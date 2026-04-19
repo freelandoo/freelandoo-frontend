@@ -1,0 +1,279 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  /* Marca Freelandoo — dourado #e6b800 */
+  --primary: #e6b800;
+  --primary-foreground: #171717;
+  --secondary: oklch(0.96 0.01 85);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0.01 85);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.7 0.15 140);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.01 85);
+  --input: oklch(0.9 0.01 85);
+  --ring: #e6b800;
+  --chart-1: #e6b800;
+  --chart-2: oklch(0.7 0.15 140);
+  --chart-3: oklch(0.6 0.12 200);
+  --chart-4: oklch(0.8 0.1 80);
+  --chart-5: oklch(0.55 0.2 340);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-primary: #e6b800;
+  --sidebar-primary-foreground: #171717;
+  --sidebar-accent: oklch(0.96 0.01 85);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.9 0.01 85);
+  --sidebar-ring: oklch(0.75 0.15 85);
+}
+
+.dark {
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.15 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.15 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: #f2c409;
+  --primary-foreground: #171717;
+  --secondary: oklch(0.22 0.02 85);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.22 0.02 85);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.75 0.15 140);
+  --accent-foreground: oklch(0.12 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.25 0.02 85);
+  --input: oklch(0.25 0.02 85);
+  --ring: #f2c409;
+  --chart-1: #f2c409;
+  --chart-2: oklch(0.75 0.15 140);
+  --chart-3: oklch(0.65 0.12 200);
+  --chart-4: oklch(0.85 0.1 80);
+  --chart-5: oklch(0.65 0.2 340);
+  --sidebar: oklch(0.15 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: #f2c409;
+  --sidebar-primary-foreground: #171717;
+  --sidebar-accent: oklch(0.22 0.02 85);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.25 0.02 85);
+  --sidebar-ring: oklch(0.8 0.15 85);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Fundo escuro compartilhado (auth, conta, perfil) */
+  .bg-page-shell-dark {
+    @apply min-h-screen bg-gradient-to-b from-neutral-900 to-black;
+  }
+
+  /* Horizontal snap scroll */
+  .snap-x-mandatory {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .snap-start {
+    scroll-snap-align: start;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Machines dark background */
+  .bg-machines-dark {
+    background-color: #05060a;
+  }
+}
+
+@layer base {
+  /* Custom keyframes for machine animations */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+  @keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes scan-vertical {
+    0% { top: 0%; }
+    50% { top: 100%; }
+    100% { top: 0%; }
+  }
+}
+
+@layer utilities {
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .animate-float-y {
+    animation: float-y 4s ease-in-out infinite;
+  }
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+}
+
+/* ──────────────────────────────────────────────────────
+   Phase 4 — Machine glow border on profile cards
+   Uses conic-gradient + mask for a performant animated
+   border. Activated via data-machine="<slug>" on the card.
+   ────────────────────────────────────────────────────── */
+
+@layer base {
+  @keyframes glow-spin {
+    to { --glow-angle: 360deg; }
+  }
+
+  @property --glow-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+}
+
+/* Per-machine glow colors */
+[data-machine="views"]         { --glow-c1: #6d28d9; --glow-c2: #2563eb; }
+[data-machine="divulgacao"]    { --glow-c1: #e11d48; --glow-c2: #db2777; }
+[data-machine="limpeza"]       { --glow-c1: #059669; --glow-c2: #10b981; }
+[data-machine="construcao"]    { --glow-c1: #ea580c; --glow-c2: #f59e0b; }
+[data-machine="negocios"]      { --glow-c1: #0ea5e9; --glow-c2: #06b6d4; }
+[data-machine="oportunidades"] { --glow-c1: #e6b800; --glow-c2: #f59e0b; }
+[data-machine="saude_beleza"]  { --glow-c1: #d946ef; --glow-c2: #ec4899; }
+[data-machine="saude_pet"]     { --glow-c1: #0d9488; --glow-c2: #14b8a6; }
+
+/* The glowing border wrapper */
+.card-glow {
+  --glow-angle: 0deg;
+  position: relative;
+  border-radius: var(--radius);
+  animation: glow-spin 4s linear infinite;
+}
+
+.card-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--glow-angle),
+    var(--glow-c1, #888) 0%,
+    var(--glow-c2, #888) 25%,
+    transparent 50%,
+    var(--glow-c1, #888) 75%,
+    var(--glow-c2, #888) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* Show glow on hover OR when card has data-machine (always subtle) */
+.card-glow[data-machine]::before {
+  opacity: 0.5;
+}
+
+.card-glow[data-machine]:hover::before {
+  opacity: 1;
+}
+
+/* Outer ambient glow (box-shadow) */
+.card-glow[data-machine]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 24px -6px var(--glow-c1, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.card-glow[data-machine]:hover::after {
+  opacity: 0.6;
+}
