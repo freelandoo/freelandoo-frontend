@@ -1,6 +1,6 @@
 import { apiDebug } from "@/lib/api-logger"
 
-const DEFAULT_BACKEND_API_URL = "https://creators-views-production.up.railway.app"
+const DEFAULT_BACKEND_API_URL = "https://freelandoo-backend-production.up.railway.app"
 
 let loggedBackendOrigin = false
 

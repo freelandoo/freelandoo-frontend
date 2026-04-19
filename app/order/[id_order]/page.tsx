@@ -77,7 +77,7 @@ export default function OrderPage() {
   const [preferenceId, setPreferenceId] = useState<string | null>(null)
 
   useEffect(() => {
-    initMercadoPago("APP_USR-495b19e5-4bd3-406c-a2e3-f34651303948", {
+    initMercadoPago(process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY!, {
       locale: "pt-BR",
     })
   }, [])
