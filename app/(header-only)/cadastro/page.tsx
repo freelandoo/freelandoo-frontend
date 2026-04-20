@@ -10,10 +10,30 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
+interface Category {
+  id_category: number
+  desc_category: string
+  is_active: boolean
+}
+
+interface Machine {
+  id_machine: number
+  name: string
+  slug: string
+  color_glow: string
+  color_ring: string
+  color_accent: string
+  color_text: string
+  is_active: boolean
+  categories: Category[]
+}
 
 export default function CadastroPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [machines, setMachines] = useState<Machine[]>([])
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -27,6 +47,15 @@ export default function CadastroPage() {
   const [openTermosModal, setOpenTermosModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
+  useEffect(() => {
+    fetch("/api/machines")
+      .then((r) => r.json())
+      .then((data) => setMachines(data.machines || []))
+      .catch(() => {})
+  }, [])
+
+  const selectedMachine = machines.find((m) => m.id_machine === selectedMachineId) ?? null
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -35,15 +64,13 @@ export default function CadastroPage() {
       return
     }
 
-    if (
-      !formData.nome ||
-      !formData.email ||
-      !formData.dataNascimento ||
-      !formData.sexo ||
-      !formData.senha ||
-      !formData.confirmarSenha
-    ) {
+    if (!formData.nome || !formData.email || !formData.dataNascimento || !formData.sexo || !formData.senha || !formData.confirmarSenha) {
       alert("Por favor, preencha todos os campos obrigatórios.")
+      return
+    }
+
+    if (!selectedCategoryId) {
+      alert("Por favor, escolha sua máquina e profissão.")
       return
     }
 
@@ -60,25 +87,19 @@ export default function CadastroPage() {
       data_nascimento: formData.dataNascimento,
       sexo: formData.sexo,
       senha: formData.senha,
-      // Valores padrão para campos obrigatórios no backend
+      id_category: selectedCategoryId,
       estado: "SP",
       municipio: "São Paulo",
     }
 
-    console.log("[v0] Enviando dados para backend:", payload)
-
     try {
       const response = await fetch("/api/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
 
-      console.log("[v0] Resposta do backend:", response.status)
       const data = await response.json()
-      console.log("[v0] Dados da resposta:", data)
 
       if (response.ok) {
         router.push("/confirmar-email")
@@ -87,7 +108,7 @@ export default function CadastroPage() {
         setIsSubmitting(false)
       }
     } catch (error) {
-      console.error("[v0] Erro ao enviar cadastro:", error)
+      console.error(error)
       alert("Erro ao conectar com o servidor. Tente novamente.")
       setIsSubmitting(false)
     }
@@ -135,10 +156,7 @@ export default function CadastroPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="sexo">Sexo</Label>
-                  <Select
-                    onValueChange={(value) => setFormData({ ...formData, sexo: value })}
-                    value={formData.sexo}
-                  >
+                  <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
                     <SelectTrigger id="sexo">
                       <SelectValue placeholder="Selecione seu sexo" />
                     </SelectTrigger>
@@ -190,12 +208,79 @@ export default function CadastroPage() {
                   </div>
                 </div>
 
+                {/* Machine selection */}
+                {machines.length > 0 && (
+                  <div className="space-y-3">
+                    <Label>Escolha sua Máquina</Label>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {machines.map((m) => {
+                        const isSelected = selectedMachineId === m.id_machine
+                        return (
+                          <button
+                            key={m.id_machine}
+                            type="button"
+                            onClick={() => {
+                              setSelectedMachineId(m.id_machine)
+                              setSelectedCategoryId(null)
+                            }}
+                            style={
+                              isSelected
+                                ? {
+                                    boxShadow: `0 0 18px ${m.color_glow}, 0 0 6px ${m.color_ring}`,
+                                    borderColor: m.color_ring,
+                                  }
+                                : {}
+                            }
+                            className={`rounded-lg border-2 bg-black px-3 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 ${
+                              isSelected ? "" : "border-white/10 hover:border-white/30"
+                            }`}
+                          >
+                            {m.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
+                {/* Category selection */}
+                {selectedMachine && (
+                  <div className="space-y-3">
+                    <Label>Escolha sua Profissão</Label>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {selectedMachine.categories.filter((c) => c.is_active).map((c) => {
+                        const isSelected = selectedCategoryId === c.id_category
+                        return (
+                          <button
+                            key={c.id_category}
+                            type="button"
+                            onClick={() => setSelectedCategoryId(c.id_category)}
+                            style={
+                              isSelected
+                                ? {
+                                    boxShadow: `0 0 14px ${selectedMachine.color_glow}`,
+                                    borderColor: selectedMachine.color_ring,
+                                    color: selectedMachine.color_text,
+                                  }
+                                : {}
+                            }
+                            className={`rounded-lg border-2 bg-black px-3 py-2 text-sm text-white transition-all duration-200 hover:brightness-110 ${
+                              isSelected ? "" : "border-white/10 hover:border-white/30"
+                            }`}
+                          >
+                            {c.desc_category}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
                   <p className="text-sm text-muted-foreground">
                     Ao clicar em continuar, você aceita os nossos{" "}
                     <button
+                      type="button"
                       onClick={() => setOpenTermosModal(true)}
                       className="font-medium text-blue-500 hover:underline"
                     >
@@ -241,10 +326,7 @@ export default function CadastroPage() {
                 <li>A Freelandoo atua exclusivamente como plataforma de divulgação de influenciadores.</li>
                 <li>A Freelandoo não entra em contato com usuários, empresas ou influenciadores.</li>
                 <li>A Freelandoo não intermedia negociações, não participa de acordos e não recebe pagamentos.</li>
-                <li>
-                  Todas as parcerias, negociações, valores, prazos, entregas e pagamentos são tratados diretamente
-                  entre empresas e influenciadores, fora da plataforma.
-                </li>
+                <li>Todas as parcerias, negociações, valores, prazos, entregas e pagamentos são tratados diretamente entre empresas e influenciadores, fora da plataforma.</li>
                 <li>Qualquer mensagem, contato ou proposta feita em nome da Freelandoo fora do site não é verdadeira.</li>
               </ul>
             </div>
@@ -270,10 +352,7 @@ export default function CadastroPage() {
               <p className="mt-2">Para sua segurança, a Freelandoo recomenda que:</p>
               <ul className="mt-2 space-y-1 list-disc list-inside">
                 <li>Nenhum pagamento seja feito sem um acordo claro entre as partes.</li>
-                <li>
-                  Sempre que possível, o pagamento seja realizado somente após a apresentação do material de divulgação
-                  pronto ou conforme combinado entre empresa e influenciador.
-                </li>
+                <li>Sempre que possível, o pagamento seja realizado somente após a apresentação do material de divulgação pronto ou conforme combinado entre empresa e influenciador.</li>
                 <li>Se evite pressão, urgência excessiva ou pedidos fora do padrão profissional.</li>
                 <li>Pagamentos sejam feitos por meios rastreáveis.</li>
               </ul>
@@ -284,10 +363,7 @@ export default function CadastroPage() {
               <ul className="mt-2 space-y-1 list-disc list-inside">
                 <li>Os contatos (WhatsApp, Instagram, redes sociais) são fornecidos pelos próprios influenciadores.</li>
                 <li>A Freelandoo não garante que contatos externos pertençam à pessoa anunciada.</li>
-                <li>
-                  Cabe ao usuário confirmar se o perfil e os dados realmente pertencem ao influenciador antes de qualquer
-                  acordo.
-                </li>
+                <li>Cabe ao usuário confirmar se o perfil e os dados realmente pertencem ao influenciador antes de qualquer acordo.</li>
               </ul>
             </div>
 
@@ -315,23 +391,14 @@ export default function CadastroPage() {
 
             <div className="border-t pt-4">
               <h3 className="font-semibold text-foreground">Termos para Influenciadores</h3>
-              <p className="mt-2">
-                Ao se cadastrar e anunciar na plataforma Freelandoo, o influenciador declara que leu, compreendeu e
-                concorda integralmente com os termos abaixo.
-              </p>
+              <p className="mt-2">Ao se cadastrar e anunciar na plataforma Freelandoo, o influenciador declara que leu, compreendeu e concorda integralmente com os termos abaixo.</p>
             </div>
 
             <div>
               <h4 className="font-semibold text-foreground">1. OBJETO DO CONTRATO</h4>
               <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>
-                  O presente termo concede ao influenciador uma licença de uso da plataforma Freelandoo, exclusivamente
-                  para divulgação de seu perfil, redes sociais e contatos profissionais.
-                </li>
-                <li>
-                  A Freelandoo não representa, não agencia e não intermedia o influenciador, atuando apenas como plataforma
-                  de exposição publicitária.
-                </li>
+                <li>O presente termo concede ao influenciador uma licença de uso da plataforma Freelandoo, exclusivamente para divulgação de seu perfil, redes sociais e contatos profissionais.</li>
+                <li>A Freelandoo não representa, não agencia e não intermedia o influenciador, atuando apenas como plataforma de exposição publicitária.</li>
               </ul>
             </div>
 
@@ -341,70 +408,15 @@ export default function CadastroPage() {
                 <li>Para anunciar seu perfil, o influenciador adquire uma licença de uso, cujo valor padrão é de R$ 49,00.</li>
                 <li>A Freelandoo poderá disponibilizar cupons de desconto, licenças premium, promocionais ou especiais.</li>
                 <li>A concessão de descontos ou gratuidade não altera as obrigações do influenciador previstas neste termo.</li>
-                <li>
-                  O pagamento da licença não garante retorno financeiro, contratos, parcerias ou propostas comerciais.
-                </li>
+                <li>O pagamento da licença não garante retorno financeiro, contratos, parcerias ou propostas comerciais.</li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-semibold text-foreground">3. RESPONSABILIDADE PELO CONTEÚDO ANUNCIADO</h4>
               <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>
-                  O influenciador é único e exclusivo responsável por todas as informações publicadas em seu perfil,
-                  incluindo nome, imagem, descrição, redes sociais, contatos, promessas comerciais, portfólio e resultados
-                  divulgados.
-                </li>
+                <li>O influenciador é único e exclusivo responsável por todas as informações publicadas em seu perfil.</li>
                 <li>A Freelandoo não valida, não fiscaliza e não garante a veracidade, legalidade ou atualização das informações fornecidas.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">4. RELAÇÃO COM TERCEIROS</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>
-                  Qualquer contato, negociação, contrato, pagamento ou parceria realizada com empresas ou terceiros ocorre
-                  fora da plataforma, sendo de responsabilidade exclusiva do influenciador.
-                </li>
-                <li>A Freelandoo não se responsabiliza por descumprimento de acordos, cancelamentos, atrasos ou danos financeiros.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">5. RESPONSABILIDADE LEGAL E INDENIZAÇÃO</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>
-                  O influenciador declara que seu conteúdo não viola leis, direitos autorais, direitos de imagem, marcas
-                  registradas ou direitos de terceiros.
-                </li>
-                <li>
-                  Caso a Freelandoo seja acionada judicialmente, o influenciador se compromete a assumir total
-                  responsabilidade, incluindo custos, indenizações, multas e honorários advocatícios.
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">6. USO DE IMAGEM E CONTEÚDO</h4>
-              <p className="mt-2">O influenciador autoriza a Freelandoo a utilizar nome, imagem, marca pessoal e conteúdo do perfil exclusivamente para fins de divulgação da plataforma, enquanto o perfil estiver ativo.</p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">7. SUSPENSÃO E CANCELAMENTO</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>
-                  A Freelandoo poderá suspender ou remover perfis que publiquem conteúdo ilegal, pratiquem golpes, gerem
-                  reclamações recorrentes ou usem a plataforma de forma indevida.
-                </li>
-                <li>A remoção do perfil não gera direito a reembolso, inclusive em planos pagos.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">8. NATUREZA DA RELAÇÃO</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Este termo não cria vínculo empregatício, societário ou de representação entre a Freelandoo e o influenciador.</li>
-                <li>O influenciador atua de forma independente, por sua conta e risco.</li>
               </ul>
             </div>
 
