@@ -6,7 +6,7 @@ import { AlertTitle } from "@/components/ui/alert"
 
 import { Alert } from "@/components/ui/alert"
 
-import React, { useCallback, useRef } from "react"
+import React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMeProfile } from "@/hooks/use-me-profile"
@@ -52,8 +52,6 @@ export default function PerfilPage() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editForm, setEditForm] = useState({
-    nome: "",
-    username: "",
     idade: "",
     sexo: "",
     telefone: "",
@@ -61,10 +59,6 @@ export default function PerfilPage() {
     municipio: "",
     bio: "",
   })
-  // Username availability in edit modal
-  const [editUsernameStatus, setEditUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
-  const [editUsernameMsg, setEditUsernameMsg] = useState("")
-  const editUsernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -569,49 +563,8 @@ export default function PerfilPage() {
     }
   }
 
-  const checkEditUsername = useCallback(async (u: string, currentUsername: string) => {
-    if (u === currentUsername) {
-      setEditUsernameStatus("idle")
-      setEditUsernameMsg("")
-      return
-    }
-    if (u.length < 3) {
-      setEditUsernameStatus("invalid")
-      setEditUsernameMsg("Mínimo 3 caracteres")
-      return
-    }
-    setEditUsernameStatus("checking")
-    try {
-      const res = await fetch(`/api/check-username?u=${encodeURIComponent(u)}`)
-      const data = await res.json()
-      if (data.available) {
-        setEditUsernameStatus("available")
-        setEditUsernameMsg("Disponível ✓")
-      } else {
-        setEditUsernameStatus("taken")
-        setEditUsernameMsg("Este nome já está em uso")
-      }
-    } catch {
-      setEditUsernameStatus("idle")
-      setEditUsernameMsg("")
-    }
-  }, [])
-
-  const handleEditUsernameChange = (raw: string) => {
-    const u = raw.toLowerCase().replace(/[^a-z0-9_.]/g, "")
-    setEditForm((prev) => ({ ...prev, username: u }))
-    setEditUsernameStatus("idle")
-    setEditUsernameMsg("")
-    if (editUsernameTimer.current) clearTimeout(editUsernameTimer.current)
-    if (u.length >= 3) {
-      editUsernameTimer.current = setTimeout(() => checkEditUsername(u, perfil.username || ""), 400)
-    }
-  }
-
   const openEditModal = async () => {
     setEditForm({
-      nome: perfil.nome || "",
-      username: perfil.username || "",
       idade: perfil.idade?.toString() || "",
       sexo: perfil.sexo || "",
       telefone: perfil.telefone || "",
@@ -619,8 +572,6 @@ export default function PerfilPage() {
       municipio: perfil.municipio || "",
       bio: perfil.bio || "",
     })
-    setEditUsernameStatus("idle")
-    setEditUsernameMsg("")
 
     if (perfil.estado) {
       const estadoObj = estados.find((e) => e.uf === perfil.estado)
@@ -666,9 +617,7 @@ export default function PerfilPage() {
       return
     }
 
-    const payload: Record<string, unknown> = {
-      nome: editForm.nome || null,
-      username: editForm.username || null,
+    const payload = {
       idade: editForm.idade ? parseInt(editForm.idade) : null,
       sexo: editForm.sexo || null,
       telefone: editForm.telefone,
@@ -1078,18 +1027,9 @@ export default function PerfilPage() {
                   </Button>
                 </div>
                 <div className="flex-1 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Nome</p>
-                      <p className="font-semibold text-lg">{perfil.nome}</p>
-                      {perfil.username && (
-                        <p className="text-sm text-muted-foreground">@{perfil.username}</p>
-                      )}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={openEditModal}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Nome</p>
+                    <p className="font-semibold text-lg">{perfil.nome}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {perfil.data_nascimento && (
@@ -1102,15 +1042,6 @@ export default function PerfilPage() {
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Sexo</p>
                         <p className="font-medium">{formatarSexo(perfil.sexo)}</p>
-                      </div>
-                    )}
-                    {perfil.estado && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Localização</p>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <p className="font-medium">{perfil.municipio ? `${perfil.municipio}, ${perfil.estado}` : perfil.estado}</p>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1616,41 +1547,6 @@ export default function PerfilPage() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-nome">Nome</Label>
-                <Input
-                  id="edit-nome"
-                  placeholder="Seu nome completo"
-                  value={editForm.nome}
-                  onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-username">Nome de Usuário</Label>
-                <Input
-                  id="edit-username"
-                  placeholder="ex: joao.silva"
-                  value={editForm.username}
-                  onChange={(e) => handleEditUsernameChange(e.target.value)}
-                  maxLength={30}
-                  className={editUsernameStatus === "taken" || editUsernameStatus === "invalid" ? "border-red-500 focus-visible:ring-red-500" : editUsernameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" : ""}
-                />
-                {editUsernameMsg && (
-                  <p className={`text-xs mt-1 font-medium ${
-                    editUsernameStatus === "taken" || editUsernameStatus === "invalid"
-                      ? "text-red-500"
-                      : editUsernameStatus === "available"
-                      ? "text-green-500"
-                      : "text-muted-foreground"
-                  }`}>
-                    {editUsernameStatus === "checking" ? "Verificando..." : editUsernameMsg}
-                  </p>
-                )}
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="data_nascimento">Data de Nascimento</Label>
