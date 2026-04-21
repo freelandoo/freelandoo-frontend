@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type React from "react"
 
 import { useRouter } from "next/navigation"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 
 interface Category {
   id_category: number
@@ -37,15 +38,83 @@ export default function CadastroPage() {
 
   const [formData, setFormData] = useState({
     nome: "",
+    username: "",
     email: "",
     dataNascimento: "",
     sexo: "",
     senha: "",
     confirmarSenha: "",
+    estado: "",
+    municipio: "",
   })
 
   const [openTermosModal, setOpenTermosModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+
+  // Username availability
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
+  const [usernameMsg, setUsernameMsg] = useState("")
+  const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Municipios
+  const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false)
+  const estados = ESTADOS_BRASIL
+
+  const checkUsername = useCallback(async (u: string) => {
+    if (u.length < 3) {
+      setUsernameStatus("invalid")
+      setUsernameMsg("Mínimo 3 caracteres")
+      return
+    }
+    setUsernameStatus("checking")
+    try {
+      const res = await fetch(`/api/check-username?u=${encodeURIComponent(u)}`)
+      const data = await res.json()
+      if (data.available) {
+        setUsernameStatus("available")
+        setUsernameMsg("Disponível ✓")
+      } else {
+        setUsernameStatus("taken")
+        setUsernameMsg("Este nome já está em uso")
+      }
+    } catch {
+      setUsernameStatus("idle")
+      setUsernameMsg("")
+    }
+  }, [])
+
+  const handleUsernameChange = (raw: string) => {
+    const u = raw.toLowerCase().replace(/[^a-z0-9_.]/g, "")
+    setFormData((prev) => ({ ...prev, username: u }))
+    setUsernameStatus("idle")
+    setUsernameMsg("")
+    if (usernameTimer.current) clearTimeout(usernameTimer.current)
+    if (u.length >= 3) {
+      usernameTimer.current = setTimeout(() => checkUsername(u), 400)
+    }
+  }
+
+  const handleEstadoChange = async (uf: string) => {
+    setFormData((prev) => ({ ...prev, estado: uf, municipio: "" }))
+    const estadoObj = estados.find((e) => e.uf === uf)
+    if (estadoObj) {
+      setLoadingMunicipios(true)
+      try {
+        const res = await fetch(
+          `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoObj.id}/municipios`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setMunicipios(data.map((m: { id: number; nome: string }) => ({ id: m.id, nome: m.nome })))
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoadingMunicipios(false)
+      }
+    }
+  }
 
   useEffect(() => {
     fetch("/api/machines")
@@ -64,8 +133,13 @@ export default function CadastroPage() {
       return
     }
 
-    if (!formData.nome || !formData.email || !formData.dataNascimento || !formData.sexo || !formData.senha || !formData.confirmarSenha) {
+    if (!formData.nome || !formData.username || !formData.email || !formData.dataNascimento || !formData.sexo || !formData.senha || !formData.confirmarSenha) {
       alert("Por favor, preencha todos os campos obrigatórios.")
+      return
+    }
+
+    if (usernameStatus === "taken" || usernameStatus === "invalid") {
+      alert("Escolha um nome de usuário válido e disponível.")
       return
     }
 
@@ -83,13 +157,14 @@ export default function CadastroPage() {
 
     const payload = {
       nome: formData.nome,
+      username: formData.username,
       email: formData.email,
       data_nascimento: formData.dataNascimento,
       sexo: formData.sexo,
       senha: formData.senha,
       id_category: selectedCategoryId,
-      estado: "SP",
-      municipio: "São Paulo",
+      estado: formData.estado || null,
+      municipio: formData.municipio || null,
     }
 
     try {
@@ -143,6 +218,32 @@ export default function CadastroPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="username">Nome de Usuário</Label>
+                    <Input
+                      id="username"
+                      placeholder="ex: joao.silva"
+                      value={formData.username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      required
+                      maxLength={30}
+                      className={usernameStatus === "taken" || usernameStatus === "invalid" ? "border-red-500 focus-visible:ring-red-500" : usernameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" : ""}
+                    />
+                    {usernameMsg && (
+                      <p className={`text-xs mt-1 font-medium ${
+                        usernameStatus === "taken" || usernameStatus === "invalid"
+                          ? "text-red-500"
+                          : usernameStatus === "available"
+                          ? "text-green-500"
+                          : "text-muted-foreground"
+                      }`}>
+                        {usernameStatus === "checking" ? "Verificando..." : usernameMsg}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
                     <Label htmlFor="dataNascimento">Data de Nascimento</Label>
                     <Input
                       id="dataNascimento"
@@ -152,20 +253,20 @@ export default function CadastroPage() {
                       required
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="sexo">Sexo</Label>
-                  <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
-                    <SelectTrigger id="sexo">
-                      <SelectValue placeholder="Selecione seu sexo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M">Masculino</SelectItem>
-                      <SelectItem value="F">Feminino</SelectItem>
-                      <SelectItem value="O">Outro</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="sexo">Sexo</Label>
+                    <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
+                      <SelectTrigger id="sexo">
+                        <SelectValue placeholder="Selecione seu sexo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="M">Masculino</SelectItem>
+                        <SelectItem value="F">Feminino</SelectItem>
+                        <SelectItem value="O">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -178,6 +279,40 @@ export default function CadastroPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="estado">Estado</Label>
+                    <Select value={formData.estado} onValueChange={handleEstadoChange}>
+                      <SelectTrigger id="estado">
+                        <SelectValue placeholder="Selecione o estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {estados.map((e) => (
+                          <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="municipio">Município</Label>
+                    <Select
+                      value={formData.municipio}
+                      onValueChange={(val) => setFormData((prev) => ({ ...prev, municipio: val }))}
+                      disabled={!formData.estado || loadingMunicipios}
+                    >
+                      <SelectTrigger id="municipio">
+                        <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {municipios.map((m) => (
+                          <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">

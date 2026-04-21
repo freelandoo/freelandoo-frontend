@@ -21,6 +21,7 @@ export interface Profile {
 export interface PerfilCompleto {
   id_user: string
   nome: string
+  username?: string
   idade?: number | null
   data_nascimento?: string
   sexo?: string | null
