@@ -71,7 +71,7 @@ export function MachinePanel({
             </span>
           </motion.div>
 
-          <h2 className="mt-6 text-balance text-5xl font-black leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl">
+          <h2 className="mt-6 text-balance text-3xl font-semibold leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl">
             {machine.headline}
           </h2>
 
