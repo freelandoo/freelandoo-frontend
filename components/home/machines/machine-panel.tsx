@@ -1,10 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { ArrowRight, Zap } from "lucide-react"
-import gsap from "gsap"
 import type { MachineTheme } from "./tokens"
 import { MachineInput } from "./machine-input"
 import { SearchState } from "./search-state"
@@ -40,70 +39,6 @@ export function MachinePanel({
 
   const isOpportunities = machine.id === "oportunidades"
 
-  const headlineRef = useRef<HTMLHeadingElement | null>(null)
-
-  useEffect(() => {
-    const el = headlineRef.current
-    if (!el) return
-
-    const words = el.querySelectorAll<HTMLSpanElement>("[data-word]")
-    if (words.length === 0) return
-
-    gsap.set(words, { opacity: 0, y: 40, scale: 0.7, filter: "blur(12px)" })
-
-    const ctx = gsap.context(() => {
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return
-            io.disconnect()
-
-            const tl = gsap.timeline()
-            tl.to(words, {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              duration: 0.9,
-              ease: "back.out(1.6)",
-              stagger: 0.08,
-            }).to(
-              el,
-              {
-                keyframes: [
-                  { scale: 1.04, duration: 0.25, ease: "power2.out" },
-                  { scale: 1, duration: 0.35, ease: "power2.inOut" },
-                ],
-              },
-              "-=0.2"
-            )
-
-            gsap.to(el, {
-              textShadow: `0 0 24px ${machine.colors.glow}`,
-              repeat: -1,
-              yoyo: true,
-              duration: 1.8,
-              ease: "sine.inOut",
-            })
-
-            gsap.to(el, {
-              backgroundPosition: "200% center",
-              repeat: -1,
-              duration: 6,
-              ease: "none",
-            })
-          })
-        },
-        { threshold: 0.25 }
-      )
-      io.observe(el)
-
-      return () => io.disconnect()
-    }, el)
-
-    return () => ctx.revert()
-  }, [machine.colors.accent, machine.colors.glow, machine.colors.text])
-
   return (
     <div
       id={`machine-${machine.id}`}
@@ -137,26 +72,15 @@ export function MachinePanel({
           </motion.div>
 
           <h2
-            ref={headlineRef}
-            className="mt-6 text-balance bg-clip-text text-5xl font-black leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl xl:text-[5.5rem]"
+            className="mt-6 text-balance bg-clip-text text-6xl font-black leading-[1.05] tracking-tight text-white md:text-7xl lg:text-8xl"
             style={{
               backgroundImage: `linear-gradient(100deg, #ffffff 0%, ${machine.colors.accent} 40%, ${machine.colors.text} 60%, #ffffff 100%)`,
               backgroundSize: "200% auto",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              willChange: "transform, filter",
             }}
           >
-            {machine.headline.split(" ").map((word, i, arr) => (
-              <span
-                key={`${word}-${i}`}
-                data-word
-                className="inline-block"
-                style={{ marginRight: i < arr.length - 1 ? "0.28em" : 0 }}
-              >
-                {word}
-              </span>
-            ))}
+            {machine.headline}
           </h2>
 
           <motion.p
@@ -164,7 +88,7 @@ export function MachinePanel({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.5 }}
-            className="mt-4 max-w-md text-pretty text-xs text-white/50 md:text-sm"
+            className="mt-3 max-w-md text-pretty text-[11px] text-white/40 md:text-xs"
           >
             {machine.subheadline}
           </motion.p>
