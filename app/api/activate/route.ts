@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       status = response.status
-      return NextResponse.json({ message: data.message || "Erro ao ativar conta" }, { status: response.status })
+      return NextResponse.json(
+        { message: data.error || data.message || "Erro ao ativar conta" },
+        { status: response.status }
+      )
     }
 
     status = 200
