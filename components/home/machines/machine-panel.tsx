@@ -63,10 +63,10 @@ export function MachinePanel({
             transition={{ duration: 0.5 }}
           >
             <span
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold uppercase tracking-[0.2em] backdrop-blur md:text-base"
+              className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-base font-bold uppercase tracking-[0.18em] backdrop-blur md:text-lg"
               style={{ color: machine.colors.text }}
             >
-              <Zap className="h-4 w-4 md:h-5 md:w-5" style={{ color: machine.colors.accent }} />
+              <Zap className="h-5 w-5 md:h-6 md:w-6" style={{ color: machine.colors.accent }} />
               {machine.label} — {machine.name}
             </span>
           </motion.div>
