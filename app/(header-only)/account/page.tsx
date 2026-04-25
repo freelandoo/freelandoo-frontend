@@ -73,9 +73,12 @@ export default function PerfilPage() {
   const imageRef = React.useRef<HTMLImageElement>(null)
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false)
   const [isNewProfileModalOpen, setIsNewProfileModalOpen] = useState(false)
-  const [categories, setCategories] = useState<{ id_category: number; desc_category: string }[]>([])
-  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [machines, setMachines] = useState<{ id_machine: number; name: string; slug: string }[]>([])
+  const [loadingMachines, setLoadingMachines] = useState(false)
+  const [professions, setProfessions] = useState<{ id_category: number; desc_category: string }[]>([])
+  const [loadingProfessions, setLoadingProfessions] = useState(false)
   const [newProfileForm, setNewProfileForm] = useState({
+    id_machine: "",
     id_category: "",
     display_name: "",
     bio: "",
@@ -142,21 +145,45 @@ export default function PerfilPage() {
     setTimeout(() => setCouponCopied(false), 2000)
   }
 
-  const fetchCategories = async () => {
-    if (categories.length > 0) return
-    setLoadingCategories(true)
+  const fetchMachines = async () => {
+    if (machines.length > 0) return
+    setLoadingMachines(true)
     try {
-      const res = await fetch("/api/categories")
+      const res = await fetch("/api/machines")
       if (res.ok) {
         const data = await res.json()
-        const list = Array.isArray(data) ? data : (data.categories ?? [])
-        setCategories(list)
+        const list = Array.isArray(data) ? data : (data.machines ?? [])
+        setMachines(list)
       }
     } catch {
       // silencioso
     } finally {
-      setLoadingCategories(false)
+      setLoadingMachines(false)
     }
+  }
+
+  const fetchProfessions = async (id_machine: string) => {
+    setLoadingProfessions(true)
+    try {
+      const res = await fetch(`/api/machines/${encodeURIComponent(id_machine)}/categories`)
+      if (res.ok) {
+        const data = await res.json()
+        const list = Array.isArray(data) ? data : (data.categories ?? [])
+        setProfessions(list)
+      } else {
+        setProfessions([])
+      }
+    } catch {
+      setProfessions([])
+    } finally {
+      setLoadingProfessions(false)
+    }
+  }
+
+  const handleNewProfileMachineChange = (val: string) => {
+    setNewProfileForm((prev) => ({ ...prev, id_machine: val, id_category: "" }))
+    setProfessions([])
+    if (val) fetchProfessions(val)
   }
 
   const fetchNewProfileMunicipios = async (estadoId: string) => {
@@ -187,6 +214,14 @@ export default function PerfilPage() {
       setNewProfileError("O nome de exibição é obrigatório.")
       return
     }
+    if (!newProfileForm.id_machine) {
+      setNewProfileError("Selecione uma máquina.")
+      return
+    }
+    if (!newProfileForm.id_category) {
+      setNewProfileError("Selecione uma profissão.")
+      return
+    }
     const token = localStorage.getItem("token")
     if (!token) return
 
@@ -195,7 +230,8 @@ export default function PerfilPage() {
     try {
       const payload = {
         id_user: perfil?.id_user ?? null,
-        id_category: newProfileForm.id_category ? Number(newProfileForm.id_category) : null,
+        id_machine: Number(newProfileForm.id_machine),
+        id_category: Number(newProfileForm.id_category),
         display_name: newProfileForm.display_name.trim(),
         bio: newProfileForm.bio.trim() || null,
         avatar_url: newProfileForm.avatar_url.trim() || null,
@@ -213,7 +249,8 @@ export default function PerfilPage() {
       const resData = await res.json()
       if (res.ok) {
         setIsNewProfileModalOpen(false)
-        setNewProfileForm({ id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" })
+        setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" })
+        setProfessions([])
         // Recarrega dados do usuário
         const updated = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
         if (updated.ok) setPerfil(await updated.json())
@@ -1207,7 +1244,7 @@ export default function PerfilPage() {
                     )
                   })()}
                 </div>
-                <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); fetchCategories(); setIsNewProfileModalOpen(true) }}>
+                <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Perfil
                 </Button>
@@ -1257,6 +1294,13 @@ export default function PerfilPage() {
                               </Badge>
                             )}
                           </div>
+
+                          {(profile.municipio || profile.estado) && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {[profile.municipio, profile.estado].filter(Boolean).join(" - ")}
+                            </p>
+                          )}
 
                           {/* Bio */}
                           {profile.bio && (
@@ -1336,7 +1380,7 @@ export default function PerfilPage() {
                   </div>
                   <p className="text-muted-foreground mb-2">Nenhum perfil criado</p>
                   <p className="text-sm text-muted-foreground mb-4">Crie seu primeiro perfil para começar</p>
-                  <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); fetchCategories(); setIsNewProfileModalOpen(true) }}>
+                  <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Perfil
                   </Button>
@@ -1368,19 +1412,44 @@ export default function PerfilPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="np-category">Categoria</Label>
+              <Label htmlFor="np-machine">Máquina <span className="text-destructive">*</span></Label>
+              <Select
+                value={newProfileForm.id_machine}
+                onValueChange={handleNewProfileMachineChange}
+                disabled={loadingMachines}
+              >
+                <SelectTrigger id="np-machine">
+                  <SelectValue placeholder={loadingMachines ? "Carregando..." : "Selecione uma máquina"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {machines.map((m) => (
+                    <SelectItem key={m.id_machine} value={String(m.id_machine)}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="np-profession">Profissão <span className="text-destructive">*</span></Label>
               <Select
                 value={newProfileForm.id_category}
                 onValueChange={(val) => setNewProfileForm((prev) => ({ ...prev, id_category: val }))}
-                disabled={loadingCategories}
+                disabled={!newProfileForm.id_machine || loadingProfessions}
               >
-                <SelectTrigger id="np-category">
-                  <SelectValue placeholder={loadingCategories ? "Carregando..." : "Selecione uma categoria"} />
+                <SelectTrigger id="np-profession">
+                  <SelectValue placeholder={
+                    !newProfileForm.id_machine
+                      ? "Selecione uma máquina primeiro"
+                      : loadingProfessions
+                        ? "Carregando..."
+                        : "Selecione uma profissão"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id_category} value={String(cat.id_category)}>
-                      {cat.desc_category}
+                  {professions.map((p) => (
+                    <SelectItem key={p.id_category} value={String(p.id_category)}>
+                      {p.desc_category}
                     </SelectItem>
                   ))}
                 </SelectContent>
