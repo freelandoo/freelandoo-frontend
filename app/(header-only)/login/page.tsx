@@ -49,11 +49,16 @@ export default function LoginPage() {
       // Salvar token e dados do usuário no localStorage
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
+      // Notifica componentes (ex.: header) que o estado de auth mudou.
+      window.dispatchEvent(new Event("auth:changed"))
 
       console.log("[v0] Login realizado com sucesso, redirecionando...")
 
-      // Redirecionar para a página de busca
-      router.push("/search")
+      if (data.email_verified === false || data.user?.email_verified === false) {
+        router.push("/verify-email")
+      } else {
+        router.push("/search")
+      }
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
       setError("Erro ao conectar com o servidor")

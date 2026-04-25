@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { fetchWithLog } from "@/lib/fetch-with-log"
 
 /** Carrega `/api/users/me`, cupom e mídia do portfólio global (autenticado). */
 export function useMeProfile() {
   const router = useRouter()
+  const pathname = usePathname()
   const [perfil, setPerfil] = useState<PerfilCompleto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
@@ -39,6 +40,13 @@ export function useMeProfile() {
         }
 
         const data = await response.json()
+
+        // Email não confirmado: bloqueia páginas protegidas e redireciona
+        if (data && data.ativo === false && pathname !== "/verify-email") {
+          router.push("/verify-email")
+          return
+        }
+
         setPerfil(data)
 
         try {
@@ -87,7 +95,7 @@ export function useMeProfile() {
     }
 
     fetchPerfil()
-  }, [router])
+  }, [router, pathname])
 
   return { perfil, setPerfil, isLoading, error }
 }

@@ -44,13 +44,22 @@ export interface Status {
 export interface FreelancerProfile {
   id_profile: string
   id_user: string
+  username?: string | null
   id_category: number
   desc_category: string
+  profession_slug?: string | null
+  id_machine?: number | null
+  machine_slug?: string | null
+  machine_name?: string | null
   display_name: string
   bio: string
   avatar_url: string | null
   user_avatar: string | null
   is_active: boolean
+  is_visible?: boolean
+  is_paid?: boolean
+  is_published?: boolean
+  deleted_at?: string | null
   created_at: string
   updated_at: string
   estado: string

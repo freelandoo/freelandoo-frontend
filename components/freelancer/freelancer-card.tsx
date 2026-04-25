@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { CheckCircle2, Instagram, Youtube, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { MACHINES } from "@/components/home/machines/tokens"
+import { buildProfileUrl } from "@/lib/slug"
 
 interface RedeSocial {
   url: string
@@ -26,7 +27,9 @@ interface Creator {
   estado: string
   municipio: string
   category: string
+  profession_slug?: string | null
   id_user: string
+  username?: string | null
   user_nome: string
   user_avatar: string
   profile_statuses: ProfileStatus[]
@@ -91,6 +94,16 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
   const redesRestantes = Math.max(0, redesOrdenadas.length - 3)
 
   const handleVerPerfil = () => {
+    if (creator.username && creator.profession_slug) {
+      router.push(
+        buildProfileUrl({
+          profession_slug: creator.profession_slug,
+          municipio: creator.municipio,
+          handle: creator.username,
+        })
+      )
+      return
+    }
     router.push(`/freelancer/${creator.id_profile}`)
   }
 

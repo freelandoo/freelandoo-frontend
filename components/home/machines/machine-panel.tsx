@@ -32,7 +32,7 @@ export function MachinePanel({
   const handleComplete = useCallback(() => {
     const q = inputValue.trim()
     const params = new URLSearchParams()
-    params.set("from", `maquina-${machine.id}`)
+    params.set("machine", machine.id)
     if (q) params.set("q", q)
     router.push(`/search?${params.toString()}`)
   }, [inputValue, machine.id, router])

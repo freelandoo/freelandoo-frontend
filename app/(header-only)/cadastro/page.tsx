@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import type React from "react"
 
 import { useRouter } from "next/navigation"
@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
+import { machineDescription } from "@/lib/constants/machine-descriptions"
+import { checkPassword, isPasswordStrong, isAdult, isValidEmail } from "@/lib/validation/signup"
+import { Check, X, ArrowLeft, User, Briefcase, Info } from "lucide-react"
 
 interface Category {
   id_category: number
@@ -29,13 +32,17 @@ interface Machine {
   categories: Category[]
 }
 
+type Step = 1 | 2 | 3
+type UserType = "client" | "freelancer"
+
 export default function CadastroPage() {
   const router = useRouter()
+  const [step, setStep] = useState<Step>(1)
+  const [userType, setUserType] = useState<UserType | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [machines, setMachines] = useState<Machine[]>([])
-  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null)
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
+  // Step 1 — account
   const [formData, setFormData] = useState({
     nome: "",
     username: "",
@@ -44,10 +51,7 @@ export default function CadastroPage() {
     sexo: "",
     senha: "",
     confirmarSenha: "",
-    estado: "",
-    municipio: "",
   })
-
   const [openTermosModal, setOpenTermosModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
@@ -56,10 +60,44 @@ export default function CadastroPage() {
   const [usernameMsg, setUsernameMsg] = useState("")
   const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Municipios
+  // Step 3 — profile
+  const [machines, setMachines] = useState<Machine[]>([])
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null)
+  const [hoveredMachineId, setHoveredMachineId] = useState<number | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [profileData, setProfileData] = useState({
+    display_name: "",
+    bio: "",
+    avatar_url: "",
+    estado: "",
+    municipio: "",
+  })
   const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
   const estados = ESTADOS_BRASIL
+
+  // Live password validation
+  const passwordChecks = useMemo(() => checkPassword(formData.senha), [formData.senha])
+  const passwordStrong = isPasswordStrong(formData.senha)
+  const passwordsMatch = formData.senha.length > 0 && formData.senha === formData.confirmarSenha
+
+  // Step 1 derived validity
+  const ageOk = !formData.dataNascimento || isAdult(formData.dataNascimento)
+  const ageBlocked = !!formData.dataNascimento && !ageOk
+  const emailOk = !formData.email || isValidEmail(formData.email)
+  const emailBlocked = !!formData.email && !emailOk
+
+  const step1Valid =
+    !!formData.nome.trim() &&
+    !!formData.username &&
+    usernameStatus === "available" &&
+    !!formData.email &&
+    emailOk &&
+    !!formData.dataNascimento &&
+    ageOk &&
+    passwordStrong &&
+    passwordsMatch &&
+    acceptedTerms
 
   const checkUsername = useCallback(async (u: string) => {
     if (u.length < 3) {
@@ -96,7 +134,7 @@ export default function CadastroPage() {
   }
 
   const handleEstadoChange = async (uf: string) => {
-    setFormData((prev) => ({ ...prev, estado: uf, municipio: "" }))
+    setProfileData((prev) => ({ ...prev, estado: uf, municipio: "" }))
     const estadoObj = estados.find((e) => e.uf === uf)
     if (estadoObj) {
       setLoadingMunicipios(true)
@@ -119,146 +157,184 @@ export default function CadastroPage() {
   useEffect(() => {
     fetch("/api/machines")
       .then((r) => r.json())
-      .then((data) => setMachines(data.machines || []))
+      .then((data) => setMachines(Array.isArray(data) ? data : data.machines || []))
       .catch(() => {})
   }, [])
 
   const selectedMachine = machines.find((m) => m.id_machine === selectedMachineId) ?? null
+  const hoveredOrSelectedMachine =
+    machines.find((m) => m.id_machine === hoveredMachineId) ?? selectedMachine
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStep1Continue = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!step1Valid) return
+    setStep(2)
+  }
 
-    if (!acceptedTerms) {
-      alert("Por favor, aceite os termos de uso para continuar.")
-      return
+  const submitSignup = async (asFreelancer: boolean) => {
+    setSubmitError(null)
+    if (asFreelancer) {
+      if (!selectedMachineId || !selectedCategoryId) {
+        setSubmitError("Selecione máquina e profissão.")
+        return
+      }
+      if (!profileData.estado || !profileData.municipio) {
+        setSubmitError("Selecione estado e município do perfil.")
+        return
+      }
+      if (!profileData.display_name.trim()) {
+        setSubmitError("Defina o nome de exibição do perfil.")
+        return
+      }
     }
-
-    if (!formData.nome || !formData.username || !formData.email || !formData.dataNascimento || !formData.sexo || !formData.senha || !formData.confirmarSenha) {
-      alert("Por favor, preencha todos os campos obrigatórios.")
-      return
-    }
-
-    if (usernameStatus === "taken" || usernameStatus === "invalid") {
-      alert("Escolha um nome de usuário válido e disponível.")
-      return
-    }
-
-    if (!selectedCategoryId) {
-      alert("Por favor, escolha sua máquina e profissão.")
-      return
-    }
-
-    if (formData.senha !== formData.confirmarSenha) {
-      alert("As senhas não coincidem. Tente novamente.")
-      return
-    }
-
     setIsSubmitting(true)
-
-    const payload = {
-      nome: formData.nome,
+    const payload: Record<string, unknown> = {
+      nome: formData.nome.trim(),
       username: formData.username,
-      email: formData.email,
+      email: formData.email.trim(),
       data_nascimento: formData.dataNascimento,
-      sexo: formData.sexo,
+      sexo: formData.sexo || null,
       senha: formData.senha,
-      id_category: selectedCategoryId,
-      estado: formData.estado || null,
-      municipio: formData.municipio || null,
     }
-
+    if (asFreelancer) {
+      payload.id_machine = selectedMachineId
+      payload.id_category = selectedCategoryId
+      payload.display_name = profileData.display_name.trim()
+      payload.bio = profileData.bio.trim() || null
+      payload.avatar_url = profileData.avatar_url.trim() || null
+      payload.estado = profileData.estado
+      payload.municipio = profileData.municipio
+    }
     try {
       const response = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-
       const data = await response.json()
-
       if (response.ok) {
-        router.push("/confirmar-email")
+        router.push("/verify-email")
       } else {
-        alert(data.error || data.message || "Erro ao criar cadastro. Tente novamente.")
+        setSubmitError(data.error || data.message || "Erro ao criar cadastro. Tente novamente.")
         setIsSubmitting(false)
       }
     } catch (error) {
       console.error(error)
-      alert("Erro ao conectar com o servidor. Tente novamente.")
+      setSubmitError("Erro ao conectar com o servidor. Tente novamente.")
       setIsSubmitting(false)
     }
   }
 
+  const PasswordRequirement = ({ ok, label }: { ok: boolean; label: string }) => (
+    <li className={`flex items-center gap-2 text-xs ${ok ? "text-green-600" : "text-muted-foreground"}`}>
+      {ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5 opacity-50" />}
+      <span>{label}</span>
+    </li>
+  )
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 py-12">
         <div className="mx-auto max-w-3xl">
-          <div className="mb-8 text-center">
-            <h1 className="mb-3 text-4xl font-bold">Cadastro de Creator</h1>
-            <p className="text-lg text-muted-foreground">Crie seu perfil profissional e conecte-se com marcas</p>
+          <div className="mb-6 text-center">
+            <h1 className="mb-2 text-3xl font-bold">Criar conta</h1>
+            <p className="text-muted-foreground">Etapa {step} de {userType === "client" ? 2 : 3}</p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Dados do Creator</CardTitle>
-              <CardDescription>Preencha as informações para criar sua conta</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome">Nome Completo</Label>
-                    <Input
-                      id="nome"
-                      placeholder="Ex: João Silva"
-                      value={formData.nome}
-                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      required
-                    />
+          {/* STEP 1 — DADOS DA CONTA */}
+          {step === 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados da conta</CardTitle>
+                <CardDescription>Crie suas credenciais para acessar a Freelandoo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-6" onSubmit={handleStep1Continue}>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="nome">Nome completo</Label>
+                      <Input
+                        id="nome"
+                        placeholder="Ex: João Silva"
+                        value={formData.nome}
+                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Nome de usuário</Label>
+                      <Input
+                        id="username"
+                        placeholder="ex: joao.silva"
+                        value={formData.username}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
+                        required
+                        maxLength={30}
+                        className={
+                          usernameStatus === "taken" || usernameStatus === "invalid"
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : usernameStatus === "available"
+                              ? "border-green-500 focus-visible:ring-green-500"
+                              : ""
+                        }
+                      />
+                      {usernameMsg && (
+                        <p
+                          className={`text-xs mt-1 font-medium ${
+                            usernameStatus === "taken" || usernameStatus === "invalid"
+                              ? "text-red-500"
+                              : usernameStatus === "available"
+                                ? "text-green-500"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {usernameStatus === "checking" ? "Verificando..." : usernameMsg}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                        className={emailBlocked ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {emailBlocked && (
+                        <p className="text-xs text-red-500">Digite um email válido.</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        type="date"
+                        value={formData.dataNascimento}
+                        onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+                        required
+                        className={ageBlocked ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {ageBlocked && (
+                        <p className="text-xs text-red-500">
+                          Você precisa ter 18 anos ou mais para criar uma conta.
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="username">Nome de Usuário</Label>
-                    <Input
-                      id="username"
-                      placeholder="ex: joao.silva"
-                      value={formData.username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
-                      required
-                      maxLength={30}
-                      className={usernameStatus === "taken" || usernameStatus === "invalid" ? "border-red-500 focus-visible:ring-red-500" : usernameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" : ""}
-                    />
-                    {usernameMsg && (
-                      <p className={`text-xs mt-1 font-medium ${
-                        usernameStatus === "taken" || usernameStatus === "invalid"
-                          ? "text-red-500"
-                          : usernameStatus === "available"
-                          ? "text-green-500"
-                          : "text-muted-foreground"
-                      }`}>
-                        {usernameStatus === "checking" ? "Verificando..." : usernameMsg}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-                    <Input
-                      id="dataNascimento"
-                      type="date"
-                      value={formData.dataNascimento}
-                      onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sexo">Sexo</Label>
+                    <Label htmlFor="sexo">Sexo (opcional)</Label>
                     <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
                       <SelectTrigger id="sexo">
-                        <SelectValue placeholder="Selecione seu sexo" />
+                        <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="M">Masculino</SelectItem>
@@ -267,177 +343,321 @@ export default function CadastroPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                  />
-                </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="senha">Senha</Label>
+                      <Input
+                        id="senha"
+                        type="password"
+                        placeholder="Mínimo 8 caracteres"
+                        value={formData.senha}
+                        onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                        required
+                      />
+                      <ul className="space-y-1 mt-2">
+                        <PasswordRequirement ok={passwordChecks.min_length} label="Mínimo de 8 caracteres" />
+                        <PasswordRequirement ok={passwordChecks.uppercase} label="Pelo menos 1 letra maiúscula" />
+                        <PasswordRequirement ok={passwordChecks.number} label="Pelo menos 1 número" />
+                        <PasswordRequirement ok={passwordChecks.special_character} label="Pelo menos 1 caractere especial" />
+                      </ul>
+                    </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="estado">Estado</Label>
-                    <Select value={formData.estado} onValueChange={handleEstadoChange}>
-                      <SelectTrigger id="estado">
-                        <SelectValue placeholder="Selecione o estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {estados.map((e) => (
-                          <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="municipio">Município</Label>
-                    <Select
-                      value={formData.municipio}
-                      onValueChange={(val) => setFormData((prev) => ({ ...prev, municipio: val }))}
-                      disabled={!formData.estado || loadingMunicipios}
-                    >
-                      <SelectTrigger id="municipio">
-                        <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {municipios.map((m) => (
-                          <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="senha">Senha</Label>
-                    <Input
-                      id="senha"
-                      type="password"
-                      placeholder="Mínimo 8 caracteres"
-                      value={formData.senha}
-                      onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
-                    <Input
-                      id="confirmarSenha"
-                      type="password"
-                      placeholder="Repita sua senha"
-                      value={formData.confirmarSenha}
-                      onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                </div>
-
-                {/* Machine selection */}
-                {machines.length > 0 && (
-                  <div className="space-y-3">
-                    <Label>Escolha sua Máquina</Label>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {machines.map((m) => {
-                        const isSelected = selectedMachineId === m.id_machine
-                        return (
-                          <button
-                            key={m.id_machine}
-                            type="button"
-                            onClick={() => {
-                              setSelectedMachineId(m.id_machine)
-                              setSelectedCategoryId(null)
-                            }}
-                            style={
-                              isSelected
-                                ? {
-                                    boxShadow: `0 0 18px ${m.color_glow}, 0 0 6px ${m.color_ring}`,
-                                    borderColor: m.color_ring,
-                                  }
-                                : {}
-                            }
-                            className={`rounded-lg border-2 bg-black px-3 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 ${
-                              isSelected ? "" : "border-white/10 hover:border-white/30"
-                            }`}
-                          >
-                            {m.name}
-                          </button>
-                        )
-                      })}
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmarSenha">Confirmar senha</Label>
+                      <Input
+                        id="confirmarSenha"
+                        type="password"
+                        placeholder="Repita sua senha"
+                        value={formData.confirmarSenha}
+                        onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
+                        required
+                        className={
+                          formData.confirmarSenha.length > 0 && !passwordsMatch
+                            ? "border-red-500 focus-visible:ring-red-500"
+                            : ""
+                        }
+                      />
+                      {formData.confirmarSenha.length > 0 && !passwordsMatch && (
+                        <p className="text-xs text-red-500">As senhas não coincidem.</p>
+                      )}
                     </div>
                   </div>
-                )}
 
-                {/* Category selection */}
-                {selectedMachine && (
-                  <div className="space-y-3">
-                    <Label>Escolha sua Profissão</Label>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {selectedMachine.categories.filter((c) => c.is_active).map((c) => {
-                        const isSelected = selectedCategoryId === c.id_category
-                        return (
-                          <button
-                            key={c.id_category}
-                            type="button"
-                            onClick={() => setSelectedCategoryId(c.id_category)}
-                            style={
-                              isSelected
-                                ? {
-                                    boxShadow: `0 0 14px ${selectedMachine.color_glow}`,
-                                    borderColor: selectedMachine.color_ring,
-                                    color: selectedMachine.color_text,
-                                  }
-                                : {}
-                            }
-                            className={`rounded-lg border-2 bg-black px-3 py-2 text-sm text-white transition-all duration-200 hover:brightness-110 ${
-                              isSelected ? "" : "border-white/10 hover:border-white/30"
-                            }`}
-                          >
-                            {c.desc_category}
-                          </button>
-                        )
-                      })}
-                    </div>
+                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <span className="text-muted-foreground">
+                        Li e aceito os{" "}
+                        <button
+                          type="button"
+                          onClick={() => setOpenTermosModal(true)}
+                          className="font-medium text-blue-500 hover:underline"
+                        >
+                          termos de uso
+                        </button>
+                        .
+                      </span>
+                    </label>
                   </div>
-                )}
 
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
-                  <p className="text-sm text-muted-foreground">
-                    Ao clicar em continuar, você aceita os nossos{" "}
-                    <button
-                      type="button"
-                      onClick={() => setOpenTermosModal(true)}
-                      className="font-medium text-blue-500 hover:underline"
-                    >
-                      termos de uso
-                    </button>
-                    .
+                  <Button type="submit" size="lg" className="w-full" disabled={!step1Valid}>
+                    Continuar
+                  </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Já tem uma conta?{" "}
+                    <a href="/login" className="font-medium text-primary hover:underline">
+                      Faça login
+                    </a>
                   </p>
-                </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
 
-                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || !acceptedTerms}>
-                  {isSubmitting ? "Enviando..." : "Continuar"}
+          {/* STEP 2 — TIPO DE USUÁRIO */}
+          {step === 2 && (
+            <Card>
+              <CardHeader>
+                <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(1)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
                 </Button>
+                <CardTitle>Como você pretende usar a Freelandoo?</CardTitle>
+                <CardDescription>Você pode mudar isso depois pela sua conta.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserType("client")
+                      submitSignup(false)
+                    }}
+                    disabled={isSubmitting}
+                    className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
+                  >
+                    <User className="h-8 w-8 mb-3 text-primary" />
+                    <p className="font-semibold mb-1">Sou cliente</p>
+                    <p className="text-sm text-muted-foreground">
+                      Quero contratar profissionais. Finalizar cadastro agora.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserType("freelancer")
+                      setProfileData((prev) => ({
+                        ...prev,
+                        display_name: prev.display_name || formData.nome,
+                      }))
+                      setStep(3)
+                    }}
+                    disabled={isSubmitting}
+                    className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
+                  >
+                    <Briefcase className="h-8 w-8 mb-3 text-primary" />
+                    <p className="font-semibold mb-1">Sou freelancer</p>
+                    <p className="text-sm text-muted-foreground">
+                      Quero criar perfil profissional para receber contatos.
+                    </p>
+                  </button>
+                </div>
+                {submitError && <p className="text-sm text-red-500 mt-4">{submitError}</p>}
+                {isSubmitting && (
+                  <p className="text-sm text-muted-foreground mt-4">Criando conta...</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-                <p className="text-center text-sm text-muted-foreground">
-                  Já tem uma conta?{" "}
-                  <a href="/login" className="font-medium text-primary hover:underline">
-                    Faça login
-                  </a>
-                </p>
-              </form>
-            </CardContent>
-          </Card>
+          {/* STEP 3 — PERFIL FREELANCER */}
+          {step === 3 && (
+            <Card>
+              <CardHeader>
+                <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(2)}>
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+                </Button>
+                <CardTitle>Perfil profissional</CardTitle>
+                <CardDescription>
+                  Seu perfil nasce <strong>aguardando assinatura</strong>. Ele só aparece publicamente após você ativar a anuidade.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-6"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    submitSignup(true)
+                  }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="display_name">Nome de exibição</Label>
+                    <Input
+                      id="display_name"
+                      value={profileData.display_name}
+                      onChange={(e) => setProfileData({ ...profileData, display_name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* Machines */}
+                  {machines.length > 0 && (
+                    <div className="space-y-3">
+                      <Label>Escolha sua máquina</Label>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {machines.map((m) => {
+                          const isSelected = selectedMachineId === m.id_machine
+                          return (
+                            <button
+                              key={m.id_machine}
+                              type="button"
+                              onClick={() => {
+                                setSelectedMachineId(m.id_machine)
+                                setSelectedCategoryId(null)
+                              }}
+                              onMouseEnter={() => setHoveredMachineId(m.id_machine)}
+                              onMouseLeave={() => setHoveredMachineId(null)}
+                              onFocus={() => setHoveredMachineId(m.id_machine)}
+                              onBlur={() => setHoveredMachineId(null)}
+                              title={machineDescription(m.slug)}
+                              style={
+                                isSelected
+                                  ? {
+                                      boxShadow: `0 0 18px ${m.color_glow}, 0 0 6px ${m.color_ring}`,
+                                      borderColor: m.color_ring,
+                                    }
+                                  : {}
+                              }
+                              className={`rounded-lg border-2 bg-black px-3 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 ${
+                                isSelected ? "" : "border-white/10 hover:border-white/30"
+                              }`}
+                            >
+                              {m.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {hoveredOrSelectedMachine && machineDescription(hoveredOrSelectedMachine.slug) && (
+                        <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-3 flex gap-2 items-start">
+                          <Info className="h-4 w-4 mt-0.5 text-blue-500 shrink-0" />
+                          <div className="text-sm">
+                            <p className="font-medium">{hoveredOrSelectedMachine.name}</p>
+                            <p className="text-muted-foreground">{machineDescription(hoveredOrSelectedMachine.slug)}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Profession */}
+                  {selectedMachine && (
+                    <div className="space-y-3">
+                      <Label>Escolha sua profissão</Label>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {selectedMachine.categories
+                          .filter((c) => c.is_active)
+                          .map((c) => {
+                            const isSelected = selectedCategoryId === c.id_category
+                            return (
+                              <button
+                                key={c.id_category}
+                                type="button"
+                                onClick={() => setSelectedCategoryId(c.id_category)}
+                                style={
+                                  isSelected
+                                    ? {
+                                        boxShadow: `0 0 14px ${selectedMachine.color_glow}`,
+                                        borderColor: selectedMachine.color_ring,
+                                        color: selectedMachine.color_text,
+                                      }
+                                    : {}
+                                }
+                                className={`rounded-lg border-2 bg-black px-3 py-2 text-sm text-white transition-all duration-200 hover:brightness-110 ${
+                                  isSelected ? "" : "border-white/10 hover:border-white/30"
+                                }`}
+                              >
+                                {c.desc_category}
+                              </button>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio (opcional)</Label>
+                    <textarea
+                      id="bio"
+                      rows={3}
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="avatar_url">URL do avatar (opcional)</Label>
+                    <Input
+                      id="avatar_url"
+                      type="url"
+                      placeholder="https://..."
+                      value={profileData.avatar_url}
+                      onChange={(e) => setProfileData({ ...profileData, avatar_url: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="estado">Estado</Label>
+                      <Select value={profileData.estado} onValueChange={handleEstadoChange}>
+                        <SelectTrigger id="estado">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {estados.map((e) => (
+                            <SelectItem key={e.uf} value={e.uf}>
+                              {e.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="municipio">Município</Label>
+                      <Select
+                        value={profileData.municipio}
+                        onValueChange={(val) => setProfileData((prev) => ({ ...prev, municipio: val }))}
+                        disabled={!profileData.estado || loadingMunicipios}
+                      >
+                        <SelectTrigger id="municipio">
+                          <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {municipios.map((m) => (
+                            <SelectItem key={m.id} value={m.nome}>
+                              {m.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {submitError && <p className="text-sm text-red-500">{submitError}</p>}
+
+                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Criando conta..." : "Finalizar cadastro"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
 
@@ -447,128 +667,24 @@ export default function CadastroPage() {
             <DialogTitle>Termos de Uso - Freelandoo</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-sm text-muted-foreground">
-            <div>
-              <h3 className="font-semibold text-foreground">Freelandoo</h3>
-              <p className="mt-2">
-                Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda
-                integralmente com os termos abaixo.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">1. NATUREZA DA PLATAFORMA</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>A Freelandoo atua exclusivamente como plataforma de divulgação de influenciadores.</li>
-                <li>A Freelandoo não entra em contato com usuários, empresas ou influenciadores.</li>
-                <li>A Freelandoo não intermedia negociações, não participa de acordos e não recebe pagamentos.</li>
-                <li>Todas as parcerias, negociações, valores, prazos, entregas e pagamentos são tratados diretamente entre empresas e influenciadores, fora da plataforma.</li>
-                <li>Qualquer mensagem, contato ou proposta feita em nome da Freelandoo fora do site não é verdadeira.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">2. RESPONSABILIDADE DAS PARTES</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Cada influenciador é totalmente responsável pelas informações, dados e redes sociais divulgadas em seu perfil.</li>
-                <li>Cada empresa é responsável por verificar a identidade, credibilidade e histórico do influenciador antes de firmar qualquer parceria.</li>
-                <li className="mt-2 font-semibold text-foreground">A Freelandoo não se responsabiliza, em nenhuma hipótese, por:</li>
-                <ul className="ml-4 space-y-1 list-disc list-inside">
-                  <li>Descumprimento de acordos</li>
-                  <li>Atrasos</li>
-                  <li>Resultados esperados</li>
-                  <li>Qualidade de entregas</li>
-                  <li>Prejuízos financeiros ou de imagem</li>
-                </ul>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">3. CUIDADOS EM NEGOCIAÇÕES</h4>
-              <p className="mt-2">Para sua segurança, a Freelandoo recomenda que:</p>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Nenhum pagamento seja feito sem um acordo claro entre as partes.</li>
-                <li>Sempre que possível, o pagamento seja realizado somente após a apresentação do material de divulgação pronto ou conforme combinado entre empresa e influenciador.</li>
-                <li>Se evite pressão, urgência excessiva ou pedidos fora do padrão profissional.</li>
-                <li>Pagamentos sejam feitos por meios rastreáveis.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">4. PERFIS E CONTATOS EXTERNOS</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Os contatos (WhatsApp, Instagram, redes sociais) são fornecidos pelos próprios influenciadores.</li>
-                <li>A Freelandoo não garante que contatos externos pertençam à pessoa anunciada.</li>
-                <li>Cabe ao usuário confirmar se o perfil e os dados realmente pertencem ao influenciador antes de qualquer acordo.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">5. CONDUTA NA PLATAFORMA</h4>
-              <p className="mt-2">É proibido utilizar o Freelandoo para:</p>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Práticas ilegais</li>
-                <li>Golpes ou tentativas de fraude</li>
-                <li>Assédio</li>
-                <li>Uso da plataforma para fins criminosos</li>
-              </ul>
-              <p className="mt-2">Perfis que violem essas regras podem ser removidos sem aviso prévio.</p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">6. ACEITE FINAL</h4>
-              <p className="mt-2">Ao clicar em «Li e concordo», você declara que:</p>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Está ciente de que a Freelandoo não participa de negociações</li>
-                <li>Assume total responsabilidade por contatos e acordos feitos fora da plataforma</li>
-                <li>Compreende que a Freelandoo atua apenas como meio de divulgação</li>
-              </ul>
-            </div>
-
-            <div className="border-t pt-4">
-              <h3 className="font-semibold text-foreground">Termos para Influenciadores</h3>
-              <p className="mt-2">Ao se cadastrar e anunciar na plataforma Freelandoo, o influenciador declara que leu, compreendeu e concorda integralmente com os termos abaixo.</p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">1. OBJETO DO CONTRATO</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>O presente termo concede ao influenciador uma licença de uso da plataforma Freelandoo, exclusivamente para divulgação de seu perfil, redes sociais e contatos profissionais.</li>
-                <li>A Freelandoo não representa, não agencia e não intermedia o influenciador, atuando apenas como plataforma de exposição publicitária.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">2. LICENÇA, VALORES E PLANOS</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Para anunciar seu perfil, o influenciador adquire uma licença de uso, cujo valor padrão é de R$ 49,00.</li>
-                <li>A Freelandoo poderá disponibilizar cupons de desconto, licenças premium, promocionais ou especiais.</li>
-                <li>A concessão de descontos ou gratuidade não altera as obrigações do influenciador previstas neste termo.</li>
-                <li>O pagamento da licença não garante retorno financeiro, contratos, parcerias ou propostas comerciais.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">3. RESPONSABILIDADE PELO CONTEÚDO ANUNCIADO</h4>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>O influenciador é único e exclusivo responsável por todas as informações publicadas em seu perfil.</li>
-                <li>A Freelandoo não valida, não fiscaliza e não garante a veracidade, legalidade ou atualização das informações fornecidas.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground">9. ACEITE FINAL</h4>
-              <p className="mt-2">Ao clicar em «Li e concordo», o influenciador declara que:</p>
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Está ciente de todas as condições deste termo</li>
-                <li>Assume total responsabilidade por seu anúncio e conduta</li>
-                <li>Reconhece que a Freelandoo atua apenas como plataforma de divulgação</li>
-              </ul>
-            </div>
+            <p>
+              Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda
+              integralmente com os termos.
+            </p>
+            <p>
+              A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações,
+              não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são
+              tratadas diretamente entre as partes.
+            </p>
+            <p>
+              Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se
+              responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <Button variant="outline" onClick={() => setOpenTermosModal(false)}>
-              Cancelar
+              Fechar
             </Button>
             <Button
               onClick={() => {
@@ -576,7 +692,7 @@ export default function CadastroPage() {
                 setOpenTermosModal(false)
               }}
             >
-              Aceitar
+              Li e aceito
             </Button>
           </div>
         </DialogContent>

@@ -48,33 +48,42 @@ export default function SiteHeader() {
   const router = useRouter()
 
   useEffect(() => {
-    const fromStorage = readUserFromStorage()
-    if (fromStorage) {
-      setUser(fromStorage)
+    const refresh = () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) {
+        setUser(null)
+        return
+      }
+      const fromStorage = readUserFromStorage()
+      if (fromStorage) setUser(fromStorage)
+
+      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.id_user) setUser(data)
+        })
+        .catch(() => {})
     }
 
-    const token = localStorage.getItem("token")
-    if (!token) return
+    refresh()
 
-    fetch("/api/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) return null
-        return res.json()
-      })
-      .then((data) => {
-        if (data && data.id_user) {
-          setUser(data)
-        }
-      })
-      .catch(() => {})
+    const onAuthChange = () => refresh()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token" || e.key === "user") refresh()
+    }
+    window.addEventListener("auth:changed", onAuthChange)
+    window.addEventListener("storage", onStorage)
+    return () => {
+      window.removeEventListener("auth:changed", onAuthChange)
+      window.removeEventListener("storage", onStorage)
+    }
   }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     setUser(null)
+    window.dispatchEvent(new Event("auth:changed"))
     router.push("/")
   }
 

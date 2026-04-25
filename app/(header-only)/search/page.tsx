@@ -288,24 +288,36 @@ function SearchPageInner() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Hydrate from URL (id_machine/id_category or legacy slug via ?from=maquina-<slug>)
+  // Slug pendente da URL (síncrono). Enquanto não resolvido pelo catálogo,
+  // a busca fica bloqueada para não exibir profissões de outras máquinas.
+  const pendingSlug =
+    searchParams.get("machine") ||
+    searchParams.get("machine_slug") ||
+    searchParams.get("from")?.replace("maquina-", "") ||
+    null
+
+  // Hydrate from URL (id_machine/id_category, ?machine=<slug> ou legacy ?from=maquina-<slug>)
   useEffect(() => {
     const imRaw = searchParams.get("id_machine")
     const icRaw = searchParams.get("id_category")
-    const fromSlug = searchParams.get("from")?.replace("maquina-", "") || null
 
     if (imRaw) {
       const n = Number(imRaw)
       if (Number.isFinite(n)) setIdMachine(n)
-    } else if (fromSlug && machines.length > 0) {
-      const m = machines.find((x) => x.slug === fromSlug)
+    } else if (pendingSlug && machines.length > 0) {
+      const m = machines.find((x) => x.slug === pendingSlug)
       if (m) setIdMachine(m.id_machine)
     }
     if (icRaw) {
       const n = Number(icRaw)
       if (Number.isFinite(n)) setIdCategory(n)
     }
-  }, [searchParams, machines])
+  }, [searchParams, machines, pendingSlug])
+
+  // Quando há slug na URL mas o catálogo ainda não carregou (ou idMachine não foi
+  // resolvido), seguramos o fetch para evitar flash de profissões de outra máquina.
+  const slugAwaitingResolution =
+    !!pendingSlug && idMachine == null
 
   const activeMachine: CatalogMachine | null = useMemo(
     () => machines.find((m) => m.id_machine === idMachine) ?? null,
@@ -357,6 +369,12 @@ function SearchPageInner() {
 
   // Fetch creators reactively when any filter changes
   useEffect(() => {
+    if (slugAwaitingResolution) {
+      // URL pede uma máquina específica que ainda não foi resolvida pelo catálogo.
+      // Mostra loading e espera — assim nunca renderizamos profissões da máquina errada.
+      setLoading(true)
+      return
+    }
     const run = async () => {
       setLoading(true)
       setError(null)
@@ -424,7 +442,7 @@ function SearchPageInner() {
       }
     }
     run()
-  }, [selectedEstado, selectedCity, municipios, idMachine, idCategory, activeMachine, activeCategory])
+  }, [selectedEstado, selectedCity, municipios, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution])
 
   const topCreators = creators.filter((c) =>
     c.profile_statuses?.some((s) => s.desc_status === "destaque_premium")
