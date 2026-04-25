@@ -8,13 +8,33 @@ export interface RedeSocial {
   url?: string
 }
 
+export interface ProfileSubscription {
+  id_subscription?: string
+  status?: "pending" | "active" | "past_due" | "canceled" | "expired" | "failed"
+  amount_cents?: number
+  currency?: string
+  current_period_start?: string | null
+  current_period_end?: string | null
+  paid_at?: string | null
+  canceled_at?: string | null
+}
+
 export interface Profile {
   bio?: string
+  id_category?: number
   category?: string
+  id_machine?: number | null
+  machine_slug?: string | null
+  machine_name?: string | null
   statuses?: { id_status: string; desc_status: string }[]
   avatar_url?: string | null
   id_profile: string
   display_name: string
+  estado?: string | null
+  municipio?: string | null
+  is_active?: boolean
+  is_published?: boolean
+  subscription?: ProfileSubscription | null
   redes_sociais?: RedeSocial[]
 }
 

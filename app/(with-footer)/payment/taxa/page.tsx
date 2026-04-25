@@ -1,17 +1,65 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, CheckCircle2, Shield, Zap } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Loader2, Shield, Zap } from "lucide-react"
 
-export default function TaxaPage() {
+interface ProfileSummary {
+  id_profile: string
+  display_name: string
+  category?: string
+  is_published?: boolean
+  subscription?: { status?: string } | null
+}
+
+function TaxaPageInner() {
   const router = useRouter()
+  const search = useSearchParams()
+  const profileIdParam = search.get("profile_id")
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [couponCode, setCouponCode] = useState("")
+  const [profile, setProfile] = useState<ProfileSummary | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+        if (!token) {
+          router.replace("/login")
+          return
+        }
+        if (!profileIdParam) {
+          setError("Nenhum perfil informado. Volte e clique em 'Ativar perfil' no card desejado.")
+          return
+        }
+        const res = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) throw new Error("Não foi possível validar seu perfil")
+        const data = await res.json()
+        const found: ProfileSummary | undefined = (data.profiles || []).find(
+          (p: ProfileSummary) => p.id_profile === profileIdParam
+        )
+        if (!found) {
+          setError("Esse perfil não pertence à sua conta.")
+          return
+        }
+        if (found.is_published) {
+          setError("Este perfil já está com a anuidade ativa.")
+        }
+        setProfile(found)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar perfil")
+      } finally {
+        setLoadingProfile(false)
+      }
+    }
+    loadProfile()
+  }, [profileIdParam, router])
 
   async function handleCheckout() {
     setIsLoading(true)
@@ -22,6 +70,10 @@ export default function TaxaPage() {
         setError("Você precisa estar logado para pagar a anuidade")
         return
       }
+      if (!profileIdParam) {
+        setError("Perfil não informado")
+        return
+      }
 
       const response = await fetch("/api/stripe/subscription/create-session", {
         method: "POST",
@@ -30,6 +82,7 @@ export default function TaxaPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          id_profile: profileIdParam,
           coupon_code: couponCode.trim() || undefined,
         }),
       })
@@ -38,7 +91,6 @@ export default function TaxaPage() {
       if (!response.ok) {
         throw new Error(data?.error || "Erro ao iniciar pagamento")
       }
-
       if (!data?.url) {
         throw new Error("Resposta do servidor sem URL de checkout")
       }
@@ -62,13 +114,19 @@ export default function TaxaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Anuidade Freelandoo</CardTitle>
-              <CardDescription>Mantenha seu perfil ativo nos classificados</CardDescription>
+              <CardDescription>
+                {profile
+                  ? `Ativando o perfil "${profile.display_name}"`
+                  : "Mantenha seu perfil ativo nos classificados"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-center py-6">
-                <p className="text-sm text-muted-foreground mb-2">Cobrança anual</p>
+                <p className="text-sm text-muted-foreground mb-2">Cobrança anual por perfil</p>
                 <p className="text-4xl font-bold">R$ 300,00</p>
-                <p className="text-xs text-muted-foreground mt-2">Renovação automática a cada ano</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Renovação automática a cada ano. Cada perfil tem assinatura própria.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -77,7 +135,7 @@ export default function TaxaPage() {
                   <div>
                     <p className="font-medium">Apareça nos Classificados</p>
                     <p className="text-sm text-muted-foreground">
-                      Seu perfil fica visível para empresas e marcas pelo período da anuidade
+                      Somente o perfil pago aparece publicamente. Seus outros perfis seguem inativos.
                     </p>
                   </div>
                 </div>
@@ -87,7 +145,7 @@ export default function TaxaPage() {
                   <div>
                     <p className="font-medium">Ativação Imediata</p>
                     <p className="text-sm text-muted-foreground">
-                      Assim que o pagamento é confirmado, seu perfil é ativado automaticamente
+                      Confirmação via Stripe ativa o perfil automaticamente.
                     </p>
                   </div>
                 </div>
@@ -97,7 +155,7 @@ export default function TaxaPage() {
                   <div>
                     <p className="font-medium">Pagamento Seguro</p>
                     <p className="text-sm text-muted-foreground">
-                      Processado pelo Stripe com criptografia ponta a ponta
+                      Processado pelo Stripe com criptografia ponta a ponta.
                     </p>
                   </div>
                 </div>
@@ -108,35 +166,59 @@ export default function TaxaPage() {
           <Card>
             <CardHeader>
               <CardTitle>Finalizar Pagamento</CardTitle>
-              <CardDescription>Você será redirecionado ao Stripe para concluir</CardDescription>
+              <CardDescription>
+                {profile
+                  ? `Perfil: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
+                  : "Você será redirecionado ao Stripe para concluir"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="coupon">
-                  Cupom de desconto (opcional)
-                </label>
-                <Input
-                  id="coupon"
-                  placeholder="Insira seu código"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  disabled={isLoading}
-                />
-              </div>
+              {loadingProfile ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium" htmlFor="coupon">
+                      Cupom de desconto (opcional)
+                    </label>
+                    <Input
+                      id="coupon"
+                      placeholder="Insira seu código"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={isLoading || !profile}
+                    />
+                  </div>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+                  {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button className="w-full" onClick={handleCheckout} disabled={isLoading}>
-                {isLoading ? "Redirecionando..." : "Pagar com Stripe"}
-              </Button>
+                  <Button
+                    className="w-full"
+                    onClick={handleCheckout}
+                    disabled={isLoading || !profile || !!profile?.is_published}
+                  >
+                    {isLoading ? "Redirecionando..." : "Pagar com Stripe"}
+                  </Button>
 
-              <p className="text-xs text-center text-muted-foreground">
-                Ao continuar, você concorda com nossos termos de serviço
-              </p>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Ao continuar, você concorda com nossos termos de serviço.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
     </main>
+  )
+}
+
+export default function TaxaPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+      <TaxaPageInner />
+    </Suspense>
   )
 }

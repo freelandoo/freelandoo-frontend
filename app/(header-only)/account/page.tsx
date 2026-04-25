@@ -1194,7 +1194,19 @@ export default function PerfilPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">Meus Perfis</CardTitle>
+                <div>
+                  <CardTitle className="text-xl">Meus Perfis</CardTitle>
+                  {(() => {
+                    const total = perfil.profiles?.length || 0
+                    const active = (perfil.profiles || []).filter((p) => p.is_published).length
+                    const inactive = total - active
+                    return (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Perfis: {total} criado{total === 1 ? "" : "s"} · {active} ativo{active === 1 ? "" : "s"} · {inactive} desativado{inactive === 1 ? "" : "s"}
+                      </p>
+                    )
+                  })()}
+                </div>
                 <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); fetchCategories(); setIsNewProfileModalOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Perfil
@@ -1204,17 +1216,15 @@ export default function PerfilPage() {
             <CardContent>
               {perfil.profiles && perfil.profiles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {perfil.profiles.map((profile) => (
-                    <div
+                  {perfil.profiles.map((profile) => {
+                    const isPaid = !!profile.is_published
+                    return (
+                    <Card
                       key={profile.id_profile}
-                      onClick={() => router.push(`/freelancer/${profile.id_profile}`)}
-                      className="cursor-pointer"
+                      className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col"
                     >
-                      <Card 
-                        className="overflow-hidden hover:shadow-lg transition-shadow h-full"
-                      >
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
+                      <CardContent className="p-6 flex-1 flex flex-col">
+                        <div className="space-y-4 flex-1">
                           {/* Avatar e Display Name */}
                           <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
@@ -1232,16 +1242,21 @@ export default function PerfilPage() {
                             </div>
                           </div>
 
-                          {/* Status Badges */}
-                          {profile.statuses && profile.statuses.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {profile.statuses.map((status) => (
-                                <Badge key={status.id_status} variant="default" className="bg-green-600 hover:bg-green-700">
-                                  {status.desc_status.replace(/_/g, " ")}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+                          {/* Status Badge — pagamento */}
+                          <div className="flex flex-wrap gap-2">
+                            {isPaid ? (
+                              <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
+                                Aguardando assinatura
+                              </Badge>
+                            )}
+                            {(profile.machine_name || profile.machine_slug) && (
+                              <Badge variant="outline">
+                                {profile.machine_name || profile.machine_slug}
+                              </Badge>
+                            )}
+                          </div>
 
                           {/* Bio */}
                           {profile.bio && (
@@ -1289,10 +1304,30 @@ export default function PerfilPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Ações do perfil */}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {isPaid ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/freelancer/${profile.id_profile}`)}
+                            >
+                              Gerenciar perfil
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}
+                            >
+                              Ativar perfil
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -1318,7 +1353,8 @@ export default function PerfilPage() {
           <DialogHeader>
             <DialogTitle>Criar novo perfil</DialogTitle>
             <DialogDescription>
-              Preencha as informações do novo perfil de criador.
+              O perfil é criado como <strong>Aguardando assinatura</strong>. Ele só
+              aparece nos classificados após você ativar a anuidade desse perfil.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
