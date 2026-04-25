@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { initMercadoPago, Wallet } from "@mercadopago/sdk-react"
 
 interface OrderData {
   order: {
@@ -74,13 +73,6 @@ export default function OrderPage() {
   const [orderData, setOrderData] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [preferenceId, setPreferenceId] = useState<string | null>(null)
-
-  useEffect(() => {
-    initMercadoPago(process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY!, {
-      locale: "pt-BR",
-    })
-  }, [])
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -97,17 +89,6 @@ export default function OrderPage() {
         const data = await res.json()
         if (res.ok) {
           setOrderData(data)
-          // Extrair o preferenceId da payment_url do Mercado Pago
-          const paymentUrl: string | null = data.order?.payment_url
-          if (paymentUrl) {
-            try {
-              const url = new URL(paymentUrl)
-              const pid = url.searchParams.get("pref_id") || url.pathname.split("/").pop()
-              if (pid) setPreferenceId(pid)
-            } catch {
-              // fallback: usar a url diretamente como preferenceId
-            }
-          }
         } else {
           setError(data.error || "Erro ao carregar pedido")
         }
@@ -225,35 +206,17 @@ export default function OrderPage() {
             </CardContent>
           </Card>
 
-          {/* Forma de Pagamento */}
           {order.status === "PENDING_PAYMENT" && (
             <Card>
               <CardHeader>
-                <CardTitle>Forma de Pagamento</CardTitle>
-                <CardDescription>Escolha como deseja pagar</CardDescription>
+                <CardTitle>Pagamento</CardTitle>
+                <CardDescription>Aguardando confirmação</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Você será redirecionado para o Mercado Pago para concluir o pagamento de{" "}
-                    <strong>{(total / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong> de forma segura.
-                  </p>
-
-                  <div className="min-h-[100px] flex items-center justify-center">
-                    {!preferenceId && (
-                      <p className="text-sm text-muted-foreground">Carregando opções de pagamento...</p>
-                    )}
-                    {preferenceId && (
-                      <div className="w-full">
-                        <Wallet initialization={{ preferenceId }} />
-                      </div>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    Ao clicar em pagar, você concorda com nossos termos de serviço
-                  </p>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Este pedido está aguardando processamento de pagamento. Entre em contato com o
+                  suporte caso tenha dúvidas.
+                </p>
               </CardContent>
             </Card>
           )}

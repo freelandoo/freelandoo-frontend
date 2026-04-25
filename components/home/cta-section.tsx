@@ -34,7 +34,7 @@ export function CtaSection() {
               </div>
               <h3 className="mb-2 text-2xl font-bold">Para Creators</h3>
               <p className="mb-6 text-muted-foreground">
-                Conecte-se com marcas que buscam seu perfil. Taxa única de R$10, sem mensalidades.
+                Conecte-se com marcas que buscam seu perfil. Anuidade de R$ 300, sem comissões.
               </p>
               <Button variant="outline" className="w-full gap-2 border-primary text-primary hover:bg-primary/10">
                 Cadastrar Perfil

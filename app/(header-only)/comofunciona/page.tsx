@@ -102,8 +102,8 @@ export default function ComoFunciona() {
               </div>
               <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">Para Creators</h2>
               <p className="text-lg text-muted-foreground text-pretty">
-                Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho, e custo
-                previsível com taxa única de entrada
+                Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo
+                previsível com anuidade de R$ 300
               </p>
             </div>
 
@@ -113,9 +113,9 @@ export default function ComoFunciona() {
                   <div className="mb-4 inline-flex items-center justify-center rounded-lg bg-primary/10 p-2">
                     <Check className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold">Taxa única de R$10</h3>
+                  <h3 className="mb-2 text-lg font-semibold">Anuidade de R$ 300</h3>
                   <p className="text-sm text-muted-foreground">
-                    Sem mensalidades. Pague apenas uma vez e mantenha 100% dos seus ganhos
+                    Cobrança anual única. Sem comissões por campanha — mantenha 100% dos seus ganhos
                   </p>
                 </CardContent>
               </Card>

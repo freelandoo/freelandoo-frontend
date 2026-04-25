@@ -12,7 +12,7 @@ const features = [
     icon: Sparkles,
     title: "Para Creators",
     description:
-      "Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com taxa anual de R$49. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.",
+      "Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com anuidade de R$ 300. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.",
   },
 ]
 
