@@ -1,3 +1,5 @@
+import type { SocialMedia } from "./freelancer-profile"
+
 export interface RedeSocial {
   id?: string
   platform: string
@@ -39,6 +41,7 @@ export interface Profile {
   deleted_at?: string | null
   subscription?: ProfileSubscription | null
   redes_sociais?: RedeSocial[]
+  social_media?: SocialMedia[]
 }
 
 export interface PerfilCompleto {
