@@ -62,14 +62,17 @@ export default function PagamentosPage() {
             router.push("/login")
             return
           }
-          throw new Error("Erro ao carregar dados de assinatura")
+          const errBody = await response.text().catch(() => "")
+          console.error("[pagamentos] API error:", response.status, errBody)
+          throw new Error(`Erro ${response.status}: ${errBody}`)
         }
 
         const data = await response.json()
         setSubscription(data.subscription || null)
       } catch (err) {
-        console.error("[pagamentos] Erro ao buscar assinatura:", err)
-        setError("Erro ao carregar dados de assinatura. Tente novamente mais tarde.")
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error("[pagamentos] Erro ao buscar assinatura:", msg)
+        setError(msg || "Erro ao carregar dados de assinatura. Tente novamente mais tarde.")
       } finally {
         setIsLoading(false)
       }
