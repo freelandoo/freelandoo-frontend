@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2 } from "lucide-react"
 
-export default function SucessoPage() {
+function SucessoContent() {
   const router = useRouter()
   const params = useSearchParams()
   const sessionId = params.get("session_id")
@@ -45,5 +45,19 @@ export default function SucessoPage() {
         </Card>
       </div>
     </main>
+  )
+}
+
+export default function SucessoPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex-1 container mx-auto px-4 py-16">
+        <div className="max-w-xl mx-auto text-center text-muted-foreground">
+          Carregando...
+        </div>
+      </main>
+    }>
+      <SucessoContent />
+    </Suspense>
   )
 }
