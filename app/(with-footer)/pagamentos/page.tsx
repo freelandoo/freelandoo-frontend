@@ -4,31 +4,36 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CreditCard, ArrowLeft, Calendar, DollarSign } from "lucide-react"
+import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle, ExternalLink } from "lucide-react"
 
-interface Pagamento {
-  id: string
-  provider: string
-  provider_preference_id: string
-  provider_payment_id: string | null
-  type: string
-  status: "pending" | "approved" | "failed" | "cancelled"
+interface Subscription {
+  id_subscription: string
+  id_user: string
+  id_profile: string | null
+  status: "pending" | "active" | "past_due" | "canceled" | "incomplete"
   amount_cents: number
   currency: string
+  stripe_customer_id: string | null
+  stripe_checkout_session_id: string | null
+  stripe_subscription_id: string | null
+  stripe_price_id: string | null
+  stripe_promotion_code: string | null
+  id_coupon: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  canceled_at: string | null
   created_at: string
   updated_at: string
-  approved_at: string | null
 }
 
 export default function PagamentosPage() {
   const router = useRouter()
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>([])
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
 
   useEffect(() => {
-    // Verificar autenticação
     const token = localStorage.getItem("token")
     const user = localStorage.getItem("user")
 
@@ -38,13 +43,13 @@ export default function PagamentosPage() {
     }
 
     setIsAutenticado(true)
-    // Carregar histórico de pagamentos
-    const fetchPagamentos = async () => {
+
+    const fetchSubscription = async () => {
       setIsLoading(true)
       setError(null)
-      
+
       try {
-        const response = await fetch("/api/payments/history", {
+        const response = await fetch("/api/stripe/subscription/me", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -53,57 +58,79 @@ export default function PagamentosPage() {
         })
 
         if (!response.ok) {
-          throw new Error("Erro ao carregar histórico de pagamentos")
+          if (response.status === 401) {
+            router.push("/login")
+            return
+          }
+          throw new Error("Erro ao carregar dados de assinatura")
         }
 
         const data = await response.json()
-        console.log("[v0] Histórico de pagamentos carregado:", data)
-        // O backend retorna {items: [], page, limit, total, totalPages}
-        setPagamentos(data.items || [])
-      } catch (error) {
-        console.error("[v0] Erro ao buscar histórico:", error)
-        setError("Erro ao carregar histórico de pagamentos. Tente novamente mais tarde.")
+        setSubscription(data.subscription || null)
+      } catch (err) {
+        console.error("[pagamentos] Erro ao buscar assinatura:", err)
+        setError("Erro ao carregar dados de assinatura. Tente novamente mais tarde.")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchPagamentos()
+    fetchSubscription()
   }, [router])
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />
+      case "pending":
+        return <Clock className="h-5 w-5 text-amber-500" />
+      case "past_due":
+        return <AlertTriangle className="h-5 w-5 text-orange-500" />
+      case "canceled":
+      case "incomplete":
+        return <XCircle className="h-5 w-5 text-red-500" />
+      default:
+        return <Clock className="h-5 w-5 text-gray-500" />
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800"
+      case "active":
+        return "bg-green-100 text-green-800 border-green-200"
       case "pending":
-        return "bg-amber-100 text-amber-800"
-      case "failed":
-      case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "bg-amber-100 text-amber-800 border-amber-200"
+      case "past_due":
+        return "bg-orange-100 text-orange-800 border-orange-200"
+      case "canceled":
+      case "incomplete":
+        return "bg-red-100 text-red-800 border-red-200"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800 border-gray-200"
     }
   }
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "approved":
-        return "Aprovado"
+      case "active":
+        return "Ativa"
       case "pending":
         return "Pendente"
-      case "failed":
-        return "Falhou"
-      case "cancelled":
-        return "Cancelado"
+      case "past_due":
+        return "Pagamento atrasado"
+      case "canceled":
+        return "Cancelada"
+      case "incomplete":
+        return "Incompleta"
       default:
         return status
     }
   }
 
-  const formatarValor = (amount_cents: number) => {
+  const formatarValor = (amount_cents: number, currency: string = "BRL") => {
     return (amount_cents / 100).toLocaleString("pt-BR", {
       style: "currency",
-      currency: "BRL",
+      currency: currency,
     })
   }
 
@@ -117,30 +144,39 @@ export default function PagamentosPage() {
     })
   }
 
+  const formatarDataCurta = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })
+  }
+
   if (!isAutenticado) {
     return null
   }
 
   return (
     <main className="flex-1 container mx-auto px-4 py-8 bg-background">
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-2xl mx-auto">
           {/* Header da página */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                <CreditCard className="h-8 w-8 text-primary" />
-                Histórico de Pagamentos
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Visualize todos os seus pagamentos e status das transações
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <CreditCard className="h-8 w-8 text-primary" />
+              Minha Assinatura
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Gerencie sua anuidade e veja o status da sua assinatura
+            </p>
           </div>
 
-          {/* Lista de pagamentos */}
+          {/* Conteúdo */}
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
-              <p className="text-muted-foreground">Carregando histórico...</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-muted-foreground">Carregando...</p>
+              </div>
             </div>
           ) : error ? (
             <Card className="border-destructive bg-destructive/5">
@@ -148,83 +184,145 @@ export default function PagamentosPage() {
                 <p className="text-destructive">{error}</p>
               </CardContent>
             </Card>
-          ) : pagamentos.length === 0 ? (
-            <Card>
+          ) : !subscription ? (
+            /* Sem assinatura */
+            <Card className="border-dashed border-2">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Nenhum pagamento ainda</h3>
-                <p className="text-muted-foreground text-center mb-6">
-                  Você não possui nenhum histórico de pagamentos no momento
+                <CreditCard className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+                <h3 className="font-semibold text-xl mb-2">Nenhuma assinatura ativa</h3>
+                <p className="text-muted-foreground text-center mb-6 max-w-md">
+                  Para aparecer nas buscas e receber propostas de trabalho, você precisa ativar sua anuidade.
                 </p>
-                <Button onClick={() => router.push("/payment/taxa")} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  Efetuar Pagamento da Taxa
+                <Button
+                  onClick={() => router.push("/payment/taxa")}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base"
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Ativar Anuidade
                 </Button>
               </CardContent>
             </Card>
           ) : (
+            /* Com assinatura */
             <div className="space-y-4">
-              {pagamentos.map((pagamento) => (
-                <Card key={pagamento.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-foreground">{pagamento.provider}</h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(pagamento.status)}`}>
-                            {getStatusLabel(pagamento.status)}
-                          </span>
-                        </div>
-                        <div className="flex gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {formatarData(pagamento.created_at)}
-                          </div>
-                          {pagamento.provider_preference_id && (
-                            <div>ID: {pagamento.provider_preference_id}</div>
-                          )}
-                        </div>
+              {/* Card principal de status */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl">Anuidade Freelandoo</CardTitle>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(subscription.status)}`}>
+                      {getStatusIcon(subscription.status)}
+                      {getStatusLabel(subscription.status)}
+                    </span>
+                  </div>
+                  <CardDescription>
+                    Taxa anual para visibilidade na plataforma
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Valor */}
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <DollarSign className="h-4 w-4" />
+                      <span>Valor</span>
+                    </div>
+                    <span className="text-xl font-bold text-foreground">
+                      {formatarValor(subscription.amount_cents, subscription.currency)}
+                    </span>
+                  </div>
+
+                  {/* Data de criação */}
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>Data de adesão</span>
+                    </div>
+                    <span className="text-foreground font-medium">
+                      {formatarData(subscription.created_at)}
+                    </span>
+                  </div>
+
+                  {/* Período atual */}
+                  {subscription.current_period_start && subscription.current_period_end && (
+                    <div className="flex items-center justify-between py-3 border-b">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>Período vigente</span>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-lg font-semibold text-primary">
-                          <DollarSign className="h-5 w-5" />
-                          {formatarValor(pagamento.amount_cents)}
-                        </div>
+                      <span className="text-foreground font-medium">
+                        {formatarDataCurta(subscription.current_period_start)} — {formatarDataCurta(subscription.current_period_end)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Cupom aplicado */}
+                  {subscription.id_coupon && (
+                    <div className="flex items-center justify-between py-3 border-b">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="text-lg">🏷️</span>
+                        <span>Cupom aplicado</span>
+                      </div>
+                      <span className="text-green-600 font-medium">Sim</span>
+                    </div>
+                  )}
+
+                  {/* Cancelada em */}
+                  {subscription.canceled_at && (
+                    <div className="flex items-center justify-between py-3 border-b">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <XCircle className="h-4 w-4" />
+                        <span>Cancelada em</span>
+                      </div>
+                      <span className="text-destructive font-medium">
+                        {formatarData(subscription.canceled_at)}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Card informativo para status pendente */}
+              {subscription.status === "pending" && (
+                <Card className="border-amber-200 bg-amber-50/50">
+                  <CardContent className="pt-6">
+                    <div className="flex gap-3">
+                      <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-amber-900">Pagamento pendente</p>
+                        <p className="text-amber-700 text-sm mt-1">
+                          Seu pagamento está sendo processado. Caso não tenha concluído, clique abaixo para
+                          finalizar o pagamento.
+                        </p>
+                        <Button
+                          onClick={() => router.push("/payment/taxa")}
+                          variant="outline"
+                          className="mt-3 border-amber-300 text-amber-800 hover:bg-amber-100"
+                        >
+                          Finalizar Pagamento
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* Resumo financeiro */}
-          {pagamentos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  Resumo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Total gasto:</span>
-                  <span className="font-semibold text-foreground">
-                    {formatarValor(pagamentos
-                      .filter((p) => p.status === "approved")
-                      .reduce((sum, p) => sum + p.amount_cents, 0))}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pagamentos pendentes:</span>
-                  <span className="font-semibold text-amber-700">
-                    {formatarValor(pagamentos
-                      .filter((p) => p.status === "pending")
-                      .reduce((sum, p) => sum + p.amount_cents, 0))}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Card informativo para ativa */}
+              {subscription.status === "active" && (
+                <Card className="border-green-200 bg-green-50/50">
+                  <CardContent className="pt-6">
+                    <div className="flex gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-green-900">Assinatura ativa</p>
+                        <p className="text-green-700 text-sm mt-1">
+                          Seu perfil está visível nas buscas e você pode receber propostas de trabalho normalmente.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </div>
       </main>

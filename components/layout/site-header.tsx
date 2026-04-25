@@ -153,7 +153,7 @@ export default function SiteHeader() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/pagamentos")} className="cursor-pointer">
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Pagamentos
+                    Minha Assinatura
                   </DropdownMenuItem>
                   {(user.is_admin || user.roles?.some((r) => r.desc_role === "Administrator")) && (
                     <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">

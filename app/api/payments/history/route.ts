@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 
+/**
+ * Proxy para GET /stripe/subscription/me
+ * Mantém a rota /api/payments/history como redirect interno para compatibilidade.
+ */
 export async function GET(request: NextRequest) {
-  const log = apiFlow("payments/history")
+  const log = apiFlow("payments/history→stripe/subscription/me")
   let status = 500
   log.start(request)
   try {
@@ -14,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const url = `${getBackendApiUrl()}/payments/history`
+    const url = `${getBackendApiUrl()}/stripe/subscription/me`
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -25,19 +29,13 @@ export async function GET(request: NextRequest) {
 
     log.backendFetch("GET", url, response.status)
 
-    if (!response.ok) {
-      await response.text()
-      status = 500
-      throw new Error(`Backend retornou: ${response.status}`)
-    }
-
-    const data = await response.json()
-    status = 200
-    return NextResponse.json(data)
+    const data = await response.json().catch(() => ({}))
+    status = response.status
+    return NextResponse.json(data, { status: response.status })
   } catch (error) {
     log.fail(error)
     status = 500
-    return NextResponse.json({ error: "Erro ao carregar histórico de pagamentos" }, { status: 500 })
+    return NextResponse.json({ error: "Erro ao carregar dados de assinatura" }, { status: 500 })
   } finally {
     log.end(status)
   }
