@@ -65,9 +65,7 @@
     "postcss": "^8.5",
     "tw-animate-css": "1.3.3",
     "vaul": "^1.1.2",
-    "zod": "3.25.76"
-  },
-  "devDependencies": {
+    "zod": "3.25.76",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
