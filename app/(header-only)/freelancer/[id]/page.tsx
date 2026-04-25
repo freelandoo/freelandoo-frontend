@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Edit2, Plus, Trash2, ImageIcon, Upload, X, ExternalLink } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Edit2, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -64,6 +64,15 @@ export default function FreelancerProfilePage() {
     is_featured: false,
     sort_order: 0,
   })
+  // Booking state
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [bookingDate, setBookingDate] = useState("")
+  const [bookingSlots, setBookingSlots] = useState<{ start: string; end: string }[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [bookingForm, setBookingForm] = useState({ client_name: "", client_email: "", client_whatsapp: "" })
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
+  const [bookingError, setBookingError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!profile) return
@@ -1002,6 +1011,175 @@ export default function FreelancerProfilePage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Agendar Horário — visível para visitantes (não dono) */}
+          {!isOwnProfile && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  Agendar horário
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!isBookingOpen ? (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground mb-4">Quer marcar um horário com este profissional?</p>
+                    <Button onClick={() => setIsBookingOpen(true)} className="gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      Ver horários disponíveis
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Date picker */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Escolha a data</label>
+                      <input
+                        type="date"
+                        min={new Date().toISOString().substring(0, 10)}
+                        value={bookingDate}
+                        onChange={async (e) => {
+                          const d = e.target.value
+                          setBookingDate(d)
+                          setSelectedSlot(null)
+                          setBookingError(null)
+                          if (!d) { setBookingSlots([]); return }
+                          setLoadingSlots(true)
+                          try {
+                            const res = await fetch(`/api/public/profile/${profileId}/available-slots?date=${d}`)
+                            const data = await res.json()
+                            setBookingSlots(data.slots || [])
+                            if (data.message && (!data.slots || data.slots.length === 0)) {
+                              setBookingError(data.message)
+                            }
+                          } catch { setBookingSlots([]) }
+                          setLoadingSlots(false)
+                        }}
+                        className="w-full max-w-xs bg-background border rounded-lg px-3 py-2 text-sm"
+                      />
+                    </div>
+
+                    {/* Slots */}
+                    {bookingDate && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Horários disponíveis</label>
+                        {loadingSlots ? (
+                          <div className="flex items-center gap-2 text-muted-foreground py-4">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Buscando horários...
+                          </div>
+                        ) : bookingSlots.length === 0 ? (
+                          <p className="text-muted-foreground text-sm py-4">
+                            {bookingError || "Nenhum horário disponível nesta data."}
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {bookingSlots.map((slot) => (
+                              <button
+                                key={slot.start}
+                                onClick={() => { setSelectedSlot(slot.start); setBookingError(null) }}
+                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                                  selectedSlot === slot.start
+                                    ? "bg-primary text-primary-foreground border-primary shadow-md"
+                                    : "bg-background hover:bg-muted border-border"
+                                }`}
+                              >
+                                <Clock className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
+                                {slot.start}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Client form */}
+                    {selectedSlot && (
+                      <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                        <h4 className="font-medium">Seus dados</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label htmlFor="booking-name">Nome *</Label>
+                            <Input
+                              id="booking-name"
+                              placeholder="Seu nome completo"
+                              value={bookingForm.client_name}
+                              onChange={(e) => setBookingForm(f => ({ ...f, client_name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="booking-email">Email *</Label>
+                            <Input
+                              id="booking-email"
+                              type="email"
+                              placeholder="seu@email.com"
+                              value={bookingForm.client_email}
+                              onChange={(e) => setBookingForm(f => ({ ...f, client_email: e.target.value }))}
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label htmlFor="booking-whatsapp">WhatsApp (opcional)</Label>
+                            <Input
+                              id="booking-whatsapp"
+                              placeholder="(11) 99999-9999"
+                              value={bookingForm.client_whatsapp}
+                              onChange={(e) => setBookingForm(f => ({ ...f, client_whatsapp: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+
+                        {bookingError && (
+                          <p className="text-destructive text-sm">{bookingError}</p>
+                        )}
+
+                        <Button
+                          className="w-full gap-2"
+                          disabled={isSubmittingBooking || !bookingForm.client_name.trim() || !bookingForm.client_email.trim()}
+                          onClick={async () => {
+                            setIsSubmittingBooking(true)
+                            setBookingError(null)
+                            try {
+                              const res = await fetch(`/api/public/profile/${profileId}/bookings`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  client_name: bookingForm.client_name.trim(),
+                                  client_email: bookingForm.client_email.trim(),
+                                  client_whatsapp: bookingForm.client_whatsapp.trim() || null,
+                                  booking_date: bookingDate,
+                                  start_time: selectedSlot,
+                                }),
+                              })
+                              const data = await res.json()
+                              if (res.ok && data.checkout_url) {
+                                window.location.href = data.checkout_url
+                              } else {
+                                setBookingError(data.error || "Erro ao agendar. Tente novamente.")
+                              }
+                            } catch {
+                              setBookingError("Erro de conexão. Tente novamente.")
+                            } finally {
+                              setIsSubmittingBooking(false)
+                            }
+                          }}
+                        >
+                          {isSubmittingBooking ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</>
+                          ) : (
+                            <>Confirmar e pagar sinal</>
+                          )}
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Ao confirmar, você será redirecionado para o pagamento do sinal via Stripe.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
         </div>
       </main>
