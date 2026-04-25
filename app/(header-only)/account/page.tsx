@@ -28,7 +28,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
 
@@ -1424,6 +1424,14 @@ export default function PerfilPage() {
                             onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
                           >
                             Gerenciar perfil
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}
+                          >
+                            <CalendarDays className="h-3.5 w-3.5 mr-1" />
+                            Agenda
                           </Button>
                           {!isPaid && (
                             <Button
