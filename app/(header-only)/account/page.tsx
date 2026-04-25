@@ -108,6 +108,8 @@ export default function PerfilPage() {
     external_link: "",
   })
   const [isSavingMedia, setIsSavingMedia] = useState(false)
+  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
+  const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
 
   const estados = ESTADOS_BRASIL
 
@@ -179,9 +181,6 @@ export default function PerfilPage() {
       setLoadingProfessions(false)
     }
   }
-
-  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
-  const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
 
   const handleToggleVisibility = async (id_profile: string, next: boolean) => {
     const token = localStorage.getItem("token")
