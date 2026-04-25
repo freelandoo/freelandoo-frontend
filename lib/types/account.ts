@@ -33,7 +33,10 @@ export interface Profile {
   estado?: string | null
   municipio?: string | null
   is_active?: boolean
+  is_visible?: boolean
+  is_paid?: boolean
   is_published?: boolean
+  deleted_at?: string | null
   subscription?: ProfileSubscription | null
   redes_sociais?: RedeSocial[]
 }

@@ -180,6 +180,60 @@ export default function PerfilPage() {
     }
   }
 
+  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
+  const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
+
+  const handleToggleVisibility = async (id_profile: string, next: boolean) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setTogglingVisibility(id_profile)
+    try {
+      const res = await fetch(`/api/profile/${id_profile}/visibility`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ is_visible: next }),
+      })
+      if (res.ok) {
+        const updated = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+        if (updated.ok) setPerfil(await updated.json())
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Não foi possível alterar a visibilidade.")
+      }
+    } catch {
+      alert("Erro ao alterar visibilidade.")
+    } finally {
+      setTogglingVisibility(null)
+    }
+  }
+
+  const handleDeleteProfile = async (id_profile: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    const ok = window.confirm(
+      "Tem certeza que deseja excluir este perfil? Ele não aparecerá mais para você nem para o público. O histórico de pagamentos é preservado para auditoria."
+    )
+    if (!ok) return
+    setDeletingProfile(id_profile)
+    try {
+      const res = await fetch(`/api/profile/${id_profile}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const updated = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+        if (updated.ok) setPerfil(await updated.json())
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Não foi possível excluir o perfil.")
+      }
+    } catch {
+      alert("Erro ao excluir o perfil.")
+    } finally {
+      setDeletingProfile(null)
+    }
+  }
+
   const handleNewProfileMachineChange = (val: string) => {
     setNewProfileForm((prev) => ({ ...prev, id_machine: val, id_category: "" }))
     setProfessions([])
@@ -1234,12 +1288,14 @@ export default function PerfilPage() {
                 <div>
                   <CardTitle className="text-xl">Meus Perfis</CardTitle>
                   {(() => {
-                    const total = perfil.profiles?.length || 0
-                    const active = (perfil.profiles || []).filter((p) => p.is_published).length
-                    const inactive = total - active
+                    const list = perfil.profiles || []
+                    const total = list.length
+                    const visible = list.filter((p) => p.is_published).length
+                    const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
+                    const unpaid = list.filter((p) => !p.is_paid).length
                     return (
                       <p className="text-sm text-muted-foreground mt-1">
-                        Perfis: {total} criado{total === 1 ? "" : "s"} · {active} ativo{active === 1 ? "" : "s"} · {inactive} desativado{inactive === 1 ? "" : "s"}
+                        Perfis: {total} criado{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"} · {unpaid} aguardando assinatura
                       </p>
                     )
                   })()}
@@ -1254,7 +1310,9 @@ export default function PerfilPage() {
               {perfil.profiles && perfil.profiles.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {perfil.profiles.map((profile) => {
-                    const isPaid = !!profile.is_published
+                    const isPaid = !!profile.is_paid
+                    const isVisible = profile.is_visible !== false
+                    const isPublished = !!profile.is_published
                     return (
                     <Card
                       key={profile.id_profile}
@@ -1272,20 +1330,30 @@ export default function PerfilPage() {
                               )}
                             </Avatar>
                             <div className="flex-1">
-                              <p className="font-semibold text-lg">{profile.display_name}</p>
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
+                                className="font-semibold text-lg text-left hover:underline"
+                              >
+                                {profile.display_name}
+                              </button>
                               {profile.category && (
                                 <p className="text-sm text-muted-foreground">{profile.category}</p>
                               )}
                             </div>
                           </div>
 
-                          {/* Status Badge — pagamento */}
+                          {/* Status Badge — pagamento + visibilidade */}
                           <div className="flex flex-wrap gap-2">
-                            {isPaid ? (
-                              <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>
-                            ) : (
+                            {!isPaid ? (
                               <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
                                 Aguardando assinatura
+                              </Badge>
+                            ) : isPublished ? (
+                              <Badge className="bg-green-600 hover:bg-green-700">Ativo e visível</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-slate-500/15 text-slate-700 border border-slate-500/30">
+                                Invisível
                               </Badge>
                             )}
                             {(profile.machine_name || profile.machine_slug) && (
@@ -1351,15 +1419,14 @@ export default function PerfilPage() {
 
                         {/* Ações do perfil */}
                         <div className="mt-4 flex flex-wrap gap-2">
-                          {isPaid ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/freelancer/${profile.id_profile}`)}
-                            >
-                              Gerenciar perfil
-                            </Button>
-                          ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
+                          >
+                            Gerenciar perfil
+                          </Button>
+                          {!isPaid && (
                             <Button
                               size="sm"
                               onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}
@@ -1367,6 +1434,30 @@ export default function PerfilPage() {
                               Ativar perfil
                             </Button>
                           )}
+                          {isPaid && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={togglingVisibility === profile.id_profile}
+                              onClick={() => handleToggleVisibility(profile.id_profile, !isVisible)}
+                            >
+                              {togglingVisibility === profile.id_profile
+                                ? "..."
+                                : isVisible
+                                  ? "Deixar invisível"
+                                  : "Tornar visível"}
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={deletingProfile === profile.id_profile}
+                            onClick={() => handleDeleteProfile(profile.id_profile)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />
+                            {deletingProfile === profile.id_profile ? "..." : "Excluir"}
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
