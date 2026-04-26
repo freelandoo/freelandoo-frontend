@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { startOfWeek, endOfWeek, format, addDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
@@ -33,14 +33,14 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<{ dateISO: string; startTime: string } | null>(null)
 
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 })
+  const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 0 }), [weekStart])
+  const weekStartIso = useMemo(() => format(weekStart, "yyyy-MM-dd"), [weekStart])
+  const weekEndIso = useMemo(() => format(weekEnd, "yyyy-MM-dd"), [weekEnd])
 
   const fetchWeek = useCallback(async () => {
     setFetchState("loading")
     try {
-      const ws = format(weekStart, "yyyy-MM-dd")
-      const we = format(weekEnd, "yyyy-MM-dd")
-      const res = await fetch(`/api/public/profile/${profileId}/calendar/week?weekStart=${ws}&weekEnd=${we}`)
+      const res = await fetch(`/api/public/profile/${profileId}/calendar/week?weekStart=${weekStartIso}&weekEnd=${weekEndIso}`)
       const d = await res.json()
       if (!res.ok || !d || typeof d.allowBooking === "undefined") {
         setFetchState("error")
@@ -51,7 +51,7 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
     } catch {
       setFetchState("error")
     }
-  }, [profileId, weekStart, weekEnd])
+  }, [profileId, weekStartIso, weekEndIso])
 
   useEffect(() => { fetchWeek() }, [fetchWeek])
 
