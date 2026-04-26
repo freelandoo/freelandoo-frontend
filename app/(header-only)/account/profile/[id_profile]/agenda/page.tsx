@@ -59,6 +59,12 @@ interface Booking {
   professional_amount: number
   confirmed_at: string | null
   created_at: string
+  service_name_snapshot?: string | null
+  service_price_amount?: number | null
+  id_profile_service?: number | null
+  client_user_id?: string | null
+  client_profile_id?: string | null
+  client_profile_display_name?: string | null
 }
 
 const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
@@ -537,39 +543,61 @@ export default function AgendaPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {bookings.map(b => (
-                    <div key={b.id} className={`p-4 rounded-lg border ${
-                      b.status === "confirmed" ? "border-red-500/30 bg-red-500/5" : "border-zinc-700 bg-zinc-800/50"
-                    }`}>
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <p className="font-medium text-sm">{b.client_name}</p>
-                          <p className="text-xs text-zinc-400">{b.client_email} {b.client_whatsapp && `• ${b.client_whatsapp}`}</p>
+                  {bookings.map(b => {
+                    const amountPaid = b.service_price_amount ?? b.deposit_amount
+                    const duration = (() => {
+                      const [sh, sm] = b.start_time.split(":").map(Number)
+                      const [eh, em] = b.end_time.split(":").map(Number)
+                      return (eh * 60 + em) - (sh * 60 + sm)
+                    })()
+                    return (
+                      <div key={b.id} className={`p-4 rounded-lg border ${
+                        b.status === "confirmed" ? "border-red-500/30 bg-red-500/5" : "border-zinc-700 bg-zinc-800/50"
+                      }`}>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            {b.client_profile_id ? (
+                              <a href={`/freelancer/${b.client_profile_id}`} target="_blank" rel="noreferrer"
+                                 className="font-medium text-sm text-emerald-400 hover:underline">
+                                {b.client_profile_display_name || b.client_name}
+                              </a>
+                            ) : (
+                              <p className="font-medium text-sm">{b.client_name}</p>
+                            )}
+                            <p className="text-xs text-zinc-400">
+                              {b.client_email}{b.client_whatsapp && ` • ${b.client_whatsapp}`}
+                            </p>
+                            {b.service_name_snapshot && (
+                              <p className="text-xs text-zinc-300 mt-1">
+                                <Briefcase className="inline w-3 h-3 mr-1" />{b.service_name_snapshot}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PAYMENT_STATUS_COLORS[b.payment_status] || "bg-zinc-700 text-zinc-300"}`}>
+                              {PAYMENT_STATUS_LABELS[b.payment_status] || b.payment_status}
+                            </span>
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[b.status] || "bg-zinc-700 text-zinc-300"}`}>
+                              {STATUS_LABELS[b.status] || b.status}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PAYMENT_STATUS_COLORS[b.payment_status] || "bg-zinc-700 text-zinc-300"}`}>
-                            {PAYMENT_STATUS_LABELS[b.payment_status] || b.payment_status}
+                        <div className="flex flex-wrap gap-4 mt-3 text-xs text-zinc-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(b.booking_date + "T12:00:00").toLocaleDateString("pt-BR")}
                           </span>
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[b.status] || "bg-zinc-700 text-zinc-300"}`}>
-                            {STATUS_LABELS[b.status] || b.status}
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {b.start_time.substring(0, 5)} — {b.end_time.substring(0, 5)} ({duration} min)
+                          </span>
+                          <span className="text-zinc-300">
+                            Valor pago: <strong className="text-emerald-400">{centsToReais(amountPaid)}</strong>
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 mt-3 text-xs text-zinc-400">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {new Date(b.booking_date + "T12:00:00").toLocaleDateString("pt-BR")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {b.start_time.substring(0, 5)} — {b.end_time.substring(0, 5)}
-                        </span>
-                        <span className="text-zinc-300">
-                          Valor pago: <strong className="text-emerald-400">{centsToReais(b.deposit_amount)}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
