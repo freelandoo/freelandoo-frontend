@@ -29,9 +29,6 @@ interface Override {
 }
 
 interface BookingSettings {
-  deposit_amount: number
-  platform_fee_amount: number
-  currency: string
   allow_booking: boolean
 }
 
@@ -138,10 +135,8 @@ export default function AgendaPage() {
   const [newOverrideBlocked, setNewOverrideBlocked] = useState(false)
   const [newOverrideNote, setNewOverrideNote] = useState("")
 
-  // Booking settings (kept alive — slice 2 substitui por preço-do-serviço)
-  const [, setSettings] = useState<BookingSettings>({
-    deposit_amount: 5000, platform_fee_amount: 1000, currency: "BRL", allow_booking: false,
-  })
+  // Booking settings — apenas allow_booking sobreviveu (deposit foi substituído por price_amount do serviço)
+  const [settings, setSettings] = useState<BookingSettings>({ allow_booking: false })
 
   // Bookings list
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -206,6 +201,27 @@ export default function AgendaPage() {
     }
     load()
   }, [profileId, headers])
+
+  // ─── Toggle allow_booking ─────────────────────────────────────────
+  async function toggleAllowBooking(next: boolean) {
+    setSettings(s => ({ ...s, allow_booking: next }))
+    try {
+      const res = await fetch(`/api/profile/${profileId}/booking-settings`, {
+        method: "POST", headers: headers(),
+        body: JSON.stringify({ allow_booking: next }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        showMsg("error", d.error || "Erro ao salvar")
+        setSettings(s => ({ ...s, allow_booking: !next }))
+      } else {
+        showMsg("success", next ? "Agendamento público ativado" : "Agendamento público desativado")
+      }
+    } catch {
+      showMsg("error", "Erro de conexão")
+      setSettings(s => ({ ...s, allow_booking: !next }))
+    }
+  }
 
   // ─── Save weekly rules ────────────────────────────────────────────
   async function saveRules() {
@@ -397,6 +413,20 @@ export default function AgendaPage() {
         {/* ─── Tab: Disponibilidade ─────────────────────────────────── */}
         {activeTab === "rules" && (
           <div className="space-y-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={settings.allow_booking}
+                  onChange={e => toggleAllowBooking(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-zinc-600 text-emerald-500 focus:ring-emerald-500 bg-zinc-800" />
+                <div>
+                  <span className="text-sm font-medium">Permitir agendamento público</span>
+                  <p className="text-xs text-zinc-400">
+                    Quando ativado, clientes podem ver sua agenda no perfil público e reservar horários pagando o valor do serviço escolhido.
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-1">Disponibilidade semanal</h2>
               <p className="text-sm text-zinc-400 mb-6">Configure os dias e horários em que você atende.</p>

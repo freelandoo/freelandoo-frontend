@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
@@ -43,6 +43,20 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
   const [bookingForm, setBookingForm] = useState({ client_name: "", client_email: "", client_whatsapp: "" })
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
   const [bookingError, setBookingError] = useState<string | null>(null)
+  const [services, setServices] = useState<{ id_profile_service: number; name: string; description: string | null; duration_minutes: number; price_amount: number }[]>([])
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/public/profile/${profileId}/services`)
+      .then(r => (r.ok ? r.json() : { services: [] }))
+      .then(d => { if (!cancelled) setServices(d.services || []) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [profileId])
+
+  const selectedService = services.find(s => s.id_profile_service === selectedServiceId) || null
+  const formatBRL = (cents: number) => `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`
 
   const refetchPortfolio = async () => {
     try {
@@ -574,9 +588,37 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
           
           <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
             <div className="space-y-8">
+              {/* Service picker */}
+              {services.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold mb-3">1. Escolha o serviço</label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {services.map(s => (
+                      <button
+                        key={s.id_profile_service}
+                        type="button"
+                        onClick={() => { setSelectedServiceId(s.id_profile_service); setSelectedSlot(null); setBookingError(null) }}
+                        className={`text-left p-4 rounded-xl border transition-all ${
+                          selectedServiceId === s.id_profile_service
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-border hover:border-foreground/30"
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="font-semibold text-sm">{s.name}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">{formatBRL(s.price_amount)}</span>
+                        </div>
+                        {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
+                        <p className="text-xs text-muted-foreground mt-2">{s.duration_minutes} min</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Date picker */}
-              <div>
-                <label className="block text-sm font-semibold mb-3">1. Escolha a data</label>
+              <div className={services.length > 0 && !selectedServiceId ? "opacity-50 pointer-events-none" : ""}>
+                <label className="block text-sm font-semibold mb-3">{services.length > 0 ? "2" : "1"}. Escolha a data</label>
                 <input
                   type="date"
                   min={new Date().toISOString().substring(0, 10)}
@@ -605,7 +647,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
               {/* Slots */}
               {bookingDate && (
                 <div>
-                  <label className="block text-sm font-semibold mb-3">2. Horários disponíveis</label>
+                  <label className="block text-sm font-semibold mb-3">{services.length > 0 ? "3" : "2"}. Horários disponíveis</label>
                   {loadingSlots ? (
                     <div className="flex items-center gap-2 text-muted-foreground py-4">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -640,7 +682,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
               {/* Client form */}
               {selectedSlot && (
                 <div className="space-y-5 pt-6 border-t animate-in fade-in slide-in-from-bottom-4">
-                  <label className="block text-sm font-semibold mb-1">3. Seus dados</label>
+                  <label className="block text-sm font-semibold mb-1">{services.length > 0 ? "4" : "3"}. Seus dados</label>
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="booking-name" className="text-xs text-muted-foreground uppercase tracking-wider">Nome completo</Label>
@@ -675,6 +717,16 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                     </div>
                   </div>
 
+                  {selectedService && (
+                    <div className="rounded-xl border bg-muted/30 p-4 text-sm flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{selectedService.name}</p>
+                        <p className="text-xs text-muted-foreground">{selectedService.duration_minutes} min</p>
+                      </div>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatBRL(selectedService.price_amount)}</span>
+                    </div>
+                  )}
+
                   {bookingError && (
                     <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg flex items-center gap-2">
                       <X className="h-4 w-4 shrink-0" />
@@ -699,6 +751,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                             client_whatsapp: bookingForm.client_whatsapp.trim() || null,
                             booking_date: bookingDate,
                             start_time: selectedSlot,
+                            ...(selectedServiceId ? { id_profile_service: selectedServiceId } : {}),
                           }),
                         })
                         const data = await res.json()
