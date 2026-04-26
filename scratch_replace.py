@@ -1,229 +1,19 @@
-"use client"
+import re
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
-import { FreelancerProfileError, FreelancerProfileLoading } from "./freelancer-states"
-import type { PortfolioItem } from "@/lib/types/freelancer-profile"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2 } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+filepath = "c:/Users/Alex/Documents/Antigravity/freelandoo/freelandoo frontend/freelandoo-website-main/app/(header-only)/freelancer/[id]/_components/freelancer-profile-view.tsx"
 
-export default function FreelancerProfileView({ profileId }: { profileId: string }) {
-  const router = useRouter()
-  const { profile, portfolioItems, setPortfolioItems, loading, error, isOwnProfile } =
-    useCreatorPublicProfile(profileId)
+with open(filepath, 'r', encoding='utf-8') as f:
+    content = f.read()
 
-  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null) // id_portfolio_item em upload
-  const [portfolioError, setPortfolioError] = useState<string | null>(null)
-  const [isAddingPortfolioItem, setIsAddingPortfolioItem] = useState(false)
-  const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false)
-  const [editingPortfolioItemId, setEditingPortfolioItemId] = useState<string | null>(null)
-  const [portfolioForm, setPortfolioForm] = useState({
-    title: "",
-    description: "",
-    project_url: "",
-    is_featured: false,
-    sort_order: 0,
-  })
+# The block to replace starts at:
+#   return (
+#     <div className="bg-page-shell-dark">
+#       <main className="container mx-auto px-4 py-8">
+# and ends at:
+#       </main>
+# We replace it with the new layout block.
 
-  // Booking state
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
-  const [bookingDate, setBookingDate] = useState("")
-  const [bookingSlots, setBookingSlots] = useState<{ start: string; end: string }[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
-  const [bookingForm, setBookingForm] = useState({ client_name: "", client_email: "", client_whatsapp: "" })
-  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
-  const [bookingError, setBookingError] = useState<string | null>(null)
-
-  const refetchPortfolio = async () => {
-    try {
-      const res = await fetch(`/api/profile/${profileId}/portfolio`)
-      if (res.ok) {
-        const data = await res.json()
-        const items = Array.isArray(data) ? data : (data.items ?? data.portfolio ?? [])
-        setPortfolioItems(items)
-      }
-    } catch {
-      // silencioso
-    }
-  }
-
-  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, itemId: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const currentToken = localStorage.getItem("token")
-    if (!currentToken) return
-
-    setIsUploadingPortfolio(itemId)
-    setPortfolioError(null)
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await fetch(`/api/profile/${profileId}/portfolio/${itemId}/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${currentToken}` },
-        body: formData,
-      })
-      if (res.ok) {
-        await refetchPortfolio()
-      } else {
-        const data = await res.json()
-        setPortfolioError(data.error || "Erro ao fazer upload")
-      }
-    } catch {
-      setPortfolioError("Erro ao fazer upload. Tente novamente.")
-    } finally {
-      setIsUploadingPortfolio(null)
-      e.target.value = ""
-    }
-  }
-
-  const handleAddPortfolioItem = () => {
-    setEditingPortfolioItemId(null)
-    setPortfolioForm({ title: "", description: "", project_url: "", is_featured: false, sort_order: 0 })
-    setPortfolioError(null)
-    setIsPortfolioModalOpen(true)
-  }
-
-  const handleEditPortfolioItem = (item: PortfolioItem) => {
-    setEditingPortfolioItemId(item.id_portfolio_item)
-    setPortfolioForm({
-      title: item.title ?? "",
-      description: item.description ?? "",
-      project_url: item.project_url ?? "",
-      is_featured: false,
-      sort_order: 0,
-    })
-    setPortfolioError(null)
-    setIsPortfolioModalOpen(true)
-  }
-
-  const handleSubmitPortfolioItem = async () => {
-    const currentToken = localStorage.getItem("token")
-    if (!currentToken) return
-
-    const isEditing = editingPortfolioItemId !== null
-    setIsAddingPortfolioItem(true)
-    setPortfolioError(null)
-    try {
-      const url = isEditing
-        ? `/api/profile/${profileId}/portfolio/${editingPortfolioItemId}`
-        : `/api/profile/${profileId}/portfolio`
-      const res = await fetch(url, {
-        method: isEditing ? "PATCH" : "POST",
-        headers: {
-          Authorization: `Bearer ${currentToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...(isEditing ? {} : { id_user: profile?.id_user ?? null, id_profile: profileId }),
-          title: portfolioForm.title.trim() || null,
-          description: portfolioForm.description.trim() || null,
-          project_url: portfolioForm.project_url.trim() || null,
-          is_featured: portfolioForm.is_featured,
-          sort_order: portfolioForm.sort_order,
-        }),
-      })
-      if (res.ok) {
-        setIsPortfolioModalOpen(false)
-        setEditingPortfolioItemId(null)
-        await refetchPortfolio()
-      } else {
-        const data = await res.json()
-        setPortfolioError(data.error || (isEditing ? "Erro ao editar item" : "Erro ao criar item"))
-      }
-    } catch {
-      setPortfolioError(isEditing ? "Erro ao editar item. Tente novamente." : "Erro ao criar item. Tente novamente.")
-    } finally {
-      setIsAddingPortfolioItem(false)
-    }
-  }
-
-  const handlePortfolioDeleteMedia = async (itemId: string, mediaId: string) => {
-    if (!confirm("Remover esta mídia do portfólio?")) return
-    const currentToken = localStorage.getItem("token")
-    if (!currentToken) return
-
-    try {
-      const res = await fetch(`/api/profile/${profileId}/portfolio/${itemId}/media/${mediaId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${currentToken}` },
-      })
-      if (res.ok || res.status === 204) {
-        setPortfolioItems((prev) =>
-          prev.map((item) =>
-            item.id_portfolio_item === itemId
-               ? { ...item, media: item.media.filter((m) => m.id_portfolio_media !== mediaId) }
-               : item
-          )
-        )
-      } else {
-        const data = await res.json()
-        alert(data.error || "Erro ao remover mídia")
-      }
-    } catch {
-      alert("Erro ao remover mídia. Tente novamente.")
-    }
-  }
-
-  const handlePortfolioDeleteItem = async (itemId: string) => {
-    if (!confirm("Remover este item do portfólio?")) return
-    const currentToken = localStorage.getItem("token")
-    if (!currentToken) return
-
-    try {
-      const res = await fetch(`/api/profile/${profileId}/portfolio/${itemId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${currentToken}` },
-      })
-      if (res.ok || res.status === 204) {
-        setPortfolioItems((prev) => prev.filter((item) => item.id_portfolio_item !== itemId))
-      } else {
-        const data = await res.json()
-        alert(data.error || "Erro ao remover item")
-      }
-    } catch {
-      alert("Erro ao remover item. Tente novamente.")
-    }
-  }
-
-  const getInitials = (name: string) => {
-    if (!name) return "?"
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-  }
-
-  const getSocialIcon = (icon: string) => {
-    const lower = icon.toLowerCase()
-    if (lower === "instagram") return <Instagram className="h-4 w-4 text-white" />
-    if (lower === "youtube") return <Youtube className="h-4 w-4 text-white" />
-    return <Video className="h-4 w-4 text-white" />
-  }
-
-  const getSocialBg = (icon: string) => {
-    const lower = icon.toLowerCase()
-    if (lower === "instagram") return "bg-gradient-to-br from-purple-500 to-pink-500"
-    if (lower === "youtube") return "bg-red-600"
-    return "bg-black"
-  }
-
-  if (loading) {
-    return <FreelancerProfileLoading />
-  }
-
-  if (error || !profile) {
-    return <FreelancerProfileError message={error || "Perfil não encontrado"} />
-  }
-
-  return (
+new_block = """  return (
     <div className="bg-background min-h-screen">
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Button
@@ -726,72 +516,19 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
             </div>
           </div>
         </section>
-      </main>
+      </main>"""
 
-      {/* Modal de Novo Item de Portfólio */}
-      <Dialog open={isPortfolioModalOpen} onOpenChange={(open) => { setIsPortfolioModalOpen(open); if (!open) setEditingPortfolioItemId(null) }}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{editingPortfolioItemId ? "Editar item de portfólio" : "Novo item de portfólio"}</DialogTitle>
-            <DialogDescription>
-              {editingPortfolioItemId
-                ? "Atualize as informações do item do seu portfólio."
-                : "Preencha as informações do novo item do seu portfólio."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="portfolio-title">Título</Label>
-              <Input
-                id="portfolio-title"
-                placeholder="Ex: Campanha de verão, Ensaio fotográfico..."
-                value={portfolioForm.title}
-                onChange={(e) => setPortfolioForm((prev) => ({ ...prev, title: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="portfolio-description">Descrição</Label>
-              <Textarea
-                id="portfolio-description"
-                placeholder="Descreva o trabalho, cliente, contexto..."
-                value={portfolioForm.description}
-                onChange={(e) => setPortfolioForm((prev) => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                className="resize-none overflow-y-auto max-h-36"
-                style={{ wordBreak: "break-all", overflowWrap: "break-word" }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="portfolio-project-url">URL do projeto</Label>
-              <Input
-                id="portfolio-project-url"
-                type="url"
-                placeholder="https://..."
-                value={portfolioForm.project_url}
-                onChange={(e) => setPortfolioForm((prev) => ({ ...prev, project_url: e.target.value }))}
-              />
-            </div>
+start_str = '  return (\n    <div className="bg-page-shell-dark">\n      <main className="container mx-auto px-4 py-8">'
+end_str = '      </main>'
 
-            {portfolioError && (
-              <p className="text-sm text-destructive">{portfolioError}</p>
-            )}
-            <div className="flex gap-2 justify-end pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsPortfolioModalOpen(false)}
-                disabled={isAddingPortfolioItem}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSubmitPortfolioItem} disabled={isAddingPortfolioItem}>
-                {isAddingPortfolioItem
-                  ? editingPortfolioItemId ? "Salvando..." : "Criando..."
-                  : editingPortfolioItemId ? "Salvar" : "Criar item"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+start_idx = content.find(start_str)
+end_idx = content.find(end_str, start_idx)
+
+if start_idx != -1 and end_idx != -1:
+    end_idx += len(end_str)
+    new_content = content[:start_idx] + new_block + content[end_idx:]
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    print("Successfully replaced content.")
+else:
+    print("Could not find start or end block.")
