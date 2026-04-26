@@ -17,7 +17,6 @@ interface ProfileScheduleSectionProps {
 interface WeekDataResponse {
   weekStart: string
   weekEnd: string
-  allowBooking: boolean
   availableSlots: { date: string; slots: AvailableSlot[] }[]
   events: CalendarEvent[]
 }
@@ -42,7 +41,7 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
     try {
       const res = await fetch(`/api/public/profile/${profileId}/calendar/week?weekStart=${weekStartIso}&weekEnd=${weekEndIso}`)
       const d = await res.json()
-      if (!res.ok || !d || typeof d.allowBooking === "undefined") {
+      if (!res.ok || !d || !Array.isArray(d.availableSlots)) {
         setFetchState("error")
         return
       }
@@ -96,17 +95,6 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
   const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
 
   const headerLabel = `${format(weekStart, "d 'de' MMM", { locale: ptBR })} — ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
-
-  // Só mostra "não habilitou" quando temos resposta confirmada e allowBooking === false.
-  if (fetchState === "loaded" && data && data.allowBooking === false) {
-    return (
-      <section id="agenda-section" className="mb-20 max-w-6xl mx-auto scroll-mt-24">
-        <div className="text-center py-16 border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/30">
-          <p className="text-zinc-400 text-sm">{profileName} ainda não habilitou agendamentos online.</p>
-        </div>
-      </section>
-    )
-  }
 
   if (fetchState === "error") {
     return (

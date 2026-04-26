@@ -34,8 +34,6 @@ interface Override {
   note: string | null
 }
 
-interface BookingSettings { allow_booking: boolean }
-
 interface ProfileService {
   id_profile_service: number
   name: string
@@ -95,7 +93,7 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
 
 function getToken() {
   if (typeof window === "undefined") return null
-  try { return JSON.parse(localStorage.getItem("token") || "null") } catch { return null }
+  return localStorage.getItem("token")
 }
 
 function centsToReais(cents: number) {
@@ -132,7 +130,6 @@ export default function AgendaPage() {
   const [newOverrideDate, setNewOverrideDate] = useState("")
   const [newOverrideBlocked, setNewOverrideBlocked] = useState(false)
   const [newOverrideNote, setNewOverrideNote] = useState("")
-  const [settings, setSettings] = useState<BookingSettings>({ allow_booking: false })
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<ProfileService[]>([])
 
@@ -167,10 +164,9 @@ export default function AgendaPage() {
     async function load() {
       setLoading(true)
       try {
-        const [rulesRes, overridesRes, settingsRes, bookingsRes, servicesRes] = await Promise.all([
+        const [rulesRes, overridesRes, bookingsRes, servicesRes] = await Promise.all([
           fetch(`/api/profile/${profileId}/availability`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/availability-overrides`, { headers: headers() }),
-          fetch(`/api/profile/${profileId}/booking-settings`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/bookings`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/services`, { headers: headers() }),
         ])
@@ -185,7 +181,6 @@ export default function AgendaPage() {
           }
         }
         if (overridesRes.ok) { const d = await overridesRes.json(); setOverrides(d.overrides || []) }
-        if (settingsRes.ok) { const d = await settingsRes.json(); if (d.settings) setSettings(d.settings) }
         if (bookingsRes.ok) {
           const d = await bookingsRes.json()
           const list = (d.bookings || []) as Booking[]
@@ -219,17 +214,6 @@ export default function AgendaPage() {
   }, [activeTab, bookingsView, fetchWeek])
 
   // ─── Mutations ─────────────────────────────────────────────────────
-  async function toggleAllowBooking(next: boolean) {
-    setSettings(s => ({ ...s, allow_booking: next }))
-    try {
-      const res = await fetch(`/api/profile/${profileId}/booking-settings`, {
-        method: "POST", headers: headers(), body: JSON.stringify({ allow_booking: next }),
-      })
-      if (!res.ok) { const d = await res.json(); showMsg("error", d.error || "Erro ao salvar"); setSettings(s => ({ ...s, allow_booking: !next })) }
-      else showMsg("success", next ? "Agendamento público ativado" : "Agendamento público desativado")
-    } catch { showMsg("error", "Erro de conexão"); setSettings(s => ({ ...s, allow_booking: !next })) }
-  }
-
   async function saveRules() {
     setSaving(true)
     try {
@@ -360,12 +344,6 @@ export default function AgendaPage() {
             <h1 className="text-lg font-bold leading-tight">Agenda</h1>
             <p className="text-xs text-zinc-400">Gerencie horários, serviços e agendamentos.</p>
           </div>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input type="checkbox" checked={settings.allow_booking}
-              onChange={e => toggleAllowBooking(e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-600 text-yellow-400 focus:ring-yellow-400 bg-zinc-800" />
-            <span className="hidden sm:inline">Agendamento público</span>
-          </label>
         </div>
       </header>
 
