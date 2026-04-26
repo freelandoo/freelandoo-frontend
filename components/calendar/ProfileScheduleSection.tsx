@@ -20,33 +20,36 @@ interface WeekDataResponse {
   allowBooking: boolean
   availableSlots: { date: string; slots: AvailableSlot[] }[]
   events: CalendarEvent[]
-  message?: string
-  error?: string
 }
+
+type FetchState = "idle" | "loading" | "loaded" | "error"
 
 export function ProfileScheduleSection({ profileId, profileName }: ProfileScheduleSectionProps) {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
   const [month, setMonth] = useState<Date>(() => new Date())
   const [data, setData] = useState<WeekDataResponse | null>(null)
   const [services, setServices] = useState<ProfileService[]>([])
-  const [loading, setLoading] = useState(true)
+  const [fetchState, setFetchState] = useState<FetchState>("idle")
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<{ dateISO: string; startTime: string } | null>(null)
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 })
 
   const fetchWeek = useCallback(async () => {
-    setLoading(true)
+    setFetchState("loading")
     try {
       const ws = format(weekStart, "yyyy-MM-dd")
       const we = format(weekEnd, "yyyy-MM-dd")
       const res = await fetch(`/api/public/profile/${profileId}/calendar/week?weekStart=${ws}&weekEnd=${we}`)
       const d = await res.json()
+      if (!res.ok || !d || typeof d.allowBooking === "undefined") {
+        setFetchState("error")
+        return
+      }
       setData(d)
+      setFetchState("loaded")
     } catch {
-      setData(null)
-    } finally {
-      setLoading(false)
+      setFetchState("error")
     }
   }, [profileId, weekStart, weekEnd])
 
@@ -61,15 +64,10 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
     return () => { cancelled = true }
   }, [profileId])
 
-  const handleSlotClick = (info: { dateISO: string; startISO: string }) => {
-    const startDate = new Date(info.startISO)
-    const startTime = format(startDate, "HH:mm")
-    const day = (data?.availableSlots || []).find(d => d.date === info.dateISO)
-    const isAvailable = !!day?.slots.find(s => s.start === startTime)
-    if (!isAvailable) return
-    setSelectedSlot({ dateISO: info.dateISO, startTime })
+  const handleAvailableClick = useCallback((slot: { dateISO: string; startTime: string }) => {
+    setSelectedSlot({ dateISO: slot.dateISO, startTime: slot.startTime })
     setModalOpen(true)
-  }
+  }, [])
 
   const handleConfirm = async (serviceId: number, client: { name: string; email: string; whatsapp: string }) => {
     if (!selectedSlot) return
@@ -99,7 +97,8 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
 
   const headerLabel = `${format(weekStart, "d 'de' MMM", { locale: ptBR })} — ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
 
-  if (data && !data.allowBooking && !loading) {
+  // Só mostra "não habilitou" quando temos resposta confirmada e allowBooking === false.
+  if (fetchState === "loaded" && data && data.allowBooking === false) {
     return (
       <section id="agenda-section" className="mb-20 max-w-6xl mx-auto scroll-mt-24">
         <div className="text-center py-16 border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/30">
@@ -108,6 +107,18 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
       </section>
     )
   }
+
+  if (fetchState === "error") {
+    return (
+      <section id="agenda-section" className="mb-20 max-w-6xl mx-auto scroll-mt-24">
+        <div className="text-center py-16 border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/30">
+          <p className="text-zinc-400 text-sm">Não foi possível carregar a agenda agora. Tente novamente em instantes.</p>
+        </div>
+      </section>
+    )
+  }
+
+  const showLoading = fetchState === "idle" || (fetchState === "loading" && !data)
 
   return (
     <section id="agenda-section" className="mb-20 max-w-6xl mx-auto scroll-mt-24">
@@ -148,16 +159,20 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
               <button onClick={goNext} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"><ChevronRight className="w-4 h-4" /></button>
             </div>
             <p className="text-sm font-semibold text-zinc-100 capitalize">{headerLabel}</p>
-            {loading && <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />}
-            {!loading && <span className="w-4" />}
+            {fetchState === "loading" ? <Loader2 className="w-4 h-4 animate-spin text-zinc-500" /> : <span className="w-4" />}
           </div>
 
-          <div className="p-2 sm:p-4">
+          <div className="p-2 sm:p-4 relative">
+            {showLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-900/40 rounded-xl">
+                <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+              </div>
+            )}
             <WeeklyTimeGrid
               weekStart={weekStart}
               events={data?.events || []}
               availableBackground={data?.availableSlots}
-              onSlotClick={handleSlotClick}
+              onAvailableClick={handleAvailableClick}
               height={620}
             />
           </div>

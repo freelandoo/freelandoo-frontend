@@ -156,8 +156,14 @@ export default function AgendaPage() {
     setMessage({ type, text }); setTimeout(() => setMessage(null), 4000)
   }
 
+  // Auth guard: sem token, redireciona para login.
+  useEffect(() => {
+    if (!getToken()) router.replace("/login")
+  }, [router])
+
   // Load main data
   useEffect(() => {
+    if (!getToken()) return
     async function load() {
       setLoading(true)
       try {

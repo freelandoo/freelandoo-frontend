@@ -16,7 +16,7 @@ interface WeeklyTimeGridProps {
   slotMinTime?: string
   slotMaxTime?: string
   slotDuration?: string
-  onSlotClick?: (slot: { dateISO: string; startISO: string; endISO: string }) => void
+  onAvailableClick?: (slot: { dateISO: string; startTime: string; endTime: string }) => void
   onEventClick?: (event: CalendarEvent) => void
   readOnly?: boolean
   showHeaderToolbar?: boolean
@@ -30,7 +30,7 @@ export function WeeklyTimeGrid({
   slotMinTime = "06:00:00",
   slotMaxTime = "23:00:00",
   slotDuration = "00:30:00",
-  onSlotClick,
+  onAvailableClick,
   onEventClick,
   readOnly = false,
   showHeaderToolbar = false,
@@ -58,7 +58,8 @@ export function WeeklyTimeGrid({
   }, [isMobile])
 
   const fcEvents = useMemo(() => {
-    const eventBlocks = events.map(e => {
+    const taken = new Set(events.map(e => `${e.start.substring(0, 16)}`)) // bloqueia slots já com booking
+    const bookedBlocks = events.map(e => {
       const c = STATUS_COLOR[e.status]
       return {
         id: e.id,
@@ -69,19 +70,25 @@ export function WeeklyTimeGrid({
         borderColor: c.border,
         textColor: c.text,
         classNames: [`freelandoo-evt-${e.status}`],
-        extendedProps: { ...e.meta, status: e.status },
+        extendedProps: { ...e.meta, status: e.status, kind: "booking" },
       }
     })
-    const bgBlocks = (availableBackground || []).flatMap(d =>
-      d.slots.map(s => ({
-        start: `${d.date}T${s.start}:00`,
-        end: `${d.date}T${s.end}:00`,
-        display: "background",
-        backgroundColor: "rgba(250, 204, 21, 0.08)",
-        classNames: ["freelandoo-evt-available"],
-      }))
+    const availableBlocks = (availableBackground || []).flatMap(d =>
+      d.slots
+        .filter(s => !taken.has(`${d.date}T${s.start}`))
+        .map(s => ({
+          id: `avail-${d.date}-${s.start}`,
+          title: s.start,
+          start: `${d.date}T${s.start}:00`,
+          end: `${d.date}T${s.end}:00`,
+          backgroundColor: "rgba(250, 204, 21, 0.10)",
+          borderColor: "rgba(250, 204, 21, 0.40)",
+          textColor: "#fde68a",
+          classNames: ["freelandoo-evt-available"],
+          extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
+        }))
     )
-    return [...eventBlocks, ...bgBlocks]
+    return [...bookedBlocks, ...availableBlocks]
   }, [events, availableBackground])
 
   return (
@@ -104,20 +111,36 @@ export function WeeklyTimeGrid({
         expandRows
         headerToolbar={showHeaderToolbar ? { left: "prev,next today", center: "title", right: "timeGridWeek,timeGridDay" } : false}
         events={fcEvents}
-        dateClick={(info) => {
-          if (readOnly || !onSlotClick) return
-          const start = new Date(info.date)
-          const end = new Date(start.getTime() + 30 * 60 * 1000)
-          onSlotClick({
-            dateISO: info.dateStr.substring(0, 10),
-            startISO: start.toISOString(),
-            endISO: end.toISOString(),
-          })
-        }}
         eventClick={(info) => {
-          if (!onEventClick) return
-          const ev = events.find(e => e.id === info.event.id)
-          if (ev) onEventClick(ev)
+          info.jsEvent.preventDefault()
+          const kind = info.event.extendedProps.kind
+          if (kind === "available") {
+            if (readOnly || !onAvailableClick) return
+            onAvailableClick({
+              dateISO: info.event.extendedProps.dateISO,
+              startTime: info.event.extendedProps.startTime,
+              endTime: info.event.extendedProps.endTime,
+            })
+            return
+          }
+          if (kind === "booking" && onEventClick) {
+            const ev = events.find(e => e.id === info.event.id)
+            if (ev) onEventClick(ev)
+          }
+        }}
+        eventDidMount={(info) => {
+          const kind = info.event.extendedProps.kind
+          if (kind === "available") {
+            info.el.setAttribute("title", `Disponível • ${info.event.extendedProps.startTime}`)
+          } else if (kind === "booking") {
+            const status = info.event.extendedProps.status
+            const labels: Record<string, string> = {
+              confirmed: "Reservado",
+              pending_payment: "Aguardando pagamento",
+              blocked: "Bloqueado",
+            }
+            info.el.setAttribute("title", labels[status] || "Indisponível")
+          }
         }}
       />
       <style jsx global>{`
@@ -167,6 +190,19 @@ export function WeeklyTimeGrid({
         }
         .freelandoo-weekly-grid .freelandoo-evt-available {
           cursor: ${readOnly ? "default" : "pointer"};
+          transition: background-color 120ms ease, border-color 120ms ease, transform 80ms ease;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-available:hover {
+          background-color: ${readOnly ? "rgba(250, 204, 21, 0.10)" : "rgba(250, 204, 21, 0.30)"} !important;
+          border-color: #facc15 !important;
+          color: #fde68a !important;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-title {
+          font-weight: 600;
+          font-size: 11px;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-time {
+          display: none;
         }
         .freelandoo-weekly-grid .fc-button-primary {
           background: rgb(39 39 42) !important;
