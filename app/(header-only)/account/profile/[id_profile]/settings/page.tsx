@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video } from "lucide-react"
+import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const Separator = () => <hr className="my-4 border-border" />
@@ -50,7 +50,14 @@ export default function ProfileSettingsPage() {
   const [isSocialMediaModalOpen, setIsSocialMediaModalOpen] = useState(false)
   const [socialMediaMeta, setSocialMediaMeta] = useState<{ types: SocialMediaType[]; follower_ranges: FollowerRange[] }>({ types: [], follower_ranges: [] })
   const [editingSocial, setEditingSocial] = useState<SocialMedia | null>(null)
-  const [socialForm, setSocialForm] = useState({ id_social_media_type: "", url: "", id_follower_range: "" })
+  const [socialForm, setSocialForm] = useState({ id_social_media_type: "", url: "", id_follower_range: "", phone_number: "" })
+
+  const selectedSocialType = useMemo(() => {
+    const id = editingSocial ? editingSocial.id_social_media_type : Number(socialForm.id_social_media_type)
+    return socialMediaMeta.types.find((t) => t.id_social_media_type === id) || null
+  }, [editingSocial, socialForm.id_social_media_type, socialMediaMeta.types])
+
+  const isWhatsapp = (selectedSocialType?.icon || "").toLowerCase() === "whatsapp"
   const [isSubmittingSocial, setIsSubmittingSocial] = useState(false)
 
   useEffect(() => {
@@ -245,7 +252,7 @@ export default function ProfileSettingsPage() {
 
   const handleOpenAddSocial = async () => {
     setEditingSocial(null)
-    setSocialForm({ id_social_media_type: "", url: "", id_follower_range: "" })
+    setSocialForm({ id_social_media_type: "", url: "", id_follower_range: "", phone_number: "" })
     await fetchSocialMediaMeta()
     setIsSocialMediaModalOpen(true)
   }
@@ -255,7 +262,8 @@ export default function ProfileSettingsPage() {
     setSocialForm({
       id_social_media_type: social.id_social_media_type.toString(),
       url: social.profile_url,
-      id_follower_range: social.id_follower_range.toString(),
+      id_follower_range: social.id_follower_range ? social.id_follower_range.toString() : "",
+      phone_number: social.phone_number_normalized || "",
     })
     await fetchSocialMediaMeta()
     setIsSocialMediaModalOpen(true)
@@ -269,24 +277,32 @@ export default function ProfileSettingsPage() {
     try {
       let response: Response
 
+      const editBody = isWhatsapp
+        ? { phone_number: socialForm.phone_number }
+        : { url: socialForm.url, id_follower_range: parseInt(socialForm.id_follower_range) }
+
+      const createBody = isWhatsapp
+        ? {
+            id_social_media_type: parseInt(socialForm.id_social_media_type),
+            phone_number: socialForm.phone_number,
+          }
+        : {
+            id_social_media_type: parseInt(socialForm.id_social_media_type),
+            url: socialForm.url,
+            id_follower_range: parseInt(socialForm.id_follower_range),
+          }
+
       if (editingSocial) {
         response = await fetch(`/api/profile/${id_profile}/social-media/${editingSocial.id_social_media_type}`, {
           method: "PUT",
           headers: { Authorization: `Bearer ${currentToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: socialForm.url,
-            id_follower_range: parseInt(socialForm.id_follower_range),
-          }),
+          body: JSON.stringify(editBody),
         })
       } else {
         response = await fetch(`/api/profile/${id_profile}/social-media`, {
           method: "POST",
           headers: { Authorization: `Bearer ${currentToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_social_media_type: parseInt(socialForm.id_social_media_type),
-            url: socialForm.url,
-            id_follower_range: parseInt(socialForm.id_follower_range),
-          }),
+          body: JSON.stringify(createBody),
         })
       }
 
@@ -330,6 +346,7 @@ export default function ProfileSettingsPage() {
     const lower = icon.toLowerCase()
     if (lower === "instagram") return <Instagram className="h-5 w-5 text-white" />
     if (lower === "youtube") return <Youtube className="h-5 w-5 text-white" />
+    if (lower === "whatsapp") return <MessageCircle className="h-5 w-5 text-white" />
     return <Video className="h-5 w-5 text-white" />
   }
 
@@ -337,6 +354,7 @@ export default function ProfileSettingsPage() {
     const lower = icon.toLowerCase()
     if (lower === "instagram") return "bg-gradient-to-br from-purple-500 to-pink-500"
     if (lower === "youtube") return "bg-red-600"
+    if (lower === "whatsapp") return "bg-green-500"
     return "bg-black"
   }
 
@@ -539,11 +557,17 @@ export default function ProfileSettingsPage() {
                     </div>
                     <div>
                       <p className="font-medium">{social.desc_social_media_type}</p>
-                      <p className="text-sm text-muted-foreground">{social.profile_url}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {social.icon?.toLowerCase() === "whatsapp" && social.phone_number_normalized
+                          ? `+${social.phone_number_normalized}`
+                          : social.profile_url}
+                      </p>
                     </div>
                   </a>
                   <div className="flex items-center gap-2 ml-3">
-                    <Badge variant="secondary">{social.follower_range} seguidores</Badge>
+                    {social.icon?.toLowerCase() !== "whatsapp" && social.follower_range && (
+                      <Badge variant="secondary">{social.follower_range} seguidores</Badge>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"
@@ -664,36 +688,54 @@ export default function ProfileSettingsPage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="social-url">
-                {editingSocial ? `URL / Usuário (${editingSocial.desc_social_media_type})` : "URL / Usuário"}
-              </Label>
-              <Input
-                id="social-url"
-                placeholder="Ex: meuusuario ou https://..."
-                value={socialForm.url}
-                onChange={(e) => setSocialForm((prev) => ({ ...prev, url: e.target.value }))}
-              />
-            </div>
+            {isWhatsapp ? (
+              <div className="space-y-2">
+                <Label htmlFor="social-phone">Número de telefone</Label>
+                <Input
+                  id="social-phone"
+                  type="tel"
+                  placeholder="Ex: 11999999999"
+                  value={socialForm.phone_number}
+                  onChange={(e) => setSocialForm((prev) => ({ ...prev, phone_number: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  O link do WhatsApp e a mensagem padrão são gerados automaticamente.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="social-url">
+                    {editingSocial ? `URL / Usuário (${editingSocial.desc_social_media_type})` : "URL / Usuário"}
+                  </Label>
+                  <Input
+                    id="social-url"
+                    placeholder="Ex: meuusuario ou https://..."
+                    value={socialForm.url}
+                    onChange={(e) => setSocialForm((prev) => ({ ...prev, url: e.target.value }))}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>Faixa de Seguidores</Label>
-              <Select
-                value={socialForm.id_follower_range}
-                onValueChange={(v) => setSocialForm((prev) => ({ ...prev, id_follower_range: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a faixa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {socialMediaMeta.follower_ranges.map((r) => (
-                    <SelectItem key={r.id_follower_range} value={r.id_follower_range.toString()}>
-                      {r.follower_range}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label>Faixa de Seguidores</Label>
+                  <Select
+                    value={socialForm.id_follower_range}
+                    onValueChange={(v) => setSocialForm((prev) => ({ ...prev, id_follower_range: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a faixa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {socialMediaMeta.follower_ranges.map((r) => (
+                        <SelectItem key={r.id_follower_range} value={r.id_follower_range.toString()}>
+                          {r.follower_range}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
 
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsSocialMediaModalOpen(false)} disabled={isSubmittingSocial}>
@@ -703,9 +745,8 @@ export default function ProfileSettingsPage() {
                 onClick={handleSaveSocial}
                 disabled={
                   isSubmittingSocial ||
-                  !socialForm.url ||
-                  !socialForm.id_follower_range ||
-                  (!editingSocial && !socialForm.id_social_media_type)
+                  (!editingSocial && !socialForm.id_social_media_type) ||
+                  (isWhatsapp ? !socialForm.phone_number : (!socialForm.url || !socialForm.id_follower_range))
                 }
               >
                 {isSubmittingSocial ? "Salvando..." : "Salvar"}

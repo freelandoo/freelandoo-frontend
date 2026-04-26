@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2 } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -205,6 +205,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
     const lower = icon.toLowerCase()
     if (lower === "instagram") return <Instagram className="h-4 w-4 text-white" />
     if (lower === "youtube") return <Youtube className="h-4 w-4 text-white" />
+    if (lower === "whatsapp") return <MessageCircle className="h-4 w-4 text-white" />
     return <Video className="h-4 w-4 text-white" />
   }
 
@@ -212,6 +213,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
     const lower = icon.toLowerCase()
     if (lower === "instagram") return "bg-gradient-to-br from-purple-500 to-pink-500"
     if (lower === "youtube") return "bg-red-600"
+    if (lower === "whatsapp") return "bg-green-500"
     return "bg-black"
   }
 

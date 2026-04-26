@@ -26,6 +26,7 @@ export interface SocialMedia {
   profile_url: string
   id_follower_range: number
   follower_range: string
+  phone_number_normalized?: string | null
   is_active: boolean
 }
 
