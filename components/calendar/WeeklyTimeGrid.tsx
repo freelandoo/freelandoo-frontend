@@ -89,12 +89,12 @@ export function WeeklyTimeGrid({
         })
         .map(s => ({
           id: `avail-${d.date}-${s.start}`,
-          title: s.start,
+          title: "",
           start: `${d.date}T${s.start}:00`,
           end: `${d.date}T${s.end}:00`,
-          backgroundColor: "rgba(59, 130, 246, 0.08)",
-          borderColor: "rgba(59, 130, 246, 0.35)",
-          textColor: "#bfdbfe",
+          backgroundColor: "transparent",
+          borderColor: "transparent",
+          textColor: "transparent",
           classNames: ["freelandoo-evt-available"],
           extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
         }))
@@ -160,7 +160,7 @@ export function WeeklyTimeGrid({
           --fc-page-bg-color: transparent;
           --fc-neutral-bg-color: rgb(24 24 27);
           --fc-list-event-hover-bg-color: rgb(39 39 42);
-          --fc-today-bg-color: rgba(250, 204, 21, 0.04);
+          --fc-today-bg-color: transparent;
           --fc-now-indicator-color: #facc15;
           color: rgb(228 228 231);
           font-family: inherit;
@@ -186,7 +186,7 @@ export function WeeklyTimeGrid({
           height: 2.5em !important;
         }
         .freelandoo-weekly-grid .fc-timegrid-slot-lane:hover {
-          background: rgba(250, 204, 21, 0.04);
+          background: transparent;
           cursor: ${readOnly ? "default" : "pointer"};
         }
         .freelandoo-weekly-grid .fc-event {

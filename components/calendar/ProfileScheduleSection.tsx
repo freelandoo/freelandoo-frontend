@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { startOfWeek, endOfWeek, format, addDays } from "date-fns"
+import { startOfWeek, endOfWeek, format, addDays, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { MiniCalendar } from "./MiniCalendar"
@@ -35,6 +35,34 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
   const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 0 }), [weekStart])
   const weekStartIso = useMemo(() => format(weekStart, "yyyy-MM-dd"), [weekStart])
   const weekEndIso = useMemo(() => format(weekEnd, "yyyy-MM-dd"), [weekEnd])
+
+  // Slots sintéticos para cada célula de 30 min da semana, das 06:00 às 23:00.
+  // Filtra dias passados e horários já passados de hoje. Bookings sobrepostos
+  // são removidos depois pelo WeeklyTimeGrid.
+  const fullGridSlots = useMemo(() => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const days: { date: string; slots: AvailableSlot[] }[] = []
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i)
+      if (d < today) continue
+      const dateISO = format(d, "yyyy-MM-dd")
+      const slots: AvailableSlot[] = []
+      for (let m = 6 * 60; m < 23 * 60; m += 30) {
+        const hh = Math.floor(m / 60).toString().padStart(2, "0")
+        const mm = (m % 60).toString().padStart(2, "0")
+        const eh = Math.floor((m + 30) / 60).toString().padStart(2, "0")
+        const em = ((m + 30) % 60).toString().padStart(2, "0")
+        if (isSameDay(d, now)) {
+          const slotStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(m / 60), m % 60)
+          if (slotStart <= now) continue
+        }
+        slots.push({ start: `${hh}:${mm}`, end: `${eh}:${em}` })
+      }
+      if (slots.length) days.push({ date: dateISO, slots })
+    }
+    return days
+  }, [weekStart])
 
   const fetchWeek = useCallback(async () => {
     setFetchState("loading")
@@ -159,7 +187,7 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
             <WeeklyTimeGrid
               weekStart={weekStart}
               events={data?.events || []}
-              availableBackground={data?.availableSlots}
+              availableBackground={fullGridSlots}
               onAvailableClick={handleAvailableClick}
               height={620}
             />
