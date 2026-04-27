@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle } from "lucide-react"
+import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle, Camera } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const Separator = () => <hr className="my-4 border-border" />
@@ -45,6 +45,7 @@ export default function ProfileSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [savingVisibility, setSavingVisibility] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [statusMsg, setStatusMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null)
 
   const [isSocialMediaModalOpen, setIsSocialMediaModalOpen] = useState(false)
@@ -144,6 +145,34 @@ export default function ProfileSettingsPage() {
     if (!token) return
     const res = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
     if (res.ok) setPerfil(await res.json())
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      const res = await fetch(`/api/profile/${id_profile}/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        await refreshMe()
+      } else {
+        setStatusMsg({ kind: "error", text: data.error || "Erro ao enviar foto." })
+      }
+    } catch {
+      setStatusMsg({ kind: "error", text: "Erro ao enviar foto." })
+    } finally {
+      setUploadingAvatar(false)
+      e.target.value = ""
+    }
   }
 
   const handleSave = async () => {
@@ -388,12 +417,29 @@ export default function ProfileSettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              {(profile.avatar_url) && (
-                <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-              )}
-              <AvatarFallback>{(profile.display_name || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <div className="relative shrink-0 group">
+              <Avatar className="h-16 w-16">
+                {(profile.avatar_url || perfil?.avatar) && (
+                  <AvatarImage src={(profile.avatar_url ?? perfil?.avatar) ?? undefined} alt={profile.display_name} />
+                )}
+                <AvatarFallback>{(profile.display_name || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <label
+                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                title="Alterar foto do perfil"
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                />
+                {uploadingAvatar
+                  ? <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  : <Camera className="h-5 w-5 text-white" />}
+              </label>
+            </div>
             <div>
               <CardTitle>Configurações do Perfil</CardTitle>
               <CardDescription>{profile.machine_name || profile.machine_slug || "—"} · {profile.category || "—"}</CardDescription>

@@ -82,7 +82,6 @@ export default function PerfilPage() {
     id_category: "",
     display_name: "",
     bio: "",
-    avatar_url: "",
     estado: "",
     municipio: "",
   })
@@ -287,7 +286,6 @@ export default function PerfilPage() {
         id_category: Number(newProfileForm.id_category),
         display_name: newProfileForm.display_name.trim(),
         bio: newProfileForm.bio.trim() || null,
-        avatar_url: newProfileForm.avatar_url.trim() || null,
         estado: newProfileForm.estado || null,
         municipio: newProfileForm.municipio || null,
       }
@@ -302,7 +300,7 @@ export default function PerfilPage() {
       const resData = await res.json()
       if (res.ok) {
         setIsNewProfileModalOpen(false)
-        setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" })
+        setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
         setProfessions([])
         // Recarrega dados do usuário
         const updated = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
@@ -1299,7 +1297,7 @@ export default function PerfilPage() {
                     )
                   })()}
                 </div>
-                <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
+                <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Perfil
                 </Button>
@@ -1322,11 +1320,10 @@ export default function PerfilPage() {
                           {/* Avatar e Display Name */}
                           <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
-                              {profile.avatar_url ? (
-                                <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
-                              ) : (
-                                <AvatarFallback>{getInitials(profile.display_name)}</AvatarFallback>
+                              {(profile.avatar_url || perfil?.avatar) && (
+                                <AvatarImage src={(profile.avatar_url || perfil?.avatar) ?? undefined} alt={profile.display_name} />
                               )}
+                              <AvatarFallback>{getInitials(profile.display_name)}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
                               <button
@@ -1478,7 +1475,7 @@ export default function PerfilPage() {
                   </div>
                   <p className="text-muted-foreground mb-2">Nenhum perfil criado</p>
                   <p className="text-sm text-muted-foreground mb-4">Crie seu primeiro perfil para começar</p>
-                  <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", avatar_url: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
+                  <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Criar Perfil
                   </Button>
@@ -1563,16 +1560,6 @@ export default function PerfilPage() {
                 rows={3}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-y-auto max-h-36"
                 style={{ wordBreak: "break-all", overflowWrap: "break-word" }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-avatar">URL do avatar</Label>
-              <Input
-                id="np-avatar"
-                type="url"
-                placeholder="https://..."
-                value={newProfileForm.avatar_url}
-                onChange={(e) => setNewProfileForm((prev) => ({ ...prev, avatar_url: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

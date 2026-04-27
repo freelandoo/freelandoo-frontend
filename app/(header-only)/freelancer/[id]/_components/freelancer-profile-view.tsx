@@ -22,7 +22,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
   const { profile, portfolioItems, setPortfolioItems, loading, error, isOwnProfile } =
     useCreatorPublicProfile(profileId)
 
-  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null) // id_portfolio_item em upload
+  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [isAddingPortfolioItem, setIsAddingPortfolioItem] = useState(false)
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false)
@@ -34,6 +34,8 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
     is_featured: false,
     sort_order: 0,
   })
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null)
 
   const refetchPortfolio = async () => {
     try {
@@ -78,10 +80,32 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
     }
   }
 
+  const handlePendingFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPendingFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPendingPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const handlePendingFileDrop = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file || !file.type.startsWith("image/")) return
+    setPendingFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPendingPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const clearPending = () => { setPendingFile(null); setPendingPreview(null) }
+
   const handleAddPortfolioItem = () => {
     setEditingPortfolioItemId(null)
     setPortfolioForm({ title: "", description: "", project_url: "", is_featured: false, sort_order: 0 })
     setPortfolioError(null)
+    clearPending()
     setIsPortfolioModalOpen(true)
   }
 
@@ -95,6 +119,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
       sort_order: 0,
     })
     setPortfolioError(null)
+    clearPending()
     setIsPortfolioModalOpen(true)
   }
 
@@ -111,10 +136,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
         : `/api/profile/${profileId}/portfolio`
       const res = await fetch(url, {
         method: isEditing ? "PATCH" : "POST",
-        headers: {
-          Authorization: `Bearer ${currentToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${currentToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           ...(isEditing ? {} : { id_user: profile?.id_user ?? null, id_profile: profileId }),
           title: portfolioForm.title.trim() || null,
@@ -124,14 +146,27 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
           sort_order: portfolioForm.sort_order,
         }),
       })
-      if (res.ok) {
-        setIsPortfolioModalOpen(false)
-        setEditingPortfolioItemId(null)
-        await refetchPortfolio()
-      } else {
+      if (!res.ok) {
         const data = await res.json()
         setPortfolioError(data.error || (isEditing ? "Erro ao editar item" : "Erro ao criar item"))
+        return
       }
+      const created = await res.json()
+      const newItemId: string = isEditing ? editingPortfolioItemId! : (created.id_portfolio_item ?? created.item?.id_portfolio_item)
+      // Upload da imagem pendente (só na criação ou se houver arquivo)
+      if (pendingFile && newItemId) {
+        const fd = new FormData()
+        fd.append("file", pendingFile)
+        await fetch(`/api/profile/${profileId}/portfolio/${newItemId}/upload`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${currentToken}` },
+          body: fd,
+        })
+      }
+      clearPending()
+      setIsPortfolioModalOpen(false)
+      setEditingPortfolioItemId(null)
+      await refetchPortfolio()
     } catch {
       setPortfolioError(isEditing ? "Erro ao editar item. Tente novamente." : "Erro ao criar item. Tente novamente.")
     } finally {
@@ -559,7 +594,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
       </main>
 
       {/* Modal de Novo Item de Portfólio */}
-      <Dialog open={isPortfolioModalOpen} onOpenChange={(open) => { setIsPortfolioModalOpen(open); if (!open) setEditingPortfolioItemId(null) }}>
+      <Dialog open={isPortfolioModalOpen} onOpenChange={(open) => { setIsPortfolioModalOpen(open); if (!open) { setEditingPortfolioItemId(null); clearPending() } }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{editingPortfolioItemId ? "Editar item de portfólio" : "Novo item de portfólio"}</DialogTitle>
@@ -570,6 +605,37 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+
+            {/* Upload de imagem */}
+            {!editingPortfolioItemId && (
+              <div className="space-y-2">
+                <Label>Imagem</Label>
+                {pendingPreview ? (
+                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-border bg-muted">
+                    <img src={pendingPreview} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={clearPending}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    className="flex flex-col items-center justify-center w-full aspect-[4/3] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handlePendingFileDrop}
+                  >
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePendingFileSelect} />
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground font-medium">Clique ou arraste uma imagem</span>
+                    <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG, WEBP — max 5 MB</span>
+                  </label>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="portfolio-title">Título</Label>
               <Input
@@ -592,7 +658,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="portfolio-project-url">URL do projeto</Label>
+              <Label htmlFor="portfolio-project-url">URL do projeto (opcional)</Label>
               <Input
                 id="portfolio-project-url"
                 type="url"
