@@ -58,7 +58,14 @@ export function WeeklyTimeGrid({
   }, [isMobile])
 
   const fcEvents = useMemo(() => {
-    const taken = new Set(events.map(e => `${e.start.substring(0, 16)}`)) // bloqueia slots já com booking
+    // Ranges ocupados (booking ativo) para filtrar slots por OVERLAP, não por start exato.
+    const occupiedRanges = events.map(e => ({
+      startMs: new Date(e.start).getTime(),
+      endMs: new Date(e.end).getTime(),
+    }))
+    const overlapsBooking = (startMs: number, endMs: number) =>
+      occupiedRanges.some(r => startMs < r.endMs && endMs > r.startMs)
+
     const bookedBlocks = events.map(e => {
       const c = STATUS_COLOR[e.status]
       return {
@@ -75,15 +82,19 @@ export function WeeklyTimeGrid({
     })
     const availableBlocks = (availableBackground || []).flatMap(d =>
       d.slots
-        .filter(s => !taken.has(`${d.date}T${s.start}`))
+        .filter(s => {
+          const startMs = new Date(`${d.date}T${s.start}:00`).getTime()
+          const endMs = new Date(`${d.date}T${s.end}:00`).getTime()
+          return !overlapsBooking(startMs, endMs)
+        })
         .map(s => ({
           id: `avail-${d.date}-${s.start}`,
           title: s.start,
           start: `${d.date}T${s.start}:00`,
           end: `${d.date}T${s.end}:00`,
-          backgroundColor: "rgba(250, 204, 21, 0.10)",
-          borderColor: "rgba(250, 204, 21, 0.40)",
-          textColor: "#fde68a",
+          backgroundColor: "rgba(59, 130, 246, 0.08)",
+          borderColor: "rgba(59, 130, 246, 0.35)",
+          textColor: "#bfdbfe",
           classNames: ["freelandoo-evt-available"],
           extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
         }))
@@ -131,7 +142,7 @@ export function WeeklyTimeGrid({
         eventDidMount={(info) => {
           const kind = info.event.extendedProps.kind
           if (kind === "available") {
-            info.el.setAttribute("title", `Disponível • ${info.event.extendedProps.startTime}`)
+            info.el.setAttribute("data-time", info.event.extendedProps.startTime)
           } else if (kind === "booking") {
             const status = info.event.extendedProps.status
             const labels: Record<string, string> = {
@@ -190,12 +201,14 @@ export function WeeklyTimeGrid({
         }
         .freelandoo-weekly-grid .freelandoo-evt-available {
           cursor: ${readOnly ? "default" : "pointer"};
-          transition: background-color 120ms ease, border-color 120ms ease, transform 80ms ease;
+          transition: background-color 120ms ease, border-color 120ms ease;
+          position: relative;
         }
         .freelandoo-weekly-grid .freelandoo-evt-available:hover {
-          background-color: ${readOnly ? "rgba(250, 204, 21, 0.10)" : "rgba(250, 204, 21, 0.30)"} !important;
-          border-color: #facc15 !important;
-          color: #fde68a !important;
+          background-color: ${readOnly ? "rgba(59, 130, 246, 0.10)" : "rgba(59, 130, 246, 0.45)"} !important;
+          border-color: #3b82f6 !important;
+          color: #ffffff !important;
+          z-index: 5;
         }
         .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-title {
           font-weight: 600;
@@ -203,6 +216,35 @@ export function WeeklyTimeGrid({
         }
         .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-time {
           display: none;
+        }
+        /* Tooltip instantâneo via data-attribute */
+        .freelandoo-weekly-grid .freelandoo-evt-available[data-time]:hover::after {
+          content: attr(data-time);
+          position: absolute;
+          left: 50%;
+          top: -28px;
+          transform: translateX(-50%);
+          background: #1e3a8a;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 8px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          z-index: 20;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-available[data-time]:hover::before {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: -8px;
+          transform: translateX(-50%);
+          border: 4px solid transparent;
+          border-top-color: #1e3a8a;
+          pointer-events: none;
+          z-index: 20;
         }
         .freelandoo-weekly-grid .fc-button-primary {
           background: rgb(39 39 42) !important;
