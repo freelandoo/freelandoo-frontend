@@ -157,11 +157,16 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
       if (pendingFile && newItemId) {
         const fd = new FormData()
         fd.append("file", pendingFile)
-        await fetch(`/api/profile/${profileId}/portfolio/${newItemId}/upload`, {
+        const uploadRes = await fetch(`/api/profile/${profileId}/portfolio/${newItemId}/upload`, {
           method: "POST",
           headers: { Authorization: `Bearer ${currentToken}` },
           body: fd,
         })
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => ({}))
+          setPortfolioError(uploadData.error || "Erro ao fazer upload da imagem")
+          return
+        }
       }
       clearPending()
       setIsPortfolioModalOpen(false)

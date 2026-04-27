@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const formData = await request.formData()
-    const url = `${BACKEND}/profiles/${profileId}/portfolio/${itemId}/upload`
+    const url = `${BACKEND}/profile/${profileId}/portfolio/${itemId}/upload`
     const response = await fetch(url, {
       method: "POST",
       headers: { Authorization: authHeader },
