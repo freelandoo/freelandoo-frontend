@@ -194,9 +194,9 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 </div>
                 <Metric
                   icon={Clock}
-                  label="Tempo online hoje"
-                  value={`${data.online_minutes} min`}
-                  sub="máx. 120 min contabilizados"
+                  label="Pontos por logar hoje"
+                  value={Math.min(120, (data.online_minutes ?? 0) * 2)}
+                  sub={`${data.online_minutes ?? 0} min online (2 pts/min, cap 120/dia)`}
                 />
                 <Metric
                   icon={Trophy}
@@ -225,8 +225,8 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 <div className="flex items-center gap-2"><Eye className="h-3 w-3 shrink-0" /><span>Visitas × 1 ponto</span></div>
                 <div className="flex items-center gap-2"><Heart className="h-3 w-3 shrink-0" /><span>Likes × 2 pontos</span></div>
                 <div className="flex items-center gap-2"><Star className="h-3 w-3 shrink-0" /><span>Média de avaliações × nº de avaliações × 5 pontos</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Minutos online (máx. 120/dia) × 0,5 pontos</span></div>
-                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking recalculado diariamente</span></div>
+                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Tempo online: 2 pontos por minuto, máx. 120 pontos/dia</span></div>
+                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking recalculado conforme o período definido pelo admin</span></div>
               </div>
             </>
           )}

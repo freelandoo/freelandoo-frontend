@@ -232,23 +232,41 @@ export default function AdminRankingPage() {
               {/* Período */}
               <div>
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-3 block">
-                  Período de contagem
+                  Período de contagem (dias)
                 </Label>
-                <div className="flex gap-2 flex-wrap">
-                  {PERIOD_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setCfgDraft((d) => d ? { ...d, period_days: opt.value } : d)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
-                        cfgDraft.period_days === opt.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="flex gap-2 flex-wrap items-center">
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={cfgDraft.period_days}
+                    onChange={(e) =>
+                      setCfgDraft((d) =>
+                        d ? { ...d, period_days: Math.max(1, parseInt(e.target.value, 10) || 1) } : d
+                      )
+                    }
+                    className="max-w-[140px]"
+                  />
+                  <span className="text-xs text-muted-foreground">dias</span>
+                  <div className="flex gap-1.5 ml-2 flex-wrap">
+                    {PERIOD_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setCfgDraft((d) => d ? { ...d, period_days: opt.value } : d)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                          cfgDraft.period_days === opt.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  A cada {cfgDraft.period_days} dias o ranking é recalculado automaticamente.
+                </p>
               </div>
 
               {/* Pesos */}

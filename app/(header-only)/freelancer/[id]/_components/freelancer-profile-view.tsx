@@ -20,6 +20,7 @@ import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
+import { RateProfile } from "@/components/profile/rate-profile"
 import { BarChart2, Trophy } from "lucide-react"
 
 export default function FreelancerProfileView({ profileId }: { profileId: string }) {
@@ -665,6 +666,12 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
         </section>
 
         {/* AGENDA SECTION */}
+        {!isOwnProfile && (
+          <section className="mb-8">
+            <RateProfile profileId={profileId} />
+          </section>
+        )}
+
         <ProfileScheduleSection profileId={profileId} profileName={profile.display_name || "este profissional"} />
       </main>
 
