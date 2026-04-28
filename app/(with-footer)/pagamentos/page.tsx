@@ -4,12 +4,13 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle, ExternalLink } from "lucide-react"
+import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle } from "lucide-react"
 
 interface Subscription {
   id_subscription: string
   id_user: string
   id_profile: string | null
+  profile_name: string | null
   status: "pending" | "active" | "past_due" | "canceled" | "incomplete"
   amount_cents: number
   currency: string
@@ -21,6 +22,7 @@ interface Subscription {
   id_coupon: string | null
   current_period_start: string | null
   current_period_end: string | null
+  paid_at: string | null
   canceled_at: string | null
   created_at: string
   updated_at: string
@@ -28,7 +30,7 @@ interface Subscription {
 
 export default function PagamentosPage() {
   const router = useRouter()
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
@@ -44,7 +46,7 @@ export default function PagamentosPage() {
 
     setIsAutenticado(true)
 
-    const fetchSubscription = async () => {
+    const fetchSubscriptions = async () => {
       setIsLoading(true)
       setError(null)
 
@@ -68,18 +70,24 @@ export default function PagamentosPage() {
         }
 
         const data = await response.json()
-        setSubscription(data.subscription || null)
+        setSubscriptions(data.subscriptions || [])
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        console.error("[pagamentos] Erro ao buscar assinatura:", msg)
+        console.error("[pagamentos] Erro ao buscar assinaturas:", msg)
         setError(msg || "Erro ao carregar dados de assinatura. Tente novamente mais tarde.")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchSubscription()
+    fetchSubscriptions()
   }, [router])
+
+  const activeSubscription = subscriptions.find(
+    (s) => s.status === "active" || s.status === "past_due"
+  ) || subscriptions.find((s) => s.status === "pending") || null
+
+  const paidEntries = subscriptions.filter((s) => s.status === "active")
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -161,173 +169,210 @@ export default function PagamentosPage() {
 
   return (
     <main className="flex-1 container mx-auto px-4 py-8 bg-background">
-        <div className="space-y-6 max-w-2xl mx-auto">
-          {/* Header da página */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <CreditCard className="h-8 w-8 text-primary" />
-              Minha Assinatura
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie sua anuidade e veja o status da sua assinatura
-            </p>
-          </div>
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="h-8 w-8 text-primary" />
+            Minha Assinatura
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie sua anuidade e veja o status da sua assinatura
+          </p>
+        </div>
 
-          {/* Conteúdo */}
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-muted-foreground">Carregando...</p>
-              </div>
+        {/* Conteúdo */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-muted-foreground">Carregando...</p>
             </div>
-          ) : error ? (
-            <Card className="border-destructive bg-destructive/5">
-              <CardContent className="pt-6">
-                <p className="text-destructive">{error}</p>
-              </CardContent>
-            </Card>
-          ) : !subscription ? (
-            /* Sem assinatura */
-            <Card className="border-dashed border-2">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <CreditCard className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-                <h3 className="font-semibold text-xl mb-2">Nenhuma assinatura ativa</h3>
-                <p className="text-muted-foreground text-center mb-6 max-w-md">
-                  Para aparecer nas buscas e receber propostas de trabalho, você precisa ativar sua anuidade.
-                </p>
-                <Button
-                  onClick={() => router.push("/payment/taxa")}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base"
-                >
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  Ativar Anuidade
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            /* Com assinatura */
-            <div className="space-y-4">
-              {/* Card principal de status */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">Anuidade Freelandoo</CardTitle>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(subscription.status)}`}>
-                      {getStatusIcon(subscription.status)}
-                      {getStatusLabel(subscription.status)}
-                    </span>
-                  </div>
-                  <CardDescription>
-                    Taxa anual para visibilidade na plataforma
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Valor */}
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <DollarSign className="h-4 w-4" />
-                      <span>Valor</span>
+          </div>
+        ) : error ? (
+          <Card className="border-destructive bg-destructive/5">
+            <CardContent className="pt-6">
+              <p className="text-destructive">{error}</p>
+            </CardContent>
+          </Card>
+        ) : subscriptions.length === 0 ? (
+          /* Sem assinatura */
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <CreditCard className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+              <h3 className="font-semibold text-xl mb-2">Nenhuma assinatura ativa</h3>
+              <p className="text-muted-foreground text-center mb-6 max-w-md">
+                Para aparecer nas buscas e receber propostas de trabalho, você precisa ativar sua anuidade.
+              </p>
+              <Button
+                onClick={() => router.push("/payment/taxa")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base"
+              >
+                <CreditCard className="mr-2 h-5 w-5" />
+                Ativar Anuidade
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {/* Card de status da assinatura mais recente */}
+            {activeSubscription && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl">Anuidade Freelandoo</CardTitle>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(activeSubscription.status)}`}>
+                        {getStatusIcon(activeSubscription.status)}
+                        {getStatusLabel(activeSubscription.status)}
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-foreground">
-                      {formatarValor(subscription.amount_cents, subscription.currency)}
-                    </span>
-                  </div>
-
-                  {/* Data de criação */}
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>Data de adesão</span>
+                    <CardDescription>
+                      Taxa anual para visibilidade na plataforma
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between py-3 border-b">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Valor</span>
+                      </div>
+                      <span className="text-xl font-bold text-foreground">
+                        {formatarValor(activeSubscription.amount_cents, activeSubscription.currency)}
+                      </span>
                     </div>
-                    <span className="text-foreground font-medium">
-                      {formatarData(subscription.created_at)}
-                    </span>
-                  </div>
 
-                  {/* Período atual */}
-                  {subscription.current_period_start && subscription.current_period_end && (
                     <div className="flex items-center justify-between py-3 border-b">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>Período vigente</span>
+                        <span>Data de adesão</span>
                       </div>
                       <span className="text-foreground font-medium">
-                        {formatarDataCurta(subscription.current_period_start)} — {formatarDataCurta(subscription.current_period_end)}
+                        {formatarData(activeSubscription.created_at)}
                       </span>
                     </div>
-                  )}
 
-                  {/* Cupom aplicado */}
-                  {subscription.id_coupon && (
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="text-lg">🏷️</span>
-                        <span>Cupom aplicado</span>
+                    {activeSubscription.current_period_start && activeSubscription.current_period_end && (
+                      <div className="flex items-center justify-between py-3 border-b">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>Período vigente</span>
+                        </div>
+                        <span className="text-foreground font-medium">
+                          {formatarDataCurta(activeSubscription.current_period_start)} — {formatarDataCurta(activeSubscription.current_period_end)}
+                        </span>
                       </div>
-                      <span className="text-green-600 font-medium">Sim</span>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Cancelada em */}
-                  {subscription.canceled_at && (
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div className="flex items-center gap-2 text-destructive">
-                        <XCircle className="h-4 w-4" />
-                        <span>Cancelada em</span>
+                    {activeSubscription.id_coupon && (
+                      <div className="flex items-center justify-between py-3 border-b">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <span className="text-lg">🏷️</span>
+                          <span>Cupom aplicado</span>
+                        </div>
+                        <span className="text-green-600 font-medium">Sim</span>
                       </div>
-                      <span className="text-destructive font-medium">
-                        {formatarData(subscription.canceled_at)}
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
 
-              {/* Card informativo para status pendente */}
-              {subscription.status === "pending" && (
-                <Card className="border-amber-200 bg-amber-50/50">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-3">
-                      <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-amber-900">Pagamento pendente</p>
-                        <p className="text-amber-700 text-sm mt-1">
-                          Seu pagamento está sendo processado. Caso não tenha concluído, clique abaixo para
-                          finalizar o pagamento.
-                        </p>
-                        <Button
-                          onClick={() => router.push("/payment/taxa")}
-                          variant="outline"
-                          className="mt-3 border-amber-300 text-amber-800 hover:bg-amber-100"
-                        >
-                          Finalizar Pagamento
-                        </Button>
+                    {activeSubscription.canceled_at && (
+                      <div className="flex items-center justify-between py-3 border-b">
+                        <div className="flex items-center gap-2 text-destructive">
+                          <XCircle className="h-4 w-4" />
+                          <span>Cancelada em</span>
+                        </div>
+                        <span className="text-destructive font-medium">
+                          {formatarData(activeSubscription.canceled_at)}
+                        </span>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Card informativo para ativa */}
-              {subscription.status === "active" && (
-                <Card className="border-green-200 bg-green-50/50">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-green-900">Assinatura ativa</p>
-                        <p className="text-green-700 text-sm mt-1">
-                          Seu perfil está visível nas buscas e você pode receber propostas de trabalho normalmente.
-                        </p>
+                {activeSubscription.status === "pending" && (
+                  <Card className="border-amber-200 bg-amber-50/50">
+                    <CardContent className="pt-6">
+                      <div className="flex gap-3">
+                        <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-amber-900">Pagamento pendente</p>
+                          <p className="text-amber-700 text-sm mt-1">
+                            Seu pagamento está sendo processado. Caso não tenha concluído, clique abaixo para finalizar.
+                          </p>
+                          <Button
+                            onClick={() => router.push("/payment/taxa")}
+                            variant="outline"
+                            className="mt-3 border-amber-300 text-amber-800 hover:bg-amber-100"
+                          >
+                            Finalizar Pagamento
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-      </main>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {activeSubscription.status === "active" && (
+                  <Card className="border-green-200 bg-green-50/50">
+                    <CardContent className="pt-6">
+                      <div className="flex gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold text-green-900">Assinatura ativa</p>
+                          <p className="text-green-700 text-sm mt-1">
+                            Seu perfil está visível nas buscas e você pode receber propostas de trabalho normalmente.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Tabela de histórico de pagamentos */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Histórico de Pagamentos</CardTitle>
+                <CardDescription>Todas as entradas de pagamento da sua conta</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {paidEntries.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-muted-foreground text-sm">
+                    Nenhum pagamento confirmado ainda.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="px-6 py-3 text-left font-medium text-muted-foreground">Nome do perfil</th>
+                          <th className="px-6 py-3 text-left font-medium text-muted-foreground">Data e hora</th>
+                          <th className="px-6 py-3 text-right font-medium text-muted-foreground">Valor pago</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paidEntries.map((s) => (
+                          <tr key={s.id_subscription} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                            <td className="px-6 py-4 font-medium text-foreground">
+                              {s.profile_name || "—"}
+                            </td>
+                            <td className="px-6 py-4 text-muted-foreground">
+                              {formatarData(s.paid_at || s.created_at)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-semibold text-foreground">
+                              {formatarValor(s.amount_cents, s.currency)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </main>
   )
 }
