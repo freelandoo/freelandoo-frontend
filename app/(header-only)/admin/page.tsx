@@ -79,7 +79,7 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/admin/profiles")}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/administracao")}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-primary" />

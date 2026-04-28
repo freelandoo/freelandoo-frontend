@@ -1,13 +1,10 @@
 "use client"
 
-import React from "react"
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import React, { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import {
   Shield,
   Users,
@@ -16,7 +13,29 @@ import {
   XCircle,
   CreditCard,
   Loader2,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  CalendarDays,
+  DollarSign,
 } from "lucide-react"
+
+interface ProfileAdmin {
+  id_profile: string
+  display_name: string | null
+  category: string
+  machine: string | null
+  machine_slug: string | null
+  is_active: boolean
+  is_visible: boolean
+  deleted_at: string | null
+  created_at: string
+  is_paid: boolean
+  subscription_status: string | null
+  subscription_paid_at: string | null
+  subscription_amount_cents: number | null
+  total_spent_cents: number
+}
 
 interface UserAdmin {
   id_user: string
@@ -29,6 +48,50 @@ interface UserAdmin {
   taxa_paga?: boolean
   is_admin?: boolean
   created_at?: string
+  total_spent_cents?: number
+  profiles_count?: number
+  profiles?: ProfileAdmin[]
+}
+
+function formatCents(cents: number): string {
+  if (!cents) return "R$ 0,00"
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(cents / 100)
+}
+
+function formatAge(createdAt: string): string {
+  const created = new Date(createdAt)
+  const now = new Date()
+  const diffMs = now.getTime() - created.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 30) return `${diffDays}d`
+  const diffMonths = Math.floor(diffDays / 30)
+  if (diffMonths < 12) return `${diffMonths}m`
+  const diffYears = Math.floor(diffMonths / 12)
+  const remMonths = diffMonths % 12
+  if (remMonths === 0) return `${diffYears}a`
+  return `${diffYears}a ${remMonths}m`
+}
+
+function subscriptionStatusBadge(status: string | null) {
+  if (!status) return <span className="text-xs text-muted-foreground">—</span>
+  const map: Record<string, { label: string; className: string }> = {
+    active:   { label: "Ativa",    className: "bg-green-500/20 text-green-400 border-green-500/30" },
+    past_due: { label: "Atrasada", className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+    pending:  { label: "Pendente", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+    canceled: { label: "Cancelada",className: "bg-red-500/20 text-red-400 border-red-500/30" },
+    expired:  { label: "Expirada", className: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+    failed:   { label: "Falhou",   className: "bg-red-500/20 text-red-400 border-red-500/30" },
+  }
+  const s = map[status] ?? { label: status, className: "bg-muted text-muted-foreground" }
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${s.className}`}>
+      {s.label}
+    </span>
+  )
 }
 
 export default function AdministracaoPage() {
@@ -38,6 +101,7 @@ export default function AdministracaoPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAdmin, setIsAdmin] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -47,7 +111,6 @@ export default function AdministracaoPage() {
       return
     }
 
-    // Verificar se o usuario e admin
     fetch("/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -64,9 +127,7 @@ export default function AdministracaoPage() {
         setCheckingAuth(false)
         fetchUsers(token)
       })
-      .catch(() => {
-        router.push("/")
-      })
+      .catch(() => router.push("/"))
   }, [router])
 
   const fetchUsers = async (token: string) => {
@@ -81,7 +142,7 @@ export default function AdministracaoPage() {
         setFilteredUsers(userList)
       }
     } catch (error) {
-      console.error("Erro ao buscar usuarios:", error)
+      console.error("Erro ao buscar usuários:", error)
     } finally {
       setLoading(false)
     }
@@ -92,57 +153,54 @@ export default function AdministracaoPage() {
       setFilteredUsers(users)
       return
     }
-
     const term = searchTerm.toLowerCase()
-    const filtered = users.filter(
-      (u) =>
-        u.nome?.toLowerCase().includes(term) ||
-        u.email?.toLowerCase().includes(term) ||
-        u.estado?.toLowerCase().includes(term) ||
-        u.municipio?.toLowerCase().includes(term),
+    setFilteredUsers(
+      users.filter(
+        (u) =>
+          u.nome?.toLowerCase().includes(term) ||
+          u.email?.toLowerCase().includes(term) ||
+          u.estado?.toLowerCase().includes(term) ||
+          u.municipio?.toLowerCase().includes(term),
+      ),
     )
-    setFilteredUsers(filtered)
   }, [searchTerm, users])
+
+  function toggleRow(id_user: string) {
+    setExpandedRows((prev) => {
+      const next = new Set(prev)
+      next.has(id_user) ? next.delete(id_user) : next.add(id_user)
+      return next
+    })
+  }
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center justify-center py-32">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center py-32">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   if (!isAdmin) return null
 
-  const totalUsers = users.length
-  const activeUsers = users.filter((u) => u.ativo).length
-  const paidUsers = users.filter((u) => u.taxa_paga).length
+  const totalUsers   = users.length
+  const activeUsers  = users.filter((u) => u.ativo).length
+  const paidUsers    = users.filter((u) => u.taxa_paga).length
   const premiumUsers = users.filter((u) => u.premium).length
 
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
-              <p className="text-sm text-muted-foreground">Gerencie os usuários da plataforma</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => router.push("/administracao/maquinas")} variant="outline">
-              Máquinas
-            </Button>
-            <Button onClick={() => router.push("/administracao/afiliados")} variant="outline">
-              Afiliados
-            </Button>
+        {/* Header */}
+        <div className="mb-8 flex items-center gap-3">
+          <Shield className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
+            <p className="text-sm text-muted-foreground">Usuários e perfis da plataforma</p>
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card className="border-border bg-card">
             <CardContent className="flex items-center gap-3 p-4">
@@ -198,7 +256,7 @@ export default function AdministracaoPage() {
           </Badge>
         </div>
 
-        {/* Users Table */}
+        {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -217,68 +275,193 @@ export default function AdministracaoPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="w-6 px-3 py-3" />
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Nome
+                      Usuário
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Email
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Perfis
                     </th>
-                    <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
-                      Local
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Premium
                     </th>
-
+                    <th className="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
+                      Registrado
+                    </th>
+                    <th className="hidden px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
+                      Total gasto
+                    </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Ativo
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Taxa
-                    </th>
-                    <th className="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
-                      Premium
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredUsers.map((u) => (
-                    <tr
-                      key={u.id_user}
-                      className="transition-colors hover:bg-muted/50 cursor-pointer"
-                      onClick={() => router.push(`/freelancer/${u.id_user}`)}
-                    >
-                      <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-foreground">
-                        {u.nome}
-                        {u.is_admin && (
-                          <Badge className="ml-2 bg-primary px-1.5 py-0 text-[10px] text-primary-foreground">Admin</Badge>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">{u.email}</td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                        {u.municipio && u.estado ? `${u.municipio}, ${u.estado}` : u.estado || "-"}
-                      </td>
+                  {filteredUsers.map((u) => {
+                    const expanded = expandedRows.has(u.id_user)
+                    const profileCount = u.profiles_count ?? 0
+                    return (
+                      <React.Fragment key={u.id_user}>
+                        {/* User row */}
+                        <tr className="transition-colors hover:bg-muted/30">
+                          {/* Expand toggle */}
+                          <td className="px-3 py-3 text-center">
+                            {profileCount > 0 ? (
+                              <button
+                                onClick={() => toggleRow(u.id_user)}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {expanded ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="block w-4" />
+                            )}
+                          </td>
 
-                      <td className="whitespace-nowrap px-4 py-3 text-center">
-                        {u.ativo ? (
-                          <CheckCircle2 className="mx-auto h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="mx-auto h-4 w-4 text-red-500" />
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-center">
-                        {u.taxa_paga ? (
-                          <CheckCircle2 className="mx-auto h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="mx-auto h-4 w-4 text-red-500" />
-                        )}
-                      </td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 text-center sm:table-cell">
-                        {u.premium ? (
-                          <CheckCircle2 className="mx-auto h-4 w-4 text-primary" />
-                        ) : (
-                          <XCircle className="mx-auto h-4 w-4 text-muted-foreground" />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          {/* Nome + email */}
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-medium text-foreground">
+                              {u.nome}
+                              {u.is_admin && (
+                                <Badge className="ml-2 bg-primary px-1.5 py-0 text-[10px] text-primary-foreground">
+                                  Admin
+                                </Badge>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                            {(u.municipio || u.estado) && (
+                              <p className="text-xs text-muted-foreground/70">
+                                {u.municipio && u.estado
+                                  ? `${u.municipio}, ${u.estado}`
+                                  : u.estado}
+                              </p>
+                            )}
+                          </td>
+
+                          {/* Qtd perfis — clicável para expandir */}
+                          <td className="px-4 py-3 text-center">
+                            {profileCount > 0 ? (
+                              <button
+                                onClick={() => toggleRow(u.id_user)}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                {profileCount}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">0</span>
+                            )}
+                          </td>
+
+                          {/* Premium */}
+                          <td className="px-4 py-3 text-center">
+                            {u.premium ? (
+                              <Star className="mx-auto h-4 w-4 fill-primary text-primary" />
+                            ) : (
+                              <Star className="mx-auto h-4 w-4 text-muted-foreground/30" />
+                            )}
+                          </td>
+
+                          {/* Registrado há */}
+                          <td className="hidden px-4 py-3 text-center md:table-cell">
+                            {u.created_at ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <CalendarDays className="h-3 w-3" />
+                                {formatAge(u.created_at)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+
+                          {/* Total gasto */}
+                          <td className="hidden px-4 py-3 text-right sm:table-cell">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                              <DollarSign className="h-3 w-3 text-muted-foreground" />
+                              {formatCents(u.total_spent_cents ?? 0)}
+                            </span>
+                          </td>
+
+                          {/* Ativo */}
+                          <td className="px-4 py-3 text-center">
+                            {u.ativo ? (
+                              <CheckCircle2 className="mx-auto h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="mx-auto h-4 w-4 text-red-500" />
+                            )}
+                          </td>
+                        </tr>
+
+                        {/* Profile sub-rows */}
+                        {expanded &&
+                          (u.profiles ?? []).map((p) => (
+                            <tr
+                              key={p.id_profile}
+                              className="border-t border-border/50 bg-muted/10 transition-colors hover:bg-muted/20"
+                            >
+                              {/* indent */}
+                              <td className="px-3 py-2" />
+
+                              {/* Nome do perfil + categoria */}
+                              <td className="px-4 py-2 pl-8">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-muted-foreground/50 select-none">└</span>
+                                  <div>
+                                    <p className="text-xs font-medium text-foreground">
+                                      {p.display_name || <span className="italic text-muted-foreground">sem nome</span>}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {p.category}
+                                      {p.machine && ` · ${p.machine}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Assinatura status */}
+                              <td className="px-4 py-2 text-center">
+                                {subscriptionStatusBadge(p.subscription_status)}
+                              </td>
+
+                              {/* is_paid (Premium do perfil) */}
+                              <td className="px-4 py-2 text-center">
+                                {p.is_paid ? (
+                                  <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
+                                ) : (
+                                  <XCircle className="mx-auto h-3.5 w-3.5 text-muted-foreground/40" />
+                                )}
+                              </td>
+
+                              {/* Criado há */}
+                              <td className="hidden px-4 py-2 text-center md:table-cell">
+                                <span className="text-[10px] text-muted-foreground">
+                                  {formatAge(p.created_at)}
+                                </span>
+                              </td>
+
+                              {/* Total pago neste perfil */}
+                              <td className="hidden px-4 py-2 text-right sm:table-cell">
+                                <span className="text-[10px] text-muted-foreground">
+                                  {formatCents(p.total_spent_cents)}
+                                </span>
+                              </td>
+
+                              {/* is_visible */}
+                              <td className="px-4 py-2 text-center">
+                                {p.is_visible && !p.deleted_at ? (
+                                  <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
+                                ) : (
+                                  <XCircle className="mx-auto h-3.5 w-3.5 text-red-500/60" />
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -286,24 +469,5 @@ export default function AdministracaoPage() {
         )}
       </main>
     </div>
-  )
-}
-
-function Star(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
   )
 }
