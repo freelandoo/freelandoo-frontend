@@ -10,7 +10,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id: profileId } = await params
     const url = `${BACKEND}/profile/${profileId}/portfolio`
-    const response = await fetch(url)
+    const auth = request.headers.get("authorization")
+    const response = await fetch(url, {
+      headers: auth ? { Authorization: auth } : {},
+    })
 
     log.backendFetch("GET", url, response.status)
 

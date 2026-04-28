@@ -55,9 +55,11 @@ export function useCreatorPublicProfile(profileId: string) {
 
     const fetchPortfolio = async () => {
       try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
         const res = await fetchWithLog(
           "useCreatorPublicProfile:portfolio",
-          `/api/profile/${profileId}/portfolio`
+          `/api/profile/${profileId}/portfolio`,
+          token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
         )
         if (res.ok) {
           const data = await res.json()

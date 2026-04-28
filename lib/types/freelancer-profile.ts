@@ -87,4 +87,6 @@ export interface PortfolioItem {
   is_active?: boolean
   created_at: string
   media: PortfolioMedia[]
+  likes_count?: number
+  liked_by_me?: boolean
 }

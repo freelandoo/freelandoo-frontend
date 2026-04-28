@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
 import { FreelancerProfileError, FreelancerProfileLoading } from "./freelancer-states"
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,7 @@ import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSec
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
+import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { BarChart2, Trophy } from "lucide-react"
 
 export default function FreelancerProfileView({ profileId }: { profileId: string }) {
@@ -42,10 +43,15 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
   const [showEngagement, setShowEngagement] = useState(false)
   const [showRanking, setShowRanking] = useState(false)
+  const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
+  const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
     try {
-      const res = await fetch(`/api/profile/${profileId}/portfolio`)
+      const token = localStorage.getItem("token")
+      const res = await fetch(`/api/profile/${profileId}/portfolio`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
       if (res.ok) {
         const data = await res.json()
         const items = Array.isArray(data) ? data : (data.items ?? data.portfolio ?? [])
@@ -54,6 +60,22 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
     } catch {
       // silencioso
     }
+  }
+
+  // Deep-link: ?portfolio=<id> abre modal automaticamente
+  useEffect(() => {
+    const id = searchParams?.get("portfolio")
+    if (id) setOpenPortfolioItemId(id)
+  }, [searchParams])
+
+  const updatePortfolioItemLike = (itemId: string, liked: boolean, count: number) => {
+    setPortfolioItems((items) =>
+      items.map((it) =>
+        it.id_portfolio_item === itemId
+          ? { ...it, liked_by_me: liked, likes_count: count }
+          : it
+      )
+    )
   }
 
   const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, itemId: string) => {
@@ -465,7 +487,10 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                   <div key={item.id_portfolio_item} className="group relative flex flex-col">
                     {/* Media Container 4:5 aspect ratio */}
                     {firstMedia ? (
-                      <div className="relative aspect-[4/5] bg-muted overflow-hidden md:rounded-lg border border-border/50">
+                      <div
+                        className={`relative aspect-[4/5] bg-muted overflow-hidden md:rounded-lg border border-border/50 ${!isOwnProfile ? "cursor-pointer" : ""}`}
+                        onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
+                      >
                         {firstMedia.media_type === "video" ? (
                           <video
                             src={firstMedia.media_url}
@@ -567,19 +592,31 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
 
                     {/* Content below image */}
                     <div className="pt-3 px-2 md:px-0">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <h3 className="font-semibold text-sm line-clamp-1">{item.title || "Sem título"}</h3>
-                        {item.project_url && (
-                          <a
-                            href={item.project_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center shrink-0"
-                            title="Ver projeto"
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setOpenPortfolioItemId(item.id_portfolio_item) }}
+                            className={`flex items-center gap-1 text-xs transition-colors ${item.liked_by_me ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                            title={item.liked_by_me ? "Remover like" : "Curtir"}
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        )}
+                            <Heart className={`h-3.5 w-3.5 ${item.liked_by_me ? "fill-current" : ""}`} />
+                            <span className="tabular-nums">{item.likes_count ?? 0}</span>
+                          </button>
+                          {item.project_url && (
+                            <a
+                              href={item.project_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center"
+                              title="Ver projeto"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       {item.description && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
@@ -730,6 +767,19 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
       {showRanking && (
         <RankingBadgeModal profileId={profileId} onClose={() => setShowRanking(false)} />
       )}
+
+      {openPortfolioItemId && (() => {
+        const item = portfolioItems.find((i) => i.id_portfolio_item === openPortfolioItemId)
+        if (!item) return null
+        return (
+          <PortfolioItemModal
+            item={item}
+            profileId={profileId}
+            onClose={() => setOpenPortfolioItemId(null)}
+            onLikeChange={updatePortfolioItemLike}
+          />
+        )
+      })()}
 
       {showEngagement && (
         <EngagementPanel profileId={profileId} onClose={() => setShowEngagement(false)} />
