@@ -162,8 +162,18 @@ export default function ProfileSettingsPage() {
         body: formData,
       })
       const data = await res.json().catch(() => ({}))
-      if (res.ok) {
-        await refreshMe()
+      if (res.ok && data.avatar_url) {
+        setPerfil((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            profiles: prev.profiles?.map((p) =>
+              p.id_profile === id_profile ? { ...p, avatar_url: data.avatar_url } : p
+            ),
+          }
+        })
+        setStatusMsg({ kind: "ok", text: "Foto atualizada com sucesso!" })
+        setTimeout(() => setStatusMsg(null), 3000)
       } else {
         setStatusMsg({ kind: "error", text: data.error || "Erro ao enviar foto." })
       }
