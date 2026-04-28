@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useEffect, useState, useCallback } from "react"
+import { useMemo, useRef, useEffect, useState } from "react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
 import dayGridPlugin from "@fullcalendar/daygrid"
@@ -38,16 +38,6 @@ export function WeeklyTimeGrid({
 }: WeeklyTimeGridProps) {
   const calendarRef = useRef<FullCalendar | null>(null)
   const [isMobile, setIsMobile] = useState(false)
-  const [disabledSlots, setDisabledSlots] = useState<Set<string>>(new Set())
-
-  const toggleDisabled = useCallback((key: string) => {
-    setDisabledSlots(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }, [])
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)")
@@ -103,44 +93,34 @@ export function WeeklyTimeGrid({
           const startMs = new Date(`${d.date}T${s.start}:00`).getTime()
           const endMs = new Date(`${d.date}T${s.end}:00`).getTime()
           const isPast = endMs <= nowMs
-          const slotKey = `${d.date}|${s.start}`
-          const isDisabled = disabledSlots.has(slotKey)
-          if (isPast || isDisabled) {
+          if (isPast) {
             return {
-              id: isPast ? `past-${d.date}-${s.start}` : `dis-${d.date}-${s.start}`,
-              title: "Indisp.",
+              id: `past-${d.date}-${s.start}`,
+              title: "indisp.",
               start: `${d.date}T${s.start}:00`,
               end: `${d.date}T${s.end}:00`,
               backgroundColor: blockedColor.bg,
               borderColor: blockedColor.border,
               textColor: blockedColor.text,
               classNames: ["freelandoo-evt-blocked"],
-              extendedProps: {
-                kind: isDisabled ? "disabled" : "past",
-                status: "blocked",
-                slotKey,
-                dateISO: d.date,
-                startTime: s.start,
-                endTime: s.end,
-              },
+              extendedProps: { kind: "past", status: "blocked" },
             }
           }
           return {
             id: `avail-${d.date}-${s.start}`,
-            title: `${s.start} - ${s.end}`,
+            title: "",
             start: `${d.date}T${s.start}:00`,
             end: `${d.date}T${s.end}:00`,
-            display: "auto",
-            backgroundColor: "rgba(59, 130, 246, 0.35)",
-            borderColor: "rgba(59, 130, 246, 0.6)",
-            textColor: "#ffffff",
+            backgroundColor: "transparent",
+            borderColor: "transparent",
+            textColor: "transparent",
             classNames: ["freelandoo-evt-available"],
-            extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end, slotKey },
+            extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
           }
         })
     )
     return [...bookedBlocks, ...availableBlocks]
-  }, [events, availableBackground, disabledSlots])
+  }, [events, availableBackground])
 
   return (
     <div className="freelandoo-weekly-grid">
@@ -166,15 +146,12 @@ export function WeeklyTimeGrid({
           info.jsEvent.preventDefault()
           const kind = info.event.extendedProps.kind
           if (kind === "available") {
-            if (readOnly) return
-            const key = info.event.extendedProps.slotKey as string
-            toggleDisabled(key)
-            return
-          }
-          if (kind === "disabled") {
-            if (readOnly) return
-            const key = info.event.extendedProps.slotKey as string
-            toggleDisabled(key)
+            if (readOnly || !onAvailableClick) return
+            onAvailableClick({
+              dateISO: info.event.extendedProps.dateISO,
+              startTime: info.event.extendedProps.startTime,
+              endTime: info.event.extendedProps.endTime,
+            })
             return
           }
           if (kind === "booking" && onEventClick) {
@@ -247,7 +224,7 @@ export function WeeklyTimeGrid({
           position: relative;
         }
         .freelandoo-weekly-grid .freelandoo-evt-available:hover {
-          background-color: ${readOnly ? "rgba(59, 130, 246, 0.35)" : "rgba(59, 130, 246, 0.55)"} !important;
+          background-color: ${readOnly ? "rgba(59, 130, 246, 0.10)" : "rgba(59, 130, 246, 0.45)"} !important;
           border-color: #3b82f6 !important;
           color: #ffffff !important;
           z-index: 5;
@@ -259,7 +236,6 @@ export function WeeklyTimeGrid({
         .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-time {
           display: none;
         }
-
         .freelandoo-weekly-grid .freelandoo-evt-blocked {
           cursor: ${readOnly ? "default" : "pointer"};
         }
@@ -274,7 +250,35 @@ export function WeeklyTimeGrid({
           color: rgb(244 244 245);
           letter-spacing: 0.02em;
         }
-
+        /* Tooltip instantâneo via data-attribute */
+        .freelandoo-weekly-grid .freelandoo-evt-available[data-time]:hover::after {
+          content: attr(data-time);
+          position: absolute;
+          left: 50%;
+          top: -28px;
+          transform: translateX(-50%);
+          background: #1e3a8a;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 8px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          z-index: 20;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-available[data-time]:hover::before {
+          content: "";
+          position: absolute;
+          left: 50%;
+          top: -8px;
+          transform: translateX(-50%);
+          border: 4px solid transparent;
+          border-top-color: #1e3a8a;
+          pointer-events: none;
+          z-index: 20;
+        }
         .freelandoo-weekly-grid .fc-button-primary {
           background: rgb(39 39 42) !important;
           border-color: rgb(63 63 70) !important;
