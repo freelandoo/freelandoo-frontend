@@ -29,7 +29,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
   const currentMedia = activeMedias[activeMediaIdx] ?? activeMedias[0]
 
   const shareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/freelancer/${profileId}?portfolio=${item.id_portfolio_item}`
+    ? `${window.location.origin}/p/${item.id_portfolio_item}`
     : ""
 
   const toggleLike = async () => {
@@ -72,13 +72,38 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
 
   const share = async () => {
     if (!shareUrl) return
+    const title = item.title ?? "Item de portfólio"
+    const text = item.description ?? ""
+
+    // Tenta compartilhar a imagem como arquivo (se navegador suportar)
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.share &&
+      currentMedia?.media_type !== "video" &&
+      currentMedia?.media_url
+    ) {
+      try {
+        const res = await fetch(currentMedia.media_url)
+        if (res.ok) {
+          const blob = await res.blob()
+          const ext = (blob.type.split("/")[1] ?? "jpg").replace("jpeg", "jpg")
+          const file = new File([blob], `portfolio-${item.id_portfolio_item}.${ext}`, { type: blob.type })
+          const shareData = { title, text, url: shareUrl, files: [file] } as ShareData & { files: File[] }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const canShareFiles = typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })
+          if (canShareFiles) {
+            await navigator.share(shareData)
+            return
+          }
+        }
+      } catch {
+        // segue pro fallback
+      }
+    }
+
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({
-          title: item.title ?? "Item de portfólio",
-          text: item.description ?? "",
-          url: shareUrl,
-        })
+        await navigator.share({ title, text, url: shareUrl })
         return
       } catch {
         // user cancelled — cai pro clipboard
