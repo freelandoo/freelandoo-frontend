@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSection"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
-import { BarChart2 } from "lucide-react"
+import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
+import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
+import { BarChart2, Trophy } from "lucide-react"
 
 export default function FreelancerProfileView({ profileId }: { profileId: string }) {
   const router = useRouter()
@@ -39,6 +41,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
   const [showEngagement, setShowEngagement] = useState(false)
+  const [showRanking, setShowRanking] = useState(false)
 
   const refetchPortfolio = async () => {
     try {
@@ -274,7 +277,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
         {/* HEADER SECTION */}
         <section className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12 mb-12">
           {/* Avatar Area */}
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col items-center">
             <Avatar className="h-32 w-32 md:h-40 md:w-40 border border-border">
               {(profile.avatar_url || profile.user_avatar) && (
                 <AvatarImage
@@ -287,6 +290,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                 {getInitials(profile.display_name)}
               </AvatarFallback>
             </Avatar>
+            <AvatarRatingStar profileId={profileId} />
           </div>
 
           {/* Info Area */}
@@ -316,6 +320,14 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                       Engajamento
                     </Button>
                     <Button
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
+                      onClick={() => setShowRanking(true)}
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Ranking
+                    </Button>
+                    <Button
                       onClick={() => {
                         const agendaEl = document.getElementById("agenda-section")
                         if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
@@ -326,15 +338,25 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    onClick={() => {
-                      const agendaEl = document.getElementById("agenda-section")
-                      if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
-                    }}
-                    className="font-semibold w-full md:w-auto px-8"
-                  >
-                    Agendar
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
+                      onClick={() => setShowRanking(true)}
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Ranking
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const agendaEl = document.getElementById("agenda-section")
+                        if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
+                      }}
+                      className="font-semibold flex-1 md:flex-none px-8"
+                    >
+                      Agendar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -704,6 +726,10 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
           </div>
         </DialogContent>
       </Dialog>
+
+      {showRanking && (
+        <RankingBadgeModal profileId={profileId} onClose={() => setShowRanking(false)} />
+      )}
 
       {showEngagement && (
         <EngagementPanel profileId={profileId} onClose={() => setShowEngagement(false)} />
