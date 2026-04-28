@@ -70,7 +70,7 @@ export function WeeklyTimeGrid({
       const c = STATUS_COLOR[e.status]
       return {
         id: e.id,
-        title: e.title,
+        title: e.status === "blocked" ? "indisp." : e.title,
         start: e.start,
         end: e.end,
         backgroundColor: c.bg,
@@ -147,8 +147,7 @@ export function WeeklyTimeGrid({
             const status = info.event.extendedProps.status
             const labels: Record<string, string> = {
               confirmed: "Reservado",
-              pending_payment: "Aguardando pagamento",
-              blocked: "Bloqueado",
+              blocked: "Indisponível",
             }
             info.el.setAttribute("title", labels[status] || "Indisponível")
           }
@@ -216,6 +215,20 @@ export function WeeklyTimeGrid({
         }
         .freelandoo-weekly-grid .freelandoo-evt-available .fc-event-time {
           display: none;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-blocked {
+          cursor: ${readOnly ? "default" : "pointer"};
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-blocked .fc-event-time {
+          display: none;
+        }
+        .freelandoo-weekly-grid .freelandoo-evt-blocked .fc-event-title {
+          font-size: 11px;
+          font-weight: 600;
+          text-align: center;
+          width: 100%;
+          color: rgb(244 244 245);
+          letter-spacing: 0.02em;
         }
         /* Tooltip instantâneo via data-attribute */
         .freelandoo-weekly-grid .freelandoo-evt-available[data-time]:hover::after {

@@ -38,5 +38,5 @@ export const STATUS_COLOR: Record<SlotStatus, { bg: string; border: string; text
   available:       { bg: "transparent",        border: "transparent",   text: "inherit" },
   confirmed:       { bg: "rgb(220 38 38 / 0.85)", border: "rgb(185 28 28)", text: "white" },
   pending_payment: { bg: "rgb(234 179 8 / 0.85)", border: "rgb(202 138 4)", text: "black" },
-  blocked:         { bg: "rgb(82 82 91 / 0.85)",  border: "rgb(63 63 70)",  text: "rgb(228 228 231)" },
+  blocked:         { bg: "rgb(212 212 216 / 0.35)", border: "rgb(161 161 170 / 0.6)", text: "rgb(244 244 245)" },
 }

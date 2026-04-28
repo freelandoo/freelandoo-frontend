@@ -158,10 +158,9 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 hidden lg:block">
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">Legenda</p>
             <ul className="space-y-2 text-xs text-zinc-300">
-              <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-yellow-400/20 border border-yellow-400/40" /> Horário disponível</li>
+              <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-blue-500/45 border border-blue-500" /> Horário disponível</li>
               <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-red-600/80" /> Reservado</li>
-              <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-yellow-500/80" /> Aguardando pagamento</li>
-              <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-zinc-600" /> Bloqueado</li>
+              <li className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-zinc-300/40 border border-zinc-400/60" /> Indisponível</li>
             </ul>
           </div>
         </aside>
