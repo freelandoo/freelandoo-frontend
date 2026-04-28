@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, UserCheck, BarChart2, Package, Sparkles, Ticket, Wallet } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface UserData {
   id_user: string
@@ -71,23 +71,23 @@ export default function AdminPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Usuários
+                Usuários / Perfis
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Gerenciar usuários cadastrados na plataforma.</p>
+              <p className="text-sm text-muted-foreground">Usuários cadastrados, com seus sub-perfis, premium e total recebido.</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/administracao")}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/admin/entradas")}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                Perfis
+                <Receipt className="h-5 w-5 text-primary" />
+                Entradas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Gerenciar perfis de criadores e status de ativação.</p>
+              <p className="text-sm text-muted-foreground">Histórico de assinaturas pagas e taxas de agendamento recebidas.</p>
             </CardContent>
           </Card>
 
