@@ -16,8 +16,6 @@ import {
   Star,
   ChevronDown,
   ChevronRight,
-  CalendarDays,
-  DollarSign,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -61,19 +59,14 @@ function formatCents(cents: number): string {
   }).format(cents / 100)
 }
 
-function formatAge(createdAt: string): string {
-  const created = new Date(createdAt)
-  const now = new Date()
-  const diffMs = now.getTime() - created.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 30) return `${diffDays}d`
-  const diffMonths = Math.floor(diffDays / 30)
-  if (diffMonths < 12) return `${diffMonths}m`
-  const diffYears = Math.floor(diffMonths / 12)
-  const remMonths = diffMonths % 12
-  if (remMonths === 0) return `${diffYears}a`
-  return `${diffYears}a ${remMonths}m`
+function formatDate(iso?: string | null): string {
+  if (!iso) return "—"
+  const d = new Date(iso)
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
 }
 
 function subscriptionStatusBadge(status: string | null) {
@@ -275,24 +268,26 @@ export default function AdministracaoPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="w-6 px-3 py-3" />
+                    <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Perfis
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Usuário
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Perfis
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Premium
-                    </th>
-                    <th className="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
-                      Registrado
-                    </th>
-                    <th className="hidden px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
-                      Total gasto
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Ativo
+                    </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
+                      Local
+                    </th>
+                    <th className="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
+                      Cadastro
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Total entradas
                     </th>
                   </tr>
                 </thead>
@@ -303,22 +298,29 @@ export default function AdministracaoPage() {
                     return (
                       <React.Fragment key={u.id_user}>
                         {/* User row */}
-                        <tr className="transition-colors hover:bg-muted/30">
-                          {/* Expand toggle */}
+                        <tr
+                          className="transition-colors hover:bg-muted/30 cursor-pointer"
+                          onClick={() => profileCount > 0 && toggleRow(u.id_user)}
+                        >
+                          {/* Qtd perfis com chevron */}
                           <td className="px-3 py-3 text-center">
                             {profileCount > 0 ? (
                               <button
-                                onClick={() => toggleRow(u.id_user)}
-                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleRow(u.id_user)
+                                }}
+                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
                               >
                                 {expanded ? (
-                                  <ChevronDown className="h-4 w-4" />
+                                  <ChevronDown className="h-3 w-3" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4" />
+                                  <ChevronRight className="h-3 w-3" />
                                 )}
+                                {profileCount}
                               </button>
                             ) : (
-                              <span className="block w-4" />
+                              <span className="text-xs text-muted-foreground">0</span>
                             )}
                           </td>
 
@@ -333,27 +335,6 @@ export default function AdministracaoPage() {
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground">{u.email}</p>
-                            {(u.municipio || u.estado) && (
-                              <p className="text-xs text-muted-foreground/70">
-                                {u.municipio && u.estado
-                                  ? `${u.municipio}, ${u.estado}`
-                                  : u.estado}
-                              </p>
-                            )}
-                          </td>
-
-                          {/* Qtd perfis — clicável para expandir */}
-                          <td className="px-4 py-3 text-center">
-                            {profileCount > 0 ? (
-                              <button
-                                onClick={() => toggleRow(u.id_user)}
-                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
-                              >
-                                {profileCount}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">0</span>
-                            )}
                           </td>
 
                           {/* Premium */}
@@ -365,26 +346,6 @@ export default function AdministracaoPage() {
                             )}
                           </td>
 
-                          {/* Registrado há */}
-                          <td className="hidden px-4 py-3 text-center md:table-cell">
-                            {u.created_at ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                <CalendarDays className="h-3 w-3" />
-                                {formatAge(u.created_at)}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </td>
-
-                          {/* Total gasto */}
-                          <td className="hidden px-4 py-3 text-right sm:table-cell">
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                              <DollarSign className="h-3 w-3 text-muted-foreground" />
-                              {formatCents(u.total_spent_cents ?? 0)}
-                            </span>
-                          </td>
-
                           {/* Ativo */}
                           <td className="px-4 py-3 text-center">
                             {u.ativo ? (
@@ -393,6 +354,23 @@ export default function AdministracaoPage() {
                               <XCircle className="mx-auto h-4 w-4 text-red-500" />
                             )}
                           </td>
+
+                          {/* Local */}
+                          <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-muted-foreground md:table-cell">
+                            {u.municipio && u.estado
+                              ? `${u.municipio}, ${u.estado}`
+                              : u.estado || "-"}
+                          </td>
+
+                          {/* Cadastro */}
+                          <td className="hidden whitespace-nowrap px-4 py-3 text-center text-xs text-muted-foreground md:table-cell">
+                            {formatDate(u.created_at)}
+                          </td>
+
+                          {/* Total entradas */}
+                          <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-foreground">
+                            {formatCents(u.total_spent_cents ?? 0)}
+                          </td>
                         </tr>
 
                         {/* Profile sub-rows */}
@@ -400,62 +378,58 @@ export default function AdministracaoPage() {
                           (u.profiles ?? []).map((p) => (
                             <tr
                               key={p.id_profile}
-                              className="border-t border-border/50 bg-muted/10 transition-colors hover:bg-muted/20"
+                              className="border-t border-border/50 bg-muted/10 transition-colors hover:bg-muted/30 cursor-pointer"
+                              onClick={() => router.push(`/freelancer/${p.id_profile}`)}
                             >
-                              {/* indent */}
-                              <td className="px-3 py-2" />
+                              {/* Indent / anchor */}
+                              <td className="px-3 py-2 text-center">
+                                <span className="text-[10px] text-muted-foreground/50">└</span>
+                              </td>
 
                               {/* Nome do perfil + categoria */}
                               <td className="px-4 py-2 pl-8">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] text-muted-foreground/50 select-none">└</span>
-                                  <div>
-                                    <p className="text-xs font-medium text-foreground">
-                                      {p.display_name || <span className="italic text-muted-foreground">sem nome</span>}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                      {p.category}
-                                      {p.machine && ` · ${p.machine}`}
-                                    </p>
-                                  </div>
-                                </div>
+                                <p className="text-xs font-medium text-foreground">
+                                  {p.display_name || (
+                                    <span className="italic text-muted-foreground">sem nome</span>
+                                  )}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {p.category}
+                                  {p.machine && ` · ${p.machine}`}
+                                </p>
                               </td>
 
-                              {/* Assinatura status */}
-                              <td className="px-4 py-2 text-center">
-                                {subscriptionStatusBadge(p.subscription_status)}
-                              </td>
-
-                              {/* is_paid (Premium do perfil) */}
+                              {/* Premium (is_paid) */}
                               <td className="px-4 py-2 text-center">
                                 {p.is_paid ? (
-                                  <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
+                                  <Star className="mx-auto h-3.5 w-3.5 fill-primary text-primary" />
                                 ) : (
-                                  <XCircle className="mx-auto h-3.5 w-3.5 text-muted-foreground/40" />
+                                  <Star className="mx-auto h-3.5 w-3.5 text-muted-foreground/30" />
                                 )}
                               </td>
 
-                              {/* Criado há */}
-                              <td className="hidden px-4 py-2 text-center md:table-cell">
-                                <span className="text-[10px] text-muted-foreground">
-                                  {formatAge(p.created_at)}
-                                </span>
-                              </td>
-
-                              {/* Total pago neste perfil */}
-                              <td className="hidden px-4 py-2 text-right sm:table-cell">
-                                <span className="text-[10px] text-muted-foreground">
-                                  {formatCents(p.total_spent_cents)}
-                                </span>
-                              </td>
-
-                              {/* is_visible */}
+                              {/* Ativo (is_active && is_visible && !deleted) */}
                               <td className="px-4 py-2 text-center">
-                                {p.is_visible && !p.deleted_at ? (
+                                {p.is_active && p.is_visible && !p.deleted_at ? (
                                   <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
                                 ) : (
                                   <XCircle className="mx-auto h-3.5 w-3.5 text-red-500/60" />
                                 )}
+                              </td>
+
+                              {/* Status assinatura (no lugar de Local) */}
+                              <td className="hidden px-4 py-2 md:table-cell">
+                                {subscriptionStatusBadge(p.subscription_status)}
+                              </td>
+
+                              {/* Data criação */}
+                              <td className="hidden whitespace-nowrap px-4 py-2 text-center text-[10px] text-muted-foreground md:table-cell">
+                                {formatDate(p.created_at)}
+                              </td>
+
+                              {/* Total entradas do perfil */}
+                              <td className="whitespace-nowrap px-4 py-2 text-right text-xs text-muted-foreground">
+                                {formatCents(p.total_spent_cents)}
                               </td>
                             </tr>
                           ))}
