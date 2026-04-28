@@ -85,13 +85,28 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/terms" className="transition-colors hover:text-neutral-900">
                   Termos de uso
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/privacy-policy" className="transition-colors hover:text-neutral-900">
                   Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies-policy" className="transition-colors hover:text-neutral-900">
+                  Política de cookies
+                </Link>
+              </li>
+              <li>
+                <Link href="/subscription-terms" className="transition-colors hover:text-neutral-900">
+                  Contrato de assinatura
+                </Link>
+              </li>
+              <li>
+                <Link href="/affiliate-terms" className="transition-colors hover:text-neutral-900">
+                  Programa de afiliados
                 </Link>
               </li>
             </ul>

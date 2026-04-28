@@ -203,7 +203,15 @@ function TaxaPageInner() {
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    Ao continuar, você concorda com nossos termos de serviço.
+                    Ao continuar, você concorda com o{" "}
+                    <a href="/subscription-terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                      Contrato de Assinatura
+                    </a>{" "}
+                    e os{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                      Termos de Uso
+                    </a>
+                    .
                   </p>
                 </>
               )}
