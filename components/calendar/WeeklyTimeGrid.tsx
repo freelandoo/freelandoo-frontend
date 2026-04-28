@@ -80,6 +80,8 @@ export function WeeklyTimeGrid({
         extendedProps: { ...e.meta, status: e.status, kind: "booking" },
       }
     })
+    const nowMs = Date.now()
+    const blockedColor = STATUS_COLOR.blocked
     const availableBlocks = (availableBackground || []).flatMap(d =>
       d.slots
         .filter(s => {
@@ -87,17 +89,35 @@ export function WeeklyTimeGrid({
           const endMs = new Date(`${d.date}T${s.end}:00`).getTime()
           return !overlapsBooking(startMs, endMs)
         })
-        .map(s => ({
-          id: `avail-${d.date}-${s.start}`,
-          title: "",
-          start: `${d.date}T${s.start}:00`,
-          end: `${d.date}T${s.end}:00`,
-          backgroundColor: "transparent",
-          borderColor: "transparent",
-          textColor: "transparent",
-          classNames: ["freelandoo-evt-available"],
-          extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
-        }))
+        .map(s => {
+          const startMs = new Date(`${d.date}T${s.start}:00`).getTime()
+          const endMs = new Date(`${d.date}T${s.end}:00`).getTime()
+          const isPast = endMs <= nowMs
+          if (isPast) {
+            return {
+              id: `past-${d.date}-${s.start}`,
+              title: "indisp.",
+              start: `${d.date}T${s.start}:00`,
+              end: `${d.date}T${s.end}:00`,
+              backgroundColor: blockedColor.bg,
+              borderColor: blockedColor.border,
+              textColor: blockedColor.text,
+              classNames: ["freelandoo-evt-blocked"],
+              extendedProps: { kind: "past", status: "blocked" },
+            }
+          }
+          return {
+            id: `avail-${d.date}-${s.start}`,
+            title: "",
+            start: `${d.date}T${s.start}:00`,
+            end: `${d.date}T${s.end}:00`,
+            backgroundColor: "transparent",
+            borderColor: "transparent",
+            textColor: "transparent",
+            classNames: ["freelandoo-evt-available"],
+            extendedProps: { kind: "available", dateISO: d.date, startTime: s.start, endTime: s.end },
+          }
+        })
     )
     return [...bookedBlocks, ...availableBlocks]
   }, [events, availableBackground])
