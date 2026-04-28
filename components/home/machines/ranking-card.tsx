@@ -1,37 +1,59 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { MessageCircle, Star, Clock, TrendingUp, CheckCircle, Flame, Zap } from "lucide-react"
+import { Star, Eye, Heart } from "lucide-react"
+import Link from "next/link"
 import type { MachineTheme } from "./tokens"
 
 type RankingCardProps = {
   rank: number
+  id_profile: string
   name: string
+  avatar_url: string | null
   specialty: string
   rating: number
-  responseTime: string
-  badges: string[]
+  visits: number
+  likes: number
   machine: MachineTheme
 }
 
-const BADGE_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; color: string }> = {
-  "Em alta": { icon: Flame, color: "#f59e0b" },
-  "Responde rápido": { icon: Zap, color: "#22c55e" },
-  "Muito procurado": { icon: TrendingUp, color: "#8b5cf6" },
-  "Bem avaliado": { icon: Star, color: "#eab308" },
-  "Perfil completo": { icon: CheckCircle, color: "#06b6d4" },
+function StarRating({ value }: { value: number }) {
+  const full = Math.floor(value)
+  const half = value - full >= 0.5
+  return (
+    <span className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className="h-3 w-3"
+          style={{
+            fill: i < full ? "#fbbf24" : i === full && half ? "url(#half)" : "transparent",
+            color: i < full || (i === full && half) ? "#fbbf24" : "rgba(255,255,255,0.2)",
+          }}
+        />
+      ))}
+    </span>
+  )
 }
 
 export function RankingCard({
   rank,
+  id_profile,
   name,
+  avatar_url,
   specialty,
   rating,
-  responseTime,
-  badges,
+  visits,
+  likes,
   machine,
 }: RankingCardProps) {
   const isTop = rank === 1
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <motion.div
@@ -69,57 +91,54 @@ export function RankingCard({
 
         {/* Avatar */}
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 text-lg font-semibold"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 overflow-hidden text-lg font-semibold"
           style={{
             background: `linear-gradient(135deg, ${machine.colors.from}33, ${machine.colors.to}22)`,
             color: machine.colors.text,
           }}
         >
-          {name.charAt(0)}
+          {avatar_url ? (
+            <img src={avatar_url} alt={name} className="h-full w-full object-cover" />
+          ) : (
+            initials
+          )}
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-semibold text-white">{name}</h4>
           <p className="truncate text-xs text-white/50">{specialty}</p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {badges.slice(0, 2).map((badge) => {
-              const config = BADGE_CONFIG[badge]
-              if (!config) return null
-              const Icon = config.icon
-              return (
-                <span
-                  key={badge}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] uppercase tracking-wider"
-                  style={{ color: config.color }}
-                >
-                  <Icon className="h-2.5 w-2.5" />
-                  {badge}
-                </span>
-              )
-            })}
+          <div className="mt-1 flex items-center gap-3 text-[10px] text-white/40">
+            <span className="flex items-center gap-1">
+              <Eye className="h-3 w-3" />
+              {visits.toLocaleString("pt-BR")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Heart className="h-3 w-3" />
+              {likes.toLocaleString("pt-BR")}
+            </span>
           </div>
         </div>
 
         {/* Right stats */}
         <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-            <span className="text-sm font-semibold text-white">{rating.toFixed(1)}</span>
+            <span className="text-sm font-semibold text-white">
+              {rating > 0 ? rating.toFixed(1) : "—"}
+            </span>
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-white/40">
-            <Clock className="h-3 w-3" />
-            {responseTime}
-          </div>
+          <StarRating value={rating} />
         </div>
 
-        {/* WhatsApp button */}
-        <button
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-emerald-500/20 hover:text-emerald-400"
-          aria-label={`Conversar com ${name}`}
+        {/* Profile link */}
+        <Link
+          href={`/freelancer/${id_profile}`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white text-xs font-bold"
+          aria-label={`Ver perfil de ${name}`}
         >
-          <MessageCircle className="h-4 w-4" />
-        </button>
+          →
+        </Link>
       </div>
     </motion.div>
   )

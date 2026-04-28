@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface UserData {
   id_user: string
@@ -162,6 +162,23 @@ export default function AdminPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Configurar valor e status da taxa anual cobrada via Stripe.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/admin/ranking")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                Ranking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configurar pesos, período e visualizar posições por máquina, cidade e geral.
               </p>
             </CardContent>
           </Card>

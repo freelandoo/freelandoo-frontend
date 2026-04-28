@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSection"
+import { EngagementPanel } from "@/components/profile/engagement-panel"
+import { BarChart2 } from "lucide-react"
 
 export default function FreelancerProfileView({ profileId }: { profileId: string }) {
   const router = useRouter()
@@ -36,6 +38,7 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
   })
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
+  const [showEngagement, setShowEngagement] = useState(false)
 
   const refetchPortfolio = async () => {
     try {
@@ -295,16 +298,24 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
               <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto">
                 {isOwnProfile ? (
                   <>
-                    <Button 
-                      asChild 
-                      variant="secondary" 
+                    <Button
+                      asChild
+                      variant="secondary"
                       className="font-semibold bg-secondary/80 hover:bg-secondary text-secondary-foreground flex-1 md:flex-none"
                     >
                       <Link href={`/account/profile/${profileId}/settings`}>
                         Editar perfil
                       </Link>
                     </Button>
-                    <Button 
+                    <Button
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
+                      onClick={() => setShowEngagement(true)}
+                    >
+                      <BarChart2 className="h-4 w-4" />
+                      Engajamento
+                    </Button>
+                    <Button
                       onClick={() => {
                         const agendaEl = document.getElementById("agenda-section")
                         if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
@@ -693,6 +704,10 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
           </div>
         </DialogContent>
       </Dialog>
+
+      {showEngagement && (
+        <EngagementPanel profileId={profileId} onClose={() => setShowEngagement(false)} />
+      )}
     </div>
   )
 }
