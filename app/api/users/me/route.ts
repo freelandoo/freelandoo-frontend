@@ -44,6 +44,35 @@ export async function GET(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  const log = apiFlow("users/me:DELETE")
+  let status = 500
+  log.start(request)
+  try {
+    const authHeader = request.headers.get("Authorization")
+    if (!authHeader) {
+      status = 401
+      return Response.json({ error: "Token não fornecido" }, { status: 401 })
+    }
+
+    const url = urlMe()
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: authHeader },
+    })
+
+    log.backendFetch("DELETE", url, response.status)
+    const data = await response.json()
+    status = response.status
+    return Response.json(data, { status: response.status })
+  } catch (error) {
+    log.fail(error)
+    return Response.json({ error: "Erro ao desativar conta" }, { status: 500 })
+  } finally {
+    log.end(status)
+  }
+}
+
 export async function PUT(request: Request) {
   const log = apiFlow("users/me:PUT")
   let status = 500

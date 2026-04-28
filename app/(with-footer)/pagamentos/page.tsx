@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle } from "lucide-react"
+import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle, Loader2 } from "lucide-react"
 
 interface Subscription {
   id_subscription: string
@@ -34,6 +34,8 @@ export default function PagamentosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -163,6 +165,33 @@ export default function PagamentosPage() {
     })
   }
 
+  const handleCancel = async (id_subscription: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setCancellingId(id_subscription)
+    try {
+      const res = await fetch("/api/stripe/subscription/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id_subscription }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erro ao cancelar")
+      setSubscriptions((prev) =>
+        prev.map((s) =>
+          s.id_subscription === id_subscription
+            ? { ...s, canceled_at: data.cancel_at }
+            : s
+        )
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao cancelar assinatura")
+    } finally {
+      setCancellingId(null)
+      setConfirmId(null)
+    }
+  }
+
   if (!isAutenticado) {
     return null
   }
@@ -274,15 +303,53 @@ export default function PagamentosPage() {
                       </div>
                     )}
 
-                    {activeSubscription.canceled_at && (
+                    {activeSubscription.status === "active" && activeSubscription.canceled_at && (
                       <div className="flex items-center justify-between py-3 border-b">
-                        <div className="flex items-center gap-2 text-destructive">
-                          <XCircle className="h-4 w-4" />
-                          <span>Cancelada em</span>
+                        <div className="flex items-center gap-2 text-amber-600">
+                          <Clock className="h-4 w-4" />
+                          <span>Cancelamento agendado — ativo até</span>
                         </div>
-                        <span className="text-destructive font-medium">
-                          {formatarData(activeSubscription.canceled_at)}
+                        <span className="text-amber-700 font-medium">
+                          {formatarDataCurta(activeSubscription.canceled_at)}
                         </span>
+                      </div>
+                    )}
+
+                    {activeSubscription.status === "active" && !activeSubscription.canceled_at && (
+                      <div className="pt-2">
+                        {confirmId === activeSubscription.id_subscription ? (
+                          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                            <p className="text-sm font-medium text-foreground mb-1">Confirmar cancelamento?</p>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Seu perfil permanece ativo até o fim do período pago. Não há reembolso.
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={cancellingId === activeSubscription.id_subscription}
+                                onClick={() => handleCancel(activeSubscription.id_subscription)}
+                              >
+                                {cancellingId === activeSubscription.id_subscription
+                                  ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Cancelando...</>
+                                  : "Sim, cancelar"}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setConfirmId(null)}>
+                                Voltar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 w-full"
+                            onClick={() => setConfirmId(activeSubscription.id_subscription)}
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Cancelar renovação automática
+                          </Button>
+                        )}
                       </div>
                     )}
                   </CardContent>

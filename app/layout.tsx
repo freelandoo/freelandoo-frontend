@@ -1,8 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import { CookieConsent } from "@/components/cookie-consent"
+import { AnalyticsProvider } from "@/components/analytics-provider"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -50,7 +50,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         {children}
         <CookieConsent />
-        <Analytics />
+        <AnalyticsProvider />
       </body>
     </html>
   )
