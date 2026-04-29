@@ -38,6 +38,7 @@ export interface Profile {
   is_visible?: boolean
   is_paid?: boolean
   is_published?: boolean
+  is_clan?: boolean
   deleted_at?: string | null
   subscription?: ProfileSubscription | null
   redes_sociais?: RedeSocial[]

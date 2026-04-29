@@ -1285,7 +1285,7 @@ export default function PerfilPage() {
                 <div>
                   <CardTitle className="text-xl">Meus Perfis</CardTitle>
                   {(() => {
-                    const list = perfil.profiles || []
+                    const list = (perfil.profiles || []).filter((p) => !p.is_clan)
                     const total = list.length
                     const visible = list.filter((p) => p.is_published).length
                     const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
@@ -1304,9 +1304,9 @@ export default function PerfilPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {perfil.profiles && perfil.profiles.length > 0 ? (
+              {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {perfil.profiles.map((profile) => {
+                  {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
                     const isPublished = !!profile.is_published
