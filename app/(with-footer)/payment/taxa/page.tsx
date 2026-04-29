@@ -11,6 +11,8 @@ interface ProfileSummary {
   id_profile: string
   display_name: string
   category?: string
+  machine_name?: string | null
+  is_clan?: boolean
   is_published?: boolean
   subscription?: { status?: string } | null
 }
@@ -168,7 +170,9 @@ function TaxaPageInner() {
               <CardTitle>Finalizar Pagamento</CardTitle>
               <CardDescription>
                 {profile
-                  ? `Perfil: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
+                  ? profile.is_clan
+                    ? `Clan: ${profile.display_name}${profile.machine_name ? ` · ${profile.machine_name}` : ""}`
+                    : `Perfil: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
                   : "Você será redirecionado ao Stripe para concluir"}
               </CardDescription>
             </CardHeader>
