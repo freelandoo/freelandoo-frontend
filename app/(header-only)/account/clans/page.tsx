@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Users, Plus, Lock, AlertCircle, Check, X } from "lucide-react"
+import { Users, Plus, Lock, AlertCircle, Check, X, CalendarDays } from "lucide-react"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 
 type Machine = { id_machine: number; name: string; slug: string }
@@ -371,13 +371,21 @@ export default function MyClansPage() {
                   {c.members_count}/{c.max_slots ?? 3} membros
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex items-center justify-between gap-2">
                 <Link
                   href={`/account/clans/${c.id_profile}`}
                   className="text-sm text-primary hover:underline"
                 >
                   Gerenciar clan →
                 </Link>
+                {c.my_role === "owner" && (
+                  <Link
+                    href={`/account/profile/${c.id_profile}/agenda`}
+                    className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                  >
+                    <CalendarDays className="size-3.5" /> Agenda
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ))}

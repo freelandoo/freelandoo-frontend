@@ -89,4 +89,8 @@ export interface PortfolioItem {
   media: PortfolioMedia[]
   likes_count?: number
   liked_by_me?: boolean
+  author_display_name?: string | null
+  author_avatar_url?: string | null
+  author_username?: string | null
+  is_clan_self?: boolean
 }

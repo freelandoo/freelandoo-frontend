@@ -52,7 +52,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           id_portfolio_item: item.id_portfolio_item,
-          id_profile: profileId,
+          id_profile: item.id_profile ?? profileId,
         }),
       })
       if (!res.ok) throw new Error("Falha ao curtir")

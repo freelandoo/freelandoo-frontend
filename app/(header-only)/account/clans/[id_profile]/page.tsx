@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   AlertCircle,
   ArrowLeft,
+  CalendarDays,
   Crown,
   CreditCard,
   ImageIcon,
@@ -89,9 +90,11 @@ type ClanMessage = {
 
 type InvitableProfile = {
   id_profile: string
+  id_user: string
   display_name: string
   avatar_url: string | null
   username: string
+  user_avatar: string | null
   desc_category: string | null
   is_paid: boolean
   already_in_clan: boolean
@@ -457,21 +460,30 @@ export default function ManageClanPage({
     <div className="container mx-auto max-w-4xl px-4 py-12 space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <Link
-          href="/account/clans"
+          href={`/clans/${id_profile}`}
           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
         >
-          <ArrowLeft className="size-4" /> Meus clans
+          <ArrowLeft className="size-4" /> Voltar para o clan
         </Link>
-        {!isOwner && myMembership && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleRemove(myMembership.id_member_profile, true)}
-            disabled={actionLoading}
-          >
-            <LogOut className="size-4 mr-1" /> Sair do clan
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/account/profile/${id_profile}/agenda`}>
+                <CalendarDays className="size-4 mr-1" /> Agenda
+              </Link>
+            </Button>
+          )}
+          {!isOwner && myMembership && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleRemove(myMembership.id_member_profile, true)}
+              disabled={actionLoading}
+            >
+              <LogOut className="size-4 mr-1" /> Sair do clan
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -527,27 +539,6 @@ export default function ManageClanPage({
           </div>
         </CardContent>
       </Card>
-
-      {isOwner && clan.is_paid === false && (
-        <Card className="border-amber-300 bg-amber-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base text-amber-900">
-              Clan inativo — ative para aparecer publicamente
-            </CardTitle>
-            <CardDescription className="text-amber-800">
-              R$ 300/ano. Sem assinatura ativa, o clan não aparece na vitrine
-              nem no ranking público.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href={`/payment/taxa?profile_id=${clan.id_profile}`}>
-              <Button>
-                <CreditCard className="size-4 mr-1" /> Ativar clan
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
@@ -863,47 +854,66 @@ export default function ManageClanPage({
                 </p>
               )}
 
-              {searchResults.length > 0 && (
-                <div className="space-y-2">
-                  {searchResults.map((p) => {
-                    const blocked = !p.is_paid || p.already_in_clan
-                    const reason = !p.is_paid
-                      ? "Sem assinatura ativa"
-                      : p.already_in_clan
-                        ? "Já está em outro clan"
-                        : ""
-                    return (
-                      <div
-                        key={p.id_profile}
-                        className="flex items-center gap-3 border rounded-md p-3"
-                      >
-                        <Avatar>
-                          <AvatarImage src={p.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {p.display_name?.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{p.display_name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            @{p.username} {p.desc_category && `· ${p.desc_category}`}
-                          </div>
-                          {blocked && (
-                            <div className="text-xs text-amber-700 mt-1">{reason}</div>
-                          )}
+              {searchResults.length > 0 && (() => {
+                const head = searchResults[0]
+                return (
+                  <div className="border rounded-md overflow-hidden">
+                    <div className="flex items-center gap-3 p-3 bg-muted/40">
+                      <Avatar className="size-12">
+                        <AvatarImage src={head.user_avatar || undefined} />
+                        <AvatarFallback>
+                          {head.username?.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">@{head.username}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {searchResults.length} subperfil(is) encontrado(s) — escolha qual entra no clan
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleInvite(p.id_profile)}
-                          disabled={blocked || actionLoading}
-                        >
-                          Convidar
-                        </Button>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    </div>
+                    <div className="divide-y">
+                      {searchResults.map((p) => {
+                        const blocked = !p.is_paid || p.already_in_clan
+                        const reason = !p.is_paid
+                          ? "Subperfil inativo"
+                          : p.already_in_clan
+                            ? "Já está em outro clan"
+                            : ""
+                        return (
+                          <div
+                            key={p.id_profile}
+                            className="flex items-center gap-3 p-3"
+                          >
+                            <Avatar className="size-9">
+                              <AvatarImage src={p.avatar_url || undefined} />
+                              <AvatarFallback>
+                                {p.display_name?.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">{p.display_name}</div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {p.desc_category || "—"}
+                              </div>
+                              {blocked && (
+                                <div className="text-xs text-amber-700 mt-0.5">{reason}</div>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleInvite(p.id_profile)}
+                              disabled={blocked || actionLoading}
+                            >
+                              Convidar
+                            </Button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
 

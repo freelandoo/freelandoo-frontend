@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users, Cog, Search, Crown } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -23,10 +23,19 @@ import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { BarChart2, Trophy } from "lucide-react"
 
-export default function FreelancerProfileView({ profileId }: { profileId: string }) {
+export default function FreelancerProfileView({
+  profileId,
+  kind = "profile",
+}: {
+  profileId: string
+  kind?: "profile" | "clan"
+}) {
+  const isClan = kind === "clan"
   const router = useRouter()
-  const { profile, portfolioItems, setPortfolioItems, loading, error, isOwnProfile } =
-    useCreatorPublicProfile(profileId)
+  const { profile, portfolioItems, setPortfolioItems, members, loading, error, isOwnProfile } =
+    useCreatorPublicProfile(profileId, { kind })
+  const [showMembers, setShowMembers] = useState(false)
+  const [membersQuery, setMembersQuery] = useState("")
 
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
@@ -330,20 +339,49 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                       variant="secondary"
                       className="font-semibold bg-secondary/80 hover:bg-secondary text-secondary-foreground flex-1 md:flex-none"
                     >
-                      <Link href={`/account/profile/${profileId}/settings`}>
+                      <Link
+                        href={
+                          isClan
+                            ? `/account/clans/${profileId}/edit`
+                            : `/account/profile/${profileId}/settings`
+                        }
+                      >
                         Editar perfil
                       </Link>
                     </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                    >
-                      <Link href="/account/clans">
-                        <Users className="h-4 w-4" />
-                        Clans
-                      </Link>
-                    </Button>
+                    {isClan ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="font-semibold flex-1 md:flex-none gap-1.5"
+                          onClick={() => setShowMembers(true)}
+                        >
+                          <Users className="h-4 w-4" />
+                          Ver membros
+                        </Button>
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="font-semibold flex-1 md:flex-none gap-1.5"
+                        >
+                          <Link href={`/account/clans/${profileId}`}>
+                            <Cog className="h-4 w-4" />
+                            Gerenciar
+                          </Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="font-semibold flex-1 md:flex-none gap-1.5"
+                      >
+                        <Link href="/account/clans">
+                          <Users className="h-4 w-4" />
+                          Clans
+                        </Link>
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="font-semibold flex-1 md:flex-none gap-1.5"
@@ -372,6 +410,16 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                   </>
                 ) : (
                   <>
+                    {isClan && (
+                      <Button
+                        variant="outline"
+                        className="font-semibold flex-1 md:flex-none gap-1.5"
+                        onClick={() => setShowMembers(true)}
+                      >
+                        <Users className="h-4 w-4" />
+                        Ver membros
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="font-semibold flex-1 md:flex-none gap-1.5"
@@ -522,6 +570,25 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                         {activeMedias.length > 1 && (
                           <div className="absolute top-3 right-3">
                             <ImageIcon className="h-5 w-5 text-white drop-shadow-md opacity-90" />
+                          </div>
+                        )}
+                        {isClan && item.is_clan_self === false && item.author_display_name && (
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 text-white text-xs">
+                            {item.author_avatar_url ? (
+                              <img
+                                src={item.author_avatar_url}
+                                alt={item.author_display_name}
+                                className="h-5 w-5 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-5 w-5 rounded-full bg-white/20" />
+                            )}
+                            <span className="line-clamp-1 max-w-[100px]">{item.author_display_name}</span>
+                          </div>
+                        )}
+                        {isClan && item.is_clan_self && (
+                          <div className="absolute top-3 left-3 bg-primary/90 text-primary-foreground rounded-full px-2.5 py-1 text-[10px] uppercase tracking-wide font-semibold">
+                            Clan
                           </div>
                         )}
                         
@@ -801,6 +868,107 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
       {showEngagement && (
         <EngagementPanel profileId={profileId} onClose={() => setShowEngagement(false)} />
       )}
+
+      {isClan && showMembers && (() => {
+        const sortedMembers = [...members].sort((a, b) => {
+          if (a.role === "owner" && b.role !== "owner") return -1
+          if (b.role === "owner" && a.role !== "owner") return 1
+          return a.display_name.localeCompare(b.display_name, "pt-BR")
+        })
+        const q = membersQuery.trim().toLowerCase()
+        const filtered = q
+          ? sortedMembers.filter(
+              (m) =>
+                m.display_name.toLowerCase().includes(q) ||
+                m.username.toLowerCase().includes(q)
+            )
+          : sortedMembers
+        return (
+          <Dialog
+            open={showMembers}
+            onOpenChange={(open) => {
+              setShowMembers(open)
+              if (!open) setMembersQuery("")
+            }}
+          >
+            <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                <div className="flex items-center gap-3">
+                  <Avatar className="size-11 border border-border">
+                    {(profile.avatar_url || profile.user_avatar) && (
+                      <AvatarImage
+                        src={profile.avatar_url ?? profile.user_avatar!}
+                        alt={profile.display_name}
+                        className="object-cover"
+                      />
+                    )}
+                    <AvatarFallback>{getInitials(profile.display_name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1 text-left">
+                    <DialogTitle className="text-base truncate">
+                      Membros de {profile.display_name}
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                      {members.length} {members.length === 1 ? "membro" : "membros"}
+                    </DialogDescription>
+                  </div>
+                </div>
+                {members.length > 4 && (
+                  <div className="relative mt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={membersQuery}
+                      onChange={(e) => setMembersQuery(e.target.value)}
+                      placeholder="Buscar por nome ou @username"
+                      className="pl-9 h-9"
+                    />
+                  </div>
+                )}
+              </DialogHeader>
+              <div className="px-4 pb-5 pt-3 max-h-[60vh] overflow-y-auto">
+                {filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                    <Users className="h-8 w-8 opacity-40 mb-2" />
+                    <p className="text-sm">Nenhum membro encontrado.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {filtered.map((m) => (
+                      <Link
+                        key={m.id_member_profile}
+                        href={`/freelancer/${m.id_member_profile}`}
+                        className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/60 transition-colors"
+                        onClick={() => setShowMembers(false)}
+                      >
+                        <div className="relative">
+                          <Avatar className="size-16 border border-border">
+                            {m.avatar_url && <AvatarImage src={m.avatar_url} alt={m.display_name} className="object-cover" />}
+                            <AvatarFallback>{getInitials(m.display_name)}</AvatarFallback>
+                          </Avatar>
+                          {m.role === "owner" && (
+                            <span
+                              className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground border-2 border-background shadow-sm"
+                              title="Dono do clan"
+                            >
+                              <Crown className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 w-full text-center">
+                          <div className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                            {m.display_name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">@{m.username}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )
+      })()}
     </div>
   )
 }
