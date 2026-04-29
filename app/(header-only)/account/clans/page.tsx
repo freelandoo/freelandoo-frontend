@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Users, Plus, Lock, AlertCircle, Check, X } from "lucide-react"
+import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -86,6 +87,26 @@ export default function MyClansPage() {
   })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState("")
+  const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false)
+
+  // Carrega municípios do IBGE conforme estado selecionado
+  useEffect(() => {
+    if (!form.estado) {
+      setMunicipios([])
+      return
+    }
+    const estadoObj = ESTADOS_BRASIL.find((e) => e.uf === form.estado)
+    if (!estadoObj) return
+    setLoadingMunicipios(true)
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoObj.id}/municipios`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: { id: number; nome: string }[]) =>
+        setMunicipios(list.map((m) => ({ id: m.id, nome: m.nome })))
+      )
+      .catch(() => setMunicipios([]))
+      .finally(() => setLoadingMunicipios(false))
+  }, [form.estado])
 
   // Carrega clans, elegibilidade e dados do modal
   useEffect(() => {
@@ -449,20 +470,44 @@ export default function MyClansPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Estado (opcional)</Label>
-                <Input
+                <Select
                   value={form.estado}
-                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                  placeholder="UF"
-                  maxLength={2}
-                />
+                  onValueChange={(v) =>
+                    setForm({ ...form, estado: v, municipio: "" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ESTADOS_BRASIL.map((e) => (
+                      <SelectItem key={e.uf} value={e.uf}>
+                        {e.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Município (opcional)</Label>
-                <Input
+                <Select
                   value={form.municipio}
-                  onChange={(e) => setForm({ ...form, municipio: e.target.value })}
-                  placeholder="Cidade"
-                />
+                  onValueChange={(v) => setForm({ ...form, municipio: v })}
+                  disabled={!form.estado || loadingMunicipios}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={loadingMunicipios ? "Carregando..." : "Cidade"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {municipios.map((m) => (
+                      <SelectItem key={m.id} value={m.nome}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
