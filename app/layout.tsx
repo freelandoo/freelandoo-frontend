@@ -20,21 +20,18 @@ export const metadata: Metadata = {
     title: "Freelandoo — Encontre freelancers e influenciadores",
     description: "Encontre o melhor profissional freelancer para o seu projeto.",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1024, height: 1024, alt: "Freelandoo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Freelandoo — Encontre freelancers e influenciadores",
+    description: "Encontre o melhor profissional freelancer para o seu projeto.",
+    images: ["/og-image.png"],
   },
   icons: {
     icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico" },
     ],
     apple: "/apple-icon.png",
   },
