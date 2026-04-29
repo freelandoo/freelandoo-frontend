@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -332,6 +332,16 @@ export default function FreelancerProfileView({ profileId }: { profileId: string
                     >
                       <Link href={`/account/profile/${profileId}/settings`}>
                         Editar perfil
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
+                    >
+                      <Link href="/account/clans">
+                        <Users className="h-4 w-4" />
+                        Clans
                       </Link>
                     </Button>
                     <Button
