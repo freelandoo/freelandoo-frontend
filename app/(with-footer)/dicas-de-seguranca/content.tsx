@@ -1,0 +1,146 @@
+"use client"
+
+import { useEffect } from "react"
+import Link from "next/link"
+import gsap from "gsap"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
+
+const clientTips = [
+  { title: "Analise o perfil", text: "Leia a descrição, veja a profissão, localização, serviços e portfólio." },
+  { title: "Confira o portfólio", text: "Trabalhos publicados ajudam a entender estilo, experiência e qualidade." },
+  { title: "Converse antes de fechar", text: "Alinhe prazo, valor, escopo, forma de entrega e disponibilidade." },
+  { title: "Registre combinados", text: "Mantenha acordos importantes por mensagem para evitar dúvidas." },
+  { title: "Cuidado com pagamentos antecipados", text: "Evite enviar valores sem confirmar identidade, escopo e condições." },
+  { title: "Desconfie de promessas exageradas", text: "Resultados muito garantidos ou ofertas fora da realidade merecem atenção." },
+]
+
+const proTips = [
+  { title: "Confirme quem está falando com você", text: "Antes de aceitar uma demanda, entenda quem é o cliente e o que ele precisa." },
+  { title: "Defina escopo", text: "Combine exatamente o que será entregue, prazo, revisões e forma de pagamento." },
+  { title: "Não compartilhe senhas", text: "Nunca envie senhas, códigos ou acessos sensíveis sem necessidade e proteção." },
+  { title: "Cuidado com golpes", text: "Fique atento a links suspeitos, comprovantes falsos e pedidos fora do combinado." },
+  { title: "Proteja seu trabalho", text: "Evite enviar arquivos finais sem combinar pagamento, aprovação ou etapas." },
+  { title: "Mantenha seu perfil verdadeiro", text: "Informações falsas podem prejudicar sua reputação e levar à remoção da plataforma." },
+]
+
+const freelandooDoes = [
+  "ajudamos na descoberta",
+  "organizamos perfis e filtros",
+  "facilitamos contato direto",
+  "incentivamos transparência",
+  "fornecemos informações de segurança",
+]
+
+function useReveal() {
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+    gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+      gsap.from(el, { y: 30, opacity: 0, duration: 0.7, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%" } })
+    })
+    gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((container) => {
+      gsap.from(container.querySelectorAll("[data-card]"), { y: 25, opacity: 0, duration: 0.6, stagger: 0.08, ease: "power2.out", scrollTrigger: { trigger: container, start: "top 85%" } })
+    })
+    return () => ScrollTrigger.getAll().forEach((t) => t.kill())
+  }, [])
+}
+
+export function DicasDeSegurancaContent() {
+  useReveal()
+
+  return (
+    <main className="flex-1 bg-background">
+      {/* HERO */}
+      <section className="relative overflow-hidden py-20 md:py-28">
+        <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[350px] w-[700px] rounded-full bg-primary/5 blur-[100px]" />
+        <div className="container mx-auto px-4 relative max-w-3xl">
+          <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6" data-reveal>
+            Segurança
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-6" data-reveal>
+            Dicas de segurança
+          </h1>
+          <p className="text-xl text-muted-foreground mb-4" data-reveal>
+            A Freelandoo conecta pessoas. A segurança começa com informação, clareza e cuidado nas negociações.
+          </p>
+          <p className="text-muted-foreground leading-relaxed" data-reveal>
+            A plataforma ajuda clientes e profissionais a se encontrarem, mas os combinados, pagamentos e entregas são tratados diretamente entre as partes.
+          </p>
+        </div>
+      </section>
+
+      {/* PARA CLIENTES */}
+      <section className="py-16 md:py-20 bg-card/20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-10" data-reveal>
+            Se você vai contratar um profissional
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-stagger>
+            {clientTips.map((tip, i) => (
+              <div key={tip.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/20 transition-all" data-card>
+                <div className="text-primary/40 text-xs font-mono mb-3">{String(i + 1).padStart(2, "0")}</div>
+                <h3 className="font-semibold text-foreground mb-2">{tip.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{tip.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PARA PROFISSIONAIS */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-10" data-reveal>
+            Se você anuncia seus serviços
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-stagger>
+            {proTips.map((tip, i) => (
+              <div key={tip.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/20 transition-all" data-card>
+                <div className="text-primary/40 text-xs font-mono mb-3">{String(i + 1).padStart(2, "0")}</div>
+                <h3 className="font-semibold text-foreground mb-2">{tip.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{tip.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* O PAPEL DA FREELANDOO */}
+      <section className="py-16 md:py-20 bg-card/20">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
+            O que a Freelandoo faz
+          </h2>
+          <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
+            A Freelandoo atua como plataforma de divulgação e conexão. Ela não intermedia diretamente pagamentos entre clientes e profissionais, não garante entrega de serviços e não participa da negociação feita entre as partes.
+          </p>
+          <div className="flex flex-wrap gap-3" data-stagger>
+            {freelandooDoes.map((item) => (
+              <div key={item} className="flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2" data-card>
+                <span className="text-primary font-bold text-xs">✓</span>
+                <span className="text-sm text-foreground">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="py-20 md:py-28 relative overflow-hidden">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[600px] rounded-full bg-primary/5 blur-[100px]" />
+        <div className="container mx-auto px-4 text-center relative">
+          <h2 className="text-3xl font-bold text-foreground mb-4" data-reveal>
+            Contrate e anuncie com mais clareza
+          </h2>
+          <p className="text-muted-foreground mb-10 max-w-md mx-auto leading-relaxed" data-reveal>
+            Use as informações disponíveis, converse com cuidado e combine tudo antes de avançar.
+          </p>
+          <div data-reveal>
+            <Link href="/search" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">
+              Encontrar profissionais
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}

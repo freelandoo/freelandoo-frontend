@@ -28,17 +28,17 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/cadastro" className="transition-colors hover:text-neutral-900">
+                <Link href="/anunciar-servicos" className="transition-colors hover:text-neutral-900">
                   Anunciar serviços
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="transition-colors hover:text-neutral-900">
+                <Link href="/contratar-profissionais" className="transition-colors hover:text-neutral-900">
                   Contratar profissionais
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/precos" className="transition-colors hover:text-neutral-900">
                   Preços
                 </Link>
               </li>
@@ -49,24 +49,29 @@ export function SiteFooter() {
             <h3 className="mb-4 text-base font-semibold text-neutral-900">Recursos</h3>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/central-de-ajuda" className="transition-colors hover:text-neutral-900">
                   Central de ajuda
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/comunidade" className="transition-colors hover:text-neutral-900">
                   Comunidade
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/dicas-de-seguranca" className="transition-colors hover:text-neutral-900">
                   Dicas de segurança
                 </Link>
+              </li>
+              <li>
+                <a
+                  href="https://www.instagram.com/printtei_/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-neutral-900"
+                >
+                  Printtei_
+                </a>
               </li>
             </ul>
           </div>
@@ -75,12 +80,12 @@ export function SiteFooter() {
             <h3 className="mb-4 text-base font-semibold text-neutral-900">Empresa</h3>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/sobre-nos" className="transition-colors hover:text-neutral-900">
                   Sobre nós
                 </Link>
               </li>
               <li>
-                <Link href="#" className="transition-colors hover:text-neutral-900">
+                <Link href="/carreiras" className="transition-colors hover:text-neutral-900">
                   Carreiras
                 </Link>
               </li>
