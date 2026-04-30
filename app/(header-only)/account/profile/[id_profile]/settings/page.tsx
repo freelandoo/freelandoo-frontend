@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle, Camera } from "lucide-react"
+import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle, Camera, Link2, Copy, Check, ExternalLink, Share2 } from "lucide-react"
+import { buildProfileUrl } from "@/lib/slug"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const Separator = () => <hr className="my-4 border-border" />
@@ -47,6 +48,7 @@ export default function ProfileSettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [statusMsg, setStatusMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const [isSocialMediaModalOpen, setIsSocialMediaModalOpen] = useState(false)
   const [socialMediaMeta, setSocialMediaMeta] = useState<{ types: SocialMediaType[]; follower_ranges: FollowerRange[] }>({ types: [], follower_ranges: [] })
@@ -139,6 +141,13 @@ export default function ProfileSettingsPage() {
   const isPaid = !!profile.is_paid
   const isVisible = profile.is_visible !== false
   const isPublished = !!profile.is_published
+
+  const handle = perfil?.username || ""
+  const slug = profile.sub_profile_slug || profile.profession_slug || null
+  const canonicalPath = slug && handle ? buildProfileUrl({ profession_slug: slug, municipio: profile.municipio, handle }) : null
+  const canonicalUrl = canonicalPath
+    ? (typeof window !== "undefined" ? `${window.location.origin}${canonicalPath}` : canonicalPath)
+    : null
 
   const refreshMe = async () => {
     const token = localStorage.getItem("token")
@@ -678,6 +687,75 @@ export default function ProfileSettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* URL canônica do perfil */}
+      {canonicalPath && canonicalUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-primary" /> Link público do perfil
+            </CardTitle>
+            <CardDescription>
+              Este é o endereço que outras pessoas usam para encontrar você. Copie ou compartilhe — funciona mesmo em status invisível (mas só fica indexado nas buscas quando publicado).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-mono break-all">
+              {canonicalUrl}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(canonicalUrl)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  } catch {
+                    setStatusMsg({ kind: "error", text: "Não foi possível copiar." })
+                  }
+                }}
+              >
+                {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+                {copied ? "Copiado!" : "Copiar link"}
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={canonicalPath} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Abrir perfil
+                </a>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const nav = typeof navigator !== "undefined" ? navigator : null
+                  if (nav && typeof nav.share === "function") {
+                    try {
+                      await nav.share({
+                        title: profile.display_name,
+                        text: `Confira meu perfil na Freelandoo: ${profile.display_name}`,
+                        url: canonicalUrl,
+                      })
+                    } catch {
+                      // usuário cancelou — ignora
+                    }
+                  } else if (nav) {
+                    try {
+                      await nav.clipboard.writeText(canonicalUrl)
+                      setStatusMsg({ kind: "ok", text: "Link copiado (compartilhamento nativo indisponível)." })
+                    } catch {
+                      setStatusMsg({ kind: "error", text: "Compartilhamento não suportado." })
+                    }
+                  }
+                }}
+              >
+                <Share2 className="h-3.5 w-3.5 mr-1.5" /> Compartilhar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Visibilidade pública */}
       {isPaid && (

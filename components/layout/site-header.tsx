@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { LogOut, Search, User, CreditCard, Shield } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
@@ -20,74 +20,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-interface UserData {
-  id_user: string
-  nome: string
-  email: string
-  is_admin?: boolean
-  roles?: { id_role: string; desc_role: string }[]
-}
-
-function readUserFromStorage(): UserData | null {
-  if (typeof window === "undefined") return null
-  const raw = localStorage.getItem("user")
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as UserData
-  } catch {
-    return null
-  }
-}
+import { useAuth } from "@/hooks/use-auth"
 
 export default function SiteHeader() {
-  // Sempre `null` no 1.º render (SSR + hidratação) para bater com o HTML do servidor;
-  // usuário só após mount — evita mismatch com localStorage no cliente.
-  const [user, setUser] = useState<UserData | null>(null)
+  const { user, status, logout } = useAuth()
   const [query, setQuery] = useState("")
   const router = useRouter()
 
-  useEffect(() => {
-    const refresh = () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) {
-        setUser(null)
-        return
-      }
-      const fromStorage = readUserFromStorage()
-      if (fromStorage) setUser(fromStorage)
-
-      fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data && data.id_user) setUser(data)
-        })
-        .catch(() => {})
-    }
-
-    refresh()
-
-    const onAuthChange = () => refresh()
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "token" || e.key === "user") refresh()
-    }
-    window.addEventListener("auth:changed", onAuthChange)
-    window.addEventListener("storage", onStorage)
-    return () => {
-      window.removeEventListener("auth:changed", onAuthChange)
-      window.removeEventListener("storage", onStorage)
-    }
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    setUser(null)
-    window.dispatchEvent(new Event("auth:changed"))
-    router.push("/")
-  }
-
-  const submitSearch = (e: React.FormEvent) => {
+  const submitSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const q = query.trim()
     router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search")
@@ -143,7 +83,9 @@ export default function SiteHeader() {
           </form>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
-            {user ? (
+            {status === "loading" ? (
+              <div className="h-9 w-24 animate-pulse rounded-md bg-white/10" />
+            ) : status === "authenticated" && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -170,7 +112,7 @@ export default function SiteHeader() {
                       Administração
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair
                   </DropdownMenuItem>

@@ -25,6 +25,8 @@ export interface Profile {
   bio?: string
   id_category?: number
   category?: string
+  profession_slug?: string | null
+  sub_profile_slug?: string | null
   id_machine?: number | null
   machine_slug?: string | null
   machine_name?: string | null

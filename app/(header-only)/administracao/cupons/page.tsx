@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2, Ticket, Search, Percent, Wallet, Check, AlertCircle } from "lucide-react"
+import { ArrowLeft, Loader2, Ticket, Search, Percent, Wallet, Check, AlertCircle, Plus, RefreshCw } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 
-type Tab = "discount" | "commission" | "specific"
+type Tab = "discount" | "commission" | "specific" | "create"
 
 type DiscountSettings = {
   id_settings: string
@@ -728,6 +728,162 @@ function SpecificTab() {
   )
 }
 
+// ─────────────────────────── Tab: Criar cupom manual ──────────────────────────
+function CreateManualCouponTab() {
+  const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [created, setCreated] = useState<{ id_coupon: string; code: string } | null>(null)
+  const [form, setForm] = useState({
+    code: "",
+    discount_type: "percent" as "percent" | "amount",
+    discount_value: "",
+    max_discount_cents: "",
+    min_order_cents: "",
+    max_uses: "",
+    expires_at: "",
+  })
+
+  function randomCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    let s = ""
+    for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)]
+    setForm((p) => ({ ...p, code: `FREE-${s}` }))
+  }
+
+  async function save() {
+    setSaving(true)
+    setFeedback(null)
+    setCreated(null)
+    try {
+      const body: Record<string, unknown> = {
+        discount_type: form.discount_type,
+        discount_value: Number(form.discount_value),
+        max_discount_cents: form.max_discount_cents === "" ? null : Number(form.max_discount_cents),
+        min_order_cents: form.min_order_cents === "" ? 0 : Number(form.min_order_cents),
+        max_uses: form.max_uses === "" ? null : Number(form.max_uses),
+        expires_at: form.expires_at || null,
+      }
+      if (form.code.trim()) body.code = form.code.trim().toUpperCase()
+
+      const result = await api<{ id_coupon: string; code: string }>("/api/admin/coupons/manual", {
+        method: "POST",
+        body: JSON.stringify(body),
+      })
+      setCreated(result)
+      setFeedback({ ok: true, msg: `Cupom ${result.code} criado com sucesso.` })
+      setForm({ code: "", discount_type: "percent", discount_value: "", max_discount_cents: "", min_order_cents: "", max_uses: "", expires_at: "" })
+    } catch (e) {
+      setFeedback({ ok: false, msg: e instanceof Error ? e.message : "Erro ao criar cupom" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Plus className="h-4 w-4 text-primary" /> Criar cupom manual
+        </CardTitle>
+        <CardDescription>
+          Cupom sem afiliado — toda conversão fica para a plataforma. O código é gerado automaticamente se deixado em branco.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-end gap-2">
+          <div className="flex-1 space-y-1">
+            <Label>Código (opcional)</Label>
+            <Input
+              value={form.code}
+              onChange={(e) => setForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
+              placeholder="Ex.: FREE-AB3K7M (deixe em branco para gerar)"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={randomCode} className="mb-0.5">
+            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Gerar
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label>Tipo de desconto</Label>
+            <select
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={form.discount_type}
+              onChange={(e) => setForm((p) => ({ ...p, discount_type: e.target.value as "percent" | "amount" }))}
+            >
+              <option value="percent">Percentual (%)</option>
+              <option value="amount">Valor fixo (centavos)</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Valor</Label>
+            <Input
+              type="number"
+              min="0"
+              value={form.discount_value}
+              onChange={(e) => setForm((p) => ({ ...p, discount_value: e.target.value }))}
+              placeholder={form.discount_type === "percent" ? "Ex.: 20" : "Ex.: 3000 (= R$ 30)"}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Teto de desconto (centavos)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={form.max_discount_cents}
+              onChange={(e) => setForm((p) => ({ ...p, max_discount_cents: e.target.value }))}
+              placeholder="Opcional"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Pedido mínimo (centavos)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={form.min_order_cents}
+              onChange={(e) => setForm((p) => ({ ...p, min_order_cents: e.target.value }))}
+              placeholder="Padrão: 0"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Usos máximos</Label>
+            <Input
+              type="number"
+              min="1"
+              value={form.max_uses}
+              onChange={(e) => setForm((p) => ({ ...p, max_uses: e.target.value }))}
+              placeholder="Ilimitado"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Expira em</Label>
+            <Input
+              type="datetime-local"
+              value={form.expires_at}
+              onChange={(e) => setForm((p) => ({ ...p, expires_at: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        {created && (
+          <div className="rounded-md bg-muted px-3 py-2 text-sm font-mono">
+            Código gerado: <span className="text-primary font-semibold">{created.code}</span>
+          </div>
+        )}
+
+        {feedback && <Banner ok={feedback.ok} msg={feedback.msg} />}
+
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving || !form.discount_value}>
+            {saving ? "Criando…" : "Criar cupom"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ─────────────────────────────── Página raiz ───────────────────────────────
 export default function CouponsAdminPage() {
   const router = useRouter()
@@ -762,6 +918,7 @@ export default function CouponsAdminPage() {
     { id: "discount", label: "Descontos", icon: <Percent className="h-4 w-4" /> },
     { id: "commission", label: "Comissões", icon: <Wallet className="h-4 w-4" /> },
     { id: "specific", label: "Cupons específicos", icon: <Search className="h-4 w-4" /> },
+    { id: "create", label: "Criar cupom", icon: <Plus className="h-4 w-4" /> },
   ]
 
   return (
@@ -804,6 +961,7 @@ export default function CouponsAdminPage() {
         {tab === "discount" && <DiscountTab />}
         {tab === "commission" && <CommissionTab />}
         {tab === "specific" && <SpecificTab />}
+        {tab === "create" && <CreateManualCouponTab />}
       </main>
     </div>
   )

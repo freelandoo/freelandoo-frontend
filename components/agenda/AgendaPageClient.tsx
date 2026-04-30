@@ -155,6 +155,7 @@ export default function AgendaPageClient({
     name: "", description: "", duration_minutes: 60, price_reais: "0,00", is_active: true,
     member_profile_ids: [] as string[],
   })
+  const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
 
   const headers = useCallback(() => {
     const token = getToken()
@@ -168,6 +169,13 @@ export default function AgendaPageClient({
   useEffect(() => {
     if (!getToken()) router.replace("/login")
   }, [router])
+
+  useEffect(() => {
+    fetch("/api/public/booking-fees")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setBookingFees({ stripe_fee_percent: d.stripe_fee_percent ?? 0, service_fee_cents: d.service_fee_cents ?? 0 }) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!getToken()) return
@@ -719,13 +727,44 @@ export default function AgendaPageClient({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Valor total (R$)</label>
+                  <label className="block text-xs text-zinc-400 mb-1">Valor que você quer receber (R$)</label>
                   <input type="text" value={serviceForm.price_reais}
                     onChange={e => setServiceForm(f => ({ ...f, price_reais: e.target.value }))}
                     placeholder="0,00"
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono" />
                 </div>
               </div>
+
+              {/* Preview de taxas */}
+              {(() => {
+                const baseCents = parsePriceReais(serviceForm.price_reais)
+                const stripeFee = Math.round(baseCents * bookingFees.stripe_fee_percent / 100)
+                const serviceFee = bookingFees.service_fee_cents
+                const clientTotal = baseCents + stripeFee + serviceFee
+                const hasFees = bookingFees.stripe_fee_percent > 0 || bookingFees.service_fee_cents > 0
+                if (!hasFees || baseCents <= 0) return null
+                return (
+                  <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-2 text-xs">
+                    <p className="text-zinc-400 font-medium mb-3">Resumo do valor</p>
+                    <div className="flex justify-between text-zinc-300">
+                      <span>Você recebe</span>
+                      <span className="font-mono">{centsToReais(baseCents)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-400">
+                      <span>Taxa Stripe ({bookingFees.stripe_fee_percent}%)</span>
+                      <span className="font-mono text-yellow-500/80">+ {centsToReais(stripeFee)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-400">
+                      <span>Taxa da plataforma (fixo)</span>
+                      <span className="font-mono text-yellow-500/80">+ {centsToReais(serviceFee)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-zinc-700 pt-2 font-semibold text-sm">
+                      <span className="text-zinc-200">Cliente pagará</span>
+                      <span className="font-mono text-yellow-400">{centsToReais(clientTotal)}</span>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Seletor de membros — só para clan */}
               {isClan && clanMembers.length > 0 && (
