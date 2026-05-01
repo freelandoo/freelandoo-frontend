@@ -14,6 +14,8 @@ type RankingPro = {
   visits_count: number
   likes_count: number
   position_machine: number | null
+  is_clan?: boolean
+  members_count?: number | null
 }
 
 const TABS = MACHINES.filter((m) => m.id !== "oportunidades")
@@ -117,6 +119,8 @@ export function RankingSection() {
                 visits={pro.visits_count}
                 likes={pro.likes_count}
                 machine={machine}
+                is_clan={pro.is_clan}
+                members_count={pro.members_count}
               />
             ))
           )}

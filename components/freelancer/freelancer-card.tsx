@@ -36,6 +36,8 @@ interface Creator {
   profile_statuses: ProfileStatus[]
   redes_sociais: RedeSocial[]
   machine_slug?: string | null
+  is_clan?: boolean
+  members_count?: number | null
 }
 
 interface FreelancerCardProps {
@@ -95,6 +97,10 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
   const redesRestantes = Math.max(0, redesOrdenadas.length - 3)
 
   const handleVerPerfil = () => {
+    if (creator.is_clan) {
+      router.push(`/clans/${creator.id_profile}`)
+      return
+    }
     if (creator.username && creator.profession_slug) {
       router.push(
         buildProfileUrl({
@@ -215,13 +221,19 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
                 : undefined
             }
           >
-            {creator.category}
+            {creator.is_clan
+              ? `Clan${creator.members_count ? ` · ${creator.members_count} membro${creator.members_count !== 1 ? "s" : ""}` : ""}`
+              : creator.category}
           </Badge>
           <span className="text-xs text-muted-foreground">{creator.municipio}, {creator.estado}</span>
         </div>
 
         <div className="space-y-2">
-          {creator.redes_sociais && creator.redes_sociais.length > 0 ? (
+          {creator.is_clan ? (
+            <p className="text-sm text-muted-foreground text-center">
+              Equipe colaborativa
+            </p>
+          ) : creator.redes_sociais && creator.redes_sociais.length > 0 ? (
             <div className="flex items-flex-start gap-4 justify-center">
               {redesExibidas.map((rede) => (
                 <div key={rede.social_id} className="flex flex-col items-center gap-1">

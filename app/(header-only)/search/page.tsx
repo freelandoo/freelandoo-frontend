@@ -190,6 +190,8 @@ interface Creator {
   redes_sociais: RedeSocial[]
   id_machine?: number | null
   machine_slug?: string | null
+  is_clan?: boolean
+  members_count?: number | null
 }
 
 const ESTADOS = [
@@ -409,27 +411,29 @@ function SearchPageInner() {
 
         // Step 1: Enrich EVERY creator with machine_slug from their category.
         // This is critical — the backend may return machine_slug: null.
-        // The CATEGORY_TO_MACHINE map bridges the gap.
+        // The CATEGORY_TO_MACHINE map bridges the gap. Clans pulam — o
+        // backend já filtra por máquina/profissão via membros.
         list.forEach((c) => {
-          if (!c.machine_slug) {
+          if (!c.is_clan && !c.machine_slug) {
             c.machine_slug = resolveMachineFromCategory(c.category)
           }
         })
 
-        // Step 2: Filter by selected machine (client-side)
-        // ALWAYS apply when a machine is selected — even if result is empty
+        // Step 2: Filter by selected machine (client-side).
+        // Clans pulam — passam pelo filtro server-side via membros.
         if (activeMachine) {
           list = list.filter(
-            (c) => c.machine_slug === activeMachine.slug
+            (c) => c.is_clan || c.machine_slug === activeMachine.slug
           )
         }
 
-        // Step 3: Filter by selected category/profession
+        // Step 3: Filter by selected category/profession (clans pulam).
         if (activeCategory) {
           list = list.filter(
             (c) =>
-              c.category &&
-              c.category.toLowerCase() === activeCategory.desc_category.toLowerCase()
+              c.is_clan ||
+              (c.category &&
+                c.category.toLowerCase() === activeCategory.desc_category.toLowerCase())
           )
         }
 

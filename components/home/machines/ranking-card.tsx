@@ -15,6 +15,8 @@ type RankingCardProps = {
   visits: number
   likes: number
   machine: MachineTheme
+  is_clan?: boolean
+  members_count?: number | null
 }
 
 function StarRating({ value }: { value: number }) {
@@ -46,7 +48,13 @@ export function RankingCard({
   visits,
   likes,
   machine,
+  is_clan,
+  members_count,
 }: RankingCardProps) {
+  const profileHref = is_clan ? `/clans/${id_profile}` : `/freelancer/${id_profile}`
+  const specialtyLabel = is_clan
+    ? `Clan${members_count ? ` · ${members_count} membro${members_count !== 1 ? "s" : ""}` : ""}`
+    : specialty
   const isTop = rank === 1
   const initials = name
     .split(" ")
@@ -107,7 +115,7 @@ export function RankingCard({
         {/* Info */}
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-semibold text-white">{name}</h4>
-          <p className="truncate text-xs text-white/50">{specialty}</p>
+          <p className="truncate text-xs text-white/50">{specialtyLabel}</p>
           <div className="mt-1 flex items-center gap-3 text-[10px] text-white/40">
             <span className="flex items-center gap-1">
               <Eye className="h-3 w-3" />
@@ -133,7 +141,7 @@ export function RankingCard({
 
         {/* Profile link */}
         <Link
-          href={`/freelancer/${id_profile}`}
+          href={profileHref}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white text-xs font-bold"
           aria-label={`Ver perfil de ${name}`}
         >
