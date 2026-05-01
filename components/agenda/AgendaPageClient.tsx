@@ -735,14 +735,13 @@ export default function AgendaPageClient({
                 </div>
               </div>
 
-              {/* Preview de taxas */}
+              {/* Preview de taxas — aparece sempre que há um valor digitado */}
               {(() => {
                 const baseCents = parsePriceReais(serviceForm.price_reais)
+                if (baseCents <= 0) return null
                 const stripeFee = Math.round(baseCents * bookingFees.stripe_fee_percent / 100)
                 const serviceFee = bookingFees.service_fee_cents
                 const clientTotal = baseCents + stripeFee + serviceFee
-                const hasFees = bookingFees.stripe_fee_percent > 0 || bookingFees.service_fee_cents > 0
-                if (!hasFees || baseCents <= 0) return null
                 return (
                   <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-2 text-xs">
                     <p className="text-zinc-400 font-medium mb-3">Resumo do valor</p>
@@ -751,11 +750,11 @@ export default function AgendaPageClient({
                       <span className="font-mono">{centsToReais(baseCents)}</span>
                     </div>
                     <div className="flex justify-between text-zinc-400">
-                      <span>Taxa Stripe ({bookingFees.stripe_fee_percent}%)</span>
+                      <span>Taxa da maquininha ({bookingFees.stripe_fee_percent}%)</span>
                       <span className="font-mono text-yellow-500/80">+ {centsToReais(stripeFee)}</span>
                     </div>
                     <div className="flex justify-between text-zinc-400">
-                      <span>Taxa da plataforma (fixo)</span>
+                      <span>Taxa de serviço (fixo)</span>
                       <span className="font-mono text-yellow-500/80">+ {centsToReais(serviceFee)}</span>
                     </div>
                     <div className="flex justify-between border-t border-zinc-700 pt-2 font-semibold text-sm">
