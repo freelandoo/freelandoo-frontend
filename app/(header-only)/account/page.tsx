@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
+import { AccountClansSection } from "@/components/account/account-clans-section"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -1483,6 +1484,9 @@ export default function PerfilPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Meus Clans */}
+          <AccountClansSection />
         </div>
       </main>
 
