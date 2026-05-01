@@ -109,7 +109,7 @@ export function AccountClansSection() {
               return (
                 <Link
                   key={c.id_profile}
-                  href={`/account/clans/${c.id_profile}`}
+                  href={`/clans/${c.id_profile}`}
                   className="block"
                 >
                   <Card className="hover:shadow-md hover:border-primary/40 transition-all h-full">
