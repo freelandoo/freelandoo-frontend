@@ -8,6 +8,7 @@ interface ProfileById {
   id_profile: string
   username?: string | null
   profession_slug?: string | null
+  sub_profile_slug?: string | null
   municipio?: string | null
   is_visible?: boolean
   is_paid?: boolean
@@ -62,6 +63,7 @@ export default async function FreelancerProfilePage({
         profession_slug: profile.profession_slug,
         municipio: profile.municipio,
         handle: profile.username,
+        sub_profile_slug: profile.sub_profile_slug ?? null,
       })
     )
   }

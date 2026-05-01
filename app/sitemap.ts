@@ -69,6 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           profession_slug: profile.profession_slug,
           municipio: profile.municipio,
           handle: profile.username,
+          sub_profile_slug: profile.sub_profile_slug ?? null,
         })
         
         routes.push({

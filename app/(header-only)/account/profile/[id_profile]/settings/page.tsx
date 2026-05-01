@@ -143,8 +143,17 @@ export default function ProfileSettingsPage() {
   const isPublished = !!profile.is_published
 
   const handle = perfil?.username || ""
-  const slug = profile.sub_profile_slug || profile.profession_slug || null
-  const canonicalPath = slug && handle ? buildProfileUrl({ profession_slug: slug, municipio: profile.municipio, handle }) : null
+  const professionSlug = profile.profession_slug || null
+  const subProfileSlug = profile.sub_profile_slug || null
+  const canonicalPath =
+    professionSlug && handle && subProfileSlug
+      ? buildProfileUrl({
+          profession_slug: professionSlug,
+          municipio: profile.municipio,
+          handle,
+          sub_profile_slug: subProfileSlug,
+        })
+      : null
   const canonicalUrl = canonicalPath
     ? (typeof window !== "undefined" ? `${window.location.origin}${canonicalPath}` : canonicalPath)
     : null

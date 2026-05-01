@@ -28,6 +28,7 @@ interface Creator {
   municipio: string
   category: string
   profession_slug?: string | null
+  sub_profile_slug?: string | null
   id_user: string
   username?: string | null
   user_nome: string
@@ -100,6 +101,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           profession_slug: creator.profession_slug,
           municipio: creator.municipio,
           handle: creator.username,
+          sub_profile_slug: creator.sub_profile_slug ?? null,
         })
       )
       return
