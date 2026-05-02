@@ -10,6 +10,7 @@ export {
   MachinesHeroSection,
   ConceptSection,
   HorizontalMachinesSection,
+  MachinesGridSection,
   RankingSection,
   HowItWorksSection,
   NewCategoriesSection,

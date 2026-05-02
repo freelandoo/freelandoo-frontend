@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import {
   MachinesHeroSection,
   SegmentationCards,
-  HorizontalMachinesSection,
+  MachinesGridSection,
   PopularShortcutsSection,
   RankingSection,
   HowItWorksSection,
@@ -43,7 +43,7 @@ export default function HomePage() {
       />
       <MachinesHeroSection />
       <SegmentationCards />
-      <HorizontalMachinesSection />
+      <MachinesGridSection />
       <PopularShortcutsSection />
       <RankingSection />
       <HowItWorksSection />
