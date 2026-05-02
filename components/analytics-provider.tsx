@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Analytics, track } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next"
+import { track } from "@vercel/analytics"
 
 const CONSENT_KEY = "fl_cookie_consent"
 
