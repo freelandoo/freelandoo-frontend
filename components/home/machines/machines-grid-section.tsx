@@ -220,17 +220,17 @@ export function MachinesGridSection() {
 
           <div
             ref={scrollerRef}
-            className="machines-scroller flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-4 pt-2 md:gap-5 md:px-12 lg:px-20"
+            className="machines-scroller snap-x snap-mandatory overflow-x-auto scroll-smooth pb-4 pt-2"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
             }}
           >
-            {machines.map((m, i) => (
-              <MachineCard key={m.id} machine={m} index={i} />
-            ))}
-            {/* Trailing spacer so last card doesn't sit flush against the edge */}
-            <div aria-hidden className="shrink-0 pr-2" />
+            <div className="mx-auto flex w-max gap-4 px-4 md:gap-5 md:px-12 lg:px-20">
+              {machines.map((m, i) => (
+                <MachineCard key={m.id} machine={m} index={i} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
