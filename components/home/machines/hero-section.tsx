@@ -58,7 +58,7 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-5 max-w-md text-pretty text-sm text-white/70 md:text-base md:leading-relaxed"
           >
-            Profissionais organizados por intenção. Escolha o que você precisa, veja opções reais e fale direto pelo WhatsApp. Sem intermediação. Sem comissão.
+            Na Freelandoo, você encontra profissionais, divulga seus serviços e ainda pode ganhar dinheiro indicando amigos.
           </motion.p>
 
           <motion.div
