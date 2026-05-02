@@ -45,7 +45,7 @@ export function HeroSection() {
           <AnimatedHeadline
             className="text-balance text-3xl leading-[1.05] sm:text-4xl md:text-5xl lg:text-6xl"
             lines={[
-              "Ative a máquina certa.",
+              "Ative a máquina de resultados.",
               "Encontre quem resolve.",
             ]}
             highlightIndex={1}
