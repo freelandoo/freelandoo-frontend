@@ -14,29 +14,36 @@ import {
   Laptop,
 } from "lucide-react"
 
-const SHORTCUTS = [
-  { label: "Design", icon: Palette, href: "/search?q=design" },
-  { label: "Marketing", icon: TrendingUp, href: "/search?q=marketing" },
-  { label: "Construção", icon: HardHat, href: "/search?machine=construcao" },
-  { label: "Limpeza", icon: Sparkles, href: "/search?machine=limpeza" },
-  { label: "Influenciadores", icon: Megaphone, href: "/search?machine=divulgacao" },
-  { label: "Aulas", icon: GraduationCap, href: "/search?q=aulas" },
-  { label: "Reformas", icon: Hammer, href: "/search?q=reformas" },
-  { label: "Freelas digitais", icon: Laptop, href: "/search?q=freela+digital" },
+type Shortcut = {
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  href: string
+  tint: string
+}
+
+const SHORTCUTS: Shortcut[] = [
+  { label: "Design", icon: Palette, href: "/search?q=design", tint: "#a78bfa" },
+  { label: "Marketing", icon: TrendingUp, href: "/search?q=marketing", tint: "#38bdf8" },
+  { label: "Construção", icon: HardHat, href: "/search?machine=construcao", tint: "#fb923c" },
+  { label: "Limpeza", icon: Sparkles, href: "/search?machine=limpeza", tint: "#34d399" },
+  { label: "Influenciadores", icon: Megaphone, href: "/search?machine=divulgacao", tint: "#fb7185" },
+  { label: "Aulas", icon: GraduationCap, href: "/search?q=aulas", tint: "#fbbf24" },
+  { label: "Reformas", icon: Hammer, href: "/search?q=reformas", tint: "#f59e0b" },
+  { label: "Freelas digitais", icon: Laptop, href: "/search?q=freela+digital", tint: "#2dd4bf" },
 ]
 
 export function PopularShortcutsSection() {
   return (
     <section
-      aria-label="Atalhos populares"
+      aria-label="Categorias populares"
       className="relative bg-machines-dark py-12 text-white md:py-16"
     >
       <div className="container relative z-10 mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 md:text-xs">
-            Atalhos populares
+            Categorias populares
           </p>
-          <h3 className="mt-2 text-balance text-base font-medium text-white/70 md:text-lg">
+          <h3 className="mt-2 text-balance text-base font-medium text-white/75 md:text-lg">
             Prefere começar por categoria?
           </h3>
         </div>
@@ -46,7 +53,8 @@ export function PopularShortcutsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.5 }}
-          className="mx-auto mt-6 grid max-w-5xl grid-cols-2 gap-2 sm:grid-cols-4 md:gap-3"
+          className="shortcuts-scroller mx-auto mt-7 flex max-w-5xl gap-3 overflow-x-auto px-1 pb-2 md:grid md:grid-cols-8 md:gap-3 md:overflow-visible md:px-0"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {SHORTCUTS.map((s) => {
             const Icon = s.icon
@@ -56,10 +64,27 @@ export function PopularShortcutsSection() {
                 href={s.href}
                 data-cta="popular-shortcut"
                 data-cta-action={`shortcut-${s.label.toLowerCase()}`}
-                className="group flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-2.5 text-xs text-white/65 backdrop-blur transition hover:border-primary/40 hover:bg-white/[0.05] hover:text-white md:text-sm"
+                className="group flex h-[100px] w-[96px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.025] p-2.5 text-center backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-white/[0.05] md:h-[104px] md:w-auto"
+                style={{ boxShadow: "0 0 0 0 transparent" }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px -10px ${s.tint}66`
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 0 transparent`
+                }}
               >
-                <Icon className="h-4 w-4 shrink-0 text-white/45 transition-colors group-hover:text-primary" />
-                <span className="truncate">{s.label}</span>
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 transition-transform duration-300 group-hover:scale-[1.06]"
+                  style={{
+                    background: `${s.tint}1a`,
+                    color: s.tint,
+                  }}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="line-clamp-2 text-[11px] font-medium leading-tight text-white/75 transition-colors group-hover:text-white">
+                  {s.label}
+                </span>
               </Link>
             )
           })}
@@ -77,6 +102,12 @@ export function PopularShortcutsSection() {
           </Link>
         </div>
       </div>
+
+      <style jsx>{`
+        .shortcuts-scroller::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   )
 }
