@@ -78,7 +78,7 @@ export function HeroSection() {
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
             </Link>
             <Link
-              href="#afiliados"
+              href="/cadastro?intent=afiliado"
               data-cta="hero-secondary"
               data-cta-action="ganhar-dinheiro"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/30 hover:bg-white/10"
