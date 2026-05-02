@@ -3,33 +3,18 @@
 import { useRef } from "react"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
+import * as Icons from "lucide-react"
 import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Play,
-  Megaphone,
   Sparkles,
-  HardHat,
-  TrendingUp,
-  Heart,
-  PawPrint,
-  Briefcase,
 } from "lucide-react"
-import { MACHINES, type MachineId, type MachineTheme } from "./tokens"
+import { useMachinesCatalog, type CatalogMachine } from "./use-machines-catalog"
 
-const ICONS: Record<MachineId, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  views: Play,
-  divulgacao: Megaphone,
-  limpeza: Sparkles,
-  construcao: HardHat,
-  negocios: TrendingUp,
-  oportunidades: Briefcase,
-  saude_beleza: Heart,
-  saude_pet: PawPrint,
-}
+const FALLBACK_DESCRIPTION = "Profissionais selecionados para esta intenção."
 
-const DESCRIPTIONS: Record<MachineId, string> = {
+const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   views: "Conteúdo, edição, roteiros e crescimento digital.",
   divulgacao: "Creators, influenciadores e campanhas que geram alcance.",
   limpeza: "Faxina, organização e serviços de apoio.",
@@ -40,21 +25,41 @@ const DESCRIPTIONS: Record<MachineId, string> = {
   saude_pet: "Banho, tosa, passeio e cuidados para pets.",
 }
 
-const ORDER: MachineId[] = [
-  "views",
-  "divulgacao",
-  "limpeza",
-  "construcao",
-  "negocios",
-  "oportunidades",
-  "saude_beleza",
-  "saude_pet",
-]
+const COLOR_FALLBACKS = {
+  from: "#6d28d9",
+  to: "#2563eb",
+  glow: "rgba(139,92,246,0.45)",
+  ring: "rgba(139,92,246,0.7)",
+  accent: "#a78bfa",
+  text: "#ddd6fe",
+}
 
-function MachineCard({ machine, index }: { machine: MachineTheme; index: number }) {
-  const Icon = ICONS[machine.id]
-  const description = DESCRIPTIONS[machine.id]
+type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+
+function resolveIcon(name: string | null | undefined): IconComponent {
+  if (!name) return Sparkles
+  const candidate = (Icons as unknown as Record<string, unknown>)[name]
+  if (candidate && typeof candidate === "object") return candidate as IconComponent
+  return Sparkles
+}
+
+function resolveDescription(machine: CatalogMachine): string {
+  if (machine.description && machine.description.trim()) return machine.description
+  return FALLBACK_DESCRIPTIONS[machine.slug] ?? FALLBACK_DESCRIPTION
+}
+
+function MachineCard({ machine, index }: { machine: CatalogMachine; index: number }) {
+  const Icon = resolveIcon(machine.icon_name)
+  const description = resolveDescription(machine)
   const reduceMotion = useReducedMotion()
+
+  const colors = {
+    from: machine.color_from || COLOR_FALLBACKS.from,
+    to: machine.color_to || COLOR_FALLBACKS.to,
+    glow: machine.color_glow || COLOR_FALLBACKS.glow,
+    ring: machine.color_ring || COLOR_FALLBACKS.ring,
+    accent: machine.color_accent || COLOR_FALLBACKS.accent,
+  }
 
   return (
     <motion.div
@@ -65,69 +70,60 @@ function MachineCard({ machine, index }: { machine: MachineTheme; index: number 
       className="shrink-0 snap-start"
     >
       <Link
-        href={`/search?machine=${machine.id}`}
+        href={`/search?machine=${machine.slug}`}
         data-cta="machine-grid"
-        data-cta-action={`ativar-${machine.id}`}
+        data-cta-action={`ativar-${machine.slug}`}
         className="group relative flex h-[260px] w-[180px] flex-col items-center overflow-hidden rounded-3xl border border-white/10 bg-[#0b0d14] p-5 text-center transition-all duration-300 hover:-translate-y-1 sm:h-[280px] sm:w-[200px] sm:p-6"
-        style={{
-          boxShadow: "0 0 0 0 transparent",
-        }}
+        style={{ boxShadow: "0 0 0 0 transparent" }}
         onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 50px -16px ${machine.colors.glow}, inset 0 0 0 1px ${machine.colors.ring}`
+          ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 50px -16px ${colors.glow}, inset 0 0 0 1px ${colors.ring}`
         }}
         onMouseLeave={(e) => {
           ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 0 transparent`
         }}
       >
-        {/* Background tint */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
-            background: `radial-gradient(ellipse at 50% 0%, ${machine.colors.from}1f, transparent 65%)`,
+            background: `radial-gradient(ellipse at 50% 0%, ${colors.from}1f, transparent 65%)`,
           }}
         />
-        {/* Hover glow */}
         <div
           aria-hidden
           className="pointer-events-none absolute -top-12 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full opacity-50 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
-          style={{ background: machine.colors.glow }}
+          style={{ background: colors.glow }}
         />
 
-        {/* Icon */}
         <div
           className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 transition-transform duration-300 group-hover:scale-[1.06]"
           style={{
-            background: `linear-gradient(135deg, ${machine.colors.from}40, ${machine.colors.to}1f)`,
-            boxShadow: `0 0 24px -6px ${machine.colors.glow}`,
+            background: `linear-gradient(135deg, ${colors.from}40, ${colors.to}1f)`,
+            boxShadow: `0 0 24px -6px ${colors.glow}`,
           }}
         >
-          <Icon className="h-7 w-7" style={{ color: machine.colors.accent }} />
+          <Icon className="h-7 w-7" style={{ color: colors.accent }} />
         </div>
 
-        {/* Title */}
         <h3 className="relative mt-4 text-sm font-semibold leading-tight text-white sm:text-[15px]">
           {machine.name}
         </h3>
 
-        {/* Description */}
         <p className="relative mt-1.5 line-clamp-3 text-[11px] leading-snug text-white/55 sm:text-xs">
           {description}
         </p>
 
-        {/* CTA — premium pill, sticky to bottom */}
         <div className="relative mt-auto pt-4">
           <span
             className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-all duration-300 group-hover:gap-2 sm:text-xs"
             style={{
-              background: `linear-gradient(135deg, ${machine.colors.from}, ${machine.colors.to})`,
+              background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
               color: "#fff",
-              boxShadow: `0 0 0 1px ${machine.colors.ring}, 0 6px 22px -6px ${machine.colors.glow}`,
+              boxShadow: `0 0 0 1px ${colors.ring}, 0 6px 22px -6px ${colors.glow}`,
             }}
           >
             <span className="relative z-10">Ativar</span>
             <ArrowRight className="relative z-10 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
-            {/* Sheen */}
             <span
               aria-hidden
               className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full"
@@ -140,8 +136,10 @@ function MachineCard({ machine, index }: { machine: MachineTheme; index: number 
 }
 
 export function MachinesGridSection() {
-  const machines = ORDER.map((id) => MACHINES.find((m) => m.id === id)!).filter(Boolean)
+  const { machines, loading } = useMachinesCatalog()
   const scrollerRef = useRef<HTMLDivElement>(null)
+
+  const visible = machines.filter((m) => m.is_active)
 
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollerRef.current
@@ -188,9 +186,7 @@ export function MachinesGridSection() {
           </p>
         </motion.div>
 
-        {/* Scroller */}
         <div className="relative mt-10 md:mt-12">
-          {/* Edge fades */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-0 z-20 w-12 bg-gradient-to-r from-machines-dark to-transparent md:w-20"
@@ -200,7 +196,6 @@ export function MachinesGridSection() {
             className="pointer-events-none absolute inset-y-0 right-0 z-20 w-12 bg-gradient-to-l from-machines-dark to-transparent md:w-20"
           />
 
-          {/* Arrow buttons (desktop) */}
           <button
             type="button"
             onClick={() => scrollBy(-1)}
@@ -227,8 +222,13 @@ export function MachinesGridSection() {
             }}
           >
             <div className="mx-auto flex w-max gap-4 px-4 md:gap-5 md:px-12 lg:px-20">
-              {machines.map((m, i) => (
-                <MachineCard key={m.id} machine={m} index={i} />
+              {visible.length === 0 && !loading && (
+                <p className="px-4 py-12 text-center text-sm text-white/40">
+                  Nenhuma máquina ativa no momento.
+                </p>
+              )}
+              {visible.map((m, i) => (
+                <MachineCard key={m.id_machine} machine={m} index={i} />
               ))}
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   Pencil,
   Check,
   X,
+  Trash2,
 } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -44,8 +45,34 @@ type Machine = {
   color_ring: string | null
   color_accent: string | null
   color_text: string | null
+  description: string | null
+  icon_name: string | null
   is_active: boolean
   categories: Category[]
+}
+
+const EMPTY_NEW_MACHINE = {
+  slug: "",
+  name: "",
+  description: "",
+  icon_name: "Sparkles",
+  color_from: "#6d28d9",
+  color_to: "#2563eb",
+  color_accent: "#a78bfa",
+  color_glow: "rgba(139,92,246,0.45)",
+  color_ring: "rgba(139,92,246,0.7)",
+  color_text: "#ddd6fe",
+}
+
+function autoSlug(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40)
 }
 
 export default function AdminMachinesPage() {
@@ -63,6 +90,8 @@ export default function AdminMachinesPage() {
   const [editMachine, setEditMachine] = useState<Machine | null>(null)
   const [editForm, setEditForm] = useState({
     name: "",
+    description: "",
+    icon_name: "",
     color_from: "",
     color_to: "",
     color_accent: "",
@@ -71,6 +100,11 @@ export default function AdminMachinesPage() {
     color_text: "",
   })
   const [savingEdit, setSavingEdit] = useState(false)
+
+  const [creatingOpen, setCreatingOpen] = useState(false)
+  const [createForm, setCreateForm] = useState(EMPTY_NEW_MACHINE)
+  const [savingCreate, setSavingCreate] = useState(false)
+  const [slugTouched, setSlugTouched] = useState(false)
 
   const [editingCat, setEditingCat] = useState<{ id: number; value: string } | null>(null)
 
@@ -200,6 +234,8 @@ export default function AdminMachinesPage() {
     setEditMachine(m)
     setEditForm({
       name: m.name,
+      description: m.description || "",
+      icon_name: m.icon_name || "",
       color_from: m.color_from || "",
       color_to: m.color_to || "",
       color_accent: m.color_accent || "",
@@ -207,6 +243,59 @@ export default function AdminMachinesPage() {
       color_ring: m.color_ring || "",
       color_text: m.color_text || "",
     })
+  }
+
+  async function handleCreateMachine() {
+    if (!token) return
+    if (!createForm.name.trim()) {
+      alert("Nome obrigatório")
+      return
+    }
+    setSavingCreate(true)
+    try {
+      const payload = {
+        ...createForm,
+        slug: createForm.slug.trim() || autoSlug(createForm.name),
+      }
+      const res = await fetch(`/api/admin/machines`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `HTTP ${res.status}`)
+      }
+      setCreatingOpen(false)
+      setCreateForm(EMPTY_NEW_MACHINE)
+      setSlugTouched(false)
+      await loadMachines()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro")
+    } finally {
+      setSavingCreate(false)
+    }
+  }
+
+  async function handleDeleteMachine(m: Machine) {
+    if (!token) return
+    const confirmed = window.confirm(
+      `Excluir "${m.name}" PERMANENTEMENTE? As profissões vinculadas serão desvinculadas (não excluídas) e a máquina some da home, filtros e vitrine. Não dá para desfazer.`,
+    )
+    if (!confirmed) return
+    try {
+      const res = await fetch(`/api/admin/machines/${m.id_machine}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || `HTTP ${res.status}`)
+      }
+      await loadMachines()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao excluir")
+    }
   }
 
   async function saveEditMachine() {
@@ -248,14 +337,18 @@ export default function AdminMachinesPage() {
           Voltar
         </button>
 
-        <div className="mb-8 flex items-center gap-3">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           <Sparkles className="h-6 w-6 text-primary" />
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-semibold">Governança de Máquinas</h1>
             <p className="text-sm text-muted-foreground">
               Habilitar/desabilitar máquinas, gerenciar profissões e identidade visual.
             </p>
           </div>
+          <Button onClick={() => setCreatingOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            Nova máquina
+          </Button>
         </div>
 
         {loading ? (
@@ -300,7 +393,7 @@ export default function AdminMachinesPage() {
                       Editar
                     </Button>
                     <Button
-                      variant={m.is_active ? "destructive" : "default"}
+                      variant={m.is_active ? "outline" : "default"}
                       size="sm"
                       onClick={() => toggleMachine(m)}
                     >
@@ -313,6 +406,15 @@ export default function AdminMachinesPage() {
                           <Power className="h-3.5 w-3.5 mr-1" /> Ativar
                         </>
                       )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMachine(m)}
+                      title="Excluir permanentemente"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Excluir
                     </Button>
                   </div>
                 </CardHeader>
@@ -440,6 +542,24 @@ export default function AdminMachinesPage() {
                   onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Ícone (Lucide)</Label>
+                  <Input
+                    value={editForm.icon_name}
+                    onChange={(e) => setEditForm((p) => ({ ...p, icon_name: e.target.value }))}
+                    placeholder="Sparkles"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Descrição curta</Label>
+                  <Input
+                    value={editForm.description}
+                    onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
+                    placeholder="Texto curto que aparece no card"
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label>Cor inicial</Label>
@@ -505,6 +625,145 @@ export default function AdminMachinesPage() {
               </Button>
               <Button onClick={saveEditMachine} disabled={savingEdit}>
                 {savingEdit ? "Salvando…" : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={creatingOpen}
+          onOpenChange={(v) => {
+            if (!v) {
+              setCreatingOpen(false)
+              setCreateForm(EMPTY_NEW_MACHINE)
+              setSlugTouched(false)
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nova máquina</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Nome</Label>
+                  <Input
+                    value={createForm.name}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setCreateForm((p) => ({
+                        ...p,
+                        name,
+                        slug: slugTouched ? p.slug : autoSlug(name),
+                      }))
+                    }}
+                    placeholder="Máquina de Eventos"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Slug</Label>
+                  <Input
+                    value={createForm.slug}
+                    onChange={(e) => {
+                      setSlugTouched(true)
+                      setCreateForm((p) => ({ ...p, slug: e.target.value }))
+                    }}
+                    placeholder="eventos"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Ícone (Lucide)</Label>
+                  <Input
+                    value={createForm.icon_name}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, icon_name: e.target.value }))}
+                    placeholder="Sparkles"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Descrição curta</Label>
+                  <Input
+                    value={createForm.description}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, description: e.target.value }))
+                    }
+                    placeholder="Aparece no card da home"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label>Cor inicial</Label>
+                  <Input
+                    value={createForm.color_from}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_from: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Cor final</Label>
+                  <Input
+                    value={createForm.color_to}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_to: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Accent</Label>
+                  <Input
+                    value={createForm.color_accent}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_accent: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label>Glow</Label>
+                  <Input
+                    value={createForm.color_glow}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_glow: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Ring</Label>
+                  <Input
+                    value={createForm.color_ring}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_ring: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Texto</Label>
+                  <Input
+                    value={createForm.color_text}
+                    onChange={(e) =>
+                      setCreateForm((p) => ({ ...p, color_text: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <div
+                className="h-12 rounded-md border"
+                style={{
+                  background: `linear-gradient(135deg, ${createForm.color_from}, ${createForm.color_to})`,
+                }}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreatingOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateMachine} disabled={savingCreate}>
+                {savingCreate ? "Criando…" : "Criar máquina"}
               </Button>
             </DialogFooter>
           </DialogContent>

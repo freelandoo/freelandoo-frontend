@@ -11,7 +11,8 @@ export type CatalogCategory = {
 
 export type CatalogMachine = {
   id_machine: number
-  slug: MachineId
+  /** Slug do backend; pode ser uma máquina seed (MachineId) ou um slug custom criado via admin. */
+  slug: MachineId | string
   name: string
   display_order: number
   color_from: string | null
@@ -20,6 +21,8 @@ export type CatalogMachine = {
   color_ring: string | null
   color_accent: string | null
   color_text: string | null
+  description: string | null
+  icon_name: string | null
   is_active: boolean
   categories: CatalogCategory[]
 }
@@ -46,6 +49,8 @@ function buildSeedCatalog(): CatalogMachine[] {
     color_ring: m.colors.ring,
     color_accent: m.colors.accent,
     color_text: m.colors.text,
+    description: null,
+    icon_name: null,
     is_active: true,
     categories: m.resultCards.map((rc, ci) => ({
       id_category: -(i * 100 + ci + 1),
