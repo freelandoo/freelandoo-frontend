@@ -1,26 +1,32 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Zap, MessageSquareText, Handshake } from "lucide-react"
+import { Zap, MessageSquareText, Handshake, Star } from "lucide-react"
 
 const STEPS = [
   {
     icon: Zap,
     title: "Escolha uma máquina",
-    description: "Selecione a área que resolve o seu problema.",
+    description: "Selecione a intenção que melhor descreve o que você precisa.",
     color: "#f2c409",
   },
   {
     icon: MessageSquareText,
     title: "Diga o que você quer",
-    description: "A plataforma interpreta sua intenção e ativa a busca.",
+    description: "A Freelandoo direciona sua busca para os profissionais certos.",
     color: "#a78bfa",
   },
   {
     icon: Handshake,
     title: "Fale direto com quem resolve",
-    description: "Sem intermediação, sem excesso de etapas, sem perder tempo.",
+    description: "Abra o perfil, veja informações e chame pelo WhatsApp.",
     color: "#34d399",
+  },
+  {
+    icon: Star,
+    title: "Resolva e avalie",
+    description: "Combine valores, prazos e entrega diretamente com o profissional.",
+    color: "#38bdf8",
   },
 ]
 
@@ -46,13 +52,13 @@ export function HowItWorksSection() {
           </h2>
         </motion.div>
 
-        <div className="relative mx-auto mt-16 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3 md:gap-4">
+        <div className="relative mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
           {/* Connecting line (desktop only) */}
           <div
             aria-hidden
-            className="absolute left-[16.67%] right-[16.67%] top-[44px] hidden h-px md:block"
+            className="absolute left-[12.5%] right-[12.5%] top-[44px] hidden h-px md:block"
             style={{
-              background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.15), rgba(255,255,255,0.05))",
+              background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.18), rgba(255,255,255,0.05))",
             }}
           />
 

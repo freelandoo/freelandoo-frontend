@@ -1,11 +1,15 @@
 import type { Metadata } from "next"
 import {
   MachinesHeroSection,
+  SegmentationCards,
   HorizontalMachinesSection,
+  PopularShortcutsSection,
   RankingSection,
   HowItWorksSection,
   NewCategoriesSection,
   TrustSection,
+  ForProfessionalsSection,
+  AffiliatesSection,
   FinalCTASection,
 } from "@/components/home"
 
@@ -38,11 +42,15 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
       <MachinesHeroSection />
+      <SegmentationCards />
       <HorizontalMachinesSection />
+      <PopularShortcutsSection />
       <RankingSection />
       <HowItWorksSection />
       <NewCategoriesSection />
       <TrustSection />
+      <ForProfessionalsSection />
+      <AffiliatesSection />
       <FinalCTASection />
     </main>
   )

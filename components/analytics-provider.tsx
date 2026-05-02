@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics, track } from "@vercel/analytics/next"
 
 const CONSENT_KEY = "fl_cookie_consent"
 
@@ -14,6 +14,27 @@ export function AnalyticsProvider() {
     window.addEventListener("cookieConsentChanged", check)
     return () => window.removeEventListener("cookieConsentChanged", check)
   }, [])
+
+  useEffect(() => {
+    if (!consented) return
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      const el = target?.closest<HTMLElement>("[data-cta]")
+      if (!el) return
+      const cta = el.dataset.cta
+      const action = el.dataset.ctaAction
+      if (!cta) return
+      track("cta_click", {
+        cta,
+        action: action ?? "",
+        href: el.getAttribute("href") ?? "",
+      })
+    }
+
+    document.addEventListener("click", onClick, { capture: true })
+    return () => document.removeEventListener("click", onClick, { capture: true })
+  }, [consented])
 
   if (!consented) return null
   return <Analytics />

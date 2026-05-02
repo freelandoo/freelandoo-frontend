@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
+import { ArrowRight } from "lucide-react"
 import { MACHINES, type MachineId } from "./tokens"
 import { RankingCard } from "./ranking-card"
 
@@ -103,9 +105,23 @@ export function RankingSection() {
               ))}
             </div>
           ) : pros.length === 0 ? (
-            <p className="py-12 text-center text-sm text-white/30">
-              Nenhum profissional no ranking ainda. Seja o primeiro!
-            </p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center backdrop-blur">
+              <p className="text-sm text-white/70">
+                Ainda estamos ativando profissionais nesta máquina.
+              </p>
+              <p className="mt-1 text-xs text-white/40">
+                Seja um dos primeiros a aparecer aqui.
+              </p>
+              <Link
+                href="/cadastro"
+                data-cta="ranking-empty"
+                data-cta-action="ativar-perfil-empty"
+                className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition hover:gap-2"
+              >
+                Ativar meu perfil
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           ) : (
             pros.map((pro, i) => (
               <RankingCard
@@ -125,6 +141,20 @@ export function RankingSection() {
             ))
           )}
         </div>
+
+        {pros.length > 0 && (
+          <div className="mt-10 flex justify-center">
+            <Link
+              href={`/search?machine=${activeTab}`}
+              data-cta="ranking"
+              data-cta-action="ver-destaque"
+              className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white/85 backdrop-blur transition hover:border-white/30 hover:bg-white/10"
+            >
+              Ver profissionais em destaque
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   )

@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight, Sparkles, MessageCircle, Percent, MapPin } from "lucide-react"
 import { FloatingParticles } from "./floating-particles"
 import { AnimatedHeadline } from "./animated-headline"
 
@@ -116,14 +116,14 @@ export function HeroSection() {
               className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] uppercase tracking-[0.2em] text-white/70 backdrop-blur"
             >
               <Sparkles className="h-3 w-3 text-primary" />
-              Sistema de ativação de resultados
+              A nova forma de encontrar e ser encontrado
             </motion.div>
 
             <AnimatedHeadline
-              className="text-balance text-3xl leading-[1.08] sm:text-4xl md:text-5xl"
+              className="text-balance text-3xl leading-[1.05] sm:text-4xl md:text-5xl lg:text-6xl"
               lines={[
-                "Você não contrata pessoas.",
-                "Você ativa máquinas de resultado.",
+                "Ative a máquina certa.",
+                "Encontre quem resolve.",
               ]}
               highlightIndex={1}
               highlightClassName="bg-gradient-to-r from-primary via-amber-300 to-primary bg-clip-text text-transparent"
@@ -133,10 +133,9 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="mt-5 max-w-md text-pretty text-sm text-white/60 md:text-base md:leading-relaxed"
+              className="mt-5 max-w-md text-pretty text-sm text-white/65 md:text-base md:leading-relaxed"
             >
-              Views, divulgação, serviços, construção, limpeza e muito mais.
-              Escolha uma máquina e encontre quem resolve.
+              Profissionais organizados por intenção. Escolha o que você precisa, veja opções reais e fale direto pelo WhatsApp. Sem intermediação. Sem comissão.
             </motion.p>
 
             <motion.div
@@ -147,6 +146,8 @@ export function HeroSection() {
             >
               <Link
                 href="#machines"
+                data-cta="hero-primary"
+                data-cta-action="ativar-maquina"
                 className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_0_0_1px_rgba(230,184,0,0.4),0_8px_40px_-8px_rgba(230,184,0,0.6)] transition hover:shadow-[0_0_0_1px_rgba(230,184,0,0.8),0_12px_60px_-8px_rgba(230,184,0,0.9)]"
               >
                 <span className="relative z-10">Ativar uma máquina</span>
@@ -155,20 +156,33 @@ export function HeroSection() {
               </Link>
               <Link
                 href="/search"
+                data-cta="hero-secondary"
+                data-cta-action="encontrar-profissional"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/30 hover:bg-white/10"
               >
-                Explorar profissionais
+                Encontrar profissional
               </Link>
             </motion.div>
 
-            <motion.p
+            <motion.ul
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1 }}
-              className="mt-5 text-[10px] uppercase tracking-[0.25em] text-white/35"
+              className="mt-6 flex flex-col gap-2 text-xs text-white/55 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2 md:text-[13px]"
             >
-              Sem burocracia · Sem intermediação · Contato direto
-            </motion.p>
+              <li className="inline-flex items-center gap-2">
+                <MessageCircle className="h-3.5 w-3.5 text-emerald-400/80" aria-hidden />
+                Contato direto via WhatsApp
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Percent className="h-3.5 w-3.5 text-primary/90" aria-hidden />
+                Sem comissão por serviço fechado
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5 text-sky-400/80" aria-hidden />
+                Profissionais por cidade e intenção
+              </li>
+            </motion.ul>
           </div>
         </div>
       </div>

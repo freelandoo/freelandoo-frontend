@@ -42,18 +42,20 @@ export function FinalCTASection() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="mx-auto max-w-3xl text-balance text-3xl font-semibold tracking-tight md:text-5xl lg:text-6xl">
-            Seu problema{" "}
+            Pronto para ativar a{" "}
             <span className="bg-gradient-to-r from-primary via-amber-300 to-primary bg-clip-text text-transparent">
-              não precisa esperar.
+              solução certa?
             </span>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-pretty text-white/60 md:text-lg">
-            Ative uma máquina e encontre quem resolve agora.
+            Escolha uma máquina e encontre profissionais prontos para resolver.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="#machines"
+              data-cta="final-primary"
+              data-cta-action="ativar-maquina"
               className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_0_0_1px_rgba(230,184,0,0.4),0_8px_40px_-8px_rgba(230,184,0,0.6)] transition hover:shadow-[0_0_0_1px_rgba(230,184,0,0.8),0_12px_60px_-8px_rgba(230,184,0,0.9)]"
             >
               <span className="relative z-10">Ativar uma máquina</span>
@@ -61,10 +63,12 @@ export function FinalCTASection() {
               <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
             </Link>
             <Link
-              href="/search"
+              href="/cadastro"
+              data-cta="final-secondary"
+              data-cta-action="anunciar-servicos"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white/90 backdrop-blur transition hover:border-white/30 hover:bg-white/10"
             >
-              Explorar profissionais
+              Anunciar meus serviços
             </Link>
           </div>
 

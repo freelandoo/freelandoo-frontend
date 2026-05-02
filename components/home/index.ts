@@ -15,4 +15,8 @@ export {
   NewCategoriesSection,
   TrustSection,
   FinalCTASection,
+  SegmentationCards,
+  PopularShortcutsSection,
+  ForProfessionalsSection,
+  AffiliatesSection,
 } from "./machines"

@@ -1,32 +1,38 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { MessageCircle, ShieldCheck, User, TrendingUp } from "lucide-react"
+import { MessageCircle, Layers, MapPin, Star, Percent } from "lucide-react"
 
 const BLOCKS = [
   {
     icon: MessageCircle,
     title: "Contato direto",
-    text: "Fale com o profissional sem barreiras desnecessárias.",
+    text: "Você conversa, combina e negocia direto com o profissional.",
     color: "#34d399",
   },
   {
-    icon: ShieldCheck,
-    title: "Sem intermediação",
-    text: "Mais rapidez para iniciar conversa e avançar.",
+    icon: Layers,
+    title: "Perfis por intenção",
+    text: "Profissionais organizados pela máquina certa para o seu problema.",
     color: "#a78bfa",
   },
   {
-    icon: User,
-    title: "Perfis ativos",
-    text: "Profissionais presentes, visíveis e prontos para oportunidade.",
+    icon: MapPin,
+    title: "Filtros por cidade e profissão",
+    text: "Mais clareza para comparar quem está perto de você.",
     color: "#38bdf8",
   },
   {
-    icon: TrendingUp,
-    title: "Reputação em evolução",
-    text: "Elementos de atividade, destaque e avaliação ajudam na decisão.",
+    icon: Star,
+    title: "Avaliações e ranking",
+    text: "Reputação em evolução para decidir com mais confiança.",
     color: "#fbbf24",
+  },
+  {
+    icon: Percent,
+    title: "Sem comissão",
+    text: "Você não paga nada por serviço fechado na plataforma.",
+    color: "#fb7185",
   },
 ]
 
@@ -45,17 +51,17 @@ export function TrustSection() {
             Confiança
           </p>
           <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-5xl">
-            Profissionais reais. Contato direto.{" "}
+            Sem intermediários.{" "}
             <span className="bg-gradient-to-r from-primary via-amber-300 to-primary bg-clip-text text-transparent">
-              Mais confiança.
+              Com mais controle.
             </span>
           </h2>
           <p className="mt-4 text-pretty text-white/60 md:text-lg">
-            Uma experiência simples para encontrar, comparar e falar com quem pode resolver.
+            A Freelandoo organiza a descoberta, mas não trava sua negociação.
           </p>
         </motion.div>
 
-        <div className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {BLOCKS.map((block, i) => {
             const Icon = block.icon
             return (
