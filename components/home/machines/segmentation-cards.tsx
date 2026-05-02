@@ -48,7 +48,7 @@ const CARDS: Card[] = [
     title: "Quero ganhar indicando",
     text: "Use cupons e indique pessoas para gerar renda extra.",
     cta: "Virar afiliado",
-    href: "/account/afiliado",
+    href: "/cadastro?intent=afiliado",
     ctaAction: "segment-afiliado",
     accent: "#34d399",
     ring: "rgba(52,211,153,0.45)",
