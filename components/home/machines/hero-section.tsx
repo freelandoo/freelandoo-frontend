@@ -85,6 +85,15 @@ export function HeroSection() {
             >
               Ganhar dinheiro
             </Link>
+            <Link
+              href="#como-funciona-freelandoo"
+              data-cta="hero-tertiary"
+              data-cta-action="como-funciona"
+              className="inline-flex items-center justify-center gap-1.5 px-2 py-3 text-sm font-semibold text-white/70 transition hover:text-white"
+            >
+              Como funciona
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </motion.div>
 
           <motion.ul
