@@ -45,10 +45,10 @@ export function HeroSection() {
           <AnimatedHeadline
             className="text-balance text-3xl leading-[1.05] sm:text-4xl md:text-5xl lg:text-6xl"
             lines={[
-              "Ative a máquina de resultados.",
-              "Encontre quem resolve.",
+              "Freelandoo:",
+              "uma plataforma que conecta freelancers com seus clientes.",
             ]}
-            highlightIndex={1}
+            highlightIndex={0}
             highlightClassName="bg-gradient-to-r from-primary via-amber-300 to-primary bg-clip-text text-transparent"
           />
 
@@ -58,7 +58,7 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mt-5 max-w-md text-pretty text-sm text-white/70 md:text-base md:leading-relaxed"
           >
-            Na Freelandoo, você encontra profissionais, divulga seus serviços e ainda pode ganhar dinheiro indicando amigos.
+            Escolha sua máquina de resultados e ative!
           </motion.p>
 
           <motion.div
