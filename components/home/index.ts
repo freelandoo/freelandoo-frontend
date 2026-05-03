@@ -20,4 +20,5 @@ export {
   PopularShortcutsSection,
   ForProfessionalsSection,
   AffiliatesSection,
+  AboutFreelandooSection,
 } from "./machines"

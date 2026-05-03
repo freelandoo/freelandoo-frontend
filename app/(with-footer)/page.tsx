@@ -10,6 +10,7 @@ import {
   TrustSection,
   ForProfessionalsSection,
   AffiliatesSection,
+  AboutFreelandooSection,
   FinalCTASection,
 } from "@/components/home"
 
@@ -46,6 +47,7 @@ export default function HomePage() {
       <MachinesGridSection />
       <PopularShortcutsSection />
       <RankingSection />
+      <AboutFreelandooSection />
       <HowItWorksSection />
       <NewCategoriesSection />
       <TrustSection />
