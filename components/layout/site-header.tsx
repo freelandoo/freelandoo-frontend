@@ -37,7 +37,7 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-50 w-full">
       <div className="border-b border-white/10 bg-black">
         <div className="container mx-auto flex flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:gap-4">
-          <Link href="/" className="flex shrink-0 items-center">
+          <Link href="/" className="flex shrink-0 items-center gap-2">
             <Image
               src="/freelandoo-logo.png"
               alt="Freelandoo"
@@ -46,6 +46,9 @@ export default function SiteHeader() {
               className="h-8 w-auto md:h-9"
               priority
             />
+            <span className="text-base font-bold tracking-tight text-primary md:text-lg">
+              Freelandoo
+            </span>
           </Link>
 
           <form
