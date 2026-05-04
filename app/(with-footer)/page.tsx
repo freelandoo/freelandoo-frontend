@@ -15,10 +15,20 @@ import {
 } from "@/components/home"
 
 export const metadata: Metadata = {
-  title: "Freelandoo — Freelancers e influenciadores para o seu projeto",
-  description: "Encontre o melhor profissional freelancer para o seu projeto na Freelandoo.",
+  title: "Freelandoo — Plataforma para freelancers e clientes",
+  description:
+    "Freelandoo é a plataforma que conecta freelancers, influenciadores e prestadores de serviço com seus clientes. Ative uma máquina, encontre quem resolve e fale direto pelo WhatsApp.",
   alternates: {
     canonical: "https://www.freelandoo.com.br",
+  },
+  openGraph: {
+    title: "Freelandoo — Plataforma para freelancers e clientes",
+    description:
+      "Conecta freelancers, influenciadores e prestadores de serviço com clientes. Ative uma máquina e encontre quem resolve.",
+    url: "https://www.freelandoo.com.br",
+    siteName: "Freelandoo",
+    type: "website",
+    locale: "pt_BR",
   },
 }
 
