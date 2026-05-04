@@ -13,6 +13,7 @@ import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { machineDescription } from "@/lib/constants/machine-descriptions"
 import { checkPassword, isPasswordStrong, isAdult, isValidEmail } from "@/lib/validation/signup"
 import { Check, X, ArrowLeft, User, Briefcase, Info } from "lucide-react"
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 
 interface Category {
   id_category: number
@@ -248,7 +249,16 @@ export default function CadastroPage() {
                 <CardTitle>Dados da conta</CardTitle>
                 <CardDescription>Crie suas credenciais para acessar a Freelandoo</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                <GoogleSignInButton text="signup_with" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                  </div>
+                </div>
                 <form className="space-y-6" onSubmit={handleStep1Continue}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
