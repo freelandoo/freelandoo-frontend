@@ -312,7 +312,7 @@ export function ComoFuncionaClient() {
       ════════════════════════════════════════════════════════════ */}
       <section
         ref={heroRef}
-        className="relative min-h-[92vh] flex flex-col items-center justify-center text-center px-4 pb-20 pt-24 overflow-hidden"
+        className="relative min-h-[68vh] flex flex-col items-center justify-center text-center px-4 pb-14 pt-16 overflow-hidden"
       >
         {/* Background grid */}
         <div className="absolute inset-0 pointer-events-none" style={{
@@ -378,9 +378,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 2 — O QUE É A FREELANDOO
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section2Ref} className="px-4 py-24 md:py-32" style={sectionStyle}>
+      <section ref={section2Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header text-center mb-16">
+          <div className="section-header text-center mb-10">
             <SectionLabel>O ecossistema</SectionLabel>
             <SectionTitle>Uma vitrine inteligente para{" "}
               <span style={{ color: yellow }}>serviços, talentos e oportunidades</span>
@@ -414,9 +414,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 3 — PARA QUEM PROCURA
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section3Ref} className="px-4 py-24 md:py-32" style={sectionStyle}>
+      <section ref={section3Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Para quem contrata</SectionLabel>
             <SectionTitle>
               Encontre profissionais sem{" "}
@@ -450,9 +450,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 4 — PARA QUEM ANUNCIA
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section4Ref} className="px-4 py-24 md:py-32" style={{ ...sectionStyle, background: "rgba(251,191,36,0.02)" }}>
+      <section ref={section4Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(251,191,36,0.02)" }}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Para quem anuncia</SectionLabel>
             <SectionTitle>
               Crie seu perfil e{" "}
@@ -491,9 +491,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 5 — MÁQUINAS
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section5Ref} className="px-4 py-24 md:py-32" style={sectionStyle}>
+      <section ref={section5Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header text-center mb-16">
+          <div className="section-header text-center mb-10">
             <SectionLabel>As máquinas</SectionLabel>
             <SectionTitle className="text-center">
               Máquinas que organizam{" "}
@@ -552,9 +552,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 6 — PERFIS, PORTFÓLIO E SERVIÇOS
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section6Ref} className="px-4 py-24 md:py-32" style={{ ...sectionStyle, background: "rgba(255,255,255,0.01)" }}>
+      <section ref={section6Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(255,255,255,0.01)" }}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Perfis completos</SectionLabel>
             <SectionTitle>
               Perfis que mostram mais do{" "}
@@ -590,9 +590,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 7 — CLANS
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section7Ref} className="px-4 py-24 md:py-32" style={sectionStyle}>
+      <section ref={section7Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Clans</SectionLabel>
             <SectionTitle>
               Profissionais conectados{" "}
@@ -625,9 +625,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 8 — AFILIADOS E CUPONS
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section8Ref} className="px-4 py-24 md:py-32" style={{ ...sectionStyle, background: "rgba(251,191,36,0.015)" }}>
+      <section ref={section8Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(251,191,36,0.015)" }}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Cupons e afiliados</SectionLabel>
             <SectionTitle>
               Cresça junto e{" "}
@@ -664,9 +664,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 9 — RANKING E ENGAJAMENTO
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section9Ref} className="px-4 py-24 md:py-32" style={sectionStyle}>
+      <section ref={section9Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
-          <div className="section-header mb-16">
+          <div className="section-header mb-10">
             <SectionLabel>Ranking e engajamento</SectionLabel>
             <SectionTitle>
               Engajamento que{" "}
@@ -720,9 +720,9 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 10 — RESUMO DO FLUXO
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section10Ref} className="px-4 py-24 md:py-32" style={{ ...sectionStyle, background: "rgba(255,255,255,0.01)" }}>
+      <section ref={section10Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(255,255,255,0.01)" }}>
         <div className="max-w-5xl mx-auto">
-          <div className="section-header text-center mb-16">
+          <div className="section-header text-center mb-10">
             <SectionLabel>Resumo</SectionLabel>
             <SectionTitle className="text-center">
               Do problema à solução{" "}
@@ -793,7 +793,7 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 11 — CTA FINAL
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section11Ref} className="px-4 py-32 md:py-40 text-center relative overflow-hidden" style={sectionStyle}>
+      <section ref={section11Ref} className="px-4 py-16 md:py-24 text-center relative overflow-hidden" style={sectionStyle}>
         {/* Glow */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div className="w-[800px] h-[400px] rounded-full" style={{
