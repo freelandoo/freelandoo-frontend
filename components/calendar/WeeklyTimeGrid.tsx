@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useRef, useEffect, useState } from "react"
+import { useMemo, useRef, useEffect, useState, useCallback } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import FullCalendar from "@fullcalendar/react"
 import timeGridPlugin from "@fullcalendar/timegrid"
 import dayGridPlugin from "@fullcalendar/daygrid"
@@ -38,6 +39,30 @@ export function WeeklyTimeGrid({
 }: WeeklyTimeGridProps) {
   const calendarRef = useRef<FullCalendar | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentDateLabel, setCurrentDateLabel] = useState<string>("")
+
+  const refreshLabel = useCallback(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    const d = api.getDate()
+    setCurrentDateLabel(
+      d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })
+    )
+  }, [])
+
+  const goPrev = useCallback(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    api.prev()
+    refreshLabel()
+  }, [refreshLabel])
+
+  const goNext = useCallback(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    api.next()
+    refreshLabel()
+  }, [refreshLabel])
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)")
@@ -49,13 +74,19 @@ export function WeeklyTimeGrid({
 
   useEffect(() => {
     const api = calendarRef.current?.getApi()
-    if (api) api.gotoDate(weekStart)
-  }, [weekStart])
+    if (api) {
+      api.gotoDate(weekStart)
+      refreshLabel()
+    }
+  }, [weekStart, refreshLabel])
 
   useEffect(() => {
     const api = calendarRef.current?.getApi()
-    if (api) api.changeView(isMobile ? "timeGridDay" : "timeGridWeek")
-  }, [isMobile])
+    if (api) {
+      api.changeView(isMobile ? "timeGridDay" : "timeGridWeek")
+      refreshLabel()
+    }
+  }, [isMobile, refreshLabel])
 
   const fcEvents = useMemo(() => {
     // Ranges ocupados (booking ativo) para filtrar slots por OVERLAP, não por start exato.
@@ -123,7 +154,30 @@ export function WeeklyTimeGrid({
   }, [events, availableBackground])
 
   return (
-    <div className="freelandoo-weekly-grid">
+    <div className="freelandoo-weekly-grid relative">
+      {isMobile && (
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Dia anterior"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="flex-1 text-center text-sm font-semibold uppercase tracking-wider text-zinc-200">
+            {currentDateLabel}
+          </span>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Próximo dia"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      )}
       <FullCalendar
         ref={calendarRef}
         plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}

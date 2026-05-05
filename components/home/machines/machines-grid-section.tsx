@@ -200,7 +200,7 @@ export function MachinesGridSection() {
             type="button"
             onClick={() => scrollBy(-1)}
             aria-label="Anterior"
-            className="absolute left-2 top-1/2 z-30 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/60 p-2 text-white/80 backdrop-blur transition hover:border-white/30 hover:bg-black/80 hover:text-white md:flex"
+            className="absolute left-2 top-1/2 z-30 flex -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/60 p-2 text-white/80 backdrop-blur transition hover:border-white/30 hover:bg-black/80 hover:text-white"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -208,7 +208,7 @@ export function MachinesGridSection() {
             type="button"
             onClick={() => scrollBy(1)}
             aria-label="Próximo"
-            className="absolute right-2 top-1/2 z-30 hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/60 p-2 text-white/80 backdrop-blur transition hover:border-white/30 hover:bg-black/80 hover:text-white md:flex"
+            className="absolute right-2 top-1/2 z-30 flex -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/60 p-2 text-white/80 backdrop-blur transition hover:border-white/30 hover:bg-black/80 hover:text-white"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
