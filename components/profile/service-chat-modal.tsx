@@ -59,39 +59,44 @@ export function ServiceChatModal({
   const [sending, setSending] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
   const [rejecting, setRejecting] = useState(false)
-  // confirmType cobre os 4 fluxos: USER finalize/reject e PRO accept/reject (preview)
-  const [confirmType, setConfirmType] = useState<
-    "finalize" | "reject" | "pro-accept" | "pro-reject" | null
-  >(null)
+  // Só USER decide (finalize/reject) — PRO apenas conversa
+  const [confirmType, setConfirmType] = useState<"finalize" | "reject" | null>(null)
   // Quando abre via mural cria PENDING e guardamos o id local até o caller atualizar a prop
   const [acceptedIdResponse, setAcceptedIdResponse] = useState<string>("")
   // Status corrente, atualizado via /messages (que devolve `response`)
   const [currentStatus, setCurrentStatus] = useState<string>(responseStatus || "")
   const [opening, setOpening] = useState(false)
+  const [lockedByOther, setLockedByOther] = useState(false)
+  const openingRef = useRef(false)
+  const previewAcceptedRef = useRef(onPreviewAccepted)
+  useEffect(() => { previewAcceptedRef.current = onPreviewAccepted }, [onPreviewAccepted])
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const effectiveIdResponse = idResponse || acceptedIdResponse
   const effectiveStatus = currentStatus || responseStatus || ""
   const isTerminal = TERMINAL.includes(effectiveStatus)
-  const isPending = effectiveStatus === "PENDING"
 
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setAcceptedIdResponse("")
       setCurrentStatus("")
+      setLockedByOther(false)
+      openingRef.current = false
     } else {
       setCurrentStatus(responseStatus || "")
     }
   }, [open, responseStatus])
 
-  // Ao abrir via mural (preview), cria response PENDING para liberar o chat
+  // Ao abrir via mural (preview), cria response PENDING para liberar o chat.
+  // Se outro sub-perfil já travou a O.S., backend devolve 409 + locked_by_other.
   useEffect(() => {
-    if (!open || !previewRequest || effectiveIdResponse || opening) return
+    if (!open || !previewRequest || effectiveIdResponse) return
+    if (openingRef.current) return
     const token = getToken()
     if (!token) return
-    let cancelled = false
+    openingRef.current = true
     setOpening(true)
     ;(async () => {
       try {
@@ -100,21 +105,25 @@ export function ServiceChatModal({
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ id_profile: previewRequest.idProfile, action: "open" }),
         })
-        if (res.ok && !cancelled) {
-          const d = await res.json().catch(() => ({}))
+        const d = await res.json().catch(() => ({}))
+        if (res.ok) {
           const newId = (d as { response?: { id_response: string; status?: string } }).response?.id_response
           const newStatus = (d as { response?: { status?: string } }).response?.status
           if (newId) {
             setAcceptedIdResponse(newId)
             if (newStatus) setCurrentStatus(newStatus)
-            onPreviewAccepted?.(newId)
+            previewAcceptedRef.current?.(newId)
           }
+        } else if (res.status === 409 && (d as { locked_by_other?: boolean }).locked_by_other) {
+          setLockedByOther(true)
+        } else {
+          setLockedByOther(false)
         }
       } catch { /* silent */ }
-      if (!cancelled) setOpening(false)
+      setOpening(false)
+      openingRef.current = false
     })()
-    return () => { cancelled = true }
-  }, [open, previewRequest, effectiveIdResponse, opening, onPreviewAccepted])
+  }, [open, previewRequest, effectiveIdResponse])
 
   const fetchMessages = useCallback(async () => {
     const token = getToken()
@@ -226,57 +235,6 @@ export function ServiceChatModal({
     setRejecting(false)
   }
 
-  // PRO side — preview mode: aceitar cria a response e vira chat normal
-  const handleProAccept = async () => {
-    if (!previewRequest) return
-    const token = getToken()
-    if (!token) return
-    setFinalizing(true)
-    try {
-      const res = await fetch(`/api/service-requests/${previewRequest.idRequest}/respond`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ id_profile: previewRequest.idProfile, action: "accept" }),
-      })
-      if (res.ok) {
-        const d = await res.json().catch(() => ({}))
-        const newId = (d as { response?: { id_response: string } }).response?.id_response
-        if (newId) {
-          setAcceptedIdResponse(newId)
-          onPreviewAccepted?.(newId)
-        }
-        setConfirmType(null)
-      } else {
-        const d = await res.json().catch(() => ({}))
-        alert((d as { error?: string }).error || "Erro ao aceitar")
-      }
-    } catch { alert("Erro de rede") }
-    setFinalizing(false)
-  }
-
-  const handleProReject = async () => {
-    if (!previewRequest) return
-    const token = getToken()
-    if (!token) return
-    setRejecting(true)
-    try {
-      const res = await fetch(`/api/service-requests/${previewRequest.idRequest}/respond`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ id_profile: previewRequest.idProfile, action: "reject" }),
-      })
-      if (res.ok) {
-        setConfirmType(null)
-        onReject?.()
-        onOpenChange(false)
-      } else {
-        const d = await res.json().catch(() => ({}))
-        alert((d as { error?: string }).error || "Erro ao rejeitar")
-      }
-    } catch { alert("Erro de rede") }
-    setRejecting(false)
-  }
-
   const initials = (name: string) => {
     if (!name) return "?"
     const p = name.split(" ")
@@ -362,11 +320,20 @@ export function ServiceChatModal({
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!loading && !opening && messages.length === 0 && (
+          {!loading && !opening && !lockedByOther && messages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground text-xs">
-              {isPending
-                ? "Negocie pelo chat e depois aceite ou rejeite."
-                : "Nenhuma mensagem ainda. Inicie a conversa!"}
+              {viewerSide === "PRO"
+                ? "Mande uma mensagem para iniciar a negociação."
+                : "Nenhuma mensagem ainda."}
+            </div>
+          )}
+          {lockedByOther && (
+            <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">Alguém já respondeu a essa solicitação</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Aguarde — se o usuário rejeitar a outra resposta, a O.S. fica disponível para você.
+              </p>
             </div>
           )}
           {grouped.map(group => (
@@ -400,32 +367,8 @@ export function ServiceChatModal({
 
         {/* Footer */}
         <div className="border-t bg-background">
-          {/* Botões de decisão (PRO em PENDING ou USER em PRO_ACCEPTED) */}
-          {!isTerminal && viewerSide === "PRO" && isPending && (
-            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
-                onClick={() => setConfirmType("pro-reject")}
-                disabled={finalizing || rejecting}
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
-                onClick={() => setConfirmType("pro-accept")}
-                disabled={finalizing || rejecting}
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Aceitar
-              </Button>
-            </div>
-          )}
-          {!isTerminal && viewerSide === "USER" && idRequest && (
+          {/* Botões de decisão — só o USER decide (Aceitar/Rejeitar) */}
+          {!isTerminal && !lockedByOther && viewerSide === "USER" && idRequest && (
             <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b">
               <Button
                 size="sm"
@@ -456,6 +399,11 @@ export function ServiceChatModal({
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                 <Lock className="h-4 w-4" />
                 Conversa encerrada
+              </div>
+            ) : lockedByOther ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                <Lock className="h-3.5 w-3.5" />
+                Aguarde a decisão do usuário
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -490,14 +438,10 @@ export function ServiceChatModal({
           <DialogTitle>
             {confirmType === "finalize" && "Aceitar este profissional?"}
             {confirmType === "reject" && "Rejeitar este profissional?"}
-            {confirmType === "pro-accept" && "Aceitar solicitação?"}
-            {confirmType === "pro-reject" && "Rejeitar solicitação?"}
           </DialogTitle>
           <DialogDescription>
             {confirmType === "finalize" && "Você está aceitando esse serviço. Você não receberá mais freelancers para essa O.S. e as outras conversas serão encerradas. Confirma?"}
             {confirmType === "reject" && "A conversa com este profissional será encerrada. Outros profissionais ainda podem responder à sua O.S."}
-            {confirmType === "pro-accept" && "Se você aceitar, o perfil que requisitou o seu serviço poderá te avaliar ao final do trabalho."}
-            {confirmType === "pro-reject" && "Você não verá mais essa solicitação no seu mural."}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
@@ -506,15 +450,13 @@ export function ServiceChatModal({
           </Button>
           <Button
             className={
-              confirmType === "finalize" || confirmType === "pro-accept"
+              confirmType === "finalize"
                 ? "bg-green-600 hover:bg-green-700 text-white"
                 : "bg-red-600 hover:bg-red-700 text-white"
             }
             onClick={() => {
               if (confirmType === "finalize") handleFinalize()
               else if (confirmType === "reject") handleReject()
-              else if (confirmType === "pro-accept") handleProAccept()
-              else if (confirmType === "pro-reject") handleProReject()
             }}
             disabled={finalizing || rejecting}
           >
