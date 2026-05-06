@@ -99,7 +99,7 @@ function buildContextBundle(
     avatar_url: null,
     items: [
       { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
-      { href: "/#ranking", label: "Ranking", icon: Trophy },
+      { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },
       {
         href: "/account/dados",
         label: "Configurações",
