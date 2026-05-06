@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface UserData {
   id_user: string
@@ -179,6 +179,23 @@ export default function AdminPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/admin/afiliados")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <HandCoins className="h-5 w-5 text-primary" />
+                Afiliados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Comissões acumuladas, alertas de prazo e confirmação de pagamento.
               </p>
             </CardContent>
           </Card>
