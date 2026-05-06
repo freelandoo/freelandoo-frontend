@@ -99,11 +99,15 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       })
       if (res.ok) {
         const data = await res.json()
-        // Backend may return { requests: [...], conversations: [...] } or separate shapes
-        if (data.requests) {
-          setMuralItems(Array.isArray(data.requests) ? data.requests : [])
+        // Backend may return { requests: [...] }, { items: [...] }, or an array.
+        if (Array.isArray(data.requests)) {
+          setMuralItems(data.requests)
+        } else if (Array.isArray(data.items)) {
+          setMuralItems(data.items)
         } else if (Array.isArray(data)) {
           setMuralItems(data)
+        } else {
+          setMuralItems([])
         }
         if (data.conversations) {
           setConversations(Array.isArray(data.conversations) ? data.conversations : [])
@@ -114,7 +118,11 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
   }, [profileId])
 
   useEffect(() => {
-    if (open) fetchData()
+    if (!open) return
+    const timeout = window.setTimeout(() => {
+      void fetchData()
+    }, 0)
+    return () => window.clearTimeout(timeout)
   }, [open, fetchData])
 
   const handleRespond = async (idRequest: string, action: "accept" | "reject") => {
