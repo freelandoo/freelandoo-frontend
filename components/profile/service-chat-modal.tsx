@@ -63,19 +63,58 @@ export function ServiceChatModal({
   const [confirmType, setConfirmType] = useState<
     "finalize" | "reject" | "pro-accept" | "pro-reject" | null
   >(null)
-  // Quando aceita no preview, usamos esse id local até o caller atualizar a prop
+  // Quando abre via mural cria PENDING e guardamos o id local até o caller atualizar a prop
   const [acceptedIdResponse, setAcceptedIdResponse] = useState<string>("")
+  // Status corrente, atualizado via /messages (que devolve `response`)
+  const [currentStatus, setCurrentStatus] = useState<string>(responseStatus || "")
+  const [opening, setOpening] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const effectiveIdResponse = idResponse || acceptedIdResponse
-  const isPreview = !!previewRequest && !effectiveIdResponse
-  const isTerminal = TERMINAL.includes(responseStatus || "")
+  const effectiveStatus = currentStatus || responseStatus || ""
+  const isTerminal = TERMINAL.includes(effectiveStatus)
+  const isPending = effectiveStatus === "PENDING"
 
-  // Reset acceptedIdResponse when modal closes
+  // Reset state when modal closes
   useEffect(() => {
-    if (!open) setAcceptedIdResponse("")
-  }, [open])
+    if (!open) {
+      setAcceptedIdResponse("")
+      setCurrentStatus("")
+    } else {
+      setCurrentStatus(responseStatus || "")
+    }
+  }, [open, responseStatus])
+
+  // Ao abrir via mural (preview), cria response PENDING para liberar o chat
+  useEffect(() => {
+    if (!open || !previewRequest || effectiveIdResponse || opening) return
+    const token = getToken()
+    if (!token) return
+    let cancelled = false
+    setOpening(true)
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/service-requests/${previewRequest.idRequest}/respond`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ id_profile: previewRequest.idProfile, action: "open" }),
+        })
+        if (res.ok && !cancelled) {
+          const d = await res.json().catch(() => ({}))
+          const newId = (d as { response?: { id_response: string; status?: string } }).response?.id_response
+          const newStatus = (d as { response?: { status?: string } }).response?.status
+          if (newId) {
+            setAcceptedIdResponse(newId)
+            if (newStatus) setCurrentStatus(newStatus)
+            onPreviewAccepted?.(newId)
+          }
+        }
+      } catch { /* silent */ }
+      if (!cancelled) setOpening(false)
+    })()
+    return () => { cancelled = true }
+  }, [open, previewRequest, effectiveIdResponse, opening, onPreviewAccepted])
 
   const fetchMessages = useCallback(async () => {
     const token = getToken()
@@ -87,6 +126,8 @@ export function ServiceChatModal({
       if (res.ok) {
         const data = await res.json()
         setMessages(Array.isArray(data) ? data : data.messages ?? [])
+        const respStatus = (data as { response?: { status?: string } }).response?.status
+        if (respStatus) setCurrentStatus(respStatus)
       }
     } catch { /* silent */ }
   }, [effectiveIdResponse])
@@ -286,100 +327,46 @@ export function ServiceChatModal({
               </p>
             )}
           </div>
-          {/* USER side: Aceitar/Rejeitar (não terminal, em conversa real) */}
-          {viewerSide === "USER" && !isTerminal && idRequest && !isPreview && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
-                onClick={() => setConfirmType("reject")}
-                disabled={finalizing || rejecting}
-              >
-                <XCircle className="h-3 w-3" />
-                Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
-                onClick={() => setConfirmType("finalize")}
-                disabled={finalizing || rejecting}
-              >
-                <CheckCircle2 className="h-3 w-3" />
-                Aceitar
-              </Button>
-            </div>
-          )}
-
-          {/* PRO side: Aceitar/Rejeitar em modo preview (response ainda não criada) */}
-          {viewerSide === "PRO" && isPreview && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
-                onClick={() => setConfirmType("pro-reject")}
-                disabled={finalizing || rejecting}
-              >
-                <XCircle className="h-3 w-3" />
-                Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
-                onClick={() => setConfirmType("pro-accept")}
-                disabled={finalizing || rejecting}
-              >
-                <CheckCircle2 className="h-3 w-3" />
-                Aceitar
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 min-h-[200px] max-h-[60vh]">
-          {/* Modo preview (PRO ainda não respondeu): mostra detalhes da O.S. */}
-          {isPreview && previewRequest && (
-            <div className="space-y-3 py-2">
-              <div className="bg-muted/50 border rounded-lg p-3 space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Solicitação de serviço
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {previewRequest.machineName && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-background border">
-                      {previewRequest.machineName}
-                    </span>
-                  )}
-                  {previewRequest.categoryName && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-secondary text-secondary-foreground">
-                      {previewRequest.categoryName}
-                    </span>
-                  )}
-                  {previewRequest.municipio && (
-                    <span className="text-[10px] text-muted-foreground">
-                      📍 {previewRequest.municipio}{previewRequest.estado ? `, ${previewRequest.estado}` : ""}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm whitespace-pre-wrap">{previewRequest.description}</p>
-              </div>
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                Aceite a solicitação para iniciar a conversa.
+          {/* Card com detalhes da solicitação (mostrado quando vem do mural) */}
+          {previewRequest && (
+            <div className="bg-muted/50 border rounded-lg p-3 space-y-2 mb-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Solicitação de serviço
               </p>
+              <div className="flex flex-wrap gap-1.5">
+                {previewRequest.machineName && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-background border">
+                    {previewRequest.machineName}
+                  </span>
+                )}
+                {previewRequest.categoryName && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-secondary text-secondary-foreground">
+                    {previewRequest.categoryName}
+                  </span>
+                )}
+                {previewRequest.municipio && (
+                  <span className="text-[10px] text-muted-foreground">
+                    📍 {previewRequest.municipio}{previewRequest.estado ? `, ${previewRequest.estado}` : ""}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{previewRequest.description}</p>
             </div>
           )}
-          {!isPreview && loading && (
+          {(loading || opening) && messages.length === 0 && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           )}
-          {!isPreview && !loading && messages.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              Nenhuma mensagem ainda. Inicie a conversa!
+          {!loading && !opening && messages.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground text-xs">
+              {isPending
+                ? "Negocie pelo chat e depois aceite ou rejeite."
+                : "Nenhuma mensagem ainda. Inicie a conversa!"}
             </div>
           )}
           {grouped.map(group => (
@@ -412,38 +399,86 @@ export function ServiceChatModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t px-3 py-2.5 bg-background">
-          {isPreview ? (
-            <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-              <Lock className="h-3.5 w-3.5" />
-              Aceite ou rejeite acima para continuar
-            </div>
-          ) : isTerminal ? (
-            <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4" />
-              Conversa encerrada
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                value={text}
-                onChange={e => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Digite uma mensagem..."
-                className="flex-1 h-9"
-                disabled={sending}
-              />
+        <div className="border-t bg-background">
+          {/* Botões de decisão (PRO em PENDING ou USER em PRO_ACCEPTED) */}
+          {!isTerminal && viewerSide === "PRO" && isPending && (
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b">
               <Button
                 size="sm"
-                className="h-9 w-9 p-0 shrink-0"
-                onClick={handleSend}
-                disabled={!text.trim() || sending}
+                variant="outline"
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
+                onClick={() => setConfirmType("pro-reject")}
+                disabled={finalizing || rejecting}
               >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <XCircle className="h-3.5 w-3.5" />
+                Rejeitar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
+                onClick={() => setConfirmType("pro-accept")}
+                disabled={finalizing || rejecting}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Aceitar
               </Button>
             </div>
           )}
+          {!isTerminal && viewerSide === "USER" && idRequest && (
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
+                onClick={() => setConfirmType("reject")}
+                disabled={finalizing || rejecting}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Rejeitar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
+                onClick={() => setConfirmType("finalize")}
+                disabled={finalizing || rejecting}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Aceitar
+              </Button>
+            </div>
+          )}
+
+          {/* Input ou aviso de encerrada */}
+          <div className="px-3 py-2.5">
+            {isTerminal ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4" />
+                Conversa encerrada
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={inputRef}
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Digite uma mensagem..."
+                  className="flex-1 h-9"
+                  disabled={sending || !effectiveIdResponse}
+                />
+                <Button
+                  size="sm"
+                  className="h-9 w-9 p-0 shrink-0"
+                  onClick={handleSend}
+                  disabled={!text.trim() || sending || !effectiveIdResponse}
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

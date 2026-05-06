@@ -120,6 +120,8 @@ export default function PerfilPage() {
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
   const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
   const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
+  // bolinha vermelha por sub-perfil (mural/chat) — id_profile -> has_new
+  const [profileBadges, setProfileBadges] = useState<Record<string, boolean>>({})
 
   const estados = ESTADOS_BRASIL
 
@@ -142,6 +144,37 @@ export default function PerfilPage() {
     const interval = setInterval(fetchBadge, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Badge por sub-perfil — só perfis ativos e visíveis (não-clan)
+  React.useEffect(() => {
+    const profilesToCheck = (perfil?.profiles || []).filter(
+      (p) => !p.is_clan && p.is_paid && p.is_visible !== false && !p.deleted_at
+    )
+    if (profilesToCheck.length === 0) return
+    let cancelled = false
+    const fetchAll = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+      const out: Record<string, boolean> = {}
+      await Promise.all(
+        profilesToCheck.map(async (p) => {
+          try {
+            const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(p.id_profile)}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            if (res.ok) {
+              const d = await res.json()
+              out[p.id_profile] = !!d.has_new
+            }
+          } catch { /* silent */ }
+        })
+      )
+      if (!cancelled) setProfileBadges(out)
+    }
+    fetchAll()
+    const interval = setInterval(fetchAll, 30000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [perfil?.profiles])
 
   if (isLoading) {
     return <AccountLoading />
@@ -1329,8 +1362,15 @@ export default function PerfilPage() {
                     const isVisible = profile.is_visible !== false
                     const isPublished = !!profile.is_published
                     const imgSrc = profile.avatar_url || perfil?.avatar || null
+                    const hasNotification = !!profileBadges[profile.id_profile]
                     return (
                       <div key={profile.id_profile} className="group relative">
+                        {hasNotification && (
+                          <span
+                            className="absolute -top-1 -right-1 z-10 inline-block h-3 w-3 rounded-full bg-red-500 ring-2 ring-background animate-pulse"
+                            title="Notificação no mural ou chat"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}

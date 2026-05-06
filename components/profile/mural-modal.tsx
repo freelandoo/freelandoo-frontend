@@ -25,9 +25,12 @@ interface MuralRequest {
 interface ActiveConversation {
   id_response: string
   id_request: string
+  status?: string
   user_name?: string
   user_avatar?: string
   description?: string
+  estado?: string
+  municipio?: string
   last_message?: string
   last_message_at?: string
   unread_count?: number
@@ -247,6 +250,13 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                     setChatIdResponse(conv.id_response)
                     setChatPeerName(conv.user_name || "Usuário")
                     setChatPeerAvatar(conv.user_avatar)
+                    setChatPreview({
+                      idRequest: conv.id_request,
+                      idProfile: profileId,
+                      description: conv.description || "",
+                      estado: conv.estado,
+                      municipio: conv.municipio,
+                    })
                     setChatOpen(true)
                   }}
                 >
@@ -292,11 +302,11 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       viewerSide="PRO"
       previewRequest={chatPreview}
       onPreviewAccepted={(newId) => {
-        // Aceitou: agora é conversa real — limpa preview e mantém o chat aberto com o novo id
-        setChatPreview(undefined)
+        // 'open' criou PENDING — só registra o id pra continuar a conversa
         setChatIdResponse(newId)
       }}
       onReject={() => fetchData()}
+      onFinalize={() => fetchData()}
     />
     </>
   )
