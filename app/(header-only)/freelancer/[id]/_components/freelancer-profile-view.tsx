@@ -399,13 +399,20 @@ export default function FreelancerProfileView({
                       Ranking
                     </Button>
                     <Button
-                      onClick={() => {
-                        const agendaEl = document.getElementById("agenda-section")
-                        if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
-                      }}
-                      className="font-semibold flex-1 md:flex-none"
+                      asChild
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
                     >
-                      Agendar
+                      <Link
+                        href={
+                          isClan
+                            ? `/account/clans/${profileId}/agenda`
+                            : `/account/profile/${profileId}/agenda`
+                        }
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        Agenda
+                      </Link>
                     </Button>
                   </>
                 ) : (
