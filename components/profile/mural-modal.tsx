@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { ServiceChatModal } from "@/components/profile/service-chat-modal"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -76,6 +76,12 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
   const [chatPeerName, setChatPeerName] = useState("")
   const [chatPeerAvatar, setChatPeerAvatar] = useState<string | undefined>()
 
+  // --- confirm dialogs ---
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "accept" | "reject"
+    request: MuralRequest
+  } | null>(null)
+
   // Mark mural as seen when opening
   useEffect(() => {
     if (!open) return
@@ -125,19 +131,27 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
     return () => window.clearTimeout(timeout)
   }, [open, fetchData])
 
-  const handleRespond = async (idRequest: string, action: "accept" | "reject") => {
-    if (action === "reject" && !confirm("Rejeitar esta solicitação?")) return
+  const handleRespond = async (req: MuralRequest, action: "accept" | "reject") => {
     const token = getToken()
     if (!token) return
-    setActionLoading(idRequest)
+    setActionLoading(req.id_request)
     try {
-      const res = await fetch(`/api/service-requests/${idRequest}/respond`, {
+      const res = await fetch(`/api/service-requests/${req.id_request}/respond`, {
         method: "POST",
         headers: headers(token),
         body: JSON.stringify({ id_profile: profileId, action }),
       })
       if (res.ok) {
-        fetchData()
+        const d = await res.json().catch(() => ({}))
+        const newResp = (d as { response?: { id_response: string } }).response
+        await fetchData()
+        // Após aceitar com sucesso, abrir chat automaticamente
+        if (action === "accept" && newResp?.id_response) {
+          setChatIdResponse(newResp.id_response)
+          setChatPeerName(req.user_name || "Usuário")
+          setChatPeerAvatar(req.user_avatar)
+          setChatOpen(true)
+        }
       } else {
         const d = await res.json().catch(() => ({}))
         alert((d as { error?: string }).error || "Erro ao responder")
@@ -146,6 +160,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       alert("Erro de rede")
     }
     setActionLoading(null)
+    setConfirmAction(null)
   }
 
   return (
@@ -235,7 +250,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                             variant="outline"
                             size="sm"
                             className="text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
-                            onClick={() => handleRespond(req.id_request, "reject")}
+                            onClick={() => setConfirmAction({ type: "reject", request: req })}
                             disabled={actionLoading === req.id_request}
                           >
                             {actionLoading === req.id_request ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
@@ -244,7 +259,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => handleRespond(req.id_request, "accept")}
+                            onClick={() => setConfirmAction({ type: "accept", request: req })}
                             disabled={actionLoading === req.id_request}
                           >
                             {actionLoading === req.id_request ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
@@ -317,6 +332,35 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       peerAvatar={chatPeerAvatar}
       viewerSide="PRO"
     />
+
+    {/* Modal de confirmação Aceitar / Rejeitar */}
+    <Dialog open={!!confirmAction} onOpenChange={(v) => { if (!v) setConfirmAction(null) }}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>
+            {confirmAction?.type === "accept" ? "Aceitar solicitação?" : "Rejeitar solicitação?"}
+          </DialogTitle>
+          <DialogDescription>
+            {confirmAction?.type === "accept"
+              ? "Se você aceitar, o perfil que requisitou o seu serviço poderá te avaliar ao final do trabalho."
+              : "Você não verá mais essa solicitação no seu mural."}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={() => setConfirmAction(null)} disabled={!!actionLoading}>
+            Cancelar
+          </Button>
+          <Button
+            className={confirmAction?.type === "accept" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+            onClick={() => confirmAction && handleRespond(confirmAction.request, confirmAction.type)}
+            disabled={!!actionLoading}
+          >
+            {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   )
 }

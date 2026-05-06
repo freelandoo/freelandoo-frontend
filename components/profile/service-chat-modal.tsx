@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { Loader2, Send, Lock, CheckCircle2, ArrowLeft } from "lucide-react"
+import { Loader2, Send, Lock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
 
 interface Message {
   id_message: string
@@ -27,6 +27,7 @@ interface Props {
   /** Only shown for USER side in PRO_ACCEPTED status */
   idRequest?: string
   onFinalize?: () => void
+  onReject?: () => void
 }
 
 function getToken() {
@@ -37,13 +38,15 @@ const TERMINAL = ["PRO_REJECTED", "USER_REJECTED", "FINALIZED", "CLOSED_OTHER_WO
 
 export function ServiceChatModal({
   open, onOpenChange, idResponse, peerName, peerAvatar,
-  viewerSide, responseStatus, idRequest, onFinalize,
+  viewerSide, responseStatus, idRequest, onFinalize, onReject,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState("")
   const [sending, setSending] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
+  const [confirmType, setConfirmType] = useState<"finalize" | "reject" | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -113,7 +116,7 @@ export function ServiceChatModal({
   }
 
   const handleFinalize = async () => {
-    if (!idRequest || !confirm("Aceitar este profissional e fechar o serviço? Os demais serão encerrados.")) return
+    if (!idRequest) return
     const token = getToken()
     if (!token) return
     setFinalizing(true)
@@ -123,6 +126,7 @@ export function ServiceChatModal({
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })
       if (res.ok) {
+        setConfirmType(null)
         onFinalize?.()
         onOpenChange(false)
       } else {
@@ -131,6 +135,28 @@ export function ServiceChatModal({
       }
     } catch { alert("Erro de rede") }
     setFinalizing(false)
+  }
+
+  const handleReject = async () => {
+    if (!idRequest) return
+    const token = getToken()
+    if (!token) return
+    setRejecting(true)
+    try {
+      const res = await fetch(`/api/service-requests/${idRequest}/reject-response/${idResponse}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      })
+      if (res.ok) {
+        setConfirmType(null)
+        onReject?.()
+        onOpenChange(false)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        alert((d as { error?: string }).error || "Erro ao rejeitar")
+      }
+    } catch { alert("Erro de rede") }
+    setRejecting(false)
   }
 
   const initials = (name: string) => {
@@ -163,6 +189,7 @@ export function ServiceChatModal({
   })
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px] p-0 flex flex-col max-h-[85vh] gap-0">
         {/* Header */}
@@ -182,18 +209,30 @@ export function ServiceChatModal({
               </p>
             )}
           </div>
-          {/* Finalize button — user side only, non-terminal */}
+          {/* Finalize / Reject buttons — user side only, non-terminal */}
           {viewerSide === "USER" && !isTerminal && idRequest && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
-              onClick={handleFinalize}
-              disabled={finalizing}
-            >
-              {finalizing ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-              Aceitar
-            </Button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
+                onClick={() => setConfirmType("reject")}
+                disabled={finalizing || rejecting}
+              >
+                <XCircle className="h-3 w-3" />
+                Rejeitar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
+                onClick={() => setConfirmType("finalize")}
+                disabled={finalizing || rejecting}
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Aceitar
+              </Button>
+            </div>
           )}
         </div>
 
@@ -269,5 +308,35 @@ export function ServiceChatModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Modal de confirmação Aceitar / Rejeitar — lado USER */}
+    <Dialog open={!!confirmType} onOpenChange={(v) => { if (!v) setConfirmType(null) }}>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>
+            {confirmType === "finalize" ? "Aceitar este profissional?" : "Rejeitar este profissional?"}
+          </DialogTitle>
+          <DialogDescription>
+            {confirmType === "finalize"
+              ? "Você está aceitando esse serviço. Você não receberá mais freelancers para essa O.S. e as outras conversas serão encerradas. Confirma?"
+              : "A conversa com este profissional será encerrada. Outros profissionais ainda podem responder à sua O.S."}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={() => setConfirmType(null)} disabled={finalizing || rejecting}>
+            Cancelar
+          </Button>
+          <Button
+            className={confirmType === "finalize" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+            onClick={() => confirmType === "finalize" ? handleFinalize() : handleReject()}
+            disabled={finalizing || rejecting}
+          >
+            {(finalizing || rejecting) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Confirmar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
