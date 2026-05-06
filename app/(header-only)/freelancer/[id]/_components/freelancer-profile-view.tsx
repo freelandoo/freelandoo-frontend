@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users, Cog, Search, Crown } from "lucide-react"
+import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users, Cog, Search, Crown, Megaphone } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { BarChart2, Trophy } from "lucide-react"
+import { MuralModal } from "@/components/profile/mural-modal"
 
 export default function FreelancerProfileView({
   profileId,
@@ -54,6 +55,8 @@ export default function FreelancerProfileView({
   const [showEngagement, setShowEngagement] = useState(false)
   const [showRanking, setShowRanking] = useState(false)
   const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
+  const [showMural, setShowMural] = useState(false)
+  const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -286,6 +289,27 @@ export default function FreelancerProfileView({
     return "bg-black"
   }
 
+  // Badge polling for mural (30s, only for owner)
+  useEffect(() => {
+    if (!isOwnProfile) return
+    const fetchBadge = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+      try {
+        const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(profileId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setMuralBadge({ has_new: !!data.has_new, chat_unread: data.chat_unread ?? 0 })
+        }
+      } catch { /* silent */ }
+    }
+    fetchBadge()
+    const interval = setInterval(fetchBadge, 30000)
+    return () => clearInterval(interval)
+  }, [isOwnProfile, profileId])
+
   if (loading) {
     return <FreelancerProfileLoading />
   }
@@ -397,6 +421,17 @@ export default function FreelancerProfileView({
                     >
                       <Trophy className="h-4 w-4" />
                       Ranking
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5 relative"
+                      onClick={() => setShowMural(true)}
+                    >
+                      <Megaphone className="h-4 w-4" />
+                      Mural
+                      {(muralBadge.has_new || muralBadge.chat_unread > 0) && (
+                        <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
+                      )}
                     </Button>
                     <Button
                       asChild
@@ -976,6 +1011,15 @@ export default function FreelancerProfileView({
           </Dialog>
         )
       })()}
+
+      {/* Mural Modal — only rendered for owner */}
+      {isOwnProfile && (
+        <MuralModal
+          open={showMural}
+          onOpenChange={setShowMural}
+          profileId={profileId}
+        />
+      )}
     </div>
   )
 }

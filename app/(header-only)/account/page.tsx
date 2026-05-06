@@ -28,7 +28,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus } from "lucide-react"
+import { ServiceRequestModal } from "./_components/service-request-modal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
 import {
@@ -117,8 +118,30 @@ export default function PerfilPage() {
   const [isSavingMedia, setIsSavingMedia] = useState(false)
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
+  const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
+  const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
 
   const estados = ESTADOS_BRASIL
+
+  // Badge polling for service requests (30s)
+  React.useEffect(() => {
+    const fetchBadge = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+      try {
+        const res = await fetch("/api/service-requests/badge/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setSrBadge({ has_new: !!data.has_new, unread_chats: data.unread_chats ?? 0 })
+        }
+      } catch { /* silent */ }
+    }
+    fetchBadge()
+    const interval = setInterval(fetchBadge, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   if (isLoading) {
     return <AccountLoading />
@@ -1196,6 +1219,18 @@ export default function PerfilPage() {
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsServiceRequestOpen(true)}
+                        className="relative"
+                      >
+                        <MessageSquarePlus className="h-4 w-4 mr-2" />
+                        Pedir serviço
+                        {(srBadge.has_new || srBadge.unread_chats > 0) && (
+                          <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
+                        )}
+                      </Button>
                       <Button asChild variant="outline" size="sm">
                         <a href="/account/afiliado">Painel de afiliado</a>
                       </Button>
@@ -2139,6 +2174,12 @@ export default function PerfilPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Pedir Serviço */}
+      <ServiceRequestModal
+        open={isServiceRequestOpen}
+        onOpenChange={setIsServiceRequestOpen}
+      />
     </div>
   )
 }
