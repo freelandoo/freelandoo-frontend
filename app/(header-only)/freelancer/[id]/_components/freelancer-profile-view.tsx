@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
 import { FreelancerProfileError, FreelancerProfileLoading } from "./freelancer-states"
@@ -33,6 +33,7 @@ export default function FreelancerProfileView({
 }) {
   const isClan = kind === "clan"
   const router = useRouter()
+  const pathname = usePathname()
   const { profile, portfolioItems, setPortfolioItems, members, loading, error, isOwnProfile } =
     useCreatorPublicProfile(profileId, { kind })
   const [showMembers, setShowMembers] = useState(false)
@@ -80,6 +81,21 @@ export default function FreelancerProfileView({
     const id = searchParams?.get("portfolio")
     if (id) setOpenPortfolioItemId(id)
   }, [searchParams])
+
+  // Deep-link: ?ranking=1 abre o ranking a partir da toolbar.
+  useEffect(() => {
+    const openRanking = searchParams?.get("ranking")
+    if (openRanking) setShowRanking(true)
+  }, [searchParams])
+
+  const closeRanking = () => {
+    setShowRanking(false)
+    if (!searchParams?.get("ranking")) return
+    const next = new URLSearchParams(searchParams.toString())
+    next.delete("ranking")
+    const qs = next.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
 
   const updatePortfolioItemLike = (itemId: string, liked: boolean, count: number) => {
     setPortfolioItems((items) =>
@@ -891,7 +907,7 @@ export default function FreelancerProfileView({
       </Dialog>
 
       {showRanking && (
-        <RankingBadgeModal profileId={profileId} onClose={() => setShowRanking(false)} />
+        <RankingBadgeModal profileId={profileId} onClose={closeRanking} />
       )}
 
       {openPortfolioItemId && (() => {

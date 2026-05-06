@@ -39,7 +39,7 @@ export function RankingSection() {
   }, [activeTab])
 
   return (
-    <section className="relative overflow-hidden bg-machines-dark py-24 text-white md:py-32">
+    <section id="ranking" className="relative overflow-hidden bg-machines-dark py-24 text-white md:py-32">
       {/* Subtle grid */}
       <div
         aria-hidden

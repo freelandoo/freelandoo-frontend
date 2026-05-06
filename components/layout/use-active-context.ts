@@ -3,14 +3,11 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 export type ActiveContextKind = "user" | "subprofile" | "clan"
 
 export interface ActiveContext {
   kind: ActiveContextKind
-  /** UUID do sub-perfil ou clan quando kind != "user". */
+  /** Id do sub-perfil ou clan quando kind != "user". */
   id_profile: string | null
   /** Nome (display_name) — null enquanto carrega ou em modo user. */
   name: string | null
@@ -25,18 +22,18 @@ interface ParsedRoute {
 
 /**
  * Detecta o contexto a partir do pathname:
- *  - /account/profile/<uuid>/* → subperfil
- *  - /account/clans/<uuid>/* → clan
+ *  - /account/profile/<id>/* → subperfil
+ *  - /account/clans/<id>/* → clan
  *  - qualquer outra rota → user
  */
 function parsePathname(pathname: string): ParsedRoute {
   const parts = pathname.split("/").filter(Boolean)
   if (parts[0] !== "account") return { kind: "user", id_profile: null }
 
-  if (parts[1] === "profile" && parts[2] && UUID_RE.test(parts[2])) {
+  if (parts[1] === "profile" && parts[2]) {
     return { kind: "subprofile", id_profile: parts[2] }
   }
-  if (parts[1] === "clans" && parts[2] && UUID_RE.test(parts[2])) {
+  if (parts[1] === "clans" && parts[2]) {
     return { kind: "clan", id_profile: parts[2] }
   }
   return { kind: "user", id_profile: null }
@@ -47,6 +44,7 @@ function parsePathname(pathname: string): ParsedRoute {
  * navega entre subpáginas do mesmo contexto.
  */
 const cache = new Map<string, { name: string | null; avatar_url: string | null }>()
+const emptyContextData = { name: null, avatar_url: null }
 
 async function fetchContextProfile(
   kind: "subprofile" | "clan",
@@ -68,11 +66,12 @@ async function fetchContextProfile(
       return empty
     }
     const body = await res.json()
-    // Endpoints retornam shapes diferentes mas ambos têm display_name +
-    // avatar_url. Aceitamos null em qualquer um sem reclamar.
+    const record = body?.profile ?? body?.clan ?? body
+    // Endpoints retornam shapes diferentes, mas todos expõem display_name +
+    // avatar_url no objeto principal, em profile ou em clan.
     const data = {
-      name: typeof body?.display_name === "string" ? body.display_name : null,
-      avatar_url: typeof body?.avatar_url === "string" ? body.avatar_url : null,
+      name: typeof record?.display_name === "string" ? record.display_name : null,
+      avatar_url: typeof record?.avatar_url === "string" ? record.avatar_url : null,
     }
     cache.set(cacheKey, data)
     return data
@@ -84,28 +83,36 @@ async function fetchContextProfile(
 export function useActiveContext(): ActiveContext {
   const pathname = usePathname() || "/"
   const route = parsePathname(pathname)
-  const [data, setData] = useState<{ name: string | null; avatar_url: string | null }>(
-    () => {
-      if (route.kind === "user" || !route.id_profile) {
-        return { name: null, avatar_url: null }
-      }
-      return cache.get(`${route.kind}:${route.id_profile}`) || { name: null, avatar_url: null }
+  const routeKey =
+    route.kind === "user" || !route.id_profile ? "user" : `${route.kind}:${route.id_profile}`
+  const [loadedData, setLoadedData] = useState<{
+    key: string
+    name: string | null
+    avatar_url: string | null
+  }>(() => {
+    if (routeKey === "user") {
+      return { key: routeKey, ...emptyContextData }
     }
-  )
+    return { key: routeKey, ...(cache.get(routeKey) || emptyContextData) }
+  })
 
   useEffect(() => {
-    if (route.kind === "user" || !route.id_profile) {
-      setData({ name: null, avatar_url: null })
-      return
-    }
+    if (route.kind === "user" || !route.id_profile) return
     let cancelled = false
     fetchContextProfile(route.kind, route.id_profile).then((d) => {
-      if (!cancelled) setData(d)
+      if (!cancelled) setLoadedData({ key: routeKey, ...d })
     })
     return () => {
       cancelled = true
     }
-  }, [route.kind, route.id_profile])
+  }, [route.kind, route.id_profile, routeKey])
+
+  const data =
+    routeKey === "user"
+      ? emptyContextData
+      : loadedData.key === routeKey
+        ? loadedData
+        : cache.get(routeKey) || emptyContextData
 
   return {
     kind: route.kind,
