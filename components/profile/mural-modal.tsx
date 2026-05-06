@@ -2,14 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { ServiceChatModal } from "@/components/profile/service-chat-modal"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle,
-  MessageCircle, Clock, Megaphone, AlertCircle,
-} from "lucide-react"
+import { Loader2, MessageCircle, Clock, Megaphone } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -67,20 +63,21 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
   const [muralItems, setMuralItems] = useState<MuralRequest[]>([])
   const [conversations, setConversations] = useState<ActiveConversation[]>([])
   const [loading, setLoading] = useState(false)
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   // --- chat ---
   const [chatOpen, setChatOpen] = useState(false)
   const [chatIdResponse, setChatIdResponse] = useState("")
   const [chatPeerName, setChatPeerName] = useState("")
   const [chatPeerAvatar, setChatPeerAvatar] = useState<string | undefined>()
-
-  // --- confirm dialogs ---
-  const [confirmAction, setConfirmAction] = useState<{
-    type: "accept" | "reject"
-    request: MuralRequest
-  } | null>(null)
+  const [chatPreview, setChatPreview] = useState<{
+    idRequest: string
+    idProfile: string
+    description: string
+    machineName?: string
+    categoryName?: string
+    estado?: string
+    municipio?: string
+  } | undefined>(undefined)
 
   // Mark mural as seen when opening
   useEffect(() => {
@@ -131,36 +128,20 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
     return () => window.clearTimeout(timeout)
   }, [open, fetchData])
 
-  const handleRespond = async (req: MuralRequest, action: "accept" | "reject") => {
-    const token = getToken()
-    if (!token) return
-    setActionLoading(req.id_request)
-    try {
-      const res = await fetch(`/api/service-requests/${req.id_request}/respond`, {
-        method: "POST",
-        headers: headers(token),
-        body: JSON.stringify({ id_profile: profileId, action }),
-      })
-      if (res.ok) {
-        const d = await res.json().catch(() => ({}))
-        const newResp = (d as { response?: { id_response: string } }).response
-        await fetchData()
-        // Após aceitar com sucesso, abrir chat automaticamente
-        if (action === "accept" && newResp?.id_response) {
-          setChatIdResponse(newResp.id_response)
-          setChatPeerName(req.user_name || "Usuário")
-          setChatPeerAvatar(req.user_avatar)
-          setChatOpen(true)
-        }
-      } else {
-        const d = await res.json().catch(() => ({}))
-        alert((d as { error?: string }).error || "Erro ao responder")
-      }
-    } catch {
-      alert("Erro de rede")
-    }
-    setActionLoading(null)
-    setConfirmAction(null)
+  const openPreviewChat = (req: MuralRequest) => {
+    setChatIdResponse("")
+    setChatPeerName(req.user_name || "Usuário")
+    setChatPeerAvatar(req.user_avatar)
+    setChatPreview({
+      idRequest: req.id_request,
+      idProfile: profileId,
+      description: req.description,
+      machineName: req.machine_name,
+      categoryName: req.category_name,
+      estado: req.estado,
+      municipio: req.municipio,
+    })
+    setChatOpen(true)
   }
 
   return (
@@ -212,65 +193,37 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 </div>
               )}
 
-              {muralItems.map(req => {
-                const isExp = expanded === req.id_request
-                return (
-                  <div key={req.id_request} className="border rounded-lg overflow-hidden">
-                    <button
-                      type="button"
-                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
-                      onClick={() => setExpanded(isExp ? null : req.id_request)}
-                    >
-                      <Avatar className="h-9 w-9 shrink-0">
-                        {req.user_avatar && <AvatarImage src={req.user_avatar} alt={req.user_name || ""} />}
-                        <AvatarFallback className="text-xs">{initials(req.user_name || "?")}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium">{req.user_name || "Usuário"}</span>
-                          <span className="text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3 inline mr-0.5" />
-                            {new Date(req.created_at).toLocaleDateString("pt-BR")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          {req.machine_name && <Badge variant="outline" className="text-[10px] py-0 h-5">{req.machine_name}</Badge>}
-                          {req.category_name && <Badge variant="secondary" className="text-[10px] py-0 h-5">{req.category_name}</Badge>}
-                          {req.municipio && <span className="text-[10px] text-muted-foreground">📍 {req.municipio}{req.estado ? `, ${req.estado}` : ""}</span>}
-                        </div>
-                      </div>
-                      {isExp ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
-                    </button>
-
-                    {isExp && (
-                      <div className="border-t bg-muted/20 p-3 space-y-3">
-                        <p className="text-sm whitespace-pre-wrap">{req.description}</p>
-                        <div className="flex items-center gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
-                            onClick={() => setConfirmAction({ type: "reject", request: req })}
-                            disabled={actionLoading === req.id_request}
-                          >
-                            {actionLoading === req.id_request ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <XCircle className="h-4 w-4 mr-1" />}
-                            Rejeitar
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => setConfirmAction({ type: "accept", request: req })}
-                            disabled={actionLoading === req.id_request}
-                          >
-                            {actionLoading === req.id_request ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                            Aceitar
-                          </Button>
-                        </div>
-                      </div>
+              {muralItems.map(req => (
+                <button
+                  key={req.id_request}
+                  type="button"
+                  className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors text-left"
+                  onClick={() => openPreviewChat(req)}
+                >
+                  <Avatar className="h-9 w-9 shrink-0">
+                    {req.user_avatar && <AvatarImage src={req.user_avatar} alt={req.user_name || ""} />}
+                    <AvatarFallback className="text-xs">{initials(req.user_name || "?")}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium">{req.user_name || "Usuário"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3 inline mr-0.5" />
+                        {new Date(req.created_at).toLocaleDateString("pt-BR")}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      {req.machine_name && <Badge variant="outline" className="text-[10px] py-0 h-5">{req.machine_name}</Badge>}
+                      {req.category_name && <Badge variant="secondary" className="text-[10px] py-0 h-5">{req.category_name}</Badge>}
+                      {req.municipio && <span className="text-[10px] text-muted-foreground">📍 {req.municipio}{req.estado ? `, ${req.estado}` : ""}</span>}
+                    </div>
+                    {req.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{req.description}</p>
                     )}
                   </div>
-                )
-              })}
+                  <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
             </div>
           )}
 
@@ -323,44 +276,28 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       </DialogContent>
     </Dialog>
 
-    {/* Chat modal — pro side */}
+    {/* Chat modal — pro side (preview ao clicar em Solicitação nova) */}
     <ServiceChatModal
       open={chatOpen}
-      onOpenChange={(v) => { setChatOpen(v); if (!v) fetchData() }}
+      onOpenChange={(v) => {
+        setChatOpen(v)
+        if (!v) {
+          setChatPreview(undefined)
+          fetchData()
+        }
+      }}
       idResponse={chatIdResponse}
       peerName={chatPeerName}
       peerAvatar={chatPeerAvatar}
       viewerSide="PRO"
+      previewRequest={chatPreview}
+      onPreviewAccepted={(newId) => {
+        // Aceitou: agora é conversa real — limpa preview e mantém o chat aberto com o novo id
+        setChatPreview(undefined)
+        setChatIdResponse(newId)
+      }}
+      onReject={() => fetchData()}
     />
-
-    {/* Modal de confirmação Aceitar / Rejeitar */}
-    <Dialog open={!!confirmAction} onOpenChange={(v) => { if (!v) setConfirmAction(null) }}>
-      <DialogContent className="sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle>
-            {confirmAction?.type === "accept" ? "Aceitar solicitação?" : "Rejeitar solicitação?"}
-          </DialogTitle>
-          <DialogDescription>
-            {confirmAction?.type === "accept"
-              ? "Se você aceitar, o perfil que requisitou o seu serviço poderá te avaliar ao final do trabalho."
-              : "Você não verá mais essa solicitação no seu mural."}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => setConfirmAction(null)} disabled={!!actionLoading}>
-            Cancelar
-          </Button>
-          <Button
-            className={confirmAction?.type === "accept" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
-            onClick={() => confirmAction && handleRespond(confirmAction.request, confirmAction.type)}
-            disabled={!!actionLoading}
-          >
-            {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Confirmar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
     </>
   )
 }
