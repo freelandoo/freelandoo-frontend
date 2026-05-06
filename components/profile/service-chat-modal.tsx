@@ -67,6 +67,7 @@ export function ServiceChatModal({
   const [currentStatus, setCurrentStatus] = useState<string>(responseStatus || "")
   const [opening, setOpening] = useState(false)
   const [lockedByOther, setLockedByOther] = useState(false)
+  const [openError, setOpenError] = useState<string | null>(null)
   const openingRef = useRef(false)
   const previewAcceptedRef = useRef(onPreviewAccepted)
   useEffect(() => { previewAcceptedRef.current = onPreviewAccepted }, [onPreviewAccepted])
@@ -83,9 +84,11 @@ export function ServiceChatModal({
       setAcceptedIdResponse("")
       setCurrentStatus("")
       setLockedByOther(false)
+      setOpenError(null)
       openingRef.current = false
     } else {
       setCurrentStatus(responseStatus || "")
+      setOpenError(null)
     }
   }, [open, responseStatus])
 
@@ -118,8 +121,12 @@ export function ServiceChatModal({
           setLockedByOther(true)
         } else {
           setLockedByOther(false)
+          const msg = (d as { error?: string }).error || `Erro ao abrir o chat (HTTP ${res.status}).`
+          setOpenError(msg)
         }
-      } catch { /* silent */ }
+      } catch {
+        setOpenError("Erro de rede ao abrir o chat.")
+      }
       setOpening(false)
       openingRef.current = false
     })()
@@ -334,6 +341,13 @@ export function ServiceChatModal({
               <p className="text-xs text-muted-foreground max-w-xs">
                 Aguarde — se o usuário rejeitar a outra resposta, a O.S. fica disponível para você.
               </p>
+            </div>
+          )}
+          {openError && !lockedByOther && (
+            <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
+              <Lock className="h-8 w-8 text-destructive" />
+              <p className="text-sm font-medium text-destructive">Não foi possível abrir o chat</p>
+              <p className="text-xs text-muted-foreground max-w-xs">{openError}</p>
             </div>
           )}
           {grouped.map(group => (
