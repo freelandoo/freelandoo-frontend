@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
+import { ProfileSidebar } from "@/components/layout"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -94,6 +95,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         {children}
+        <ProfileSidebar />
         <CookieConsent />
         <AnalyticsProvider />
       </body>
