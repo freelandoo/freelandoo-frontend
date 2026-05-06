@@ -28,10 +28,17 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
-import { AccountClansSection } from "@/components/account/account-clans-section"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -1146,17 +1153,14 @@ export default function PerfilPage() {
     <div className="bg-page-shell-dark">
       <main className="container mx-auto px-4 py-12">
         <div className="grid gap-8 max-w-4xl mx-auto">
-          {/* Informações Pessoais */}
+          {/* Head Card — perfil do usuário (info pessoal + conta) */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Informações Pessoais</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-start gap-6">
-                <div className="relative">
-                  <Avatar className="h-24 w-24">
+            <CardContent className="pt-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="relative shrink-0 mx-auto md:mx-0">
+                  <Avatar className="h-32 w-32">
                     {perfil.avatar && <AvatarImage src={perfil.avatar || "/placeholder.svg"} alt={perfil.nome} />}
-                    <AvatarFallback>{getInitials(perfil.nome)}</AvatarFallback>
+                    <AvatarFallback className="text-2xl">{getInitials(perfil.nome)}</AvatarFallback>
                   </Avatar>
                   <Button
                     size="icon"
@@ -1166,112 +1170,87 @@ export default function PerfilPage() {
                     <Camera className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Nome</p>
-                      <p className="font-semibold text-lg">{perfil.nome}</p>
+
+                <div className="flex-1 min-w-0 space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="font-bold text-2xl truncate">{perfil.nome}</h2>
                       {perfil.username && (
                         <p className="text-sm text-muted-foreground">@{perfil.username}</p>
                       )}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {perfil.statuses && perfil.statuses.length > 0 ? (
+                          perfil.statuses.map((status) => (
+                            <Badge key={status.id_status} variant="default" className="bg-green-600 hover:bg-green-700">
+                              {status.desc_status.replace(/_/g, " ").toUpperCase()}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="secondary">Sem status</Badge>
+                        )}
+                      </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={openEditModal}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {perfil.data_nascimento && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Data de Nascimento</p>
-                        <p className="font-medium">{new Date(perfil.data_nascimento.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                      </div>
-                    )}
-                    {perfil.sexo && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Sexo</p>
-                        <p className="font-medium">{formatarSexo(perfil.sexo)}</p>
-                      </div>
-                    )}
-                    {perfil.estado && (
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Localização</p>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <p className="font-medium">{perfil.municipio ? `${perfil.municipio}, ${perfil.estado}` : perfil.estado}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Informações da Conta */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Informações da Conta</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Status</p>
-                  <div className="flex flex-wrap gap-2">
-                    {perfil.statuses && perfil.statuses.length > 0 ? (
-                      perfil.statuses.map((status) => {
-                        let badgeClass = "bg-green-600 hover:bg-green-700"
-                        if (status.desc_status.includes("email")) {
-                          badgeClass = "bg-green-600 hover:bg-green-700"
-                        }
-                        return (
-                          <Badge key={status.id_status} variant="default" className={badgeClass}>
-                            {status.desc_status.replace(/_/g, " ").toUpperCase()}
-                          </Badge>
-                        )
-                      })
-                    ) : (
-                      <Badge variant="secondary">Sem status</Badge>
-                    )}
-
-
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Email</p>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <p className="font-medium">{perfil.email}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Cupom</p>
-                  {perfil.coupon_code ? (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-primary bg-primary/5 hover:bg-primary/10 transition-colors font-mono text-sm font-semibold tracking-widest text-primary"
-                      >
-                        {couponCopied ? <Check className="h-4 w-4 shrink-0" /> : <Copy className="h-4 w-4 shrink-0" />}
-                        {perfil.coupon_code}
-                        <span className="text-xs font-normal text-muted-foreground ml-1">
-                          {couponCopied ? "Copiado!" : "Clique para copiar"}
-                        </span>
-                      </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={openEditModal}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
                       <Button asChild variant="outline" size="sm">
                         <a href="/account/afiliado">Painel de afiliado</a>
                       </Button>
+                      {perfil.coupon_code ? (
+                        <button
+                          onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-dashed border-primary bg-primary/5 hover:bg-primary/10 transition-colors font-mono text-sm font-semibold tracking-widest text-primary"
+                          title={couponCopied ? "Copiado!" : "Clique para copiar"}
+                        >
+                          {couponCopied ? <Check className="h-4 w-4 shrink-0" /> : <Copy className="h-4 w-4 shrink-0" />}
+                          {perfil.coupon_code}
+                        </button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateCoupon}
+                          disabled={isGeneratingCoupon}
+                        >
+                          {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateCoupon}
-                      disabled={isGeneratingCoupon}
-                    >
-                      {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
-                    </Button>
-                  )}
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                    {perfil.data_nascimento && (
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Data de Nascimento</p>
+                        <p className="text-sm font-medium">{new Date(perfil.data_nascimento.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    )}
+                    {perfil.sexo && (
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Sexo</p>
+                        <p className="text-sm font-medium">{formatarSexo(perfil.sexo)}</p>
+                      </div>
+                    )}
+                    {perfil.estado && (
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Localização</p>
+                        <p className="text-sm font-medium flex items-center gap-1 truncate">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{perfil.municipio ? `${perfil.municipio}, ${perfil.estado}` : perfil.estado}</span>
+                        </p>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Email</p>
+                      <p className="text-sm font-medium flex items-center gap-1 truncate">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{perfil.email}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -1282,9 +1261,12 @@ export default function PerfilPage() {
           {/* Meus Perfis */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div>
-                  <CardTitle className="text-xl">Meus Perfis</CardTitle>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Meus Perfis
+                  </CardTitle>
                   {(() => {
                     const list = (perfil.profiles || []).filter((p) => !p.is_clan)
                     const total = list.length
@@ -1306,166 +1288,101 @@ export default function PerfilPage() {
             </CardHeader>
             <CardContent>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
                     const isPublished = !!profile.is_published
+                    const imgSrc = profile.avatar_url || perfil?.avatar || null
                     return (
-                    <Card
-                      key={profile.id_profile}
-                      className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col"
-                    >
-                      <CardContent className="p-6 flex-1 flex flex-col">
-                        <div className="space-y-4 flex-1">
-                          {/* Avatar e Display Name */}
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16">
-                              {(profile.avatar_url || perfil?.avatar) && (
-                                <AvatarImage src={(profile.avatar_url || perfil?.avatar) ?? undefined} alt={profile.display_name} />
-                              )}
-                              <AvatarFallback>{getInitials(profile.display_name)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <button
-                                type="button"
-                                onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                                className="font-semibold text-lg text-left hover:underline"
+                      <div key={profile.id_profile} className="group relative">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
+                          className="block w-full aspect-square overflow-hidden rounded-lg bg-muted relative ring-1 ring-border hover:ring-primary/50 transition"
+                          aria-label={`Abrir perfil ${profile.display_name}`}
+                        >
+                          {imgSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imgSrc}
+                              alt={profile.display_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-3xl font-semibold">
+                              {getInitials(profile.display_name)}
+                            </div>
+                          )}
+                        </button>
+
+                        {/* Engrenagem (canto superior esquerdo) */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="absolute top-2 left-2 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
+                              aria-label="Ações do perfil"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-52">
+                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}`)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Gerenciar perfil
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}>
+                              <CalendarDays className="h-4 w-4 mr-2" />
+                              Agenda
+                            </DropdownMenuItem>
+                            {!isPaid && (
+                              <DropdownMenuItem onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}>
+                                <Briefcase className="h-4 w-4 mr-2" />
+                                Ativar perfil
+                              </DropdownMenuItem>
+                            )}
+                            {isPaid && (
+                              <DropdownMenuItem
+                                disabled={togglingVisibility === profile.id_profile}
+                                onClick={() => handleToggleVisibility(profile.id_profile, !isVisible)}
                               >
-                                {profile.display_name}
-                              </button>
-                              {profile.category && (
-                                <p className="text-sm text-muted-foreground">{profile.category}</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Status Badge — pagamento + visibilidade */}
-                          <div className="flex flex-wrap gap-2">
-                            {!isPaid ? (
-                              <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
-                                Aguardando assinatura
-                              </Badge>
-                            ) : isPublished ? (
-                              <Badge className="bg-green-600 hover:bg-green-700">Ativo e visível</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="bg-slate-500/15 text-slate-700 border border-slate-500/30">
-                                Invisível
-                              </Badge>
+                                {isVisible ? (
+                                  <><EyeOff className="h-4 w-4 mr-2" /> Deixar invisível</>
+                                ) : (
+                                  <><Eye className="h-4 w-4 mr-2" /> Tornar visível</>
+                                )}
+                              </DropdownMenuItem>
                             )}
-                            {(profile.machine_name || profile.machine_slug) && (
-                              <Badge variant="outline">
-                                {profile.machine_name || profile.machine_slug}
-                              </Badge>
-                            )}
-                          </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              disabled={deletingProfile === profile.id_profile}
+                              onClick={() => handleDeleteProfile(profile.id_profile)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
 
-                          {(profile.municipio || profile.estado) && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {[profile.municipio, profile.estado].filter(Boolean).join(" - ")}
-                            </p>
-                          )}
-
-                          {/* Bio */}
-                          {profile.bio && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">{profile.bio}</p>
-                          )}
-
-                          {/* Redes Sociais */}
-                          {profile.redes_sociais && profile.redes_sociais.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground">Redes Sociais</p>
-                              <div className="flex flex-wrap gap-2">
-                                {profile.redes_sociais.map((rede) => {
-                                  let icon = null
-                                  let color = "bg-gray-500"
-
-                                  const plataforma = rede.social_media_type?.toLowerCase() || ""
-                                  if (plataforma.includes("instagram")) {
-                                    icon = <Instagram className="h-4 w-4" />
-                                    color = "bg-gradient-to-br from-purple-500 to-pink-500"
-                                  } else if (plataforma.includes("youtube")) {
-                                    icon = <Youtube className="h-4 w-4" />
-                                    color = "bg-red-600"
-                                  } else if (plataforma.includes("tiktok")) {
-                                    icon = <Video className="h-4 w-4" />
-                                    color = "bg-black"
-                                  }
-
-                                  return (
-                                    <button
-                                      key={rede.social_id}
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        if (rede.url) {
-                                          window.open(rede.url, "_blank")
-                                        }
-                                      }}
-                                      className={`${color} p-2 rounded-full text-white hover:opacity-80 transition-opacity`}
-                                      title={rede.social_media_type}
-                                    >
-                                      {icon}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
+                        {/* Status indicator (canto superior direito) */}
+                        <div className="absolute top-2 right-2 pointer-events-none">
+                          {!isPaid ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold uppercase tracking-wide">
+                              Aguardando
+                            </span>
+                          ) : isPublished ? (
+                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" title="Ativo e visível" />
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-slate-700/80 text-white text-[10px] font-semibold uppercase tracking-wide">
+                              Invisível
+                            </span>
                           )}
                         </div>
 
-                        {/* Ações do perfil */}
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          >
-                            Gerenciar perfil
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}
-                          >
-                            <CalendarDays className="h-3.5 w-3.5 mr-1" />
-                            Agenda
-                          </Button>
-                          {!isPaid && (
-                            <Button
-                              size="sm"
-                              onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}
-                            >
-                              Ativar perfil
-                            </Button>
-                          )}
-                          {isPaid && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={togglingVisibility === profile.id_profile}
-                              onClick={() => handleToggleVisibility(profile.id_profile, !isVisible)}
-                            >
-                              {togglingVisibility === profile.id_profile
-                                ? "..."
-                                : isVisible
-                                  ? "Deixar invisível"
-                                  : "Tornar visível"}
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            disabled={deletingProfile === profile.id_profile}
-                            onClick={() => handleDeleteProfile(profile.id_profile)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            {deletingProfile === profile.id_profile ? "..." : "Excluir"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        <p className="mt-2 text-sm font-medium truncate">{profile.display_name}</p>
+                      </div>
                     )
                   })}
                 </div>
@@ -1485,8 +1402,141 @@ export default function PerfilPage() {
             </CardContent>
           </Card>
 
-          {/* Meus Clans */}
-          <AccountClansSection />
+          {/* Meus Clans — mesmo estilo dos subperfis */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Meus Clans
+                  </CardTitle>
+                  {(() => {
+                    const list = (perfil.profiles || []).filter((p) => p.is_clan)
+                    const total = list.length
+                    const visible = list.filter((p) => p.is_published).length
+                    const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
+                    return (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {total} clan{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"}
+                      </p>
+                    )
+                  })()}
+                </div>
+                <Button variant="outline" asChild>
+                  <Link href="/account/clans">
+                    Gerenciar clans
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
+                    const isPaid = !!clan.is_paid
+                    const isVisible = clan.is_visible !== false
+                    const isPublished = !!clan.is_published
+                    const imgSrc = clan.avatar_url || null
+                    return (
+                      <div key={clan.id_profile} className="group relative">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/account/clans/${clan.id_profile}`)}
+                          className="block w-full aspect-square overflow-hidden rounded-lg bg-muted relative ring-1 ring-border hover:ring-primary/50 transition"
+                          aria-label={`Abrir clan ${clan.display_name}`}
+                        >
+                          {imgSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imgSrc}
+                              alt={clan.display_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-3xl font-semibold">
+                              {getInitials(clan.display_name)}
+                            </div>
+                          )}
+                        </button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="absolute top-2 left-2 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
+                              aria-label="Ações do clan"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-52">
+                            <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}`)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Gerenciar clan
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${clan.id_profile}/agenda`)}>
+                              <CalendarDays className="h-4 w-4 mr-2" />
+                              Agenda
+                            </DropdownMenuItem>
+                            {isPaid && (
+                              <DropdownMenuItem
+                                disabled={togglingVisibility === clan.id_profile}
+                                onClick={() => handleToggleVisibility(clan.id_profile, !isVisible)}
+                              >
+                                {isVisible ? (
+                                  <><EyeOff className="h-4 w-4 mr-2" /> Deixar invisível</>
+                                ) : (
+                                  <><Eye className="h-4 w-4 mr-2" /> Tornar visível</>
+                                )}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              disabled={deletingProfile === clan.id_profile}
+                              onClick={() => handleDeleteProfile(clan.id_profile)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <div className="absolute top-2 right-2 pointer-events-none flex items-center gap-1">
+                          <Crown className="h-4 w-4 text-amber-400 drop-shadow" />
+                          {!isPaid ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold uppercase tracking-wide">
+                              Aguardando
+                            </span>
+                          ) : isPublished ? (
+                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" title="Ativo e visível" />
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-slate-700/80 text-white text-[10px] font-semibold uppercase tracking-wide">
+                              Invisível
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-2 text-sm font-medium truncate">{clan.display_name}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                  <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Você ainda não tem clans criados.
+                  </p>
+                  <Button variant="link" asChild className="mt-2">
+                    <Link href="/account/clans">Criar ou entrar em um clan</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
 
