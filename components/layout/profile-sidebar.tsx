@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Settings, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -62,6 +62,8 @@ function buildContextBundle(
       avatar_url: active.avatar_url,
       items: [
         { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+        { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+        { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `${root}?ranking=1`, label: "Ranking", icon: Trophy, activePath: root },
         {
           href: `${root}/settings`,
@@ -81,6 +83,8 @@ function buildContextBundle(
       avatar_url: active.avatar_url,
       items: [
         { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+        { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+        { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `/clans/${active.id_profile}?ranking=1`, label: "Ranking", icon: Trophy },
         {
           href: `${root}/edit`,
@@ -99,6 +103,8 @@ function buildContextBundle(
     avatar_url: null,
     items: [
       { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+      { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+      { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
       { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },
       {
         href: "/account/dados",
