@@ -4,21 +4,17 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import {
   BarChart2,
-  Briefcase,
   CalendarDays,
   Cog,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca
   Instagram,
   MapPin,
   Megaphone,
   MessageCircle,
   Phone,
-  Quote,
   Settings,
   Trophy,
   Users,
   UserRound,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca
   Youtube,
 } from "lucide-react"
 import { FollowButton } from "@/components/entity-follow"
@@ -117,6 +113,12 @@ function getSocialIcon(icon?: string) {
       return <Youtube className="h-3.5 w-3.5" />
     case "whatsapp":
       return <Phone className="h-3.5 w-3.5" />
+    case "tiktok":
+      return (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-2.89-2.89c.31 0 .6.05.88.14V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 1 0 15.86 15.67v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35 0-.69-.04-1.04-.1z" />
+        </svg>
+      )
     default:
       return <span className="block h-2 w-2 rounded-full bg-current" aria-hidden />
   }
@@ -136,7 +138,7 @@ export function ProfileHeadCard({
   className,
 }: ProfileHeadCardProps) {
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
-  const [openMode, setOpenMode] = useState<"followers" | "following" | null>(null)
+  const [openFollowers, setOpenFollowers] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -181,19 +183,32 @@ export function ProfileHeadCard({
           "relative overflow-hidden rounded-[2rem] border border-white/[0.07]",
           "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
           "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_0_0_1px_rgba(255,255,255,0.02)]",
-          "p-4 md:p-6",
+          "p-4 md:p-5",
           className
         )}
       >
-        {/* TOPO: foto + stats lado a lado (estilo Instagram) */}
-        <div className="flex items-start gap-4 md:gap-6">
+        {statusBadge && (
+          <div className="mb-3 flex justify-end">
+            <span
+              className={cn(
+                "rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                statusBadge.className
+              )}
+            >
+              {statusBadge.label}
+            </span>
+          </div>
+        )}
+
+        {/* TOPO: foto + stats/info lado a lado */}
+        <div className="flex items-start gap-4 md:gap-5">
           {/* Foto + estrelas embaixo */}
           <div className="flex shrink-0 flex-col items-center">
             <div
-              className="relative h-24 w-24 overflow-hidden rounded-3xl ring-1 ring-primary/25 sm:h-28 sm:w-28 md:h-32 md:w-32"
+              className="relative h-28 w-28 overflow-hidden rounded-2xl ring-1 ring-primary/25 sm:h-32 sm:w-32 md:h-36 md:w-36"
               style={{
                 boxShadow:
-                  "0 0 0 1px rgba(242,196,9,0.05), 0 18px 36px -22px rgba(242,196,9,0.28)",
+                  "0 0 0 1px rgba(242,196,9,0.05), 0 16px 32px -22px rgba(242,196,9,0.28)",
               }}
             >
               {avatarSrc ? (
@@ -218,156 +233,93 @@ export function ProfileHeadCard({
             <AvatarRatingStar profileId={profileId} />
           </div>
 
-          {/* Stats + status — ocupa o lado direito */}
+          {/* Coluna direita: stats (Posts | Acompanham) + info com icones */}
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-start justify-end gap-2">
-              {statusBadge && (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
-                    statusBadge.className
-                  )}
-                >
-                  {statusBadge.label}
-                </span>
-              )}
-            </div>
-
-            <dl className="mt-1 grid grid-cols-3 gap-1 text-center sm:gap-3">
-              <div className="flex flex-col items-center justify-center px-1 py-1.5">
-                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
+            <dl className="grid grid-cols-2 divide-x divide-white/[0.06]">
+              <div className="flex flex-col items-center justify-center px-2 py-1">
+                <dd className="text-xl font-semibold tabular-nums text-white">
                   {portfolioCount}
                 </dd>
-                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
+                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-white/45">
                   Posts
                 </dt>
               </div>
               <button
                 type="button"
-                onClick={() => setOpenMode("followers")}
-                className="flex flex-col items-center justify-center rounded-xl px-1 py-1.5 transition hover:bg-white/[0.04]"
+                onClick={() => setOpenFollowers(true)}
+                className="flex flex-col items-center justify-center rounded-xl px-2 py-1 transition hover:bg-white/[0.04]"
                 aria-label="Ver quem acompanha"
               >
-                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
+                <dd className="text-xl font-semibold tabular-nums text-white">
                   {counts.followers_count}
                 </dd>
-                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
+                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-white/45">
                   Acompanham
                 </dt>
               </button>
-              <button
-                type="button"
-                onClick={() => setOpenMode("following")}
-                className="flex flex-col items-center justify-center rounded-xl px-1 py-1.5 transition hover:bg-white/[0.04]"
-                aria-label="Ver acompanhados"
-              >
-                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
-                  {counts.following_count}
-                </dd>
-                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
-                  Acompanhando
-                </dt>
-              </button>
             </dl>
+
+            {/* Info em linhas: maquina, profissao, cidade */}
+            {(profile.machine_name || profile.desc_category || location) && (
+              <ul className="mt-4 space-y-2.5">
+                {profile.machine_name && (
+                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
+                    <Megaphone className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate">{profile.machine_name}</span>
+                  </li>
+                )}
+                {profile.desc_category && (
+                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
+                    {isClan ? (
+                      <Users className="h-4 w-4 shrink-0 text-primary" />
+                    ) : (
+                      <UserRound className="h-4 w-4 shrink-0 text-primary" />
+                    )}
+                    <span className="truncate">{profile.desc_category}</span>
+                  </li>
+                )}
+                {location && (
+                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
+                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate">{location}</span>
+                  </li>
+                )}
+                {isClan && typeof profile.members_count === "number" && (
+                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
+                    <Users className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate">
+                      {profile.members_count}{" "}
+                      {profile.members_count === 1 ? "perfil" : "perfis"}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            )}
           </div>
         </div>
 
-        {/* IDENTIDADE: nome + profissao + cidade */}
+        {/* NOME + BIO */}
         <div className="mt-5">
           <h1 className="text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-2xl">
             {displayName}
           </h1>
-          {profile.desc_category && (
-            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-white/75">
-              {isClan ? (
-                <Users className="h-3.5 w-3.5 text-primary/80" />
-              ) : (
-                <UserRound className="h-3.5 w-3.5 text-primary/80" />
-              )}
-              {profile.desc_category}
-            </p>
-          )}
-          {location && (
-            <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-white/55">
-              <MapPin className="h-3.5 w-3.5 text-primary/80" />
-              {location}
+          {profile.bio && (
+            <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
+              {profile.bio}
             </p>
           )}
         </div>
 
-        {/* CHIPS */}
-        {(profile.machine_name || profile.desc_category || location) && (
-          <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            {profile.machine_name && (
-              <span className="rounded-full border border-primary/30 bg-primary/[0.10] px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                {profile.machine_name}
-              </span>
-            )}
-            {profile.desc_category && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
-                <Briefcase className="h-2.5 w-2.5" />
-                {profile.desc_category}
-              </span>
-            )}
-            {location && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
-                <MapPin className="h-2.5 w-2.5" />
-                {location}
-              </span>
-            )}
-            {isClan && typeof profile.members_count === "number" && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
-                <Users className="h-2.5 w-2.5" />
-                {profile.members_count} {profile.members_count === 1 ? "perfil" : "perfis"}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* BIO QUOTE BLOCK */}
-        {profile.bio && (
-          <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 md:p-5">
-            <div className="flex items-start gap-3">
-              <Quote
-                className="h-4 w-4 shrink-0 -scale-x-100 text-primary/70"
-                aria-hidden
-              />
-              <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/80">
-                {profile.bio}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* SOCIAL LINKS */}
-        {socials.length > 0 && (
-          <ul className="mt-4 flex flex-wrap items-center gap-1.5">
-            {socials.map((s, i) => (
-              <li key={s.id_profile_social_media || `${s.profile_url}-${i}`}>
-                <a
-                  href={s.profile_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={s.desc_social_media_type || "Rede social"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
-                >
-                  {getSocialIcon(s.icon)}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-
         {/* PRIMARY ACTIONS */}
-        <div className="mt-5 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           {isOwnProfile ? (
             <Link
               href={ownerActions?.editHref || "#"}
               onClick={ownerActions?.onEdit}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)",
+                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
               }}
             >
               <Settings className="h-3.5 w-3.5" />
@@ -378,20 +330,23 @@ export function ProfileHeadCard({
               <button
                 type="button"
                 onClick={visitorActions?.onScheduleScroll}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
+                className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
                 style={{
                   boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)",
+                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
                 }}
               >
                 Agendar
               </button>
-              <FollowButton
-                targetType={entityType}
-                targetId={profileId}
-                onChanged={onFollowChanged}
-                className="!h-10"
-              />
+              <div className="min-w-0 flex-1">
+                <FollowButton
+                  targetType={entityType}
+                  targetId={profileId}
+                  onChanged={onFollowChanged}
+                  compact
+                  className="!h-9 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[12px] !font-bold !uppercase !tracking-wider"
+                />
+              </div>
             </>
           )}
           <Link
@@ -402,7 +357,7 @@ export function ProfileHeadCard({
             }
             aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
             title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
           >
             <MessageCircle className="h-3.5 w-3.5" />
           </Link>
@@ -434,6 +389,7 @@ export function ProfileHeadCard({
           {ownerActions.onShowRanking && (
             <ToolbarButton onClick={ownerActions.onShowRanking} icon={Trophy} label="Ranking" />
           )}
+          <SocialToolbar socials={socials} />
           {ownerActions.onShowMural && (
             <ToolbarButton
               onClick={ownerActions.onShowMural}
@@ -461,22 +417,16 @@ export function ProfileHeadCard({
           {visitorActions.onShowRanking && (
             <ToolbarButton onClick={visitorActions.onShowRanking} icon={Trophy} label="Ranking" />
           )}
+          <SocialToolbar socials={socials} />
         </nav>
       )}
 
       <EntityFollowModal
-        open={openMode === "followers"}
-        onOpenChange={(open) => setOpenMode(open ? "followers" : null)}
+        open={openFollowers}
+        onOpenChange={setOpenFollowers}
         entityType={entityType}
         entityId={profileId}
         mode="followers"
-      />
-      <EntityFollowModal
-        open={openMode === "following"}
-        onOpenChange={(open) => setOpenMode(open ? "following" : null)}
-        entityType={entityType}
-        entityId={profileId}
-        mode="following"
       />
     </>
   )
@@ -525,6 +475,28 @@ function ToolbarLink({
       <Icon className="h-3 w-3" />
       {label}
     </Link>
+  )
+}
+
+function SocialToolbar({ socials }: { socials: ProfileSocialLink[] }) {
+  if (socials.length === 0) return null
+
+  return (
+    <>
+      {socials.map((social, index) => (
+        <a
+          key={social.id_profile_social_media || `${social.profile_url}-${index}`}
+          href={social.profile_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={social.desc_social_media_type || "Rede social"}
+          aria-label={social.desc_social_media_type || "Rede social"}
+          className="inline-flex h-9 min-w-12 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/[0.03] px-3 text-white/75 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+        >
+          {getSocialIcon(social.icon)}
+        </a>
+      ))}
+    </>
   )
 }
 
