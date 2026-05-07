@@ -181,20 +181,19 @@ export function ProfileHeadCard({
           "relative overflow-hidden rounded-[2rem] border border-white/[0.07]",
           "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
           "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_0_0_1px_rgba(255,255,255,0.02)]",
-          "p-5 md:p-8",
+          "p-4 md:p-6",
           className
         )}
       >
-        {/* TOP: 2 colunas (foto + info) */}
-        <div className="grid gap-6 md:grid-cols-[220px_1fr] md:gap-8 md:items-start">
-          {/* COLUNA ESQUERDA: foto grande + estrelas */}
-          <div className="flex flex-col items-center">
+        {/* TOPO: foto + stats lado a lado (estilo Instagram) */}
+        <div className="flex items-start gap-4 md:gap-6">
+          {/* Foto + estrelas embaixo */}
+          <div className="flex shrink-0 flex-col items-center">
             <div
-              className="relative w-full max-w-[220px] overflow-hidden rounded-[28px] ring-1 ring-primary/25"
+              className="relative h-24 w-24 overflow-hidden rounded-3xl ring-1 ring-primary/25 sm:h-28 sm:w-28 md:h-32 md:w-32"
               style={{
-                aspectRatio: "1 / 1",
                 boxShadow:
-                  "0 0 0 1px rgba(242,196,9,0.05), 0 28px 48px -28px rgba(242,196,9,0.28)",
+                  "0 0 0 1px rgba(242,196,9,0.05), 0 18px 36px -22px rgba(242,196,9,0.28)",
               }}
             >
               {avatarSrc ? (
@@ -206,47 +205,26 @@ export function ProfileHeadCard({
                 />
               ) : (
                 <div
-                  className="flex h-full w-full items-center justify-center text-4xl font-semibold text-primary"
+                  className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary"
                   style={{
                     background:
                       "linear-gradient(135deg, rgba(242,196,9,0.22), rgba(242,196,9,0.05))",
                   }}
                 >
-                  {isClan ? <Users className="h-12 w-12" /> : getInitials(displayName)}
+                  {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
                 </div>
               )}
             </div>
             <AvatarRatingStar profileId={profileId} />
           </div>
 
-          {/* COLUNA DIREITA: nome + info + chips */}
-          <div className="flex min-w-0 flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-                  {displayName}
-                </h1>
-                {profile.desc_category && (
-                  <p className="mt-3 inline-flex items-center gap-2 text-sm text-white/75">
-                    {isClan ? (
-                      <Users className="h-3.5 w-3.5 text-primary/80" />
-                    ) : (
-                      <UserRound className="h-3.5 w-3.5 text-primary/80" />
-                    )}
-                    {profile.desc_category}
-                  </p>
-                )}
-                {location && (
-                  <p className="mt-1 inline-flex items-center gap-2 text-sm text-white/55">
-                    <MapPin className="h-3.5 w-3.5 text-primary/80" />
-                    {location}
-                  </p>
-                )}
-              </div>
+          {/* Stats + status — ocupa o lado direito */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex items-start justify-end gap-2">
               {statusBadge && (
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                    "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
                     statusBadge.className
                   )}
                 >
@@ -255,79 +233,115 @@ export function ProfileHeadCard({
               )}
             </div>
 
-            {/* CHIPS */}
-            {(profile.machine_name || profile.desc_category || location) && (
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                {profile.machine_name && (
-                  <span className="rounded-full border border-primary/30 bg-primary/[0.10] px-3 py-1 text-xs font-medium text-primary">
-                    {profile.machine_name}
-                  </span>
-                )}
-                {profile.desc_category && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
-                    <Briefcase className="h-3 w-3" />
-                    {profile.desc_category}
-                  </span>
-                )}
-                {location && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
-                    <MapPin className="h-3 w-3" />
-                    {location}
-                  </span>
-                )}
-                {isClan && typeof profile.members_count === "number" && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
-                    <Users className="h-3 w-3" />
-                    {profile.members_count} {profile.members_count === 1 ? "perfil" : "perfis"}
-                  </span>
-                )}
+            <dl className="mt-1 grid grid-cols-3 gap-1 text-center sm:gap-3">
+              <div className="flex flex-col items-center justify-center px-1 py-1.5">
+                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
+                  {portfolioCount}
+                </dd>
+                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
+                  Posts
+                </dt>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setOpenMode("followers")}
+                className="flex flex-col items-center justify-center rounded-xl px-1 py-1.5 transition hover:bg-white/[0.04]"
+                aria-label="Ver quem acompanha"
+              >
+                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
+                  {counts.followers_count}
+                </dd>
+                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
+                  Acompanham
+                </dt>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenMode("following")}
+                className="flex flex-col items-center justify-center rounded-xl px-1 py-1.5 transition hover:bg-white/[0.04]"
+                aria-label="Ver acompanhados"
+              >
+                <dd className="text-lg font-semibold tabular-nums text-white sm:text-xl">
+                  {counts.following_count}
+                </dd>
+                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
+                  Acompanhando
+                </dt>
+              </button>
+            </dl>
           </div>
         </div>
 
+        {/* IDENTIDADE: nome + profissao + cidade */}
+        <div className="mt-5">
+          <h1 className="text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-2xl">
+            {displayName}
+          </h1>
+          {profile.desc_category && (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-white/75">
+              {isClan ? (
+                <Users className="h-3.5 w-3.5 text-primary/80" />
+              ) : (
+                <UserRound className="h-3.5 w-3.5 text-primary/80" />
+              )}
+              {profile.desc_category}
+            </p>
+          )}
+          {location && (
+            <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-white/55">
+              <MapPin className="h-3.5 w-3.5 text-primary/80" />
+              {location}
+            </p>
+          )}
+        </div>
+
+        {/* CHIPS */}
+        {(profile.machine_name || profile.desc_category || location) && (
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
+            {profile.machine_name && (
+              <span className="rounded-full border border-primary/30 bg-primary/[0.10] px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                {profile.machine_name}
+              </span>
+            )}
+            {profile.desc_category && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
+                <Briefcase className="h-2.5 w-2.5" />
+                {profile.desc_category}
+              </span>
+            )}
+            {location && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
+                <MapPin className="h-2.5 w-2.5" />
+                {location}
+              </span>
+            )}
+            {isClan && typeof profile.members_count === "number" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/75">
+                <Users className="h-2.5 w-2.5" />
+                {profile.members_count} {profile.members_count === 1 ? "perfil" : "perfis"}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* BIO QUOTE BLOCK */}
         {profile.bio && (
-          <div className="mt-7 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 md:p-6">
+          <div className="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 md:p-5">
             <div className="flex items-start gap-3">
               <Quote
-                className="h-5 w-5 shrink-0 -scale-x-100 text-primary/70"
+                className="h-4 w-4 shrink-0 -scale-x-100 text-primary/70"
                 aria-hidden
               />
-              <div className="min-w-0 flex-1">
-                <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-white/80 md:text-sm">
-                  {profile.bio}
-                </p>
-              </div>
-              {socials.length > 0 && (
-                <ul className="hidden shrink-0 flex-col gap-1.5 sm:flex">
-                  {socials.slice(0, 3).map((s, i) => (
-                    <li key={s.id_profile_social_media || `${s.profile_url}-${i}`}>
-                      <a
-                        href={s.profile_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={s.desc_social_media_type || "Rede social"}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
-                      >
-                        {getSocialIcon(s.icon)}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/80">
+                {profile.bio}
+              </p>
             </div>
           </div>
         )}
 
-        {/* SOCIAL LINKS (mobile, ou quando nao houver bio) */}
+        {/* SOCIAL LINKS */}
         {socials.length > 0 && (
-          <ul
-            className={cn(
-              "mt-5 flex flex-wrap items-center gap-2",
-              profile.bio && "sm:hidden"
-            )}
-          >
+          <ul className="mt-4 flex flex-wrap items-center gap-1.5">
             {socials.map((s, i) => (
               <li key={s.id_profile_social_media || `${s.profile_url}-${i}`}>
                 <a
@@ -335,7 +349,7 @@ export function ProfileHeadCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={s.desc_social_media_type || "Rede social"}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
                 >
                   {getSocialIcon(s.icon)}
                 </a>
@@ -344,57 +358,19 @@ export function ProfileHeadCard({
           </ul>
         )}
 
-        {/* METRICS */}
-        <dl className="mt-7 grid grid-cols-3 divide-x divide-white/[0.06] rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-          <div className="px-4 py-4 text-left">
-            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
-              Posts
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
-              {portfolioCount}
-            </dd>
-          </div>
-          <button
-            type="button"
-            onClick={() => setOpenMode("followers")}
-            className="px-4 py-4 text-left transition hover:bg-white/[0.03]"
-            aria-label="Ver quem acompanha"
-          >
-            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
-              Acompanham
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
-              {counts.followers_count}
-            </dd>
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpenMode("following")}
-            className="px-4 py-4 text-left transition hover:bg-white/[0.03]"
-            aria-label="Ver acompanhados"
-          >
-            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
-              Acompanhando
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
-              {counts.following_count}
-            </dd>
-          </button>
-        </dl>
-
         {/* PRIMARY ACTIONS */}
         <div className="mt-5 flex items-center gap-2">
           {isOwnProfile ? (
             <Link
               href={ownerActions?.editHref || "#"}
               onClick={ownerActions?.onEdit}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
               style={{
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 16px 36px -18px rgba(242,196,9,0.55)",
+                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)",
               }}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3.5 w-3.5" />
               {isClan ? "Editar clan" : "Editar perfil"}
             </Link>
           ) : (
@@ -402,10 +378,10 @@ export function ProfileHeadCard({
               <button
                 type="button"
                 onClick={visitorActions?.onScheduleScroll}
-                className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
                 style={{
                   boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 16px 36px -18px rgba(242,196,9,0.55)",
+                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)",
                 }}
               >
                 Agendar
@@ -414,7 +390,7 @@ export function ProfileHeadCard({
                 targetType={entityType}
                 targetId={profileId}
                 onChanged={onFollowChanged}
-                className="!h-12"
+                className="!h-10"
               />
             </>
           )}
@@ -426,9 +402,9 @@ export function ProfileHeadCard({
             }
             aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
             title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className="h-3.5 w-3.5" />
           </Link>
         </div>
       </article>
@@ -521,9 +497,9 @@ function ToolbarButton({
     <button
       type="button"
       onClick={onClick}
-      className="relative inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+      className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3 w-3" />
       {label}
       {badge && (
         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
@@ -544,9 +520,9 @@ function ToolbarLink({
   return (
     <Link
       href={href}
-      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
     >
-      <Icon className="h-3.5 w-3.5" />
+      <Icon className="h-3 w-3" />
       {label}
     </Link>
   )
