@@ -44,7 +44,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
   const handleLike = async () => {
     const token = getToken()
     if (!token) {
-      const next = encodeURIComponent("/explorar")
+      const next = encodeURIComponent("/feed")
       router.push(`/login?next=${next}`)
       return
     }

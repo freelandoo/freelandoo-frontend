@@ -61,7 +61,7 @@ function buildContextBundle(
       displayName: active.name || "Sub-perfil",
       avatar_url: active.avatar_url,
       items: [
-        { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+        { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `${root}?ranking=1`, label: "Ranking", icon: Trophy, activePath: root },
@@ -82,7 +82,7 @@ function buildContextBundle(
       displayName: active.name || "Clan",
       avatar_url: active.avatar_url,
       items: [
-        { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+        { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `/clans/${active.id_profile}?ranking=1`, label: "Ranking", icon: Trophy },
@@ -102,7 +102,7 @@ function buildContextBundle(
     displayName: fallbackUserName,
     avatar_url: null,
     items: [
-      { href: "/explorar", label: "Explorar", icon: Home, matchPrefix: "/explorar" },
+      { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
       { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
       { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
       { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },

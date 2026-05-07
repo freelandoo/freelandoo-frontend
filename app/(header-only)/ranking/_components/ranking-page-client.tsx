@@ -547,8 +547,8 @@ export function RankingPageClient() {
             </div>
 
             <Button asChild className="mt-5 w-full">
-              <Link href="/explorar">
-                Explorar perfis
+              <Link href="/feed">
+                Ir para o feed
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </Button>

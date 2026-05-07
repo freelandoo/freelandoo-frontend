@@ -1,6 +1,9 @@
 "use client"
 
-import { ChevronDown, MapPin, Sparkles, X } from "lucide-react"
+import { forwardRef } from "react"
+import { ChevronDown, MapPin, X } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/hooks/use-auth"
 import type { CatalogCategory, CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { ProfessionFilterSheet } from "./profession-filter-sheet"
@@ -20,6 +23,16 @@ interface PortfolioFeedHeadcardProps {
   onClearAll: () => void
 }
 
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "?"
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || "")
+    .join("")
+}
+
 export function PortfolioFeedHeadcard({
   machines,
   categories,
@@ -33,26 +46,47 @@ export function PortfolioFeedHeadcard({
   onLocationChange,
   onClearAll,
 }: PortfolioFeedHeadcardProps) {
+  const { user, status } = useAuth()
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const activeCategory = categories.find((c) => c.id_category === selectedCategoryId) || null
   const hasFilters = !!(activeMachine || activeCategory || state || city)
 
   const locationLabel = city || state || "Cidade"
+  const isLoggedIn = status === "authenticated" && !!user
+  const greetingName = (user?.nome || "").trim().split(/\s+/)[0] || ""
 
   return (
     <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-white/10 bg-zinc-950/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/70">
-      <div className="flex items-center gap-2">
-        <Sparkles
-          className="h-5 w-5 shrink-0"
-          style={{ color: accent }}
-          aria-hidden
-        />
-        <h1 className="text-base font-semibold text-white">Explorar</h1>
+      <div className="flex items-center gap-3">
+        {isLoggedIn ? (
+          <Avatar className="h-9 w-9 shrink-0 ring-1 ring-white/15">
+            {user?.avatar && <AvatarImage src={user.avatar} alt={user.nome} />}
+            <AvatarFallback className="bg-white/10 text-[11px] font-semibold text-white">
+              {getInitials(user?.nome)}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            style={{ background: `${accent}22`, color: accent }}
+            aria-hidden
+          >
+            <span className="text-base">✨</span>
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base font-semibold leading-tight text-white">Feed</h1>
+          <p className="truncate text-[11px] text-white/50">
+            {isLoggedIn && greetingName ? `Olá, ${greetingName}` : "Descubra trabalhos perto de você"}
+          </p>
+        </div>
+
         {hasFilters && (
           <button
             type="button"
             onClick={onClearAll}
-            className="ml-auto inline-flex items-center gap-1 text-xs text-white/60 transition hover:text-white"
+            className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/20 hover:text-white"
           >
             <X className="h-3 w-3" />
             Limpar
@@ -107,16 +141,18 @@ export function PortfolioFeedHeadcard({
   )
 }
 
-interface PillProps {
+interface PillProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: string
   active?: boolean
   accent?: string
-  disabled?: boolean
   icon?: React.ReactNode
 }
 
-function Pill({ label, active, accent, disabled, icon }: PillProps) {
-  const style: React.CSSProperties = active && accent
+const Pill = forwardRef<HTMLButtonElement, PillProps>(function Pill(
+  { label, active, accent, disabled, icon, style, className, ...rest },
+  ref
+) {
+  const accentStyle: React.CSSProperties = active && accent
     ? {
         color: accent,
         borderColor: `${accent}66`,
@@ -126,14 +162,19 @@ function Pill({ label, active, accent, disabled, icon }: PillProps) {
     : {}
   return (
     <button
+      ref={ref}
       type="button"
       disabled={disabled}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 transition-all duration-200 hover:border-white/30 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-      style={style}
+      {...rest}
+      className={
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 transition-all duration-200 hover:border-white/30 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" +
+        (className ? ` ${className}` : "")
+      }
+      style={{ ...accentStyle, ...(style || {}) }}
     >
       {icon}
       <span className="max-w-[140px] truncate">{label}</span>
       <ChevronDown className="h-3.5 w-3.5 opacity-70" />
     </button>
   )
-}
+})

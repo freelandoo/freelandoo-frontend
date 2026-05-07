@@ -7,6 +7,7 @@ export interface AuthUser {
   id_user: string
   nome: string
   email: string
+  avatar?: string | null
   is_admin?: boolean
   roles?: { id_role: string; desc_role: string }[]
 }
