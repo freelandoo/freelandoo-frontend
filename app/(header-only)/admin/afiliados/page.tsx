@@ -48,6 +48,18 @@ type ConversionRow = {
 }
 
 type ModalFilter = "all" | "red" | "green" | "paid"
+type PageStatusFilter = "all" | "red" | "green" | "paid"
+
+function isoDaysAgo(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString().slice(0, 10)
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 function formatBrl(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -75,6 +87,9 @@ export default function AdminAfiliadosPage() {
   const [summary, setSummary] = useState<SummaryRow[]>([])
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [pageFrom, setPageFrom] = useState("")
+  const [pageTo, setPageTo] = useState("")
+  const [pageStatusFilter, setPageStatusFilter] = useState<PageStatusFilter>("all")
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -105,13 +120,16 @@ export default function AdminAfiliadosPage() {
       .catch(() => router.push("/"))
   }, [router])
 
-  const loadSummary = async () => {
+  const loadSummary = async (from: string, to: string) => {
     const token = localStorage.getItem("token")
     if (!token) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/affiliate/payouts/summary?threshold_days=${THRESHOLD_DAYS}`, {
+      const params = new URLSearchParams({ threshold_days: String(THRESHOLD_DAYS) })
+      if (from) params.set("from", from)
+      if (to) params.set("to", `${to}T23:59:59`)
+      const res = await fetch(`/api/admin/affiliate/payouts/summary?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
@@ -125,16 +143,31 @@ export default function AdminAfiliadosPage() {
   }
 
   useEffect(() => {
-    if (authorized) loadSummary()
-  }, [authorized])
+    if (authorized) loadSummary(pageFrom, pageTo)
+  }, [authorized, pageFrom, pageTo])
+
+  const applyDatePreset = (days: number | null) => {
+    if (days === null) {
+      setPageFrom("")
+      setPageTo("")
+    } else {
+      setPageFrom(isoDaysAgo(days))
+      setPageTo(todayIso())
+    }
+  }
 
   const filteredSummary = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return summary
-    return summary.filter((r) =>
-      r.user_name?.toLowerCase().includes(q) || r.user_email?.toLowerCase().includes(q)
-    )
-  }, [summary, search])
+    return summary.filter((r) => {
+      if (q && !(r.user_name?.toLowerCase().includes(q) || r.user_email?.toLowerCase().includes(q))) {
+        return false
+      }
+      if (pageStatusFilter === "red" && r.red_cents <= 0) return false
+      if (pageStatusFilter === "green" && r.green_cents <= 0) return false
+      if (pageStatusFilter === "paid" && r.paid_cents <= 0) return false
+      return true
+    })
+  }, [summary, search, pageStatusFilter])
 
   const totals = useMemo(() => {
     return summary.reduce(
@@ -234,7 +267,7 @@ export default function AdminAfiliadosPage() {
       if (!res.ok) throw new Error(data.error || "Erro ao confirmar pagamento")
       setSelectedConvIds(new Set())
       await fetchModalConversions(modalAffiliate.id_affiliate, modalFrom, modalTo, modalQuery)
-      await loadSummary()
+      await loadSummary(pageFrom, pageTo)
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erro ao confirmar pagamento")
     } finally {
@@ -297,6 +330,64 @@ export default function AdminAfiliadosPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Filtros: período + status */}
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">De</Label>
+                <Input type="date" value={pageFrom} onChange={(e) => setPageFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Até</Label>
+                <Input type="date" value={pageTo} onChange={(e) => setPageTo(e.target.value)} />
+              </div>
+              <div className="flex items-end gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset(7)}>7d</Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset(30)}>30d</Button>
+                <Button variant="outline" size="sm" onClick={() => applyDatePreset(90)}>90d</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyDatePreset(null)}
+                  disabled={!pageFrom && !pageTo}
+                >
+                  Limpar
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {(["all", "red", "green", "paid"] as PageStatusFilter[]).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setPageStatusFilter(f)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    pageStatusFilter === f
+                      ? f === "red"
+                        ? "bg-red-500 text-white border-red-500"
+                        : f === "green"
+                          ? "bg-green-600 text-white border-green-600"
+                          : f === "paid"
+                            ? "bg-muted-foreground text-background border-muted-foreground"
+                            : "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {f === "all"
+                    ? "Todos"
+                    : f === "red"
+                      ? "Urgente"
+                      : f === "green"
+                        ? "No prazo"
+                        : "Pago"}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
