@@ -14,7 +14,7 @@ export function PostMedia({ media, glow }: PostMediaProps) {
   const [index, setIndex] = useState(0)
   if (!media || media.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center bg-white/[0.03] text-xs text-white/30">
+      <div className="flex aspect-[4/5] items-center justify-center bg-white/[0.03] text-xs text-white/30">
         sem mídia
       </div>
     )
@@ -24,7 +24,7 @@ export function PostMedia({ media, glow }: PostMediaProps) {
   const total = media.length
 
   return (
-    <div className="relative aspect-square w-full overflow-hidden bg-black">
+    <div className="relative aspect-[4/5] w-full overflow-hidden bg-black">
       {current.type === "video" ? (
         <video
           key={current.url}

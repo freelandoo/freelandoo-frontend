@@ -18,6 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
+import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  AVATAR_IMAGE_ASPECT_RATIO,
+  AVATAR_IMAGE_MAX_SIZE_BYTES,
+  AVATAR_IMAGE_OUTPUT,
+  validateImageFile,
+} from "@/lib/media/media-validation"
+import type { ProcessedImage } from "@/lib/media/image-processing"
 
 type Clan = {
   id_profile: string
@@ -43,6 +51,7 @@ export default function EditClanPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
@@ -102,9 +111,7 @@ export default function EditClanPage({
       .finally(() => setLoadingMunicipios(false))
   }, [form.estado])
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function uploadAvatarFile(file: File) {
     const token = localStorage.getItem("token")
     if (!token) return
     setUploadingAvatar(true)
@@ -129,8 +136,27 @@ export default function EditClanPage({
       setError(err instanceof Error ? err.message : "Erro ao enviar avatar")
     } finally {
       setUploadingAvatar(false)
-      e.target.value = ""
     }
+  }
+
+  function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    const validation = validateImageFile(file, AVATAR_IMAGE_MAX_SIZE_BYTES)
+    if (!validation.ok) {
+      setError(validation.error)
+      return
+    }
+
+    setAvatarCropFile(file)
+  }
+
+  async function handleAvatarCropConfirm(image: ProcessedImage) {
+    setAvatarCropFile(null)
+    URL.revokeObjectURL(image.previewUrl)
+    await uploadAvatarFile(image.file)
   }
 
   async function handleSave() {
@@ -228,7 +254,7 @@ export default function EditClanPage({
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={handleAvatarUpload}
                 disabled={uploadingAvatar}
@@ -359,6 +385,21 @@ export default function EditClanPage({
           </div>
         </CardContent>
       </Card>
+
+      {avatarCropFile && (
+        <MediaCropModal
+          file={avatarCropFile}
+          aspectRatio={AVATAR_IMAGE_ASPECT_RATIO}
+          outputWidth={AVATAR_IMAGE_OUTPUT.width}
+          outputHeight={AVATAR_IMAGE_OUTPUT.height}
+          maxSizeMB={2}
+          mediaType="profile_avatar"
+          title="Ajustar foto de perfil"
+          description="Ajuste sua foto de perfil."
+          onCancel={() => setAvatarCropFile(null)}
+          onConfirm={handleAvatarCropConfirm}
+        />
+      )}
     </div>
   )
 }

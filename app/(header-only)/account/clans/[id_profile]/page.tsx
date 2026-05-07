@@ -26,6 +26,17 @@ import {
   UserPlus,
   X,
 } from "lucide-react"
+import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  POST_IMAGE_ASPECT_RATIO,
+  POST_IMAGE_MAX_SIZE_BYTES,
+  POST_IMAGE_OUTPUT,
+  getImageDimensions,
+  isAspectRatio,
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/media/media-validation"
+import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 
 type Member = {
   id_member_profile: string
@@ -127,6 +138,10 @@ export default function ManageClanPage({
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
   const [newItemTitle, setNewItemTitle] = useState("")
   const [newItemFile, setNewItemFile] = useState<File | null>(null)
+  const [newItemOriginalImage, setNewItemOriginalImage] = useState<File | null>(null)
+  const [newItemPreview, setNewItemPreview] = useState<string | null>(null)
+  const [newItemCropFile, setNewItemCropFile] = useState<File | null>(null)
+  const [processingPortfolioMedia, setProcessingPortfolioMedia] = useState(false)
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false)
   const [portfolioError, setPortfolioError] = useState("")
 
@@ -270,6 +285,79 @@ export default function ManageClanPage({
     setActionLoading(false)
   }
 
+  function clearNewPortfolioMedia() {
+    if (newItemPreview?.startsWith("blob:")) URL.revokeObjectURL(newItemPreview)
+    setNewItemFile(null)
+    setNewItemOriginalImage(null)
+    setNewItemPreview(null)
+  }
+
+  function setProcessedPortfolioImage(processed: ProcessedImage, originalFile: File) {
+    if (newItemPreview?.startsWith("blob:")) URL.revokeObjectURL(newItemPreview)
+    setNewItemFile(processed.file)
+    setNewItemOriginalImage(originalFile)
+    setNewItemPreview(processed.previewUrl)
+  }
+
+  async function prepareClanPortfolioFile(file: File) {
+    setPortfolioError("")
+
+    if (file.type.startsWith("image/")) {
+      const validation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+      if (!validation.ok) {
+        setPortfolioError(validation.error)
+        return
+      }
+
+      try {
+        const dimensions = await getImageDimensions(file)
+        if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+          setNewItemCropFile(file)
+          return
+        }
+
+        setProcessingPortfolioMedia(true)
+        const processed = await compressImageToMaxSize(file, {
+          outputWidth: POST_IMAGE_OUTPUT.width,
+          outputHeight: POST_IMAGE_OUTPUT.height,
+          maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+          mimeType: "image/webp",
+          errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+        })
+        setProcessedPortfolioImage(processed, file)
+      } catch (err) {
+        setPortfolioError(err instanceof Error ? err.message : "Não foi possível otimizar esse arquivo. Tente outro.")
+      } finally {
+        setProcessingPortfolioMedia(false)
+      }
+      return
+    }
+
+    const validation = validateVideoFile(file)
+    if (!validation.ok) {
+      setPortfolioError(validation.error)
+      return
+    }
+
+    if (newItemPreview?.startsWith("blob:")) URL.revokeObjectURL(newItemPreview)
+    setNewItemFile(file)
+    setNewItemOriginalImage(null)
+    setNewItemPreview(URL.createObjectURL(file))
+  }
+
+  function handleClanPortfolioFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    void prepareClanPortfolioFile(file)
+  }
+
+  function handleClanPortfolioCropConfirm(image: ProcessedImage) {
+    if (!newItemCropFile) return
+    setProcessedPortfolioImage(image, newItemCropFile)
+    setNewItemCropFile(null)
+  }
+
   async function handleAddPortfolioItem() {
     setPortfolioError("")
     const title = newItemTitle.trim()
@@ -312,7 +400,7 @@ export default function ManageClanPage({
 
       // Reset + reload
       setNewItemTitle("")
-      setNewItemFile(null)
+      clearNewPortfolioMedia()
       const refreshed = await fetch(`/api/profile/${id_profile}/portfolio`, {
         headers: auth,
       })
@@ -696,9 +784,38 @@ export default function ManageClanPage({
               />
               <Input
                 type="file"
-                accept="image/*,video/*"
-                onChange={(e) => setNewItemFile(e.target.files?.[0] || null)}
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                onChange={handleClanPortfolioFileSelect}
               />
+              {newItemPreview && (
+                <div className={`relative overflow-hidden rounded-md border bg-muted ${newItemFile?.type.startsWith("image/") ? "aspect-[4/5]" : "aspect-video"}`}>
+                  {newItemFile?.type.startsWith("image/") ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={newItemPreview} alt="Preview" className="h-full w-full object-cover" />
+                      {newItemOriginalImage && (
+                        <button
+                          type="button"
+                          onClick={() => setNewItemCropFile(newItemOriginalImage)}
+                          className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
+                        >
+                          Cortar imagem
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <video src={newItemPreview} className="h-full w-full object-cover" controls preload="metadata" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={clearNewPortfolioMedia}
+                    className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white backdrop-blur transition-colors hover:bg-black/85"
+                    aria-label="Remover mídia"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              )}
               {portfolioError && (
                 <p className="text-sm text-red-600 flex items-center gap-1">
                   <AlertCircle className="size-4" /> {portfolioError}
@@ -708,10 +825,10 @@ export default function ManageClanPage({
                 <Button
                   size="sm"
                   onClick={handleAddPortfolioItem}
-                  disabled={uploadingPortfolio || !newItemFile || !newItemTitle.trim()}
+                  disabled={uploadingPortfolio || processingPortfolioMedia || !newItemFile || !newItemTitle.trim()}
                 >
                   <Upload className="size-4 mr-1" />
-                  {uploadingPortfolio ? "Enviando..." : "Adicionar"}
+                  {uploadingPortfolio ? "Enviando..." : processingPortfolioMedia ? "Otimizando..." : "Adicionar"}
                 </Button>
               </div>
             </div>
@@ -956,6 +1073,21 @@ export default function ManageClanPage({
             </Card>
           )}
         </>
+      )}
+
+      {newItemCropFile && (
+        <MediaCropModal
+          file={newItemCropFile}
+          aspectRatio={POST_IMAGE_ASPECT_RATIO}
+          outputWidth={POST_IMAGE_OUTPUT.width}
+          outputHeight={POST_IMAGE_OUTPUT.height}
+          maxSizeMB={3}
+          mediaType="post_image"
+          title="Cortar imagem"
+          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          onCancel={() => setNewItemCropFile(null)}
+          onConfirm={handleClanPortfolioCropConfirm}
+        />
       )}
     </div>
   )
