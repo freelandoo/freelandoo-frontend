@@ -39,6 +39,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  AVATAR_IMAGE_ASPECT_RATIO,
+  AVATAR_IMAGE_MAX_SIZE_BYTES,
+  AVATAR_IMAGE_OUTPUT,
+  POST_IMAGE_ASPECT_RATIO,
+  POST_IMAGE_MAX_SIZE_BYTES,
+  POST_IMAGE_OUTPUT,
+  getImageDimensions,
+  isAspectRatio,
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/media/media-validation"
+import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -106,6 +120,9 @@ export default function PerfilPage() {
     external_link: "",
   })
   const [uploadingMedia, setUploadingMedia] = useState<{ file: File; preview: string } | null>(null)
+  const [originalUploadImage, setOriginalUploadImage] = useState<File | null>(null)
+  const [mediaCropFile, setMediaCropFile] = useState<File | null>(null)
+  const [isProcessingUploadMedia, setIsProcessingUploadMedia] = useState(false)
   const [mediaUploadProgress, setMediaUploadProgress] = useState<"idle" | "uploading" | "processing">("idle")
   const [selectedMediaType, setSelectedMediaType] = useState<"image" | "video">("image")
   const [isEditMediaModalOpen, setIsEditMediaModalOpen] = useState(false)
@@ -537,25 +554,74 @@ export default function PerfilPage() {
     }
   }
 
+  const uploadUserAvatarFile = async (file: File) => {
+    setIsUploadingAvatar(true)
+
+    const token = localStorage.getItem("token")
+    if (!token) {
+      alert("Sessão expirada. Faça login novamente.")
+      router.push("/login")
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append("avatar", file)
+
+      const response = await fetch("/api/users/me/avatar", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erro ao atualizar avatar")
+      }
+
+      const getResponse = await fetch("/api/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (getResponse.ok) {
+        const updatedProfile = await getResponse.json()
+        setPerfil(updatedProfile)
+      }
+
+      setFotoPreview(null)
+      setFotoTemp(null)
+      setAvatarFile(null)
+      setIsUploadModalOpen(false)
+      setImagePosition({ x: 0, y: 0 })
+      setZoom(1)
+    } catch (error) {
+      console.error("Erro ao fazer upload do avatar:", error)
+      alert(error instanceof Error ? error.message : "Erro ao atualizar avatar")
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  const handleUserAvatarCropConfirm = async (image: ProcessedImage) => {
+    URL.revokeObjectURL(image.previewUrl)
+    await uploadUserAvatarFile(image.file)
+  }
+
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ""
     if (file) {
-      if (!file.type.startsWith("image/")) {
-        alert("Por favor, selecione uma imagem válida")
-        return
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert("A imagem deve ter no máximo 5MB")
+      const validation = validateImageFile(file, AVATAR_IMAGE_MAX_SIZE_BYTES)
+      if (!validation.ok) {
+        alert(validation.error)
         return
       }
       setAvatarFile(file)
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setFotoTemp(event.target?.result as string)
-        setImagePosition({ x: 0, y: 0 })
-        setZoom(1)
-      }
-      reader.readAsDataURL(file)
+      setIsUploadModalOpen(false)
     }
   }
 
@@ -985,8 +1051,56 @@ export default function PerfilPage() {
     })
   }
 
-  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const revokeUploadPreview = (preview: string | null | undefined) => {
+    if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview)
+  }
+
+  const setProcessedUploadImage = (processed: ProcessedImage, originalFile: File) => {
+    revokeUploadPreview(uploadingMedia?.preview)
+    setUploadingMedia({ file: processed.file, preview: processed.previewUrl })
+    setOriginalUploadImage(originalFile)
+    setSelectedMediaType("image")
+  }
+
+  const prepareUploadImage = async (file: File) => {
+    const validation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+    if (!validation.ok) {
+      alert(validation.error)
+      return
+    }
+
+    try {
+      const dimensions = await getImageDimensions(file)
+      if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+        setMediaCropFile(file)
+        return
+      }
+
+      setIsProcessingUploadMedia(true)
+      const processed = await compressImageToMaxSize(file, {
+        outputWidth: POST_IMAGE_OUTPUT.width,
+        outputHeight: POST_IMAGE_OUTPUT.height,
+        maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+        mimeType: "image/webp",
+        errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+      })
+      setProcessedUploadImage(processed, file)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Nao foi possivel otimizar esse arquivo. Tente outro.")
+    } finally {
+      setIsProcessingUploadMedia(false)
+    }
+  }
+
+  const handleUploadCropConfirm = (image: ProcessedImage) => {
+    if (!mediaCropFile) return
+    setProcessedUploadImage(image, mediaCropFile)
+    setMediaCropFile(null)
+  }
+
+  const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ""
     if (!file) return
 
     const isImage = file.type.startsWith("image/")
@@ -997,20 +1111,26 @@ export default function PerfilPage() {
       return
     }
 
+    if (isImage) {
+      await prepareUploadImage(file)
+      return
+    }
+
+    const validation = validateVideoFile(file)
+    if (!validation.ok) {
+      alert(validation.error)
+      return
+    }
+
     if (file.size > 100 * 1024 * 1024) {
       alert("O arquivo deve ter no máximo 100MB")
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      setUploadingMedia({
-        file,
-        preview: event.target?.result as string,
-      })
-      setSelectedMediaType(isImage ? "image" : "video")
-    }
-    reader.readAsDataURL(file)
+    revokeUploadPreview(uploadingMedia?.preview)
+    setUploadingMedia({ file, preview: URL.createObjectURL(file) })
+    setOriginalUploadImage(null)
+    setSelectedMediaType("video")
   }
 
   const handleUploadMedia = async () => {
@@ -1026,19 +1146,8 @@ export default function PerfilPage() {
     }
 
     try {
-      let fileToUpload = uploadingMedia.file
-
-      if (uploadingMedia.file.type.startsWith("image/") && uploadingMedia.file.size > 4 * 1024 * 1024) {
-        try {
-          const compressedBlob = await compressImage(uploadingMedia.file)
-          fileToUpload = new File([compressedBlob], uploadingMedia.file.name, { type: "image/jpeg" })
-        } catch (compressError) {
-          throw new Error("Erro ao comprimir imagem: " + (compressError instanceof Error ? compressError.message : "Desconhecido"))
-        }
-      }
-
       const uploadFormData = new FormData()
-      uploadFormData.append("file", fileToUpload)
+      uploadFormData.append("file", uploadingMedia.file)
 
       const uploadResponse = await fetch("/api/media/upload", {
         method: "POST",
@@ -1114,7 +1223,9 @@ export default function PerfilPage() {
         console.error("Erro ao carregar mídia após upload:", mediaError)
       }
 
+      revokeUploadPreview(uploadingMedia.preview)
       setUploadingMedia(null)
+      setOriginalUploadImage(null)
       setPortfolioForm({ title: "", description: "", external_link: "" })
       setIsPortfolioModalOpen(false)
       setMediaUploadProgress("idle")
@@ -1597,26 +1708,19 @@ export default function PerfilPage() {
             </header>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false
                     const isPublished = !!clan.is_published
                     const imgSrc = clan.avatar_url || null
                     return (
-                      <div
-                        key={clan.id_profile}
-                        className="group relative flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-primary/25"
-                      >
+                      <div key={clan.id_profile} className="group relative">
                         <button
                           type="button"
-                          onClick={() => router.push(`/account/clans/${clan.id_profile}`)}
-                          className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-primary/25"
+                          onClick={() => router.push(`/clans/${clan.id_profile}`)}
+                          className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
                           aria-label={`Abrir clan ${clan.display_name}`}
-                          style={{
-                            background:
-                              "linear-gradient(135deg, rgba(242,196,9,0.18), rgba(217,70,239,0.14))",
-                          }}
                         >
                           {imgSrc ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -1626,54 +1730,43 @@ export default function PerfilPage() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="grid h-full w-full place-items-center text-sm font-semibold text-white/85">
+                            <div
+                              className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white/60"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, rgba(242,196,9,0.18), rgba(217,70,239,0.12))",
+                              }}
+                            >
                               {getInitials(clan.display_name)}
                             </div>
                           )}
+                          <div
+                            aria-hidden
+                            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"
+                          />
                         </button>
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <Crown className="h-3 w-3 text-primary" />
-                            {!isPaid ? (
-                              <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
-                                Aguardando
-                              </span>
-                            ) : isPublished ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                                Visível
-                              </span>
-                            ) : (
-                              <span className="rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70">
-                                Invisível
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 truncate text-sm font-medium text-white">
-                            {clan.display_name}
-                          </p>
-                          <p className="text-[11px] text-white/45">
-                            {isVisible ? "0 visíveis" : "Invisível"}
-                          </p>
-                        </div>
-
+                        {/* Engrenagem (canto superior esquerdo) */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
+                              className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
                               aria-label="Ações do clan"
                             >
                               <Settings className="h-3.5 w-3.5" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuContent align="start" className="w-52">
+                            <DropdownMenuItem onClick={() => router.push(`/clans/${clan.id_profile}`)}>
+                              <ArrowRight className="h-4 w-4 mr-2" />
+                              Ver clan
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}`)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Gerenciar clan
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${clan.id_profile}/agenda`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}/agenda`)}>
                               <CalendarDays className="h-4 w-4 mr-2" />
                               Agenda
                             </DropdownMenuItem>
@@ -1700,6 +1793,29 @@ export default function PerfilPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+
+                        {/* Status badge (canto superior direito) */}
+                        <div className="absolute top-2 right-2 pointer-events-none">
+                          {!isPaid ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
+                              Aguardando
+                            </span>
+                          ) : isPublished ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                              Visível
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
+                              Invisível
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
+                          <Crown className="h-3 w-3 text-primary" />
+                          <span className="truncate">{clan.display_name}</span>
+                        </p>
                       </div>
                     )
                   })}
@@ -1947,7 +2063,7 @@ export default function PerfilPage() {
                 <input
                   id="avatar-input"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handleFotoChange}
                   className="hidden"
                   ref={(input) => {
@@ -2031,6 +2147,21 @@ export default function PerfilPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {avatarFile && !isUploadModalOpen && (
+        <MediaCropModal
+          file={avatarFile}
+          aspectRatio={AVATAR_IMAGE_ASPECT_RATIO}
+          outputWidth={AVATAR_IMAGE_OUTPUT.width}
+          outputHeight={AVATAR_IMAGE_OUTPUT.height}
+          maxSizeMB={2}
+          mediaType="profile_avatar"
+          title="Ajustar foto de perfil"
+          description="Ajuste sua foto de perfil."
+          onCancel={() => setAvatarFile(null)}
+          onConfirm={handleUserAvatarCropConfirm}
+        />
+      )}
 
       {/* Modal de Edição de Perfil */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -2183,13 +2314,24 @@ export default function PerfilPage() {
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="font-medium">Clique para adicionar ou arraste uma imagem/vídeo</p>
                 <p className="text-sm text-muted-foreground">Máximo 100MB</p>
-                <Input id="media-input" type="file" accept="image/*,video/*" onChange={handleMediaSelect} className="hidden" />
+                <Input id="media-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onChange={handleMediaSelect} className="hidden" />
               </div>
             ) : (
               <>
-                <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                <div className={`relative bg-muted rounded-lg overflow-hidden ${selectedMediaType === "image" ? "aspect-[4/5]" : "aspect-video"}`}>
                   {selectedMediaType === "image" ? (
-                    <img src={uploadingMedia.preview || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
+                    <>
+                      <img src={uploadingMedia.preview || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
+                      {originalUploadImage && (
+                        <button
+                          type="button"
+                          onClick={() => setMediaCropFile(originalUploadImage)}
+                          className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
+                        >
+                          Cortar imagem
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <video src={uploadingMedia.preview} className="w-full h-full object-cover" controls />
                   )}
@@ -2251,6 +2393,21 @@ export default function PerfilPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {mediaCropFile && (
+        <MediaCropModal
+          file={mediaCropFile}
+          aspectRatio={POST_IMAGE_ASPECT_RATIO}
+          outputWidth={POST_IMAGE_OUTPUT.width}
+          outputHeight={POST_IMAGE_OUTPUT.height}
+          maxSizeMB={3}
+          mediaType="post_image"
+          title="Cortar imagem"
+          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          onCancel={() => setMediaCropFile(null)}
+          onConfirm={handleUploadCropConfirm}
+        />
+      )}
 
       {/* Modal de Edição de Mídia */}
       <Dialog open={isEditMediaModalOpen} onOpenChange={setIsEditMediaModalOpen}>

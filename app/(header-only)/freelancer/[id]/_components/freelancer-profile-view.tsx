@@ -13,6 +13,7 @@ import {
   Crown,
   Edit2,
   ExternalLink,
+  EyeOff,
   Heart,
   ImageIcon,
   Loader2,
@@ -34,6 +35,17 @@ import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { MuralModal } from "@/components/profile/mural-modal"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
+import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  POST_IMAGE_ASPECT_RATIO,
+  POST_IMAGE_MAX_SIZE_BYTES,
+  POST_IMAGE_OUTPUT,
+  getImageDimensions,
+  isAspectRatio,
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/media/media-validation"
+import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 
 export default function FreelancerProfileView({
   profileId,
@@ -65,7 +77,10 @@ export default function FreelancerProfileView({
     sort_order: 0,
   })
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingOriginalFile, setPendingOriginalFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
+  const [cropTarget, setCropTarget] = useState<{ file: File; itemId?: string; mode: "new" | "existing" } | null>(null)
+  const [processingMedia, setProcessingMedia] = useState(false)
   const [showEngagement, setShowEngagement] = useState(false)
   const [showRanking, setShowRanking] = useState(false)
   const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
@@ -120,9 +135,25 @@ export default function FreelancerProfileView({
     )
   }
 
-  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, itemId: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const revokePreviewUrl = (url: string | null) => {
+    if (url?.startsWith("blob:")) URL.revokeObjectURL(url)
+  }
+
+  const clearPending = () => {
+    revokePreviewUrl(pendingPreview)
+    setPendingFile(null)
+    setPendingOriginalFile(null)
+    setPendingPreview(null)
+  }
+
+  const setPendingProcessedImage = (processed: ProcessedImage, originalFile: File) => {
+    revokePreviewUrl(pendingPreview)
+    setPendingFile(processed.file)
+    setPendingOriginalFile(originalFile)
+    setPendingPreview(processed.previewUrl)
+  }
+
+  const uploadPortfolioFile = async (itemId: string, file: File) => {
     const currentToken = localStorage.getItem("token")
     if (!currentToken) return
 
@@ -139,37 +170,100 @@ export default function FreelancerProfileView({
       if (res.ok) {
         await refetchPortfolio()
       } else {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         setPortfolioError(data.error || "Erro ao fazer upload")
       }
     } catch {
       setPortfolioError("Erro ao fazer upload. Tente novamente.")
     } finally {
       setIsUploadingPortfolio(null)
-      e.target.value = ""
     }
   }
 
-  const handlePendingFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPendingFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setPendingPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
+  const preparePostImage = async (file: File, mode: "new" | "existing", itemId?: string) => {
+    const imageValidation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+    if (!imageValidation.ok) {
+      setPortfolioError(imageValidation.error)
+      return
+    }
+
+    setPortfolioError(null)
+    try {
+      const dimensions = await getImageDimensions(file)
+      if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+        setCropTarget({ file, itemId, mode })
+        return
+      }
+
+      setProcessingMedia(true)
+      const processed = await compressImageToMaxSize(file, {
+        outputWidth: POST_IMAGE_OUTPUT.width,
+        outputHeight: POST_IMAGE_OUTPUT.height,
+        maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+        mimeType: "image/webp",
+        errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+      })
+
+      if (mode === "new") {
+        setPendingProcessedImage(processed, file)
+      } else if (itemId) {
+        URL.revokeObjectURL(processed.previewUrl)
+        await uploadPortfolioFile(itemId, processed.file)
+      }
+    } catch (err) {
+      setPortfolioError(err instanceof Error ? err.message : "Não foi possível otimizar esse arquivo. Tente outro.")
+    } finally {
+      setProcessingMedia(false)
+    }
   }
 
-  const handlePendingFileDrop = (e: React.DragEvent<HTMLElement>) => {
+  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, itemId: string) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+
+    if (file.type.startsWith("image/")) {
+      await preparePostImage(file, "existing", itemId)
+      return
+    }
+
+    const videoValidation = validateVideoFile(file)
+    if (!videoValidation.ok) {
+      setPortfolioError(videoValidation.error)
+      return
+    }
+    await uploadPortfolioFile(itemId, file)
+  }
+
+  const handlePendingFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    await preparePostImage(file, "new")
+  }
+
+  const handlePendingFileDrop = async (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
     if (!file || !file.type.startsWith("image/")) return
-    setPendingFile(file)
-    const reader = new FileReader()
-    reader.onload = (ev) => setPendingPreview(ev.target?.result as string)
-    reader.readAsDataURL(file)
+    await preparePostImage(file, "new")
   }
 
-  const clearPending = () => { setPendingFile(null); setPendingPreview(null) }
+  const handleCropConfirm = async (image: ProcessedImage) => {
+    const target = cropTarget
+    if (!target) return
+
+    setCropTarget(null)
+    if (target.mode === "new") {
+      setPendingProcessedImage(image, target.file)
+      return
+    }
+
+    URL.revokeObjectURL(image.previewUrl)
+    if (target.itemId) {
+      await uploadPortfolioFile(target.itemId, image.file)
+    }
+  }
 
   const handleAddPortfolioItem = () => {
     setEditingPortfolioItemId(null)
@@ -294,6 +388,38 @@ export default function FreelancerProfileView({
       }
     } catch {
       alert("Erro ao remover item. Tente novamente.")
+    }
+  }
+
+  // Owner do clan oculta um post de membro do feed do clan, sem afetar o
+  // portfolio do subperfil de origem.
+  const handleHideFromClan = async (itemId: string) => {
+    if (!isClan || !isOwnProfile) return
+    if (!confirm("Ocultar este post do feed do clan? O post continuará no perfil do membro.")) return
+    const currentToken = localStorage.getItem("token")
+    if (!currentToken) return
+    try {
+      const res = await fetch(
+        `/api/clans/${profileId}/hidden-posts/${itemId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${currentToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      )
+      if (res.ok || res.status === 201) {
+        setPortfolioItems((prev) =>
+          prev.filter((item) => item.id_portfolio_item !== itemId)
+        )
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || "Erro ao ocultar do clan")
+      }
+    } catch {
+      alert("Erro ao ocultar do clan. Tente novamente.")
     }
   }
 
@@ -486,7 +612,7 @@ export default function FreelancerProfileView({
                               <input
                                 type="file"
                                 className="hidden"
-                                accept="image/*,video/*"
+                                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
                                 onChange={(e) => handlePortfolioUpload(e, item.id_portfolio_item)}
                                 disabled={isUploadingPortfolio === item.id_portfolio_item}
                               />
@@ -497,22 +623,39 @@ export default function FreelancerProfileView({
                               )}
                             </label>
                             <div className="flex items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => handleEditPortfolioItem(item)}
-                                className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
-                                title="Editar item"
-                              >
-                                <Edit2 className="h-5 w-5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
-                                className="flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
-                                title="Remover item"
-                              >
-                                <Trash2 className="h-5 w-5" />
-                              </button>
+                              {isClan && (item as PortfolioItem & { id_profile?: string }).id_profile !== profileId ? (
+                                /* Post de membro num clan: owner so pode ocultar
+                                   do feed do clan; o post permanece no perfil
+                                   do membro. */
+                                <button
+                                  type="button"
+                                  onClick={() => handleHideFromClan(item.id_portfolio_item)}
+                                  className="flex items-center gap-2 h-10 px-4 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors text-sm font-medium"
+                                  title="Ocultar do clan (não exclui do perfil do membro)"
+                                >
+                                  <EyeOff className="h-4 w-4" />
+                                  Ocultar do clan
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditPortfolioItem(item)}
+                                    className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
+                                    title="Editar item"
+                                  >
+                                    <Edit2 className="h-5 w-5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
+                                    className="flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
+                                    title="Remover item"
+                                  >
+                                    <Trash2 className="h-5 w-5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         )}
@@ -529,7 +672,7 @@ export default function FreelancerProfileView({
                               <input
                                 type="file"
                                 className="hidden"
-                                accept="image/*,video/*"
+                                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
                                 onChange={(e) => handlePortfolioUpload(e, item.id_portfolio_item)}
                                 disabled={isUploadingPortfolio === item.id_portfolio_item}
                               />
@@ -654,8 +797,17 @@ export default function FreelancerProfileView({
               <div className="space-y-2">
                 <Label>Imagem</Label>
                 {pendingPreview ? (
-                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-border bg-muted">
+                  <div className="relative w-full aspect-[4/5] max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted">
                     <img src={pendingPreview} alt="Preview" className="w-full h-full object-cover" />
+                    {pendingOriginalFile && (
+                      <button
+                        type="button"
+                        onClick={() => setCropTarget({ file: pendingOriginalFile, mode: "new" })}
+                        className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
+                      >
+                        Cortar imagem
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={clearPending}
@@ -666,14 +818,20 @@ export default function FreelancerProfileView({
                   </div>
                 ) : (
                   <label
-                    className="flex flex-col items-center justify-center w-full aspect-[4/3] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors"
+                    className="flex flex-col items-center justify-center w-full aspect-[4/5] max-h-[460px] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handlePendingFileDrop}
                   >
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePendingFileSelect} />
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground font-medium">Clique ou arraste uma imagem</span>
-                    <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG, WEBP — max 5 MB</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePendingFileSelect} disabled={processingMedia} />
+                    {processingMedia ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    ) : (
+                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    )}
+                    <span className="text-sm text-muted-foreground font-medium">
+                      {processingMedia ? "Otimizando imagem..." : "Clique ou arraste uma imagem"}
+                    </span>
+                    <span className="text-xs text-muted-foreground/60 mt-1">JPG, PNG ou WebP - 4:5 - max 3MB</span>
                   </label>
                 )}
               </div>
@@ -722,7 +880,7 @@ export default function FreelancerProfileView({
               >
                 Cancelar
               </Button>
-              <Button onClick={handleSubmitPortfolioItem} disabled={isAddingPortfolioItem}>
+              <Button onClick={handleSubmitPortfolioItem} disabled={isAddingPortfolioItem || processingMedia}>
                 {isAddingPortfolioItem
                   ? editingPortfolioItemId ? "Salvando..." : "Criando..."
                   : editingPortfolioItemId ? "Salvar" : "Criar item"}
@@ -734,6 +892,21 @@ export default function FreelancerProfileView({
 
       {showRanking && (
         <RankingBadgeModal profileId={profileId} onClose={closeRanking} />
+      )}
+
+      {cropTarget && (
+        <MediaCropModal
+          file={cropTarget.file}
+          aspectRatio={POST_IMAGE_ASPECT_RATIO}
+          outputWidth={POST_IMAGE_OUTPUT.width}
+          outputHeight={POST_IMAGE_OUTPUT.height}
+          maxSizeMB={3}
+          mediaType="post_image"
+          title="Cortar imagem"
+          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          onCancel={() => setCropTarget(null)}
+          onConfirm={handleCropConfirm}
+        />
       )}
 
       {openPortfolioItemId && (() => {
