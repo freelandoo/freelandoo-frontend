@@ -15,7 +15,10 @@ export function InfiniteScrollSentinel({
 }: InfiniteScrollSentinelProps) {
   const ref = useRef<HTMLDivElement | null>(null)
   const cb = useRef(onIntersect)
-  cb.current = onIntersect
+
+  useEffect(() => {
+    cb.current = onIntersect
+  }, [onIntersect])
 
   useEffect(() => {
     if (disabled) return

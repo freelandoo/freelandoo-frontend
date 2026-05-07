@@ -117,6 +117,7 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
   useEffect(() => {
     if (!open) return
     if (machines.length > 0) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingM(true)
     fetch("/api/machines").then(r => r.json()).then(d => {
       setMachines(Array.isArray(d) ? d : d.machines ?? [])
@@ -139,6 +140,7 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) fetchList()
   }, [open, fetchList])
 

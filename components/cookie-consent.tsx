@@ -11,8 +11,12 @@ export function CookieConsent() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // mount-only: lê localStorage só no client e expõe o banner se ainda não houve consent.
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) setVisible(true)
+    if (!stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVisible(true)
+    }
   }, [])
 
   const accept = () => {

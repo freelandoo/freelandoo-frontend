@@ -761,7 +761,7 @@ function EmptyConversations() {
       <MessageCircle className="mb-3 h-10 w-10 text-white/30" />
       <p className="text-sm font-medium text-white">Nenhuma conversa</p>
       <p className="mt-1 text-xs text-white/50">
-        Abra um perfil e clique em "Enviar mensagem" para começar.
+        Abra um perfil e clique em &ldquo;Enviar mensagem&rdquo; para começar.
       </p>
     </div>
   )

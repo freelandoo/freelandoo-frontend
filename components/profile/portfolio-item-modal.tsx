@@ -89,7 +89,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
           const ext = (blob.type.split("/")[1] ?? "jpg").replace("jpeg", "jpg")
           const file = new File([blob], `portfolio-${item.id_portfolio_item}.${ext}`, { type: blob.type })
           const shareData = { title, text, url: shareUrl, files: [file] } as ShareData & { files: File[] }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const canShareFiles = typeof (navigator as any).canShare === "function" && (navigator as any).canShare({ files: [file] })
           if (canShareFiles) {
             await navigator.share(shareData)

@@ -80,6 +80,7 @@ export function ProfileScheduleSection({ profileId, profileName }: ProfileSchedu
     }
   }, [profileId, weekStartIso, weekEndIso])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchWeek() }, [fetchWeek])
 
   useEffect(() => {

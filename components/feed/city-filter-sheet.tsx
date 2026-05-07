@@ -42,10 +42,12 @@ export function CityFilterSheet({
 
   useEffect(() => {
     if (!draftState) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMunicipios([])
       return
     }
     let cancelled = false
+     
     setLoadingMunicipios(true)
     fetch(
       `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${draftState}/municipios`

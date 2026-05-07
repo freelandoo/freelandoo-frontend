@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { createElement, useRef } from "react"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import * as Icons from "lucide-react"
@@ -49,7 +49,7 @@ function resolveDescription(machine: CatalogMachine): string {
 }
 
 function MachineCard({ machine, index }: { machine: CatalogMachine; index: number }) {
-  const Icon = resolveIcon(machine.icon_name)
+  const iconComponent = resolveIcon(machine.icon_name)
   const description = resolveDescription(machine)
   const reduceMotion = useReducedMotion()
 
@@ -102,7 +102,7 @@ function MachineCard({ machine, index }: { machine: CatalogMachine; index: numbe
             boxShadow: `0 0 24px -6px ${colors.glow}`,
           }}
         >
-          <Icon className="h-7 w-7" style={{ color: colors.accent }} />
+          {createElement(iconComponent, { className: "h-7 w-7", style: { color: colors.accent } })}
         </div>
 
         <h3 className="relative mt-4 text-sm font-semibold leading-tight text-white sm:text-[15px]">

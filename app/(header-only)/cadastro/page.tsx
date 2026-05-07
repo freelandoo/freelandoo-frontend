@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import type React from "react"
 
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -422,9 +423,9 @@ export default function CadastroPage() {
 
                   <p className="text-center text-sm text-muted-foreground">
                     Já tem uma conta?{" "}
-                    <a href="/login" className="font-medium text-primary hover:underline">
+                    <Link href="/login" className="font-medium text-primary hover:underline">
                       Faça login
-                    </a>
+                    </Link>
                   </p>
                 </form>
               </CardContent>

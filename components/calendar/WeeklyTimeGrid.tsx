@@ -111,6 +111,8 @@ export function WeeklyTimeGrid({
         extendedProps: { ...e.meta, status: e.status, kind: "booking" },
       }
     })
+    // Date.now() em useMemo é aceito: só re-roda quando deps mudam e basta para classificar slots como passados.
+    // eslint-disable-next-line react-hooks/purity
     const nowMs = Date.now()
     const blockedColor = STATUS_COLOR.blocked
     const availableBlocks = (availableBackground || []).flatMap(d =>

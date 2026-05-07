@@ -30,6 +30,7 @@ export function RankingSection() {
   const machine = MACHINES.find((m) => m.id === activeTab)!
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     fetch(`/api/ranking/public/machine/${activeTab}?limit=5`)
       .then((r) => (r.ok ? r.json() : []))

@@ -78,7 +78,7 @@ export default function TermsPage() {
 
         <Section title="8. Limitação de responsabilidade">
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-            <li>A plataforma é fornecida "no estado em que se encontra", sem garantias de qualquer tipo.</li>
+            <li>A plataforma é fornecida &ldquo;no estado em que se encontra&rdquo;, sem garantias de qualquer tipo.</li>
             <li>A Freelandoo não será responsável por danos diretos, indiretos, incidentais ou consequentes.</li>
           </ul>
         </Section>

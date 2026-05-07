@@ -81,12 +81,14 @@ export function ServiceChatModal({
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAcceptedIdResponse("")
       setCurrentStatus("")
       setLockedByOther(false)
       setOpenError(null)
       openingRef.current = false
     } else {
+       
       setCurrentStatus(responseStatus || "")
       setOpenError(null)
     }
@@ -100,6 +102,7 @@ export function ServiceChatModal({
     const token = getToken()
     if (!token) return
     openingRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpening(true)
     ;(async () => {
       try {
@@ -151,8 +154,10 @@ export function ServiceChatModal({
   // Initial fetch + polling 10s
   useEffect(() => {
     if (!open) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessages([])
     if (!effectiveIdResponse) return
+     
     setLoading(true)
     fetchMessages().finally(() => setLoading(false))
     const interval = setInterval(fetchMessages, 10000)

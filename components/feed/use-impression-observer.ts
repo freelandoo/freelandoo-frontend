@@ -17,7 +17,9 @@ export function useImpressionObserver(post_id: string, filters: FeedFilters) {
   // Mantém uma referência viva aos filtros para o callback do observer
   // sem reinicializar o observer a cada render.
   const filtersRef = useRef(filters)
-  filtersRef.current = filters
+  useEffect(() => {
+    filtersRef.current = filters
+  }, [filters])
 
   useEffect(() => {
     const node = ref.current
