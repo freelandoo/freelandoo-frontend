@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Boxes, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,7 @@ interface SidebarItem {
   icon: LucideIcon
   activePath?: string
   matchPrefix?: string
+  accent?: boolean
 }
 
 const HIDDEN_ON_PATHS = [
@@ -128,6 +129,22 @@ export function ProfileSidebar() {
 
   const bundle = buildContextBundle(active, user.nome || "Perfil")
 
+  const isAdmin =
+    !!user.is_admin ||
+    !!user.roles?.some((r) => r.desc_role === "Administrator")
+  const items: SidebarItem[] = isAdmin
+    ? [
+        ...bundle.items,
+        {
+          href: "/admin",
+          label: "Administração",
+          icon: Crown,
+          matchPrefix: "/admin",
+          accent: true,
+        },
+      ]
+    : bundle.items
+
   return (
     <>
       <aside
@@ -146,7 +163,7 @@ export function ProfileSidebar() {
 
         <div className="mx-2 my-1 h-px bg-white/[0.07]" />
 
-        {bundle.items.map((item) => (
+        {items.map((item) => (
           <ToolbarItemLink key={item.label} item={item} pathname={pathname} />
         ))}
       </aside>
@@ -158,7 +175,7 @@ export function ProfileSidebar() {
       >
         <ProfileContextLink bundle={bundle} active={pathname === bundle.homeHref} compact />
         <span aria-hidden className="mx-0.5 h-7 w-px bg-white/[0.08]" />
-        {bundle.items.map((item) => (
+        {items.map((item) => (
           <ToolbarItemLink key={item.label} item={item} pathname={pathname} compact />
         ))}
       </nav>
@@ -235,12 +252,20 @@ function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
       title={item.label}
       className={cn(
         "relative flex h-11 items-center gap-3 overflow-hidden rounded-full px-1.5 text-sm font-medium transition-colors",
-        active ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white",
+        active
+          ? item.accent
+            ? "bg-primary/15 text-primary"
+            : "bg-white/10 text-white"
+          : item.accent
+            ? "text-primary hover:bg-primary/10"
+            : "text-white/70 hover:bg-white/5 hover:text-white",
         compact && "h-10 w-10 justify-center px-0"
       )}
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-        <Icon className="h-[18px] w-[18px]" />
+        <Icon
+          className={cn("h-[18px] w-[18px]", item.accent && "text-primary")}
+        />
       </span>
       <span
         className={cn(
