@@ -496,6 +496,16 @@ export default function FreelancerProfileView({
                       onChanged={() => setFollowRefreshKey((value) => value + 1)}
                     />
                     <Button
+                      asChild
+                      variant="outline"
+                      className="font-semibold flex-1 md:flex-none gap-1.5"
+                    >
+                      <Link href={`/mensagens?with=${encodeURIComponent(profileId)}`}>
+                        <MessageCircle className="h-4 w-4" />
+                        Enviar mensagem
+                      </Link>
+                    </Button>
+                    <Button
                       onClick={() => {
                         const agendaEl = document.getElementById("agenda-section")
                         if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })

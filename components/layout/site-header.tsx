@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/use-auth"
+import MessagesNavLink from "@/components/mensagens/MessagesNavLink"
 
 export default function SiteHeader() {
   const { user, status, logout } = useAuth()
@@ -89,7 +90,9 @@ export default function SiteHeader() {
             {status === "loading" ? (
               <div className="h-9 w-24 animate-pulse rounded-md bg-white/10" />
             ) : status === "authenticated" && user ? (
-              <DropdownMenu>
+              <>
+                <MessagesNavLink />
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -121,6 +124,7 @@ export default function SiteHeader() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <>
                 <Link href="/login" className="text-xs font-medium text-white hover:text-white/80 sm:text-sm">
