@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Fragment, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, HandCoins, AlertTriangle, Clock, CheckCircle2, Search, Loader2, X } from "lucide-react"
+import { ArrowLeft, HandCoins, AlertTriangle, Clock, CheckCircle2, Search, Loader2, X, ChevronDown, Copy, Check } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +45,25 @@ type ConversionRow = {
   eligible_at: string | null
   paid_at: string | null
   coupon_code: string | null
+}
+
+type Lancamento = {
+  id_conversion: string
+  id_affiliate: string
+  id_order: string
+  status: "PENDING" | "APPROVED" | "REVERSED" | "PAID"
+  commission_cents: number
+  order_total_cents: number
+  created_at: string
+  approved_at: string | null
+  paid_at: string | null
+  coupon_code: string | null
+  affiliate_name: string | null
+  affiliate_email: string | null
+  affiliate_pix_key: string | null
+  affiliate_pix_key_type: string | null
+  affiliate_legal_name: string | null
+  affiliate_tax_id: string | null
 }
 
 type ModalFilter = "all" | "red" | "green" | "paid"
@@ -90,6 +109,13 @@ export default function AdminAfiliadosPage() {
   const [pageFrom, setPageFrom] = useState("")
   const [pageTo, setPageTo] = useState("")
   const [pageStatusFilter, setPageStatusFilter] = useState<PageStatusFilter>("all")
+
+  // Lançamentos (lista de conversões com dados PIX expansíveis)
+  const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
+  const [lancLoading, setLancLoading] = useState(false)
+  const [lancError, setLancError] = useState<string | null>(null)
+  const [expandedLancId, setExpandedLancId] = useState<string | null>(null)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -145,6 +171,57 @@ export default function AdminAfiliadosPage() {
   useEffect(() => {
     if (authorized) loadSummary(pageFrom, pageTo)
   }, [authorized, pageFrom, pageTo])
+
+  const loadLancamentos = async (from: string, to: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setLancLoading(true)
+    setLancError(null)
+    try {
+      const params = new URLSearchParams({ limit: "100" })
+      if (from) params.set("from", from)
+      if (to) params.set("to", `${to}T23:59:59`)
+      const res = await fetch(`/api/admin/affiliate/conversions?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erro ao carregar lançamentos")
+      setLancamentos(Array.isArray(data.items) ? data.items : [])
+    } catch (e) {
+      setLancError(e instanceof Error ? e.message : "Erro ao carregar")
+    } finally {
+      setLancLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (authorized) loadLancamentos(pageFrom, pageTo)
+  }, [authorized, pageFrom, pageTo])
+
+  const filteredLancamentos = useMemo(() => {
+    return lancamentos.filter((l) => {
+      if (pageStatusFilter === "all") return true
+      if (pageStatusFilter === "paid") return l.status === "PAID"
+      if (l.status !== "APPROVED" || l.paid_at) return false
+      const ref = l.approved_at || l.created_at
+      const days = daysSince(ref)
+      const isRed = days !== null && days > THRESHOLD_DAYS
+      if (pageStatusFilter === "red") return isRed
+      if (pageStatusFilter === "green") return !isRed
+      return true
+    })
+  }, [lancamentos, pageStatusFilter])
+
+  const copyToClipboard = async (key: string, value: string | null | undefined) => {
+    if (!value) return
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500)
+    } catch {
+      // navegador sem clipboard
+    }
+  }
 
   const applyDatePreset = (days: number | null) => {
     if (days === null) {
@@ -492,6 +569,181 @@ export default function AdminAfiliadosPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Lançamentos: tabela de conversões com dados PIX expansíveis */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <CardTitle className="text-lg">Lançamentos</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Clique em uma linha para ver os dados de PIX do afiliado.
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {filteredLancamentos.length} {filteredLancamentos.length === 1 ? "lançamento" : "lançamentos"}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {lancLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : lancError ? (
+              <p className="text-sm text-destructive">{lancError}</p>
+            ) : filteredLancamentos.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground">
+                Nenhum lançamento neste filtro.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b">
+                      <th className="px-3 py-2 font-medium">Usuário</th>
+                      <th className="px-3 py-2 font-medium">Cupom</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Data / Hora</th>
+                      <th className="px-3 py-2 font-medium text-right">Valor</th>
+                      <th className="px-2 py-2 w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLancamentos.map((l) => {
+                      const expanded = expandedLancId === l.id_conversion
+                      const dt = new Date(l.created_at)
+                      const statusColor =
+                        l.status === "PAID"
+                          ? "bg-muted text-muted-foreground"
+                          : l.status === "APPROVED"
+                            ? l.paid_at
+                              ? "bg-muted text-muted-foreground"
+                              : (() => {
+                                  const days = daysSince(l.approved_at || l.created_at)
+                                  return days !== null && days > THRESHOLD_DAYS
+                                    ? "bg-red-500/15 text-red-500 border-red-500/30"
+                                    : "bg-green-500/15 text-green-600 border-green-500/30"
+                                })()
+                            : l.status === "REVERSED"
+                              ? "bg-orange-500/15 text-orange-500 border-orange-500/30"
+                              : "bg-yellow-500/15 text-yellow-500 border-yellow-500/30"
+                      return (
+                        <Fragment key={l.id_conversion}>
+                          <tr
+                            className="border-b hover:bg-muted/40 cursor-pointer transition"
+                            onClick={() =>
+                              setExpandedLancId((prev) => (prev === l.id_conversion ? null : l.id_conversion))
+                            }
+                          >
+                            <td className="px-3 py-3">
+                              <p className="font-medium leading-tight">{l.affiliate_name || "—"}</p>
+                              <p className="text-xs text-muted-foreground">{l.affiliate_email || ""}</p>
+                            </td>
+                            <td className="px-3 py-3">
+                              {l.coupon_code ? (
+                                <Badge variant="outline" className="text-xs font-mono">
+                                  {l.coupon_code}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${statusColor}`}
+                              >
+                                {l.status}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-muted-foreground tabular-nums">
+                              {dt.toLocaleDateString("pt-BR")}, {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                            <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                              {formatBrl(l.commission_cents)}
+                            </td>
+                            <td className="px-2 py-3 text-muted-foreground">
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                              />
+                            </td>
+                          </tr>
+                          {expanded && (
+                            <tr className="bg-muted/30">
+                              <td colSpan={6} className="px-3 py-4">
+                                <div className="space-y-3">
+                                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Dados de PIX do afiliado
+                                  </p>
+                                  {!l.affiliate_pix_key && !l.affiliate_legal_name && !l.affiliate_tax_id ? (
+                                    <p className="text-sm text-muted-foreground italic">
+                                      O afiliado ainda não cadastrou os dados de pagamento.
+                                    </p>
+                                  ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <PixField
+                                        label="Tipo de chave"
+                                        value={l.affiliate_pix_key_type}
+                                        copyKey={`${l.id_conversion}:type`}
+                                        copiedKey={copiedKey}
+                                        onCopy={copyToClipboard}
+                                      />
+                                      <PixField
+                                        label="Chave PIX"
+                                        value={l.affiliate_pix_key}
+                                        copyKey={`${l.id_conversion}:key`}
+                                        copiedKey={copiedKey}
+                                        onCopy={copyToClipboard}
+                                      />
+                                      <PixField
+                                        label="Nome / Razão social"
+                                        value={l.affiliate_legal_name}
+                                        copyKey={`${l.id_conversion}:legal`}
+                                        copiedKey={copiedKey}
+                                        onCopy={copyToClipboard}
+                                      />
+                                      <PixField
+                                        label="CPF / CNPJ"
+                                        value={l.affiliate_tax_id}
+                                        copyKey={`${l.id_conversion}:tax`}
+                                        copiedKey={copiedKey}
+                                        onCopy={copyToClipboard}
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+                                    <p className="text-xs text-muted-foreground">
+                                      Venda <span className="font-mono">{l.id_order.slice(0, 8)}</span> · base{" "}
+                                      {formatBrl(l.order_total_cents)}
+                                      {l.paid_at && (
+                                        <> · pago {new Date(l.paid_at).toLocaleDateString("pt-BR")}</>
+                                      )}
+                                    </p>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        const row = summary.find((s) => s.id_affiliate === l.id_affiliate)
+                                        if (row) openModal(row, "all")
+                                      }}
+                                    >
+                                      Ver no painel do afiliado
+                                    </Button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
 
       {/* Modal de detalhes */}
@@ -669,6 +921,53 @@ export default function AdminAfiliadosPage() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function PixField({
+  label,
+  value,
+  copyKey,
+  copiedKey,
+  onCopy,
+}: {
+  label: string
+  value: string | null | undefined
+  copyKey: string
+  copiedKey: string | null
+  onCopy: (key: string, value: string | null | undefined) => void
+}) {
+  const empty = !value
+  const isCopied = copiedKey === copyKey
+  return (
+    <div className="rounded-md border bg-background px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+        {label}
+      </p>
+      <div className="flex items-center justify-between gap-2 mt-1">
+        <p className={`text-sm font-mono break-all ${empty ? "text-muted-foreground/60 italic" : ""}`}>
+          {empty ? "—" : value}
+        </p>
+        {!empty && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onCopy(copyKey, value)
+            }}
+            className="shrink-0 rounded p-1.5 hover:bg-muted transition"
+            aria-label={`Copiar ${label}`}
+            title="Copiar"
+          >
+            {isCopied ? (
+              <Check className="h-3.5 w-3.5 text-green-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
