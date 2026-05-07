@@ -4,7 +4,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/search", "/maquina/*", "/*/*/*"],
+      allow: "/",
       disallow: [
         "/account",
         "/account/*",
@@ -13,6 +13,10 @@ export default function robots(): MetadataRoute.Robots {
         "/login",
         "/cadastro",
         "/verify-email",
+        "/forgot-password",
+        "/reset-password",
+        "/confirmar-email",
+        "/activate",
         "/api",
         "/api/*",
       ],
