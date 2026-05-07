@@ -20,6 +20,7 @@ interface MuralRequest {
   user_name?: string
   user_avatar?: string
   created_at: string
+  responses_count?: number
 }
 
 interface ActiveConversation {
@@ -219,6 +220,16 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                       {req.machine_name && <Badge variant="outline" className="text-[10px] py-0 h-5">{req.machine_name}</Badge>}
                       {req.category_name && <Badge variant="secondary" className="text-[10px] py-0 h-5">{req.category_name}</Badge>}
                       {req.municipio && <span className="text-[10px] text-muted-foreground">📍 {req.municipio}{req.estado ? `, ${req.estado}` : ""}</span>}
+                      {typeof req.responses_count === "number" && req.responses_count > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] py-0 h-5 border-primary/40 bg-primary/10 text-primary gap-1"
+                          title={`${req.responses_count} ${req.responses_count === 1 ? "subperfil já respondeu" : "subperfis já responderam"}`}
+                        >
+                          <MessageCircle className="h-2.5 w-2.5" />
+                          {req.responses_count} {req.responses_count === 1 ? "conversa aberta" : "conversas abertas"}
+                        </Badge>
+                      )}
                     </div>
                     {req.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{req.description}</p>
