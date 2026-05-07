@@ -6,11 +6,23 @@ import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
 import { FreelancerProfileError, FreelancerProfileLoading } from "./freelancer-states"
 import type { PortfolioItem } from "@/lib/types/freelancer-profile"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MapPin, Instagram, Youtube, ArrowLeft, Video, Settings, Plus, Trash2, ImageIcon, Upload, X, ExternalLink, CalendarDays, Clock, Loader2, Edit2, MessageCircle, Heart, Users, Cog, Search, Crown, Megaphone } from "lucide-react"
+import {
+  ArrowLeft,
+  Crown,
+  Edit2,
+  ExternalLink,
+  Heart,
+  ImageIcon,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  Users,
+  X,
+} from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -18,12 +30,10 @@ import { Label } from "@/components/ui/label"
 import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSection"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
-import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
-import { BarChart2, Trophy } from "lucide-react"
 import { MuralModal } from "@/components/profile/mural-modal"
-import { EntityFollowStats, FollowButton } from "@/components/entity-follow"
+import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 
 export default function FreelancerProfileView({
   profileId,
@@ -292,22 +302,6 @@ export default function FreelancerProfileView({
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
   }
 
-  const getSocialIcon = (icon: string) => {
-    const lower = icon.toLowerCase()
-    if (lower === "instagram") return <Instagram className="h-4 w-4 text-white" />
-    if (lower === "youtube") return <Youtube className="h-4 w-4 text-white" />
-    if (lower === "whatsapp") return <MessageCircle className="h-4 w-4 text-white" />
-    return <Video className="h-4 w-4 text-white" />
-  }
-
-  const getSocialBg = (icon: string) => {
-    const lower = icon.toLowerCase()
-    if (lower === "instagram") return "bg-gradient-to-br from-purple-500 to-pink-500"
-    if (lower === "youtube") return "bg-red-600"
-    if (lower === "whatsapp") return "bg-green-500"
-    return "bg-black"
-  }
-
   // Badge polling for mural (30s, only for owner)
   useEffect(() => {
     if (!isOwnProfile) return
@@ -349,235 +343,42 @@ export default function FreelancerProfileView({
           Voltar
         </Button>
 
-        {/* HEADER SECTION */}
-        <section className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12 mb-12">
-          {/* Avatar Area */}
-          <div className="shrink-0 flex flex-col items-center">
-            <Avatar className="h-32 w-32 md:h-40 md:w-40 border border-border">
-              {(profile.avatar_url || profile.user_avatar) && (
-                <AvatarImage
-                  src={profile.avatar_url ?? profile.user_avatar!}
-                  alt={profile.display_name}
-                  className="object-cover"
-                />
-              )}
-              <AvatarFallback className="bg-primary text-4xl font-bold text-primary-foreground">
-                {getInitials(profile.display_name)}
-              </AvatarFallback>
-            </Avatar>
-            <AvatarRatingStar profileId={profileId} />
-          </div>
-
-          {/* Info Area */}
-          <div className="flex-1 space-y-5 text-center md:text-left w-full">
-            {/* Name and Buttons Row */}
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-              <h1 className="text-2xl md:text-3xl font-semibold">{profile.display_name}</h1>
-              
-              <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto">
-                {isOwnProfile ? (
-                  <>
-                    <Button
-                      asChild
-                      variant="secondary"
-                      className="font-semibold bg-secondary/80 hover:bg-secondary text-secondary-foreground flex-1 md:flex-none"
-                    >
-                      <Link
-                        href={
-                          isClan
-                            ? `/account/clans/${profileId}/edit`
-                            : `/account/profile/${profileId}/settings`
-                        }
-                      >
-                        Editar perfil
-                      </Link>
-                    </Button>
-                    {isClan ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          className="font-semibold flex-1 md:flex-none gap-1.5"
-                          onClick={() => setShowMembers(true)}
-                        >
-                          <Users className="h-4 w-4" />
-                          Ver membros
-                        </Button>
-                        <Button
-                          asChild
-                          variant="outline"
-                          className="font-semibold flex-1 md:flex-none gap-1.5"
-                        >
-                          <Link href={`/account/clans/${profileId}`}>
-                            <Cog className="h-4 w-4" />
-                            Gerenciar
-                          </Link>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        asChild
-                        variant="outline"
-                        className="font-semibold flex-1 md:flex-none gap-1.5"
-                      >
-                        <Link href="/account/clans">
-                          <Users className="h-4 w-4" />
-                          Clans
-                        </Link>
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                      onClick={() => setShowEngagement(true)}
-                    >
-                      <BarChart2 className="h-4 w-4" />
-                      Engajamento
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                      onClick={() => setShowRanking(true)}
-                    >
-                      <Trophy className="h-4 w-4" />
-                      Ranking
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5 relative"
-                      onClick={() => setShowMural(true)}
-                    >
-                      <Megaphone className="h-4 w-4" />
-                      Mural
-                      {(muralBadge.has_new || muralBadge.chat_unread > 0) && (
-                        <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
-                      )}
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                    >
-                      <Link
-                        href={
-                          isClan
-                            ? `/account/clans/${profileId}/agenda`
-                            : `/account/profile/${profileId}/agenda`
-                        }
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        Agenda
-                      </Link>
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {isClan && (
-                      <Button
-                        variant="outline"
-                        className="font-semibold flex-1 md:flex-none gap-1.5"
-                        onClick={() => setShowMembers(true)}
-                      >
-                        <Users className="h-4 w-4" />
-                        Ver membros
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                      onClick={() => setShowRanking(true)}
-                    >
-                      <Trophy className="h-4 w-4" />
-                      Ranking
-                    </Button>
-                    <FollowButton
-                      targetType={entityType}
-                      targetId={profileId}
-                      className="flex-1 md:flex-none"
-                      onChanged={() => setFollowRefreshKey((value) => value + 1)}
-                    />
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="font-semibold flex-1 md:flex-none gap-1.5"
-                    >
-                      <Link href={`/mensagens?with=${encodeURIComponent(profileId)}`}>
-                        <MessageCircle className="h-4 w-4" />
-                        Enviar mensagem
-                      </Link>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        const agendaEl = document.getElementById("agenda-section")
-                        if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
-                      }}
-                      className="font-semibold flex-1 md:flex-none px-8"
-                    >
-                      Agendar
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Badges and Location */}
-            <div className="flex flex-col md:flex-row md:items-center gap-3 text-sm">
-              <div className="flex items-center justify-center md:justify-start gap-2">
-                {profile.machine_name && (
-                  <Badge variant="outline" className="font-medium">
-                    {profile.machine_name}
-                  </Badge>
-                )}
-                {profile.desc_category && (
-                  <Badge variant="secondary" className="font-medium bg-muted">
-                    {profile.desc_category}
-                  </Badge>
-                )}
-              </div>
-              {(profile.municipio || profile.estado) && (
-                <div className="flex items-center justify-center md:justify-start gap-1 text-muted-foreground font-medium">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span>{[profile.municipio, profile.estado].filter(Boolean).join(", ")}</span>
-                </div>
-              )}
-            </div>
-
-            <EntityFollowStats
-              entityType={entityType}
-              entityId={profileId}
-              refreshKey={followRefreshKey}
-            />
-
-            {/* Bio */}
-            {profile.bio && (
-              <p className="text-sm md:text-base leading-relaxed max-w-2xl break-words whitespace-pre-wrap mx-auto md:mx-0">
-                {profile.bio}
-              </p>
-            )}
-
-            {/* Social Links */}
-            {profile.social_media && profile.social_media.filter(s => s.is_active).length > 0 && (
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                {profile.social_media.filter(s => s.is_active).map(social => (
-                  <a
-                    key={social.id_profile_social_media}
-                    href={social.profile_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center hover:scale-110 transition-transform"
-                    title={social.desc_social_media_type}
-                  >
-                    <div className={`rounded-full p-2 ${getSocialBg(social.icon)}`}>
-                      {getSocialIcon(social.icon)}
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* HEADER CARD */}
+        <section className="mb-10">
+          <ProfileHeadCard
+            profile={profile}
+            profileId={profileId}
+            entityType={entityType}
+            isClan={isClan}
+            isOwnProfile={isOwnProfile}
+            portfolioCount={portfolioItems.length}
+            followRefreshKey={followRefreshKey}
+            onFollowChanged={() => setFollowRefreshKey((value) => value + 1)}
+            ownerActions={{
+              editHref: isClan
+                ? `/account/clans/${profileId}/edit`
+                : `/account/profile/${profileId}/settings`,
+              onShowEngagement: () => setShowEngagement(true),
+              onShowRanking: () => setShowRanking(true),
+              onShowMural: () => setShowMural(true),
+              muralBadge,
+              agendaHref: isClan
+                ? `/account/clans/${profileId}/agenda`
+                : `/account/profile/${profileId}/agenda`,
+              onShowMembers: isClan ? () => setShowMembers(true) : undefined,
+              clansHref: !isClan ? "/account/clans" : undefined,
+              manageHref: isClan ? `/account/clans/${profileId}` : undefined,
+            }}
+            visitorActions={{
+              onShowRanking: () => setShowRanking(true),
+              onShowMembers: isClan ? () => setShowMembers(true) : undefined,
+              onScheduleScroll: () => {
+                const agendaEl = document.getElementById("agenda-section")
+                if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
+              },
+            }}
+          />
         </section>
-
-        {/* DIVIDER */}
-        <div className="border-t border-border mb-8"></div>
 
         {/* PORTFOLIO SECTION */}
         <section className="mb-16">
