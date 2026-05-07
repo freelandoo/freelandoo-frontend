@@ -13,7 +13,6 @@ import { useMeProfile } from "@/hooks/use-me-profile"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import type { MediaItem, PerfilCompleto, Profile, RedeSocial } from "@/lib/types/account"
 import { AccountError, AccountLoading } from "./_components/account-states"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +27,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound } from "lucide-react"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -44,6 +43,7 @@ import Link from "next/link"
 export default function PerfilPage() {
   const router = useRouter()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
+  const [unreadMessages, setUnreadMessages] = React.useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -142,6 +142,26 @@ export default function PerfilPage() {
     }
     fetchBadge()
     const interval = setInterval(fetchBadge, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Total de mensagens nao lidas (somatorio de todos os subperfis e clans owned)
+  React.useEffect(() => {
+    const fetchUnread = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+      try {
+        const res = await fetch("/api/conversations/unread-count", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setUnreadMessages(Number(data?.total) || 0)
+        }
+      } catch { /* silent */ }
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -1205,158 +1225,218 @@ export default function PerfilPage() {
     }
   }
 
+  const emailVerified =
+    Array.isArray(perfil.statuses) &&
+    perfil.statuses.some((s) =>
+      String(s.desc_status || "").toLowerCase().includes("email")
+    )
+  const totalProfiles = (perfil.profiles || []).filter((p) => !p.is_clan).length
+  const visibleProfiles = (perfil.profiles || []).filter(
+    (p) => !p.is_clan && p.is_published
+  ).length
+  const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
+
   return (
-    <div className="bg-page-shell-dark">
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 max-w-4xl mx-auto">
-          {/* Head Card — perfil do usuário (info pessoal + conta) */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="relative shrink-0 mx-auto md:mx-0">
-                  <Avatar className="h-32 w-32">
-                    {perfil.avatar && <AvatarImage src={perfil.avatar || "/placeholder.svg"} alt={perfil.nome} />}
-                    <AvatarFallback className="text-2xl">{getInitials(perfil.nome)}</AvatarFallback>
+    <div className="bg-page-shell-dark min-h-[100dvh]">
+      <main className="container mx-auto px-4 py-10 md:py-12">
+        <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
+          {/* Head Card — perfil do usuario */}
+          <article
+            className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7"
+          >
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+              {/* Avatar */}
+              <div className="relative mx-auto shrink-0 md:mx-0">
+                <div
+                  className="relative h-32 w-32 overflow-hidden rounded-full ring-1 ring-primary/30"
+                  style={{
+                    boxShadow:
+                      "0 0 0 1px rgba(242,196,9,0.08), 0 24px 60px -28px rgba(242,196,9,0.45)",
+                  }}
+                >
+                  <Avatar className="h-full w-full rounded-full">
+                    {perfil.avatar && (
+                      <AvatarImage
+                        src={perfil.avatar}
+                        alt={perfil.nome}
+                        className="rounded-full object-cover"
+                      />
+                    )}
+                    <AvatarFallback
+                      className="rounded-full text-2xl font-semibold text-primary"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(242,196,9,0.22), rgba(242,196,9,0.05))",
+                      }}
+                    >
+                      {getInitials(perfil.nome)}
+                    </AvatarFallback>
                   </Avatar>
-                  <Button
-                    size="icon"
-                    className="absolute bottom-0 right-0 rounded-full h-8 w-8"
-                    onClick={() => setIsUploadModalOpen(true)}
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(true)}
+                  aria-label="Trocar foto"
+                  className="absolute bottom-1 right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Info + ações */}
+              <div className="min-w-0 flex-1 space-y-4">
+                <div>
+                  <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
+                    {perfil.nome}
+                  </h1>
+                  {perfil.username && (
+                    <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {emailVerified ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+                        <BadgeCheck className="h-3 w-3" />
+                        Email verificado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
+                        <AlertCircle className="h-3 w-3" />
+                        Email não verificado
+                      </span>
+                    )}
+                    {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
+                      <span
+                        key={status.id_status}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
+                      >
+                        {status.desc_status.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0 space-y-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="font-bold text-2xl truncate">{perfil.nome}</h2>
-                      {perfil.username && (
-                        <p className="text-sm text-muted-foreground">@{perfil.username}</p>
-                      )}
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {perfil.statuses && perfil.statuses.length > 0 ? (
-                          perfil.statuses.map((status) => (
-                            <Badge key={status.id_status} variant="default" className="bg-green-600 hover:bg-green-700">
-                              {status.desc_status.replace(/_/g, " ").toUpperCase()}
-                            </Badge>
-                          ))
-                        ) : (
-                          <Badge variant="secondary">Sem status</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={openEditModal}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsServiceRequestOpen(true)}
-                        className="relative"
-                      >
-                        <MessageSquarePlus className="h-4 w-4 mr-2" />
-                        Pedir serviço
-                        {(srBadge.has_new || srBadge.unread_chats > 0) && (
-                          <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
-                        )}
-                      </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <a href="/account/afiliado">Painel de afiliado</a>
-                      </Button>
-                      {perfil.coupon_code ? (
-                        <button
-                          onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-dashed border-primary bg-primary/5 hover:bg-primary/10 transition-colors font-mono text-sm font-semibold tracking-widest text-primary"
-                          title={couponCopied ? "Copiado!" : "Clique para copiar"}
-                        >
-                          {couponCopied ? <Check className="h-4 w-4 shrink-0" /> : <Copy className="h-4 w-4 shrink-0" />}
-                          {perfil.coupon_code}
-                        </button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleGenerateCoupon}
-                          disabled={isGeneratingCoupon}
-                        >
-                          {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-                    {perfil.data_nascimento && (
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground mb-1">Data de Nascimento</p>
-                        <p className="text-sm font-medium">{new Date(perfil.data_nascimento.split('T')[0] + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                      </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openEditModal}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsServiceRequestOpen(true)}
+                    className="relative inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+                  >
+                    <MessageSquarePlus className="h-3.5 w-3.5" />
+                    Pedir serviço
+                    {(srBadge.has_new || srBadge.unread_chats > 0) && (
+                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
                     )}
-                    {perfil.sexo && (
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground mb-1">Sexo</p>
-                        <p className="text-sm font-medium">{formatarSexo(perfil.sexo)}</p>
-                      </div>
-                    )}
-                    {perfil.estado && (
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground mb-1">Localização</p>
-                        <p className="text-sm font-medium flex items-center gap-1 truncate">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{perfil.municipio ? `${perfil.municipio}, ${perfil.estado}` : perfil.estado}</span>
-                        </p>
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground mb-1">Email</p>
-                      <p className="text-sm font-medium flex items-center gap-1 truncate">
-                        <Mail className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{perfil.email}</span>
-                      </p>
-                    </div>
-                  </div>
+                  </button>
+                  <Link
+                    href="/account/afiliado"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+                  >
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Painel de afiliado
+                  </Link>
+                  {perfil.coupon_code ? (
+                    <button
+                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-3.5 py-2 font-mono text-[12px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
+                      title={couponCopied ? "Copiado!" : "Clique para copiar"}
+                    >
+                      {couponCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {perfil.coupon_code}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleGenerateCoupon}
+                      disabled={isGeneratingCoupon}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-3.5 py-2 text-[12px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    >
+                      {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                    </button>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Linha info pessoal */}
+            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-white/[0.07] pt-5 sm:grid-cols-2 lg:grid-cols-4">
+              {perfil.data_nascimento && (
+                <InfoCell
+                  icon={CalendarDays}
+                  label="Data de nascimento"
+                  value={new Date(perfil.data_nascimento.split("T")[0] + "T00:00:00").toLocaleDateString("pt-BR")}
+                />
+              )}
+              {perfil.sexo && (
+                <InfoCell icon={UserRound} label="Sexo" value={formatarSexo(perfil.sexo)} />
+              )}
+              {(perfil.municipio || perfil.estado) && (
+                <InfoCell
+                  icon={MapPin}
+                  label="Localização"
+                  value={perfil.municipio ? `${perfil.municipio}${perfil.estado ? `, ${perfil.estado}` : ""}` : perfil.estado || ""}
+                />
+              )}
+              <InfoCell icon={Mail} label="Email" value={perfil.email || ""} truncate />
+            </div>
+          </article>
+
+          {/* Stats row */}
+          <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <StatCell icon={UserRound} label="Total de perfis" value={totalProfiles} />
+            <StatCell icon={Eye} label="Perfis visíveis" value={visibleProfiles} />
+            <StatCell icon={Users} label="Clans" value={totalClans} />
+            <StatCell
+              icon={MessageCircle}
+              label="Mensagens não lidas"
+              value={unreadMessages}
+              accent={unreadMessages > 0}
+            />
+          </section>
 
 
 
           {/* Meus Perfis */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    Meus Perfis
-                  </CardTitle>
-                  {(() => {
-                    const list = (perfil.profiles || []).filter((p) => !p.is_clan)
-                    const total = list.length
-                    const visible = list.filter((p) => p.is_published).length
-                    const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
-                    const unpaid = list.filter((p) => !p.is_paid).length
-                    return (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Perfis: {total} criado{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"} · {unpaid} aguardando assinatura
-                      </p>
-                    )
-                  })()}
-                </div>
-                <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Perfil
-                </Button>
+          <article className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+            <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+                  <UserRound className="h-4 w-4 text-primary" />
+                  Meus Perfis
+                </h2>
+                {(() => {
+                  const list = (perfil.profiles || []).filter((p) => !p.is_clan)
+                  const total = list.length
+                  const visible = list.filter((p) => p.is_published).length
+                  const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
+                  const unpaid = list.filter((p) => !p.is_paid).length
+                  return (
+                    <p className="mt-1 text-xs text-white/50">
+                      {total} criado{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"} · {unpaid} aguardando assinatura
+                    </p>
+                  )
+                })()}
               </div>
-            </CardHeader>
-            <CardContent>
+              <button
+                type="button"
+                onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
+                style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)" }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Novo Perfil
+              </button>
+            </header>
+            <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
@@ -1367,14 +1447,14 @@ export default function PerfilPage() {
                       <div key={profile.id_profile} className="group relative">
                         {hasNotification && (
                           <span
-                            className="absolute -top-1 -right-1 z-10 inline-block h-3 w-3 rounded-full bg-red-500 ring-2 ring-background animate-pulse"
+                            className="absolute -top-1 -right-1 z-10 inline-block h-3 w-3 rounded-full bg-red-500 ring-2 ring-zinc-950 animate-pulse"
                             title="Notificação no mural ou chat"
                           />
                         )}
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          className="block w-full aspect-square overflow-hidden rounded-lg bg-muted relative ring-1 ring-border hover:ring-primary/50 transition"
+                          className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
                           aria-label={`Abrir perfil ${profile.display_name}`}
                         >
                           {imgSrc ? (
@@ -1382,13 +1462,17 @@ export default function PerfilPage() {
                             <img
                               src={imgSrc}
                               alt={profile.display_name}
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-3xl font-semibold">
+                            <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white/40">
                               {getInitials(profile.display_name)}
                             </div>
                           )}
+                          <div
+                            aria-hidden
+                            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"
+                          />
                         </button>
 
                         {/* Engrenagem (canto superior esquerdo) */}
@@ -1396,10 +1480,10 @@ export default function PerfilPage() {
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="absolute top-2 left-2 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
+                              className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
                               aria-label="Ações do perfil"
                             >
-                              <Settings className="h-4 w-4" />
+                              <Settings className="h-3.5 w-3.5" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="w-52">
@@ -1441,22 +1525,28 @@ export default function PerfilPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
 
-                        {/* Status indicator (canto superior direito) */}
+                        {/* Status badge (canto superior direito) */}
                         <div className="absolute top-2 right-2 pointer-events-none">
                           {!isPaid ? (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold uppercase tracking-wide">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
                               Aguardando
                             </span>
                           ) : isPublished ? (
-                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" title="Ativo e visível" />
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                              Visível
+                            </span>
                           ) : (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-slate-700/80 text-white text-[10px] font-semibold uppercase tracking-wide">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
                               Invisível
                             </span>
                           )}
                         </div>
 
-                        <p className="mt-2 text-sm font-medium truncate">{profile.display_name}</p>
+                        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
+                          <UserRound className="h-3 w-3 text-primary/80" />
+                          <span className="truncate">{profile.display_name}</span>
+                        </p>
                       </div>
                     )
                   })}
@@ -1474,79 +1564,111 @@ export default function PerfilPage() {
                   </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </article>
 
-          {/* Meus Clans — mesmo estilo dos subperfis */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Meus Clans
-                  </CardTitle>
-                  {(() => {
-                    const list = (perfil.profiles || []).filter((p) => p.is_clan)
-                    const total = list.length
-                    const visible = list.filter((p) => p.is_published).length
-                    const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
-                    return (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {total} clan{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"}
-                      </p>
-                    )
-                  })()}
-                </div>
-                <Button variant="outline" asChild>
-                  <Link href="/account/clans">
-                    Gerenciar clans
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
+          {/* Meus Clans */}
+          <article className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+            <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
+                  <Users className="h-4 w-4 text-primary" />
+                  Meus Clans
+                </h2>
+                {(() => {
+                  const list = (perfil.profiles || []).filter((p) => p.is_clan)
+                  const total = list.length
+                  const visible = list.filter((p) => p.is_published).length
+                  const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
+                  return (
+                    <p className="mt-1 text-xs text-white/50">
+                      {total} clan{total === 1 ? "" : "s"} · {visible} visível{visible === 1 ? "" : "is"} · {paidInvisible} invisível{paidInvisible === 1 ? "" : "is"}
+                    </p>
+                  )
+                })()}
               </div>
-            </CardHeader>
-            <CardContent>
+              <Link
+                href="/account/clans"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+              >
+                Gerenciar clans
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </header>
+            <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false
                     const isPublished = !!clan.is_published
                     const imgSrc = clan.avatar_url || null
                     return (
-                      <div key={clan.id_profile} className="group relative">
+                      <div
+                        key={clan.id_profile}
+                        className="group relative flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-primary/25"
+                      >
                         <button
                           type="button"
                           onClick={() => router.push(`/account/clans/${clan.id_profile}`)}
-                          className="block w-full aspect-square overflow-hidden rounded-lg bg-muted relative ring-1 ring-border hover:ring-primary/50 transition"
+                          className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-1 ring-primary/25"
                           aria-label={`Abrir clan ${clan.display_name}`}
+                          style={{
+                            background:
+                              "linear-gradient(135deg, rgba(242,196,9,0.18), rgba(217,70,239,0.14))",
+                          }}
                         >
                           {imgSrc ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={imgSrc}
                               alt={clan.display_name}
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-3xl font-semibold">
+                            <div className="grid h-full w-full place-items-center text-sm font-semibold text-white/85">
                               {getInitials(clan.display_name)}
                             </div>
                           )}
                         </button>
 
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <Crown className="h-3 w-3 text-primary" />
+                            {!isPaid ? (
+                              <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+                                Aguardando
+                              </span>
+                            ) : isPublished ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                                Visível
+                              </span>
+                            ) : (
+                              <span className="rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                                Invisível
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 truncate text-sm font-medium text-white">
+                            {clan.display_name}
+                          </p>
+                          <p className="text-[11px] text-white/45">
+                            {isVisible ? "0 visíveis" : "Invisível"}
+                          </p>
+                        </div>
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               type="button"
-                              className="absolute top-2 left-2 inline-flex items-center justify-center h-8 w-8 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition-colors"
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
                               aria-label="Ações do clan"
                             >
-                              <Settings className="h-4 w-4" />
+                              <Settings className="h-3.5 w-3.5" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-52">
+                          <DropdownMenuContent align="end" className="w-52">
                             <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}`)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Gerenciar clan
@@ -1578,40 +1700,23 @@ export default function PerfilPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-
-                        <div className="absolute top-2 right-2 pointer-events-none flex items-center gap-1">
-                          <Crown className="h-4 w-4 text-amber-400 drop-shadow" />
-                          {!isPaid ? (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold uppercase tracking-wide">
-                              Aguardando
-                            </span>
-                          ) : isPublished ? (
-                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" title="Ativo e visível" />
-                          ) : (
-                            <span className="inline-block px-2 py-0.5 rounded-full bg-slate-700/80 text-white text-[10px] font-semibold uppercase tracking-wide">
-                              Invisível
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="mt-2 text-sm font-medium truncate">{clan.display_name}</p>
                       </div>
                     )
                   })}
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-border p-8 text-center">
-                  <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
+                  <Users className="mx-auto mb-2 h-8 w-8 text-white/40" />
+                  <p className="text-sm text-white/55">
                     Você ainda não tem clans criados.
                   </p>
-                  <Button variant="link" asChild className="mt-2">
-                    <Link href="/account/clans">Criar ou entrar em um clan</Link>
-                  </Button>
+                  <Link href="/account/clans" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+                    Criar ou entrar em um clan
+                  </Link>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </article>
         </div>
       </main>
 
@@ -2220,6 +2325,71 @@ export default function PerfilPage() {
         open={isServiceRequestOpen}
         onOpenChange={setIsServiceRequestOpen}
       />
+    </div>
+  )
+}
+
+function InfoCell({
+  icon: Icon,
+  label,
+  value,
+  truncate,
+}: {
+  icon: typeof Mail
+  label: string
+  value: string
+  truncate?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary/[0.10] text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">
+          {label}
+        </p>
+        <p
+          className={
+            "mt-0.5 text-sm font-medium text-white" +
+            (truncate ? " truncate" : "")
+          }
+          title={truncate ? value : undefined}
+        >
+          {value}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function StatCell({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Mail
+  label: string
+  value: number
+  accent?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-4">
+      <div
+        className={
+          "grid h-10 w-10 shrink-0 place-items-center rounded-xl border " +
+          (accent
+            ? "border-primary/40 bg-primary/[0.14] text-primary"
+            : "border-primary/25 bg-primary/[0.08] text-primary")
+        }
+      >
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xl font-semibold tabular-nums text-white">{value}</p>
+        <p className="mt-0.5 text-[11px] text-white/55">{label}</p>
+      </div>
     </div>
   )
 }
