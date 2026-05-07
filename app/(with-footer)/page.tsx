@@ -1,34 +1,38 @@
 import type { Metadata } from "next"
 import {
-  MachinesHeroSection,
-  SegmentationCards,
-  MachinesGridSection,
-  PopularShortcutsSection,
-  RankingSection,
-  HowItWorksSection,
-  NewCategoriesSection,
-  TrustSection,
-  ForProfessionalsSection,
-  AffiliatesSection,
-  AboutFreelandooSection,
-  FinalCTASection,
-} from "@/components/home"
+  SocialHero,
+  PortfolioWorksSection,
+  FeedShowcaseSection,
+  MachinesIntentSection,
+  MessagesSection,
+  AcompanharClansSection,
+  EarnMoneySection,
+  ForWhomSection,
+  SocialFinalCTASection,
+} from "@/components/home/social"
+
+const TITLE = "Freelandoo — A rede social de profissionais feita para ganhar dinheiro"
+const DESCRIPTION =
+  "Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja encontrado por quem precisa do que você faz. Posts de portfólio, máquinas, clans, mensagens e indicações."
 
 export const metadata: Metadata = {
-  title: "Freelandoo — Plataforma para freelancers e clientes",
-  description:
-    "Freelandoo é a plataforma que conecta freelancers, influenciadores e prestadores de serviço com seus clientes. Ative uma máquina, encontre quem resolve e fale direto pelo WhatsApp.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: {
     canonical: "https://www.freelandoo.com.br",
   },
   openGraph: {
-    title: "Freelandoo — Plataforma para freelancers e clientes",
-    description:
-      "Conecta freelancers, influenciadores e prestadores de serviço com clientes. Ative uma máquina e encontre quem resolve.",
+    title: TITLE,
+    description: DESCRIPTION,
     url: "https://www.freelandoo.com.br",
     siteName: "Freelandoo",
     type: "website",
     locale: "pt_BR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
   },
 }
 
@@ -41,29 +45,38 @@ export default function HomePage() {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://www.freelandoo.com.br"
-      }
-    ]
+        item: "https://www.freelandoo.com.br",
+      },
+    ],
+  }
+  const jsonLdOrg = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Freelandoo",
+    url: "https://www.freelandoo.com.br",
+    description: DESCRIPTION,
   }
 
   return (
-    <main className="flex-1 bg-machines-dark">
+    <main className="flex-1 bg-zinc-950 text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
-      <MachinesHeroSection />
-      <SegmentationCards />
-      <MachinesGridSection />
-      <PopularShortcutsSection />
-      <RankingSection />
-      <AboutFreelandooSection />
-      <HowItWorksSection />
-      <NewCategoriesSection />
-      <TrustSection />
-      <ForProfessionalsSection />
-      <AffiliatesSection />
-      <FinalCTASection />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
+      />
+
+      <SocialHero />
+      <PortfolioWorksSection />
+      <FeedShowcaseSection />
+      <MachinesIntentSection />
+      <MessagesSection />
+      <AcompanharClansSection />
+      <EarnMoneySection />
+      <ForWhomSection />
+      <SocialFinalCTASection />
     </main>
   )
 }
