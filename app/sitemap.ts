@@ -4,6 +4,10 @@ import { buildProfileUrl, slugify } from "@/lib/slug"
 
 const BASE_URL = "https://www.freelandoo.com.br"
 
+// Revalida o sitemap a cada 10min: dado de prod (username sujo, perfil novo,
+// máquina nova) reflete em até 10min em vez de 1h, sem ficar dinâmico de mais.
+export const revalidate = 600
+
 // Username válido: letras/números/underscore/ponto, 3–30 chars. Reflete a regra
 // já usada nas rotas dinâmicas (isValidHandleParam em [profession]/[city]/[handle]).
 const USERNAME_RE = /^[a-z0-9][a-z0-9_.]{2,29}$/i
