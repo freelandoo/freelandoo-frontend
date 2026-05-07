@@ -23,6 +23,7 @@ import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { BarChart2, Trophy } from "lucide-react"
 import { MuralModal } from "@/components/profile/mural-modal"
+import { EntityFollowStats, FollowButton } from "@/components/entity-follow"
 
 export default function FreelancerProfileView({
   profileId,
@@ -32,12 +33,14 @@ export default function FreelancerProfileView({
   kind?: "profile" | "clan"
 }) {
   const isClan = kind === "clan"
+  const entityType = isClan ? "clan" : "profile"
   const router = useRouter()
   const pathname = usePathname()
   const { profile, portfolioItems, setPortfolioItems, members, loading, error, isOwnProfile } =
     useCreatorPublicProfile(profileId, { kind })
   const [showMembers, setShowMembers] = useState(false)
   const [membersQuery, setMembersQuery] = useState("")
+  const [followRefreshKey, setFollowRefreshKey] = useState(0)
 
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
@@ -486,6 +489,12 @@ export default function FreelancerProfileView({
                       <Trophy className="h-4 w-4" />
                       Ranking
                     </Button>
+                    <FollowButton
+                      targetType={entityType}
+                      targetId={profileId}
+                      className="flex-1 md:flex-none"
+                      onChanged={() => setFollowRefreshKey((value) => value + 1)}
+                    />
                     <Button
                       onClick={() => {
                         const agendaEl = document.getElementById("agenda-section")
@@ -521,6 +530,12 @@ export default function FreelancerProfileView({
                 </div>
               )}
             </div>
+
+            <EntityFollowStats
+              entityType={entityType}
+              entityId={profileId}
+              refreshKey={followRefreshKey}
+            />
 
             {/* Bio */}
             {profile.bio && (
