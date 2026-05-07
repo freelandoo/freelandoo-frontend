@@ -4,21 +4,23 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import {
   BarChart2,
+  Briefcase,
   CalendarDays,
   Cog,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca usados como brand badges
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca
   Instagram,
   MapPin,
   Megaphone,
   MessageCircle,
   Phone,
+  Quote,
   Settings,
   Trophy,
   Users,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca usados como brand badges
+  UserRound,
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- ícones de marca
   Youtube,
 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
@@ -169,8 +171,8 @@ export function ProfileHeadCard({
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
-  const subtitle = [profile.desc_category, location].filter(Boolean).join(" · ")
   const avatarSrc = profile.avatar_url || profile.user_avatar || undefined
+  const displayName = profile.display_name || "Sem nome"
 
   return (
     <>
@@ -179,52 +181,72 @@ export function ProfileHeadCard({
           "relative overflow-hidden rounded-[2rem] border border-white/[0.07]",
           "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
           "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_0_0_1px_rgba(255,255,255,0.02)]",
-          "p-6 md:p-8",
+          "p-5 md:p-8",
           className
         )}
       >
-        {/* TOP ROW */}
-        <header className="flex items-start gap-4">
-          <div className="relative shrink-0">
-            <Avatar
-              className={cn(
-                "h-14 w-14 rounded-2xl ring-1 ring-primary/30",
-                isClan && "bg-primary/[0.08]"
-              )}
+        {/* TOP: 2 colunas (foto + info) */}
+        <div className="grid gap-6 md:grid-cols-[220px_1fr] md:gap-8 md:items-start">
+          {/* COLUNA ESQUERDA: foto grande + estrelas */}
+          <div className="flex flex-col items-center">
+            <div
+              className="relative w-full max-w-[220px] overflow-hidden rounded-[28px] ring-1 ring-primary/25"
+              style={{
+                aspectRatio: "1 / 1",
+                boxShadow:
+                  "0 0 0 1px rgba(242,196,9,0.05), 0 28px 48px -28px rgba(242,196,9,0.28)",
+              }}
             >
-              {avatarSrc && (
-                <AvatarImage
+              {avatarSrc ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
                   src={avatarSrc}
-                  alt={profile.display_name || "Perfil"}
-                  className="rounded-2xl object-cover"
+                  alt={displayName}
+                  className="h-full w-full object-cover"
                 />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center text-4xl font-semibold text-primary"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(242,196,9,0.22), rgba(242,196,9,0.05))",
+                  }}
+                >
+                  {isClan ? <Users className="h-12 w-12" /> : getInitials(displayName)}
+                </div>
               )}
-              <AvatarFallback
-                className="rounded-2xl text-base font-semibold text-primary"
-                style={{ background: "linear-gradient(135deg, rgba(242,196,9,0.18), rgba(242,196,9,0.04))" }}
-              >
-                {isClan ? <Users className="h-5 w-5" /> : getInitials(profile.display_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-              <AvatarRatingStar profileId={profileId} />
             </div>
+            <AvatarRatingStar profileId={profileId} />
           </div>
 
-          <div className="min-w-0 flex-1">
+          {/* COLUNA DIREITA: nome + info + chips */}
+          <div className="flex min-w-0 flex-col">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="truncate text-lg font-semibold leading-tight text-white md:text-xl">
-                  {profile.display_name || "Sem nome"}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-balance text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
+                  {displayName}
                 </h1>
-                {subtitle && (
-                  <p className="mt-0.5 truncate text-[12px] text-white/55">{subtitle}</p>
+                {profile.desc_category && (
+                  <p className="mt-3 inline-flex items-center gap-2 text-sm text-white/75">
+                    {isClan ? (
+                      <Users className="h-3.5 w-3.5 text-primary/80" />
+                    ) : (
+                      <UserRound className="h-3.5 w-3.5 text-primary/80" />
+                    )}
+                    {profile.desc_category}
+                  </p>
+                )}
+                {location && (
+                  <p className="mt-1 inline-flex items-center gap-2 text-sm text-white/55">
+                    <MapPin className="h-3.5 w-3.5 text-primary/80" />
+                    {location}
+                  </p>
                 )}
               </div>
               {statusBadge && (
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                    "shrink-0 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
                     statusBadge.className
                   )}
                 >
@@ -232,47 +254,80 @@ export function ProfileHeadCard({
                 </span>
               )}
             </div>
-          </div>
-        </header>
 
-        {/* TAGS */}
-        {(profile.machine_name || profile.desc_category || location) && (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {profile.machine_name && (
-              <span className="rounded-full border border-primary/25 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary">
-                {profile.machine_name}
-              </span>
-            )}
-            {profile.desc_category && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/70">
-                {profile.desc_category}
-              </span>
-            )}
-            {location && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
-                <MapPin className="h-3 w-3" />
-                {location}
-              </span>
-            )}
-            {isClan && typeof profile.members_count === "number" && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
-                <Users className="h-3 w-3" />
-                {profile.members_count} {profile.members_count === 1 ? "perfil" : "perfis"}
-              </span>
+            {/* CHIPS */}
+            {(profile.machine_name || profile.desc_category || location) && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {profile.machine_name && (
+                  <span className="rounded-full border border-primary/30 bg-primary/[0.10] px-3 py-1 text-xs font-medium text-primary">
+                    {profile.machine_name}
+                  </span>
+                )}
+                {profile.desc_category && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
+                    <Briefcase className="h-3 w-3" />
+                    {profile.desc_category}
+                  </span>
+                )}
+                {location && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
+                    <MapPin className="h-3 w-3" />
+                    {location}
+                  </span>
+                )}
+                {isClan && typeof profile.members_count === "number" && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs text-white/75">
+                    <Users className="h-3 w-3" />
+                    {profile.members_count} {profile.members_count === 1 ? "perfil" : "perfis"}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* BIO */}
+        {/* BIO QUOTE BLOCK */}
         {profile.bio && (
-          <p className="mt-5 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
-            {profile.bio}
-          </p>
+          <div className="mt-7 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 md:p-6">
+            <div className="flex items-start gap-3">
+              <Quote
+                className="h-5 w-5 shrink-0 -scale-x-100 text-primary/70"
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-white/80 md:text-sm">
+                  {profile.bio}
+                </p>
+              </div>
+              {socials.length > 0 && (
+                <ul className="hidden shrink-0 flex-col gap-1.5 sm:flex">
+                  {socials.slice(0, 3).map((s, i) => (
+                    <li key={s.id_profile_social_media || `${s.profile_url}-${i}`}>
+                      <a
+                        href={s.profile_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={s.desc_social_media_type || "Rede social"}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
+                      >
+                        {getSocialIcon(s.icon)}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         )}
 
-        {/* SOCIAL LINKS */}
+        {/* SOCIAL LINKS (mobile, ou quando nao houver bio) */}
         {socials.length > 0 && (
-          <ul className="mt-5 flex flex-wrap items-center gap-2">
+          <ul
+            className={cn(
+              "mt-5 flex flex-wrap items-center gap-2",
+              profile.bio && "sm:hidden"
+            )}
+          >
             {socials.map((s, i) => (
               <li key={s.id_profile_social_media || `${s.profile_url}-${i}`}>
                 <a
@@ -280,7 +335,7 @@ export function ProfileHeadCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   title={s.desc_social_media_type || "Rede social"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-white/25 hover:text-white"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/70 transition hover:border-primary/30 hover:text-primary"
                 >
                   {getSocialIcon(s.icon)}
                 </a>
@@ -292,10 +347,10 @@ export function ProfileHeadCard({
         {/* METRICS */}
         <dl className="mt-7 grid grid-cols-3 divide-x divide-white/[0.06] rounded-2xl border border-white/[0.06] bg-white/[0.02]">
           <div className="px-4 py-4 text-left">
-            <dt className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
               Posts
             </dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
               {portfolioCount}
             </dd>
           </div>
@@ -305,10 +360,10 @@ export function ProfileHeadCard({
             className="px-4 py-4 text-left transition hover:bg-white/[0.03]"
             aria-label="Ver quem acompanha"
           >
-            <dt className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
               Acompanham
             </dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
               {counts.followers_count}
             </dd>
           </button>
@@ -318,10 +373,10 @@ export function ProfileHeadCard({
             className="px-4 py-4 text-left transition hover:bg-white/[0.03]"
             aria-label="Ver acompanhados"
           >
-            <dt className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+            <dt className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">
               Acompanhando
             </dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums text-white">
+            <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
               {counts.following_count}
             </dd>
           </button>
@@ -333,8 +388,11 @@ export function ProfileHeadCard({
             <Link
               href={ownerActions?.editHref || "#"}
               onClick={ownerActions?.onEdit}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
-              style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.2) inset, 0 12px 28px -16px rgba(242,196,9,0.5)" }}
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+              style={{
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 16px 36px -18px rgba(242,196,9,0.55)",
+              }}
             >
               <Settings className="h-4 w-4" />
               {isClan ? "Editar clan" : "Editar perfil"}
@@ -344,8 +402,11 @@ export function ProfileHeadCard({
               <button
                 type="button"
                 onClick={visitorActions?.onScheduleScroll}
-                className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
-                style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.2) inset, 0 12px 28px -16px rgba(242,196,9,0.5)" }}
+                className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
+                style={{
+                  boxShadow:
+                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 16px 36px -18px rgba(242,196,9,0.55)",
+                }}
               >
                 Agendar
               </button>
@@ -353,7 +414,7 @@ export function ProfileHeadCard({
                 targetType={entityType}
                 targetId={profileId}
                 onChanged={onFollowChanged}
-                className="!h-11"
+                className="!h-12"
               />
             </>
           )}
@@ -363,9 +424,9 @@ export function ProfileHeadCard({
                 ? "/mensagens"
                 : `/mensagens?with=${encodeURIComponent(profileId)}`
             }
-            aria-label="Mensagens"
+            aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
             title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/80 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
           >
             <MessageCircle className="h-4 w-4" />
           </Link>
@@ -374,7 +435,10 @@ export function ProfileHeadCard({
 
       {/* SECONDARY TOOLBAR */}
       {isOwnProfile && ownerActions && (
-        <nav className="mt-3 flex flex-wrap items-center gap-2">
+        <nav
+          aria-label="Ações do perfil"
+          className="mt-3 flex flex-wrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {!isClan && ownerActions.clansHref && (
             <ToolbarLink href={ownerActions.clansHref} icon={Users} label="Clans" />
           )}
@@ -414,7 +478,7 @@ export function ProfileHeadCard({
       )}
 
       {!isOwnProfile && visitorActions && (
-        <nav className="mt-3 flex flex-wrap items-center gap-2">
+        <nav aria-label="Ações" className="mt-3 flex flex-wrap items-center gap-2">
           {isClan && visitorActions.onShowMembers && (
             <ToolbarButton onClick={visitorActions.onShowMembers} icon={Users} label="Ver membros" />
           )}
@@ -457,7 +521,7 @@ function ToolbarButton({
     <button
       type="button"
       onClick={onClick}
-      className="relative inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+      className="relative inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
     >
       <Icon className="h-3.5 w-3.5" />
       {label}
@@ -480,7 +544,7 @@ function ToolbarLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-xs font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
     >
       <Icon className="h-3.5 w-3.5" />
       {label}
