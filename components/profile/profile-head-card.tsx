@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Phone,
   Settings,
+  Sparkles,
   Trophy,
   Users,
   UserRound,
@@ -404,6 +405,21 @@ export function ProfileHeadCard({
             <MessageCircle className="h-3.5 w-3.5" />
           </Link>
         </div>
+
+        {/* ACTIVATE ACCOUNT — só p/ próprio perfil ainda não publicado */}
+        {isOwnProfile && !isPublished && (
+          <Link
+            href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
+            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+            style={{
+              boxShadow:
+                "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ative sua conta
+          </Link>
+        )}
       </article>
 
       {/* SECONDARY TOOLBAR */}
