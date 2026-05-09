@@ -42,6 +42,15 @@ interface Subscription {
 }
 
 const STATUS_CONFIG = {
+  refunded: {
+    label: "Reembolsado",
+    icon: RotateCcw,
+    color: "text-rose-600",
+    bg: "bg-muted/60",
+    border: "border-border",
+    dot: "bg-rose-400",
+    ring: "ring-rose-500/20",
+  },
   active: {
     label: "Ativa",
     icon: CheckCircle2,
@@ -169,6 +178,11 @@ const PeriodBar = memo(function PeriodBar({
 function isWithin7Days(dateStr: string | null): boolean {
   if (!dateStr) return false
   return Date.now() - new Date(dateStr).getTime() < 7 * 24 * 60 * 60 * 1000
+}
+
+function refundDeadline(paidAt: string): string {
+  const d = new Date(new Date(paidAt).getTime() + 7 * 24 * 60 * 60 * 1000)
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
 /* ── Drawer de reembolso ── */
@@ -367,23 +381,27 @@ function SubscriptionCard({
   cancelling,
   onRefund,
   refunding,
+  isRefunded,
 }: {
   sub: Subscription
   onCancel: (id: string) => void
   cancelling: string | null
   onRefund: (id: string) => void
   refunding: string | null
+  isRefunded: boolean
 }) {
-  const cfg = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.incomplete
+  const cfg = isRefunded
+    ? STATUS_CONFIG.refunded
+    : (STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.incomplete)
   const StatusIcon = cfg.icon
-  const isPulsing = sub.status === "active"
+  const isPulsing = sub.status === "active" && !isRefunded
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className={`rounded-2xl border ${cfg.border} ${cfg.bg} p-6 space-y-5`}
+      className={`rounded-2xl border ${cfg.border} ${cfg.bg} p-6 space-y-5 ${isRefunded ? "opacity-60 grayscale" : ""}`}
     >
       {/* Topo */}
       <div className="flex items-start justify-between gap-3">
@@ -400,7 +418,10 @@ function SubscriptionCard({
           )}
         </div>
 
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${isRefunded ? "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-600" : `${cfg.border} ${cfg.bg} ${cfg.color}`}`}
+          style={isRefunded ? { filter: "none", opacity: 1 } : undefined}
+        >
           {isPulsing ? <PulseDot color={cfg.dot} /> : <StatusIcon className="h-3.5 w-3.5" />}
           {cfg.label}
         </span>
@@ -434,19 +455,27 @@ function SubscriptionCard({
       </div>
 
       {/* Ações */}
-      {sub.status === "active" && !sub.canceled_at && (
-        <div className="flex flex-wrap items-center gap-4 pt-1">
-          <CancelDrawer
-            sub={sub}
-            onConfirm={() => onCancel(sub.id_subscription)}
-            loading={cancelling === sub.id_subscription}
-          />
-          {isWithin7Days(sub.paid_at) && (
-            <RefundDrawer
+      {sub.status === "active" && !sub.canceled_at && !isRefunded && (
+        <div className="space-y-2 pt-1">
+          <div className="flex flex-wrap items-center gap-4">
+            <CancelDrawer
               sub={sub}
-              onConfirm={() => onRefund(sub.id_subscription)}
-              loading={refunding === sub.id_subscription}
+              onConfirm={() => onCancel(sub.id_subscription)}
+              loading={cancelling === sub.id_subscription}
             />
+            {isWithin7Days(sub.paid_at) && (
+              <RefundDrawer
+                sub={sub}
+                onConfirm={() => onRefund(sub.id_subscription)}
+                loading={refunding === sub.id_subscription}
+              />
+            )}
+          </div>
+          {sub.paid_at && isWithin7Days(sub.paid_at) && (
+            <p className="text-xs text-muted-foreground">
+              Reembolso disponível até{" "}
+              <span className="font-medium text-foreground">{refundDeadline(sub.paid_at)}</span>
+            </p>
           )}
         </div>
       )}
@@ -519,6 +548,7 @@ export default function PagamentosPage() {
   const [isAutenticado, setIsAutenticado] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [refundingId, setRefundingId] = useState<string | null>(null)
+  const [refundedIds, setRefundedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -590,11 +620,7 @@ export default function PagamentosPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Erro ao processar reembolso")
-      setSubscriptions((prev) =>
-        prev.map((s) =>
-          s.id_subscription === id_subscription ? { ...s, status: "canceled" } : s
-        )
-      )
+      setRefundedIds((prev) => new Set(prev).add(id_subscription))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar reembolso")
     } finally {
@@ -607,7 +633,9 @@ export default function PagamentosPage() {
     subscriptions.find((s) => s.status === "pending") ||
     null
 
-  const paidEntries = subscriptions.filter((s) => s.status === "active")
+  const paidEntries = subscriptions.filter(
+    (s) => s.status === "active" && !refundedIds.has(s.id_subscription)
+  )
 
   if (!isAutenticado) return null
 
@@ -660,6 +688,7 @@ export default function PagamentosPage() {
                 cancelling={cancellingId}
                 onRefund={handleRefund}
                 refunding={refundingId}
+                isRefunded={refundedIds.has(activeSubscription.id_subscription)}
               />
             )}
 
