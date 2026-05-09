@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { ServiceChatModal } from "@/components/profile/service-chat-modal"
+import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -83,15 +83,8 @@ const respLabel: Record<string, { text: string; color: string }> = {
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 export function ServiceRequestModal({ open, onOpenChange }: Props) {
+  const router = useRouter()
   const [tab, setTab] = useState<"new" | "list">("list")
-
-  // --- chat ---
-  const [chatOpen, setChatOpen] = useState(false)
-  const [chatIdResponse, setChatIdResponse] = useState("")
-  const [chatIdRequest, setChatIdRequest] = useState("")
-  const [chatPeerName, setChatPeerName] = useState("")
-  const [chatPeerAvatar, setChatPeerAvatar] = useState<string | undefined>()
-  const [chatRespStatus, setChatRespStatus] = useState("")
 
   // --- create form ---
   const [machines, setMachines] = useState<{ id_machine: number; name: string }[]>([])
@@ -253,6 +246,11 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
   }
 
   const isTerminal = (s: string) => ["PRO_REJECTED", "USER_REJECTED", "FINALIZED", "CLOSED_OTHER_WON"].includes(s)
+
+  const openResponseChat = (idResponse: string) => {
+    onOpenChange(false)
+    router.push(`/mensagens?tab=os&response=${encodeURIComponent(idResponse)}`)
+  }
 
   return (
     <>
@@ -435,7 +433,11 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
                                 {resp.avatar_url && <AvatarImage src={resp.avatar_url} alt={resp.display_name || ""} />}
                                 <AvatarFallback className="text-xs">{initials(resp.display_name || "?")}</AvatarFallback>
                               </Avatar>
-                              <div className="min-w-0 flex-1">
+                              <button
+                                type="button"
+                                className="min-w-0 flex-1 text-left"
+                                onClick={() => openResponseChat(resp.id_response)}
+                              >
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm font-medium truncate">{resp.display_name || "Profissional"}</span>
                                   <Badge className={`${rl.color} text-white text-[10px] px-1.5 py-0`}>{rl.text}</Badge>
@@ -446,21 +448,14 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
                                   )}
                                 </div>
                                 {resp.last_message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{resp.last_message}</p>}
-                              </div>
+                              </button>
                               <div className="flex items-center gap-1 shrink-0">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0"
                                   title="Conversar"
-                                  onClick={() => {
-                                    setChatIdResponse(resp.id_response)
-                                    setChatIdRequest(req.id_request)
-                                    setChatPeerName(resp.display_name || "Profissional")
-                                    setChatPeerAvatar(resp.avatar_url)
-                                    setChatRespStatus(resp.status)
-                                    setChatOpen(true)
-                                  }}
+                                  onClick={() => openResponseChat(resp.id_response)}
                                 >
                                   <MessageCircle className="h-4 w-4" />
                                 </Button>
@@ -502,19 +497,6 @@ export function ServiceRequestModal({ open, onOpenChange }: Props) {
         </div>
       </DialogContent>
     </Dialog>
-
-    {/* Chat modal */}
-    <ServiceChatModal
-      open={chatOpen}
-      onOpenChange={(v) => { setChatOpen(v); if (!v) fetchList() }}
-      idResponse={chatIdResponse}
-      peerName={chatPeerName}
-      peerAvatar={chatPeerAvatar}
-      viewerSide="USER"
-      responseStatus={chatRespStatus}
-      idRequest={chatIdRequest}
-      onFinalize={fetchList}
-    />
     </>
   )
 }
