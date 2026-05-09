@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, Instagram, Youtube, Plus } from "lucide-react"
+import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { useRouter } from "next/navigation"
 import { MACHINES } from "@/components/home/machines/tokens"
 import { buildProfileUrl } from "@/lib/slug"
@@ -196,8 +197,13 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
         )}
 
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pt-8 pb-3 flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <h3 className="font-bold text-white text-base leading-tight">{creator.display_name}</h3>
+            <MachineTop10Crown
+              profileId={creator.id_profile}
+              accentColor={colors?.accent}
+              iconClassName="h-4 w-4"
+            />
             <CheckCircle2
               className="h-4 w-4 shrink-0"
               style={{ color: colors?.accent || "var(--primary)" }}
