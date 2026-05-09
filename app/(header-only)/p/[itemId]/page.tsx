@@ -13,6 +13,12 @@ type PortfolioItemPublic = {
   profile_username: string | null
   profession_slug: string | null
   profile_municipio: string | null
+  manifestation?: {
+    banner_url?: string | null
+    tag_label?: string | null
+    tag_color?: string | null
+    tag_icon?: string | null
+  } | null
   media: Array<{
     id_portfolio_media: string
     media_url: string
@@ -101,7 +107,19 @@ export default async function PortfolioItemPage({
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="rounded-2xl overflow-hidden border border-border bg-card">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        {item.manifestation?.banner_url && (
+          <div className="relative min-h-32 overflow-hidden border-b border-border">
+            <img src={item.manifestation.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/70 to-zinc-950/20" />
+            <div className="relative p-5 text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">Manifestacao</p>
+              <p className="mt-2 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs backdrop-blur">
+                {item.manifestation.tag_label}
+              </p>
+            </div>
+          </div>
+        )}
         {firstMedia && (
           <div className="bg-black flex items-center justify-center">
             {firstMedia.media_type === "video" ? (

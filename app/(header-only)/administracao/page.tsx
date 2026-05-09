@@ -17,6 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
   Receipt,
+  Sparkles,
+  Hexagon,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -216,6 +218,20 @@ export default function AdministracaoPage() {
           >
             <Star className="h-4 w-4" />
             Cupons
+          </button>
+          <button
+            onClick={() => router.push("/administracao/manifestacao")}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <Sparkles className="h-4 w-4" />
+            Manifestação
+          </button>
+          <button
+            onClick={() => router.push("/admin/polens")}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <Hexagon className="h-4 w-4 fill-amber-300 text-amber-300" />
+            Poléns
           </button>
         </div>
 
