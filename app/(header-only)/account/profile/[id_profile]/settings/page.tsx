@@ -741,25 +741,40 @@ export default function ProfileSettingsPage() {
                 Assinatura <strong>ativa</strong>
                 {periodEnd ? <> · próximo ciclo em {periodEnd}</> : null}.
               </p>
-              {canRefund && !refundConfirm && (
-                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    Você pode solicitar reembolso integral até{" "}
-                    <strong>{refundDeadline!.toLocaleDateString("pt-BR")}</strong>{" "}
-                    ({daysLeftForRefund} {daysLeftForRefund === 1 ? "dia" : "dias"} restante{daysLeftForRefund === 1 ? "" : "s"}).
-                    O perfil será desativado imediatamente.
+              {!refundConfirm && (
+                <div className={`rounded-md border p-3 space-y-2 ${canRefund ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
+                  <p className={`text-xs ${canRefund ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"}`}>
+                    {refundDeadline ? (
+                      canRefund ? (
+                        <>
+                          Você pode solicitar reembolso integral até{" "}
+                          <strong>{refundDeadline.toLocaleDateString("pt-BR")}</strong>{" "}
+                          ({daysLeftForRefund} {daysLeftForRefund === 1 ? "dia" : "dias"} restante{daysLeftForRefund === 1 ? "" : "s"}).
+                          O perfil será desativado imediatamente.
+                        </>
+                      ) : (
+                        <>
+                          Prazo de reembolso encerrado em{" "}
+                          <strong>{refundDeadline.toLocaleDateString("pt-BR")}</strong>.
+                          Para cancelar, entre em contato pelo suporte.
+                        </>
+                      )
+                    ) : (
+                      "Para cancelar, entre em contato pelo suporte."
+                    )}
                   </p>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-                    onClick={() => setRefundConfirm(true)}
+                    disabled={!canRefund}
+                    className={canRefund ? "border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10" : ""}
+                    onClick={() => canRefund && setRefundConfirm(true)}
                   >
                     Solicitar reembolso
                   </Button>
                 </div>
               )}
-              {canRefund && refundConfirm && (
+              {refundConfirm && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-2">
                   <p className="text-sm font-medium text-destructive">Confirmar reembolso?</p>
                   <p className="text-xs text-muted-foreground">
@@ -785,11 +800,6 @@ export default function ProfileSettingsPage() {
                     </Button>
                   </div>
                 </div>
-              )}
-              {!canRefund && (
-                <p className="text-xs text-muted-foreground">
-                  Para cancelar, entre em contato pelo suporte. O cancelamento manterá o histórico financeiro.
-                </p>
               )}
             </>
           ) : (
