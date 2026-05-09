@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     if (searchParams.get("id_category")) params.append("id_category", searchParams.get("id_category")!)
     if (searchParams.get("machine_slug")) params.append("machine_slug", searchParams.get("machine_slug")!)
     if (searchParams.get("q")) params.append("q", searchParams.get("q")!)
+    if (searchParams.get("level_min")) params.append("level_min", searchParams.get("level_min")!)
 
     const queryString = params.toString()
     const url = `${getBackendApiUrl()}/search${queryString ? `?${queryString}` : ""}`

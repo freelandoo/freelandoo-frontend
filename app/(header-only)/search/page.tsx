@@ -283,6 +283,7 @@ function SearchPageInner() {
   const [idCategory, setIdCategory] = useState<number | null>(null)
 
   const [premiumOnly, setPremiumOnly] = useState(false)
+  const [levelMin, setLevelMin] = useState<number | null>(null)
 
   const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
@@ -402,6 +403,8 @@ function SearchPageInner() {
           params.append("category", activeCategory.desc_category)
         }
 
+        if (levelMin != null) params.append("level_min", String(levelMin))
+
         const queryString = params.toString()
         const url = `/api/search${queryString ? `?${queryString}` : ""}`
         const response = await fetch(url)
@@ -446,7 +449,7 @@ function SearchPageInner() {
       }
     }
     run()
-  }, [selectedEstado, selectedCity, municipios, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution])
+  }, [selectedEstado, selectedCity, municipios, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin])
 
   const topCreators = creators.filter((c) =>
     c.profile_statuses?.some((s) => s.desc_status === "destaque_premium")
@@ -540,7 +543,7 @@ function SearchPageInner() {
           }}
         >
           <h3 className="font-semibold text-lg mb-4">Filtros</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <SelectField
               label="Estado"
               value={selectedEstado}
@@ -595,6 +598,20 @@ function SearchPageInner() {
                 value: String(c.id_category),
                 label: c.desc_category,
               }))}
+            />
+            <SelectField
+              label="Nível"
+              value={levelMin != null ? String(levelMin) : ""}
+              onChange={(v) => setLevelMin(v ? Number(v) : null)}
+              accentColor={activeMachine ? theme.accent : undefined}
+              options={[
+                { value: "", label: "Todos os níveis" },
+                { value: "1", label: "Nível 1+" },
+                { value: "5", label: "Nível 5+" },
+                { value: "10", label: "Nível 10+" },
+                { value: "20", label: "Nível 20+" },
+                { value: "30", label: "Nível 30+" },
+              ]}
             />
           </div>
 

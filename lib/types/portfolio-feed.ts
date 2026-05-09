@@ -70,6 +70,7 @@ export interface FeedFilters {
   id_category: number | null
   estado: string | null
   municipio: string | null
+  level_min?: number | null
 }
 
 export type FeedEventType =

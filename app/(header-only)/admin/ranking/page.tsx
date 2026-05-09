@@ -25,6 +25,9 @@ type RankingConfig = {
   weight_ratings: number
   weight_online: number
   max_online_minutes: number
+  last_recalculated_at?: string | null
+  next_recalculation_at?: string | null
+  recalculation_interval_hours?: number
 }
 
 type XpSettings = {
@@ -63,6 +66,10 @@ type RankingRow = {
   position_general: number | null
   position_machine: number | null
   position_city: number | null
+  xp_total?: number | null
+  xp_level?: number | null
+  level?: number | null
+  xp_progress_percent?: number | null
 }
 
 type Tab = "ranking" | "xp" | "preview"
@@ -83,6 +90,18 @@ function xpForLevel(level: number, base: number, mult: number): number {
 
 function formatXp(n: number): string {
   return n.toLocaleString("pt-BR")
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return "Aguardando"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Aguardando"
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,7 +244,11 @@ export default function AdminRankingPage() {
         headers: { "Content-Type": "application/json", ...authHeader() },
       })
       const data = await res.json()
-      if (res.ok) { setRecalcMsg(`✓ ${data.updated} perfis atualizados.`); await loadRankings() }
+      if (res.ok) {
+        setRecalcMsg(`✓ ${data.entities_processed ?? data.updated ?? 0} perfis atualizados.`)
+        await loadConfig()
+        await loadRankings()
+      }
       else setRecalcMsg(data.error || "Erro ao recalcular.")
     } finally { setRecalculating(false) }
   }
@@ -350,8 +373,23 @@ export default function AdminRankingPage() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      A cada {cfgDraft.period_days} dias o ranking é recalculado automaticamente.
+                      A janela de pontuação considera {cfgDraft.period_days} dias. O recálculo automático roda a cada 2 horas.
                     </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-border bg-muted/20 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Último recálculo</p>
+                      <p className="mt-1 text-sm font-semibold">{formatDateTime(cfg?.last_recalculated_at)}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/20 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Próximo previsto</p>
+                      <p className="mt-1 text-sm font-semibold">{formatDateTime(cfg?.next_recalculation_at)}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/20 p-3">
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Intervalo</p>
+                      <p className="mt-1 text-sm font-semibold">2 horas</p>
+                    </div>
                   </div>
 
                   {/* Pesos */}
@@ -446,6 +484,7 @@ export default function AdminRankingPage() {
                           <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">#</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Perfil</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Máquina</th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden sm:table-cell">Nível/XP</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Pts</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden md:table-cell">
                             <Eye className="h-3 w-3 inline" />
@@ -477,6 +516,9 @@ export default function AdminRankingPage() {
                                 <div>
                                   <p className="font-medium leading-tight">{row.display_name}</p>
                                   <p className="text-xs text-muted-foreground">{row.specialty}</p>
+                                  <p className="mt-0.5 text-[10px] font-semibold text-primary sm:hidden">
+                                    Lv. {row.level ?? row.xp_level ?? 0} - {formatXp(Number(row.xp_total ?? 0))} XP
+                                  </p>
                                   {(row.municipio || row.estado) && (
                                     <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
                                       <MapPin className="h-2.5 w-2.5" />
@@ -492,6 +534,12 @@ export default function AdminRankingPage() {
                                   {row.machine_name.replace("Máquina de ", "")}
                                 </Badge>
                               )}
+                            </td>
+                            <td className="px-4 py-3 text-right hidden sm:table-cell">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs font-semibold text-primary">Lv. {row.level ?? row.xp_level ?? 0}</span>
+                                <span className="text-[11px] text-muted-foreground">{formatXp(Number(row.xp_total ?? 0))} XP</span>
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-right font-semibold tabular-nums">
                               {Number(row.total_points).toFixed(0)}
