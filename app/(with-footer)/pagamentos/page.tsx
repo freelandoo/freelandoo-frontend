@@ -46,6 +46,18 @@ interface Subscription {
   updated_at: string
 }
 
+interface ManifestationHistory {
+  id: string
+  name: string
+  tag_label: string
+  payment_method: "stripe" | "polens"
+  amount_cents: number | null
+  amount_polens: number | null
+  acquired_at: string
+  expires_at: string
+  is_active: boolean
+}
+
 const STATUS_CONFIG = {
   refunded: {
     label: "Reembolsado",
@@ -631,6 +643,7 @@ export default function PagamentosPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [refundingId, setRefundingId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [manifestationHistory, setManifestationHistory] = useState<ManifestationHistory[]>([])
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -656,6 +669,13 @@ export default function PagamentosPage() {
         }
         const data = await res.json()
         setSubscriptions(data.subscriptions || [])
+        const manifestationRes = await fetch("/api/manifestations/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (manifestationRes.ok) {
+          const manifestationData = await manifestationRes.json()
+          setManifestationHistory(manifestationData.history || [])
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao carregar assinatura.")
       } finally {
@@ -824,6 +844,39 @@ export default function PagamentosPage() {
                     }
                   }}
                 />
+              </motion.div>
+            )}
+
+            {manifestationHistory.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="rounded-2xl border border-border bg-card p-5"
+              >
+                <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                  Manifestacao
+                </p>
+                <div className="divide-y divide-border/70">
+                  {manifestationHistory.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {formatarDataCurta(item.acquired_at)} ate {formatarDataCurta(item.expires_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-foreground">
+                          {item.payment_method === "polens"
+                            ? `${Math.abs(item.amount_polens || 0).toLocaleString("pt-BR")} Polens`
+                            : formatarValor(item.amount_cents || 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{item.is_active ? "Ativa" : "Encerrada"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
           </div>
