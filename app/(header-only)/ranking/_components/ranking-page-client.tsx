@@ -58,11 +58,22 @@ type RankingRow = {
   machine_slug: string | null
   machine_name: string | null
   total_points: number | null
+  ranking_score?: number | null
+  rank_position?: number | null
   avg_rating: number | null
   ratings_count: number | null
   visits_count: number | null
   likes_count: number | null
   is_clan?: boolean
+  entity_type?: "profile" | "clan"
+  xp_total?: number | null
+  xp_level?: number | null
+  level?: number | null
+  xp_current_level?: number | null
+  xp_next_level?: number | null
+  xp_progress_percent?: number | null
+  ranking_updated_at?: string | null
+  last_recalculated_at?: string | null
   members_count?: number | null
 }
 
@@ -116,6 +127,18 @@ function rowHref(row: RankingRow) {
     })
   }
   return `/freelancer/${row.id_profile}`
+}
+
+function formatLastUpdate(value: string | null | undefined) {
+  if (!value) return "Aguardando"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Aguardando"
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000))
+  if (diffMinutes < 1) return "agora"
+  if (diffMinutes < 60) return `há ${diffMinutes} min`
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `há ${diffHours} h`
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
 }
 
 function rankClass(rank: number) {
@@ -230,6 +253,11 @@ export function RankingPageClient() {
   const error = rankingState.key === requestKey ? rankingState.error : null
   const loading = !!rankingUrl && rankingState.key !== requestKey
   const topProfile = rows[0] ?? null
+  const lastUpdatedAt =
+    rows.find((row) => row.last_recalculated_at || row.ranking_updated_at)
+      ?.last_recalculated_at ??
+    rows.find((row) => row.ranking_updated_at)?.ranking_updated_at ??
+    null
 
   const scopeLabel = useMemo(() => {
     if (scope === "general") return "Brasil"
@@ -462,8 +490,8 @@ export function RankingPageClient() {
             icon={<Search className="h-4 w-4" />}
           />
           <SummaryTile
-            label="Lista"
-            value={loading ? "Carregando" : `${rows.length || 0} perfis`}
+            label="Atualização"
+            value={loading ? "Carregando" : formatLastUpdate(lastUpdatedAt)}
             icon={<Trophy className="h-4 w-4" />}
           />
           <SummaryTile
@@ -495,6 +523,9 @@ export function RankingPageClient() {
                 }}
               >
                 {scopeOptions.find((option) => option.key === scope)?.label}
+              </span>
+              <span className="text-xs text-white/[0.38]">
+                Atualização automática a cada 2 horas
               </span>
             </div>
 
@@ -535,6 +566,10 @@ export function RankingPageClient() {
                     ? numberFormatter.format(Number(topProfile.total_points))
                     : "0"
                 }
+              />
+              <SideMetric
+                label="Atualização"
+                value={formatLastUpdate(lastUpdatedAt)}
               />
               <SideMetric
                 label="Avaliação média"
@@ -592,12 +627,16 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
   const initials = getInitials(row.display_name)
   const location =
     row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
+  const level = Number(row.level ?? row.xp_level ?? 0)
+  const xpTotal = Number(row.xp_total ?? 0)
+  const progress = Math.min(100, Math.max(0, Number(row.xp_progress_percent ?? 0)))
+  const points = Number(row.ranking_score ?? row.total_points ?? 0)
 
   return (
     <Link
       data-ranking-row
       href={rowHref(row)}
-      className="group mb-2 grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 border border-white/10 bg-black/20 px-3 py-3 opacity-0 transition hover:border-primary/[0.45] hover:bg-white/[0.045]"
+      className="group mb-2 grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border border-white/10 bg-black/20 px-3 py-3 opacity-0 transition hover:border-primary/[0.45] hover:bg-white/[0.045] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]"
     >
       <span
         className={cn(
@@ -623,19 +662,71 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
               Clan
             </span>
           )}
+          {!row.is_clan && (
+            <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-white/[0.45]">
+              Perfil
+            </span>
+          )}
         </span>
         <span className="mt-1 block truncate text-xs text-white/[0.45]">
           {[row.specialty, row.machine_name, location].filter(Boolean).join(" · ") ||
             "Perfil Freelandoo"}
         </span>
+        <span className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
+          <XpBadge level={level} xpTotal={xpTotal} progress={progress} />
+          <span className="text-xs font-semibold text-primary">
+            {numberFormatter.format(Math.round(points))} pts
+          </span>
+        </span>
       </span>
-      <span className="hidden items-center gap-4 text-xs text-white/[0.55] sm:flex">
+      <span className="hidden items-center gap-5 text-xs text-white/[0.55] sm:flex">
+        <span className="flex min-w-[138px] flex-col items-end gap-1">
+          <span className="font-semibold text-primary">
+            {numberFormatter.format(Math.round(points))} pts
+          </span>
+          <XpBadge level={level} xpTotal={xpTotal} progress={progress} align="end" />
+        </span>
+        <span className="hidden items-center gap-4 md:flex">
         <Metric icon={<Star className="h-3.5 w-3.5 text-primary" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
         <Metric icon={<Eye className="h-3.5 w-3.5" />} value={compactFormatter.format(row.visits_count ?? 0)} />
         <Metric icon={<Heart className="h-3.5 w-3.5" />} value={compactFormatter.format(row.likes_count ?? 0)} />
+        </span>
         <ArrowUpRight className="h-4 w-4 text-white/30 transition group-hover:text-primary" />
       </span>
     </Link>
+  )
+}
+
+function XpBadge({
+  level,
+  xpTotal,
+  progress,
+  align = "start",
+}: {
+  level: number
+  xpTotal: number
+  progress: number
+  align?: "start" | "end"
+}) {
+  return (
+    <span className={cn("flex min-w-0 flex-col gap-1", align === "end" && "items-end")}>
+      <span className="inline-flex items-center gap-2">
+        <span className="rounded-full border border-primary/30 bg-primary/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+          Lv. {level}
+        </span>
+        <span className="text-[11px] font-medium text-white/[0.58]">
+          {numberFormatter.format(Math.round(xpTotal))} XP
+        </span>
+      </span>
+      {progress > 0 && (
+        <span className="h-1 w-24 overflow-hidden rounded-full bg-white/[0.08]">
+          <span
+            className="block h-full rounded-full bg-primary"
+            style={{ width: `${progress}%` }}
+          />
+        </span>
+      )}
+    </span>
   )
 }
 
