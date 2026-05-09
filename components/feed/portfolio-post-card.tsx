@@ -12,6 +12,7 @@ import { SocialLinksSheet } from "./social-links-sheet"
 import { useImpressionObserver } from "./use-impression-observer"
 import { sendFeedEvent } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
+import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 
 interface PortfolioPostCardProps {
@@ -184,6 +185,11 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
               <span className="truncate text-sm font-semibold text-white">
                 {post.profile_name || post.username || "Perfil"}
               </span>
+              <MachineTop10Crown
+                profileId={post.profile_id}
+                accentColor={machineColor}
+                iconClassName="h-4 w-4"
+              />
               {post.is_clan && (
                 <Badge
                   variant="outline"
