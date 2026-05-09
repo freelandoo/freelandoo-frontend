@@ -6,6 +6,7 @@ const FORWARDED = [
   "id_category",
   "estado",
   "municipio",
+  "level_min",
   "exclude_ids",
   "cursor",
   "limit",

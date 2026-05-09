@@ -85,6 +85,11 @@ export default function RootLayout({
     <html lang="pt-BR" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <head>
         <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
+          crossOrigin="anonymous"
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
