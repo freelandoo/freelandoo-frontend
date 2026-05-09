@@ -208,7 +208,7 @@ export function ProfilePublicServicesSection({
                   {showOwnerControls && (
                     <button
                       type="button"
-                      className="absolute right-2 top-2 z-10 rounded-full bg-black/55 p-1.5 text-zinc-100 backdrop-blur-sm transition hover:bg-black/75 hover:text-white"
+                      className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-black/55 p-1.5 text-zinc-100 backdrop-blur-sm transition hover:bg-black/75 hover:text-white"
                       onClick={(e) => {
                         e.stopPropagation()
                         openEdit(s)
