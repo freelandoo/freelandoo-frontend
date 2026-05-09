@@ -1,7 +1,7 @@
 "use client"
 
 import { X, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { ProfileService } from "./types"
 
 interface ServiceSelectionModalProps {
@@ -11,19 +11,42 @@ interface ServiceSelectionModalProps {
   dateISO: string
   startTime: string
   onConfirm: (serviceId: number, clientData: { name: string; email: string; whatsapp: string }) => Promise<void>
+  /** Serviço já escolhido (fluxo vindo do modal de data/hora público). */
+  lockedServiceId?: number
 }
 
 function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 }
 
-export function ServiceSelectionModal({ open, onClose, services, dateISO, startTime, onConfirm }: ServiceSelectionModalProps) {
+export function ServiceSelectionModal({
+  open,
+  onClose,
+  services,
+  dateISO,
+  startTime,
+  onConfirm,
+  lockedServiceId,
+}: ServiceSelectionModalProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setError(null)
+    if (lockedServiceId != null) {
+      setSelectedId(lockedServiceId)
+    } else {
+      setSelectedId(null)
+    }
+    setName("")
+    setEmail("")
+    setWhatsapp("")
+  }, [open, lockedServiceId])
 
   if (!open) return null
 
@@ -48,8 +71,10 @@ export function ServiceSelectionModal({ open, onClose, services, dateISO, startT
     }
   }
 
+  const isLocked = lockedServiceId != null
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
       <div
         className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={e => e.stopPropagation()}
@@ -66,32 +91,54 @@ export function ServiceSelectionModal({ open, onClose, services, dateISO, startT
 
         <div className="p-6 space-y-5">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-              Escolha o serviço
-            </label>
-            {activeServices.length === 0 ? (
-              <p className="text-sm text-zinc-500">Nenhum serviço disponível.</p>
-            ) : (
-              <div className="space-y-2">
-                {activeServices.map(s => (
-                  <button
-                    key={s.id_profile_service}
-                    onClick={() => setSelectedId(s.id_profile_service)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all ${
-                      selectedId === s.id_profile_service
-                        ? "border-yellow-400 bg-yellow-400/10 shadow-md"
-                        : "border-zinc-700 hover:border-zinc-500 bg-zinc-800/50"
-                    }`}
-                  >
+            {isLocked ? (
+              <>
+                <label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Serviço
+                </label>
+                {!selected ? (
+                  <p className="text-sm text-red-400">Serviço não encontrado.</p>
+                ) : (
+                  <div className="rounded-xl border border-zinc-700 bg-zinc-800/40 p-4">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-semibold text-sm text-zinc-100">{s.name}</span>
-                      <span className="text-yellow-400 font-bold text-sm">{formatBRL(s.price_amount)}</span>
+                      <span className="text-sm font-semibold text-zinc-100">{selected.name}</span>
+                      <span className="text-sm font-bold text-yellow-400">{formatBRL(selected.price_amount)}</span>
                     </div>
-                    {s.description && <p className="text-xs text-zinc-400 mt-1">{s.description}</p>}
-                    <p className="text-xs text-zinc-500 mt-2">{s.duration_minutes} min</p>
-                  </button>
-                ))}
-              </div>
+                    <p className="mt-2 text-xs text-zinc-500">{selected.duration_minutes} min</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Escolha o serviço
+                </label>
+                {activeServices.length === 0 ? (
+                  <p className="text-sm text-zinc-500">Nenhum serviço disponível.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {activeServices.map((s) => (
+                      <button
+                        key={s.id_profile_service}
+                        type="button"
+                        onClick={() => setSelectedId(s.id_profile_service)}
+                        className={`w-full rounded-xl border p-4 text-left transition-all ${
+                          selectedId === s.id_profile_service
+                            ? "border-yellow-400 bg-yellow-400/10 shadow-md"
+                            : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-500"
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-sm font-semibold text-zinc-100">{s.name}</span>
+                          <span className="text-sm font-bold text-yellow-400">{formatBRL(s.price_amount)}</span>
+                        </div>
+                        {s.description && <p className="mt-1 text-xs text-zinc-400">{s.description}</p>}
+                        <p className="mt-2 text-xs text-zinc-500">{s.duration_minutes} min</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 

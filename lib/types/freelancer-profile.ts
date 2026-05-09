@@ -68,6 +68,9 @@ export interface FreelancerProfile {
   subcategories: Subcategory[]
   statuses: Status[]
   social_media: SocialMedia[]
+  /** Quando exposto pelo backend (tb_profile_booking_settings). */
+  allow_booking?: boolean | null
+  booking_settings?: { allow_booking?: boolean | null } | null
 }
 
 export interface PortfolioMedia {
