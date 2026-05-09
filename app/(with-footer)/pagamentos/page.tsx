@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Sparkles,
   TrendingUp,
+  RotateCcw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -165,6 +166,77 @@ const PeriodBar = memo(function PeriodBar({
   )
 })
 
+function isWithin7Days(dateStr: string | null): boolean {
+  if (!dateStr) return false
+  return Date.now() - new Date(dateStr).getTime() < 7 * 24 * 60 * 60 * 1000
+}
+
+/* ── Drawer de reembolso ── */
+function RefundDrawer({
+  sub,
+  onConfirm,
+  loading,
+}: {
+  sub: Subscription
+  onConfirm: () => void
+  loading: boolean
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Drawer.Root open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger asChild>
+        <button className="text-xs text-muted-foreground hover:text-amber-500 transition-colors underline underline-offset-4 mt-1">
+          Solicitar reembolso
+        </button>
+      </Drawer.Trigger>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-background border-t border-border max-h-[50vh] px-6 pt-5 pb-10">
+          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/50">
+              <RotateCcw className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <Drawer.Title className="font-semibold text-base text-foreground">
+                Solicitar reembolso integral?
+              </Drawer.Title>
+              <Drawer.Description className="text-sm text-muted-foreground mt-1">
+                O valor de{" "}
+                <span className="font-medium text-foreground">
+                  {formatarValor(sub.amount_cents, sub.currency)}
+                </span>{" "}
+                será devolvido ao seu método de pagamento. Seu perfil será desativado imediatamente.
+              </Drawer.Description>
+              <p className="text-xs text-muted-foreground mt-2">
+                Disponível por 7 dias após o pagamento. Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 h-11 border-amber-300 text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-950/30"
+              disabled={loading}
+              onClick={onConfirm}
+            >
+              {loading ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Processando...</>
+              ) : (
+                <><RotateCcw className="h-4 w-4 mr-2" />Confirmar reembolso</>
+              )}
+            </Button>
+            <Button variant="ghost" className="flex-1 h-11" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  )
+}
+
 /* ── Drawer de cancelamento ── */
 function CancelDrawer({
   sub,
@@ -293,10 +365,14 @@ function SubscriptionCard({
   sub,
   onCancel,
   cancelling,
+  onRefund,
+  refunding,
 }: {
   sub: Subscription
   onCancel: (id: string) => void
   cancelling: string | null
+  onRefund: (id: string) => void
+  refunding: string | null
 }) {
   const cfg = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.incomplete
   const StatusIcon = cfg.icon
@@ -359,11 +435,20 @@ function SubscriptionCard({
 
       {/* Ações */}
       {sub.status === "active" && !sub.canceled_at && (
-        <CancelDrawer
-          sub={sub}
-          onConfirm={() => onCancel(sub.id_subscription)}
-          loading={cancelling === sub.id_subscription}
-        />
+        <div className="flex flex-wrap items-center gap-4 pt-1">
+          <CancelDrawer
+            sub={sub}
+            onConfirm={() => onCancel(sub.id_subscription)}
+            loading={cancelling === sub.id_subscription}
+          />
+          {isWithin7Days(sub.paid_at) && (
+            <RefundDrawer
+              sub={sub}
+              onConfirm={() => onRefund(sub.id_subscription)}
+              loading={refunding === sub.id_subscription}
+            />
+          )}
+        </div>
       )}
 
       {sub.status === "pending" && (
@@ -433,6 +518,7 @@ export default function PagamentosPage() {
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [refundingId, setRefundingId] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -492,6 +578,30 @@ export default function PagamentosPage() {
     }
   }
 
+  const handleRefund = async (id_subscription: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setRefundingId(id_subscription)
+    try {
+      const res = await fetch("/api/stripe/subscription/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id_subscription }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erro ao processar reembolso")
+      setSubscriptions((prev) =>
+        prev.map((s) =>
+          s.id_subscription === id_subscription ? { ...s, status: "canceled" } : s
+        )
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao processar reembolso")
+    } finally {
+      setRefundingId(null)
+    }
+  }
+
   const activeSubscription =
     subscriptions.find((s) => s.status === "active" || s.status === "past_due") ||
     subscriptions.find((s) => s.status === "pending") ||
@@ -548,6 +658,8 @@ export default function PagamentosPage() {
                 sub={activeSubscription}
                 onCancel={handleCancel}
                 cancelling={cancellingId}
+                onRefund={handleRefund}
+                refunding={refundingId}
               />
             )}
 
