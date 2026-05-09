@@ -1556,16 +1556,14 @@ export default function PerfilPage() {
                     const hasNotification = !!profileBadges[profile.id_profile]
                     return (
                       <div key={profile.id_profile} className="group relative">
-                        {hasNotification && (
-                          <span
-                            className="absolute -top-1 -right-1 z-10 inline-block h-3 w-3 rounded-full bg-red-500 ring-2 ring-zinc-950 animate-pulse"
-                            title="Notificação no mural ou chat"
-                          />
-                        )}
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
+                          className={`relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border bg-white/[0.02] transition cursor-pointer hover:border-primary/30 ${
+                            hasNotification
+                              ? "border-red-500 animate-pulse"
+                              : "border-white/[0.07]"
+                          }`}
                           aria-label={`Abrir perfil ${profile.display_name}`}
                         >
                           {imgSrc ? (
