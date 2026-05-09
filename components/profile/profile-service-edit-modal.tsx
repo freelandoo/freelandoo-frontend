@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react"
 import { Save, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { ProfileService } from "@/components/calendar/types"
+import {
+  clientTotalCentsFromFreelancerNet,
+  freelancerNetForEditForm,
+} from "@/lib/service-booking-price"
 
 export interface ProfileServiceEditClanMember {
   id_member_profile: string
@@ -78,6 +82,7 @@ export function ProfileServiceEditModal({
   })
   const [saving, setSaving] = useState(false)
   const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
+  const [bookingFeesReady, setBookingFeesReady] = useState(false)
 
   useEffect(() => {
     fetch("/api/public/booking-fees")
@@ -90,6 +95,7 @@ export function ProfileServiceEditModal({
           })
       })
       .catch(() => {})
+      .finally(() => setBookingFeesReady(true))
   }, [])
 
   useEffect(() => {
@@ -103,6 +109,23 @@ export function ProfileServiceEditModal({
       member_profile_ids: service.member_profile_ids || [],
     })
   }, [open, service])
+
+  useEffect(() => {
+    if (!open || !service || !bookingFeesReady) return
+    const net = freelancerNetForEditForm(
+      service.price_amount,
+      bookingFees.stripe_fee_percent,
+      bookingFees.service_fee_cents,
+    )
+    setServiceForm((f) => ({ ...f, price_reais: (net / 100).toFixed(2).replace(".", ",") }))
+  }, [
+    open,
+    service?.id_profile_service,
+    service?.price_amount,
+    bookingFeesReady,
+    bookingFees.stripe_fee_percent,
+    bookingFees.service_fee_cents,
+  ])
 
   const selectedCount = serviceForm.member_profile_ids.length
   const effectiveCount = selectedCount === 0 ? clanMembers.length : selectedCount
@@ -136,12 +159,21 @@ export function ProfileServiceEditModal({
       onError?.("Valor inválido")
       return
     }
+    if (!bookingFeesReady) {
+      onError?.("Carregando taxas de agendamento. Tente novamente em instantes.")
+      return
+    }
+    const price_amount = clientTotalCentsFromFreelancerNet(
+      price,
+      bookingFees.stripe_fee_percent,
+      bookingFees.service_fee_cents,
+    )
     setSaving(true)
     const body: Record<string, unknown> = {
       name: serviceForm.name.trim(),
       description: serviceForm.description.trim() || null,
       duration_minutes: serviceForm.duration_minutes,
-      price_amount: price,
+      price_amount,
       is_active: serviceForm.is_active,
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
@@ -351,7 +383,7 @@ export function ProfileServiceEditModal({
           <button
             type="button"
             onClick={saveService}
-            disabled={saving}
+            disabled={saving || !bookingFeesReady}
             className="flex items-center gap-2 rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-yellow-300 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
