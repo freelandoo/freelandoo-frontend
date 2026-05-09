@@ -406,8 +406,8 @@ export function ProfileHeadCard({
           </Link>
         </div>
 
-        {/* ACTIVATE ACCOUNT — só p/ próprio perfil ainda não publicado */}
-        {isOwnProfile && !isPublished && (
+        {/* ACTIVATE ACCOUNT — só p/ próprio perfil ainda não pago */}
+        {isOwnProfile && !profile.is_paid && (
           <Link
             href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
             className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
