@@ -51,6 +51,8 @@ export default function ManifestacaoPage() {
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState("all")
   const [buying, setBuying] = useState<string | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [purchaseModal, setPurchaseModal] = useState<{ title: string; message: string } | null>(null)
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
@@ -111,13 +113,20 @@ export default function ManifestacaoPage() {
       }
       await loadMine()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro na compra")
+      const message = err instanceof Error ? err.message : "Erro na compra"
+      setPurchaseModal({
+        title: method === "polens" && message.toLowerCase().includes("saldo")
+          ? "Voce nao tem Polens suficientes"
+          : "Compra nao concluida",
+        message,
+      })
     } finally {
       setBuying(null)
     }
   }
 
   const active = mine?.active as (Product & { expires_at?: string }) | null | undefined
+  const previewProduct = selectedProduct ?? catalog?.featured ?? products[0] ?? null
 
   return (
     <main className="min-h-[100dvh] bg-[#f8faf9] text-zinc-950">
@@ -152,18 +161,30 @@ export default function ManifestacaoPage() {
         </div>
 
         <div className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-900">
-          {catalog?.featured?.banner_url ? (
-            <img src={catalog.featured.banner_url} alt={catalog.featured.name} className="absolute inset-0 h-full w-full object-cover" />
+          {previewProduct?.banner_url ? (
+            <img src={previewProduct.banner_url} alt={previewProduct.name} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(217,119,6,0.32),transparent_34%),linear-gradient(135deg,#18181b,#3f3f46)]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/82 via-zinc-950/42 to-zinc-950/18" />
+          <div className="absolute inset-x-5 top-5 rounded-2xl border border-white/12 bg-zinc-950/38 p-4 text-white backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white/10 text-lg font-semibold">
+                AS
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold">alex sandro</p>
+                <p className="text-xs text-white/60">@alexsandro</p>
+              </div>
+            </div>
+          </div>
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs backdrop-blur">
               <BadgeCheck className="h-3.5 w-3.5" />
-              {catalog?.featured?.tag_label || "Tag exclusiva"}
+              {previewProduct?.tag_label || "Tag exclusiva"}
             </span>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight">{catalog?.featured?.name || "Colecao em destaque"}</h2>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">{previewProduct?.name || "Colecao em destaque"}</h2>
+            <p className="mt-1 text-sm text-white/70">Preview do visual no perfil</p>
           </div>
         </div>
       </section>
@@ -200,7 +221,11 @@ export default function ManifestacaoPage() {
             {products.map((p, index) => (
               <article
                 key={p.id}
-                className="group overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-white shadow-[0_18px_40px_-34px_rgba(0,0,0,0.35)]"
+                onClick={() => setSelectedProduct(p)}
+                className={cn(
+                  "group cursor-pointer overflow-hidden rounded-[1.5rem] border bg-white shadow-[0_18px_40px_-34px_rgba(0,0,0,0.35)] transition",
+                  selectedProduct?.id === p.id ? "border-zinc-950 ring-2 ring-zinc-950/10" : "border-zinc-200 hover:border-zinc-400"
+                )}
                 style={{ animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 55}ms` }}
               >
                 <div className="aspect-[16/5] overflow-hidden bg-zinc-200">
@@ -222,11 +247,26 @@ export default function ManifestacaoPage() {
                     </div>
                   </div>
                   <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                    <Button onClick={() => buy(p, "stripe")} disabled={!!buying || p.price_cents <= 0} className="rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]">
+                    <Button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setSelectedProduct(p)
+                        void buy(p, "stripe")
+                      }}
+                      className="rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                    >
                       {buying === `stripe:${p.id}` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                       Cartao
                     </Button>
-                    <Button onClick={() => buy(p, "polens")} disabled={!!buying || p.price_polens <= 0} variant="outline" className="rounded-full border-amber-600/25 text-amber-800 hover:bg-amber-50 active:scale-[0.98]">
+                    <Button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setSelectedProduct(p)
+                        void buy(p, "polens")
+                      }}
+                      variant="outline"
+                      className="rounded-full border-amber-600/25 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
+                    >
                       {buying === `polens:${p.id}` ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Hexagon className="mr-2 h-4 w-4" />}
                       Polens
                     </Button>
@@ -237,6 +277,23 @@ export default function ManifestacaoPage() {
           </div>
         )}
       </section>
+
+      {purchaseModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/55 px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-amber-50 text-amber-700">
+              <Hexagon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-lg font-semibold tracking-tight">{purchaseModal.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600">{purchaseModal.message}</p>
+            <div className="mt-5 flex justify-end">
+              <Button onClick={() => setPurchaseModal(null)} className="rounded-full bg-zinc-950 text-white hover:bg-zinc-800">
+                Entendi
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
