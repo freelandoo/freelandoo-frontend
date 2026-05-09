@@ -56,6 +56,13 @@ interface ProfileLike {
   social_media?: ProfileSocialLink[] | null
   members_count?: number | null
   username?: string | null
+  manifestation?: {
+    banner_url?: string | null
+    banner_thumb_url?: string | null
+    tag_label?: string | null
+    tag_color?: string | null
+    tag_icon?: string | null
+  } | null
 }
 
 interface FollowCounts {
@@ -210,6 +217,18 @@ export function ProfileHeadCard({
           className
         )}
       >
+        {profile.manifestation?.banner_url && !isClan && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={profile.manifestation.banner_url}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover opacity-42"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/72 to-zinc-950/48" />
+          </>
+        )}
+        <div className="relative">
         {statusBadge && (
           <div className="mb-3 flex justify-end">
             <span
@@ -305,6 +324,14 @@ export function ProfileHeadCard({
                   <li className="flex items-center gap-2.5 text-[13px] text-white/85">
                     <MapPin className="h-4 w-4 shrink-0 text-primary" />
                     <span className="truncate">{location}</span>
+                  </li>
+                )}
+                {profile.manifestation?.tag_label && !isClan && (
+                  <li className="flex items-center gap-2.5">
+                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                      <Sparkles className="h-3 w-3 shrink-0 text-amber-300" />
+                      <span className="truncate">{profile.manifestation.tag_label}</span>
+                    </span>
                   </li>
                 )}
                 {isClan && typeof profile.members_count === "number" && (
@@ -428,6 +455,7 @@ export function ProfileHeadCard({
             Ative sua conta
           </Link>
         )}
+        </div>
       </article>
 
       {/* SECONDARY TOOLBAR */}
