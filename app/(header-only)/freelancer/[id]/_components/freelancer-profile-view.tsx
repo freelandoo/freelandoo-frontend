@@ -29,6 +29,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSection"
+import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
+import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
+import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
 import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
@@ -495,12 +498,13 @@ export default function FreelancerProfileView({
               clansHref: !isClan ? "/account/clans" : undefined,
               manageHref: isClan ? `/account/clans/${profileId}` : undefined,
             }}
+            visitorScheduleButtonLabel="Serviços"
             visitorActions={{
               onShowRanking: () => setShowRanking(true),
               onShowMembers: isClan ? () => setShowMembers(true) : undefined,
               onScheduleScroll: () => {
-                const agendaEl = document.getElementById("agenda-section")
-                if (agendaEl) agendaEl.scrollIntoView({ behavior: "smooth" })
+                const el = document.getElementById("services-section")
+                if (el) el.scrollIntoView({ behavior: "smooth" })
               },
             }}
           />
@@ -769,14 +773,27 @@ export default function FreelancerProfileView({
           )}
         </section>
 
-        {/* AGENDA SECTION */}
+        {/* SERVIÇOS + AGENDA */}
         {!isOwnProfile && (
           <section className="mb-8">
             <RateProfile profileId={profileId} />
           </section>
         )}
 
-        <ProfileScheduleSection profileId={profileId} profileName={profile.display_name || "este profissional"} />
+        <ProfilePublicServicesSection
+          profileId={profileId}
+          profileName={profile.display_name || "este profissional"}
+          allowPublicBooking={profileAllowsPublicBooking(profile)}
+          showOwnerControls={isOwnProfile}
+          isClan={isClan}
+          clanMembers={
+            isClan ? (members as ProfileServiceEditClanMember[]) : []
+          }
+        />
+
+        {isOwnProfile && (
+          <ProfileScheduleSection profileId={profileId} profileName={profile.display_name || "este profissional"} />
+        )}
       </main>
 
       {/* Modal de Novo Item de Portfólio */}

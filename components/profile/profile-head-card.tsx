@@ -91,6 +91,8 @@ interface ProfileHeadCardProps {
     onShowMembers?: () => void
     onScheduleScroll?: () => void
   }
+  /** Rótulo do botão principal para visitantes (ex.: rolar à secção de serviços). */
+  visitorScheduleButtonLabel?: string
   className?: string
 }
 
@@ -144,6 +146,7 @@ export function ProfileHeadCard({
   onFollowChanged,
   ownerActions,
   visitorActions,
+  visitorScheduleButtonLabel = "Agendar",
   className,
 }: ProfileHeadCardProps) {
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
@@ -384,7 +387,7 @@ export function ProfileHeadCard({
                     "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
                 }}
               >
-                Agendar
+                {visitorScheduleButtonLabel}
               </button>
               <div className="min-w-0 flex-1">
                 <FollowButton

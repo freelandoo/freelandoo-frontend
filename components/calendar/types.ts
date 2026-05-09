@@ -20,6 +20,10 @@ export interface ProfileService {
   duration_minutes: number
   price_amount: number
   is_active?: boolean
+  /** Capa do serviço, quando o backend enviar. */
+  image_url?: string | null
+  /** Perfis membro (serviços em clan). */
+  member_profile_ids?: string[]
 }
 
 export interface AvailableSlot {
