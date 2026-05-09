@@ -11,10 +11,7 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MiniCalendar } from "@/components/calendar/MiniCalendar"
-import {
-  clientTotalCentsFromFreelancerNet,
-  freelancerNetForEditForm,
-} from "@/lib/service-booking-price"
+import { ProfileServiceEditModal } from "@/components/profile/profile-service-edit-modal"
 import { WeeklyTimeGrid } from "@/components/calendar/WeeklyTimeGridDynamic"
 import type { CalendarEvent, AvailableSlot } from "@/components/calendar/types"
 
@@ -155,12 +152,6 @@ export default function AgendaPageClient({
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ProfileService | null>(null)
-  const [serviceForm, setServiceForm] = useState({
-    name: "", description: "", duration_minutes: 60, price_reais: "0,00", is_active: true,
-    member_profile_ids: [] as string[],
-  })
-  const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
-  const [bookingFeesReady, setBookingFeesReady] = useState(false)
 
   const headers = useCallback(() => {
     const token = getToken()
@@ -174,39 +165,6 @@ export default function AgendaPageClient({
   useEffect(() => {
     if (!getToken()) router.replace("/login")
   }, [router])
-
-  useEffect(() => {
-    fetch("/api/public/booking-fees")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d)
-          setBookingFees({
-            stripe_fee_percent: d.stripe_fee_percent ?? 0,
-            service_fee_cents: d.service_fee_cents ?? 0,
-          })
-      })
-      .catch(() => {})
-      .finally(() => setBookingFeesReady(true))
-  }, [])
-
-  useEffect(() => {
-    if (!serviceModalOpen || !editingService || !bookingFeesReady) return
-    const net = freelancerNetForEditForm(
-      editingService.price_amount,
-      bookingFees.stripe_fee_percent,
-      bookingFees.service_fee_cents,
-    )
-    setServiceForm((f) => ({
-      ...f,
-      price_reais: (net / 100).toFixed(2).replace(".", ","),
-    }))
-  }, [
-    serviceModalOpen,
-    editingService,
-    bookingFeesReady,
-    bookingFees.stripe_fee_percent,
-    bookingFees.service_fee_cents,
-  ])
 
   useEffect(() => {
     if (!getToken()) return
@@ -305,74 +263,13 @@ export default function AgendaPageClient({
 
   function openNewService() {
     setEditingService(null)
-    setServiceForm({ name: "", description: "", duration_minutes: 60, price_reais: "0,00", is_active: true, member_profile_ids: [] })
     setServiceModalOpen(true)
   }
   function openEditService(s: ProfileService) {
     setEditingService(s)
-    const net = bookingFeesReady
-      ? freelancerNetForEditForm(s.price_amount, bookingFees.stripe_fee_percent, bookingFees.service_fee_cents)
-      : s.price_amount
-    setServiceForm({
-      name: s.name,
-      description: s.description || "",
-      duration_minutes: s.duration_minutes,
-      price_reais: (net / 100).toFixed(2).replace(".", ","),
-      is_active: s.is_active,
-      member_profile_ids: s.member_profile_ids || [],
-    })
     setServiceModalOpen(true)
   }
-  function parsePriceReais(input: string): number {
-    const cleaned = input.replace(/\./g, "").replace(",", ".").trim()
-    const n = Number(cleaned)
-    if (!isFinite(n) || n < 0) return -1
-    return Math.round(n * 100)
-  }
-  function toggleMember(id: string) {
-    setServiceForm(f => ({
-      ...f,
-      member_profile_ids: f.member_profile_ids.includes(id)
-        ? f.member_profile_ids.filter(m => m !== id)
-        : [...f.member_profile_ids, id],
-    }))
-  }
 
-  async function saveService() {
-    const price = parsePriceReais(serviceForm.price_reais)
-    if (!serviceForm.name.trim()) { showMsg("error", "Informe o nome do serviço"); return }
-    if (!serviceForm.duration_minutes || serviceForm.duration_minutes <= 0) { showMsg("error", "Duração inválida"); return }
-    if (price < 0) { showMsg("error", "Valor inválido"); return }
-    if (!bookingFeesReady) { showMsg("error", "Carregando taxas de agendamento. Tente novamente em instantes."); return }
-    const price_amount = clientTotalCentsFromFreelancerNet(
-      price,
-      bookingFees.stripe_fee_percent,
-      bookingFees.service_fee_cents,
-    )
-    setSaving(true)
-    const body: Record<string, unknown> = {
-      name: serviceForm.name.trim(),
-      description: serviceForm.description.trim() || null,
-      duration_minutes: serviceForm.duration_minutes,
-      price_amount,
-      is_active: serviceForm.is_active,
-    }
-    if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
-    try {
-      const res = editingService
-        ? await fetch(`/api/profile/${profileId}/services/${editingService.id_profile_service}`, { method: "PATCH", headers: headers(), body: JSON.stringify(body) })
-        : await fetch(`/api/profile/${profileId}/services`, { method: "POST", headers: headers(), body: JSON.stringify(body) })
-      if (res.ok) {
-        const d = await res.json()
-        setServices(prev => editingService
-          ? prev.map(s => s.id_profile_service === d.service.id_profile_service ? d.service : s)
-          : [...prev, d.service])
-        setServiceModalOpen(false)
-        showMsg("success", editingService ? "Serviço atualizado!" : "Serviço criado!")
-      } else { const d = await res.json(); showMsg("error", d.error || "Erro ao salvar") }
-    } catch { showMsg("error", "Erro de conexão") }
-    setSaving(false)
-  }
   async function toggleServiceActive(s: ProfileService) {
     try {
       const res = await fetch(`/api/profile/${profileId}/services/${s.id_profile_service}`, {
@@ -393,15 +290,6 @@ export default function AgendaPageClient({
   const goNext = () => setWeekStart(prev => addDays(prev, 7))
   const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
   const headerLabel = `${format(weekStart, "d 'de' MMM", { locale: ptBR })} — ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
-
-  // Para o seletor de membros: preview de valor por membro
-  const selectedCount = serviceForm.member_profile_ids.length
-  const effectiveCount = selectedCount === 0 ? clanMembers.length : selectedCount
-  const pricePerMember = (() => {
-    const total = parsePriceReais(serviceForm.price_reais)
-    if (total < 0 || effectiveCount === 0) return null
-    return total / effectiveCount
-  })()
 
   // Helper: nome do membro por id
   const memberById = useMemo(() => {
@@ -736,144 +624,31 @@ export default function AgendaPageClient({
         </main>
       </div>
 
-      {/* Modal: Serviço */}
-      {serviceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setServiceModalOpen(false)}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold">{editingService ? "Editar serviço" : "Novo serviço"}</h2>
-              <button onClick={() => setServiceModalOpen(false)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Nome</label>
-                <input type="text" value={serviceForm.name}
-                  onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex: Sessão de fotos"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Descrição (opcional)</label>
-                <textarea value={serviceForm.description}
-                  onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))}
-                  rows={2}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm resize-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Duração</label>
-                  <select value={serviceForm.duration_minutes}
-                    onChange={e => setServiceForm(f => ({ ...f, duration_minutes: Number(e.target.value) }))}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm">
-                    {[15, 30, 45, 60, 90, 120, 180, 240].map(m => <option key={m} value={m}>{m} min</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Valor que você quer receber (R$)</label>
-                  <input type="text" value={serviceForm.price_reais}
-                    onChange={e => setServiceForm(f => ({ ...f, price_reais: e.target.value }))}
-                    placeholder="0,00"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono" />
-                </div>
-              </div>
-
-              {/* Preview de taxas — aparece sempre que há um valor digitado */}
-              {(() => {
-                const baseCents = parsePriceReais(serviceForm.price_reais)
-                if (baseCents <= 0) return null
-                const stripeFee = Math.round(baseCents * bookingFees.stripe_fee_percent / 100)
-                const serviceFee = bookingFees.service_fee_cents
-                const clientTotal = baseCents + stripeFee + serviceFee
-                return (
-                  <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-2 text-xs">
-                    <p className="text-zinc-400 font-medium mb-3">Resumo do valor</p>
-                    <div className="flex justify-between text-zinc-300">
-                      <span>Você recebe</span>
-                      <span className="font-mono">{centsToReais(baseCents)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Taxa da maquininha ({bookingFees.stripe_fee_percent}%)</span>
-                      <span className="font-mono text-yellow-500/80">+ {centsToReais(stripeFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Taxa de serviço (fixo)</span>
-                      <span className="font-mono text-yellow-500/80">+ {centsToReais(serviceFee)}</span>
-                    </div>
-                    <div className="flex justify-between border-t border-zinc-700 pt-2 font-semibold text-sm">
-                      <span className="text-zinc-200">Cliente pagará</span>
-                      <span className="font-mono text-yellow-400">{centsToReais(clientTotal)}</span>
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Seletor de membros — só para clan */}
-              {isClan && clanMembers.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs text-zinc-400 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      Membros participantes
-                    </label>
-                    <span className="text-xs text-zinc-500">
-                      {selectedCount === 0 ? "Todos" : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
-                    </span>
-                  </div>
-                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                    {clanMembers.map(m => {
-                      const checked = serviceForm.member_profile_ids.includes(m.id_member_profile)
-                      return (
-                        <label key={m.id_member_profile}
-                          className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? "bg-yellow-400/10 border-yellow-400/30" : "bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-800"
-                          }`}>
-                          <input type="checkbox" checked={checked}
-                            onChange={() => toggleMember(m.id_member_profile)}
-                            className="w-4 h-4 rounded border-zinc-600 text-yellow-400 bg-zinc-800" />
-                          <Avatar className="size-7 border border-zinc-600">
-                            {m.avatar_url && <img src={m.avatar_url} alt={m.display_name} className="object-cover w-full h-full rounded-full" />}
-                            <AvatarFallback className="text-xs">{getInitials(m.display_name)}</AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{m.display_name}</div>
-                            <div className="text-xs text-zinc-500">@{m.username}</div>
-                          </div>
-                          {m.role === "owner" && (
-                            <span className="text-xs text-zinc-500 shrink-0">dono</span>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
-                  {pricePerMember !== null && effectiveCount > 0 && (
-                    <p className="mt-2 text-xs text-zinc-400">
-                      {centsToReais(pricePerMember)}/membro
-                      {selectedCount === 0 && <span className="text-zinc-600"> (dividido entre todos os {clanMembers.length} membros)</span>}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={serviceForm.is_active}
-                  onChange={e => setServiceForm(f => ({ ...f, is_active: e.target.checked }))}
-                  className="w-4 h-4 rounded border-zinc-600 text-yellow-400 bg-zinc-800" />
-                <span className="text-sm">Ativo (visível para clientes)</span>
-              </label>
-            </div>
-            <div className="flex justify-end gap-2 p-6 border-t border-zinc-800">
-              <button onClick={() => setServiceModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-sm">Cancelar</button>
-              <button onClick={saveService} disabled={saving || !bookingFeesReady}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold disabled:opacity-50">
-                <Save className="w-4 h-4" />{saving ? "Salvando..." : "Salvar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProfileServiceEditModal
+        open={serviceModalOpen}
+        onClose={() => {
+          setServiceModalOpen(false)
+          setEditingService(null)
+        }}
+        profileId={profileId}
+        service={editingService}
+        isClan={isClan}
+        clanMembers={clanMembers}
+        onSaved={(updated) => {
+          const wasEdit = editingService !== null
+          setServices((prev) => {
+            const idx = prev.findIndex((x) => x.id_profile_service === updated.id_profile_service)
+            if (idx >= 0) {
+              const next = [...prev]
+              next[idx] = updated as ProfileService
+              return next
+            }
+            return [...prev, updated as ProfileService]
+          })
+          showMsg("success", wasEdit ? "Serviço atualizado!" : "Serviço criado!")
+        }}
+        onError={(msg) => showMsg("error", msg)}
+      />
 
       {/* Modal: Exceções */}
       {exceptionsOpen && (

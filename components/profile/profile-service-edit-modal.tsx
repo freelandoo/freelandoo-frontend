@@ -54,7 +54,7 @@ interface ProfileServiceEditModalProps {
   open: boolean
   onClose: () => void
   profileId: string
-  /** Serviço em edição (sempre definido quando open). */
+  /** Em edição: serviço existente. `null` com `open`: novo serviço (POST). */
   service: ProfileService | null
   isClan?: boolean
   clanMembers?: ProfileServiceEditClanMember[]
@@ -97,6 +97,18 @@ export function ProfileServiceEditModal({
       .catch(() => {})
       .finally(() => setBookingFeesReady(true))
   }, [])
+
+  useEffect(() => {
+    if (!open || service !== null) return
+    setServiceForm({
+      name: "",
+      description: "",
+      duration_minutes: 60,
+      price_reais: "0,00",
+      is_active: true,
+      member_profile_ids: [],
+    })
+  }, [open, service])
 
   useEffect(() => {
     if (!open || !service) return
@@ -145,7 +157,6 @@ export function ProfileServiceEditModal({
   }
 
   async function saveService() {
-    if (!service) return
     const price = parsePriceReais(serviceForm.price_reais)
     if (!serviceForm.name.trim()) {
       onError?.("Informe o nome do serviço")
@@ -178,8 +189,11 @@ export function ProfileServiceEditModal({
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
     try {
-      const res = await fetch(`/api/profile/${profileId}/services/${service.id_profile_service}`, {
-        method: "PATCH",
+      const url = service
+        ? `/api/profile/${profileId}/services/${service.id_profile_service}`
+        : `/api/profile/${profileId}/services`
+      const res = await fetch(url, {
+        method: service ? "PATCH" : "POST",
         headers: headers(),
         body: JSON.stringify(body),
       })
@@ -196,7 +210,9 @@ export function ProfileServiceEditModal({
     setSaving(false)
   }
 
-  if (!open || !service) return null
+  if (!open) return null
+
+  const isEdit = service !== null
 
   return (
     <div
@@ -213,7 +229,7 @@ export function ProfileServiceEditModal({
       >
         <div className="flex items-center justify-between border-b border-zinc-800 p-6">
           <h2 id="profile-service-edit-title" className="text-lg font-semibold text-zinc-100">
-            Editar serviço
+            {isEdit ? "Editar serviço" : "Novo serviço"}
           </h2>
           <button
             type="button"
