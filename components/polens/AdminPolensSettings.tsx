@@ -20,6 +20,9 @@ type PolenSettings = {
   price_post_boost: number
   price_profile_boost: number
   price_clan_highlight: number
+  manifestation_admin_enabled: boolean
+  manifestation_users_enabled: boolean
+  manifestation_min_xp_level: number
   rewarded_provider: string
   rewarded_ad_unit_id: string | null
   created_at: string
@@ -39,6 +42,7 @@ type NumericField = {
     | "price_post_boost"
     | "price_profile_boost"
     | "price_clan_highlight"
+    | "manifestation_min_xp_level"
   >
   label: string
   helper: string
@@ -104,6 +108,14 @@ const PRICE_FIELDS: NumericField[] = [
   },
 ]
 
+const MANIFESTATION_FIELDS: NumericField[] = [
+  {
+    key: "manifestation_min_xp_level",
+    label: "Nivel minimo do usuario",
+    helper: "Maximo nivel XP entre subperfis profissionais. Use 20 para liberar apenas users nivel 20+.",
+  },
+]
+
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
@@ -122,11 +134,13 @@ function normalizeSettings(settings: Partial<PolenSettings>): Record<string, str
     is_active: !!settings.is_active,
     rewarded_provider: settings.rewarded_provider || "mock",
     rewarded_ad_unit_id: settings.rewarded_ad_unit_id || "",
+    manifestation_admin_enabled: settings.manifestation_admin_enabled !== false,
+    manifestation_users_enabled: settings.manifestation_users_enabled !== false,
     created_at: settings.created_at || null,
     updated_at: settings.updated_at || null,
     updated_by: settings.updated_by || null,
   }
-  for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS]) {
+  for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS, ...MANIFESTATION_FIELDS]) {
     next[field.key] = String(settings[field.key] ?? 0)
   }
   return next
@@ -169,7 +183,7 @@ export function AdminPolensSettings({ onSaved }: { onSaved: () => void }) {
 
   const invalidFields = useMemo(() => {
     const invalid: string[] = []
-    for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS]) {
+    for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS, ...MANIFESTATION_FIELDS]) {
       const value = Number(form[field.key])
       if (!Number.isFinite(value) || value < 0) invalid.push(field.label)
     }
@@ -191,8 +205,10 @@ export function AdminPolensSettings({ onSaved }: { onSaved: () => void }) {
       is_active: !!form.is_active,
       rewarded_provider: String(form.rewarded_provider || "mock").trim() || "mock",
       rewarded_ad_unit_id: String(form.rewarded_ad_unit_id || "").trim() || null,
+      manifestation_admin_enabled: !!form.manifestation_admin_enabled,
+      manifestation_users_enabled: !!form.manifestation_users_enabled,
     }
-    for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS]) {
+    for (const field of [...REWARD_FIELDS, ...PRICE_FIELDS, ...MANIFESTATION_FIELDS]) {
       body[field.key] = Math.floor(Number(form[field.key]) || 0)
     }
     try {
@@ -293,6 +309,29 @@ export function AdminPolensSettings({ onSaved }: { onSaved: () => void }) {
         </div>
       </SettingsSection>
 
+      <SettingsSection
+        title="Manifestacao"
+        description="Controle quem pode comprar ou habilitar banners da loja Manifestacao."
+      >
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
+          <BooleanControl
+            label="Admins habilitados"
+            helper="Administradores podem comprar/testar Manifestacao mesmo sem nivel minimo."
+            checked={!!form.manifestation_admin_enabled}
+            onCheckedChange={(checked) => setForm((p) => ({ ...p, manifestation_admin_enabled: checked }))}
+          />
+          <BooleanControl
+            label="Users habilitados"
+            helper="Usuarios comuns podem comprar quando tambem atingirem o nivel minimo."
+            checked={!!form.manifestation_users_enabled}
+            onCheckedChange={(checked) => setForm((p) => ({ ...p, manifestation_users_enabled: checked }))}
+          />
+          {MANIFESTATION_FIELDS.map((field) => (
+            <NumberField key={field.key} field={field} form={form} setForm={setForm} />
+          ))}
+        </div>
+      </SettingsSection>
+
       <SettingsSection title="Metadados" description="Campos readonly do registro singleton de polen_settings.">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <ReadonlyMeta label="ID" value={fieldValue(form, "id")} />
@@ -368,6 +407,28 @@ function NumberField({
       <p className={invalid ? "text-xs text-red-400" : "text-xs text-muted-foreground"}>
         {invalid ? "Informe um numero inteiro maior ou igual a zero." : field.helper}
       </p>
+    </div>
+  )
+}
+
+function BooleanControl({
+  label,
+  helper,
+  checked,
+  onCheckedChange,
+}: {
+  label: string
+  helper: string
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background/30 p-3">
+      <div>
+        <Label>{label}</Label>
+        <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+      </div>
+      <Checkbox checked={checked} onCheckedChange={(v) => onCheckedChange(v === true)} />
     </div>
   )
 }
