@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2, Clock, CreditCard, Hourglass, Info, RotateCcw, Sparkles, Ticket } from "lucide-react"
+import { ArrowLeft, CheckCircle2, CreditCard, Hourglass, Info, RotateCcw, Sparkles, Ticket } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,7 @@ type Affiliate = {
 type Aggregates = {
   pending_cents: number
   approved_cents: number
+  holdback_cents: number
   eligible_cents: number
   paid_cents: number
   reversed_cents: number
@@ -57,6 +58,7 @@ type Conversion = {
   status: "PENDING" | "APPROVED" | "REVERSED" | "PAID"
   eligible_at: string | null
   approved_at: string | null
+  holdback_until: string | null
   paid_at: string | null
   created_at: string
 }
@@ -75,6 +77,16 @@ const STATUS_CONFIG: Record<Conversion["status"], { label: string; className: st
   APPROVED: { label: "Aprovada", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
   PAID: { label: "Paga", className: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
   REVERSED: { label: "Revertida", className: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+}
+
+const HOLDBACK_BADGE = {
+  label: "Aguardando",
+  className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+}
+
+const isInHoldback = (c: Conversion) => {
+  if (c.status !== "APPROVED" || !c.holdback_until) return false
+  return new Date(c.holdback_until).getTime() > Date.now()
 }
 
 // ─────────────────────────── Page ───────────────────────────
@@ -210,6 +222,12 @@ export default function AfiliadoDashboardPage() {
     )
   }
 
+  const holdbackCents = aggregates?.holdback_cents ?? 0
+  const approvedConfirmedCents = Math.max(
+    0,
+    (aggregates?.approved_cents ?? 0) - holdbackCents
+  )
+
   const cards = [
     {
       label: "Pendente",
@@ -218,16 +236,16 @@ export default function AfiliadoDashboardPage() {
       hint: "Pedidos aguardando pagamento",
     },
     {
-      label: "Aprovada",
-      value: aggregates?.approved_cents ?? 0,
-      icon: CheckCircle2,
-      hint: "Pago pelo cliente · aguardando liberação",
+      label: "Aguardando",
+      value: holdbackCents,
+      icon: Hourglass,
+      hint: "Janela de reembolso · 8 dias",
     },
     {
-      label: "Elegível",
-      value: aggregates?.eligible_cents ?? 0,
-      icon: Clock,
-      hint: "Pronto pra entrar em um payout",
+      label: "Aprovada",
+      value: approvedConfirmedCents,
+      icon: CheckCircle2,
+      hint: "Confirmada · aguardando liberação",
     },
     {
       label: "Paga",
@@ -487,7 +505,8 @@ export default function AfiliadoDashboardPage() {
                     </thead>
                     <tbody>
                       {conversions.map((c) => {
-                        const cfg = STATUS_CONFIG[c.status]
+                        const inHoldback = isInHoldback(c)
+                        const cfg = inHoldback ? HOLDBACK_BADGE : STATUS_CONFIG[c.status]
                         return (
                           <tr key={c.id_conversion} className="border-t border-border/60">
                             <td className="py-3 pr-4">{formatDate(c.created_at)}</td>
@@ -502,9 +521,21 @@ export default function AfiliadoDashboardPage() {
                             </td>
                             <td className="py-3 pr-4 text-muted-foreground">{formatDate(c.eligible_at)}</td>
                             <td className="py-3 pr-4">
-                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${cfg.className}`}>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${cfg.className}`}
+                                title={
+                                  inHoldback && c.holdback_until
+                                    ? `Aguarde até ${formatDate(c.holdback_until)} — o assinante ainda pode solicitar reembolso.`
+                                    : undefined
+                                }
+                              >
                                 {cfg.label}
                               </span>
+                              {inHoldback && c.holdback_until && (
+                                <p className="mt-1 text-[10px] text-muted-foreground">
+                                  Confirma em {formatDate(c.holdback_until)}
+                                </p>
+                              )}
                             </td>
                           </tr>
                         )
