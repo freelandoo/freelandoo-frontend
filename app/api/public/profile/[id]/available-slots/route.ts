@@ -11,10 +11,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
-    const date = searchParams.get("date")
-
-    const url = `${backend()}/public/profile/${id}/available-slots?date=${date || ""}`
-    const response = await fetch(url)
+    const forwarded = new URLSearchParams()
+    searchParams.forEach((value, key) => {
+      forwarded.append(key, value)
+    })
+    const qs = forwarded.toString()
+    const url = `${backend()}/public/profile/${id}/available-slots${qs ? `?${qs}` : ""}`
+    const response = await fetch(url, { cache: "no-store" })
     log.backendFetch("GET", url, response.status)
     const data = await response.json()
     status = response.status

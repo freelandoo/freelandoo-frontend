@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const weekStart = searchParams.get("weekStart") || ""
     const weekEnd = searchParams.get("weekEnd") || ""
     const url = `${backend()}/profile/${id}/calendar/week?weekStart=${weekStart}&weekEnd=${weekEnd}`
-    const response = await fetch(url, { headers: { Authorization: authHeader } })
+    const response = await fetch(url, { headers: { Authorization: authHeader }, cache: "no-store" })
     log.backendFetch("GET", url, response.status)
     const data = await response.json()
     status = response.status

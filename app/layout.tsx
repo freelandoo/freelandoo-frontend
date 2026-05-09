@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import Script from "next/script"
 import { Geist, Geist_Mono } from "next/font/google"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
@@ -81,28 +82,28 @@ export default function RootLayout({
     inLanguage: "pt-BR",
   }
 
+  const orgLd = JSON.stringify(orgJsonLd)
+  const websiteLd = JSON.stringify(websiteJsonLd)
+
   return (
-    <html lang="pt-BR" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
-          crossOrigin="anonymous"
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-        />
-      </head>
+    <html
+      lang="pt-BR"
+      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="font-sans antialiased">
+        {/* JSON-LD no body evita conflito de ordem/atributos com scripts gerenciados pelo Next no <head>. */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         {children}
         <ProfileSidebar />
         <CookieConsent />
         <AnalyticsProvider />
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
       </body>
     </html>
   )

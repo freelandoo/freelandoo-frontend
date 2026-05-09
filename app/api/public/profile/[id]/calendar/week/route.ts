@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const weekStart = searchParams.get("weekStart") || ""
     const weekEnd = searchParams.get("weekEnd") || ""
     const url = `${backend()}/public/profile/${id}/calendar/week?weekStart=${weekStart}&weekEnd=${weekEnd}`
-    const response = await fetch(url)
+    const response = await fetch(url, { cache: "no-store" })
     log.backendFetch("GET", url, response.status)
     const data = await response.json()
     status = response.status
