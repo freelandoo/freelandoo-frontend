@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     })
     const qs = forwarded.toString()
     const url = `${backend()}/public/profile/${id}/available-slots${qs ? `?${qs}` : ""}`
-    const response = await fetch(url)
+    const response = await fetch(url, { cache: "no-store" })
     log.backendFetch("GET", url, response.status)
     const data = await response.json()
     status = response.status

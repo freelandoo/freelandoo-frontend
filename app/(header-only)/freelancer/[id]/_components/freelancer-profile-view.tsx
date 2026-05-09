@@ -28,7 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ProfileScheduleSection } from "@/components/calendar/ProfileScheduleSection"
+import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
 import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
@@ -791,7 +791,15 @@ export default function FreelancerProfileView({
         />
 
         {isOwnProfile && (
-          <ProfileScheduleSection profileId={profileId} profileName={profile.display_name || "este profissional"} />
+          <section id="agenda-section" className="mb-20 scroll-mt-24">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold uppercase tracking-wide text-muted-foreground">Agenda</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).
+              </p>
+            </div>
+            <AgendaBookingsExperience profileId={profileId} />
+          </section>
         )}
       </main>
 

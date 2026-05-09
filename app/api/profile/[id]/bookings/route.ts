@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!authHeader) { status = 401; return Response.json({ error: "Autorização necessária" }, { status: 401 }) }
 
     const url = `${backend()}/profile/${id}/bookings`
-    const response = await fetch(url, { headers: { Authorization: authHeader } })
+    const response = await fetch(url, { headers: { Authorization: authHeader }, cache: "no-store" })
     log.backendFetch("GET", url, response.status)
     const data = await response.json()
     status = response.status
