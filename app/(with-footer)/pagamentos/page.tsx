@@ -500,7 +500,17 @@ function SubscriptionCard({
 }
 
 /* ── Histórico de pagamentos ── */
-function HistoryTimeline({ entries }: { entries: Subscription[] }) {
+function HistoryTimeline({
+  entries,
+  selectedId,
+  onSelect,
+  refundedIds,
+}: {
+  entries: Subscription[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+  refundedIds: Set<string>
+}) {
   if (entries.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-6 text-center">
@@ -511,30 +521,53 @@ function HistoryTimeline({ entries }: { entries: Subscription[] }) {
 
   return (
     <div className="relative space-y-0">
-      {entries.map((s, i) => (
-        <motion.div
-          key={s.id_subscription}
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-start gap-4 py-4 border-b border-border/50 last:border-0"
-        >
-          <div className="mt-0.5 p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 shrink-0">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {s.profile_name || "Anuidade Freelandoo"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {formatarData(s.paid_at || s.created_at)}
-            </p>
-          </div>
-          <span className="text-sm font-semibold text-foreground shrink-0">
-            {formatarValor(s.amount_cents, s.currency)}
-          </span>
-        </motion.div>
-      ))}
+      {entries.map((s, i) => {
+        const isSelected = s.id_subscription === selectedId
+        const isRefunded = refundedIds.has(s.id_subscription)
+        return (
+          <motion.button
+            key={s.id_subscription}
+            type="button"
+            onClick={() => onSelect(s.id_subscription)}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            className={`w-full flex items-center gap-4 px-3 py-3 -mx-3 rounded-xl border-b border-border/50 last:border-0 text-left transition-colors ${
+              isSelected ? "bg-muted/60" : "hover:bg-muted/30"
+            } ${isRefunded ? "opacity-50" : ""}`}
+          >
+            <div className={`p-1.5 rounded-lg shrink-0 ${
+              isRefunded
+                ? "bg-rose-100 dark:bg-rose-950/40"
+                : "bg-emerald-100 dark:bg-emerald-950/40"
+            }`}>
+              {isRefunded ? (
+                <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {s.profile_name || "Anuidade Freelandoo"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {formatarData(s.paid_at || s.created_at)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-semibold text-foreground">
+                {formatarValor(s.amount_cents, s.currency)}
+              </span>
+              <ChevronRight
+                className={`h-4 w-4 transition-transform ${
+                  isSelected ? "text-foreground rotate-90" : "text-muted-foreground"
+                }`}
+              />
+            </div>
+          </motion.button>
+        )
+      })}
     </div>
   )
 }
@@ -549,6 +582,7 @@ export default function PagamentosPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [refundingId, setRefundingId] = useState<string | null>(null)
   const [refundedIds, setRefundedIds] = useState<Set<string>>(new Set())
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -628,14 +662,21 @@ export default function PagamentosPage() {
     }
   }
 
-  const activeSubscription =
+  const defaultSubscription =
     subscriptions.find((s) => s.status === "active" || s.status === "past_due") ||
     subscriptions.find((s) => s.status === "pending") ||
     null
 
-  const paidEntries = subscriptions.filter(
-    (s) => s.status === "active" && !refundedIds.has(s.id_subscription)
-  )
+  const selectedSubscription =
+    subscriptions.find((s) => s.id_subscription === selectedId) || defaultSubscription
+
+  const paidEntries = subscriptions
+    .filter((s) => s.status === "active")
+    .sort((a, b) => {
+      const aDate = new Date(a.paid_at || a.created_at).getTime()
+      const bDate = new Date(b.paid_at || b.created_at).getTime()
+      return bDate - aDate
+    })
 
   if (!isAutenticado) return null
 
@@ -681,28 +722,50 @@ export default function PagamentosPage() {
           <EmptyState onActivate={() => router.push("/payment/taxa")} />
         ) : (
           <div className="space-y-6">
-            {activeSubscription && (
-              <SubscriptionCard
-                sub={activeSubscription}
-                onCancel={handleCancel}
-                cancelling={cancellingId}
-                onRefund={handleRefund}
-                refunding={refundingId}
-                isRefunded={refundedIds.has(activeSubscription.id_subscription)}
-              />
-            )}
+            <AnimatePresence mode="wait">
+              {selectedSubscription && (
+                <motion.div
+                  key={selectedSubscription.id_subscription}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <SubscriptionCard
+                    sub={selectedSubscription}
+                    onCancel={handleCancel}
+                    cancelling={cancellingId}
+                    onRefund={handleRefund}
+                    refunding={refundingId}
+                    isRefunded={refundedIds.has(selectedSubscription.id_subscription)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Histórico */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
-                Histórico de pagamentos
-              </p>
-              <HistoryTimeline entries={paidEntries} />
-            </motion.div>
+            {paidEntries.length > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                  Suas assinaturas
+                </p>
+                <HistoryTimeline
+                  entries={paidEntries}
+                  selectedId={selectedSubscription?.id_subscription || null}
+                  onSelect={(id) => {
+                    setSelectedId(id)
+                    if (typeof window !== "undefined") {
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    }
+                  }}
+                  refundedIds={refundedIds}
+                />
+              </motion.div>
+            )}
           </div>
         )}
 
