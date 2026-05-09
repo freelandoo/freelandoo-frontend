@@ -1,5 +1,6 @@
 "use client"
 
+import type { ComponentType } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
@@ -15,6 +16,10 @@ import {
   Upload,
   Eye,
   EyeOff,
+  BarChart3,
+  Users,
+  Coins,
+  ExternalLink,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -59,6 +64,32 @@ type Product = {
   sort_order: number
 }
 
+type Dashboard = {
+  summary: {
+    active_users: number
+    active_subprofile_apply: number
+    products_total: number
+    products_active: number
+    revenue_cents_30d: number
+    revenue_polens_30d: number
+  }
+  by_payment_method_30d: Array<{
+    payment_method: string
+    purchases: number
+    revenue_cents: number
+    revenue_polens: number
+  }>
+  top_products: Array<{
+    id: string
+    name: string
+    is_active: boolean
+    purchases_30d: number
+    active_users: number
+    revenue_cents_30d: number
+    revenue_polens_30d: number
+  }>
+}
+
 const TAG_COLORS = ["emerald", "amber", "rose", "sky", "violet", "primary", "zinc", "red", "blue", "green", "yellow", "orange"]
 
 const TAG_COLOR_CLASSES: Record<string, string> = {
@@ -96,16 +127,42 @@ function fmtBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((cents || 0) / 100)
 }
 
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ className?: string }>
+  label: string
+  value: string | number
+}) {
+  return (
+    <Card className="border-white/10 bg-white/[0.02]">
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-white/45">{label}</p>
+          <p className="truncate text-lg font-semibold text-white">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminManifestationPage() {
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [activeTab, setActiveTab] = useState<"products" | "categories">("products")
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories">("dashboard")
 
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [loadingCats, setLoadingCats] = useState(false)
   const [loadingProds, setLoadingProds] = useState(false)
+  const [loadingDashboard, setLoadingDashboard] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Categoria modal
@@ -167,12 +224,28 @@ export default function AdminManifestationPage() {
     }
   }, [token])
 
+  const loadDashboard = useCallback(async () => {
+    if (!token) return
+    setLoadingDashboard(true)
+    try {
+      const res = await fetch("/api/admin/manifestations/dashboard", { headers: { Authorization: `Bearer ${token}` } })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+      setDashboard(data.dashboard || null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar dashboard")
+    } finally {
+      setLoadingDashboard(false)
+    }
+  }, [token])
+
   useEffect(() => {
     if (isAdmin) {
+      loadDashboard()
       loadCategories()
       loadProducts()
     }
-  }, [isAdmin, loadCategories, loadProducts])
+  }, [isAdmin, loadCategories, loadProducts, loadDashboard])
 
   // ---------- Category actions ----------
 
@@ -357,6 +430,16 @@ export default function AdminManifestationPage() {
           <div className="flex gap-2 border-b border-white/10">
             <button
               type="button"
+              onClick={() => setActiveTab("dashboard")}
+              className={`relative px-4 py-2 text-sm font-medium transition ${
+                activeTab === "dashboard" ? "text-white" : "text-white/50 hover:text-white/80"
+              }`}
+            >
+              Dashboard
+              {activeTab === "dashboard" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab("products")}
               className={`relative px-4 py-2 text-sm font-medium transition ${
                 activeTab === "products" ? "text-white" : "text-white/50 hover:text-white/80"
@@ -379,6 +462,83 @@ export default function AdminManifestationPage() {
 
           {error && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>
+          )}
+
+          {/* DASHBOARD TAB */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-4">
+              {loadingDashboard ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : !dashboard ? (
+                <Card className="border-white/10 bg-white/[0.02]">
+                  <CardContent className="py-12 text-center text-sm text-white/55">
+                    Dashboard indisponivel.
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <MetricCard icon={Users} label="Usuarios ativos" value={dashboard.summary.active_users} />
+                    <MetricCard icon={Sparkles} label="Subperfis aplicados" value={dashboard.summary.active_subprofile_apply} />
+                    <MetricCard icon={BarChart3} label="Produtos ativos" value={`${dashboard.summary.products_active}/${dashboard.summary.products_total}`} />
+                    <MetricCard icon={Coins} label="Receita 30d" value={`${fmtBRL(dashboard.summary.revenue_cents_30d)} · ${Number(dashboard.summary.revenue_polens_30d || 0).toLocaleString("pt-BR")} P`} />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
+                    <Card className="border-white/10 bg-white/[0.02]">
+                      <CardHeader>
+                        <CardTitle className="text-white">Pagamentos 30d</CardTitle>
+                        <CardDescription>Compras por metodo de pagamento.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {dashboard.by_payment_method_30d.length === 0 ? (
+                          <div className="text-sm text-white/45">Sem compras nos ultimos 30 dias.</div>
+                        ) : dashboard.by_payment_method_30d.map((row) => (
+                          <div key={row.payment_method} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-sm font-medium text-white capitalize">{row.payment_method}</span>
+                              <span className="text-xs text-white/50">{row.purchases} compra(s)</span>
+                            </div>
+                            <div className="mt-2 text-xs text-white/60">
+                              {fmtBRL(row.revenue_cents)} · {Number(row.revenue_polens || 0).toLocaleString("pt-BR")} P
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-white/10 bg-white/[0.02]">
+                      <CardHeader>
+                        <CardTitle className="text-white">Top produtos</CardTitle>
+                        <CardDescription>Ranking por compras nos ultimos 30 dias.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="divide-y divide-white/5 p-0">
+                        {dashboard.top_products.length === 0 ? (
+                          <div className="p-4 text-sm text-white/45">Nenhum produto comprado ainda.</div>
+                        ) : dashboard.top_products.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between gap-3 p-4">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate font-medium text-white">{p.name}</span>
+                                {!p.is_active && <Badge variant="outline" className="border-white/20 text-[10px] text-white/50">Inativo</Badge>}
+                              </div>
+                              <div className="mt-1 text-xs text-white/50">
+                                {p.purchases_30d} compra(s) · {p.active_users} ativo(s) · {fmtBRL(p.revenue_cents_30d)} · {Number(p.revenue_polens_30d || 0).toLocaleString("pt-BR")} P
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => router.push(`/administracao/manifestacao/${p.id}`)}>
+                              <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Uso
+                            </Button>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           {/* PRODUCTS TAB */}

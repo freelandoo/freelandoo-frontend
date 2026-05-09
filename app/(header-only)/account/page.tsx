@@ -27,7 +27,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { PolensCard } from "@/components/polens/PolensCard"
 import { Slider } from "@/components/ui/slider"
@@ -140,6 +140,18 @@ export default function PerfilPage() {
   const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
   // bolinha vermelha por sub-perfil (mural/chat) — id_profile -> has_new
   const [profileBadges, setProfileBadges] = useState<Record<string, boolean>>({})
+  const [manifestation, setManifestation] = useState<{
+    active?: {
+      id: string
+      name: string
+      banner_url: string
+      tag_label: string
+      tag_color: string
+      tag_icon?: string | null
+      expires_at: string
+    } | null
+    applied_profile_ids?: string[]
+  } | null>(null)
 
   const estados = ESTADOS_BRASIL
 
@@ -181,6 +193,15 @@ export default function PerfilPage() {
     fetchUnread()
     const interval = setInterval(fetchUnread, 30000)
     return () => clearInterval(interval)
+  }, [])
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    fetch("/api/manifestations/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setManifestation(data) })
+      .catch(() => {})
   }, [])
 
   // Badge por sub-perfil — só perfis ativos e visíveis (não-clan)
@@ -331,6 +352,23 @@ export default function PerfilPage() {
       alert("Erro ao excluir o perfil.")
     } finally {
       setDeletingProfile(null)
+    }
+  }
+
+  const handleToggleManifestationProfile = async (id_profile: string, enabled: boolean) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    try {
+      const res = await fetch(`/api/manifestations/profiles/${id_profile}/apply`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || "Nao foi possivel aplicar")
+      setManifestation((prev) => prev ? { ...prev, applied_profile_ids: data.applied_profile_ids || [] } : prev)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erro ao aplicar Manifestacao")
     }
   }
 
@@ -1356,7 +1394,13 @@ export default function PerfilPage() {
           <article
             className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7"
           >
-            <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+            {manifestation?.active?.banner_url && (
+              <>
+                <img src={manifestation.active.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/68 to-zinc-950/42" />
+              </>
+            )}
+            <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
               {/* Avatar */}
               <div className="relative mx-auto shrink-0 md:mx-0">
                 <div
@@ -1424,6 +1468,12 @@ export default function PerfilPage() {
                         {status.desc_status.replace(/_/g, " ")}
                       </span>
                     ))}
+                    {manifestation?.active && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
+                        <Sparkles className="h-3 w-3" />
+                        {manifestation.active.tag_label}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1436,6 +1486,13 @@ export default function PerfilPage() {
                     <Edit className="h-3.5 w-3.5" />
                     Editar
                   </button>
+                  <Link
+                    href="/manifestacao"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-3.5 py-2 text-[12px] font-medium text-amber-200 transition hover:border-amber-300/45 hover:bg-amber-400/15"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Manifestacao
+                  </Link>
                   <button
                     type="button"
                     onClick={() => setIsServiceRequestOpen(true)}
@@ -1557,6 +1614,8 @@ export default function PerfilPage() {
                     const isPublished = !!profile.is_published
                     const imgSrc = profile.avatar_url || perfil?.avatar || null
                     const hasNotification = !!profileBadges[profile.id_profile]
+                    const hasManifestation = !!manifestation?.active
+                    const manifestationApplied = !!manifestation?.applied_profile_ids?.includes(profile.id_profile)
                     return (
                       <div key={profile.id_profile} className="group relative">
                         <button
@@ -1625,6 +1684,14 @@ export default function PerfilPage() {
                                 )}
                               </DropdownMenuItem>
                             )}
+                            {hasManifestation && (
+                              <DropdownMenuItem
+                                onClick={() => handleToggleManifestationProfile(profile.id_profile, !manifestationApplied)}
+                              >
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                {manifestationApplied ? "Remover Manifestacao" : "Aplicar Manifestacao"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -1654,6 +1721,14 @@ export default function PerfilPage() {
                             </span>
                           )}
                         </div>
+                        {manifestationApplied && (
+                          <div className="absolute bottom-2 left-2 pointer-events-none">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200 backdrop-blur-sm">
+                              <Sparkles className="h-3 w-3" />
+                              Manifestacao
+                            </span>
+                          </div>
+                        )}
 
                         <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
                           <UserRound className="h-3 w-3 text-primary/80" />
