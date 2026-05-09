@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Star } from "lucide-react"
+import { useRankingPublicProfileMeta } from "@/hooks/use-ranking-public-profile-meta"
 
 type Props = {
   profileId: string
@@ -15,24 +15,12 @@ function roundForDisplay(avg: number): number {
 }
 
 export function AvatarRatingStar({ profileId }: Props) {
-  const [avg, setAvg] = useState<number | null>(null)
-  const [count, setCount] = useState<number>(0)
+  const { data } = useRankingPublicProfileMeta(profileId)
 
-  useEffect(() => {
-    let cancelled = false
-    fetch(`/api/ranking/public/profile/${profileId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled || !d) return
-        const v = d.avg_rating != null ? Number(d.avg_rating) : 0
-        setAvg(v)
-        setCount(d.ratings_count ?? 0)
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [profileId])
+  if (data === undefined) return null
 
-  if (avg == null) return null
+  const avg = data.avg_rating != null ? Number(data.avg_rating) : 0
+  const count = data.ratings_count ?? 0
   const stars = roundForDisplay(avg)
 
   return (
