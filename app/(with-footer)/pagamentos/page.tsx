@@ -1,10 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, memo } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion, AnimatePresence } from "framer-motion"
+import { Drawer } from "vaul"
+import {
+  CreditCard,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  AlertTriangle,
+  Loader2,
+  ChevronRight,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CreditCard, Calendar, DollarSign, CheckCircle2, Clock, XCircle, AlertTriangle, Loader2 } from "lucide-react"
 
 interface Subscription {
   id_subscription: string
@@ -28,6 +40,392 @@ interface Subscription {
   updated_at: string
 }
 
+const STATUS_CONFIG = {
+  active: {
+    label: "Ativa",
+    icon: CheckCircle2,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    border: "border-emerald-200 dark:border-emerald-800",
+    dot: "bg-emerald-500",
+    ring: "ring-emerald-500/20",
+  },
+  pending: {
+    label: "Pendente",
+    icon: Clock,
+    color: "text-amber-600",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    border: "border-amber-200 dark:border-amber-800",
+    dot: "bg-amber-500",
+    ring: "ring-amber-500/20",
+  },
+  past_due: {
+    label: "Pagamento atrasado",
+    icon: AlertTriangle,
+    color: "text-orange-600",
+    bg: "bg-orange-50 dark:bg-orange-950/30",
+    border: "border-orange-200 dark:border-orange-800",
+    dot: "bg-orange-500",
+    ring: "ring-orange-500/20",
+  },
+  canceled: {
+    label: "Cancelada",
+    icon: XCircle,
+    color: "text-rose-600",
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    border: "border-rose-200 dark:border-rose-800",
+    dot: "bg-rose-400",
+    ring: "ring-rose-500/20",
+  },
+  incomplete: {
+    label: "Incompleta",
+    icon: XCircle,
+    color: "text-rose-600",
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    border: "border-rose-200 dark:border-rose-800",
+    dot: "bg-rose-400",
+    ring: "ring-rose-500/20",
+  },
+} as const
+
+function formatarValor(cents: number, currency = "BRL") {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency })
+}
+
+function formatarDataCurta(d: string) {
+  return new Date(d).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function formatarData(d: string) {
+  return new Date(d).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getPeriodProgress(start: string, end: string): number {
+  const s = new Date(start).getTime()
+  const e = new Date(end).getTime()
+  const now = Date.now()
+  return Math.min(100, Math.max(0, ((now - s) / (e - s)) * 100))
+}
+
+function getDaysRemaining(end: string): number {
+  return Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 86_400_000))
+}
+
+/* ── Pulse dot para status ativa ── */
+const PulseDot = memo(function PulseDot({ color }: { color: string }) {
+  return (
+    <span className="relative flex h-2.5 w-2.5">
+      <motion.span
+        className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${color}`}
+        animate={{ scale: [1, 1.8, 1], opacity: [0.75, 0, 0.75] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${color}`} />
+    </span>
+  )
+})
+
+/* ── Barra de progresso do período ── */
+const PeriodBar = memo(function PeriodBar({
+  start,
+  end,
+}: {
+  start: string
+  end: string
+}) {
+  const pct = getPeriodProgress(start, end)
+  const days = getDaysRemaining(end)
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{formatarDataCurta(start)}</span>
+        <span className="font-medium text-foreground">{days}d restantes</span>
+        <span>{formatarDataCurta(end)}</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <motion.div
+          className="h-full rounded-full bg-foreground"
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+    </div>
+  )
+})
+
+/* ── Drawer de cancelamento ── */
+function CancelDrawer({
+  sub,
+  onConfirm,
+  loading,
+}: {
+  sub: Subscription
+  onConfirm: () => void
+  loading: boolean
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <Drawer.Root open={open} onOpenChange={setOpen}>
+      <Drawer.Trigger asChild>
+        <button className="text-xs text-muted-foreground hover:text-rose-500 transition-colors underline underline-offset-4 mt-1">
+          Cancelar renovação automática
+        </button>
+      </Drawer.Trigger>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-background border-t border-border max-h-[45vh] px-6 pt-5 pb-10">
+          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/50">
+              <XCircle className="h-5 w-5 text-rose-600" />
+            </div>
+            <div>
+              <Drawer.Title className="font-semibold text-base text-foreground">
+                Cancelar renovação automática?
+              </Drawer.Title>
+              <Drawer.Description className="text-sm text-muted-foreground mt-1">
+                Seu perfil continua ativo até{" "}
+                <span className="font-medium text-foreground">
+                  {sub.current_period_end
+                    ? formatarDataCurta(sub.current_period_end)
+                    : "o fim do período"}
+                </span>
+                . Não haverá reembolso.
+              </Drawer.Description>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="destructive"
+              className="flex-1 h-11"
+              disabled={loading}
+              onClick={onConfirm}
+            >
+              {loading ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cancelando...</>
+              ) : (
+                "Sim, cancelar"
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 h-11"
+              onClick={() => setOpen(false)}
+            >
+              Manter assinatura
+            </Button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  )
+}
+
+/* ── Skeleton loader ── */
+function Skeleton({ className }: { className?: string }) {
+  return (
+    <div className={`animate-pulse rounded-lg bg-muted ${className}`} />
+  )
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-48 w-full" />
+      <div className="grid grid-cols-3 gap-3">
+        <Skeleton className="h-20" />
+        <Skeleton className="h-20" />
+        <Skeleton className="h-20" />
+      </div>
+      <Skeleton className="h-32 w-full" />
+    </div>
+  )
+}
+
+/* ── Estado vazio ── */
+function EmptyState({ onActivate }: { onActivate: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col items-center justify-center py-20 text-center"
+    >
+      <motion.div
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="mb-6 p-5 rounded-2xl bg-muted"
+      >
+        <Sparkles className="h-10 w-10 text-muted-foreground" />
+      </motion.div>
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
+        Nenhuma assinatura ativa
+      </h2>
+      <p className="text-muted-foreground max-w-xs mb-8 text-sm leading-relaxed">
+        Ative sua anuidade para aparecer nas buscas e receber propostas de trabalho.
+      </p>
+      <Button
+        onClick={onActivate}
+        className="h-11 px-7 gap-2 text-sm font-medium"
+      >
+        Ativar anuidade
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </motion.div>
+  )
+}
+
+/* ── Cartão principal de assinatura ── */
+function SubscriptionCard({
+  sub,
+  onCancel,
+  cancelling,
+}: {
+  sub: Subscription
+  onCancel: (id: string) => void
+  cancelling: string | null
+}) {
+  const cfg = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.incomplete
+  const StatusIcon = cfg.icon
+  const isPulsing = sub.status === "active"
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className={`rounded-2xl border ${cfg.border} ${cfg.bg} p-6 space-y-5`}
+    >
+      {/* Topo */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">
+            Anuidade Freelandoo
+          </p>
+          <p className="text-3xl font-bold tracking-tight text-foreground">
+            {formatarValor(sub.amount_cents, sub.currency)}
+            <span className="text-sm font-normal text-muted-foreground ml-1">/ano</span>
+          </p>
+          {sub.profile_name && (
+            <p className="text-sm text-muted-foreground mt-0.5">{sub.profile_name}</p>
+          )}
+        </div>
+
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+          {isPulsing ? <PulseDot color={cfg.dot} /> : <StatusIcon className="h-3.5 w-3.5" />}
+          {cfg.label}
+        </span>
+      </div>
+
+      {/* Barra de progresso do período */}
+      {sub.current_period_start && sub.current_period_end && sub.status === "active" && (
+        <PeriodBar start={sub.current_period_start} end={sub.current_period_end} />
+      )}
+
+      {/* Metadados */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span>Adesão: <span className="text-foreground font-medium">{formatarDataCurta(sub.created_at)}</span></span>
+        </div>
+
+        {sub.id_coupon && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+            <span>Cupom aplicado: <span className="text-emerald-600 font-medium">Sim</span></span>
+          </div>
+        )}
+
+        {sub.canceled_at && sub.status === "active" && (
+          <div className="flex items-center gap-2 col-span-full text-amber-600 text-xs font-medium">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            Cancelamento agendado — ativo até {formatarDataCurta(sub.canceled_at)}
+          </div>
+        )}
+      </div>
+
+      {/* Ações */}
+      {sub.status === "active" && !sub.canceled_at && (
+        <CancelDrawer
+          sub={sub}
+          onConfirm={() => onCancel(sub.id_subscription)}
+          loading={cancelling === sub.id_subscription}
+        />
+      )}
+
+      {sub.status === "pending" && (
+        <div className="pt-1">
+          <p className="text-xs text-amber-600 mb-2">
+            Pagamento em processamento. Não concluiu? Finalize abaixo.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-amber-300 text-amber-800 hover:bg-amber-100"
+            onClick={() => window.location.href = "/payment/taxa"}
+          >
+            Finalizar pagamento
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+/* ── Histórico de pagamentos ── */
+function HistoryTimeline({ entries }: { entries: Subscription[] }) {
+  if (entries.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        Nenhum pagamento confirmado ainda.
+      </p>
+    )
+  }
+
+  return (
+    <div className="relative space-y-0">
+      {entries.map((s, i) => (
+        <motion.div
+          key={s.id_subscription}
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-start gap-4 py-4 border-b border-border/50 last:border-0"
+        >
+          <div className="mt-0.5 p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 shrink-0">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              {s.profile_name || "Anuidade Freelandoo"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {formatarData(s.paid_at || s.created_at)}
+            </p>
+          </div>
+          <span className="text-sm font-semibold text-foreground shrink-0">
+            {formatarValor(s.amount_cents, s.currency)}
+          </span>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Página principal ── */
 export default function PagamentosPage() {
   const router = useRouter()
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
@@ -35,7 +433,6 @@ export default function PagamentosPage() {
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -51,32 +448,18 @@ export default function PagamentosPage() {
     const fetchSubscriptions = async () => {
       setIsLoading(true)
       setError(null)
-
       try {
-        const response = await fetch("/api/stripe/subscription/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+        const res = await fetch("/api/stripe/subscription/me", {
+          headers: { Authorization: `Bearer ${token}` },
         })
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push("/login")
-            return
-          }
-          const errBody = await response.text().catch(() => "")
-          console.error("[pagamentos] API error:", response.status, errBody)
-          throw new Error(`Erro ${response.status}: ${errBody}`)
+        if (!res.ok) {
+          if (res.status === 401) { router.push("/login"); return }
+          throw new Error(`Erro ${res.status}`)
         }
-
-        const data = await response.json()
+        const data = await res.json()
         setSubscriptions(data.subscriptions || [])
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        console.error("[pagamentos] Erro ao buscar assinaturas:", msg)
-        setError(msg || "Erro ao carregar dados de assinatura. Tente novamente mais tarde.")
+        setError(err instanceof Error ? err.message : "Erro ao carregar assinatura.")
       } finally {
         setIsLoading(false)
       }
@@ -84,86 +467,6 @@ export default function PagamentosPage() {
 
     fetchSubscriptions()
   }, [router])
-
-  const activeSubscription = subscriptions.find(
-    (s) => s.status === "active" || s.status === "past_due"
-  ) || subscriptions.find((s) => s.status === "pending") || null
-
-  const paidEntries = subscriptions.filter((s) => s.status === "active")
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "active":
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />
-      case "pending":
-        return <Clock className="h-5 w-5 text-amber-500" />
-      case "past_due":
-        return <AlertTriangle className="h-5 w-5 text-orange-500" />
-      case "canceled":
-      case "incomplete":
-        return <XCircle className="h-5 w-5 text-red-500" />
-      default:
-        return <Clock className="h-5 w-5 text-gray-500" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "pending":
-        return "bg-amber-100 text-amber-800 border-amber-200"
-      case "past_due":
-        return "bg-orange-100 text-orange-800 border-orange-200"
-      case "canceled":
-      case "incomplete":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Ativa"
-      case "pending":
-        return "Pendente"
-      case "past_due":
-        return "Pagamento atrasado"
-      case "canceled":
-        return "Cancelada"
-      case "incomplete":
-        return "Incompleta"
-      default:
-        return status
-    }
-  }
-
-  const formatarValor = (amount_cents: number, currency: string = "BRL") => {
-    return (amount_cents / 100).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: currency,
-    })
-  }
-
-  const formatarData = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const formatarDataCurta = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })
-  }
 
   const handleCancel = async (id_subscription: string) => {
     const token = localStorage.getItem("token")
@@ -179,266 +482,89 @@ export default function PagamentosPage() {
       if (!res.ok) throw new Error(data.error || "Erro ao cancelar")
       setSubscriptions((prev) =>
         prev.map((s) =>
-          s.id_subscription === id_subscription
-            ? { ...s, canceled_at: data.cancel_at }
-            : s
+          s.id_subscription === id_subscription ? { ...s, canceled_at: data.cancel_at } : s
         )
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao cancelar assinatura")
     } finally {
       setCancellingId(null)
-      setConfirmId(null)
     }
   }
 
-  if (!isAutenticado) {
-    return null
-  }
+  const activeSubscription =
+    subscriptions.find((s) => s.status === "active" || s.status === "past_due") ||
+    subscriptions.find((s) => s.status === "pending") ||
+    null
+
+  const paidEntries = subscriptions.filter((s) => s.status === "active")
+
+  if (!isAutenticado) return null
 
   return (
-    <main className="flex-1 container mx-auto px-4 py-8 bg-background">
-      <div className="space-y-6 max-w-2xl mx-auto">
+    <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
+      <div className="max-w-xl mx-auto space-y-8">
+
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="h-8 w-8 text-primary" />
-            Minha Assinatura
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Assinatura
+            </span>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tighter leading-none text-foreground">
+            Meus Pagamentos
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie sua anuidade e veja o status da sua assinatura
-          </p>
-        </div>
+        </motion.div>
+
+        {/* Erro */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-400"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Conteúdo */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <p className="text-muted-foreground">Carregando...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <Card className="border-destructive bg-destructive/5">
-            <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
-            </CardContent>
-          </Card>
+          <LoadingState />
         ) : subscriptions.length === 0 ? (
-          /* Sem assinatura */
-          <Card className="border-dashed border-2">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CreditCard className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-              <h3 className="font-semibold text-xl mb-2">Nenhuma assinatura ativa</h3>
-              <p className="text-muted-foreground text-center mb-6 max-w-md">
-                Para aparecer nas buscas e receber propostas de trabalho, você precisa ativar sua anuidade.
-              </p>
-              <Button
-                onClick={() => router.push("/payment/taxa")}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 text-base"
-              >
-                <CreditCard className="mr-2 h-5 w-5" />
-                Ativar Anuidade
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState onActivate={() => router.push("/payment/taxa")} />
         ) : (
           <div className="space-y-6">
-            {/* Card de status da assinatura mais recente */}
             {activeSubscription && (
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl">Anuidade Freelandoo</CardTitle>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(activeSubscription.status)}`}>
-                        {getStatusIcon(activeSubscription.status)}
-                        {getStatusLabel(activeSubscription.status)}
-                      </span>
-                    </div>
-                    <CardDescription>
-                      Taxa anual para visibilidade na plataforma
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <DollarSign className="h-4 w-4" />
-                        <span>Valor</span>
-                      </div>
-                      <span className="text-xl font-bold text-foreground">
-                        {formatarValor(activeSubscription.amount_cents, activeSubscription.currency)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between py-3 border-b">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Data de adesão</span>
-                      </div>
-                      <span className="text-foreground font-medium">
-                        {formatarData(activeSubscription.created_at)}
-                      </span>
-                    </div>
-
-                    {activeSubscription.current_period_start && activeSubscription.current_period_end && (
-                      <div className="flex items-center justify-between py-3 border-b">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>Período vigente</span>
-                        </div>
-                        <span className="text-foreground font-medium">
-                          {formatarDataCurta(activeSubscription.current_period_start)} — {formatarDataCurta(activeSubscription.current_period_end)}
-                        </span>
-                      </div>
-                    )}
-
-                    {activeSubscription.id_coupon && (
-                      <div className="flex items-center justify-between py-3 border-b">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <span className="text-lg">🏷️</span>
-                          <span>Cupom aplicado</span>
-                        </div>
-                        <span className="text-green-600 font-medium">Sim</span>
-                      </div>
-                    )}
-
-                    {activeSubscription.status === "active" && activeSubscription.canceled_at && (
-                      <div className="flex items-center justify-between py-3 border-b">
-                        <div className="flex items-center gap-2 text-amber-600">
-                          <Clock className="h-4 w-4" />
-                          <span>Cancelamento agendado — ativo até</span>
-                        </div>
-                        <span className="text-amber-700 font-medium">
-                          {formatarDataCurta(activeSubscription.canceled_at)}
-                        </span>
-                      </div>
-                    )}
-
-                    {activeSubscription.status === "active" && !activeSubscription.canceled_at && (
-                      <div className="pt-2">
-                        {confirmId === activeSubscription.id_subscription ? (
-                          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                            <p className="text-sm font-medium text-foreground mb-1">Confirmar cancelamento?</p>
-                            <p className="text-xs text-muted-foreground mb-3">
-                              Seu perfil permanece ativo até o fim do período pago. Não há reembolso.
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={cancellingId === activeSubscription.id_subscription}
-                                onClick={() => handleCancel(activeSubscription.id_subscription)}
-                              >
-                                {cancellingId === activeSubscription.id_subscription
-                                  ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Cancelando...</>
-                                  : "Sim, cancelar"}
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setConfirmId(null)}>
-                                Voltar
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 w-full"
-                            onClick={() => setConfirmId(activeSubscription.id_subscription)}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Cancelar renovação automática
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {activeSubscription.status === "pending" && (
-                  <Card className="border-amber-200 bg-amber-50/50">
-                    <CardContent className="pt-6">
-                      <div className="flex gap-3">
-                        <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-amber-900">Pagamento pendente</p>
-                          <p className="text-amber-700 text-sm mt-1">
-                            Seu pagamento está sendo processado. Caso não tenha concluído, clique abaixo para finalizar.
-                          </p>
-                          <Button
-                            onClick={() => router.push("/payment/taxa")}
-                            variant="outline"
-                            className="mt-3 border-amber-300 text-amber-800 hover:bg-amber-100"
-                          >
-                            Finalizar Pagamento
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {activeSubscription.status === "active" && (
-                  <Card className="border-green-200 bg-green-50/50">
-                    <CardContent className="pt-6">
-                      <div className="flex gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-green-900">Assinatura ativa</p>
-                          <p className="text-green-700 text-sm mt-1">
-                            Seu perfil está visível nas buscas e você pode receber propostas de trabalho normalmente.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              <SubscriptionCard
+                sub={activeSubscription}
+                onCancel={handleCancel}
+                cancelling={cancellingId}
+              />
             )}
 
-            {/* Tabela de histórico de pagamentos */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Histórico de Pagamentos</CardTitle>
-                <CardDescription>Todas as entradas de pagamento da sua conta</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                {paidEntries.length === 0 ? (
-                  <div className="px-6 py-8 text-center text-muted-foreground text-sm">
-                    Nenhum pagamento confirmado ainda.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="px-6 py-3 text-left font-medium text-muted-foreground">Nome do perfil</th>
-                          <th className="px-6 py-3 text-left font-medium text-muted-foreground">Data e hora</th>
-                          <th className="px-6 py-3 text-right font-medium text-muted-foreground">Valor pago</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paidEntries.map((s) => (
-                          <tr key={s.id_subscription} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                            <td className="px-6 py-4 font-medium text-foreground">
-                              {s.profile_name || "—"}
-                            </td>
-                            <td className="px-6 py-4 text-muted-foreground">
-                              {formatarData(s.paid_at || s.created_at)}
-                            </td>
-                            <td className="px-6 py-4 text-right font-semibold text-foreground">
-                              {formatarValor(s.amount_cents, s.currency)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Histórico */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                Histórico de pagamentos
+              </p>
+              <HistoryTimeline entries={paidEntries} />
+            </motion.div>
           </div>
         )}
+
       </div>
     </main>
   )
