@@ -21,6 +21,7 @@ import {
 import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
+import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 
 type XpSummary = {
@@ -319,8 +320,12 @@ export function ProfileHeadCard({
 
         {/* NOME + BIO */}
         <div className="mt-5">
-          <h1 className="text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-2xl">
-            {displayName}
+          <h1 className="flex flex-wrap items-center gap-2 text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-2xl">
+            <span className="min-w-0">{displayName}</span>
+            <MachineTop10Crown
+              profileId={profileId}
+              iconClassName="h-5 w-5 md:h-6 md:w-6"
+            />
           </h1>
           {profile.bio && (
             <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
