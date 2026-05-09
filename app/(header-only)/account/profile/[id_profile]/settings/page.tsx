@@ -58,6 +58,8 @@ export default function ProfileSettingsPage() {
   const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
   const [statusMsg, setStatusMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [refunding, setRefunding] = useState(false)
+  const [refundConfirm, setRefundConfirm] = useState(false)
 
   const [isSocialMediaModalOpen, setIsSocialMediaModalOpen] = useState(false)
   const [socialMediaMeta, setSocialMediaMeta] = useState<{ types: SocialMediaType[]; follower_ranges: FollowerRange[] }>({ types: [], follower_ranges: [] })
@@ -444,6 +446,39 @@ export default function ProfileSettingsPage() {
   const sub = profile.subscription
   const periodEnd = sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("pt-BR") : null
 
+  // Janela de reembolso: 7 dias corridos após o pagamento
+  const paidAt = sub?.paid_at ? new Date(sub.paid_at) : null
+  const refundDeadline = paidAt ? new Date(paidAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null
+  const canRefund = !!sub?.id_subscription && sub.status === "active" && !!refundDeadline && refundDeadline > new Date()
+  const daysLeftForRefund = refundDeadline
+    ? Math.max(0, Math.ceil((refundDeadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0
+
+  const handleRefund = async () => {
+    if (!sub?.id_subscription) return
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setRefunding(true)
+    try {
+      const res = await fetch("/api/stripe/subscription/refund", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ id_subscription: sub.id_subscription }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setStatusMsg({ kind: "error", text: data.error || "Erro ao processar reembolso." })
+        return
+      }
+      setStatusMsg({ kind: "ok", text: "Reembolso solicitado com sucesso. O valor volta ao seu cartão em até 10 dias úteis." })
+      setRefundConfirm(false)
+    } catch {
+      setStatusMsg({ kind: "error", text: "Erro de conexão. Tente novamente." })
+    } finally {
+      setRefunding(false)
+    }
+  }
+
   return (
     <main className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -706,9 +741,56 @@ export default function ProfileSettingsPage() {
                 Assinatura <strong>ativa</strong>
                 {periodEnd ? <> · próximo ciclo em {periodEnd}</> : null}.
               </p>
-              <p className="text-xs text-muted-foreground">
-                Para cancelar, entre em contato pelo suporte. O cancelamento manterá o histórico financeiro.
-              </p>
+              {canRefund && !refundConfirm && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    Você pode solicitar reembolso integral até{" "}
+                    <strong>{refundDeadline!.toLocaleDateString("pt-BR")}</strong>{" "}
+                    ({daysLeftForRefund} {daysLeftForRefund === 1 ? "dia" : "dias"} restante{daysLeftForRefund === 1 ? "" : "s"}).
+                    O perfil será desativado imediatamente.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                    onClick={() => setRefundConfirm(true)}
+                  >
+                    Solicitar reembolso
+                  </Button>
+                </div>
+              )}
+              {canRefund && refundConfirm && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-2">
+                  <p className="text-sm font-medium text-destructive">Confirmar reembolso?</p>
+                  <p className="text-xs text-muted-foreground">
+                    O valor integral será devolvido ao seu cartão em até 10 dias úteis.
+                    Seu perfil será desativado imediatamente e não aparecerá publicamente.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRefund}
+                      disabled={refunding}
+                    >
+                      {refunding ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Processando…</> : "Sim, quero reembolso"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRefundConfirm(false)}
+                      disabled={refunding}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {!canRefund && (
+                <p className="text-xs text-muted-foreground">
+                  Para cancelar, entre em contato pelo suporte. O cancelamento manterá o histórico financeiro.
+                </p>
+              )}
             </>
           ) : (
             <>
