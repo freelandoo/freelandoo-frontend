@@ -2,17 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { startOfWeek, endOfWeek, format, addDays } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import {
   ArrowLeft, Save, Calendar, Clock, Lock, Unlock, Plus, Trash2,
-  AlertCircle, Briefcase, ListOrdered, X, Pencil, Power,
-  ChevronLeft, ChevronRight, Loader2, LayoutGrid, List as ListIcon, Users,
+  AlertCircle, Briefcase, X, Pencil, Power, Users,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MiniCalendar } from "@/components/calendar/MiniCalendar"
-import { WeeklyTimeGrid } from "@/components/calendar/WeeklyTimeGridDynamic"
-import type { CalendarEvent, AvailableSlot } from "@/components/calendar/types"
+import { ProfileServiceEditModal } from "@/components/profile/profile-service-edit-modal"
+import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
 
 interface WeeklyRule {
   weekday: number
@@ -73,24 +69,6 @@ export interface ClanMember {
 
 const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Aguardando pagamento", confirmed: "Confirmado", canceled: "Cancelado",
-  completed: "Concluído", no_show: "Não compareceu", expired: "Expirado",
-}
-const STATUS_COLORS: Record<string, string> = {
-  pending_payment: "bg-yellow-500/20 text-yellow-400", confirmed: "bg-red-500/20 text-red-400",
-  canceled: "bg-zinc-500/20 text-zinc-400", completed: "bg-green-500/20 text-green-400",
-  no_show: "bg-orange-500/20 text-orange-400", expired: "bg-zinc-600/20 text-zinc-500",
-}
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente", paid: "Pago", failed: "Falhou", refunded: "Reembolsado", canceled: "Cancelado",
-}
-const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-400", paid: "bg-emerald-500/20 text-emerald-400",
-  failed: "bg-red-500/20 text-red-400", refunded: "bg-blue-500/20 text-blue-400",
-  canceled: "bg-zinc-500/20 text-zinc-400",
-}
-
 function getToken() {
   if (typeof window === "undefined") return null
   return localStorage.getItem("token")
@@ -105,7 +83,6 @@ function getInitials(name: string) {
 }
 
 type Tab = "rules" | "services" | "bookings"
-type BookingsView = "list" | "calendar"
 
 export default function AgendaPageClient({
   profileId,
@@ -123,13 +100,8 @@ export default function AgendaPageClient({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>("rules")
-  const [bookingsView, setBookingsView] = useState<BookingsView>("list")
   const [exceptionsOpen, setExceptionsOpen] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
-  const [month, setMonth] = useState<Date>(() => new Date())
-  const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 0 }), [weekStart])
 
   const [rules, setRules] = useState<WeeklyRule[]>(
     Array.from({ length: 7 }, (_, i) => ({
@@ -145,17 +117,8 @@ export default function AgendaPageClient({
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<ProfileService[]>([])
 
-  const [weekEvents, setWeekEvents] = useState<CalendarEvent[]>([])
-  const [weekAvailable, setWeekAvailable] = useState<{ date: string; slots: AvailableSlot[] }[]>([])
-  const [weekLoading, setWeekLoading] = useState(false)
-
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ProfileService | null>(null)
-  const [serviceForm, setServiceForm] = useState({
-    name: "", description: "", duration_minutes: 60, price_reais: "0,00", is_active: true,
-    member_profile_ids: [] as string[],
-  })
-  const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
 
   const headers = useCallback(() => {
     const token = getToken()
@@ -169,13 +132,6 @@ export default function AgendaPageClient({
   useEffect(() => {
     if (!getToken()) router.replace("/login")
   }, [router])
-
-  useEffect(() => {
-    fetch("/api/public/booking-fees")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d) setBookingFees({ stripe_fee_percent: d.stripe_fee_percent ?? 0, service_fee_cents: d.service_fee_cents ?? 0 }) })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     if (!getToken()) return
@@ -211,24 +167,6 @@ export default function AgendaPageClient({
     }
     load()
   }, [profileId, headers])
-
-  const fetchWeek = useCallback(async () => {
-    setWeekLoading(true)
-    try {
-      const ws = format(weekStart, "yyyy-MM-dd")
-      const we = format(weekEnd, "yyyy-MM-dd")
-      const res = await fetch(`/api/profile/${profileId}/calendar/week?weekStart=${ws}&weekEnd=${we}`, { headers: headers() })
-      if (res.ok) {
-        const d = await res.json()
-        setWeekEvents(d.events || [])
-        setWeekAvailable(d.availableSlots || [])
-      }
-    } finally { setWeekLoading(false) }
-  }, [profileId, weekStart, weekEnd, headers])
-
-  useEffect(() => {
-    if (activeTab === "bookings" && bookingsView === "calendar") fetchWeek()
-  }, [activeTab, bookingsView, fetchWeek])
 
   async function saveRules() {
     setSaving(true)
@@ -274,61 +212,13 @@ export default function AgendaPageClient({
 
   function openNewService() {
     setEditingService(null)
-    setServiceForm({ name: "", description: "", duration_minutes: 60, price_reais: "0,00", is_active: true, member_profile_ids: [] })
     setServiceModalOpen(true)
   }
   function openEditService(s: ProfileService) {
     setEditingService(s)
-    setServiceForm({
-      name: s.name, description: s.description || "",
-      duration_minutes: s.duration_minutes,
-      price_reais: (s.price_amount / 100).toFixed(2).replace(".", ","),
-      is_active: s.is_active,
-      member_profile_ids: s.member_profile_ids || [],
-    })
     setServiceModalOpen(true)
   }
-  function parsePriceReais(input: string): number {
-    const cleaned = input.replace(/\./g, "").replace(",", ".").trim()
-    const n = Number(cleaned)
-    if (!isFinite(n) || n < 0) return -1
-    return Math.round(n * 100)
-  }
-  function toggleMember(id: string) {
-    setServiceForm(f => ({
-      ...f,
-      member_profile_ids: f.member_profile_ids.includes(id)
-        ? f.member_profile_ids.filter(m => m !== id)
-        : [...f.member_profile_ids, id],
-    }))
-  }
 
-  async function saveService() {
-    const price = parsePriceReais(serviceForm.price_reais)
-    if (!serviceForm.name.trim()) { showMsg("error", "Informe o nome do serviço"); return }
-    if (!serviceForm.duration_minutes || serviceForm.duration_minutes <= 0) { showMsg("error", "Duração inválida"); return }
-    if (price < 0) { showMsg("error", "Valor inválido"); return }
-    setSaving(true)
-    const body: Record<string, unknown> = {
-      name: serviceForm.name.trim(), description: serviceForm.description.trim() || null,
-      duration_minutes: serviceForm.duration_minutes, price_amount: price, is_active: serviceForm.is_active,
-    }
-    if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
-    try {
-      const res = editingService
-        ? await fetch(`/api/profile/${profileId}/services/${editingService.id_profile_service}`, { method: "PATCH", headers: headers(), body: JSON.stringify(body) })
-        : await fetch(`/api/profile/${profileId}/services`, { method: "POST", headers: headers(), body: JSON.stringify(body) })
-      if (res.ok) {
-        const d = await res.json()
-        setServices(prev => editingService
-          ? prev.map(s => s.id_profile_service === d.service.id_profile_service ? d.service : s)
-          : [...prev, d.service])
-        setServiceModalOpen(false)
-        showMsg("success", editingService ? "Serviço atualizado!" : "Serviço criado!")
-      } else { const d = await res.json(); showMsg("error", d.error || "Erro ao salvar") }
-    } catch { showMsg("error", "Erro de conexão") }
-    setSaving(false)
-  }
   async function toggleServiceActive(s: ProfileService) {
     try {
       const res = await fetch(`/api/profile/${profileId}/services/${s.id_profile_service}`, {
@@ -344,20 +234,6 @@ export default function AgendaPageClient({
       if (res.ok) { setServices(prev => prev.filter(x => x.id_profile_service !== s.id_profile_service)); showMsg("success", "Serviço removido") }
     } catch { showMsg("error", "Erro de conexão") }
   }
-
-  const goPrev = () => setWeekStart(prev => addDays(prev, -7))
-  const goNext = () => setWeekStart(prev => addDays(prev, 7))
-  const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
-  const headerLabel = `${format(weekStart, "d 'de' MMM", { locale: ptBR })} — ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
-
-  // Para o seletor de membros: preview de valor por membro
-  const selectedCount = serviceForm.member_profile_ids.length
-  const effectiveCount = selectedCount === 0 ? clanMembers.length : selectedCount
-  const pricePerMember = (() => {
-    const total = parsePriceReais(serviceForm.price_reais)
-    if (total < 0 || effectiveCount === 0) return null
-    return total / effectiveCount
-  })()
 
   // Helper: nome do membro por id
   const memberById = useMemo(() => {
@@ -381,9 +257,11 @@ export default function AgendaPageClient({
           <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-zinc-800 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold leading-tight">Agenda{isClan ? " do clan" : ""}</h1>
-            <p className="text-xs text-zinc-400">Gerencie horários, serviços e agendamentos.</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-bold leading-tight tracking-tight">Agenda{isClan ? " do clan" : ""}</h1>
+            <p className="text-xs text-zinc-400">
+              Disponibilidade, serviços e visão clara dos seus compromissos.
+            </p>
           </div>
         </div>
       </header>
@@ -398,17 +276,9 @@ export default function AgendaPageClient({
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
-        <aside className="space-y-3">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
-            <MiniCalendar
-              selectedWeekStart={weekStart}
-              onWeekChange={(ws) => { setWeekStart(ws); setMonth(ws); setActiveTab("bookings"); setBookingsView("calendar") }}
-              month={month}
-              onMonthChange={setMonth}
-            />
-          </div>
-          <nav className="bg-zinc-900 border border-zinc-800 rounded-2xl p-2 space-y-1">
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[220px_1fr]">
+        <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+          <nav className="space-y-1 rounded-2xl border border-zinc-800 bg-zinc-900 p-2">
             {([
               { key: "rules", label: "Disponibilidade", icon: Clock },
               { key: "services", label: "Serviços", icon: Briefcase },
@@ -580,256 +450,38 @@ export default function AgendaPageClient({
             </div>
           )}
 
-          {/* ─── Agendamentos ─── */}
+          {/* ─── Agendamentos (calendário mensal + lista premium) ─── */}
           {activeTab === "bookings" && (
-            <div className="space-y-4">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button onClick={goToday} className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-200 text-xs font-medium hover:bg-zinc-800">Hoje</button>
-                  <button onClick={goPrev} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"><ChevronLeft className="w-4 h-4" /></button>
-                  <button onClick={goNext} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"><ChevronRight className="w-4 h-4" /></button>
-                  <p className="text-sm font-semibold text-zinc-100 capitalize ml-2">{headerLabel}</p>
-                  {weekLoading && <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />}
-                </div>
-                <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1">
-                  <button onClick={() => setBookingsView("list")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      bookingsView === "list" ? "bg-yellow-400 text-zinc-900" : "text-zinc-300 hover:bg-zinc-700"
-                    }`}>
-                    <ListIcon className="w-3.5 h-3.5" />Lista
-                  </button>
-                  <button onClick={() => setBookingsView("calendar")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      bookingsView === "calendar" ? "bg-yellow-400 text-zinc-900" : "text-zinc-300 hover:bg-zinc-700"
-                    }`}>
-                    <LayoutGrid className="w-3.5 h-3.5" />Calendário
-                  </button>
-                </div>
-              </div>
-
-              {bookingsView === "list" && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold mb-1 flex items-center gap-2"><ListOrdered className="w-5 h-5" /> Listagem de agendamentos</h2>
-                  <p className="text-sm text-zinc-400 mb-6">Do mais recente para o mais antigo.</p>
-                  {bookings.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Calendar className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                      <p className="text-zinc-400">Nenhum agendamento encontrado ainda.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {bookings.map(b => {
-                        const amountPaid = b.service_price_amount ?? b.deposit_amount
-                        const duration = (() => {
-                          const [sh, sm] = b.start_time.split(":").map(Number)
-                          const [eh, em] = b.end_time.split(":").map(Number)
-                          return (eh * 60 + em) - (sh * 60 + sm)
-                        })()
-                        return (
-                          <div key={b.id} className={`p-4 rounded-lg border ${
-                            b.status === "confirmed" ? "border-red-500/30 bg-red-500/5" : "border-zinc-700 bg-zinc-800/50"
-                          }`}>
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                {b.client_profile_id ? (
-                                  <a href={`/freelancer/${b.client_profile_id}`} target="_blank" rel="noreferrer"
-                                     className="font-medium text-sm text-yellow-400 hover:underline">
-                                    {b.client_profile_display_name || b.client_name}
-                                  </a>
-                                ) : (
-                                  <p className="font-medium text-sm">{b.client_name}</p>
-                                )}
-                                <p className="text-xs text-zinc-400">{b.client_email}{b.client_whatsapp && ` • ${b.client_whatsapp}`}</p>
-                                {b.service_name_snapshot && (
-                                  <p className="text-xs text-zinc-300 mt-1">
-                                    <Briefcase className="inline w-3 h-3 mr-1" />{b.service_name_snapshot}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PAYMENT_STATUS_COLORS[b.payment_status] || "bg-zinc-700 text-zinc-300"}`}>
-                                  {PAYMENT_STATUS_LABELS[b.payment_status] || b.payment_status}
-                                </span>
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[b.status] || "bg-zinc-700 text-zinc-300"}`}>
-                                  {STATUS_LABELS[b.status] || b.status}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-4 mt-3 text-xs text-zinc-400">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {new Date(b.booking_date + "T12:00:00").toLocaleDateString("pt-BR")}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                {b.start_time.substring(0, 5)} — {b.end_time.substring(0, 5)} ({duration} min)
-                              </span>
-                              <span className="text-zinc-300">
-                                Valor pago: <strong className="text-yellow-400">{centsToReais(amountPaid)}</strong>
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {bookingsView === "calendar" && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-2 sm:p-4">
-                  <WeeklyTimeGrid
-                    weekStart={weekStart}
-                    events={weekEvents}
-                    availableBackground={weekAvailable}
-                    height={680}
-                    readOnly
-                  />
-                </div>
-              )}
-            </div>
+            <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
           )}
         </main>
       </div>
 
-      {/* Modal: Serviço */}
-      {serviceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setServiceModalOpen(false)}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold">{editingService ? "Editar serviço" : "Novo serviço"}</h2>
-              <button onClick={() => setServiceModalOpen(false)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Nome</label>
-                <input type="text" value={serviceForm.name}
-                  onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex: Sessão de fotos"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Descrição (opcional)</label>
-                <textarea value={serviceForm.description}
-                  onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))}
-                  rows={2}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm resize-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Duração</label>
-                  <select value={serviceForm.duration_minutes}
-                    onChange={e => setServiceForm(f => ({ ...f, duration_minutes: Number(e.target.value) }))}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm">
-                    {[15, 30, 45, 60, 90, 120, 180, 240].map(m => <option key={m} value={m}>{m} min</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Valor que você quer receber (R$)</label>
-                  <input type="text" value={serviceForm.price_reais}
-                    onChange={e => setServiceForm(f => ({ ...f, price_reais: e.target.value }))}
-                    placeholder="0,00"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono" />
-                </div>
-              </div>
-
-              {/* Preview de taxas — aparece sempre que há um valor digitado */}
-              {(() => {
-                const baseCents = parsePriceReais(serviceForm.price_reais)
-                if (baseCents <= 0) return null
-                const stripeFee = Math.round(baseCents * bookingFees.stripe_fee_percent / 100)
-                const serviceFee = bookingFees.service_fee_cents
-                const clientTotal = baseCents + stripeFee + serviceFee
-                return (
-                  <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-2 text-xs">
-                    <p className="text-zinc-400 font-medium mb-3">Resumo do valor</p>
-                    <div className="flex justify-between text-zinc-300">
-                      <span>Você recebe</span>
-                      <span className="font-mono">{centsToReais(baseCents)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Taxa da maquininha ({bookingFees.stripe_fee_percent}%)</span>
-                      <span className="font-mono text-yellow-500/80">+ {centsToReais(stripeFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Taxa de serviço (fixo)</span>
-                      <span className="font-mono text-yellow-500/80">+ {centsToReais(serviceFee)}</span>
-                    </div>
-                    <div className="flex justify-between border-t border-zinc-700 pt-2 font-semibold text-sm">
-                      <span className="text-zinc-200">Cliente pagará</span>
-                      <span className="font-mono text-yellow-400">{centsToReais(clientTotal)}</span>
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Seletor de membros — só para clan */}
-              {isClan && clanMembers.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs text-zinc-400 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      Membros participantes
-                    </label>
-                    <span className="text-xs text-zinc-500">
-                      {selectedCount === 0 ? "Todos" : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
-                    </span>
-                  </div>
-                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-                    {clanMembers.map(m => {
-                      const checked = serviceForm.member_profile_ids.includes(m.id_member_profile)
-                      return (
-                        <label key={m.id_member_profile}
-                          className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                            checked ? "bg-yellow-400/10 border-yellow-400/30" : "bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-800"
-                          }`}>
-                          <input type="checkbox" checked={checked}
-                            onChange={() => toggleMember(m.id_member_profile)}
-                            className="w-4 h-4 rounded border-zinc-600 text-yellow-400 bg-zinc-800" />
-                          <Avatar className="size-7 border border-zinc-600">
-                            {m.avatar_url && <img src={m.avatar_url} alt={m.display_name} className="object-cover w-full h-full rounded-full" />}
-                            <AvatarFallback className="text-xs">{getInitials(m.display_name)}</AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{m.display_name}</div>
-                            <div className="text-xs text-zinc-500">@{m.username}</div>
-                          </div>
-                          {m.role === "owner" && (
-                            <span className="text-xs text-zinc-500 shrink-0">dono</span>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
-                  {pricePerMember !== null && effectiveCount > 0 && (
-                    <p className="mt-2 text-xs text-zinc-400">
-                      {centsToReais(pricePerMember)}/membro
-                      {selectedCount === 0 && <span className="text-zinc-600"> (dividido entre todos os {clanMembers.length} membros)</span>}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={serviceForm.is_active}
-                  onChange={e => setServiceForm(f => ({ ...f, is_active: e.target.checked }))}
-                  className="w-4 h-4 rounded border-zinc-600 text-yellow-400 bg-zinc-800" />
-                <span className="text-sm">Ativo (visível para clientes)</span>
-              </label>
-            </div>
-            <div className="flex justify-end gap-2 p-6 border-t border-zinc-800">
-              <button onClick={() => setServiceModalOpen(false)}
-                className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-sm">Cancelar</button>
-              <button onClick={saveService} disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold disabled:opacity-50">
-                <Save className="w-4 h-4" />{saving ? "Salvando..." : "Salvar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProfileServiceEditModal
+        open={serviceModalOpen}
+        onClose={() => {
+          setServiceModalOpen(false)
+          setEditingService(null)
+        }}
+        profileId={profileId}
+        service={editingService}
+        isClan={isClan}
+        clanMembers={clanMembers}
+        onSaved={(updated) => {
+          const wasEdit = editingService !== null
+          setServices((prev) => {
+            const idx = prev.findIndex((x) => x.id_profile_service === updated.id_profile_service)
+            if (idx >= 0) {
+              const next = [...prev]
+              next[idx] = updated as ProfileService
+              return next
+            }
+            return [...prev, updated as ProfileService]
+          })
+          showMsg("success", wasEdit ? "Serviço atualizado!" : "Serviço criado!")
+        }}
+        onError={(msg) => showMsg("error", msg)}
+      />
 
       {/* Modal: Exceções */}
       {exceptionsOpen && (
