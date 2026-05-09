@@ -315,6 +315,7 @@ export function ProfilePublicServicesSection({
         }}
         profileId={profileId}
         service={bookingService}
+        preferOwnerCalendarWeek={showOwnerControls}
         onContinue={handleScheduleContinue}
       />
 

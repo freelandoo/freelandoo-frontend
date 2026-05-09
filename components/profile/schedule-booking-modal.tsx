@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { addDays, endOfWeek, format, startOfDay, startOfWeek } from "date-fns"
+import { addDays, format, startOfDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import {
   Calendar,
@@ -19,17 +19,59 @@ function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 }
 
-/** Extrai HH:mm para casar com a grelha (suporta "09:00", "9:00:00", ISO). */
+/** HH:mm no fuso local (para casar com a grade do modal). */
+function localHM(d: Date): string {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+
+/**
+ * Extrai HH:mm para casar com a grelha.
+ * ISO com timezone → usa horário local do navegador (evita descasar com grade quando o backend manda UTC).
+ */
 function extractSlotStartTime(raw: unknown): string | null {
   if (raw == null) return null
+
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const n = raw
+    if (n > 1_000_000_000_000) {
+      const d = new Date(n)
+      if (!Number.isNaN(d.getTime())) return localHM(d)
+      return null
+    }
+    if (n > 1_000_000_000) {
+      const d = new Date(n * 1000)
+      if (!Number.isNaN(d.getTime())) return localHM(d)
+      return null
+    }
+    if (n >= 0 && n < 24 * 60 && Number.isInteger(n)) {
+      const h = Math.floor(n / 60)
+      const m = n % 60
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
+    }
+    return null
+  }
+
   const s = String(raw).trim()
   if (!s) return null
-  const isoOrSpace = /[T ](\d{2}):(\d{2})(?::\d{2})?/.exec(s)
-  if (isoOrSpace) {
-    return `${isoOrSpace[1]}:${isoOrSpace[2]}`
+
+  const brHm = /^(\d{1,2})h(\d{2})$/i.exec(s)
+  if (brHm) return `${brHm[1].padStart(2, "0")}:${brHm[2]}`
+
+  const hmExec = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s)
+  if (hmExec && !/^\d{4}-\d{2}-\d{2}/.test(s) && !s.includes("T")) {
+    return `${hmExec[1].padStart(2, "0")}:${hmExec[2]}`
   }
-  const hmOnly = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s)
-  if (hmOnly) return `${hmOnly[1].padStart(2, "0")}:${hmOnly[2]}`
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const asDate = new Date(s)
+    if (!Number.isNaN(asDate.getTime())) return localHM(asDate)
+  }
+
+  const isoOrSpace = /[T ](\d{2}):(\d{2})(?::\d{2})?/.exec(s)
+  if (isoOrSpace) return `${isoOrSpace[1]}:${isoOrSpace[2]}`
+
+  const hmFallback = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(s)
+  if (hmFallback) return `${hmFallback[1].padStart(2, "0")}:${hmFallback[2]}`
   return null
 }
 
@@ -38,7 +80,7 @@ function normalizeLabel(label: string): string {
   return e ?? label
 }
 
-type ApiSlotMeta = { start: string; spots_remaining?: number | null }
+type ApiSlotMeta = { start: string; end?: string; spots_remaining?: number | null }
 
 /** Normaliza datas vindas da API para yyyy-MM-dd. */
 function toDateOnlyISO(raw: unknown): string | null {
@@ -63,60 +105,145 @@ function parseSpotRemaining(x: Record<string, unknown>): number | undefined {
   return undefined
 }
 
-function slotRecordToMeta(sl: unknown): ApiSlotMeta | null {
+function slotRecordToMeta(sl: unknown, depth = 0): ApiSlotMeta | null {
+  if (depth > 4) return null
   if (typeof sl === "string") {
     const t = extractSlotStartTime(sl)
     return t ? { start: t, spots_remaining: undefined } : null
   }
   if (!sl || typeof sl !== "object") return null
   const x = sl as Record<string, unknown>
+
+  if (x.available === false || x.is_available === false || x.bookable === false) {
+    const t =
+      extractSlotStartTime(x.start) ??
+      extractSlotStartTime(x.start_time) ??
+      extractSlotStartTime(x.startTime)
+    if (t) return { start: t, spots_remaining: 0 }
+  }
+
   const keys = [
     "start",
     "start_time",
-    "begin",
+    "startTime",
+    "slot_start_time",
     "slot_start",
     "slotStart",
+    "starts_at",
+    "startsAt",
+    "begin",
     "from",
     "hora_inicio",
     "horaInicio",
+    "hora",
+    "inicio",
     "time",
   ] as const
+  const endRaw = x.end ?? x.end_time ?? x.endTime
+  const endHm = endRaw != null ? extractSlotStartTime(endRaw) ?? undefined : undefined
+
   for (const k of keys) {
     const t = extractSlotStartTime(x[k])
-    if (t) return { start: t, spots_remaining: parseSpotRemaining(x) }
+    if (t) return { start: t, end: endHm, spots_remaining: parseSpotRemaining(x) }
   }
+
+  for (const nest of ["period", "interval", "slot", "range", "window"] as const) {
+    const inner = x[nest]
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+      const nested = slotRecordToMeta(inner, depth + 1)
+      if (nested)
+        return {
+          ...nested,
+          end: nested.end ?? endHm,
+          spots_remaining: parseSpotRemaining(x) ?? nested.spots_remaining,
+        }
+    }
+  }
+
   for (const v of Object.values(x)) {
     if (v !== null && typeof v === "object") continue
     const t = extractSlotStartTime(v)
-    if (t) return { start: t, spots_remaining: parseSpotRemaining(x) }
+    if (t) return { start: t, end: endHm, spots_remaining: parseSpotRemaining(x) }
   }
   return null
 }
 
+/** Remove wrappers comuns (`data`, `result`, `payload`) até o objeto útil (vários backends enviam um nível extra). */
 function unwrapPayloadRoot(data: unknown): Record<string, unknown> | null {
-  if (!data || typeof data !== "object") return null
-  const o = data as Record<string, unknown>
-  const inner = o.data ?? o.result ?? o.payload
-  if (inner && typeof inner === "object") return inner as Record<string, unknown>
-  return o
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null
+  let cur: unknown = data
+  for (let depth = 0; depth < 6; depth++) {
+    if (!cur || typeof cur !== "object" || Array.isArray(cur)) break
+    const o = cur as Record<string, unknown>
+    const inner = o.data ?? o.result ?? o.payload ?? o.body ?? o.response
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) cur = inner
+    else break
+  }
+  if (!cur || typeof cur !== "object" || Array.isArray(cur)) return null
+  return cur as Record<string, unknown>
 }
 
-function parseSlotsPayload(data: unknown): ApiSlotMeta[] {
-  const root = unwrapPayloadRoot(data)
-  if (!root) return []
-  const raw = (root.slots ??
-    root.available_slots ??
-    root.availableSlots ??
-    root.free_slots ??
-    []) as unknown
-  if (!Array.isArray(raw)) return []
-
+/** `slots: { "yyyy-mm-dd": [ ... ] }` ou chaves equivalentes. */
+function parseSlotsKeyedByDate(raw: Record<string, unknown>, dateISO: string): ApiSlotMeta[] {
   const rows: ApiSlotMeta[] = []
-  for (const item of raw) {
-    const meta = slotRecordToMeta(item)
-    if (meta) rows.push(meta)
+  for (const [key, val] of Object.entries(raw)) {
+    const day = toDateOnlyISO(key)
+    if (day != null && day !== dateISO) continue
+    if (!Array.isArray(val)) continue
+    for (const item of val) {
+      const meta = slotRecordToMeta(item)
+      if (meta) rows.push(meta)
+    }
   }
   return rows
+}
+
+function parseSlotsPayload(data: unknown, dateISO?: string): ApiSlotMeta[] {
+  if (Array.isArray(data)) {
+    const rows: ApiSlotMeta[] = []
+    for (const item of data) {
+      const meta = slotRecordToMeta(item)
+      if (meta) rows.push(meta)
+    }
+    return rows
+  }
+  const root = unwrapPayloadRoot(data)
+  if (!root) return []
+
+  for (const ak of ["data", "items", "results", "records"] as const) {
+    const v = root[ak]
+    if (Array.isArray(v) && v.length > 0) {
+      const parsed = parseSlotsPayload(v, dateISO)
+      if (parsed.length) return parsed
+    }
+  }
+
+  const candidates = [
+    root.slots,
+    root.available_slots,
+    root.availableSlots,
+    root.free_slots,
+    root.open_slots,
+    root.horarios,
+  ]
+  for (const c of candidates) {
+    if (!c || typeof c !== "object") continue
+    if (Array.isArray(c)) {
+      const rows: ApiSlotMeta[] = []
+      for (const item of c) {
+        const meta = slotRecordToMeta(item)
+        if (meta) rows.push(meta)
+      }
+      if (rows.length) return rows
+      continue
+    }
+    if (dateISO) {
+      const fromKeys = parseSlotsKeyedByDate(c as Record<string, unknown>, dateISO)
+      if (fromKeys.length) return fromKeys
+    }
+  }
+
+  return []
 }
 
 /** Lista plana: cada item pode ter `date` / `day` + horário. */
@@ -140,10 +267,26 @@ function parseFlatSlotsForDay(slots: unknown[], dateISO: string): ApiSlotMeta[] 
 
 /** Resposta GET calendar/week: agrupado por dia ou lista plana. */
 function parseSlotsFromWeekPayload(data: unknown, dateISO: string): ApiSlotMeta[] {
-  if (!data || typeof data !== "object") return []
-  const d = data as Record<string, unknown>
+  const unwrapped = unwrapPayloadRoot(data)
+  if (!unwrapped) return []
+  const d = unwrapped
   let daysRaw: unknown =
-    d.available_slots ?? d.availableSlots ?? d.days ?? d.by_day ?? d.slots_by_day
+    d.available_slots ??
+    d.availableSlots ??
+    d.days ??
+    d.by_day ??
+    d.slots_by_day
+
+  const calendar = d.calendar
+  if (!Array.isArray(daysRaw) && calendar && typeof calendar === "object" && !Array.isArray(calendar)) {
+    const c = calendar as Record<string, unknown>
+    daysRaw =
+      c.available_slots ??
+      c.availableSlots ??
+      c.days ??
+      daysRaw
+  }
+
   if (!Array.isArray(daysRaw) && Array.isArray(d.slots)) {
     const first = (d.slots as unknown[])[0]
     if (first && typeof first === "object" && first !== null && "slots" in first) {
@@ -190,36 +333,72 @@ function dedupeSlotsByStart(slots: ApiSlotMeta[]): ApiSlotMeta[] {
   return [...m.values()]
 }
 
-async function loadSlotsForDate(profileId: string, dateISO: string): Promise<ApiSlotMeta[]> {
-  const day = new Date(dateISO + "T12:00:00")
-  const ws = format(startOfWeek(day, { weekStartsOn: 0 }), "yyyy-MM-dd")
-  const we = format(endOfWeek(day, { weekStartsOn: 0 }), "yyyy-MM-dd")
+/**
+ * Intervalo inclusivo [weekStart, weekEnd] alinhado ao backend (`BookingAvailabilityService`):
+ * usa `dateISO + T12:00:00.000Z` e `getUTCDay()` → semana domingo–sábado em datas UTC.
+ */
+function utcWeekRangeInclusive(dateISO: string): { weekStart: string; weekEnd: string } {
+  const anchor = new Date(`${dateISO}T12:00:00.000Z`)
+  const dow = anchor.getUTCDay()
+  const start = new Date(anchor)
+  start.setUTCDate(anchor.getUTCDate() - dow)
+  const end = new Date(start)
+  end.setUTCDate(start.getUTCDate() + 6)
+  return {
+    weekStart: start.toISOString().slice(0, 10),
+    weekEnd: end.toISOString().slice(0, 10),
+  }
+}
 
-  let merged: ApiSlotMeta[] = []
+function ownerWeekAuthHeaders(): HeadersInit | undefined {
+  if (typeof window === "undefined") return undefined
+  const token = localStorage.getItem("token")
+  return token ? { Authorization: `Bearer ${token}` } : undefined
+}
 
-  try {
-    const weekRes = await fetch(
-      `/api/public/profile/${profileId}/calendar/week?weekStart=${encodeURIComponent(ws)}&weekEnd=${encodeURIComponent(we)}`,
-    )
-    if (weekRes.ok) {
-      const wd = await weekRes.json()
-      merged = parseSlotsFromWeekPayload(wd, dateISO)
+async function loadSlotsForDate(
+  profileId: string,
+  dateISO: string,
+  preferOwnerCalendarWeek: boolean,
+): Promise<ApiSlotMeta[]> {
+  const { weekStart, weekEnd } = utcWeekRangeInclusive(dateISO)
+  const qs = new URLSearchParams({ date: dateISO })
+  const weekParams = `weekStart=${encodeURIComponent(weekStart)}&weekEnd=${encodeURIComponent(weekEnd)}`
+  const publicWeekUrl = `/api/public/profile/${profileId}/calendar/week?${weekParams}`
+  const ownerWeekUrl = `/api/profile/${profileId}/calendar/week?${weekParams}`
+
+  async function fetchWeek(): Promise<Response> {
+    const ah = preferOwnerCalendarWeek ? ownerWeekAuthHeaders() : undefined
+    if (ah) {
+      const r = await fetch(ownerWeekUrl, { cache: "no-store", headers: ah })
+      if (r.ok) return r
     }
-  } catch {
-    /* segue para available-slots */
+    return fetch(publicWeekUrl, { cache: "no-store" })
   }
 
-  if (merged.length === 0) {
-    try {
-      const qs = new URLSearchParams({ date: dateISO })
-      const slotRes = await fetch(`/api/public/profile/${profileId}/available-slots?${qs}`)
-      if (slotRes.ok) {
-        const sd = await slotRes.json()
-        merged = parseSlotsPayload(sd)
-      }
-    } catch {
-      /* vazio */
+  const [weekRes, slotRes] = await Promise.all([
+    fetchWeek(),
+    fetch(`/api/public/profile/${profileId}/available-slots?${qs}`, { cache: "no-store" }),
+  ])
+
+  const merged: ApiSlotMeta[] = []
+
+  try {
+    if (weekRes.ok) {
+      const wd = await weekRes.json()
+      merged.push(...parseSlotsFromWeekPayload(wd, dateISO))
     }
+  } catch {
+    /* ignora */
+  }
+
+  try {
+    if (slotRes.ok) {
+      const sd = await slotRes.json()
+      merged.push(...parseSlotsPayload(sd, dateISO))
+    }
+  } catch {
+    /* ignora */
   }
 
   return dedupeSlotsByStart(merged)
@@ -235,16 +414,13 @@ interface ScheduleBookingModalProps {
   onClose: () => void
   profileId: string
   service: ProfileService | null
+  /**
+   * Quando true (ex.: dono no próprio perfil), tenta GET `/profile/:id/calendar/week` com JWT
+   * antes do endpoint público — ver AGENDA_SISTEMA.md §4.2 (modo dono).
+   */
+  preferOwnerCalendarWeek?: boolean
   /** Chamado ao concluir escolha de data/hora (antes de dados do cliente / pagamento). */
   onContinue: (dateISO: string, startTime: string) => void
-}
-
-function buildTimelineMinutes(step: number): number[] {
-  const out: number[] = []
-  for (let m = 8 * 60; m < 20 * 60; m += step) {
-    out.push(m)
-  }
-  return out
 }
 
 function labelToMinutes(label: string): number {
@@ -257,15 +433,9 @@ export function ScheduleBookingModal({
   onClose,
   profileId,
   service,
+  preferOwnerCalendarWeek = false,
   onContinue,
 }: ScheduleBookingModalProps) {
-  const stepMinutes = useMemo(() => {
-    const d = service?.duration_minutes ?? 30
-    if (d <= 15) return 15
-    if (d <= 30) return 30
-    return 30
-  }, [service])
-
   const [windowStart, setWindowStart] = useState(0)
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()))
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -311,7 +481,7 @@ export function ScheduleBookingModal({
     setSlotsLoading(true)
     ;(async () => {
       try {
-        const parsed = await loadSlotsForDate(profileId, dateStr)
+        const parsed = await loadSlotsForDate(profileId, dateStr, preferOwnerCalendarWeek)
         if (!cancelled) setApiSlots(parsed)
       } catch {
         if (!cancelled) setApiSlots([])
@@ -322,7 +492,7 @@ export function ScheduleBookingModal({
     return () => {
       cancelled = true
     }
-  }, [open, profileId, service, selectedDate])
+  }, [open, profileId, service, selectedDate, preferOwnerCalendarWeek])
 
   const apiByStart = useMemo(() => {
     const m = new Map<string, ApiSlotMeta>()
@@ -333,18 +503,11 @@ export function ScheduleBookingModal({
     return m
   }, [apiSlots])
 
+  /** Contrato §4.1 / §4.2: horários são só os `{ start, end }` gerados pela regra semanal no backend — não misturar com grade fictícia pelo `duration_minutes` do serviço. */
   const mergedTimeLabels = useMemo(() => {
-    const labels = new Set<string>()
-    for (const mins of buildTimelineMinutes(stepMinutes)) {
-      const hh = String(Math.floor(mins / 60)).padStart(2, "0")
-      const mm = String(mins % 60).padStart(2, "0")
-      labels.add(`${hh}:${mm}`)
-    }
-    for (const s of apiSlots) {
-      labels.add(normalizeLabel(s.start))
-    }
-    return [...labels].sort((a, b) => labelToMinutes(a) - labelToMinutes(b))
-  }, [stepMinutes, apiSlots])
+    const labels = apiSlots.map((s) => normalizeLabel(s.start))
+    return [...new Set(labels)].sort((a, b) => labelToMinutes(a) - labelToMinutes(b))
+  }, [apiSlots])
 
   const timelineSlots = useMemo(() => {
     const now = new Date()
@@ -370,7 +533,7 @@ export function ScheduleBookingModal({
         else status = "available"
       }
 
-      return { label, status }
+      return { label, status, endLabel: meta?.end }
     })
   }, [selectedDate, apiByStart, mergedTimeLabels])
 
@@ -484,14 +647,22 @@ export function ScheduleBookingModal({
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-zinc-500" aria-hidden />
               </div>
+            ) : apiSlots.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-4 py-10 text-center text-sm text-zinc-400">
+                Nenhum horário disponível nesta data (sem regra para esse dia da semana, dia bloqueado ou já ocupado).
+                Configure em <span className="text-zinc-300">Disponibilidade</span> na agenda do perfil ou escolha outra
+                data.
+              </p>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {timelineSlots.map(({ label, status }) => {
+                {timelineSlots.map(({ label, status, endLabel }) => {
                   const selectable = status === "available" || status === "few"
                   const selected = selectedTime === label
                   const statusLabel =
                     status === "available"
-                      ? "Disponível"
+                      ? endLabel
+                        ? `Até ${endLabel}`
+                        : "Disponível"
                       : status === "few"
                         ? "Poucas vagas"
                         : "Indisponível"
@@ -531,7 +702,8 @@ export function ScheduleBookingModal({
             <div className="mt-4 flex gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/40 px-3 py-2.5">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
               <p className="text-xs leading-relaxed text-zinc-400">
-                Os horários exibidos já consideram o tempo de duração do serviço.
+                Os intervalos vêm das regras semanais da agenda (duração do slot no painel). O pagamento usa o preço do
+                serviço escolhido; o servidor valida sobreposição ao confirmar.
               </p>
             </div>
           </div>

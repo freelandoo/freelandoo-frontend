@@ -2,18 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { startOfWeek, endOfWeek, format, addDays } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import {
   ArrowLeft, Save, Calendar, Clock, Lock, Unlock, Plus, Trash2,
-  AlertCircle, Briefcase, ListOrdered, X, Pencil, Power,
-  ChevronLeft, ChevronRight, Loader2, LayoutGrid, List as ListIcon, Users,
+  AlertCircle, Briefcase, X, Pencil, Power, Users,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MiniCalendar } from "@/components/calendar/MiniCalendar"
 import { ProfileServiceEditModal } from "@/components/profile/profile-service-edit-modal"
-import { WeeklyTimeGrid } from "@/components/calendar/WeeklyTimeGridDynamic"
-import type { CalendarEvent, AvailableSlot } from "@/components/calendar/types"
+import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
 
 interface WeeklyRule {
   weekday: number
@@ -74,24 +69,6 @@ export interface ClanMember {
 
 const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Aguardando pagamento", confirmed: "Confirmado", canceled: "Cancelado",
-  completed: "Concluído", no_show: "Não compareceu", expired: "Expirado",
-}
-const STATUS_COLORS: Record<string, string> = {
-  pending_payment: "bg-yellow-500/20 text-yellow-400", confirmed: "bg-red-500/20 text-red-400",
-  canceled: "bg-zinc-500/20 text-zinc-400", completed: "bg-green-500/20 text-green-400",
-  no_show: "bg-orange-500/20 text-orange-400", expired: "bg-zinc-600/20 text-zinc-500",
-}
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente", paid: "Pago", failed: "Falhou", refunded: "Reembolsado", canceled: "Cancelado",
-}
-const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-500/20 text-yellow-400", paid: "bg-emerald-500/20 text-emerald-400",
-  failed: "bg-red-500/20 text-red-400", refunded: "bg-blue-500/20 text-blue-400",
-  canceled: "bg-zinc-500/20 text-zinc-400",
-}
-
 function getToken() {
   if (typeof window === "undefined") return null
   return localStorage.getItem("token")
@@ -106,7 +83,6 @@ function getInitials(name: string) {
 }
 
 type Tab = "rules" | "services" | "bookings"
-type BookingsView = "list" | "calendar"
 
 export default function AgendaPageClient({
   profileId,
@@ -124,13 +100,8 @@ export default function AgendaPageClient({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>("rules")
-  const [bookingsView, setBookingsView] = useState<BookingsView>("list")
   const [exceptionsOpen, setExceptionsOpen] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
-  const [month, setMonth] = useState<Date>(() => new Date())
-  const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 0 }), [weekStart])
 
   const [rules, setRules] = useState<WeeklyRule[]>(
     Array.from({ length: 7 }, (_, i) => ({
@@ -145,10 +116,6 @@ export default function AgendaPageClient({
   const [newOverrideNote, setNewOverrideNote] = useState("")
   const [bookings, setBookings] = useState<Booking[]>([])
   const [services, setServices] = useState<ProfileService[]>([])
-
-  const [weekEvents, setWeekEvents] = useState<CalendarEvent[]>([])
-  const [weekAvailable, setWeekAvailable] = useState<{ date: string; slots: AvailableSlot[] }[]>([])
-  const [weekLoading, setWeekLoading] = useState(false)
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ProfileService | null>(null)
@@ -200,24 +167,6 @@ export default function AgendaPageClient({
     }
     load()
   }, [profileId, headers])
-
-  const fetchWeek = useCallback(async () => {
-    setWeekLoading(true)
-    try {
-      const ws = format(weekStart, "yyyy-MM-dd")
-      const we = format(weekEnd, "yyyy-MM-dd")
-      const res = await fetch(`/api/profile/${profileId}/calendar/week?weekStart=${ws}&weekEnd=${we}`, { headers: headers() })
-      if (res.ok) {
-        const d = await res.json()
-        setWeekEvents(d.events || [])
-        setWeekAvailable(d.availableSlots || [])
-      }
-    } finally { setWeekLoading(false) }
-  }, [profileId, weekStart, weekEnd, headers])
-
-  useEffect(() => {
-    if (activeTab === "bookings" && bookingsView === "calendar") fetchWeek()
-  }, [activeTab, bookingsView, fetchWeek])
 
   async function saveRules() {
     setSaving(true)
@@ -286,11 +235,6 @@ export default function AgendaPageClient({
     } catch { showMsg("error", "Erro de conexão") }
   }
 
-  const goPrev = () => setWeekStart(prev => addDays(prev, -7))
-  const goNext = () => setWeekStart(prev => addDays(prev, 7))
-  const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
-  const headerLabel = `${format(weekStart, "d 'de' MMM", { locale: ptBR })} — ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
-
   // Helper: nome do membro por id
   const memberById = useMemo(() => {
     const m = new Map<string, ClanMember>()
@@ -313,9 +257,11 @@ export default function AgendaPageClient({
           <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-zinc-800 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold leading-tight">Agenda{isClan ? " do clan" : ""}</h1>
-            <p className="text-xs text-zinc-400">Gerencie horários, serviços e agendamentos.</p>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-bold leading-tight tracking-tight">Agenda{isClan ? " do clan" : ""}</h1>
+            <p className="text-xs text-zinc-400">
+              Disponibilidade, serviços e visão clara dos seus compromissos.
+            </p>
           </div>
         </div>
       </header>
@@ -330,17 +276,9 @@ export default function AgendaPageClient({
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
-        <aside className="space-y-3">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
-            <MiniCalendar
-              selectedWeekStart={weekStart}
-              onWeekChange={(ws) => { setWeekStart(ws); setMonth(ws); setActiveTab("bookings"); setBookingsView("calendar") }}
-              month={month}
-              onMonthChange={setMonth}
-            />
-          </div>
-          <nav className="bg-zinc-900 border border-zinc-800 rounded-2xl p-2 space-y-1">
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[220px_1fr]">
+        <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
+          <nav className="space-y-1 rounded-2xl border border-zinc-800 bg-zinc-900 p-2">
             {([
               { key: "rules", label: "Disponibilidade", icon: Clock },
               { key: "services", label: "Serviços", icon: Briefcase },
@@ -512,114 +450,9 @@ export default function AgendaPageClient({
             </div>
           )}
 
-          {/* ─── Agendamentos ─── */}
+          {/* ─── Agendamentos (calendário mensal + lista premium) ─── */}
           {activeTab === "bookings" && (
-            <div className="space-y-4">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button onClick={goToday} className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-200 text-xs font-medium hover:bg-zinc-800">Hoje</button>
-                  <button onClick={goPrev} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"><ChevronLeft className="w-4 h-4" /></button>
-                  <button onClick={goNext} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800"><ChevronRight className="w-4 h-4" /></button>
-                  <p className="text-sm font-semibold text-zinc-100 capitalize ml-2">{headerLabel}</p>
-                  {weekLoading && <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />}
-                </div>
-                <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1">
-                  <button onClick={() => setBookingsView("list")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      bookingsView === "list" ? "bg-yellow-400 text-zinc-900" : "text-zinc-300 hover:bg-zinc-700"
-                    }`}>
-                    <ListIcon className="w-3.5 h-3.5" />Lista
-                  </button>
-                  <button onClick={() => setBookingsView("calendar")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      bookingsView === "calendar" ? "bg-yellow-400 text-zinc-900" : "text-zinc-300 hover:bg-zinc-700"
-                    }`}>
-                    <LayoutGrid className="w-3.5 h-3.5" />Calendário
-                  </button>
-                </div>
-              </div>
-
-              {bookingsView === "list" && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold mb-1 flex items-center gap-2"><ListOrdered className="w-5 h-5" /> Listagem de agendamentos</h2>
-                  <p className="text-sm text-zinc-400 mb-6">Do mais recente para o mais antigo.</p>
-                  {bookings.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Calendar className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                      <p className="text-zinc-400">Nenhum agendamento encontrado ainda.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {bookings.map(b => {
-                        const amountPaid = b.service_price_amount ?? b.deposit_amount
-                        const duration = (() => {
-                          const [sh, sm] = b.start_time.split(":").map(Number)
-                          const [eh, em] = b.end_time.split(":").map(Number)
-                          return (eh * 60 + em) - (sh * 60 + sm)
-                        })()
-                        return (
-                          <div key={b.id} className={`p-4 rounded-lg border ${
-                            b.status === "confirmed" ? "border-red-500/30 bg-red-500/5" : "border-zinc-700 bg-zinc-800/50"
-                          }`}>
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                {b.client_profile_id ? (
-                                  <a href={`/freelancer/${b.client_profile_id}`} target="_blank" rel="noreferrer"
-                                     className="font-medium text-sm text-yellow-400 hover:underline">
-                                    {b.client_profile_display_name || b.client_name}
-                                  </a>
-                                ) : (
-                                  <p className="font-medium text-sm">{b.client_name}</p>
-                                )}
-                                <p className="text-xs text-zinc-400">{b.client_email}{b.client_whatsapp && ` • ${b.client_whatsapp}`}</p>
-                                {b.service_name_snapshot && (
-                                  <p className="text-xs text-zinc-300 mt-1">
-                                    <Briefcase className="inline w-3 h-3 mr-1" />{b.service_name_snapshot}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PAYMENT_STATUS_COLORS[b.payment_status] || "bg-zinc-700 text-zinc-300"}`}>
-                                  {PAYMENT_STATUS_LABELS[b.payment_status] || b.payment_status}
-                                </span>
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[b.status] || "bg-zinc-700 text-zinc-300"}`}>
-                                  {STATUS_LABELS[b.status] || b.status}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-4 mt-3 text-xs text-zinc-400">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {new Date(b.booking_date + "T12:00:00").toLocaleDateString("pt-BR")}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                {b.start_time.substring(0, 5)} — {b.end_time.substring(0, 5)} ({duration} min)
-                              </span>
-                              <span className="text-zinc-300">
-                                Valor pago: <strong className="text-yellow-400">{centsToReais(amountPaid)}</strong>
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {bookingsView === "calendar" && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-2 sm:p-4">
-                  <WeeklyTimeGrid
-                    weekStart={weekStart}
-                    events={weekEvents}
-                    availableBackground={weekAvailable}
-                    height={680}
-                    readOnly
-                  />
-                </div>
-              )}
-            </div>
+            <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
           )}
         </main>
       </div>
