@@ -11,6 +11,10 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MiniCalendar } from "@/components/calendar/MiniCalendar"
+import {
+  clientTotalCentsFromFreelancerNet,
+  freelancerNetForEditForm,
+} from "@/lib/service-booking-price"
 import { WeeklyTimeGrid } from "@/components/calendar/WeeklyTimeGridDynamic"
 import type { CalendarEvent, AvailableSlot } from "@/components/calendar/types"
 
@@ -156,6 +160,7 @@ export default function AgendaPageClient({
     member_profile_ids: [] as string[],
   })
   const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
+  const [bookingFeesReady, setBookingFeesReady] = useState(false)
 
   const headers = useCallback(() => {
     const token = getToken()
@@ -172,10 +177,36 @@ export default function AgendaPageClient({
 
   useEffect(() => {
     fetch("/api/public/booking-fees")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d) setBookingFees({ stripe_fee_percent: d.stripe_fee_percent ?? 0, service_fee_cents: d.service_fee_cents ?? 0 }) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d)
+          setBookingFees({
+            stripe_fee_percent: d.stripe_fee_percent ?? 0,
+            service_fee_cents: d.service_fee_cents ?? 0,
+          })
+      })
       .catch(() => {})
+      .finally(() => setBookingFeesReady(true))
   }, [])
+
+  useEffect(() => {
+    if (!serviceModalOpen || !editingService || !bookingFeesReady) return
+    const net = freelancerNetForEditForm(
+      editingService.price_amount,
+      bookingFees.stripe_fee_percent,
+      bookingFees.service_fee_cents,
+    )
+    setServiceForm((f) => ({
+      ...f,
+      price_reais: (net / 100).toFixed(2).replace(".", ","),
+    }))
+  }, [
+    serviceModalOpen,
+    editingService,
+    bookingFeesReady,
+    bookingFees.stripe_fee_percent,
+    bookingFees.service_fee_cents,
+  ])
 
   useEffect(() => {
     if (!getToken()) return
@@ -279,10 +310,14 @@ export default function AgendaPageClient({
   }
   function openEditService(s: ProfileService) {
     setEditingService(s)
+    const net = bookingFeesReady
+      ? freelancerNetForEditForm(s.price_amount, bookingFees.stripe_fee_percent, bookingFees.service_fee_cents)
+      : s.price_amount
     setServiceForm({
-      name: s.name, description: s.description || "",
+      name: s.name,
+      description: s.description || "",
       duration_minutes: s.duration_minutes,
-      price_reais: (s.price_amount / 100).toFixed(2).replace(".", ","),
+      price_reais: (net / 100).toFixed(2).replace(".", ","),
       is_active: s.is_active,
       member_profile_ids: s.member_profile_ids || [],
     })
@@ -308,10 +343,19 @@ export default function AgendaPageClient({
     if (!serviceForm.name.trim()) { showMsg("error", "Informe o nome do serviço"); return }
     if (!serviceForm.duration_minutes || serviceForm.duration_minutes <= 0) { showMsg("error", "Duração inválida"); return }
     if (price < 0) { showMsg("error", "Valor inválido"); return }
+    if (!bookingFeesReady) { showMsg("error", "Carregando taxas de agendamento. Tente novamente em instantes."); return }
+    const price_amount = clientTotalCentsFromFreelancerNet(
+      price,
+      bookingFees.stripe_fee_percent,
+      bookingFees.service_fee_cents,
+    )
     setSaving(true)
     const body: Record<string, unknown> = {
-      name: serviceForm.name.trim(), description: serviceForm.description.trim() || null,
-      duration_minutes: serviceForm.duration_minutes, price_amount: price, is_active: serviceForm.is_active,
+      name: serviceForm.name.trim(),
+      description: serviceForm.description.trim() || null,
+      duration_minutes: serviceForm.duration_minutes,
+      price_amount,
+      is_active: serviceForm.is_active,
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
     try {
@@ -822,7 +866,7 @@ export default function AgendaPageClient({
             <div className="flex justify-end gap-2 p-6 border-t border-zinc-800">
               <button onClick={() => setServiceModalOpen(false)}
                 className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-sm">Cancelar</button>
-              <button onClick={saveService} disabled={saving}
+              <button onClick={saveService} disabled={saving || !bookingFeesReady}
                 className="flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold disabled:opacity-50">
                 <Save className="w-4 h-4" />{saving ? "Salvando..." : "Salvar"}
               </button>
