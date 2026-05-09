@@ -324,9 +324,11 @@ export function ProfileHeadCard({
                   </li>
                 )}
                 {profile.manifestation?.tag_label && !isClan && (
-                  <li className="flex items-center gap-2.5 text-[13px] text-amber-200">
-                    <Sparkles className="h-4 w-4 shrink-0 text-amber-300" />
-                    <span className="truncate">{profile.manifestation.tag_label}</span>
+                  <li className="flex items-center gap-2.5">
+                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                      <Sparkles className="h-3 w-3 shrink-0 text-amber-300" />
+                      <span className="truncate">{profile.manifestation.tag_label}</span>
+                    </span>
                   </li>
                 )}
                 {isClan && typeof profile.members_count === "number" && (
