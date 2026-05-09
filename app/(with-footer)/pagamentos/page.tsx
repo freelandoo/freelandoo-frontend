@@ -16,6 +16,8 @@ import {
   Sparkles,
   TrendingUp,
   RotateCcw,
+  Copy,
+  Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -37,6 +39,9 @@ interface Subscription {
   current_period_end: string | null
   paid_at: string | null
   canceled_at: string | null
+  refunded_at: string | null
+  stripe_refund_id: string | null
+  stripe_charge_id: string | null
   created_at: string
   updated_at: string
 }
@@ -129,6 +134,38 @@ function getPeriodProgress(start: string, end: string): number {
 
 function getDaysRemaining(end: string): number {
   return Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 86_400_000))
+}
+
+/* ── Bloco com ID copiável ── */
+function CopyableId({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {}
+  }
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+          {label}
+        </p>
+        <p className="text-xs font-mono text-foreground truncate select-all" style={{ filter: "none", opacity: 1 }}>
+          {value}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copiar"
+        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  )
 }
 
 /* ── Pulse dot para status ativa ── */
@@ -454,6 +491,20 @@ function SubscriptionCard({
         )}
       </div>
 
+      {/* Detalhes do reembolso */}
+      {isRefunded && sub.stripe_refund_id && (
+        <div className="space-y-2" style={{ filter: "none", opacity: 1 }}>
+          <CopyableId label="Stripe Refund ID" value={sub.stripe_refund_id} />
+          {sub.stripe_charge_id && (
+            <CopyableId label="Stripe Charge ID" value={sub.stripe_charge_id} />
+          )}
+          <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+            Use estes IDs em qualquer suporte com a Stripe para rastrear o reembolso.
+            O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.
+          </p>
+        </div>
+      )}
+
       {/* Ações */}
       {sub.status === "active" && !sub.canceled_at && !isRefunded && (
         <div className="space-y-2 pt-1">
@@ -504,12 +555,10 @@ function HistoryTimeline({
   entries,
   selectedId,
   onSelect,
-  refundedIds,
 }: {
   entries: Subscription[]
   selectedId: string | null
   onSelect: (id: string) => void
-  refundedIds: Set<string>
 }) {
   if (entries.length === 0) {
     return (
@@ -523,7 +572,7 @@ function HistoryTimeline({
     <div className="relative space-y-0">
       {entries.map((s, i) => {
         const isSelected = s.id_subscription === selectedId
-        const isRefunded = refundedIds.has(s.id_subscription)
+        const isRefunded = !!s.refunded_at
         return (
           <motion.button
             key={s.id_subscription}
@@ -581,7 +630,6 @@ export default function PagamentosPage() {
   const [isAutenticado, setIsAutenticado] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [refundingId, setRefundingId] = useState<string | null>(null)
-  const [refundedIds, setRefundedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -654,7 +702,19 @@ export default function PagamentosPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Erro ao processar reembolso")
-      setRefundedIds((prev) => new Set(prev).add(id_subscription))
+      const nowIso = new Date().toISOString()
+      setSubscriptions((prev) =>
+        prev.map((s) =>
+          s.id_subscription === id_subscription
+            ? {
+                ...s,
+                refunded_at: nowIso,
+                stripe_refund_id: data.refund_id ?? s.stripe_refund_id,
+                canceled_at: s.canceled_at ?? nowIso,
+              }
+            : s
+        )
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar reembolso")
     } finally {
@@ -663,7 +723,8 @@ export default function PagamentosPage() {
   }
 
   const defaultSubscription =
-    subscriptions.find((s) => s.status === "active" || s.status === "past_due") ||
+    subscriptions.find((s) => (s.status === "active" || s.status === "past_due") && !s.refunded_at) ||
+    subscriptions.find((s) => s.refunded_at) ||
     subscriptions.find((s) => s.status === "pending") ||
     null
 
@@ -671,7 +732,7 @@ export default function PagamentosPage() {
     subscriptions.find((s) => s.id_subscription === selectedId) || defaultSubscription
 
   const paidEntries = subscriptions
-    .filter((s) => s.status === "active")
+    .filter((s) => s.paid_at && (s.status === "active" || s.refunded_at))
     .sort((a, b) => {
       const aDate = new Date(a.paid_at || a.created_at).getTime()
       const bDate = new Date(b.paid_at || b.created_at).getTime()
@@ -737,7 +798,7 @@ export default function PagamentosPage() {
                     cancelling={cancellingId}
                     onRefund={handleRefund}
                     refunding={refundingId}
-                    isRefunded={refundedIds.has(selectedSubscription.id_subscription)}
+                    isRefunded={!!selectedSubscription.refunded_at}
                   />
                 </motion.div>
               )}
@@ -762,7 +823,6 @@ export default function PagamentosPage() {
                       window.scrollTo({ top: 0, behavior: "smooth" })
                     }
                   }}
-                  refundedIds={refundedIds}
                 />
               </motion.div>
             )}
