@@ -782,7 +782,6 @@ export default function FreelancerProfileView({
 
         <ProfilePublicServicesSection
           profileId={profileId}
-          profileName={profile.display_name || "este profissional"}
           allowPublicBooking={profileAllowsPublicBooking(profile)}
           showOwnerControls={isOwnProfile}
           isClan={isClan}

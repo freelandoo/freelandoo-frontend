@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Briefcase, Clock, Cog, Loader2, Scissors } from "lucide-react"
+import { Briefcase, Clock, Cog, Loader2, Plus, Scissors } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { ServiceSelectionModal } from "@/components/calendar/ServiceSelectionModal"
 import type { ProfileService } from "@/components/calendar/types"
 import { ScheduleBookingModal } from "@/components/profile/schedule-booking-modal"
@@ -12,7 +13,6 @@ import {
 
 interface ProfilePublicServicesSectionProps {
   profileId: string
-  profileName: string
   /** Se false (tb_profile_booking_settings.allow_booking), não oferece fluxo de agendar horário. */
   allowPublicBooking?: boolean
   /** Dono do perfil: mostra engrenagem e edição. */
@@ -40,7 +40,6 @@ function authHeaders(): HeadersInit | undefined {
 
 export function ProfilePublicServicesSection({
   profileId,
-  profileName,
   allowPublicBooking = true,
   showOwnerControls = false,
   isClan = false,
@@ -54,8 +53,8 @@ export function ProfilePublicServicesSection({
   const [bookingService, setBookingService] = useState<ProfileService | null>(null)
   const [pickedSlot, setPickedSlot] = useState<{ dateISO: string; startTime: string } | null>(null)
 
-  const [editModalOpen, setEditModalOpen] = useState(false)
-  const [serviceToEdit, setServiceToEdit] = useState<ProfileService | null>(null)
+  /** `create` = novo serviço; caso contrário edição do serviço indicado. */
+  const [serviceSheet, setServiceSheet] = useState<ProfileService | "create" | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -104,8 +103,12 @@ export function ProfilePublicServicesSection({
   }
 
   const openEdit = (s: ProfileService) => {
-    setServiceToEdit(s)
-    setEditModalOpen(true)
+    setServiceSheet(s)
+    setFeedbackError(null)
+  }
+
+  const openCreateService = () => {
+    setServiceSheet("create")
     setFeedbackError(null)
   }
 
@@ -166,18 +169,52 @@ export function ProfilePublicServicesSection({
     ? services
     : services.filter((s) => s.is_active !== false)
 
+  const showCreateService = showOwnerControls
+
   return (
     <section id="services-section" className="mb-20 scroll-mt-24">
-      <div className="mb-8 text-center">
-        <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">Serviços</h2>
-        <p className="text-sm text-muted-foreground">Opções oferecidas por {profileName}.</p>
+      <div className="mb-8 flex items-center justify-center md:justify-between">
+        <div className="flex items-center gap-2">
+          <Briefcase className="h-5 w-5 text-muted-foreground" aria-hidden />
+          <h2 className="text-lg font-semibold uppercase tracking-wide text-muted-foreground">Serviços</h2>
+        </div>
+        {showCreateService ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="hidden font-medium text-primary hover:bg-primary/10 md:flex"
+            onClick={openCreateService}
+          >
+            <Plus className="mr-2 h-4 w-4" aria-hidden />
+            Novo serviço
+          </Button>
+        ) : null}
+      </div>
+
+      {showCreateService ? (
+        <div className="mb-6 flex justify-center md:hidden">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-full max-w-xs font-medium"
+            onClick={openCreateService}
+          >
+            <Plus className="mr-2 h-4 w-4" aria-hidden />
+            Novo serviço
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="mb-8 space-y-2">
         {!allowPublicBooking ? (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-center text-xs text-muted-foreground md:text-left">
             Agendamento online está desativado para este perfil — use mensagens ou outro canal de contato.
           </p>
         ) : null}
         {feedbackError ? (
-          <p className="mt-2 text-sm text-destructive">{feedbackError}</p>
+          <p className="text-center text-sm text-destructive md:text-left">{feedbackError}</p>
         ) : null}
       </div>
 
@@ -294,13 +331,10 @@ export function ProfilePublicServicesSection({
       )}
 
       <ProfileServiceEditModal
-        open={editModalOpen && !!serviceToEdit}
-        onClose={() => {
-          setEditModalOpen(false)
-          setServiceToEdit(null)
-        }}
+        open={serviceSheet !== null}
+        onClose={() => setServiceSheet(null)}
         profileId={profileId}
-        service={serviceToEdit}
+        service={serviceSheet !== null && serviceSheet !== "create" ? serviceSheet : null}
         isClan={isClan}
         clanMembers={clanMembers}
         onSaved={(updated) => {
