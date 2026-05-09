@@ -14,6 +14,13 @@ import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-
 
 const DEFAULT_ACCENT = "#fbbf24"
 const PAGE_LIMIT = 12
+const LEVEL_OPTIONS = new Set([1, 5, 10, 20, 30])
+
+function parseLevelMin(value: string | null): number | null {
+  if (!value || value === "all" || value === "todos") return null
+  const parsed = Number(value)
+  return LEVEL_OPTIONS.has(parsed) ? parsed : null
+}
 
 export default function FeedPage() {
   return (
@@ -40,6 +47,7 @@ function FeedPageInner() {
   const [idCategory, setIdCategory] = useState<number | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
   const [municipio, setMunicipio] = useState<string | null>(null)
+  const [levelMin, setLevelMin] = useState<number | null>(null)
 
   const [items, setItems] = useState<FeedPost[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
@@ -56,10 +64,12 @@ function FeedPageInner() {
     const ic = searchParams.get("id_category")
     const e = searchParams.get("estado")
     const m = searchParams.get("municipio")
+    const level = parseLevelMin(searchParams.get("level_min"))
     if (im) setIdMachine(Number(im) || null)
     if (ic) setIdCategory(Number(ic) || null)
     if (e) setEstado(e.toUpperCase().slice(0, 2))
     if (m) setMunicipio(m)
+    if (level) setLevelMin(level)
   }, [searchParams])
 
   const activeMachine = useMemo(
@@ -98,11 +108,12 @@ function FeedPageInner() {
     if (idCategory != null) sp.set("id_category", String(idCategory))
     if (estado) sp.set("estado", estado)
     if (municipio) sp.set("municipio", municipio)
+    if (levelMin != null) sp.set("level_min", String(levelMin))
     const qs = sp.toString()
     router.replace(qs ? `/feed?${qs}` : "/feed", { scroll: false })
-  }, [idMachine, idCategory, estado, municipio, router])
+  }, [idMachine, idCategory, estado, municipio, levelMin, router])
 
-  const filtersKey = `${idMachine ?? ""}|${idCategory ?? ""}|${estado ?? ""}|${municipio ?? ""}`
+  const filtersKey = `${idMachine ?? ""}|${idCategory ?? ""}|${estado ?? ""}|${municipio ?? ""}|${levelMin ?? ""}`
 
   const fetchPage = useCallback(
     async (nextCursor: string | null, replace: boolean) => {
@@ -111,6 +122,7 @@ function FeedPageInner() {
       if (idCategory != null && idCategory > 0) sp.set("id_category", String(idCategory))
       if (estado) sp.set("estado", estado)
       if (municipio) sp.set("municipio", municipio)
+      if (levelMin != null) sp.set("level_min", String(levelMin))
       if (nextCursor) sp.set("cursor", nextCursor)
       sp.set("limit", String(PAGE_LIMIT))
 
@@ -129,7 +141,7 @@ function FeedPageInner() {
       setCursor(data.next_cursor)
       setHasMore(!!data.has_more)
     },
-    [idMachine, idCategory, estado, municipio]
+    [idMachine, idCategory, estado, municipio, levelMin]
   )
 
   useEffect(() => {
@@ -165,15 +177,17 @@ function FeedPageInner() {
     setIdCategory(null)
     setEstado(null)
     setMunicipio(null)
+    setLevelMin(null)
   }
 
-  const hasFilters = !!(idMachine || idCategory || estado || municipio)
+  const hasFilters = !!(idMachine || idCategory || estado || municipio || levelMin)
 
   const filtersForEvents: FeedFilters = {
     id_machine: idMachine,
     id_category: idCategory,
     estado,
     municipio,
+    level_min: levelMin,
   }
 
   return (
@@ -197,6 +211,7 @@ function FeedPageInner() {
           selectedCategoryId={idCategory}
           state={estado}
           city={municipio}
+          levelMin={levelMin}
           accent={accent}
           onMachineChange={(id) => {
             setIdMachine(id)
@@ -207,6 +222,7 @@ function FeedPageInner() {
             setEstado(s)
             setMunicipio(c)
           }}
+          onLevelChange={setLevelMin}
           onClearAll={clearAll}
         />
 
@@ -219,7 +235,13 @@ function FeedPageInner() {
         {loadingInitial ? (
           <FeedSkeleton />
         ) : items.length === 0 ? (
-          <EmptyFeedState hasFilters={hasFilters} onReset={clearAll} accent={accent} />
+          <EmptyFeedState
+            hasFilters={hasFilters}
+            levelFiltered={levelMin != null}
+            onReset={clearAll}
+            onClearLevel={() => setLevelMin(null)}
+            accent={accent}
+          />
         ) : (
           <div className="flex flex-col gap-6">
             {items.map((post) => (

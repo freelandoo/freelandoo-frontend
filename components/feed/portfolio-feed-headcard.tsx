@@ -8,6 +8,7 @@ import type { CatalogCategory, CatalogMachine } from "@/components/home/machines
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { ProfessionFilterSheet } from "./profession-filter-sheet"
 import { CityFilterSheet } from "./city-filter-sheet"
+import { LevelFilterSheet, LEVEL_FILTER_OPTIONS } from "./level-filter-sheet"
 
 interface PortfolioFeedHeadcardProps {
   machines: CatalogMachine[]
@@ -16,10 +17,12 @@ interface PortfolioFeedHeadcardProps {
   selectedCategoryId: number | null
   state: string | null
   city: string | null
+  levelMin: number | null
   accent: string
   onMachineChange: (id: number | null) => void
   onCategoryChange: (id: number | null) => void
   onLocationChange: (next: { state: string | null; city: string | null }) => void
+  onLevelChange: (level: number | null) => void
   onClearAll: () => void
 }
 
@@ -40,18 +43,23 @@ export function PortfolioFeedHeadcard({
   selectedCategoryId,
   state,
   city,
+  levelMin,
   accent,
   onMachineChange,
   onCategoryChange,
   onLocationChange,
+  onLevelChange,
   onClearAll,
 }: PortfolioFeedHeadcardProps) {
   const { user, status } = useAuth()
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const activeCategory = categories.find((c) => c.id_category === selectedCategoryId) || null
-  const hasFilters = !!(activeMachine || activeCategory || state || city)
+  const hasFilters = !!(activeMachine || activeCategory || state || city || levelMin)
 
   const locationLabel = city || state || "Cidade"
+  const levelLabel =
+    LEVEL_FILTER_OPTIONS.find((option) => option.value === levelMin)?.label ||
+    "Todos os níveis"
   const isLoggedIn = status === "authenticated" && !!user
   const greetingName = (user?.nome || "").trim().split(/\s+/)[0] || ""
 
@@ -133,6 +141,18 @@ export function PortfolioFeedHeadcard({
               active={!!(state || city)}
               accent={state || city ? accent : undefined}
               icon={<MapPin className="h-3.5 w-3.5" />}
+            />
+          }
+        />
+        <LevelFilterSheet
+          selectedLevel={levelMin}
+          onChange={onLevelChange}
+          accent={accent}
+          trigger={
+            <Pill
+              label={levelLabel}
+              active={levelMin != null}
+              accent={levelMin != null ? accent : undefined}
             />
           }
         />
