@@ -11,6 +11,7 @@ import {
   type CatalogMachine,
 } from "@/components/home/machines/use-machines-catalog"
 import { MACHINES, type MachineId } from "@/components/home/machines/tokens"
+import { SearchFiltersMobile } from "./_components/filters-mobile"
 
 /**
  * Bridge map: real DB categories → machine slugs.
@@ -532,9 +533,34 @@ function SearchPageInner() {
           </div>
         )}
 
-        {/* Filter bar */}
+        {/* Filter bar — mobile (chips + bottom-sheet) */}
+        <div className="mb-6 md:hidden">
+          <SearchFiltersMobile
+            estados={ESTADOS}
+            municipios={municipios}
+            machines={machines}
+            machineCategories={machineCategories}
+            loadingMunicipios={loadingMunicipios}
+            selectedEstado={selectedEstado}
+            selectedCity={selectedCity}
+            idMachine={idMachine}
+            idCategory={idCategory}
+            levelMin={levelMin}
+            premiumOnly={premiumOnly}
+            setSelectedEstado={setSelectedEstado}
+            setSelectedCity={setSelectedCity}
+            setIdMachine={setIdMachine}
+            setIdCategory={setIdCategory}
+            setLevelMin={setLevelMin}
+            setPremiumOnly={setPremiumOnly}
+            accentColor={activeMachine ? theme.accent : undefined}
+            resultsCount={displayCreators.length}
+          />
+        </div>
+
+        {/* Filter bar — desktop */}
         <div
-          className="mb-8 rounded-lg border p-6"
+          className="mb-8 hidden rounded-lg border p-6 md:block"
           style={{
             background: activeMachine
               ? `linear-gradient(135deg, ${theme.from}08, ${theme.to}05)`
