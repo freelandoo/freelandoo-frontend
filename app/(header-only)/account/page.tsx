@@ -1646,6 +1646,12 @@ export default function PerfilPage() {
                             aria-hidden
                             className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"
                           />
+                          {manifestationApplied && (
+                            <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200 backdrop-blur-sm">
+                              <Sparkles className="h-3 w-3" />
+                              Manifestacao
+                            </span>
+                          )}
                         </button>
 
                         {/* Engrenagem (canto superior esquerdo) */}
@@ -1736,14 +1742,6 @@ export default function PerfilPage() {
                             </span>
                           )}
                         </div>
-                        {manifestationApplied && (
-                          <div className="absolute bottom-2 left-2 pointer-events-none">
-                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200 backdrop-blur-sm">
-                              <Sparkles className="h-3 w-3" />
-                              Manifestacao
-                            </span>
-                          </div>
-                        )}
 
                         <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
                           <UserRound className="h-3 w-3 text-primary/80" />
