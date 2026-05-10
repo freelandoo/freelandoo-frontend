@@ -52,15 +52,21 @@ interface ContextBundle {
 
 function buildContextBundle(
   active: ActiveContext,
-  fallbackUserName: string
+  user: { nome?: string | null; avatar?: string | null }
 ): ContextBundle {
+  // O link e a foto do user são FIXOS no /account — não mudam por contexto.
+  // Apenas os itens secundários (Ranking, Configurações) seguem o contexto ativo.
+  const userBundle = {
+    homeHref: "/account",
+    contextTag: null as null,
+    displayName: user.nome || "Perfil",
+    avatar_url: user.avatar || null,
+  }
+
   if (active.kind === "subprofile" && active.id_profile) {
     const root = `/account/profile/${active.id_profile}`
     return {
-      homeHref: root,
-      contextTag: "Sub-perfil",
-      displayName: active.name || "Sub-perfil",
-      avatar_url: active.avatar_url,
+      ...userBundle,
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
@@ -78,10 +84,7 @@ function buildContextBundle(
   if (active.kind === "clan" && active.id_profile) {
     const root = `/account/clans/${active.id_profile}`
     return {
-      homeHref: root,
-      contextTag: "Clan",
-      displayName: active.name || "Clan",
-      avatar_url: active.avatar_url,
+      ...userBundle,
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
@@ -98,10 +101,7 @@ function buildContextBundle(
   }
   // Default: user
   return {
-    homeHref: "/account",
-    contextTag: null,
-    displayName: fallbackUserName,
-    avatar_url: null,
+    ...userBundle,
     items: [
       { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
       { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
@@ -127,7 +127,7 @@ export function ProfileSidebar() {
   }
   if (status !== "authenticated" || !user) return null
 
-  const bundle = buildContextBundle(active, user.nome || "Perfil")
+  const bundle = buildContextBundle(active, user)
 
   const isAdmin =
     !!user.is_admin ||
