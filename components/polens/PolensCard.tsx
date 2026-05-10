@@ -2,34 +2,29 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { History, ShoppingBag, Store } from "lucide-react"
+import { History, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PolensBalance } from "./PolensBalance"
 import { WatchAdButton } from "./WatchAdButton"
 import { PolensHistoryModal } from "./PolensHistoryModal"
-import { PolensStore } from "./PolensStore"
 import { RewardedAdModal } from "./RewardedAdModal"
 import { RewardedAdStatus } from "./RewardedAdStatus"
 import { DailyLimitProgress } from "./DailyLimitProgress"
 import type { PolenLimits, PolenWallet } from "./types"
 
-type ProfileOption = { id_profile: string; display_name?: string; is_paid?: boolean; is_clan?: boolean }
-
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
 
-export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
+export function PolensCard() {
   const router = useRouter()
   const [wallet, setWallet] = useState<PolenWallet | null>(null)
   const [limits, setLimits] = useState<PolenLimits | null>(null)
-  const [settings, setSettings] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [storeOpen, setStoreOpen] = useState(false)
   const [adOpen, setAdOpen] = useState(false)
   const [rewardToken, setRewardToken] = useState("")
   const [rewardAmount, setRewardAmount] = useState(0)
@@ -44,7 +39,6 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
       if (!res.ok) throw new Error(data.error || "Erro ao carregar Poléns")
       setWallet(data.wallet)
       setLimits(data.limits)
-      setSettings(data.prices || {})
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar Poléns")
     } finally {
@@ -121,10 +115,6 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
             Loja de Polén
           </Button>
           <WatchAdButton disabled={loading || reachedLimit} loading={requesting} onClick={requestAd} />
-          <Button variant="outline" onClick={() => setStoreOpen(true)} className="border-amber-300/25 text-amber-100 hover:bg-amber-300/10">
-            <ShoppingBag className="mr-1 h-4 w-4" />
-            Usar Poléns
-          </Button>
           <Button variant="ghost" onClick={() => setHistoryOpen(true)} className="text-white/70 hover:text-white">
             <History className="mr-1 h-4 w-4" />
             Histórico
@@ -137,14 +127,6 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
         </p>
       )}
       <PolensHistoryModal open={historyOpen} onOpenChange={setHistoryOpen} />
-      <PolensStore
-        open={storeOpen}
-        onOpenChange={setStoreOpen}
-        balance={wallet?.balance || 0}
-        prices={settings}
-        profiles={profiles}
-        onPurchased={() => void load()}
-      />
       <RewardedAdModal
         open={adOpen}
         onOpenChange={setAdOpen}
