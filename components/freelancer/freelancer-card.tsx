@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { CheckCircle2, Instagram, Youtube, Plus } from "lucide-react"
+import { CheckCircle2, Crown, Instagram, Youtube, Plus } from "lucide-react"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { useRouter } from "next/navigation"
 import { MACHINES } from "@/components/home/machines/tokens"
@@ -39,6 +39,7 @@ interface Creator {
   machine_slug?: string | null
   is_clan?: boolean
   members_count?: number | null
+  is_premium?: boolean
 }
 
 interface FreelancerCardProps {
@@ -74,7 +75,7 @@ function PlatformIcon({ platform }: { platform: string }) {
 export function FreelancerCard({ creator, featured = false }: FreelancerCardProps) {
   const router = useRouter()
 
-  const isPremium = featured || creator.profile_statuses?.some((s) => s.desc_status === "destaque_premium")
+  const isPremium = featured || !!creator.is_premium
   const colors = getMachineColors(creator.machine_slug)
 
   const getInitials = (name: string) => {
@@ -116,16 +117,24 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
     router.push(`/freelancer/${creator.id_profile}`)
   }
 
-  // Dynamic border & glow style
-  const cardStyle: React.CSSProperties = colors
+  // Dynamic style: premium tem fundo tinted da máquina + glow permanente.
+  // Não-premium mantém border discreta + glow apenas no hover.
+  const cardStyle: React.CSSProperties = isPremium && colors
     ? {
-        borderColor: `${colors.accent}44`,
-        boxShadow: `0 0 0 0px transparent`,
+        borderColor: colors.accent,
+        background: `linear-gradient(180deg, ${colors.from}26, ${colors.to}1f)`,
+        boxShadow: `0 0 38px -6px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`,
         transition: "box-shadow 0.4s ease, border-color 0.4s ease",
       }
-    : {}
+    : colors
+      ? {
+          borderColor: `${colors.accent}44`,
+          boxShadow: `0 0 0 0px transparent`,
+          transition: "box-shadow 0.4s ease, border-color 0.4s ease",
+        }
+      : {}
 
-  const hoverHandlers = colors
+  const hoverHandlers = !isPremium && colors
     ? {
         onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
           e.currentTarget.style.boxShadow = `0 0 28px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}66`
@@ -140,29 +149,16 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
 
   return (
     <Card
-      className={`overflow-hidden transition-all duration-300 flex flex-col ${isPremium ? "border-2" : "border"}`}
-      style={{
-        ...cardStyle,
-        ...(isPremium && colors
-          ? { borderColor: colors.accent }
-          : isPremium
-            ? {}
-            : {}),
-      }}
+      className={`relative overflow-hidden transition-all duration-300 flex flex-col ${isPremium ? "border-2" : "border"}`}
+      style={cardStyle}
       data-machine={creator.machine_slug || undefined}
       {...hoverHandlers}
     >
       {isPremium && (
-        <div
-          className="py-1 text-center text-sm font-medium text-white"
-          style={
-            colors
-              ? { background: `linear-gradient(90deg, ${colors.from}, ${colors.to})` }
-              : { background: "var(--primary)", color: "var(--primary-foreground)" }
-          }
-        >
-          Destaque Premium
-        </div>
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-300/95 px-2.5 py-1 text-xs font-semibold text-zinc-900 shadow-[0_4px_12px_-2px_rgba(251,191,36,0.6)]">
+          <Crown className="h-3.5 w-3.5 fill-zinc-900" />
+          Premium
+        </span>
       )}
 
       <div className="relative aspect-square bg-muted flex items-center justify-center">
@@ -289,24 +285,38 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           onClick={handleVerPerfil}
           className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300 text-white"
           style={
-            colors
+            isPremium
               ? {
-                  background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
-                  boxShadow: `0 4px 14px -4px ${colors.glow}`,
+                  background: "#0a0a0a",
+                  color: "#fff",
+                  boxShadow: colors
+                    ? `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`
+                    : "0 6px 20px -4px rgba(0,0,0,0.5)",
                 }
-              : {
-                  background: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }
+              : colors
+                ? {
+                    background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
+                    boxShadow: `0 4px 14px -4px ${colors.glow}`,
+                  }
+                : {
+                    background: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                  }
           }
           onMouseEnter={(e) => {
-            if (colors) {
+            if (isPremium && colors) {
+              e.currentTarget.style.boxShadow = `0 8px 26px -2px ${colors.glow}, inset 0 0 0 1px ${colors.accent}88`
+              e.currentTarget.style.transform = "translateY(-1px)"
+            } else if (colors) {
               e.currentTarget.style.boxShadow = `0 6px 20px -2px ${colors.glow}`
               e.currentTarget.style.transform = "translateY(-1px)"
             }
           }}
           onMouseLeave={(e) => {
-            if (colors) {
+            if (isPremium && colors) {
+              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`
+              e.currentTarget.style.transform = "translateY(0)"
+            } else if (colors) {
               e.currentTarget.style.boxShadow = `0 4px 14px -4px ${colors.glow}`
               e.currentTarget.style.transform = "translateY(0)"
             }
