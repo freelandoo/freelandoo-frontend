@@ -1557,7 +1557,7 @@ export default function PerfilPage() {
             </div>
           </article>
 
-          <PolensCard profiles={perfil.profiles || []} />
+          <PolensCard />
 
           {/* Stats row */}
           <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
