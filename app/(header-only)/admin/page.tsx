@@ -233,6 +233,23 @@ export default function AdminPage() {
               </p>
             </CardContent>
           </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/administracao/manifestacao")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Manifestação
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Cadastro de banners, tags, preços e dashboard de uso.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
