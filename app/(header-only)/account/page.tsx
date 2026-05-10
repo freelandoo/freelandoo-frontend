@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { PolensCard } from "@/components/polens/PolensCard"
+import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
 import {
@@ -136,6 +137,7 @@ export default function PerfilPage() {
   const [isSavingMedia, setIsSavingMedia] = useState(false)
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
+  const [premiumProfile, setPremiumProfile] = useState<{ id: string; name?: string } | null>(null)
   const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
   const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
   // bolinha vermelha por sub-perfil (mural/chat) — id_profile -> has_new
@@ -1704,6 +1706,19 @@ export default function PerfilPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
 
+                        {/* Coroa: comprar premium (canto superior esquerdo, ao lado da engrenagem) */}
+                        {isPaid && (
+                          <button
+                            type="button"
+                            onClick={() => setPremiumProfile({ id: profile.id_profile, name: profile.display_name || undefined })}
+                            className="absolute top-2 left-12 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-300/95 text-zinc-900 backdrop-blur-sm transition hover:bg-amber-200 shadow-[0_4px_12px_-2px_rgba(251,191,36,0.55)]"
+                            aria-label="Tornar perfil premium"
+                            title="Tornar perfil premium"
+                          >
+                            <Crown className="h-3.5 w-3.5 fill-zinc-900" />
+                          </button>
+                        )}
+
                         {/* Status badge (canto superior direito) */}
                         <div className="absolute top-2 right-2 pointer-events-none">
                           {!isPaid ? (
@@ -2558,6 +2573,16 @@ export default function PerfilPage() {
         open={isServiceRequestOpen}
         onOpenChange={setIsServiceRequestOpen}
       />
+
+      {/* Modal Premium (comprar destaque pra um perfil) */}
+      {premiumProfile && (
+        <PremiumProfileModal
+          open={!!premiumProfile}
+          onOpenChange={(o) => { if (!o) setPremiumProfile(null) }}
+          profileId={premiumProfile.id}
+          profileName={premiumProfile.name}
+        />
+      )}
     </div>
   )
 }
