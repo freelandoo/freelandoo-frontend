@@ -1,13 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { History, ShoppingBag, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PolensBalance } from "./PolensBalance"
 import { WatchAdButton } from "./WatchAdButton"
 import { PolensHistoryModal } from "./PolensHistoryModal"
 import { PolensStore } from "./PolensStore"
-import { PolensShop } from "./PolensShop"
 import { RewardedAdModal } from "./RewardedAdModal"
 import { RewardedAdStatus } from "./RewardedAdStatus"
 import { DailyLimitProgress } from "./DailyLimitProgress"
@@ -20,6 +20,7 @@ function token() {
 }
 
 export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
+  const router = useRouter()
   const [wallet, setWallet] = useState<PolenWallet | null>(null)
   const [limits, setLimits] = useState<PolenLimits | null>(null)
   const [settings, setSettings] = useState<Record<string, number>>({})
@@ -29,7 +30,6 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
   const [error, setError] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [storeOpen, setStoreOpen] = useState(false)
-  const [shopOpen, setShopOpen] = useState(false)
   const [adOpen, setAdOpen] = useState(false)
   const [rewardToken, setRewardToken] = useState("")
   const [rewardAmount, setRewardAmount] = useState(0)
@@ -116,7 +116,7 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
           <RewardedAdStatus message={status} error={error} />
         </div>
         <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
-          <Button onClick={() => setShopOpen(true)} className="bg-amber-300/15 text-amber-100 border border-amber-300/30 hover:bg-amber-300/25">
+          <Button onClick={() => router.push("/loja-polens")} className="bg-amber-300/15 text-amber-100 border border-amber-300/30 hover:bg-amber-300/25">
             <Store className="mr-1 h-4 w-4" />
             Loja de Polén
           </Button>
@@ -137,7 +137,6 @@ export function PolensCard({ profiles }: { profiles: ProfileOption[] }) {
         </p>
       )}
       <PolensHistoryModal open={historyOpen} onOpenChange={setHistoryOpen} />
-      <PolensShop open={shopOpen} onOpenChange={setShopOpen} />
       <PolensStore
         open={storeOpen}
         onOpenChange={setStoreOpen}
