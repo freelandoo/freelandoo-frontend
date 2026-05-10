@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminPolensSettings } from "@/components/polens/AdminPolensSettings"
 import { AdminPolensMetrics } from "@/components/polens/AdminPolensMetrics"
+import { AdminPolenProducts } from "@/components/polens/AdminPolenProducts"
 
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -62,6 +63,17 @@ export default function AdminPolensPage() {
         </div>
       </div>
       <div className="grid gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cadastro de produtos</CardTitle>
+            <CardDescription>
+              Pacotes de Poléns vendidos via Stripe. Aparecem na Loja de Polén do usuário.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminPolenProducts />
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Métricas</CardTitle>
