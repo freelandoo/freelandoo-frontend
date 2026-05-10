@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { CheckCircle2, CreditCard, Hexagon, Loader2, Search, Sparkles, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,14 @@ function fmtNumber(n: number) {
 }
 
 export default function LojaPolensPage() {
+  return (
+    <Suspense fallback={<main className="min-h-[100dvh] bg-[#f8faf9]" />}>
+      <LojaPolensContent />
+    </Suspense>
+  )
+}
+
+function LojaPolensContent() {
   const params = useSearchParams()
   const checkout = params.get("polens_checkout")
 
