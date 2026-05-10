@@ -117,6 +117,21 @@ function entityInitials(name: string | null | undefined): string {
   return (a + b).toUpperCase() || "?"
 }
 
+function entityHref(entity: {
+  type?: string | null
+  id?: string | null
+  username?: string | null
+  sub_profile_slug?: string | null
+} | null | undefined): string | null {
+  if (!entity) return null
+  if (entity.type === "clan" && entity.id) return `/clans/${entity.id}`
+  if (entity.username && entity.sub_profile_slug) {
+    return `/p/${entity.username}/${entity.sub_profile_slug}`
+  }
+  if (entity.id) return `/freelancer/${entity.id}`
+  return null
+}
+
 interface ActorsResponse {
   actors: MensagensActor[]
 }
@@ -761,8 +776,10 @@ export default function MensagensClient() {
               <EmptyConversations />
             ) : (
               <ul className="divide-y divide-white/5">
-                {conversations.map((c) => (
-                  <li key={c.id_conversation}>
+                {conversations.map((c) => {
+                  const otherHref = entityHref(c.other_entity)
+                  return (
+                  <li key={c.id_conversation} className="relative">
                     <button
                       onClick={() => handleSelectConv(c.id_conversation)}
                       className={cn(
@@ -801,8 +818,17 @@ export default function MensagensClient() {
                         </div>
                       </div>
                     </button>
+                    {otherHref && (
+                      <Link
+                        href={otherHref}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Ver perfil de ${c.other_entity?.display_name || "contato"}`}
+                        className="absolute left-4 top-3 h-10 w-10 rounded-full"
+                      />
+                    )}
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -827,8 +853,15 @@ export default function MensagensClient() {
               <EmptyOsChats />
             ) : (
               <ul className="divide-y divide-white/5">
-                {visibleOsChats.map((c) => (
-                  <li key={c.id_response}>
+                {visibleOsChats.map((c) => {
+                  const profHref = entityHref({
+                    type: "profile",
+                    id: c.profile.id_profile,
+                    username: c.profile.username,
+                    sub_profile_slug: c.profile.sub_profile_slug,
+                  })
+                  return (
+                  <li key={c.id_response} className="relative">
                     <button
                       onClick={() => handleSelectOsChat(c.id_response)}
                       className={cn(
@@ -870,8 +903,17 @@ export default function MensagensClient() {
                         </div>
                       </div>
                     </button>
+                    {profHref && (
+                      <Link
+                        href={profHref}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Ver perfil de ${c.profile.display_name || "profissional"}`}
+                        className="absolute left-4 top-3 h-10 w-10 rounded-full"
+                      />
+                    )}
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -898,12 +940,25 @@ export default function MensagensClient() {
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={activeOsChat.profile.avatar_url || undefined} />
-                      <AvatarFallback className="bg-neutral-800 text-xs text-white">
-                        {entityInitials(activeOsChat.profile.display_name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    {(() => {
+                      const href = entityHref({
+                        type: "profile",
+                        id: activeOsChat.profile.id_profile,
+                        username: activeOsChat.profile.username,
+                        sub_profile_slug: activeOsChat.profile.sub_profile_slug,
+                      })
+                      const av = (
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={activeOsChat.profile.avatar_url || undefined} />
+                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                            {entityInitials(activeOsChat.profile.display_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )
+                      return href ? (
+                        <Link href={href} aria-label="Ver perfil" className="shrink-0">{av}</Link>
+                      ) : av
+                    })()}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-white">
                         {activeOsChat.profile.display_name || "Profissional"}
@@ -1090,12 +1145,20 @@ export default function MensagensClient() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={activeDetail?.other_entity?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-neutral-800 text-xs text-white">
-                    {entityInitials(activeDetail?.other_entity?.display_name)}
-                  </AvatarFallback>
-                </Avatar>
+                {(() => {
+                  const href = entityHref(activeDetail?.other_entity)
+                  const av = (
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={activeDetail?.other_entity?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                        {entityInitials(activeDetail?.other_entity?.display_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )
+                  return href ? (
+                    <Link href={href} aria-label="Ver perfil" className="shrink-0">{av}</Link>
+                  ) : av
+                })()}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-white">
                     {activeDetail?.other_entity?.display_name || "Conversa"}
