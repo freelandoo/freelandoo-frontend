@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, BarChart3, Hexagon, Loader2, Sparkles } from "lucide-react"
+import { ArrowLeft, Hexagon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminPolensSettings } from "@/components/polens/AdminPolensSettings"
@@ -62,24 +62,6 @@ export default function AdminPolensPage() {
         </div>
       </div>
       <div className="grid gap-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>Manifestacao</CardTitle>
-            <CardDescription>
-              Cadastro dos banners hospedados no R2, tag, cor, precos e dashboard de uso.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button onClick={() => router.push("/administracao/manifestacao")}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Cadastrar banners
-            </Button>
-            <Button variant="outline" onClick={() => router.push("/administracao/manifestacao")}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Dashboard de uso
-            </Button>
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Métricas</CardTitle>
