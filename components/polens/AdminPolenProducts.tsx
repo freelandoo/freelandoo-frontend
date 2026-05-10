@@ -73,6 +73,7 @@ export function AdminPolenProducts() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "price_brl" | "polens_amount", string>>>({})
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const load = useCallback(async () => {
@@ -101,6 +102,8 @@ export function AdminPolenProducts() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFile(null)
+    setFieldErrors({})
+    setError(null)
     setOpen(true)
   }
 
@@ -117,6 +120,8 @@ export function AdminPolenProducts() {
       image_url: p.image_url || "",
     })
     setFile(null)
+    setFieldErrors({})
+    setError(null)
     setOpen(true)
   }
 
@@ -125,9 +130,19 @@ export function AdminPolenProducts() {
     if (!t) return
     const price_cents = parseBrlToCents(form.price_brl)
     const polens_amount = Number(form.polens_amount)
-    if (!form.name.trim()) { setError("Nome obrigatório"); return }
-    if (price_cents <= 0) { setError("Preço deve ser maior que zero"); return }
-    if (!Number.isFinite(polens_amount) || polens_amount <= 0) { setError("Quantidade de Poléns deve ser maior que zero"); return }
+
+    const nextErrors: typeof fieldErrors = {}
+    if (!form.name.trim()) nextErrors.name = "Insira o nome do produto"
+    if (!form.price_brl.trim()) nextErrors.price_brl = "Insira o preço"
+    else if (price_cents <= 0) nextErrors.price_brl = "Preço deve ser maior que zero"
+    if (!form.polens_amount.trim()) nextErrors.polens_amount = "Insira a quantidade de Poléns"
+    else if (!Number.isFinite(polens_amount) || polens_amount <= 0) nextErrors.polens_amount = "Quantidade deve ser maior que zero"
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors)
+      return
+    }
+    setFieldErrors({})
 
     setSaving(true)
     setError(null)
@@ -254,9 +269,15 @@ export function AdminPolenProducts() {
               <Input
                 id="pp-name"
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                  if (fieldErrors.name) setFieldErrors((p) => ({ ...p, name: undefined }))
+                }}
                 placeholder="Ex.: Pacote 100 Poléns"
+                aria-invalid={!!fieldErrors.name}
+                className={fieldErrors.name ? "border-rose-500 focus-visible:ring-rose-500/40" : undefined}
               />
+              {fieldErrors.name && <p className="mt-1 text-xs text-rose-400">{fieldErrors.name}</p>}
             </div>
             <div>
               <Label htmlFor="pp-desc">Descrição</Label>
@@ -275,9 +296,15 @@ export function AdminPolenProducts() {
                   id="pp-price"
                   inputMode="decimal"
                   value={form.price_brl}
-                  onChange={(e) => setForm((f) => ({ ...f, price_brl: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, price_brl: e.target.value }))
+                    if (fieldErrors.price_brl) setFieldErrors((p) => ({ ...p, price_brl: undefined }))
+                  }}
                   placeholder="9,90"
+                  aria-invalid={!!fieldErrors.price_brl}
+                  className={fieldErrors.price_brl ? "border-rose-500 focus-visible:ring-rose-500/40" : undefined}
                 />
+                {fieldErrors.price_brl && <p className="mt-1 text-xs text-rose-400">{fieldErrors.price_brl}</p>}
               </div>
               <div>
                 <Label htmlFor="pp-polens">Poléns</Label>
@@ -285,9 +312,15 @@ export function AdminPolenProducts() {
                   id="pp-polens"
                   inputMode="numeric"
                   value={form.polens_amount}
-                  onChange={(e) => setForm((f) => ({ ...f, polens_amount: e.target.value.replace(/\D/g, "") }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, polens_amount: e.target.value.replace(/\D/g, "") }))
+                    if (fieldErrors.polens_amount) setFieldErrors((p) => ({ ...p, polens_amount: undefined }))
+                  }}
                   placeholder="100"
+                  aria-invalid={!!fieldErrors.polens_amount}
+                  className={fieldErrors.polens_amount ? "border-rose-500 focus-visible:ring-rose-500/40" : undefined}
                 />
+                {fieldErrors.polens_amount && <p className="mt-1 text-xs text-rose-400">{fieldErrors.polens_amount}</p>}
               </div>
               <div>
                 <Label htmlFor="pp-bonus">Bônus</Label>
