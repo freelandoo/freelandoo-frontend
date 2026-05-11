@@ -178,9 +178,7 @@ function CourseCard({
         onClick={() =>
           isOwner
             ? onManage?.(course.id)
-            : course.slug
-              ? router.push(`/cursos/${course.slug}`)
-              : toast.info("A página pública deste curso ainda não está disponível.")
+            : router.push(`/account/courses/${course.id}/watch`)
         }
         className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
         aria-label={`Abrir curso ${course.title}`}
