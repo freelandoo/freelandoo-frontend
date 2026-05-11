@@ -24,6 +24,7 @@ import { fetchWithLog } from "@/lib/fetch-with-log"
 import type { CourseStatus, MyCourse } from "@/hooks/use-my-courses"
 import { CourseDataSection } from "./section-data"
 import { CourseModulesSection } from "./section-modules"
+import { CourseStudentsSection } from "./section-students"
 import { ComingSoonSection } from "./section-coming-soon"
 
 interface Props {
@@ -254,7 +255,9 @@ export function CourseAdminView({ courseId }: Props) {
                           }`}
                         />
                         <span className="flex-1 truncate">{s.label}</span>
-                        {s.key !== "data" && s.key !== "modules" && (
+                        {s.key !== "data" &&
+                          s.key !== "modules" &&
+                          s.key !== "students" && (
                           <span className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider text-white/45">
                             em breve
                           </span>
@@ -297,7 +300,12 @@ export function CourseAdminView({ courseId }: Props) {
                     onModulesChanged={loadCourse}
                   />
                 )}
-                {activeSection !== "data" && activeSection !== "modules" && (
+                {activeSection === "students" && (
+                  <CourseStudentsSection courseId={course.id} />
+                )}
+                {activeSection !== "data" &&
+                  activeSection !== "modules" &&
+                  activeSection !== "students" && (
                   <ComingSoonSection
                     label={sectionMeta.label}
                     slice={sectionMeta.slice}

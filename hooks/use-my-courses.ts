@@ -24,6 +24,7 @@ export interface MyCourse {
   modules_count: number
   lessons_count: number
   students_count: number
+  revenue_cents?: number
 }
 
 export interface CourseCreateInput {
