@@ -41,6 +41,13 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
+  const primaryUrl = post.project_url || post.public_profile_url
+  const primaryLabel =
+    post.source_type === "course"
+      ? "Ver curso"
+      : post.project_url
+        ? "Abrir link"
+        : "Ver perfil"
 
   const handleLike = async () => {
     const token = getToken()
@@ -93,9 +100,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
 
   const handleShare = async () => {
     const url =
-      (post.public_profile_url
+      (primaryUrl
         ? new URL(
-            post.public_profile_url,
+            primaryUrl,
             typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
           ).toString()
         : null) || (typeof window !== "undefined" ? window.location.href : "")
@@ -256,9 +263,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
             <Share2 className="h-5 w-5" />
           )}
         </button>
-        {post.public_profile_url && (
+        {primaryUrl && (
           <Link
-            href={post.public_profile_url}
+            href={primaryUrl}
             onClick={handleProfileClick}
             className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/85 transition hover:text-white active:scale-95"
             style={{
@@ -267,7 +274,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
             }}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            Ver perfil
+            {primaryLabel}
           </Link>
         )}
       </div>
