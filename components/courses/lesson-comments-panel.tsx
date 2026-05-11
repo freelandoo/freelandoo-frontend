@@ -49,7 +49,7 @@ function CommentItem({
   onDelete: () => void
 }) {
   return (
-    <li className="flex gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+    <li className="flex gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-white/15">
       {comment.author_avatar ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -135,7 +135,7 @@ export function LessonCommentsPanel({ courseId, lessonId, moduleId, mode }: Prop
   }
 
   return (
-    <section className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+    <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
@@ -196,8 +196,10 @@ export function LessonCommentsPanel({ courseId, lessonId, moduleId, mode }: Prop
       )}
 
       {!isLoading && !error && comments.length === 0 && (
-        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-6 text-center text-sm text-white/45">
-          Ainda não há comentários nesta aula.
+        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-4 py-6 text-center text-sm text-white/50">
+          {mode === "owner"
+            ? "Nenhuma conversa ainda. Quando alunos comentarem, você acompanha e modera por aqui."
+            : "Seja a primeira pessoa a comentar esta aula."}
         </div>
       )}
 

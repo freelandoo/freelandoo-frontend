@@ -172,7 +172,7 @@ function CourseCard({
   const progress = course.progress_percent ?? 0
 
   return (
-    <div className="group relative">
+    <article className="group relative rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_45px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.1)]">
       <button
         type="button"
         onClick={() =>
@@ -180,7 +180,7 @@ function CourseCard({
             ? onManage?.(course.id)
             : router.push(`/account/courses/${course.id}/watch`)
         }
-        className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
+        className="relative block aspect-[16/9] w-full overflow-hidden rounded-[1rem] border border-white/[0.07] bg-zinc-900/80 transition hover:border-primary/35"
         aria-label={`Abrir curso ${course.title}`}
       >
         {course.cover_url ? (
@@ -188,16 +188,16 @@ function CourseCard({
           <img
             src={course.cover_url}
             alt={course.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <GraduationCap className="h-10 w-10 text-white/25" />
+          <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_35%_25%,rgba(242,196,9,0.16),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))]">
+            <GraduationCap className="h-10 w-10 text-primary/45" />
           </div>
         )}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent"
         />
         {isOwner && (
           <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-sm">
@@ -222,7 +222,7 @@ function CourseCard({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
+              className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 shadow-[0_8px_20px_rgba(0,0,0,0.22)] backdrop-blur-sm transition hover:border-primary/40 hover:text-primary"
               aria-label="Ações do curso"
             >
               <Settings className="h-3.5 w-3.5" />
@@ -261,14 +261,14 @@ function CourseCard({
       {!isOwner && course.slug && (
         <Link
           href={`/cursos/${course.slug}`}
-          className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
+          className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition hover:border-primary/40 hover:text-primary"
           aria-label="Ver página pública do curso"
         >
           <Eye className="h-3.5 w-3.5" />
         </Link>
       )}
 
-      <div className="mt-2 min-w-0">
+      <div className="min-w-0 px-1.5 pb-1 pt-3">
         <p className="inline-flex w-full items-center gap-1.5 text-sm font-medium text-white">
           <GraduationCap className="h-3 w-3 shrink-0 text-primary/80" />
           <span className="truncate">{course.title}</span>
@@ -292,14 +292,40 @@ function CourseCard({
             <span className="truncate">por {course.creator_name}</span>
           )}
         </div>
+        {!isOwner && (
+          <div className="mt-3">
+            <div className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-white/35">
+              <span>Progresso</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+              <div
+                className="h-full rounded-full bg-primary transition-[width]"
+                style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </article>
   )
 }
 
 // ---------------------------------------------------------------------------
 // Estado vazio
 // ---------------------------------------------------------------------------
+
+function CourseCardSkeleton() {
+  return (
+    <div className="rounded-[1.35rem] border border-white/[0.08] bg-white/[0.025] p-2.5">
+      <div className="aspect-[16/9] animate-pulse rounded-[1rem] bg-white/[0.05]" />
+      <div className="px-1.5 pb-1 pt-3">
+        <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/[0.06]" />
+        <div className="mt-2 h-3 w-1/2 animate-pulse rounded-full bg-white/[0.04]" />
+      </div>
+    </div>
+  )
+}
 
 function EmptyState({
   variant,
@@ -310,9 +336,9 @@ function EmptyState({
 }) {
   if (variant === "created") {
     return (
-      <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
-        <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
-          <GraduationCap className="h-7 w-7 text-white/45" />
+      <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.12),transparent_34%),rgba(255,255,255,0.018)] p-8 text-center sm:p-10">
+        <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+          <GraduationCap className="h-7 w-7 text-primary" />
         </div>
         <p className="text-sm font-medium text-white/85">
           Você ainda não criou nenhum curso
@@ -321,7 +347,11 @@ function EmptyState({
           Crie cursos gratuitamente. Defina módulos, aulas, vídeos e materiais.
           Para publicar e vender, o curso precisa ter no mínimo R$ 5,00.
         </p>
-        <Button type="button" onClick={onCreate} className="mt-4 rounded-full">
+        <Button
+          type="button"
+          onClick={onCreate}
+          className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Criar meu primeiro curso
         </Button>
@@ -329,9 +359,9 @@ function EmptyState({
     )
   }
   return (
-    <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
-      <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
-        <ShoppingBag className="h-7 w-7 text-white/45" />
+    <div className="rounded-[1.5rem] border border-dashed border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))] p-8 text-center sm:p-10">
+      <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+        <ShoppingBag className="h-7 w-7 text-primary/80" />
       </div>
       <p className="text-sm font-medium text-white/85">
         Você ainda não comprou nenhum curso
@@ -341,8 +371,8 @@ function EmptyState({
         outros criadores.
       </p>
       <Link
-        href="/explorar"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+        href="/feed"
+        className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90"
       >
         Explorar cursos
       </Link>
@@ -678,9 +708,10 @@ export function CoursesSection({ profileOptions = [] }: Props) {
         {/* Conteúdo */}
         <div>
           {tab === "created" && isLoading && (
-            <div className="flex items-center justify-center py-12 text-white/55">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Carregando cursos...
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <CourseCardSkeleton />
+              <CourseCardSkeleton />
+              <CourseCardSkeleton />
             </div>
           )}
 
@@ -713,9 +744,10 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           )}
 
           {tab === "purchased" && loadingPurchased && (
-            <div className="flex items-center justify-center py-12 text-white/55">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Carregando cursos comprados...
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <CourseCardSkeleton />
+              <CourseCardSkeleton />
+              <CourseCardSkeleton />
             </div>
           )}
 

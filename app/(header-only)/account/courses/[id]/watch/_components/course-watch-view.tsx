@@ -97,14 +97,18 @@ export function CourseWatchView({ courseId }: Props) {
 
   async function toggleCompleted() {
     if (!activeLesson) return
+    const wasCompleted = activeLesson.is_completed
     setSavingProgress(true)
     try {
-      await setLessonCompleted(activeLesson.id, !activeLesson.is_completed)
-      toast.success(
-        activeLesson.is_completed
-          ? "Aula marcada como pendente."
-          : "Aula concluída.",
-      )
+      await setLessonCompleted(activeLesson.id, !wasCompleted)
+      if (!wasCompleted && nextLesson) {
+        toast.success("Aula concluída. Indo para a próxima…")
+        setLessonId(nextLesson.id)
+      } else {
+        toast.success(
+          wasCompleted ? "Aula marcada como pendente." : "Aula concluída.",
+        )
+      }
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Falha ao atualizar progresso",
@@ -149,7 +153,7 @@ export function CourseWatchView({ courseId }: Props) {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 px-4 py-6 text-white md:px-8 md:py-8">
+    <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 text-white md:px-8 md:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <Link
@@ -178,7 +182,7 @@ export function CourseWatchView({ courseId }: Props) {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="min-w-0 space-y-5">
-            <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <div className="overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-zinc-900 shadow-[0_18px_55px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.08)]">
               {activeLesson?.video_url ? (
                 <video
                   src={activeLesson.video_url}
@@ -187,7 +191,7 @@ export function CourseWatchView({ courseId }: Props) {
                   className="aspect-video w-full bg-zinc-950"
                 />
               ) : (
-                <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-zinc-950 text-white/45">
+                <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_center,rgba(242,196,9,0.08),transparent_34%),#09090b] text-white/45">
                   {activeLesson ? (
                     <>
                       <Video className="h-10 w-10" />
@@ -204,7 +208,7 @@ export function CourseWatchView({ courseId }: Props) {
             </div>
 
             {activeLesson && (
-              <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+              <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="text-lg font-semibold">
@@ -252,9 +256,9 @@ export function CourseWatchView({ courseId }: Props) {
               </section>
             )}
 
-            {(data.materials.length > 0 || data.questions.length > 0) && (
+            {activeLesson && (
               <div className="grid gap-4 md:grid-cols-2">
-                <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                <section className="rounded-[1.25rem] border border-white/[0.08] bg-white/[0.025] p-4">
                   <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
                     <FileText className="h-4 w-4 text-primary" />
                     Materiais
@@ -275,11 +279,13 @@ export function CourseWatchView({ courseId }: Props) {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-white/45">Sem materiais nesta aula.</p>
+                    <p className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-3 py-5 text-center text-sm text-white/50">
+                      Esta aula não tem material de apoio.
+                    </p>
                   )}
                 </section>
 
-                <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                <section className="rounded-[1.25rem] border border-white/[0.08] bg-white/[0.025] p-4">
                   <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
                     <HelpCircle className="h-4 w-4 text-primary" />
                     Questionário
@@ -308,7 +314,9 @@ export function CourseWatchView({ courseId }: Props) {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-white/45">Sem questionário nesta aula.</p>
+                    <p className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-3 py-5 text-center text-sm text-white/50">
+                      Esta aula não tem questionário.
+                    </p>
                   )}
                 </section>
               </div>
@@ -323,28 +331,44 @@ export function CourseWatchView({ courseId }: Props) {
             )}
           </section>
 
-          <aside className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
+          <aside className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
             <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
               Aulas publicadas
             </p>
             <div className="space-y-3">
-              {data.modules.map((module) => (
-                <section key={module.id}>
-                  <p className="mb-1 px-2 text-xs font-semibold text-white/65">
-                    {module.title}
-                  </p>
-                  <div className="space-y-1">
-                    {module.lessons.map((lesson) => (
-                      <LessonRow
-                        key={lesson.id}
-                        lesson={lesson}
-                        active={activeLesson?.id === lesson.id}
-                        onSelect={() => setLessonId(lesson.id)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
+              {data.modules.map((module) => {
+                const moduleCompleted = module.lessons.filter(
+                  (l) => l.is_completed,
+                ).length
+                const moduleTotal = module.lessons.length
+                const allDone = moduleTotal > 0 && moduleCompleted === moduleTotal
+                return (
+                  <section key={module.id}>
+                    <div className="mb-1 flex items-center justify-between gap-2 px-2">
+                      <p className="truncate text-xs font-semibold text-white/65">
+                        {module.title}
+                      </p>
+                      <span
+                        className={`shrink-0 font-mono text-[10px] ${
+                          allDone ? "text-emerald-300/85" : "text-white/40"
+                        }`}
+                      >
+                        {moduleCompleted}/{moduleTotal}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {module.lessons.map((lesson) => (
+                        <LessonRow
+                          key={lesson.id}
+                          lesson={lesson}
+                          active={activeLesson?.id === lesson.id}
+                          onSelect={() => setLessonId(lesson.id)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )
+              })}
               {data.modules.length === 0 && (
                 <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-white/45">
                   Este curso ainda não tem aulas publicadas.
