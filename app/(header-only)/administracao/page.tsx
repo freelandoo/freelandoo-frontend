@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   Shield,
+  ShieldCheck,
+  ShieldOff,
   Users,
   Search,
   CheckCircle2,
@@ -98,6 +100,8 @@ export default function AdministracaoPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [updatingAdminId, setUpdatingAdminId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -119,6 +123,7 @@ export default function AdministracaoPage() {
           router.push("/")
           return
         }
+        setCurrentUserId(data.id_user ?? data.id ?? null)
         setIsAdmin(true)
         setCheckingAuth(false)
         fetchUsers(token)
@@ -160,6 +165,40 @@ export default function AdministracaoPage() {
       ),
     )
   }, [searchTerm, users])
+
+  async function toggleAdmin(user: UserAdmin, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (user.id_user === currentUserId) return
+    const willBeAdmin = !user.is_admin
+    const action = willBeAdmin ? "promover" : "remover de admin"
+    if (!window.confirm(`Tem certeza que deseja ${action} ${user.nome}?`)) return
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setUpdatingAdminId(user.id_user)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id_user}/admin`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_admin: willBeAdmin }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        window.alert(data.error || "Erro ao atualizar admin.")
+        return
+      }
+      setUsers((prev) =>
+        prev.map((u) => (u.id_user === user.id_user ? { ...u, is_admin: willBeAdmin } : u))
+      )
+    } catch {
+      window.alert("Erro de rede ao atualizar admin.")
+    } finally {
+      setUpdatingAdminId(null)
+    }
+  }
 
   function toggleRow(id_user: string) {
     setExpandedRows((prev) => {
@@ -368,15 +407,40 @@ export default function AdministracaoPage() {
 
                           {/* Nome + email */}
                           <td className="px-4 py-3">
-                            <p className="text-sm font-medium text-foreground">
-                              {u.nome}
-                              {u.is_admin && (
-                                <Badge className="ml-2 bg-primary px-1.5 py-0 text-[10px] text-primary-foreground">
-                                  Admin
-                                </Badge>
+                            <div className="flex items-center gap-2">
+                              {u.id_user !== currentUserId && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleAdmin(u, e)}
+                                  disabled={updatingAdminId === u.id_user}
+                                  title={u.is_admin ? "Remover privilégios de admin" : "Promover a admin"}
+                                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                                    u.is_admin
+                                      ? "border-primary/40 bg-primary/15 text-primary hover:bg-primary/25"
+                                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/40 hover:text-primary"
+                                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                  {updatingAdminId === u.id_user ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : u.is_admin ? (
+                                    <ShieldOff className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <ShieldCheck className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
                               )}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground">
+                                  {u.nome}
+                                  {u.is_admin && (
+                                    <Badge className="ml-2 bg-primary px-1.5 py-0 text-[10px] text-primary-foreground">
+                                      Admin
+                                    </Badge>
+                                  )}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{u.email}</p>
+                              </div>
+                            </div>
                           </td>
 
                           {/* Premium */}
