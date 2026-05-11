@@ -153,6 +153,61 @@ export function useMyCourses() {
     [],
   )
 
+  const uploadCourseCover = useCallback(
+    async (id: string, file: File): Promise<MyCourse> => {
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const form = new FormData()
+      form.append("cover", file)
+      const res = await fetchWithLog(
+        "useMyCourses:uploadCover",
+        `/api/me/courses/${encodeURIComponent(id)}/cover`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { course?: MyCourse; error?: string }
+        | null
+      if (!res.ok || !data?.course) {
+        throw new Error(extractError(data, "Falha ao enviar capa"))
+      }
+      setCourses((prev) =>
+        prev.map((c) => (c.id === id ? data.course! : c)),
+      )
+      return data.course
+    },
+    [],
+  )
+
+  const removeCourseCover = useCallback(
+    async (id: string): Promise<MyCourse> => {
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const res = await fetchWithLog(
+        "useMyCourses:removeCover",
+        `/api/me/courses/${encodeURIComponent(id)}/cover`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { course?: MyCourse; error?: string }
+        | null
+      if (!res.ok || !data?.course) {
+        throw new Error(extractError(data, "Falha ao remover capa"))
+      }
+      setCourses((prev) =>
+        prev.map((c) => (c.id === id ? data.course! : c)),
+      )
+      return data.course
+    },
+    [],
+  )
+
   const deleteCourse = useCallback(async (id: string): Promise<void> => {
     const token = getToken()
     if (!token) throw new Error("Não autenticado")
@@ -179,5 +234,7 @@ export function useMyCourses() {
     createCourse,
     updateCourse,
     deleteCourse,
+    uploadCourseCover,
+    removeCourseCover,
   }
 }
