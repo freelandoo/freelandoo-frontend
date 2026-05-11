@@ -44,6 +44,9 @@ export interface FeedPost {
   state: string | null
   title: string | null
   caption: string | null
+  project_url: string | null
+  source_type: "portfolio" | "course"
+  source_course_id: string | null
   media: FeedMedia[]
   likes_count: number
   shares_count: number
