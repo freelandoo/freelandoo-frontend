@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
 import { ServiceRequestModal } from "./_components/service-request-modal"
+import { CoursesSection } from "./_components/courses-section"
 import { PolensCard } from "@/components/polens/PolensCard"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
@@ -1922,6 +1923,16 @@ export default function PerfilPage() {
               )}
             </div>
           </article>
+
+          {/* Meus Cursos */}
+          <CoursesSection
+            profileOptions={(perfil.profiles || [])
+              .filter((p) => !p.is_clan)
+              .map((p) => ({
+                id: p.id_profile,
+                name: p.display_name || "Perfil sem nome",
+              }))}
+          />
         </div>
       </main>
 
