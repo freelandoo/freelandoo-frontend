@@ -12,10 +12,10 @@ import {
   PlaySquare,
 } from "lucide-react"
 import { useCourseModules } from "@/hooks/use-course-modules"
-import { useAllCourseLessons } from "@/hooks/use-all-course-lessons"
+import { useModuleLessons } from "@/hooks/use-module-lessons"
 import { useCourseLesson } from "@/hooks/use-course-lesson"
 import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
-import { LessonSidebar } from "./lesson-sidebar"
+import { LessonModuleSidebar } from "./lesson-module-sidebar"
 import { LessonDataForm } from "./lesson-data-form"
 import { LessonVideoPlaceholder } from "./lesson-video-placeholder"
 import { LessonMaterialsBlock } from "./lesson-materials-block"
@@ -52,8 +52,6 @@ function LessonStatusPill({ status }: { status: "draft" | "published" | "hidden"
 export function LessonAdminView({ courseId, lessonId }: Props) {
   const router = useRouter()
   const { modules, isLoading: loadingModules } = useCourseModules(courseId)
-  const { lessons: allLessons, isLoading: loadingAllLessons, refresh: refreshAllLessons } =
-    useAllCourseLessons(courseId)
   const {
     lesson,
     isLoading: loadingLesson,
@@ -63,25 +61,25 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
     removeVideo,
   } = useCourseLesson(courseId, lessonId)
 
-  // Lista ordenada (módulo asc, aula asc) para navegação anterior/próxima.
+  // Carrega as aulas DO MÓDULO da aula atual (não do curso inteiro).
+  // Antes era useAllCourseLessons (todas aulas do curso) — agora a sidebar
+  // foca no módulo, então só precisamos das aulas-irmãs.
+  const moduleIdForLessons = lesson?.module_id ?? null
+  const {
+    lessons: moduleLessons,
+    isLoading: loadingModuleLessons,
+    refresh: refreshModuleLessons,
+  } = useModuleLessons(courseId, moduleIdForLessons)
+
+  const currentModule = useMemo(
+    () => modules.find((m) => m.id === lesson?.module_id) ?? null,
+    [modules, lesson?.module_id],
+  )
+
+  // Navegação anterior/próxima APENAS dentro do módulo atual.
   const flatOrder = useMemo(() => {
-    const modulePos = new Map<string, number>()
-    for (const m of modules) modulePos.set(m.id, m.position)
-    const items = allLessons
-      .filter((l) => modulePos.has(l.module_id))
-      .map((l) => ({
-        id: l.id,
-        title: l.title,
-        modulePosition: modulePos.get(l.module_id) ?? 0,
-        lessonPosition: l.position,
-      }))
-    items.sort((a, b) => {
-      if (a.modulePosition !== b.modulePosition)
-        return a.modulePosition - b.modulePosition
-      return a.lessonPosition - b.lessonPosition
-    })
-    return items
-  }, [modules, allLessons])
+    return [...moduleLessons].sort((a, b) => a.position - b.position)
+  }, [moduleLessons])
 
   const currentIndex = flatOrder.findIndex((i) => i.id === lessonId)
   const prevLesson = currentIndex > 0 ? flatOrder[currentIndex - 1] : null
@@ -90,7 +88,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
       ? flatOrder[currentIndex + 1]
       : null
 
-  const isLoading = loadingLesson || loadingModules || loadingAllLessons
+  const isLoading = loadingLesson || loadingModules || loadingModuleLessons
 
   return (
     <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 md:px-8 md:py-10">
@@ -98,11 +96,15 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link
-            href={`/account/courses/${courseId}`}
+            href={
+              lesson
+                ? `/account/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(lesson.module_id)}`
+                : `/account/courses/${encodeURIComponent(courseId)}`
+            }
             className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            Voltar para o curso
+            Voltar ao módulo
           </Link>
           {lesson && <LessonStatusPill status={lesson.status} />}
 
@@ -169,13 +171,13 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
             </h1>
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-              {/* Sidebar */}
-              <aside className="lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
-                <LessonSidebar
+              {/* Sidebar focada no módulo da aula atual */}
+              <aside className="lg:sticky lg:top-6">
+                <LessonModuleSidebar
                   courseId={courseId}
+                  module={currentModule}
                   currentLessonId={lessonId}
-                  modules={modules}
-                  lessons={allLessons}
+                  lessons={moduleLessons}
                   isLoading={isLoading}
                 />
               </aside>
@@ -187,12 +189,12 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                   lesson={lesson}
                   onUpload={async (file, onProgress) => {
                     const updated = await uploadVideo(file, onProgress)
-                    await refreshAllLessons()
+                    await refreshModuleLessons()
                     return updated
                   }}
                   onRemove={async () => {
                     const updated = await removeVideo()
-                    await refreshAllLessons()
+                    await refreshModuleLessons()
                     return updated
                   }}
                 />
@@ -213,7 +215,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                     onSave={async (patch) => {
                       await updateLesson(patch)
                       // Refresca a sidebar (título/status podem ter mudado).
-                      await refreshAllLessons()
+                      await refreshModuleLessons()
                     }}
                   />
                 </section>
