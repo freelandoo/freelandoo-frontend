@@ -109,6 +109,114 @@ export function useCourseLesson(
     [courseId, lesson],
   )
 
+  // ---------------------------------------------------------------
+  // Slice 7 — Vídeo
+  // ---------------------------------------------------------------
+
+  /**
+   * Upload do vídeo da aula via XHR para conseguirmos progress real.
+   * onProgress recebe 0..1.
+   */
+  const uploadVideo = useCallback(
+    async (
+      file: File,
+      onProgress?: (ratio: number) => void,
+    ): Promise<CourseLesson> => {
+      if (!courseId || !lesson) throw new Error("Aula não carregada")
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+
+      const form = new FormData()
+      form.append("video", file)
+
+      const url = `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(lesson.module_id)}/lessons/${encodeURIComponent(lesson.id)}/video`
+
+      // UI imediata: deixa em "uploading" enquanto o XHR roda.
+      setLesson((prev) =>
+        prev ? { ...prev, video_status: "uploading" } : prev,
+      )
+
+      return new Promise<CourseLesson>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open("POST", url)
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+
+        if (onProgress) {
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable && evt.total > 0) {
+              onProgress(evt.loaded / evt.total)
+            }
+          }
+        }
+
+        xhr.onload = () => {
+          let data: unknown = null
+          try {
+            data = JSON.parse(xhr.responseText)
+          } catch {
+            data = null
+          }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const next = (data as { lesson?: CourseLesson } | null)?.lesson
+            if (next) {
+              setLesson(next)
+              resolve(next)
+              return
+            }
+            reject(new Error("Resposta inválida do servidor"))
+            return
+          }
+          // Falha — reflete erro no estado para o usuário ver.
+          setLesson((prev) =>
+            prev ? { ...prev, video_status: "error" } : prev,
+          )
+          reject(
+            new Error(extractError(data, "Falha ao enviar vídeo")),
+          )
+        }
+
+        xhr.onerror = () => {
+          setLesson((prev) =>
+            prev ? { ...prev, video_status: "error" } : prev,
+          )
+          reject(new Error("Falha de rede ao enviar vídeo"))
+        }
+
+        xhr.onabort = () => {
+          setLesson((prev) =>
+            prev ? { ...prev, video_status: "error" } : prev,
+          )
+          reject(new Error("Upload cancelado"))
+        }
+
+        xhr.send(form)
+      })
+    },
+    [courseId, lesson],
+  )
+
+  const removeVideo = useCallback(async (): Promise<CourseLesson> => {
+    if (!courseId || !lesson) throw new Error("Aula não carregada")
+    const token = getToken()
+    if (!token) throw new Error("Não autenticado")
+    const res = await fetchWithLog(
+      "useCourseLesson:removeVideo",
+      `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(lesson.module_id)}/lessons/${encodeURIComponent(lesson.id)}/video`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    )
+    const data = (await readJsonSafe(res)) as
+      | { lesson?: CourseLesson; error?: string }
+      | null
+    if (!res.ok || !data?.lesson) {
+      throw new Error(extractError(data, "Falha ao remover vídeo"))
+    }
+    setLesson(data.lesson)
+    return data.lesson
+  }, [courseId, lesson])
+
   const deleteLesson = useCallback(async (): Promise<void> => {
     if (!courseId || !lesson) throw new Error("Aula não carregada")
     const token = getToken()
@@ -128,5 +236,14 @@ export function useCourseLesson(
     setLesson(null)
   }, [courseId, lesson])
 
-  return { lesson, isLoading, error, refresh, updateLesson, deleteLesson }
+  return {
+    lesson,
+    isLoading,
+    error,
+    refresh,
+    updateLesson,
+    deleteLesson,
+    uploadVideo,
+    removeVideo,
+  }
 }

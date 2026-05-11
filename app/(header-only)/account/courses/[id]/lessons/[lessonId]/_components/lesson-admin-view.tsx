@@ -57,6 +57,8 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
     isLoading: loadingLesson,
     error: lessonError,
     updateLesson,
+    uploadVideo,
+    removeVideo,
   } = useCourseLesson(courseId, lessonId)
 
   // Lista ordenada (módulo asc, aula asc) para navegação anterior/próxima.
@@ -178,10 +180,19 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
 
               {/* Área principal */}
               <div className="space-y-5">
-                {/* Player de vídeo (placeholder Slice 7) */}
+                {/* Player de vídeo + upload (Slice 7) */}
                 <LessonVideoPlaceholder
-                  videoStatus={lesson.video_status}
-                  thumbnailUrl={lesson.thumbnail_url}
+                  lesson={lesson}
+                  onUpload={async (file, onProgress) => {
+                    const updated = await uploadVideo(file, onProgress)
+                    await refreshAllLessons()
+                    return updated
+                  }}
+                  onRemove={async () => {
+                    const updated = await removeVideo()
+                    await refreshAllLessons()
+                    return updated
+                  }}
                 />
 
                 {/* Dados da aula (editável) */}

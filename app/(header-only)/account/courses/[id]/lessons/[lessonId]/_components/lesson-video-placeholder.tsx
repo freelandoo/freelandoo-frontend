@@ -1,76 +1,276 @@
 "use client"
 
+import { useCallback, useRef, useState } from "react"
 import {
   Video,
   VideoOff,
   Loader2,
   AlertTriangle,
-  CircleCheck,
   UploadCloud,
+  Trash2,
+  RefreshCw,
 } from "lucide-react"
-import type { VideoStatus } from "@/hooks/use-module-lessons"
+import type { CourseLesson } from "@/hooks/use-module-lessons"
 
 interface Props {
-  videoStatus: VideoStatus
-  thumbnailUrl: string | null
+  lesson: CourseLesson
+  onUpload: (
+    file: File,
+    onProgress?: (ratio: number) => void,
+  ) => Promise<CourseLesson>
+  onRemove: () => Promise<CourseLesson>
 }
 
-export function LessonVideoPlaceholder({ videoStatus, thumbnailUrl }: Props) {
-  let icon: React.ReactNode
-  let title: string
-  let subtitle: string
+const ACCEPTED_MIME = ["video/mp4", "video/quicktime", "video/webm"]
+const ACCEPTED_HINT = ".mp4, .mov, .webm"
+const MAX_BYTES = 100 * 1024 * 1024
 
-  if (videoStatus === "ready") {
-    icon = <CircleCheck className="h-9 w-9 text-emerald-300" />
-    title = "Vídeo pronto"
-    subtitle = "Player do criador chega no Slice 7. Aluno assiste no Slice 14."
-  } else if (videoStatus === "processing") {
-    icon = <Loader2 className="h-9 w-9 animate-spin text-sky-300" />
-    title = "Processando vídeo..."
-    subtitle = "O Slice 8 cuida de comprimir e padronizar em 4:5."
-  } else if (videoStatus === "uploading") {
-    icon = <UploadCloud className="h-9 w-9 text-sky-300" />
-    title = "Enviando vídeo..."
-    subtitle = "Aguarde o upload terminar para continuar."
-  } else if (videoStatus === "error") {
-    icon = <AlertTriangle className="h-9 w-9 text-red-300" />
-    title = "Erro no vídeo"
-    subtitle = "Algo deu errado. Tente enviar novamente no Slice 7."
-  } else {
-    icon = <VideoOff className="h-9 w-9 text-white/35" />
-    title = "Sem vídeo enviado"
-    subtitle =
-      "Upload por drag-and-drop e processamento em 4:5 chegam nos Slices 7 e 8."
+function validateFile(file: File): string | null {
+  if (!ACCEPTED_MIME.includes(file.type.toLowerCase())) {
+    return "Formato não aceito. Envie MP4, MOV ou WebM."
   }
+  if (file.size > MAX_BYTES) {
+    return "Arquivo maior que 100MB. Comprima antes de enviar."
+  }
+  return null
+}
+
+function formatPercent(ratio: number): string {
+  return `${Math.min(100, Math.max(0, Math.round(ratio * 100)))}%`
+}
+
+export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [localError, setLocalError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
+
+  const startUpload = useCallback(
+    async (file: File) => {
+      setLocalError(null)
+      const err = validateFile(file)
+      if (err) {
+        setLocalError(err)
+        return
+      }
+      try {
+        setProgress(0)
+        await onUpload(file, (ratio) => setProgress(ratio))
+      } catch (e) {
+        setLocalError(e instanceof Error ? e.message : "Falha no envio")
+      } finally {
+        setProgress(0)
+      }
+    },
+    [onUpload],
+  )
+
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      setIsDragging(false)
+      const file = event.dataTransfer.files?.[0]
+      if (file) void startUpload(file)
+    },
+    [startUpload],
+  )
+
+  const handleSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file) void startUpload(file)
+      // Permite re-selecionar o mesmo arquivo se necessário
+      event.target.value = ""
+    },
+    [startUpload],
+  )
+
+  const handleRemove = useCallback(async () => {
+    if (removing) return
+    setLocalError(null)
+    setRemoving(true)
+    try {
+      await onRemove()
+    } catch (e) {
+      setLocalError(e instanceof Error ? e.message : "Falha ao remover")
+    } finally {
+      setRemoving(false)
+    }
+  }, [removing, onRemove])
+
+  const status = lesson.video_status
+  const previewUrl =
+    lesson.processed_video_url || lesson.original_video_url || null
+
+  // -----------------------------------------------------------------
+  // Estado: uploading
+  // -----------------------------------------------------------------
+  if (status === "uploading") {
+    return (
+      <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <div className="relative aspect-video w-full bg-zinc-950/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+            <UploadCloud className="h-9 w-9 animate-pulse text-sky-300" />
+            <p className="text-sm font-semibold text-white">
+              Enviando vídeo... {formatPercent(progress)}
+            </p>
+            <div className="mx-auto h-1.5 w-56 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full bg-sky-400 transition-[width] duration-150"
+                style={{ width: formatPercent(progress) }}
+              />
+            </div>
+            <p className="text-[11px] text-white/45">
+              Não feche esta aba até o envio terminar.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // -----------------------------------------------------------------
+  // Estado: processing / ready — preview com player + ações
+  // -----------------------------------------------------------------
+  if ((status === "processing" || status === "ready") && previewUrl) {
+    return (
+      <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <div className="relative aspect-video w-full bg-black">
+          <video
+            key={previewUrl}
+            src={previewUrl}
+            controls
+            playsInline
+            preload="metadata"
+            poster={lesson.thumbnail_url || undefined}
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-5 py-3">
+          <div className="inline-flex items-center gap-2 text-[12px] text-white/65">
+            <Video className="h-3.5 w-3.5 text-primary/80" />
+            {status === "processing" ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin text-sky-300" />
+                Processando 4:5 — preview do original disponível
+              </span>
+            ) : (
+              <span>Vídeo pronto</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Trocar vídeo
+            </button>
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={removing}
+              className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-500/10 px-3 py-1.5 text-[12px] font-medium text-red-200 transition hover:bg-red-500/15 disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {removing ? "Removendo..." : "Remover"}
+            </button>
+          </div>
+        </div>
+        {localError && (
+          <div className="border-t border-red-500/20 bg-red-500/10 px-5 py-2 text-xs text-red-200">
+            {localError}
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPTED_HINT}
+          onChange={handleSelect}
+          className="hidden"
+        />
+      </section>
+    )
+  }
+
+  // -----------------------------------------------------------------
+  // Estado: empty / error — dropzone ativo
+  // -----------------------------------------------------------------
+  const isError = status === "error"
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-      <div className="relative aspect-video w-full bg-zinc-950/80">
-        {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnailUrl}
-            alt="Thumbnail da aula"
-            className="h-full w-full object-cover opacity-70"
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            inputRef.current?.click()
+          }
+        }}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setIsDragging(true)
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        className={`relative flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-3 bg-zinc-950/80 text-center transition ${
+          isDragging
+            ? "bg-primary/10 ring-2 ring-inset ring-primary/40"
+            : "hover:bg-white/[0.03]"
+        }`}
+      >
+        {isError ? (
+          <AlertTriangle className="h-9 w-9 text-red-300" />
+        ) : (
+          <UploadCloud
+            className={`h-9 w-9 transition ${
+              isDragging ? "text-primary" : "text-white/40"
+            }`}
           />
-        ) : null}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-transparent via-zinc-950/40 to-zinc-950/70 text-center">
-          {icon}
-          <p className="text-sm font-semibold text-white">{title}</p>
-          <p className="mx-auto max-w-md px-6 text-xs text-white/55">
-            {subtitle}
+        )}
+        <div>
+          <p className="text-sm font-semibold text-white">
+            {isError
+              ? "Algo deu errado no último envio"
+              : "Arraste o vídeo aqui ou clique para selecionar"}
+          </p>
+          <p className="mt-1 text-xs text-white/55">
+            MP4, MOV ou WebM · até 100MB
           </p>
         </div>
+        {isError && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-[11px] font-medium text-red-200">
+            <VideoOff className="h-3 w-3" />
+            Tente enviar novamente
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-5 py-3">
-        <div className="inline-flex items-center gap-2 text-[12px] text-white/60">
+        <div className="inline-flex items-center gap-2 text-[12px] text-white/55">
           <Video className="h-3.5 w-3.5 text-primary/70" />
-          Área de vídeo da aula
+          Vídeo da aula
         </div>
         <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/45">
-          Upload em breve · Slice 7
+          Processamento 4:5 · Slice 8
         </span>
       </div>
+      {localError && (
+        <div className="border-t border-red-500/20 bg-red-500/10 px-5 py-2 text-xs text-red-200">
+          {localError}
+        </div>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_HINT}
+        onChange={handleSelect}
+        className="hidden"
+      />
     </section>
   )
 }
