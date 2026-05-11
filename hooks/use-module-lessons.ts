@@ -17,6 +17,7 @@ export interface CourseLesson {
   module_id: string
   title: string
   description: string | null
+  cover_url: string | null
   position: number
   status: LessonStatus
   video_status: VideoStatus
@@ -32,12 +33,14 @@ export interface LessonCreateInput {
   title: string
   description?: string | null
   status?: LessonStatus
+  cover_url?: string | null
 }
 
 export interface LessonUpdateInput {
   title?: string
   description?: string | null
   status?: LessonStatus
+  cover_url?: string | null
 }
 
 function getToken(): string | null {
@@ -234,6 +237,63 @@ export function useModuleLessons(
     [courseId, moduleId, refresh],
   )
 
+  const uploadLessonCover = useCallback(
+    async (id: string, file: File): Promise<CourseLesson> => {
+      if (!courseId || !moduleId) throw new Error("Contexto inválido")
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const form = new FormData()
+      form.append("cover", file)
+      const res = await fetchWithLog(
+        "useModuleLessons:uploadCover",
+        `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(moduleId)}/lessons/${encodeURIComponent(id)}/cover`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { lesson?: CourseLesson; error?: string }
+        | null
+      if (!res.ok || !data?.lesson) {
+        throw new Error(extractError(data, "Falha ao enviar capa"))
+      }
+      setLessons((prev) =>
+        prev.map((l) => (l.id === id ? data.lesson! : l)),
+      )
+      return data.lesson
+    },
+    [courseId, moduleId],
+  )
+
+  const removeLessonCover = useCallback(
+    async (id: string): Promise<CourseLesson> => {
+      if (!courseId || !moduleId) throw new Error("Contexto inválido")
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const res = await fetchWithLog(
+        "useModuleLessons:removeCover",
+        `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(moduleId)}/lessons/${encodeURIComponent(id)}/cover`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { lesson?: CourseLesson; error?: string }
+        | null
+      if (!res.ok || !data?.lesson) {
+        throw new Error(extractError(data, "Falha ao remover capa"))
+      }
+      setLessons((prev) =>
+        prev.map((l) => (l.id === id ? data.lesson! : l)),
+      )
+      return data.lesson
+    },
+    [courseId, moduleId],
+  )
+
   return {
     lessons,
     isLoading,
@@ -243,5 +303,7 @@ export function useModuleLessons(
     updateLesson,
     deleteLesson,
     reorderLessons,
+    uploadLessonCover,
+    removeLessonCover,
   }
 }
