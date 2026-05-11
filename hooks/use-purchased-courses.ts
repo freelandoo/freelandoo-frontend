@@ -10,6 +10,8 @@ export interface PurchasedCourse {
   amount_paid_cents: number
   currency: string
   progress_percent: number
+  completed_lessons_count?: number
+  published_lessons_count?: number
   id: string
   owner_user_id: string
   profile_id: string | null
