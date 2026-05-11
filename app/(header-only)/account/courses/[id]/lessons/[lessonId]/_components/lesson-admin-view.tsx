@@ -19,6 +19,7 @@ import { LessonDataForm } from "./lesson-data-form"
 import { LessonVideoPlaceholder } from "./lesson-video-placeholder"
 import { LessonComingSoonBlock } from "./lesson-coming-soon-block"
 import { LessonMaterialsBlock } from "./lesson-materials-block"
+import { LessonQuestionsBlock } from "./lesson-questions-block"
 
 interface Props {
   courseId: string
@@ -225,10 +226,10 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 />
 
                 {/* Questionário (Slice 10) */}
-                <LessonComingSoonBlock
-                  title="Questionário"
-                  description="Pergunta de múltipla escolha com alternativa correta para o aluno responder ao fim da aula."
-                  slice="Slice 10"
+                <LessonQuestionsBlock
+                  courseId={courseId}
+                  moduleId={lesson.module_id}
+                  lessonId={lessonId}
                 />
 
                 {/* Comentários (Slice 15) */}
