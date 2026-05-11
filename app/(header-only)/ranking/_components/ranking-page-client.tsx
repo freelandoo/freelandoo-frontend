@@ -19,9 +19,7 @@ import {
   Heart,
   Loader2,
   MapPin,
-  Medal,
   RefreshCw,
-  Search,
   Sparkles,
   Star,
   Trophy,
@@ -129,18 +127,6 @@ function rowHref(row: RankingRow) {
     })
   }
   return `/freelancer/${row.id_profile}`
-}
-
-function formatLastUpdate(value: string | null | undefined) {
-  if (!value) return "Aguardando"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "Aguardando"
-  const diffMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000))
-  if (diffMinutes < 1) return "agora"
-  if (diffMinutes < 60) return `há ${diffMinutes} min`
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `há ${diffHours} h`
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
 }
 
 function rankClass(rank: number) {
@@ -254,12 +240,6 @@ export function RankingPageClient() {
   const rows = rankingState.key === requestKey ? rankingState.rows : []
   const error = rankingState.key === requestKey ? rankingState.error : null
   const loading = !!rankingUrl && rankingState.key !== requestKey
-  const topProfile = rows[0] ?? null
-  const lastUpdatedAt =
-    rows.find((row) => row.last_recalculated_at || row.ranking_updated_at)
-      ?.last_recalculated_at ??
-    rows.find((row) => row.ranking_updated_at)?.ranking_updated_at ??
-    null
 
   const scopeLabel = useMemo(() => {
     if (scope === "general") return "Brasil"
@@ -362,50 +342,40 @@ export function RankingPageClient() {
         }}
       />
 
-      <section className="relative mx-auto flex w-full max-w-6xl flex-col px-4 pt-16 md:px-6 md:pt-20">
-        <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-          <div className="max-w-2xl">
-            <p
-              data-ranking-hero
-              className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary/80"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Ranking Freelandoo
-            </p>
-            <h1
-              data-ranking-hero
-              className="mt-5 text-4xl font-semibold leading-tight text-white md:text-6xl"
-            >
-              Os líderes do momento.
-            </h1>
-            <p
-              data-ranking-hero
-              className="mt-5 max-w-xl text-base leading-7 text-white/[0.58] md:text-lg"
-            >
-              Confira quem está dominando o ranking e inspire-se para subir
-              ainda mais.
-            </p>
-            <p
-              data-ranking-hero
-              className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/[0.5]"
-            >
-              <RefreshCw className="h-3.5 w-3.5 text-primary/80" />
-              Atualização automática a cada 2 horas
-            </p>
-          </div>
-
-          <div className="w-full">
-            <RankingPodium
-              rows={rows}
-              rowHref={(row) => rowHref(row as RankingRow)}
-              loading={loading}
-            />
-          </div>
+      <section className="relative mx-auto flex w-full max-w-5xl flex-col px-4 pt-12 md:px-6 md:pt-16">
+        <div className="max-w-2xl">
+          <p
+            data-ranking-hero
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary/80"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ranking Freelandoo
+          </p>
+          <h1
+            data-ranking-hero
+            className="mt-4 text-3xl font-semibold leading-tight text-white md:text-5xl"
+          >
+            Os líderes do momento.
+          </h1>
+          <p
+            data-ranking-hero
+            className="mt-3 max-w-xl text-sm leading-6 text-white/[0.58] md:text-base"
+          >
+            Confira quem está dominando o ranking e inspire-se para subir
+            ainda mais.
+          </p>
+          <p
+            data-ranking-hero
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/[0.5]"
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-primary/80" />
+            Atualização automática a cada 2 horas
+          </p>
         </div>
 
         <div
           data-ranking-filter
-          className="mt-10 flex flex-col gap-4 border-y border-white/10 py-4"
+          className="mt-8 flex flex-col gap-3 border-y border-white/10 py-4"
         >
           <div className="flex flex-wrap gap-2">
             {scopeOptions.map(({ key, label, icon: Icon }) => {
@@ -502,25 +472,15 @@ export function RankingPageClient() {
           )}
         </div>
 
-        <div className="mt-8 grid gap-3 md:grid-cols-3">
-          <SummaryTile
-            label="Recorte"
-            value={scopeLabel}
-            icon={<Search className="h-4 w-4" />}
-          />
-          <SummaryTile
-            label="Atualização"
-            value={loading ? "Carregando" : formatLastUpdate(lastUpdatedAt)}
-            icon={<Trophy className="h-4 w-4" />}
-          />
-          <SummaryTile
-            label="Líder"
-            value={topProfile?.display_name || "Aguardando dados"}
-            icon={<Medal className="h-4 w-4" />}
+        <div className="mt-10 px-1 md:px-4">
+          <RankingPodium
+            rows={rows}
+            rowHref={(row) => rowHref(row as RankingRow)}
+            loading={loading}
           />
         </div>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="mt-8">
           <div
             ref={listRef}
             className="border border-white/10 bg-white/[0.025] p-2 shadow-[0_24px_70px_-46px_rgba(0,0,0,0.95)] backdrop-blur"
@@ -559,86 +519,9 @@ export function RankingPageClient() {
                 ))}
             </div>
           </div>
-
-          <aside
-            data-ranking-summary
-            className="h-fit border border-white/10 bg-white/[0.025] p-4 backdrop-blur"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Trophy className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/[0.35]">
-                  Resumo
-                </p>
-                <h3 className="text-base font-semibold text-white">Ranking ativo</h3>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-3 text-sm">
-              <SideMetric label="Filtro" value={scopeLabel} />
-              <SideMetric
-                label="Pontos do líder"
-                value={
-                  topProfile?.total_points != null
-                    ? numberFormatter.format(Number(topProfile.total_points))
-                    : "0"
-                }
-              />
-              <SideMetric
-                label="Atualização"
-                value={formatLastUpdate(lastUpdatedAt)}
-              />
-              <SideMetric
-                label="Avaliação média"
-                value={
-                  topProfile?.avg_rating
-                    ? Number(topProfile.avg_rating).toFixed(1)
-                    : "0.0"
-                }
-              />
-            </div>
-
-            <Button asChild className="mt-5 w-full">
-              <Link href="/feed">
-                Ir para o feed
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </aside>
         </section>
       </section>
     </main>
-  )
-}
-
-function SummaryTile({
-  label,
-  value,
-  icon,
-}: {
-  label: string
-  value: string
-  icon: ReactNode
-}) {
-  return (
-    <div
-      data-ranking-summary
-      className="flex min-h-[82px] items-center gap-3 border border-white/10 bg-white/[0.025] px-4 py-3 backdrop-blur"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-primary">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-white/[0.35]">
-          {label}
-        </span>
-        <span className="mt-1 block truncate text-sm font-semibold text-white">
-          {value}
-        </span>
-      </span>
-    </div>
   )
 }
 
@@ -755,15 +638,6 @@ function Metric({ icon, value }: { icon: ReactNode; value: string }) {
       {icon}
       {value}
     </span>
-  )
-}
-
-function SideMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <span className="text-white/[0.45]">{label}</span>
-      <span className="max-w-[160px] truncate font-semibold text-white">{value}</span>
-    </div>
   )
 }
 
