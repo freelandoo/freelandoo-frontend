@@ -18,6 +18,7 @@ import { LessonSidebar } from "./lesson-sidebar"
 import { LessonDataForm } from "./lesson-data-form"
 import { LessonVideoPlaceholder } from "./lesson-video-placeholder"
 import { LessonComingSoonBlock } from "./lesson-coming-soon-block"
+import { LessonMaterialsBlock } from "./lesson-materials-block"
 
 interface Props {
   courseId: string
@@ -216,11 +217,11 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                   />
                 </section>
 
-                {/* Materiais (Slice 9) */}
-                <LessonComingSoonBlock
-                  title="Materiais de apoio"
-                  description="Anexe PDFs, imagens ou links que o aluno baixa junto com a aula."
-                  slice="Slice 9"
+                {/* Materiais de apoio (Slice 9) */}
+                <LessonMaterialsBlock
+                  courseId={courseId}
+                  moduleId={lesson.module_id}
+                  lessonId={lessonId}
                 />
 
                 {/* Questionário (Slice 10) */}
