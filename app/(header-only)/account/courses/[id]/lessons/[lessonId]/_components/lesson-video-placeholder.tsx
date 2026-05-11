@@ -131,6 +131,28 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
   }
 
   // -----------------------------------------------------------------
+  // Estado: processing sem preview — bytes já enviados, ffmpeg rodando
+  // -----------------------------------------------------------------
+  if (status === "processing" && !previewUrl) {
+    return (
+      <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <div className="relative aspect-video w-full bg-zinc-950/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <Loader2 className="h-9 w-9 animate-spin text-sky-300" />
+            <p className="text-sm font-semibold text-white">
+              Processando vídeo...
+            </p>
+            <p className="mx-auto max-w-md text-xs text-white/55">
+              Padronizando em 4:5 e gerando a capa. Isso pode levar alguns
+              minutos dependendo do tamanho. Não feche esta aba.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // -----------------------------------------------------------------
   // Estado: processing / ready — preview com player + ações
   // -----------------------------------------------------------------
   if ((status === "processing" || status === "ready") && previewUrl) {
