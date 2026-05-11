@@ -244,8 +244,10 @@ export function ModuleLessonsPanel({
   }
 
   function openLesson(l: CourseLesson) {
-    // Página da aula chega no Slice 6. Por enquanto, abre o modal de edição.
-    openEdit(l)
+    // Slice 6: clique no título navega para a página dedicada da aula.
+    // O botão "Editar" inline (no canto direito) continua abrindo o modal
+    // rápido para mudanças sem sair do contexto do curso.
+    router.push(`/account/courses/${courseId}/lessons/${l.id}`)
   }
 
   async function handleCreate() {
@@ -334,9 +336,6 @@ export function ModuleLessonsPanel({
       setMovingId(null)
     }
   }
-
-  // Suprime aviso de useRouter não usado quando o Slice 6 ainda não roteia.
-  void router
 
   return (
     <>
@@ -469,8 +468,8 @@ export function ModuleLessonsPanel({
         {!isLoading && !error && orderedLessons.length > 0 && (
           <p className="px-1 pt-1 text-[10px] text-white/35">
             <ExternalLink className="mr-0.5 inline h-2.5 w-2.5" />
-            Página completa da aula (vídeo, materiais, comentários) chega no
-            Slice 6.
+            Clique no título da aula para abrir a página dedicada (vídeo,
+            materiais, comentários).
           </p>
         )}
       </div>
