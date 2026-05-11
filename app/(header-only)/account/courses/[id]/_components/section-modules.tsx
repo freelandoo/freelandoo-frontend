@@ -15,7 +15,10 @@ import {
   EyeOff,
   PlaySquare,
   GripVertical,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
+import { ModuleLessonsPanel } from "./module-lessons-panel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -153,11 +156,19 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
     modules,
     isLoading,
     error,
+    refresh: refreshModules,
     createModule,
     updateModule,
     deleteModule,
     reorderModules,
   } = useCourseModules(courseId)
+
+  // Quando uma aula muda dentro de um módulo, atualiza o lessons_count
+  // do card (refresh local) e propaga para o pai atualizar o curso.
+  async function handleLessonsChanged() {
+    await refreshModules()
+    onModulesChanged?.()
+  }
 
   // Modais
   const [isNewOpen, setIsNewOpen] = useState(false)
@@ -174,6 +185,19 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const [movingId, setMovingId] = useState<string | null>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const orderedModules = useMemo(
     () => [...modules].sort((a, b) => a.position - b.position),
@@ -344,92 +368,122 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
               const isFirst = idx === 0
               const isLast = idx === orderedModules.length - 1
               const isMoving = movingId === m.id
+              const isExpanded = expandedIds.has(m.id)
               return (
                 <li
                   key={m.id}
-                  className="group flex items-stretch gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-white/15 md:p-4"
+                  className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-white/15 md:p-4"
                 >
-                  {/* Coluna de ordenação */}
-                  <div className="flex flex-col items-center justify-center gap-1 text-white/40">
-                    <GripVertical className="h-4 w-4" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-
-                  {/* Conteúdo */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
-                        <BookOpen className="h-3.5 w-3.5 text-primary/80" />
-                        <span className="truncate">{m.title}</span>
-                      </h3>
-                      <ModuleStatusPill status={m.status} />
-                    </div>
-                    {m.description && (
-                      <p className="mt-1 line-clamp-2 text-[12px] text-white/55">
-                        {m.description}
-                      </p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/45">
-                      <span className="inline-flex items-center gap-1">
-                        <PlaySquare className="h-3 w-3" />
-                        {m.lessons_count} aula
-                        {m.lessons_count === 1 ? "" : "s"}
+                  <div className="flex items-stretch gap-2">
+                    {/* Coluna de ordenação */}
+                    <div className="flex flex-col items-center justify-center gap-1 text-white/40">
+                      <GripVertical className="h-4 w-4" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">
+                        {String(idx + 1).padStart(2, "0")}
                       </span>
-                      <span className="text-white/30">·</span>
-                      <span>Slice 5 habilita a criação de aulas aqui</span>
+                    </div>
+
+                    {/* Conteúdo (clicável para expandir) */}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(m.id)}
+                      className="min-w-0 flex-1 text-left"
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Recolher módulo" : "Expandir módulo"}
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                          <BookOpen className="h-3.5 w-3.5 text-primary/80" />
+                          <span className="truncate">{m.title}</span>
+                        </h3>
+                        <ModuleStatusPill status={m.status} />
+                      </div>
+                      {m.description && (
+                        <p className="mt-1 line-clamp-2 text-[12px] text-white/55">
+                          {m.description}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/45">
+                        <span className="inline-flex items-center gap-1">
+                          <PlaySquare className="h-3 w-3" />
+                          {m.lessons_count} aula
+                          {m.lessons_count === 1 ? "" : "s"}
+                        </span>
+                        <span className="text-white/30">·</span>
+                        <span className="inline-flex items-center gap-1 text-primary/80">
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-3 w-3" />
+                              Recolher aulas
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3 w-3" />
+                              Mostrar aulas
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Ações */}
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleMove(m.id, -1)}
+                          disabled={isFirst || isMoving}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white disabled:opacity-30"
+                          aria-label="Subir módulo"
+                          title="Subir"
+                        >
+                          {isMoving ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMove(m.id, 1)}
+                          disabled={isLast || isMoving}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white disabled:opacity-30"
+                          aria-label="Descer módulo"
+                          title="Descer"
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(m)}
+                          className="inline-flex h-7 items-center gap-1 rounded-full border border-white/12 bg-white/[0.03] px-2.5 text-[11px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingModule(m)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10 text-red-200 transition hover:border-red-500/50 hover:text-red-100"
+                          aria-label="Excluir módulo"
+                          title="Excluir módulo"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Ações */}
-                  <div className="flex flex-col items-end gap-1.5">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleMove(m.id, -1)}
-                        disabled={isFirst || isMoving}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white disabled:opacity-30"
-                        aria-label="Subir módulo"
-                        title="Subir"
-                      >
-                        {isMoving ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMove(m.id, 1)}
-                        disabled={isLast || isMoving}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/12 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white disabled:opacity-30"
-                        aria-label="Descer módulo"
-                        title="Descer"
-                      >
-                        <ArrowDown className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(m)}
-                        className="inline-flex h-7 items-center gap-1 rounded-full border border-white/12 bg-white/[0.03] px-2.5 text-[11px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingModule(m)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10 text-red-200 transition hover:border-red-500/50 hover:text-red-100"
-                        aria-label="Excluir módulo"
-                        title="Excluir módulo"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  {/* Painel de aulas (montado apenas quando expandido) */}
+                  {isExpanded && (
+                    <ModuleLessonsPanel
+                      courseId={courseId}
+                      moduleId={m.id}
+                      onLessonsChanged={handleLessonsChanged}
+                    />
+                  )}
                 </li>
               )
             })}
