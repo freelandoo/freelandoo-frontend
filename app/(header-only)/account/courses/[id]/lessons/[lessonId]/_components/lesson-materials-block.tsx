@@ -255,7 +255,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
   // Render
   // -------------------------------------------------------------------------
   return (
-    <section className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+    <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
@@ -356,8 +356,8 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       )}
 
       {!isLoading && !error && materials.length === 0 && (
-        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-6 text-center text-xs text-white/45">
-          Nenhum material adicionado ainda.
+        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-4 py-6 text-center text-xs text-white/50">
+          Nenhum material ainda. Anexe um PDF, imagem ou link para complementar a aula.
         </div>
       )}
 
@@ -366,7 +366,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
           {materials.map((m, idx) => (
             <li
               key={m.id}
-              className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 transition hover:border-white/15"
+              className="flex flex-col gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 transition hover:border-primary/25 sm:flex-row sm:items-center"
             >
               <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05]">
                 {materialIcon(m)}
@@ -389,7 +389,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 self-end sm:self-auto">
                 <button
                   type="button"
                   onClick={() => moveItem(m.id, -1)}

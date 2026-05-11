@@ -49,18 +49,19 @@ interface SectionDef {
   icon: typeof BookOpen
   slice: string
   short: string
+  available: boolean
 }
 
 const SECTIONS: SectionDef[] = [
-  { key: "data", label: "Dados do curso", icon: GraduationCap, slice: "Slice 3", short: "Título, descrição, capa, preço e perfil." },
-  { key: "modules", label: "Módulos", icon: BookOpen, slice: "Slice 4", short: "Estrutura macro do curso." },
-  { key: "lessons", label: "Aulas", icon: PlaySquare, slice: "Slice 5", short: "Aulas dentro de cada módulo." },
-  { key: "videos", label: "Vídeos", icon: Video, slice: "Slice 7-8", short: "Upload e processamento dos vídeos." },
-  { key: "materials", label: "Materiais", icon: FileText, slice: "Slice 9", short: "PDFs, imagens e links externos." },
-  { key: "quizzes", label: "Questionários", icon: HelpCircle, slice: "Slice 10", short: "Perguntas e alternativas por aula." },
-  { key: "publish", label: "Publicação", icon: Megaphone, slice: "Slice 16", short: "Divulgar o curso no feed." },
-  { key: "comments", label: "Comentários", icon: MessageSquare, slice: "Slice 15", short: "Moderar comentários dos alunos." },
-  { key: "students", label: "Alunos / Vendas", icon: Users, slice: "Slice 11", short: "Quem comprou, receita gerada." },
+  { key: "data", label: "Dados do curso", icon: GraduationCap, slice: "Slice 3", short: "Título, descrição, capa, preço e perfil.", available: true },
+  { key: "modules", label: "Módulos", icon: BookOpen, slice: "Slice 4", short: "Estruture módulos, aulas, vídeos e recursos.", available: true },
+  { key: "lessons", label: "Aulas", icon: PlaySquare, slice: "Slice 5", short: "Abra um módulo para editar cada aula.", available: false },
+  { key: "videos", label: "Vídeos", icon: Video, slice: "Slice 7-8", short: "Gerencie o vídeo dentro da tela da aula.", available: false },
+  { key: "materials", label: "Materiais", icon: FileText, slice: "Slice 9", short: "Anexe materiais dentro da tela da aula.", available: false },
+  { key: "quizzes", label: "Questionários", icon: HelpCircle, slice: "Slice 10", short: "Crie perguntas dentro da tela da aula.", available: false },
+  { key: "publish", label: "Publicação", icon: Megaphone, slice: "Slice 16", short: "Divulgar o curso no feed.", available: true },
+  { key: "comments", label: "Comentários", icon: MessageSquare, slice: "Slice 15", short: "Modere comentários dentro da tela da aula.", available: false },
+  { key: "students", label: "Alunos / Vendas", icon: Users, slice: "Slice 11", short: "Quem comprou, receita gerada.", available: true },
 ]
 
 function getToken(): string | null {
@@ -171,7 +172,7 @@ export function CourseAdminView({ courseId }: Props) {
   const SectionIcon = sectionMeta.icon
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 px-4 py-6 md:px-8 md:py-10">
+    <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-6xl">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -224,14 +225,19 @@ export function CourseAdminView({ courseId }: Props) {
         {!isLoading && !loadError && course && (
           <>
             {/* Título do curso */}
-            <h1 className="mb-6 inline-flex items-center gap-2 text-xl font-semibold text-white md:text-2xl">
-              <GraduationCap className="h-5 w-5 text-primary" />
-              <span className="truncate">{course.title}</span>
-            </h1>
+            <div className="mb-6 rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-5">
+              <h1 className="inline-flex w-full items-center gap-2 text-xl font-semibold text-white md:text-2xl">
+                <GraduationCap className="h-5 w-5 shrink-0 text-primary" />
+                <span className="truncate">{course.title}</span>
+              </h1>
+              <p className="mt-1 text-xs text-white/50">
+                Ajuste a vitrine do curso, organize módulos e acompanhe publicação e vendas.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
               {/* Sidebar de seções */}
-              <aside className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-4">
+              <aside className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-4">
                 <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
                   Gestão do curso
                 </p>
@@ -256,12 +262,9 @@ export function CourseAdminView({ courseId }: Props) {
                           }`}
                         />
                         <span className="flex-1 truncate">{s.label}</span>
-                        {s.key !== "data" &&
-                          s.key !== "modules" &&
-                          s.key !== "publish" &&
-                          s.key !== "students" && (
+                        {!s.available && (
                           <span className="rounded-full bg-white/[0.06] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider text-white/45">
-                            em breve
+                            na aula
                           </span>
                         )}
                         <ChevronRight
@@ -278,7 +281,7 @@ export function CourseAdminView({ courseId }: Props) {
               </aside>
 
               {/* Área principal */}
-              <section className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+              <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
                 <header className="mb-5">
                   <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
                     <SectionIcon className="h-4 w-4 text-primary" />

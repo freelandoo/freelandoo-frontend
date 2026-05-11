@@ -391,7 +391,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
   )
 
   return (
-    <section className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+    <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
       <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
@@ -428,8 +428,8 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       )}
 
       {!isLoading && !error && questions.length === 0 && (
-        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.015] py-6 text-center text-xs text-white/45">
-          Nenhuma pergunta adicionada ainda.
+        <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-4 py-6 text-center text-xs text-white/50">
+          Nenhuma pergunta ainda. Crie uma checagem rápida para reforçar o aprendizado.
         </div>
       )}
 
@@ -438,16 +438,16 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
           {questions.map((q, idx) => (
             <li
               key={q.id}
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3.5"
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3.5 transition hover:border-primary/25"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                 <span className="mt-0.5 inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] px-1.5 text-[11px] font-semibold text-white/65">
                   {idx + 1}
                 </span>
                 <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm text-white">
                   {q.prompt}
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 self-end sm:self-auto">
                   <button
                     type="button"
                     onClick={() => moveItem(q.id, -1)}

@@ -93,7 +93,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
   const isLoading = loadingLesson || loadingModules || loadingAllLessons
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 px-4 py-6 md:px-8 md:py-10">
+    <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -106,7 +106,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
           </Link>
           {lesson && <LessonStatusPill status={lesson.status} />}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() =>
@@ -198,14 +198,14 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 />
 
                 {/* Dados da aula (editável) */}
-                <section className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+                <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
                   <header className="mb-4">
                     <h2 className="text-lg font-semibold text-white">
                       Dados da aula
                     </h2>
                     <p className="mt-1 text-xs text-white/50">
-                      Edite título, descrição e status. Outros campos chegam
-                      nos próximos slices.
+                      Edite título, descrição e status da aula. Recursos de
+                      vídeo, materiais, questionário e comentários ficam logo abaixo.
                     </p>
                   </header>
                   <LessonDataForm

@@ -321,7 +321,7 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
           <Button
             type="button"
             onClick={openNew}
-            className="rounded-full"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             size="sm"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -344,18 +344,21 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
         )}
 
         {!isLoading && !error && orderedModules.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-10 text-center">
-            <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.04]">
-              <BookOpen className="h-7 w-7 text-white/45" />
+          <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-[radial-gradient(circle_at_top,rgba(242,196,9,0.1),transparent_36%),rgba(255,255,255,0.018)] p-10 text-center">
+            <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+              <BookOpen className="h-7 w-7 text-primary" />
             </div>
             <p className="text-sm font-medium text-white/85">
               Nenhum módulo criado ainda
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
               Módulos agrupam as aulas do seu curso. Comece por algo simples
-              como "Comece por aqui" ou "Fundamentos".
+              como &ldquo;Comece por aqui&rdquo; ou &ldquo;Fundamentos&rdquo;.
             </p>
-            <Button onClick={openNew} className="mt-4 rounded-full">
+            <Button
+              onClick={openNew}
+              className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Criar primeiro módulo
             </Button>
@@ -372,7 +375,7 @@ export function CourseModulesSection({ courseId, onModulesChanged }: Props) {
               return (
                 <li
                   key={m.id}
-                  className="group rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 transition hover:border-white/15 md:p-4"
+                  className="group rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.014))] p-3 transition hover:border-primary/25 md:p-4"
                 >
                   <div className="flex items-stretch gap-2">
                     {/* Coluna de ordenação */}

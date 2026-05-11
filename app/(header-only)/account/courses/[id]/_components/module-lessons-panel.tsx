@@ -371,8 +371,8 @@ export function ModuleLessonsPanel({
         )}
 
         {!isLoading && !error && orderedLessons.length === 0 && (
-          <p className="px-1 py-2 text-[12px] text-white/50">
-            Nenhuma aula neste módulo ainda.{" "}
+          <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-3 py-4 text-center text-[12px] text-white/50">
+            Este módulo ainda está sem aulas.{" "}
             <button
               type="button"
               onClick={openNew}
@@ -380,7 +380,7 @@ export function ModuleLessonsPanel({
             >
               Criar a primeira
             </button>
-          </p>
+          </div>
         )}
 
         {!isLoading && !error && orderedLessons.length > 0 && (
@@ -392,7 +392,7 @@ export function ModuleLessonsPanel({
               return (
                 <li
                   key={l.id}
-                  className="group flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.015] px-2.5 py-1.5 transition hover:border-white/15 hover:bg-white/[0.04]"
+                  className="group flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-white/[0.018] px-2.5 py-2 transition hover:border-primary/25 hover:bg-white/[0.04] sm:flex-row sm:items-center"
                 >
                   <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-white/60">
                     {idx + 1}
@@ -410,12 +410,12 @@ export function ModuleLessonsPanel({
                     </span>
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-1 self-start sm:self-auto">
                     <VideoStatusPill status={l.video_status} />
                     <StatusPill status={l.status} />
                   </div>
 
-                  <div className="flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
+                  <div className="flex items-center gap-0.5 self-end opacity-70 group-hover:opacity-100 sm:self-auto">
                     <button
                       type="button"
                       onClick={() => handleMove(l.id, -1)}
