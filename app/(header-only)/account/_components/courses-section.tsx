@@ -51,6 +51,10 @@ import {
   type MyCourse,
 } from "@/hooks/use-my-courses"
 import {
+  usePurchasedCourses,
+  type PurchasedCourse,
+} from "@/hooks/use-purchased-courses"
+import {
   COURSE_MIN_PUBLISH_PRICE_CENTS,
   formatPriceBRL,
   parsePriceInput,
@@ -100,6 +104,22 @@ function toCardData(c: MyCourse): CourseCardData {
     lessons_count: c.lessons_count,
     students_count: c.students_count,
     slug: c.slug,
+  }
+}
+
+function toPurchasedCardData(c: PurchasedCourse): CourseCardData {
+  return {
+    id: c.id,
+    title: c.title,
+    cover_url: c.cover_url,
+    status: c.status,
+    price_cents: c.price_cents,
+    modules_count: c.modules_count,
+    lessons_count: c.lessons_count,
+    students_count: c.students_count,
+    slug: c.slug,
+    creator_name: c.creator_name,
+    progress_percent: c.progress_percent,
   }
 }
 
@@ -158,7 +178,9 @@ function CourseCard({
         onClick={() =>
           isOwner
             ? onManage?.(course.id)
-            : router.push(`/account/courses/${course.id}/watch`)
+            : course.slug
+              ? router.push(`/cursos/${course.slug}`)
+              : toast.info("A página pública deste curso ainda não está disponível.")
         }
         className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
         aria-label={`Abrir curso ${course.title}`}
@@ -187,7 +209,7 @@ function CourseCard({
         )}
         {!isOwner && (
           <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-200 backdrop-blur-sm">
-            Acesso ativo
+            Matriculado
           </span>
         )}
         {!isOwner && (
@@ -467,6 +489,11 @@ export function CoursesSection({ profileOptions = [] }: Props) {
   const router = useRouter()
   const { courses, isLoading, error, createCourse, updateCourse, deleteCourse } =
     useMyCourses()
+  const {
+    courses: purchasedCourses,
+    isLoading: loadingPurchased,
+    error: purchasedError,
+  } = usePurchasedCourses()
 
   const [tab, setTab] = useState<CoursesTab>("created")
 
@@ -484,9 +511,9 @@ export function CoursesSection({ profileOptions = [] }: Props) {
       createdTotal: courses.length,
       createdPublished: courses.filter((c) => c.status === "published").length,
       createdDraft: courses.filter((c) => c.status === "draft").length,
-      purchasedTotal: 0,
+      purchasedTotal: purchasedCourses.length,
     }),
-    [courses],
+    [courses, purchasedCourses],
   )
 
   const subline =
@@ -575,6 +602,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
   }
 
   const createdCards = courses.map(toCardData)
+  const purchasedCards = purchasedCourses.map(toPurchasedCardData)
 
   return (
     <>
@@ -686,7 +714,37 @@ export function CoursesSection({ profileOptions = [] }: Props) {
             </>
           )}
 
-          {tab === "purchased" && <EmptyState variant="purchased" />}
+          {tab === "purchased" && loadingPurchased && (
+            <div className="flex items-center justify-center py-12 text-white/55">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Carregando cursos comprados...
+            </div>
+          )}
+
+          {tab === "purchased" && !loadingPurchased && purchasedError && (
+            <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+              <AlertCircle className="h-4 w-4" />
+              {purchasedError}
+            </div>
+          )}
+
+          {tab === "purchased" && !loadingPurchased && !purchasedError && (
+            <>
+              {purchasedCards.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {purchasedCards.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      variant="purchased"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState variant="purchased" />
+              )}
+            </>
+          )}
         </div>
       </article>
 
