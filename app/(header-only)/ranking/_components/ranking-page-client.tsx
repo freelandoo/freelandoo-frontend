@@ -20,6 +20,7 @@ import {
   Loader2,
   MapPin,
   Medal,
+  RefreshCw,
   Search,
   Sparkles,
   Star,
@@ -42,6 +43,7 @@ import {
 } from "@/components/home/machines/use-machines-catalog"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { cn } from "@/lib/utils"
+import { RankingPodium } from "./ranking-podium"
 
 type RankingScope = "general" | "machine" | "profession" | "city"
 
@@ -361,27 +363,44 @@ export function RankingPageClient() {
       />
 
       <section className="relative mx-auto flex w-full max-w-6xl flex-col px-4 pt-16 md:px-6 md:pt-20">
-        <div className="max-w-3xl">
-          <p
-            data-ranking-hero
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary/80"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ranking Freelandoo
-          </p>
-          <h1
-            data-ranking-hero
-            className="mt-5 max-w-3xl text-4xl font-semibold leading-tight text-white md:text-6xl"
-          >
-            Top 10 por sinal real de atividade.
-          </h1>
-          <p
-            data-ranking-hero
-            className="mt-5 max-w-2xl text-base leading-7 text-white/[0.58] md:text-lg"
-          >
-            Perfis em destaque por presença, avaliação, visitas, curtidas e
-            engajamento na plataforma.
-          </p>
+        <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+          <div className="max-w-2xl">
+            <p
+              data-ranking-hero
+              className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary/80"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Ranking Freelandoo
+            </p>
+            <h1
+              data-ranking-hero
+              className="mt-5 text-4xl font-semibold leading-tight text-white md:text-6xl"
+            >
+              Os líderes do momento.
+            </h1>
+            <p
+              data-ranking-hero
+              className="mt-5 max-w-xl text-base leading-7 text-white/[0.58] md:text-lg"
+            >
+              Confira quem está dominando o ranking e inspire-se para subir
+              ainda mais.
+            </p>
+            <p
+              data-ranking-hero
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/[0.5]"
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-primary/80" />
+              Atualização automática a cada 2 horas
+            </p>
+          </div>
+
+          <div className="w-full">
+            <RankingPodium
+              rows={rows}
+              rowHref={(row) => rowHref(row as RankingRow)}
+              loading={loading}
+            />
+          </div>
         </div>
 
         <div
