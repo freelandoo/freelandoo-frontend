@@ -514,9 +514,9 @@ export default function AdministracaoPage() {
                                 )}
                               </td>
 
-                              {/* Ativo (is_active && is_visible && !deleted) */}
+                              {/* Ativo: mesma regra da vitrine (flags + assinatura ativa) */}
                               <td className="px-4 py-2 text-center">
-                                {p.is_active && p.is_visible && !p.deleted_at ? (
+                                {p.is_active && p.is_visible && !p.deleted_at && p.is_paid ? (
                                   <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
                                 ) : (
                                   <XCircle className="mx-auto h-3.5 w-3.5 text-red-500/60" />
