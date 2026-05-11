@@ -131,9 +131,19 @@ export function useCourseLesson(
 
       const url = `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(lesson.module_id)}/lessons/${encodeURIComponent(lesson.id)}/video`
 
-      // UI imediata: deixa em "uploading" enquanto o XHR roda.
+      // UI imediata: limpa URLs antigos (caso seja "trocar vídeo") e
+      // deixa em "uploading" enquanto o XHR roda. Após a resposta do
+      // servidor, o lesson é substituído pelo retorno autoritativo.
       setLesson((prev) =>
-        prev ? { ...prev, video_status: "uploading" } : prev,
+        prev
+          ? {
+              ...prev,
+              video_status: "uploading",
+              original_video_url: null,
+              processed_video_url: null,
+              thumbnail_url: null,
+            }
+          : prev,
       )
 
       return new Promise<CourseLesson>((resolve, reject) => {
@@ -149,6 +159,15 @@ export function useCourseLesson(
           }
         }
 
+        // Bytes totalmente enviados — servidor agora processa (ffmpeg).
+        // Reflete na UI antes da resposta chegar para não ficar travado
+        // em "uploading 100%" durante minutos.
+        xhr.upload.onload = () => {
+          setLesson((prev) =>
+            prev ? { ...prev, video_status: "processing" } : prev,
+          )
+        }
+
         xhr.onload = () => {
           let data: unknown = null
           try {
@@ -156,8 +175,11 @@ export function useCourseLesson(
           } catch {
             data = null
           }
+          const payload = data as
+            | { lesson?: CourseLesson; error?: string }
+            | null
           if (xhr.status >= 200 && xhr.status < 300) {
-            const next = (data as { lesson?: CourseLesson } | null)?.lesson
+            const next = payload?.lesson
             if (next) {
               setLesson(next)
               resolve(next)
@@ -166,13 +188,16 @@ export function useCourseLesson(
             reject(new Error("Resposta inválida do servidor"))
             return
           }
-          // Falha — reflete erro no estado para o usuário ver.
-          setLesson((prev) =>
-            prev ? { ...prev, video_status: "error" } : prev,
-          )
-          reject(
-            new Error(extractError(data, "Falha ao enviar vídeo")),
-          )
+          // Falha — se o backend devolveu o lesson (ex: ffmpeg falhou
+          // mas original subiu), use-o; senão força status=error local.
+          if (payload?.lesson) {
+            setLesson(payload.lesson)
+          } else {
+            setLesson((prev) =>
+              prev ? { ...prev, video_status: "error" } : prev,
+            )
+          }
+          reject(new Error(extractError(data, "Falha ao enviar vídeo")))
         }
 
         xhr.onerror = () => {
