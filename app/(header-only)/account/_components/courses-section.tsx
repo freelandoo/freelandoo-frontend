@@ -50,8 +50,11 @@ import {
   type CourseStatus,
   type MyCourse,
 } from "@/hooks/use-my-courses"
-
-const MIN_PUBLISH_PRICE_CENTS = 500
+import {
+  COURSE_MIN_PUBLISH_PRICE_CENTS,
+  formatPriceBRL,
+  parsePriceInput,
+} from "@/lib/courses/format"
 
 type CoursesTab = "created" | "purchased"
 
@@ -69,36 +72,7 @@ interface Props {
 }
 
 // ---------------------------------------------------------------------------
-// Utils de preço
-// ---------------------------------------------------------------------------
-
-function formatPriceBRL(priceCents: number | null | undefined): string {
-  if (priceCents == null || priceCents <= 0) return "Sem preço"
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(priceCents / 100)
-}
-
-/** Recebe texto livre ("49,90" / "R$ 49,90" / "49.9") e devolve cents (ou null). */
-function parsePriceInput(input: string): number | null {
-  if (!input || !input.trim()) return null
-  const cleaned = input
-    .replace(/[R$\s]/gi, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-  const n = Number(cleaned)
-  if (!Number.isFinite(n) || n < 0) return null
-  return Math.round(n * 100)
-}
-
-function centsToInputText(priceCents: number | null | undefined): string {
-  if (priceCents == null) return ""
-  return (priceCents / 100).toFixed(2).replace(".", ",")
-}
-
-// ---------------------------------------------------------------------------
-// Tipo "leve" usado pelos cards (compatível com MyCourse)
+// Tipo "leve" usado pelos cards
 // ---------------------------------------------------------------------------
 
 interface CourseCardData {
@@ -357,20 +331,19 @@ function EmptyState({
 }
 
 // ---------------------------------------------------------------------------
-// Form (compartilhado entre Novo Curso e Editar Curso)
+// Form do modal "Novo Curso"
 // ---------------------------------------------------------------------------
 
-interface CourseFormState {
+interface NewCourseFormState {
   title: string
   short_description: string
   description: string
   cover_url: string
   price_text: string
   profile_id: string
-  status: CourseStatus
 }
 
-function emptyForm(): CourseFormState {
+function emptyNewForm(): NewCourseFormState {
   return {
     title: "",
     short_description: "",
@@ -378,31 +351,28 @@ function emptyForm(): CourseFormState {
     cover_url: "",
     price_text: "",
     profile_id: "",
-    status: "draft",
   }
 }
 
-function CourseForm({
+function NewCourseForm({
   value,
   onChange,
   profileOptions = [],
-  showStatus,
   disabled,
 }: {
-  value: CourseFormState
-  onChange: (next: CourseFormState) => void
+  value: NewCourseFormState
+  onChange: (next: NewCourseFormState) => void
   profileOptions?: ProfileOption[]
-  showStatus?: boolean
   disabled?: boolean
 }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="c-title">
+        <Label htmlFor="nc-title">
           Nome do curso <span className="text-destructive">*</span>
         </Label>
         <Input
-          id="c-title"
+          id="nc-title"
           placeholder="Ex.: Fundamentos de Edição de Vídeo"
           value={value.title}
           onChange={(e) => onChange({ ...value, title: e.target.value })}
@@ -412,9 +382,9 @@ function CourseForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="c-short">Descrição curta</Label>
+        <Label htmlFor="nc-short">Descrição curta (opcional)</Label>
         <Input
-          id="c-short"
+          id="nc-short"
           placeholder="Uma frase que resume a proposta do curso"
           value={value.short_description}
           onChange={(e) =>
@@ -423,42 +393,25 @@ function CourseForm({
           disabled={disabled}
           maxLength={280}
         />
-        <p className="text-[11px] text-white/45">
-          {value.short_description.length}/280
-        </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="c-desc">Descrição completa</Label>
+        <Label htmlFor="nc-desc">Descrição completa (opcional)</Label>
         <Textarea
-          id="c-desc"
-          placeholder="Para quem é, o que o aluno aprende, como o curso está organizado..."
+          id="nc-desc"
+          placeholder="Pode editar depois pela engrenagem do curso."
           value={value.description}
           onChange={(e) => onChange({ ...value, description: e.target.value })}
-          rows={5}
+          rows={4}
           disabled={disabled}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="c-cover">URL da capa (opcional)</Label>
-        <Input
-          id="c-cover"
-          placeholder="https://..."
-          value={value.cover_url}
-          onChange={(e) => onChange({ ...value, cover_url: e.target.value })}
-          disabled={disabled}
-        />
-        <p className="text-[11px] text-white/45">
-          Upload de capa direto pelo R2 chega no Slice 3 (engrenagem do curso).
-        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="c-price">Preço (R$)</Label>
+          <Label htmlFor="nc-price">Preço (R$, opcional)</Label>
           <Input
-            id="c-price"
+            id="nc-price"
             placeholder="0,00"
             value={value.price_text}
             onChange={(e) =>
@@ -468,13 +421,13 @@ function CourseForm({
             inputMode="decimal"
           />
           <p className="text-[11px] text-white/45">
-            Mínimo R$ 5,00 para publicar. Em rascunho pode ficar vazio.
+            Mínimo R$ 5,00 para publicar.
           </p>
         </div>
 
         {profileOptions.length > 0 && (
           <div className="space-y-2">
-            <Label htmlFor="c-profile">Perfil vinculado (opcional)</Label>
+            <Label htmlFor="nc-profile">Perfil vinculado (opcional)</Label>
             <Select
               value={value.profile_id || "__none__"}
               onValueChange={(v) =>
@@ -482,7 +435,7 @@ function CourseForm({
               }
               disabled={disabled}
             >
-              <SelectTrigger id="c-profile">
+              <SelectTrigger id="nc-profile">
                 <SelectValue placeholder="Sem perfil vinculado" />
               </SelectTrigger>
               <SelectContent>
@@ -498,30 +451,10 @@ function CourseForm({
         )}
       </div>
 
-      {showStatus && (
-        <div className="space-y-2">
-          <Label htmlFor="c-status">Status</Label>
-          <Select
-            value={value.status}
-            onValueChange={(v) =>
-              onChange({ ...value, status: v as CourseStatus })
-            }
-            disabled={disabled}
-          >
-            <SelectTrigger id="c-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Rascunho</SelectItem>
-              <SelectItem value="published">Publicado</SelectItem>
-              <SelectItem value="paused">Pausado</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-[11px] text-white/45">
-            Publicar exige título e preço ≥ R$ 5,00.
-          </p>
-        </div>
-      )}
+      <p className="text-[11px] text-white/55">
+        Após criar, você poderá ajustar capa, descrição completa, módulos e
+        aulas pela <strong>engrenagem</strong> do card.
+      </p>
     </div>
   )
 }
@@ -532,26 +465,15 @@ function CourseForm({
 
 export function CoursesSection({ profileOptions = [] }: Props) {
   const router = useRouter()
-  const {
-    courses,
-    isLoading,
-    error,
-    createCourse,
-    updateCourse,
-    deleteCourse,
-  } = useMyCourses()
+  const { courses, isLoading, error, createCourse, updateCourse, deleteCourse } =
+    useMyCourses()
 
   const [tab, setTab] = useState<CoursesTab>("created")
 
   // Modal de novo curso
   const [isNewOpen, setIsNewOpen] = useState(false)
-  const [newForm, setNewForm] = useState<CourseFormState>(emptyForm())
+  const [newForm, setNewForm] = useState<NewCourseFormState>(emptyNewForm())
   const [isSavingNew, setIsSavingNew] = useState(false)
-
-  // Modal de edição
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<CourseFormState>(emptyForm())
-  const [isSavingEdit, setIsSavingEdit] = useState(false)
 
   // Modal de exclusão
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -573,23 +495,12 @@ export function CoursesSection({ profileOptions = [] }: Props) {
       : `${counts.purchasedTotal} curso${counts.purchasedTotal === 1 ? "" : "s"} com acesso ativo`
 
   function openNewCourse() {
-    setNewForm(emptyForm())
+    setNewForm(emptyNewForm())
     setIsNewOpen(true)
   }
 
-  function openEditCourse(id: string) {
-    const c = courses.find((x) => x.id === id)
-    if (!c) return
-    setEditForm({
-      title: c.title || "",
-      short_description: c.short_description || "",
-      description: c.description || "",
-      cover_url: c.cover_url || "",
-      price_text: centsToInputText(c.price_cents),
-      profile_id: c.profile_id || "",
-      status: c.status,
-    })
-    setEditingId(id)
+  function goToManage(id: string) {
+    router.push(`/account/courses/${id}`)
   }
 
   function openPreview(id: string) {
@@ -607,7 +518,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
     const priceCents = parsePriceInput(newForm.price_text)
     if (
       opts.publish &&
-      (priceCents == null || priceCents < MIN_PUBLISH_PRICE_CENTS)
+      (priceCents == null || priceCents < COURSE_MIN_PUBLISH_PRICE_CENTS)
     ) {
       toast.error("Para publicar, o preço precisa ser de no mínimo R$ 5,00")
       return
@@ -627,7 +538,6 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           await updateCourse(created.id, { status: "published" })
           toast.success("Curso publicado!")
         } catch (err) {
-          // Curso foi criado, mas não publicou. Usuário vê em rascunho.
           toast.error(
             err instanceof Error
               ? err.message
@@ -638,50 +548,13 @@ export function CoursesSection({ profileOptions = [] }: Props) {
         toast.success("Curso criado em rascunho")
       }
       setIsNewOpen(false)
-      setNewForm(emptyForm())
+      setNewForm(emptyNewForm())
+      // Leva direto pra engrenagem para o usuário continuar configurando.
+      router.push(`/account/courses/${created.id}`)
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Falha ao criar curso",
-      )
+      toast.error(err instanceof Error ? err.message : "Falha ao criar curso")
     } finally {
       setIsSavingNew(false)
-    }
-  }
-
-  async function handleSaveEdit() {
-    if (!editingId) return
-    const title = editForm.title.trim()
-    if (!title) {
-      toast.error("Informe o título do curso")
-      return
-    }
-    const priceCents = parsePriceInput(editForm.price_text)
-    if (
-      editForm.status === "published" &&
-      (priceCents == null || priceCents < MIN_PUBLISH_PRICE_CENTS)
-    ) {
-      toast.error("Para publicar, o preço precisa ser de no mínimo R$ 5,00")
-      return
-    }
-    setIsSavingEdit(true)
-    try {
-      await updateCourse(editingId, {
-        title,
-        short_description: editForm.short_description.trim() || null,
-        description: editForm.description.trim() || null,
-        cover_url: editForm.cover_url.trim() || null,
-        price_cents: priceCents,
-        profile_id: editForm.profile_id || null,
-        status: editForm.status,
-      })
-      toast.success("Alterações salvas")
-      setEditingId(null)
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Falha ao salvar alterações",
-      )
-    } finally {
-      setIsSavingEdit(false)
     }
   }
 
@@ -801,7 +674,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
                       key={course.id}
                       course={course}
                       variant="created"
-                      onManage={openEditCourse}
+                      onManage={goToManage}
                       onPreview={openPreview}
                       onDelete={(id) => setDeletingId(id)}
                     />
@@ -828,7 +701,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
               preço de no mínimo R$ 5,00.
             </DialogDescription>
           </DialogHeader>
-          <CourseForm
+          <NewCourseForm
             value={newForm}
             onChange={setNewForm}
             profileOptions={profileOptions}
@@ -863,51 +736,6 @@ export function CoursesSection({ profileOptions = [] }: Props) {
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
               Salvar e publicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Editar Curso (dados básicos) */}
-      <Dialog
-        open={editingId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingId(null)
-        }}
-      >
-        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar dados do curso</DialogTitle>
-            <DialogDescription>
-              No Slice 3 a engrenagem abre o painel completo (módulos, aulas,
-              vídeos). Por aqui você já edita os dados principais.
-            </DialogDescription>
-          </DialogHeader>
-          <CourseForm
-            value={editForm}
-            onChange={setEditForm}
-            profileOptions={profileOptions}
-            showStatus
-            disabled={isSavingEdit}
-          />
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setEditingId(null)}
-              disabled={isSavingEdit}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSaveEdit}
-              disabled={isSavingEdit}
-            >
-              {isSavingEdit ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Salvar alterações
             </Button>
           </DialogFooter>
         </DialogContent>
