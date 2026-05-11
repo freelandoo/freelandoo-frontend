@@ -16,6 +16,7 @@ import {
   Video,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
 import { useCoursePlayer, type PlayerLesson } from "@/hooks/use-course-player"
 
 interface Props {
@@ -311,6 +312,14 @@ export function CourseWatchView({ courseId }: Props) {
                   )}
                 </section>
               </div>
+            )}
+
+            {activeLesson && (
+              <LessonCommentsPanel
+                courseId={courseId}
+                lessonId={activeLesson.id}
+                mode="student"
+              />
             )}
           </section>
 

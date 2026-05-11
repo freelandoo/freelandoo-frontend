@@ -14,10 +14,10 @@ import {
 import { useCourseModules } from "@/hooks/use-course-modules"
 import { useAllCourseLessons } from "@/hooks/use-all-course-lessons"
 import { useCourseLesson } from "@/hooks/use-course-lesson"
+import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
 import { LessonSidebar } from "./lesson-sidebar"
 import { LessonDataForm } from "./lesson-data-form"
 import { LessonVideoPlaceholder } from "./lesson-video-placeholder"
-import { LessonComingSoonBlock } from "./lesson-coming-soon-block"
 import { LessonMaterialsBlock } from "./lesson-materials-block"
 import { LessonQuestionsBlock } from "./lesson-questions-block"
 
@@ -233,10 +233,11 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 />
 
                 {/* Comentários (Slice 15) */}
-                <LessonComingSoonBlock
-                  title="Comentários"
-                  description="Alunos comentam abaixo da aula. Você modera ou exclui qualquer comentário do próprio curso."
-                  slice="Slice 15"
+                <LessonCommentsPanel
+                  courseId={courseId}
+                  moduleId={lesson.module_id}
+                  lessonId={lessonId}
+                  mode="owner"
                 />
               </div>
             </div>
