@@ -283,19 +283,20 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
         <button
           type="button"
           onClick={handleVerPerfil}
-          className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300 text-white"
+          className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300"
           style={
             isPremium
               ? {
-                  background: "#0a0a0a",
-                  color: "#fff",
+                  background: "rgb(252, 211, 77)",
+                  color: "#0a0a0a",
                   boxShadow: colors
-                    ? `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`
-                    : "0 6px 20px -4px rgba(0,0,0,0.5)",
+                    ? `0 6px 20px -4px ${colors.glow}, 0 4px 12px -2px rgba(251,191,36,0.55), inset 0 0 0 1px rgba(251,191,36,0.7)`
+                    : "0 6px 20px -4px rgba(251,191,36,0.55)",
                 }
               : colors
                 ? {
                     background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
+                    color: "#fff",
                     boxShadow: `0 4px 14px -4px ${colors.glow}`,
                   }
                 : {
@@ -305,7 +306,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           }
           onMouseEnter={(e) => {
             if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 8px 26px -2px ${colors.glow}, inset 0 0 0 1px ${colors.accent}88`
+              e.currentTarget.style.boxShadow = `0 8px 26px -2px ${colors.glow}, 0 6px 16px -2px rgba(251,191,36,0.7), inset 0 0 0 1px rgba(251,191,36,0.9)`
               e.currentTarget.style.transform = "translateY(-1px)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 6px 20px -2px ${colors.glow}`
@@ -314,7 +315,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           }}
           onMouseLeave={(e) => {
             if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`
+              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, 0 4px 12px -2px rgba(251,191,36,0.55), inset 0 0 0 1px rgba(251,191,36,0.7)`
               e.currentTarget.style.transform = "translateY(0)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 4px 14px -4px ${colors.glow}`
