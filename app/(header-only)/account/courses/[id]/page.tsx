@@ -1,4 +1,4 @@
-import { CourseAdminView } from "./_components/course-admin-view"
+import { CourseLandingView } from "./_components/course-landing-view"
 
 export default async function ManageCoursePage({
   params,
@@ -6,5 +6,5 @@ export default async function ManageCoursePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <CourseAdminView courseId={id} />
+  return <CourseLandingView courseId={id} />
 }

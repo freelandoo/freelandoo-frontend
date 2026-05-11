@@ -10,6 +10,7 @@ export interface CourseModule {
   course_id: string
   title: string
   description: string | null
+  banner_url: string | null
   position: number
   status: ModuleStatus
   lessons_count: number
@@ -21,12 +22,14 @@ export interface ModuleCreateInput {
   title: string
   description?: string | null
   status?: ModuleStatus
+  banner_url?: string | null
 }
 
 export interface ModuleUpdateInput {
   title?: string
   description?: string | null
   status?: ModuleStatus
+  banner_url?: string | null
 }
 
 function getToken(): string | null {
@@ -217,6 +220,59 @@ export function useCourseModules(courseId: string | null | undefined) {
     [courseId, refresh],
   )
 
+  const uploadModuleBanner = useCallback(
+    async (id: string, file: File): Promise<CourseModule> => {
+      if (!courseId) throw new Error("Curso inválido")
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const form = new FormData()
+      form.append("banner", file)
+      const res = await fetchWithLog(
+        "useCourseModules:uploadBanner",
+        `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(id)}/banner`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { module?: CourseModule; error?: string }
+        | null
+      if (!res.ok || !data?.module) {
+        throw new Error(extractError(data, "Falha ao enviar banner"))
+      }
+      setModules((prev) => prev.map((m) => (m.id === id ? data.module! : m)))
+      return data.module
+    },
+    [courseId],
+  )
+
+  const removeModuleBanner = useCallback(
+    async (id: string): Promise<CourseModule> => {
+      if (!courseId) throw new Error("Curso inválido")
+      const token = getToken()
+      if (!token) throw new Error("Não autenticado")
+      const res = await fetchWithLog(
+        "useCourseModules:removeBanner",
+        `/api/me/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(id)}/banner`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+      const data = (await readJsonSafe(res)) as
+        | { module?: CourseModule; error?: string }
+        | null
+      if (!res.ok || !data?.module) {
+        throw new Error(extractError(data, "Falha ao remover banner"))
+      }
+      setModules((prev) => prev.map((m) => (m.id === id ? data.module! : m)))
+      return data.module
+    },
+    [courseId],
+  )
+
   return {
     modules,
     isLoading,
@@ -226,5 +282,7 @@ export function useCourseModules(courseId: string | null | undefined) {
     updateModule,
     deleteModule,
     reorderModules,
+    uploadModuleBanner,
+    removeModuleBanner,
   }
 }
