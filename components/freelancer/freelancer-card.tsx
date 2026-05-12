@@ -166,17 +166,17 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           {/* Sheen radial superior — efeito "metal polido" */}
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-[6]"
+            className="pointer-events-none absolute inset-0 z-30"
             style={{
               background:
                 "radial-gradient(80% 50% at 50% 0%, rgba(255,255,255,0.45), transparent 70%)",
               mixBlendMode: "screen",
             }}
           />
-          {/* Shimmer diagonal animado */}
+          {/* Shimmer diagonal animado — varre o card inteiro (acima do conteúdo) */}
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-1/2 z-[7] w-1/2 -translate-x-full rotate-12"
+            className="pointer-events-none absolute inset-y-0 -left-1/2 z-30 w-1/2 -translate-x-full rotate-12"
             style={{
               background:
                 "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
@@ -192,12 +192,9 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             }
           `}</style>
 
-          {/* Chip "PREMIUM" no estilo do TOP 01 do pódio */}
-          <span
-            className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] shadow-[0_6px_18px_-8px_rgba(0,0,0,0.65)]"
-            style={{ color: colors?.accent ?? "#facc15" }}
-          >
-            <Crown className="h-3 w-3" />
+          {/* Chip "PREMIUM" — sempre dourado com fonte preta */}
+          <span className="absolute left-3 top-3 z-40 inline-flex items-center gap-1 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-900 shadow-[0_6px_18px_-8px_rgba(0,0,0,0.65)]">
+            <Crown className="h-3 w-3 fill-zinc-900" />
             Premium
           </span>
         </>
@@ -339,11 +336,10 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           style={
             isPremium
               ? {
-                  background: "rgba(24,24,27,0.92)",
-                  color: colors?.accent ?? "#facc15",
-                  boxShadow: colors
-                    ? `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}aa`
-                    : "0 6px 20px -4px rgba(250,204,21,0.55), inset 0 0 0 1px rgba(250,204,21,0.7)",
+                  background: "linear-gradient(180deg, #fde047 0%, #facc15 55%, #eab308 100%)",
+                  color: "#0a0a0a",
+                  boxShadow:
+                    "0 6px 20px -4px rgba(250,204,21,0.6), inset 0 0 0 1px rgba(250,204,21,0.85)",
                 }
               : colors
                 ? {
@@ -357,8 +353,9 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
                   }
           }
           onMouseEnter={(e) => {
-            if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 10px 28px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}`
+            if (isPremium) {
+              e.currentTarget.style.boxShadow =
+                "0 10px 28px -4px rgba(250,204,21,0.8), inset 0 0 0 1px rgba(250,204,21,1)"
               e.currentTarget.style.transform = "translateY(-1px)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 6px 20px -2px ${colors.glow}`
@@ -366,8 +363,9 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             }
           }}
           onMouseLeave={(e) => {
-            if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}aa`
+            if (isPremium) {
+              e.currentTarget.style.boxShadow =
+                "0 6px 20px -4px rgba(250,204,21,0.6), inset 0 0 0 1px rgba(250,204,21,0.85)"
               e.currentTarget.style.transform = "translateY(0)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 4px 14px -4px ${colors.glow}`
