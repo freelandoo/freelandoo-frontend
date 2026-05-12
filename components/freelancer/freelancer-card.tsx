@@ -117,14 +117,21 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
     router.push(`/freelancer/${creator.id_profile}`)
   }
 
-  // Dynamic style: premium tem fundo tinted da máquina + glow permanente.
-  // Não-premium mantém border discreta + glow apenas no hover.
-  const cardStyle: React.CSSProperties = isPremium && colors
+  // Premium: gradiente metálico inspirado no TOP 01 do pódio,
+  // usando as cores da máquina (highlight → accent → from). Inclui glow forte,
+  // brilho radial superior e shimmer animado.
+  const premiumGradient = colors
+    ? `linear-gradient(155deg, color-mix(in srgb, ${colors.accent} 38%, #ffffff) 0%, ${colors.accent} 45%, ${colors.from} 100%)`
+    : "linear-gradient(155deg, #fde047 0%, #facc15 42%, #ca8a04 100%)"
+
+  const cardStyle: React.CSSProperties = isPremium
     ? {
-        borderColor: colors.accent,
-        background: `linear-gradient(180deg, ${colors.from}26, ${colors.to}1f)`,
-        boxShadow: `0 0 38px -6px ${colors.glow}, inset 0 0 0 1px ${colors.accent}55`,
-        transition: "box-shadow 0.4s ease, border-color 0.4s ease",
+        borderColor: colors?.accent ?? "#facc15",
+        background: premiumGradient,
+        boxShadow: colors
+          ? `0 26px 60px -22px ${colors.glow}, 0 0 0 1px ${colors.accent}73, 0 0 42px -10px ${colors.glow}`
+          : "0 26px 60px -22px rgba(250,204,21,0.7), 0 0 0 1px rgba(250,204,21,0.45)",
+        transition: "box-shadow 0.4s ease, border-color 0.4s ease, transform 0.3s ease",
       }
     : colors
       ? {
@@ -155,10 +162,45 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
       {...hoverHandlers}
     >
       {isPremium && (
-        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-amber-300/60 bg-amber-300/95 px-2.5 py-1 text-xs font-semibold text-zinc-900 shadow-[0_4px_12px_-2px_rgba(251,191,36,0.6)]">
-          <Crown className="h-3.5 w-3.5 fill-zinc-900" />
-          Premium
-        </span>
+        <>
+          {/* Sheen radial superior — efeito "metal polido" */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[6]"
+            style={{
+              background:
+                "radial-gradient(80% 50% at 50% 0%, rgba(255,255,255,0.45), transparent 70%)",
+              mixBlendMode: "screen",
+            }}
+          />
+          {/* Shimmer diagonal animado */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 -left-1/2 z-[7] w-1/2 -translate-x-full rotate-12"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+              mixBlendMode: "screen",
+              animation: "freelancerCardShimmer 3.8s ease-in-out infinite",
+            }}
+          />
+          <style>{`
+            @keyframes freelancerCardShimmer {
+              0% { transform: translateX(-150%) rotate(12deg); }
+              55% { transform: translateX(420%) rotate(12deg); }
+              100% { transform: translateX(420%) rotate(12deg); }
+            }
+          `}</style>
+
+          {/* Chip "PREMIUM" no estilo do TOP 01 do pódio */}
+          <span
+            className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] shadow-[0_6px_18px_-8px_rgba(0,0,0,0.65)]"
+            style={{ color: colors?.accent ?? "#facc15" }}
+          >
+            <Crown className="h-3 w-3" />
+            Premium
+          </span>
+        </>
       )}
 
       <div className="relative aspect-square bg-muted flex items-center justify-center">
@@ -213,21 +255,31 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
         </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1 gap-3">
+      <div className="p-4 flex flex-col flex-1 gap-3 relative z-10">
         <div className="flex items-center justify-between">
           <Badge
             variant="secondary"
             style={
-              colors
-                ? { background: `${colors.from}22`, color: colors.accent, borderColor: `${colors.accent}33` }
-                : undefined
+              isPremium && colors
+                ? {
+                    background: "rgba(24,24,27,0.85)",
+                    color: colors.accent,
+                    borderColor: `${colors.accent}55`,
+                  }
+                : colors
+                  ? { background: `${colors.from}22`, color: colors.accent, borderColor: `${colors.accent}33` }
+                  : undefined
             }
           >
             {creator.is_clan
               ? `Clan${creator.members_count ? ` · ${creator.members_count} membro${creator.members_count !== 1 ? "s" : ""}` : ""}`
               : creator.category}
           </Badge>
-          <span className="text-xs text-muted-foreground">{creator.municipio}, {creator.estado}</span>
+          <span
+            className={`text-xs ${isPremium ? "text-white/90 font-medium" : "text-muted-foreground"}`}
+          >
+            {creator.municipio}, {creator.estado}
+          </span>
         </div>
 
         <div className="space-y-2">
@@ -283,15 +335,15 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
         <button
           type="button"
           onClick={handleVerPerfil}
-          className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300"
+          className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300 relative z-10"
           style={
             isPremium
               ? {
-                  background: "rgb(252, 211, 77)",
-                  color: "#0a0a0a",
+                  background: "rgba(24,24,27,0.92)",
+                  color: colors?.accent ?? "#facc15",
                   boxShadow: colors
-                    ? `0 6px 20px -4px ${colors.glow}, 0 4px 12px -2px rgba(251,191,36,0.55), inset 0 0 0 1px rgba(251,191,36,0.7)`
-                    : "0 6px 20px -4px rgba(251,191,36,0.55)",
+                    ? `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}aa`
+                    : "0 6px 20px -4px rgba(250,204,21,0.55), inset 0 0 0 1px rgba(250,204,21,0.7)",
                 }
               : colors
                 ? {
@@ -306,7 +358,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           }
           onMouseEnter={(e) => {
             if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 8px 26px -2px ${colors.glow}, 0 6px 16px -2px rgba(251,191,36,0.7), inset 0 0 0 1px rgba(251,191,36,0.9)`
+              e.currentTarget.style.boxShadow = `0 10px 28px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}`
               e.currentTarget.style.transform = "translateY(-1px)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 6px 20px -2px ${colors.glow}`
@@ -315,7 +367,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           }}
           onMouseLeave={(e) => {
             if (isPremium && colors) {
-              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, 0 4px 12px -2px rgba(251,191,36,0.55), inset 0 0 0 1px rgba(251,191,36,0.7)`
+              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, inset 0 0 0 1px ${colors.accent}aa`
               e.currentTarget.style.transform = "translateY(0)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 4px 14px -4px ${colors.glow}`
