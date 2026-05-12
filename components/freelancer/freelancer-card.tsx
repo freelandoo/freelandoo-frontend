@@ -117,20 +117,26 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
     router.push(`/freelancer/${creator.id_profile}`)
   }
 
-  // Premium: gradiente metálico inspirado no TOP 01 do pódio,
-  // usando as cores da máquina (highlight → accent → from). Inclui glow forte,
-  // brilho radial superior e shimmer animado.
+  // Premium: gradiente metálico idêntico ao TOP 01 do pódio (3 stops:
+  // highlight quase-branco → accent → from → âncora dark off-black).
+  // Cores derivadas da máquina; dark anchor garante o fade escuro no rodapé.
   const premiumGradient = colors
-    ? `linear-gradient(155deg, color-mix(in srgb, ${colors.accent} 38%, #ffffff) 0%, ${colors.accent} 45%, ${colors.from} 100%)`
-    : "linear-gradient(155deg, #fde047 0%, #facc15 42%, #ca8a04 100%)"
+    ? `linear-gradient(160deg, color-mix(in srgb, ${colors.accent} 30%, #ffffff) 0%, ${colors.accent} 38%, ${colors.from} 78%, color-mix(in srgb, ${colors.from} 55%, #1a1a1a) 100%)`
+    : "linear-gradient(160deg, #fde047 0%, #facc15 42%, #ca8a04 100%)"
 
   const cardStyle: React.CSSProperties = isPremium
     ? {
         borderColor: colors?.accent ?? "#facc15",
         background: premiumGradient,
         boxShadow: colors
-          ? `0 26px 60px -22px ${colors.glow}, 0 0 0 1px ${colors.accent}73, 0 0 42px -10px ${colors.glow}`
-          : "0 26px 60px -22px rgba(250,204,21,0.7), 0 0 0 1px rgba(250,204,21,0.45)",
+          ? [
+              `0 26px 60px -22px ${colors.glow}`,
+              `0 0 0 1px ${colors.accent}73`,
+              `0 0 42px -10px ${colors.glow}`,
+              "inset 0 1px 0 rgba(255,255,255,0.28)",
+              "inset 0 -1px 0 rgba(0,0,0,0.22)",
+            ].join(", ")
+          : "0 26px 60px -22px rgba(250,204,21,0.7), 0 0 0 1px rgba(250,204,21,0.45), inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(0,0,0,0.22)",
         transition: "box-shadow 0.4s ease, border-color 0.4s ease, transform 0.3s ease",
       }
     : colors
@@ -334,28 +340,33 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
           onClick={handleVerPerfil}
           className="w-full py-2 rounded-lg font-medium mt-auto transition-all duration-300 relative z-10"
           style={
-            isPremium
+            isPremium && colors
               ? {
-                  background: "linear-gradient(180deg, #fde047 0%, #facc15 55%, #eab308 100%)",
-                  color: "#0a0a0a",
-                  boxShadow:
-                    "0 6px 20px -4px rgba(250,204,21,0.6), inset 0 0 0 1px rgba(250,204,21,0.85)",
+                  background: `linear-gradient(180deg, ${colors.from} 0%, color-mix(in srgb, ${colors.from} 55%, #1a1a1a) 100%)`,
+                  color: "#ffffff",
+                  boxShadow: `0 6px 20px -4px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.35), inset 0 0 0 1px ${colors.accent}55`,
                 }
-              : colors
+              : isPremium
                 ? {
-                    background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
-                    color: "#fff",
-                    boxShadow: `0 4px 14px -4px ${colors.glow}`,
+                    background: "linear-gradient(180deg, #facc15 0%, #854d0e 100%)",
+                    color: "#ffffff",
+                    boxShadow:
+                      "0 6px 20px -4px rgba(250,204,21,0.55), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.35)",
                   }
-                : {
-                    background: "var(--primary)",
-                    color: "var(--primary-foreground)",
-                  }
+                : colors
+                  ? {
+                      background: `linear-gradient(135deg, ${colors.from}, ${colors.to})`,
+                      color: "#fff",
+                      boxShadow: `0 4px 14px -4px ${colors.glow}`,
+                    }
+                  : {
+                      background: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }
           }
           onMouseEnter={(e) => {
-            if (isPremium) {
-              e.currentTarget.style.boxShadow =
-                "0 10px 28px -4px rgba(250,204,21,0.8), inset 0 0 0 1px rgba(250,204,21,1)"
+            if (isPremium && colors) {
+              e.currentTarget.style.boxShadow = `0 10px 28px -4px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.32), inset 0 -1px 0 rgba(0,0,0,0.4), inset 0 0 0 1px ${colors.accent}`
               e.currentTarget.style.transform = "translateY(-1px)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 6px 20px -2px ${colors.glow}`
@@ -363,9 +374,8 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             }
           }}
           onMouseLeave={(e) => {
-            if (isPremium) {
-              e.currentTarget.style.boxShadow =
-                "0 6px 20px -4px rgba(250,204,21,0.6), inset 0 0 0 1px rgba(250,204,21,0.85)"
+            if (isPremium && colors) {
+              e.currentTarget.style.boxShadow = `0 6px 20px -4px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.35), inset 0 0 0 1px ${colors.accent}55`
               e.currentTarget.style.transform = "translateY(0)"
             } else if (colors) {
               e.currentTarget.style.boxShadow = `0 4px 14px -4px ${colors.glow}`
