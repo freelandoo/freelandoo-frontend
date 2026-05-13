@@ -1,13 +1,28 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Save, Users, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { GripVertical, ImagePlus, Loader2, Save, Trash2, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { ProfileService } from "@/components/calendar/types"
 import {
   clientTotalCentsFromFreelancerNet,
   freelancerNetForEditForm,
 } from "@/lib/service-booking-price"
+
+interface ServiceMedia {
+  id_service_media: number
+  url: string
+  mime_type: string
+  sort_order: number
+}
+
+const MAX_SERVICE_MEDIA = 5
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg", "image/png", "image/webp",
+  "video/mp4", "video/webm",
+  "application/pdf",
+]
 
 export interface ProfileServiceEditClanMember {
   id_member_profile: string
@@ -84,6 +99,14 @@ export function ProfileServiceEditModal({
   const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
   const [bookingFeesReady, setBookingFeesReady] = useState(false)
 
+  const [mediaList, setMediaList] = useState<ServiceMedia[]>([])
+  const [mediaLoading, setMediaLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [deletingMedia, setDeletingMedia] = useState<number | null>(null)
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetch("/api/public/booking-fees")
       .then((r) => (r.ok ? r.json() : null))
@@ -156,6 +179,153 @@ export function ProfileServiceEditModal({
     }))
   }
 
+  const isEdit = service !== null
+  const mediaUrl = (sid: number) =>
+    `/api/profile/${profileId}/services/${sid}/media`
+
+  const fetchMedia = useCallback(async () => {
+    if (!service) return
+    setMediaLoading(true)
+    try {
+      const res = await fetch(mediaUrl(service.id_profile_service), { headers: headers() })
+      if (res.ok) {
+        const data = await res.json()
+        const items: ServiceMedia[] = Array.isArray(data) ? data : data.media ?? []
+        setMediaList(items.sort((a, b) => a.sort_order - b.sort_order))
+      }
+    } catch { /* silencioso */ }
+    setMediaLoading(false)
+  }, [service?.id_profile_service, profileId])
+
+  useEffect(() => {
+    if (open && service) fetchMedia()
+    if (!open) setMediaList([])
+  }, [open, service?.id_profile_service])
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (e.target) e.target.value = ""
+    if (!file || !service) return
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      onError?.("Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou PDF.")
+      return
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      onError?.("Arquivo muito grande. Máximo 10 MB.")
+      return
+    }
+    if (mediaList.length >= MAX_SERVICE_MEDIA) {
+      onError?.(`Máximo de ${MAX_SERVICE_MEDIA} arquivos por serviço.`)
+      return
+    }
+
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch(mediaUrl(service.id_profile_service), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
+      })
+      if (res.ok) {
+        await fetchMedia()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        onError?.(d.error || "Erro ao enviar arquivo")
+      }
+    } catch {
+      onError?.("Erro de conexão ao enviar arquivo")
+    }
+    setUploading(false)
+  }
+
+  async function handleDeleteMedia(mediaId: number) {
+    if (!service) return
+    setDeletingMedia(mediaId)
+    try {
+      const res = await fetch(
+        `${mediaUrl(service.id_profile_service)}/${mediaId}`,
+        { method: "DELETE", headers: headers() },
+      )
+      if (res.ok) {
+        setMediaList((prev) => prev.filter((m) => m.id_service_media !== mediaId))
+      } else {
+        const d = await res.json().catch(() => ({}))
+        onError?.(d.error || "Erro ao remover arquivo")
+      }
+    } catch {
+      onError?.("Erro de conexão ao remover arquivo")
+    }
+    setDeletingMedia(null)
+  }
+
+  async function handleReorder(fromIndex: number, toIndex: number) {
+    if (!service || fromIndex === toIndex) return
+    const reordered = [...mediaList]
+    const [moved] = reordered.splice(fromIndex, 1)
+    reordered.splice(toIndex, 0, moved)
+    setMediaList(reordered)
+
+    try {
+      await fetch(`${mediaUrl(service.id_profile_service)}/reorder`, {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify({ ordered_ids: reordered.map((m) => m.id_service_media) }),
+      })
+    } catch { /* revert silenciosamente na próxima recarga */ }
+  }
+
+  function handleDragStart(idx: number) {
+    setDragIdx(idx)
+  }
+
+  function handleDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault()
+    setDragOverIdx(idx)
+  }
+
+  function handleDrop(idx: number) {
+    if (dragIdx !== null && dragIdx !== idx) {
+      handleReorder(dragIdx, idx)
+    }
+    setDragIdx(null)
+    setDragOverIdx(null)
+  }
+
+  function handleDragEnd() {
+    setDragIdx(null)
+    setDragOverIdx(null)
+  }
+
+  function renderMediaThumb(media: ServiceMedia) {
+    if (media.mime_type.startsWith("video/")) {
+      return (
+        <video
+          src={media.url}
+          className="h-full w-full object-cover"
+          muted
+          preload="metadata"
+        />
+      )
+    }
+    if (media.mime_type === "application/pdf") {
+      return (
+        <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-xs text-zinc-400">
+          PDF
+        </div>
+      )
+    }
+    return (
+      <img
+        src={media.url}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+    )
+  }
+
   async function saveService() {
     const price = parsePriceReais(serviceForm.price_reais)
     if (!serviceForm.name.trim()) {
@@ -211,8 +381,6 @@ export function ProfileServiceEditModal({
   }
 
   if (!open) return null
-
-  const isEdit = service !== null
 
   return (
     <div
@@ -374,6 +542,96 @@ export function ProfileServiceEditModal({
                     </span>
                   )}
                 </p>
+              )}
+            </div>
+          )}
+
+          {isEdit && (
+            <div>
+              <label className="mb-2 flex items-center gap-1 text-xs text-zinc-400">
+                <ImagePlus className="h-3.5 w-3.5" />
+                Fotos e arquivos do serviço
+              </label>
+
+              {mediaLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    {mediaList.map((media, idx) => (
+                      <div
+                        key={media.id_service_media}
+                        draggable
+                        onDragStart={() => handleDragStart(idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDrop={() => handleDrop(idx)}
+                        onDragEnd={handleDragEnd}
+                        className={`group relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                          dragOverIdx === idx
+                            ? "border-yellow-400 ring-2 ring-yellow-400/30"
+                            : "border-zinc-700"
+                        } ${dragIdx === idx ? "opacity-40" : ""}`}
+                      >
+                        {renderMediaThumb(media)}
+                        <div className="absolute inset-0 flex items-start justify-between bg-gradient-to-b from-black/50 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            type="button"
+                            className="m-1 cursor-grab rounded p-0.5 text-white/70 hover:text-white active:cursor-grabbing"
+                            aria-label="Arrastar para reordenar"
+                          >
+                            <GripVertical className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMedia(media.id_service_media)}
+                            disabled={deletingMedia === media.id_service_media}
+                            className="m-1 rounded bg-red-600/80 p-1 text-white hover:bg-red-600 disabled:opacity-50"
+                            aria-label="Remover arquivo"
+                          >
+                            {deletingMedia === media.id_service_media ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {mediaList.length < MAX_SERVICE_MEDIA && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-zinc-600 text-zinc-500 transition-colors hover:border-yellow-400/50 hover:text-yellow-400 disabled:opacity-50"
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <>
+                            <ImagePlus className="h-5 w-5" />
+                            <span className="text-[10px]">Adicionar</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ALLOWED_MIME_TYPES.join(",")}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+
+                  <p className="mt-1.5 text-[10px] text-zinc-600">
+                    JPG, PNG, WebP, MP4, WebM ou PDF · Máx. 10 MB · Até {MAX_SERVICE_MEDIA} arquivos.
+                    {mediaList.length > 1 && " Arraste para reordenar."}
+                  </p>
+                </>
               )}
             </div>
           )}
