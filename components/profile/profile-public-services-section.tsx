@@ -242,7 +242,7 @@ export function ProfilePublicServicesSection({
       ) : (
         <>
           {/* 2 colunas até xl; xl+: 3 colunas como o portfólio. Imagem 4:5. */}
-          <ul className="grid grid-cols-2 items-stretch gap-2 md:gap-3 lg:gap-3 xl:grid-cols-3 xl:gap-2">
+          <ul className="-mx-4 grid grid-cols-3 items-stretch gap-px md:mx-0">
           {visibleServices.map((s) => {
             const img = getServiceCoverUrl(s)
             const { integer, cents } = formatPriceParts(s.price_amount)
@@ -251,7 +251,7 @@ export function ProfilePublicServicesSection({
             return (
               <li
                 key={s.id_profile_service}
-                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border border-zinc-800 bg-[#121212] text-left shadow-md md:rounded-lg"
+                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left"
               >
                 <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
                   {showOwnerControls && (
@@ -277,10 +277,10 @@ export function ProfilePublicServicesSection({
                   )}
                 </div>
 
-                <div className="flex min-h-0 flex-1 flex-col p-3">
+                <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="min-w-0 flex-1 text-sm font-bold leading-snug text-white">{s.name}</h3>
-                    <div className="flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-yellow-500">
+                    <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-white md:text-sm">{s.name}</h3>
+                    <div className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-yellow-500 md:text-[11px]">
                       <Clock className="h-3 w-3" aria-hidden />
                       <span className="tabular-nums">{s.duration_minutes} min</span>
                     </div>
@@ -288,28 +288,28 @@ export function ProfilePublicServicesSection({
 
                   <div className="mt-1.5 min-h-0 flex-1">
                     {desc ? (
-                      <p className="line-clamp-3 text-[11px] font-normal leading-relaxed text-zinc-300">{desc}</p>
+                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
                     ) : null}
                   </div>
 
                   <div className="mt-auto shrink-0">
-                    <hr className="my-3 border-zinc-700/80" />
+                    <div className="mt-2 flex items-center justify-between gap-1.5">
+                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
+                        R$ {integer}
+                        <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
+                      </p>
 
-                    <p className="text-xl font-bold leading-none tracking-tight text-white tabular-nums sm:text-2xl">
-                      R$ {integer}
-                      <span className="align-top text-xs font-semibold text-white/95 sm:text-sm">,{cents}</span>
-                    </p>
-
-                    {allowPublicBooking ? (
-                      <button
-                        type="button"
-                        className="mt-3 w-full rounded-full bg-yellow-400 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-black transition hover:bg-yellow-300 active:scale-[0.99] sm:py-2.5 sm:text-[11px]"
-                        onClick={() => openSchedule(s)}
-                        aria-label={`Agendar: ${s.name}`}
-                      >
-                        Agendar
-                      </button>
-                    ) : null}
+                      {allowPublicBooking ? (
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-full bg-yellow-400 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-black transition hover:bg-yellow-300 active:scale-[0.99] md:px-3 md:text-[10px]"
+                          onClick={() => openSchedule(s)}
+                          aria-label={`Agendar: ${s.name}`}
+                        >
+                          Agendar
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </li>

@@ -218,14 +218,14 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
               <p className="text-sm font-medium">Sem itens no portfolio.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-1 md:gap-2">
+            <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
               {items.map((item) => {
                 const activeMedias = item.media?.filter((media) => media.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
                 return (
                   <div key={item.id_portfolio_item} className="group relative flex flex-col">
                     {firstMedia ? (
-                      <div className="relative aspect-[4/5] overflow-hidden border border-border/50 bg-muted md:rounded-lg">
+                      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
                         {firstMedia.media_type === "video" ? (
                           <video
                             src={firstMedia.media_url}
@@ -249,7 +249,7 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
                         )}
                       </div>
                     ) : (
-                      <div className="relative flex aspect-[4/5] items-center justify-center border border-border/50 bg-muted md:rounded-lg">
+                      <div className="relative flex aspect-[4/5] items-center justify-center bg-muted">
                         <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                       </div>
                     )}
@@ -281,13 +281,13 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
               {courses.map((course) => (
                 <article
                   key={course.id}
-                  className="group overflow-hidden rounded-xl border border-border/70 bg-card transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                  className="group overflow-hidden bg-card transition duration-300 hover:-translate-y-0.5"
                 >
-                  <div className="grid grid-cols-[112px_1fr] md:grid-cols-[148px_1fr]">
+                  <div className="flex h-full flex-col">
                     <div className="aspect-[4/5] bg-muted">
                       {course.cover_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -302,22 +302,22 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex min-w-0 flex-col justify-between p-4">
+                    <div className="flex min-w-0 flex-col justify-between p-2 md:p-3">
                       <div className="min-w-0">
-                        <h3 className="line-clamp-2 text-base font-semibold leading-snug">
+                        <h3 className="line-clamp-2 text-xs font-semibold leading-snug md:text-sm">
                           {course.title}
                         </h3>
                         {course.short_description && (
-                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                          <p className="mt-1 line-clamp-2 text-[10px] leading-relaxed text-muted-foreground md:text-xs">
                             {course.short_description}
                           </p>
                         )}
                       </div>
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[9px] font-medium text-muted-foreground md:text-[10px]">
                           Publicado
                         </span>
-                        <span className="text-sm font-semibold text-foreground">
+                        <span className="text-[11px] font-semibold text-foreground md:text-sm">
                           {formatPrice(course.price_cents)}
                         </span>
                       </div>

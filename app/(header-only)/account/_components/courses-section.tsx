@@ -172,7 +172,7 @@ function CourseCard({
   const progress = course.progress_percent ?? 0
 
   return (
-    <article className="group relative rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_45px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.1)]">
+    <article className="group relative overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.012))] transition duration-300 hover:-translate-y-0.5">
       <button
         type="button"
         onClick={() =>
@@ -180,7 +180,7 @@ function CourseCard({
             ? onManage?.(course.id)
             : router.push(`/account/courses/${course.id}/watch`)
         }
-        className="relative block aspect-[16/9] w-full overflow-hidden rounded-[1rem] border border-white/[0.07] bg-zinc-900/80 transition hover:border-primary/35"
+        className="relative block aspect-[4/5] w-full overflow-hidden bg-zinc-900/80 transition"
         aria-label={`Abrir curso ${course.title}`}
       >
         {course.cover_url ? (
@@ -268,12 +268,12 @@ function CourseCard({
         </Link>
       )}
 
-      <div className="min-w-0 px-1.5 pb-1 pt-3">
-        <p className="inline-flex w-full items-center gap-1.5 text-sm font-medium text-white">
+      <div className="min-w-0 px-2 pb-2 pt-2">
+        <p className="inline-flex w-full items-center gap-1.5 text-xs font-medium text-white md:text-sm">
           <GraduationCap className="h-3 w-3 shrink-0 text-primary/80" />
           <span className="truncate">{course.title}</span>
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/55">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-white/55 md:text-[11px]">
           <span className="inline-flex items-center gap-1">
             <BookOpen className="h-3 w-3" />
             {course.modules_count} mód.
@@ -293,7 +293,7 @@ function CourseCard({
           )}
         </div>
         {!isOwner && (
-          <div className="mt-3">
+          <div className="mt-2">
             <div className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-white/35">
               <span>Progresso</span>
               <span>{Math.round(progress)}%</span>
@@ -317,8 +317,8 @@ function CourseCard({
 
 function CourseCardSkeleton() {
   return (
-    <div className="rounded-[1.35rem] border border-white/[0.08] bg-white/[0.025] p-2.5">
-      <div className="aspect-[16/9] animate-pulse rounded-[1rem] bg-white/[0.05]" />
+    <div className="bg-white/[0.025]">
+      <div className="aspect-[4/5] animate-pulse bg-white/[0.05]" />
       <div className="px-1.5 pb-1 pt-3">
         <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/[0.06]" />
         <div className="mt-2 h-3 w-1/2 animate-pulse rounded-full bg-white/[0.04]" />
@@ -634,7 +634,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
 
   return (
     <>
-      <article className="rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7">
+      <article className="bg-transparent p-0">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
@@ -708,7 +708,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
         {/* Conteúdo */}
         <div>
           {tab === "created" && isLoading && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
               <CourseCardSkeleton />
               <CourseCardSkeleton />
               <CourseCardSkeleton />
@@ -725,7 +725,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           {tab === "created" && !isLoading && !error && (
             <>
               {createdCards.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
                   {createdCards.map((course) => (
                     <CourseCard
                       key={course.id}
@@ -744,7 +744,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           )}
 
           {tab === "purchased" && loadingPurchased && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
               <CourseCardSkeleton />
               <CourseCardSkeleton />
               <CourseCardSkeleton />
@@ -761,7 +761,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           {tab === "purchased" && !loadingPurchased && !purchasedError && (
             <>
               {purchasedCards.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
                   {purchasedCards.map((course) => (
                     <CourseCard
                       key={course.id}

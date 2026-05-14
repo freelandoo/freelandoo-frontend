@@ -344,7 +344,7 @@ export function UserPortfolio() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-1 md:gap-2">
+        <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
           {items.map((item) => {
             const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
             const firstMedia = activeMedias[0]
@@ -352,7 +352,7 @@ export function UserPortfolio() {
               <div key={item.id_portfolio_item} className="group relative flex flex-col">
                 {/* Media Container 4:5 */}
                 {firstMedia ? (
-                  <div className="relative aspect-[4/5] bg-muted overflow-hidden md:rounded-lg border border-border/50">
+                  <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                     {firstMedia.media_type === "video" ? (
                       <video
                         src={firstMedia.media_url}
@@ -418,7 +418,7 @@ export function UserPortfolio() {
                     </div>
                   </div>
                 ) : (
-                  <div className="relative aspect-[4/5] bg-muted flex items-center justify-center md:rounded-lg border border-border/50">
+                  <div className="relative aspect-[4/5] bg-muted flex items-center justify-center">
                     <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <label
