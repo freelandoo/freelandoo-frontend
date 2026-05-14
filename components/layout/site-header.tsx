@@ -1,24 +1,42 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { LogOut, User, CreditCard, Shield } from "lucide-react"
-import { useRouter } from "next/navigation"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { User } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import MessagesNavLink from "@/components/mensagens/MessagesNavLink"
+import { UserDropside } from "@/components/layout/UserDropside"
 
 export default function SiteHeader() {
   const { user, status, logout } = useAuth()
-  const router = useRouter()
+  const [dropsideOpen, setDropsideOpen] = useState(false)
+  const [unreadSR, setUnreadSR] = useState(false)
 
   const isLoggedIn = status === "authenticated" && !!user
+
+  // Polling leve do badge de service-request (a cada 60s) para acender o ponto no dropside
+  useEffect(() => {
+    if (!isLoggedIn) return
+    let cancelled = false
+    const fetchBadge = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) return
+      try {
+        const res = await fetch("/api/service-requests/badge/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (!cancelled) setUnreadSR(!!data.has_new || (data.unread_chats ?? 0) > 0)
+        }
+      } catch { /* silent */ }
+    }
+    fetchBadge()
+    const interval = setInterval(fetchBadge, 60000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [isLoggedIn])
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -44,38 +62,20 @@ export default function SiteHeader() {
             ) : isLoggedIn ? (
               <>
                 <MessagesNavLink />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground md:h-9"
-                    >
-                      <User className="mr-1 h-4 w-4" />
-                      <span className="hidden max-w-[120px] truncate sm:inline">{user.nome}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Minha conta
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/pagamentos")} className="cursor-pointer">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Minha Assinatura
-                    </DropdownMenuItem>
-                    {(user.is_admin || user.roles?.some((r) => r.desc_role === "Administrator")) && (
-                      <DropdownMenuItem onClick={() => router.push("/admin")} className="cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Administração
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sair
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDropsideOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={dropsideOpen}
+                  className="relative border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground md:h-9"
+                >
+                  <User className="mr-1 h-4 w-4" />
+                  <span className="hidden max-w-[120px] truncate sm:inline">{user.nome}</span>
+                  {unreadSR && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-black" />
+                  )}
+                </Button>
               </>
             ) : (
               <>
@@ -119,6 +119,16 @@ export default function SiteHeader() {
             </Link>
           </div>
         </nav>
+      )}
+
+      {isLoggedIn && (
+        <UserDropside
+          open={dropsideOpen}
+          onClose={() => setDropsideOpen(false)}
+          user={user}
+          unreadServiceRequest={unreadSR}
+          onLogout={logout}
+        />
       )}
     </header>
   )
