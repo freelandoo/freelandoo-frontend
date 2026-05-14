@@ -29,9 +29,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { CoursesSection } from "./_components/courses-section"
-import { PolensCard } from "@/components/polens/PolensCard"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -1409,9 +1409,9 @@ export default function PerfilPage() {
     <div className="bg-page-shell-dark min-h-[100dvh]">
       <main className="container mx-auto px-4 py-10 md:py-12">
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
-          {/* Head Card — perfil do usuario */}
+          {/* Head Card — perfil do usuario (com footer fino de Pólens) */}
           <article
-            className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-7"
+            className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
           >
             {manifestation?.active?.banner_url && (
               <>
@@ -1419,7 +1419,7 @@ export default function PerfilPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/68 to-zinc-950/42" />
               </>
             )}
-            <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+            <div className="relative flex flex-col gap-6 p-5 md:flex-row md:items-start md:gap-8 md:p-7">
               {/* Avatar */}
               <div className="relative mx-auto shrink-0 md:mx-0">
                 <div
@@ -1488,20 +1488,21 @@ export default function PerfilPage() {
                 )}
               </div>
             </div>
+            {/* Footer fino de Pólens — colado ao headcard */}
+            <HeadcardPolensFooter className="relative" />
           </article>
 
-          <PolensCard />
-
-          {/* Stats row */}
-          <section className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-            <StatCell icon={UserRound} label="Total de perfis" value={totalProfiles} />
-            <StatCell icon={Eye} label="Perfis visíveis" value={visibleProfiles} />
-            <StatCell icon={Users} label="Clans" value={totalClans} />
+          {/* Stats row — compacta */}
+          <section className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-2.5">
+            <StatCell icon={UserRound} label="Perfis" value={totalProfiles} compact />
+            <StatCell icon={Eye} label="Visíveis" value={visibleProfiles} compact />
+            <StatCell icon={Users} label="Clans" value={totalClans} compact />
             <StatCell
               icon={MessageCircle}
-              label="Mensagens não lidas"
+              label="Não lidas"
               value={unreadMessages}
               accent={unreadMessages > 0}
+              compact
             />
           </section>
 
@@ -2612,12 +2613,34 @@ function StatCell({
   label,
   value,
   accent,
+  compact,
 }: {
   icon: typeof Mail
   label: string
   value: number
   accent?: boolean
+  compact?: boolean
 }) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
+        <div
+          className={
+            "grid h-7 w-7 shrink-0 place-items-center rounded-lg border " +
+            (accent
+              ? "border-primary/45 bg-primary/[0.16] text-primary"
+              : "border-primary/20 bg-primary/[0.07] text-primary")
+          }
+        >
+          <Icon className="h-3.5 w-3.5" />
+        </div>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-sm font-semibold tabular-nums text-white">{value}</p>
+          <p className="text-[10px] text-white/50">{label}</p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-4">
       <div
