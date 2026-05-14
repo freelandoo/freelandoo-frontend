@@ -1,5 +1,5 @@
 import { getBackendApiUrl } from "@/lib/backend"
-import { ImageIcon, MapPin, Sparkles } from "lucide-react"
+import { BookOpen, ImageIcon, Layers3, MapPin, Shield, Sparkles } from "lucide-react"
 
 type Media = {
   id_portfolio_media: string
@@ -25,8 +25,34 @@ type Profile = {
   estado: string | null
   municipio: string | null
   manifestation?: {
+    banner_url?: string | null
+    banner_thumb_url?: string | null
     tag_label?: string | null
+    tag_color?: string | null
+    tag_icon?: string | null
   } | null
+}
+
+type Course = {
+  id: string
+  title: string
+  slug: string | null
+  short_description: string | null
+  cover_url: string | null
+  price_cents: number | null
+  published_at: string | null
+}
+
+type AccountSummary = {
+  profiles_count: number
+  clans_count: number
+  courses: Course[]
+}
+
+const emptySummary: AccountSummary = {
+  profiles_count: 0,
+  clans_count: 0,
+  courses: [],
 }
 
 async function fetchPortfolio(id_profile: string): Promise<Item[]> {
@@ -43,108 +69,226 @@ async function fetchPortfolio(id_profile: string): Promise<Item[]> {
   }
 }
 
+async function fetchAccountSummary(handle: string | null): Promise<AccountSummary> {
+  if (!handle) return emptySummary
+  try {
+    const res = await fetch(
+      `${getBackendApiUrl()}/public/users/${encodeURIComponent(handle)}/account-summary`,
+      { cache: "no-store" }
+    )
+    if (!res.ok) return emptySummary
+    const data = await res.json()
+    return {
+      profiles_count: Number(data.profiles_count || 0),
+      clans_count: Number(data.clans_count || 0),
+      courses: Array.isArray(data.courses) ? data.courses : [],
+    }
+  } catch {
+    return emptySummary
+  }
+}
+
 function getInitials(name: string) {
   if (!name) return "?"
   return name
     .trim()
     .split(/\s+/)
     .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() || "")
+    .map((part) => part[0]?.toUpperCase() || "")
     .join("")
 }
 
-/**
- * View pública minimal de uma conta de usuário (perfil-fantasma).
- * Renderiza só header (avatar + nome + @username + bio + tag manifestação)
- * e portfólio público. SEM serviços, SEM agenda, SEM contato profissional,
- * SEM ranking — esse usuário é apenas alguém que está na plataforma, não
- * está oferecendo serviços profissionais.
- */
+function formatPrice(priceCents: number | null) {
+  if (!priceCents || priceCents <= 0) return "Gratuito"
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(priceCents / 100)
+}
+
 export async function UserAccountPublicView({ profile }: { profile: Profile }) {
-  const items = await fetchPortfolio(profile.id_profile)
+  const [items, summary] = await Promise.all([
+    fetchPortfolio(profile.id_profile),
+    fetchAccountSummary(profile.username),
+  ])
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
+  const bannerUrl = profile.manifestation?.banner_url || profile.manifestation?.banner_thumb_url || null
+  const courses = summary.courses
 
   return (
     <div className="bg-background min-h-screen">
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* HEADER simplificado */}
-        <section className="mb-10">
-          <div className="flex flex-col items-center text-center gap-4 md:flex-row md:items-start md:text-left md:gap-6">
-            <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-1 ring-primary/30 bg-primary/10 flex items-center justify-center">
-              {profile.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.display_name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl font-semibold text-primary">
-                  {getInitials(profile.display_name)}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
-                {profile.display_name}
-              </h1>
-              {profile.username && (
-                <p className="mt-0.5 text-sm text-muted-foreground">@{profile.username}</p>
-              )}
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+        <section className="mb-10 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+          <div className="relative h-40 bg-muted md:h-52">
+            {bannerUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={bannerUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(245,158,11,0.22),transparent_32%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background)))]" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+            {profile.manifestation?.tag_label && (
+              <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-background/85 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                {profile.manifestation.tag_label}
+              </div>
+            )}
+          </div>
+
+          <div className="px-5 pb-6 md:px-7">
+            <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-primary/10 ring-1 ring-border">
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.display_name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-semibold text-primary">
+                    {getInitials(profile.display_name)}
+                  </span>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1 pb-1">
+                <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
+                  {profile.display_name}
+                </h1>
+                {profile.username && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">@{profile.username}</p>
+                )}
                 {location && (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" />
                     {location}
                   </span>
                 )}
-                {profile.manifestation?.tag_label && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-                    <Sparkles className="h-3 w-3" />
-                    {profile.manifestation.tag_label}
-                  </span>
-                )}
               </div>
-              {profile.bio && (
-                <p className="mt-4 text-sm leading-relaxed text-muted-foreground max-w-2xl">
-                  {profile.bio}
-                </p>
-              )}
+            </div>
+
+            {profile.bio && (
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {profile.bio}
+              </p>
+            )}
+
+            <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-xl border border-border/70 bg-background/70">
+              <div className="p-4">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
+                  <Layers3 className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wide">Perfis</span>
+                </div>
+                <p className="mt-2 text-2xl font-semibold">{summary.profiles_count}</p>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
+                  <Shield className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wide">Clans</span>
+                </div>
+                <p className="mt-2 text-2xl font-semibold">{summary.clans_count}</p>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
+                  <BookOpen className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wide">Cursos</span>
+                </div>
+                <p className="mt-2 text-2xl font-semibold">{courses.length}</p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* PORTFOLIO read-only */}
+        {courses.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-5 flex items-center justify-center md:justify-start">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
+                  Meus cursos
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {courses.map((course) => (
+                <article
+                  key={course.id}
+                  className="group overflow-hidden rounded-xl border border-border/70 bg-card transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="grid grid-cols-[112px_1fr] md:grid-cols-[148px_1fr]">
+                    <div className="aspect-[4/5] bg-muted">
+                      {course.cover_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={course.cover_url}
+                          alt={course.title}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <BookOpen className="h-8 w-8 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-col justify-between p-4">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-2 text-base font-semibold leading-snug">
+                          {course.title}
+                        </h3>
+                        {course.short_description && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {course.short_description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                          Publicado
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatPrice(course.price_cents)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="mb-16">
-          <div className="flex items-center justify-center md:justify-start mb-8">
+          <div className="mb-8 flex items-center justify-center md:justify-start">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
-                Portfólio
+                Portfolio
               </h2>
             </div>
           </div>
 
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
-              <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-20 text-muted-foreground">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2">
                 <ImageIcon className="h-8 w-8 opacity-50" />
               </div>
-              <p className="text-sm font-medium">Sem itens no portfólio.</p>
+              <p className="text-sm font-medium">Sem itens no portfolio.</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-1 md:gap-2">
               {items.map((item) => {
-                const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
+                const activeMedias = item.media?.filter((media) => media.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
                 return (
                   <div key={item.id_portfolio_item} className="group relative flex flex-col">
                     {firstMedia ? (
-                      <div className="relative aspect-[4/5] bg-muted overflow-hidden md:rounded-lg border border-border/50">
+                      <div className="relative aspect-[4/5] overflow-hidden border border-border/50 bg-muted md:rounded-lg">
                         {firstMedia.media_type === "video" ? (
                           <video
                             src={firstMedia.media_url}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                             muted
                             playsInline
                             controls
@@ -153,27 +297,27 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={firstMedia.media_url}
-                            alt={item.title ?? "Mídia do portfólio"}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            alt={item.title ?? "Midia do portfolio"}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
                         {activeMedias.length > 1 && (
-                          <div className="absolute top-3 right-3">
-                            <ImageIcon className="h-5 w-5 text-white drop-shadow-md opacity-90" />
+                          <div className="absolute right-3 top-3">
+                            <ImageIcon className="h-5 w-5 text-white opacity-90 drop-shadow-md" />
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="relative aspect-[4/5] bg-muted flex items-center justify-center md:rounded-lg border border-border/50">
+                      <div className="relative flex aspect-[4/5] items-center justify-center border border-border/50 bg-muted md:rounded-lg">
                         <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                       </div>
                     )}
-                    <div className="pt-3 px-2 md:px-0">
-                      <h3 className="font-semibold text-sm line-clamp-1">
-                        {item.title || "Sem título"}
+                    <div className="px-2 pt-3 md:px-0">
+                      <h3 className="line-clamp-1 text-sm font-semibold">
+                        {item.title || "Sem titulo"}
                       </h3>
                       {item.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                           {item.description}
                         </p>
                       )}
