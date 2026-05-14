@@ -1647,6 +1647,7 @@ export default function PerfilPage() {
                 title="Meus Perfis"
                 icon={UserRound}
                 storageKey="account.profiles.open"
+                className="rounded-none border-0 bg-transparent shadow-none"
                 summary={`${total} criado${total === 1 ? "" : "s"} · ${visible} visível${visible === 1 ? "" : "is"} · ${paidInvisible} invisível${paidInvisible === 1 ? "" : "is"} · ${unpaid} aguardando assinatura`}
                 actions={
                   <button
@@ -1662,7 +1663,7 @@ export default function PerfilPage() {
               >
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
@@ -1676,10 +1677,10 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          className={`relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border bg-white/[0.02] transition cursor-pointer hover:border-primary/30 ${
+                          className={`relative block aspect-[4/5] w-full overflow-hidden bg-white/[0.02] transition cursor-pointer ${
                             hasNotification
-                              ? "border-red-500 animate-pulse"
-                              : "border-white/[0.07]"
+                              ? "animate-pulse ring-2 ring-red-500"
+                              : ""
                           }`}
                           aria-label={`Abrir perfil ${profile.display_name}`}
                         >
@@ -1796,7 +1797,7 @@ export default function PerfilPage() {
                           )}
                         </div>
 
-                        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
+                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-white md:text-sm">
                           <UserRound className="h-3 w-3 text-primary/80" />
                           <span className="truncate">{profile.display_name}</span>
                         </p>
@@ -1834,6 +1835,7 @@ export default function PerfilPage() {
                 icon={Users}
                 storageKey="account.clans.open"
                 defaultOpen={false}
+                className="rounded-none border-0 bg-transparent shadow-none"
                 summary={`${total} clan${total === 1 ? "" : "s"} · ${visible} visível${visible === 1 ? "" : "is"} · ${paidInvisible} invisível${paidInvisible === 1 ? "" : "is"}`}
                 actions={
                   <Link
@@ -1848,7 +1850,7 @@ export default function PerfilPage() {
               >
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false
@@ -1859,7 +1861,7 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/clans/${clan.id_profile}`)}
-                          className="relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
+                          className="relative block aspect-[4/5] w-full overflow-hidden bg-white/[0.02] transition"
                           aria-label={`Abrir clan ${clan.display_name}`}
                         >
                           {imgSrc ? (
@@ -1952,7 +1954,7 @@ export default function PerfilPage() {
                           )}
                         </div>
 
-                        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white">
+                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-white md:text-sm">
                           <Crown className="h-3 w-3 text-primary" />
                           <span className="truncate">{clan.display_name}</span>
                         </p>
@@ -1982,6 +1984,7 @@ export default function PerfilPage() {
             icon={Crown}
             storageKey="account.courses.open"
             defaultOpen={false}
+            className="rounded-none border-0 bg-transparent shadow-none"
             summary="Acompanhe matrículas e progresso"
           >
             <CoursesSection
