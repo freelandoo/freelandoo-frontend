@@ -8,20 +8,28 @@ import {
   clientTotalCentsFromFreelancerNet,
   freelancerNetForEditForm,
 } from "@/lib/service-booking-price"
+import { compressImageToMaxSize } from "@/lib/media/image-processing"
+import {
+  POST_IMAGE_MAX_SIZE_BYTES,
+  POST_IMAGE_OUTPUT,
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/media/media-validation"
 
 interface ServiceMedia {
   id_service_media: number
-  url: string
-  mime_type: string
+  url?: string
+  media_url?: string
+  thumbnail_url?: string | null
+  media_type?: "image" | "video"
+  mime_type?: string
   sort_order: number
 }
 
 const MAX_SERVICE_MEDIA = 5
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_MIME_TYPES = [
   "image/jpeg", "image/png", "image/webp",
-  "video/mp4", "video/webm",
-  "application/pdf",
+  "video/mp4", "video/webm", "video/quicktime",
 ]
 
 export interface ProfileServiceEditClanMember {
@@ -207,23 +215,41 @@ export function ProfileServiceEditModal({
     if (e.target) e.target.value = ""
     if (!file || !service) return
 
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      onError?.("Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou PDF.")
-      return
-    }
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      onError?.("Arquivo muito grande. Máximo 10 MB.")
+    const isImage = file.type.startsWith("image/")
+    const isVideo = file.type.startsWith("video/")
+    const validation = isImage
+      ? validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+      : isVideo
+        ? validateVideoFile(file)
+        : { ok: false as const, error: "Formato nao suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV." }
+
+    if (!validation.ok) {
+      onError?.(validation.error)
       return
     }
     if (mediaList.length >= MAX_SERVICE_MEDIA) {
-      onError?.(`Máximo de ${MAX_SERVICE_MEDIA} arquivos por serviço.`)
+      onError?.(`Maximo de ${MAX_SERVICE_MEDIA} arquivos por servico.`)
       return
     }
 
     setUploading(true)
+    let previewUrlToRevoke: string | null = null
     try {
+      let uploadFile = file
+      if (isImage) {
+        const processed = await compressImageToMaxSize(file, {
+          outputWidth: POST_IMAGE_OUTPUT.width,
+          outputHeight: POST_IMAGE_OUTPUT.height,
+          maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+          mimeType: "image/webp",
+          errorMessage: "A foto do servico precisa ter no maximo 3MB apos otimizacao.",
+        })
+        uploadFile = processed.file
+        previewUrlToRevoke = processed.previewUrl
+      }
+
       const fd = new FormData()
-      fd.append("file", file)
+      fd.append("file", uploadFile)
       const res = await fetch(mediaUrl(service.id_profile_service), {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -235,10 +261,12 @@ export function ProfileServiceEditModal({
         const d = await res.json().catch(() => ({}))
         onError?.(d.error || "Erro ao enviar arquivo")
       }
-    } catch {
-      onError?.("Erro de conexão ao enviar arquivo")
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : "Erro de conexao ao enviar arquivo")
+    } finally {
+      if (previewUrlToRevoke) URL.revokeObjectURL(previewUrlToRevoke)
+      setUploading(false)
     }
-    setUploading(false)
   }
 
   async function handleDeleteMedia(mediaId: number) {
@@ -300,26 +328,22 @@ export function ProfileServiceEditModal({
   }
 
   function renderMediaThumb(media: ServiceMedia) {
-    if (media.mime_type.startsWith("video/")) {
+    const url = media.url || media.media_url || media.thumbnail_url || ""
+    const mimeType = media.mime_type || (media.media_type === "video" ? "video/mp4" : "image/webp")
+
+    if (mimeType.startsWith("video/")) {
       return (
         <video
-          src={media.url}
+          src={url}
           className="h-full w-full object-cover"
           muted
           preload="metadata"
         />
       )
     }
-    if (media.mime_type === "application/pdf") {
-      return (
-        <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-xs text-zinc-400">
-          PDF
-        </div>
-      )
-    }
     return (
       <img
-        src={media.url}
+        src={url}
         alt=""
         className="h-full w-full object-cover"
       />
@@ -628,7 +652,7 @@ export function ProfileServiceEditModal({
                   />
 
                   <p className="mt-1.5 text-[10px] text-zinc-600">
-                    JPG, PNG, WebP, MP4, WebM ou PDF · Máx. 10 MB · Até {MAX_SERVICE_MEDIA} arquivos.
+                    JPG, PNG, WebP, MP4, WebM ou MOV · Fotos em 4:5 até 3MB após otimização · Até {MAX_SERVICE_MEDIA} arquivos.
                     {mediaList.length > 1 && " Arraste para reordenar."}
                   </p>
                 </>
