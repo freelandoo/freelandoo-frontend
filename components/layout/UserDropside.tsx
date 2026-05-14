@@ -1,0 +1,285 @@
+"use client"
+
+import React, { useEffect, useRef } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { createPortal } from "react-dom"
+import {
+  Edit3,
+  Briefcase,
+  MessageSquarePlus,
+  Coins,
+  CreditCard,
+  Shield,
+  LogOut,
+  X,
+  ChevronRight,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+
+type Props = {
+  open: boolean
+  onClose: () => void
+  user: {
+    nome?: string
+    email?: string
+    is_admin?: boolean
+    roles?: { desc_role?: string }[]
+  } | null
+  unreadServiceRequest?: boolean
+  onLogout: () => void
+}
+
+type Action = {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: React.ReactNode
+  description?: string
+  highlight?: boolean
+}
+
+export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogout }: Props) {
+  const router = useRouter()
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const backdropRef = useRef<HTMLDivElement | null>(null)
+  const [mounted, setMounted] = React.useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // ESC fecha
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open, onClose])
+
+  // Trava o scroll do body enquanto aberto
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  // GSAP de entrada / saída
+  useEffect(() => {
+    if (!mounted) return
+    let cancelled = false
+    ;(async () => {
+      const { gsap } = await import("gsap")
+      if (cancelled || !panelRef.current || !backdropRef.current) return
+      if (open) {
+        gsap.set(backdropRef.current, { autoAlpha: 0 })
+        gsap.set(panelRef.current, { xPercent: 100 })
+        gsap.to(backdropRef.current, { autoAlpha: 1, duration: 0.25, ease: "power2.out" })
+        gsap.to(panelRef.current, {
+          xPercent: 0,
+          duration: 0.42,
+          ease: "expo.out",
+        })
+      } else {
+        gsap.to(backdropRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.in" })
+        gsap.to(panelRef.current, { xPercent: 100, duration: 0.3, ease: "power3.in" })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, mounted])
+
+  if (!mounted) return null
+
+  const actions: Action[] = [
+    {
+      href: "/account?edit=1",
+      label: "Editar",
+      icon: Edit3,
+      description: "Atualize seus dados e verifique sua conta",
+    },
+    {
+      href: "/manifestacao",
+      label: "Manifestação",
+      icon: () => <span className="h-4 w-4" aria-hidden />,
+      badge: <ManifestationBadge label="Premium" size="sm" />,
+      description: "Banner premium + tag dourada no seu username",
+      highlight: true,
+    },
+    {
+      href: "/account/afiliado",
+      label: "Painel do afiliado",
+      icon: Briefcase,
+      description: "Cupom, comissões e indicações",
+    },
+    {
+      href: "/pedir-servico",
+      label: "Pedir serviço",
+      icon: MessageSquarePlus,
+      badge: unreadServiceRequest ? (
+        <span className="h-2 w-2 rounded-full bg-red-500" aria-label="Novas respostas" />
+      ) : undefined,
+      description: "Solicite orçamento dos profissionais",
+    },
+    {
+      href: "/loja-polens",
+      label: "Seus Pólens",
+      icon: Coins,
+      description: "Saldo, loja e histórico",
+    },
+  ]
+
+  const isAdmin =
+    user?.is_admin || user?.roles?.some((r) => r.desc_role === "Administrator")
+
+  const node = (
+    <div
+      aria-hidden={!open}
+      className={cn("fixed inset-0 z-[100]", open ? "pointer-events-auto" : "pointer-events-none")}
+    >
+      {/* Backdrop */}
+      <div
+        ref={backdropRef}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm opacity-0"
+      />
+
+      {/* Painel */}
+      <aside
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu da conta"
+        className="absolute right-0 top-0 flex h-full w-full max-w-[420px] translate-x-full flex-col border-l border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[-20px_0_60px_-20px_rgba(0,0,0,0.85)]"
+        style={{ willChange: "transform" }}
+      >
+        {/* Header */}
+        <header className="flex items-center gap-3 border-b border-white/8 px-5 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm font-semibold text-primary">
+            {user?.nome ? user.nome.slice(0, 1).toUpperCase() : "?"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-white">{user?.nome || "Conta"}</p>
+            {user?.email && (
+              <p className="truncate text-[11px] text-white/45">{user.email}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        {/* Ações primárias */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            Ações
+          </p>
+          <ul className="space-y-1.5">
+            {actions.map((a) => {
+              const Icon = a.icon
+              return (
+                <li key={a.href}>
+                  <Link
+                    href={a.href}
+                    onClick={onClose}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 transition",
+                      "hover:border-primary/30 hover:bg-primary/[0.06]",
+                      a.highlight && "border-amber-400/20 bg-gradient-to-r from-amber-400/[0.06] to-amber-400/[0.02] hover:border-amber-300/35 hover:from-amber-400/[0.10]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-black/40 text-white/80 transition group-hover:text-primary",
+                        a.highlight && "border-amber-300/30 bg-amber-300/10 text-amber-200 group-hover:text-amber-100",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="text-[13px] font-semibold text-white">{a.label}</span>
+                        {a.badge}
+                      </span>
+                      {a.description && (
+                        <span className="mt-0.5 block text-[11px] text-white/45">
+                          {a.description}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+
+          {/* Ações secundárias */}
+          <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            Conta
+          </p>
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href="/account"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+              >
+                <Briefcase className="h-4 w-4 text-white/45" />
+                Minha conta
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/pagamentos"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+              >
+                <CreditCard className="h-4 w-4 text-white/45" />
+                Pagamentos & Assinaturas
+              </Link>
+            </li>
+            {isAdmin && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => { onClose(); router.push("/admin") }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                >
+                  <Shield className="h-4 w-4 text-white/45" />
+                  Administração
+                </button>
+              </li>
+            )}
+            <li>
+              <button
+                type="button"
+                onClick={() => { onClose(); onLogout() }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+    </div>
+  )
+
+  return createPortal(node, document.body)
+}
+
+export default UserDropside

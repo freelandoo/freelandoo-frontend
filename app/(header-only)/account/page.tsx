@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
+import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { CoursesSection } from "./_components/courses-section"
 import { PolensCard } from "@/components/polens/PolensCard"
@@ -1473,10 +1474,7 @@ export default function PerfilPage() {
                 {(manifestation?.active || (perfil.statuses && perfil.statuses.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).length > 0)) && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {manifestation?.active && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
-                        <Sparkles className="h-3 w-3" />
-                        {manifestation.active.tag_label}
-                      </span>
+                      <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
                     )}
                     {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
                       <span
