@@ -1474,43 +1474,59 @@ export default function PerfilPage() {
                     {perfil.bio}
                   </p>
                 )}
-                {(manifestation?.active || (perfil.statuses && perfil.statuses.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).length > 0)) && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {manifestation?.active && (
-                      <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
-                    )}
-                    {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
-                      <span
-                        key={status.id_status}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
-                      >
-                        {status.desc_status.replace(/_/g, " ")}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {manifestation?.active && (
+                    <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
+                  )}
+                  {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
+                    <span
+                      key={status.id_status}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
+                    >
+                      {status.desc_status.replace(/_/g, " ")}
+                    </span>
+                  ))}
+                  {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
+                  {perfil.coupon_code ? (
+                    <button
+                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
+                      title={couponCopied ? "Copiado!" : "Clique para copiar"}
+                    >
+                      {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {perfil.coupon_code}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleGenerateCoupon}
+                      disabled={isGeneratingCoupon}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    >
+                      {isGeneratingCoupon ? "Gerando…" : "Gerar cupom"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            {/* Footer fino de Pólens — colado ao headcard */}
+            {/* Footer 1 — Pólens (colado ao headcard) */}
             <HeadcardPolensFooter className="relative" />
+            {/* Footer 2 — Stats (segunda faixa fina, grudada ao headcard) */}
+            <div className="grid grid-cols-2 gap-px border-t border-white/[0.06] bg-white/[0.03] sm:grid-cols-4">
+              <StatStripCell icon={UserRound} label="Perfis" value={totalProfiles} />
+              <StatStripCell icon={Eye} label="Visíveis" value={visibleProfiles} />
+              <StatStripCell icon={Users} label="Clans" value={totalClans} />
+              <StatStripCell
+                icon={MessageCircle}
+                label="Não lidas"
+                value={unreadMessages}
+                accent={unreadMessages > 0}
+              />
+            </div>
           </article>
 
           {/* Portfólio do user account — feed=true, vitrine=false, ranking=false */}
           <UserPortfolio />
-
-          {/* Stats row — compacta */}
-          <section className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-2.5">
-            <StatCell icon={UserRound} label="Perfis" value={totalProfiles} compact />
-            <StatCell icon={Eye} label="Visíveis" value={visibleProfiles} compact />
-            <StatCell icon={Users} label="Clans" value={totalClans} compact />
-            <StatCell
-              icon={MessageCircle}
-              label="Não lidas"
-              value={unreadMessages}
-              accent={unreadMessages > 0}
-              compact
-            />
-          </section>
 
 
 
@@ -2612,6 +2628,41 @@ function InfoCell({
           {value}
         </p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Versão "strip" do StatCell — para a faixa horizontal colada ao headcard.
+ * Sem bordas arredondadas, separados só por gap-px (linhas de divisão sutis).
+ */
+function StatStripCell({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Mail
+  label: string
+  value: number
+  accent?: boolean
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-zinc-950/40 px-3 py-2.5">
+      <span
+        className={
+          "grid h-7 w-7 shrink-0 place-items-center rounded-md border " +
+          (accent
+            ? "border-primary/45 bg-primary/[0.16] text-primary"
+            : "border-primary/20 bg-primary/[0.07] text-primary")
+        }
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <span className="min-w-0 leading-tight">
+        <span className="block text-sm font-semibold tabular-nums text-white">{value}</span>
+        <span className="block text-[10px] text-white/50">{label}</span>
+      </span>
     </div>
   )
 }
