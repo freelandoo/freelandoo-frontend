@@ -210,6 +210,224 @@ export function ProfileHeadCard({
     <>
       <article
         className={cn(
+          "overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+          className
+        )}
+      >
+        <div className="relative h-44 bg-zinc-900 md:h-56">
+          {profile.manifestation?.banner_url && !isClan ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={profile.manifestation.banner_url}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </>
+          ) : (
+            <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
+          {statusBadge && (
+            <div className="absolute right-4 top-4">
+              <span
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] backdrop-blur",
+                  statusBadge.className
+                )}
+              >
+                {statusBadge.label}
+              </span>
+            </div>
+          )}
+          {profile.manifestation?.tag_label && !isClan && (
+            <div className="absolute left-4 top-4 inline-flex max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-full border border-primary/35 bg-zinc-950/80 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{profile.manifestation.tag_label}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 pb-6 md:px-7">
+          <div className="-mt-12 flex flex-col gap-4 md:flex-row md:items-end md:gap-6">
+            <div className="flex shrink-0 flex-col items-center md:items-start">
+              <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:h-32 md:w-32">
+                {avatarSrc ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={avatarSrc}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary">
+                    {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2">
+                <AvatarRatingStar profileId={profileId} />
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1 text-center md:text-left">
+              <h1 className="flex flex-wrap items-center justify-center gap-2 text-balance text-2xl font-semibold leading-tight tracking-tight text-white md:justify-start md:text-3xl">
+                <span className="min-w-0 truncate">{displayName}</span>
+                <MachineTop10Crown
+                  profileId={profileId}
+                  iconClassName="h-5 w-5 md:h-6 md:w-6"
+                />
+              </h1>
+              {profile.bio && (
+                <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-sm leading-relaxed text-white/70">
+                  {profile.bio}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 divide-x divide-y divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 md:grid-cols-4 md:divide-y-0">
+            <HeadStat label="Posts" value={portfolioCount} />
+            <button
+              type="button"
+              onClick={() => setOpenFollowers(true)}
+              className="p-4 text-left transition hover:bg-white/[0.04]"
+              aria-label="Ver quem acompanha"
+            >
+              <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
+                Acompanham
+              </span>
+              <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
+                {counts.followers_count}
+              </span>
+            </button>
+            {isClan && typeof profile.members_count === "number" ? (
+              <HeadStat label="Membros" value={profile.members_count} />
+            ) : (
+              <HeadStat label="Seguindo" value={counts.following_count} />
+            )}
+            <HeadStat label={isClan ? "Tipo" : "Nivel"} value={isClan ? "Clan" : xpData?.xp_level ?? "-"} />
+          </div>
+
+          {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
+            <div className="mt-5 grid gap-2 md:grid-cols-3">
+              {profile.machine_name && (
+                <HeadInfo icon={Megaphone} label="Maquina" value={profile.machine_name} />
+              )}
+              {profile.desc_category && (
+                <HeadInfo
+                  icon={isClan ? Users : UserRound}
+                  label={isClan ? "Categoria" : "Profissao"}
+                  value={profile.desc_category}
+                />
+              )}
+              {location && (
+                <HeadInfo icon={MapPin} label="Localizacao" value={location} />
+              )}
+              {isClan && typeof profile.members_count === "number" && (
+                <HeadInfo
+                  icon={Users}
+                  label="Integrantes"
+                  value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
+                />
+              )}
+            </div>
+          )}
+
+          {!isClan && xpData && (
+            <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                  Nivel {xpData.xp_level}
+                </span>
+                <span className="text-sm font-bold tabular-nums text-primary">
+                  {xpData.xp_total.toLocaleString("pt-BR")} XP
+                </span>
+              </div>
+              <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-700"
+                  style={{ width: `${xpData.xp_progress_percent}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] text-white/30">
+                <span>Proximo nivel: {xpData.xp_next_level.toLocaleString("pt-BR")} XP</span>
+                <span>{xpData.xp_progress_percent}%</span>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-5 flex items-center gap-2">
+            {isOwnProfile ? (
+              <Link
+                href={ownerActions?.editHref || "#"}
+                onClick={ownerActions?.onEdit}
+                className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
+                style={{
+                  boxShadow:
+                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
+                }}
+              >
+                <Settings className="h-3.5 w-3.5" />
+                {isClan ? "Editar clan" : "Editar perfil"}
+              </Link>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={visitorActions?.onScheduleScroll}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
+                  style={{
+                    boxShadow:
+                      "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
+                  }}
+                >
+                  {visitorScheduleButtonLabel}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <FollowButton
+                    targetType={entityType}
+                    targetId={profileId}
+                    onChanged={onFollowChanged}
+                    compact
+                    className="!h-9 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[12px] !font-bold !uppercase !tracking-wider"
+                  />
+                </div>
+              </>
+            )}
+            <Link
+              href={
+                isOwnProfile
+                  ? "/mensagens"
+                  : `/mensagens?with=${encodeURIComponent(profileId)}`
+              }
+              aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
+              title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          {isOwnProfile && !profile.is_paid && (
+            <Link
+              href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
+              className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+              style={{
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Ative sua conta
+            </Link>
+          )}
+        </div>
+      </article>
+
+      <article
+        className={cn(
+          "hidden",
           "relative overflow-hidden rounded-[2rem] border border-white/[0.07]",
           "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
           "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_0_0_1px_rgba(255,255,255,0.02)]",
@@ -549,6 +767,51 @@ function ToolbarButton({
         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
       )}
     </button>
+  )
+}
+
+function HeadStat({
+  label,
+  value,
+}: {
+  label: string
+  value: number | string
+}) {
+  return (
+    <div className="p-4">
+      <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
+        {label}
+      </span>
+      <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function HeadInfo({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/25 bg-primary/[0.08] text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[10px] font-medium uppercase tracking-wide text-white/40">
+          {label}
+        </span>
+        <span className="block truncate text-sm font-medium text-white/85">
+          {value}
+        </span>
+      </span>
+    </div>
   )
 }
 
