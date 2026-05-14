@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { getBackendApiUrl } from "@/lib/backend"
 import { slugify, stripHandlePrefix, buildProfileUrl } from "@/lib/slug"
 import FreelancerProfileView from "../../../../freelancer/[id]/_components/freelancer-profile-view"
+import UserAccountPublicView from "./_components/user-account-public-view"
 
 type RouteParams = {
   profession: string
@@ -30,6 +31,7 @@ interface PublicProfileResponse {
     is_visible: boolean
     is_paid: boolean
     is_published: boolean
+    is_user_account: boolean
     deleted_at: string | null
   }
 }
@@ -209,7 +211,11 @@ export default async function PublicProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
-      <FreelancerProfileView profileId={profile.id_profile} />
+      {profile.is_user_account ? (
+        <UserAccountPublicView profile={profile} />
+      ) : (
+        <FreelancerProfileView profileId={profile.id_profile} />
+      )}
     </>
   )
 }
