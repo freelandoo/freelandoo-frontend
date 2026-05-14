@@ -82,6 +82,7 @@ interface ProfileServiceEditModalProps {
   isClan?: boolean
   clanMembers?: ProfileServiceEditClanMember[]
   onSaved: (service: ProfileService) => void
+  onMediaChanged?: (serviceId: number, media: NonNullable<ProfileService["media"]>) => void
   onError?: (message: string) => void
 }
 
@@ -93,6 +94,7 @@ export function ProfileServiceEditModal({
   isClan = false,
   clanMembers = [],
   onSaved,
+  onMediaChanged,
   onError,
 }: ProfileServiceEditModalProps) {
   const [serviceForm, setServiceForm] = useState({
@@ -192,17 +194,22 @@ export function ProfileServiceEditModal({
     `/api/profile/${profileId}/services/${sid}/media`
 
   const fetchMedia = useCallback(async () => {
-    if (!service) return
+    if (!service) return []
     setMediaLoading(true)
     try {
       const res = await fetch(mediaUrl(service.id_profile_service), { headers: headers() })
       if (res.ok) {
         const data = await res.json()
         const items: ServiceMedia[] = Array.isArray(data) ? data : data.media ?? []
-        setMediaList(items.sort((a, b) => a.sort_order - b.sort_order))
+        const sorted = items.sort((a, b) => a.sort_order - b.sort_order)
+        setMediaList(sorted)
+        return sorted
       }
     } catch { /* silencioso */ }
-    setMediaLoading(false)
+    finally {
+      setMediaLoading(false)
+    }
+    return []
   }, [service?.id_profile_service, profileId])
 
   useEffect(() => {
@@ -256,7 +263,8 @@ export function ProfileServiceEditModal({
         body: fd,
       })
       if (res.ok) {
-        await fetchMedia()
+        const nextMedia = await fetchMedia()
+        onMediaChanged?.(service.id_profile_service, nextMedia)
       } else {
         const d = await res.json().catch(() => ({}))
         onError?.(d.error || "Erro ao enviar arquivo")
@@ -278,7 +286,11 @@ export function ProfileServiceEditModal({
         { method: "DELETE", headers: headers() },
       )
       if (res.ok) {
-        setMediaList((prev) => prev.filter((m) => m.id_service_media !== mediaId))
+        setMediaList((prev) => {
+          const next = prev.filter((m) => m.id_service_media !== mediaId)
+          onMediaChanged?.(service.id_profile_service, next)
+          return next
+        })
       } else {
         const d = await res.json().catch(() => ({}))
         onError?.(d.error || "Erro ao remover arquivo")
@@ -295,6 +307,7 @@ export function ProfileServiceEditModal({
     const [moved] = reordered.splice(fromIndex, 1)
     reordered.splice(toIndex, 0, moved)
     setMediaList(reordered)
+    onMediaChanged?.(service.id_profile_service, reordered)
 
     try {
       await fetch(`${mediaUrl(service.id_profile_service)}/reorder`, {

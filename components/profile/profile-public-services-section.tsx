@@ -38,6 +38,18 @@ function authHeaders(): HeadersInit | undefined {
   return token ? { Authorization: `Bearer ${token}` } : undefined
 }
 
+function getServiceCoverUrl(service: ProfileService) {
+  const direct = service.image_url?.trim()
+  if (direct) return direct
+
+  const media = service.media || []
+  const cover =
+    media.find((m) => m.media_type === "image" || m.mime_type?.startsWith("image/")) ||
+    media[0]
+
+  return cover?.url?.trim() || cover?.media_url?.trim() || cover?.thumbnail_url?.trim() || ""
+}
+
 export function ProfilePublicServicesSection({
   profileId,
   allowPublicBooking = true,
@@ -148,7 +160,7 @@ export function ProfilePublicServicesSection({
       const idx = prev.findIndex((x) => x.id_profile_service === updated.id_profile_service)
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = updated
+        next[idx] = { ...next[idx], ...updated, media: updated.media ?? next[idx].media }
         return next
       }
       return [...prev, updated]
@@ -232,7 +244,7 @@ export function ProfilePublicServicesSection({
           {/* 2 colunas até xl; xl+: 3 colunas como o portfólio. Imagem 4:5. */}
           <ul className="grid grid-cols-2 items-stretch gap-2 md:gap-3 lg:gap-3 xl:grid-cols-3 xl:gap-2">
           {visibleServices.map((s) => {
-            const img = s.image_url?.trim()
+            const img = getServiceCoverUrl(s)
             const { integer, cents } = formatPriceParts(s.price_amount)
             const desc = s.description?.trim()
 
@@ -341,6 +353,15 @@ export function ProfilePublicServicesSection({
         onSaved={(updated) => {
           handleEditSaved(updated)
           setFeedbackError(null)
+        }}
+        onMediaChanged={(serviceId, media) => {
+          setServices((prev) =>
+            prev.map((service) =>
+              service.id_profile_service === serviceId
+                ? { ...service, media }
+                : service
+            )
+          )
         }}
         onError={(msg) => {
           setFeedbackError(msg)

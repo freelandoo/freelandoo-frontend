@@ -22,6 +22,16 @@ export interface ProfileService {
   is_active?: boolean
   /** Capa do serviço, quando o backend enviar. */
   image_url?: string | null
+  /** Midias anexadas ao servico. */
+  media?: Array<{
+    id_service_media?: number
+    url?: string | null
+    media_url?: string | null
+    thumbnail_url?: string | null
+    media_type?: "image" | "video" | string | null
+    mime_type?: string | null
+    sort_order?: number | null
+  }>
   /** Perfis membro (serviços em clan). */
   member_profile_ids?: string[]
 }
