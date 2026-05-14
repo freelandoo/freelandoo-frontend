@@ -1442,25 +1442,25 @@ export default function PerfilPage() {
                 </button>
               </div>
 
-              {/* Info + ações */}
-              <div className="min-w-0 flex-1 space-y-4">
-                <div>
-                  <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-                    {perfil.nome}
-                  </h1>
-                  {perfil.username && (
-                    <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
-                  )}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {emailVerified ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
-                        <BadgeCheck className="h-3 w-3" />
-                        Email verificado
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
-                        <AlertCircle className="h-3 w-3" />
-                        Email não verificado
+              {/* Info — headcard limpo (ações migraram para o dropside da toolbar; dados pessoais para o modal Editar) */}
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
+                  {perfil.nome}
+                </h1>
+                {perfil.username && (
+                  <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
+                )}
+                {perfil.bio && (
+                  <p className="mt-3 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/65">
+                    {perfil.bio}
+                  </p>
+                )}
+                {(manifestation?.active || (perfil.statuses && perfil.statuses.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).length > 0)) && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {manifestation?.active && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
+                        <Sparkles className="h-3 w-3" />
+                        {manifestation.active.tag_label}
                       </span>
                     )}
                     {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
@@ -1471,92 +1471,9 @@ export default function PerfilPage() {
                         {status.desc_status.replace(/_/g, " ")}
                       </span>
                     ))}
-                    {manifestation?.active && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-200">
-                        <Sparkles className="h-3 w-3" />
-                        {manifestation.active.tag_label}
-                      </span>
-                    )}
                   </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={openEditModal}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                    Editar
-                  </button>
-                  <Link
-                    href="/manifestacao"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-3.5 py-2 text-[12px] font-medium text-amber-200 transition hover:border-amber-300/45 hover:bg-amber-400/15"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Manifestacao
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setIsServiceRequestOpen(true)}
-                    className="relative inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
-                  >
-                    <MessageSquarePlus className="h-3.5 w-3.5" />
-                    Pedir serviço
-                    {(srBadge.has_new || srBadge.unread_chats > 0) && (
-                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
-                    )}
-                  </button>
-                  <Link
-                    href="/account/afiliado"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3.5 py-2 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
-                  >
-                    <Briefcase className="h-3.5 w-3.5" />
-                    Painel de afiliado
-                  </Link>
-                  {perfil.coupon_code ? (
-                    <button
-                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-3.5 py-2 font-mono text-[12px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
-                      title={couponCopied ? "Copiado!" : "Clique para copiar"}
-                    >
-                      {couponCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                      {perfil.coupon_code}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleGenerateCoupon}
-                      disabled={isGeneratingCoupon}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-3.5 py-2 text-[12px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
-                    >
-                      {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
-            </div>
-
-            {/* Linha info pessoal */}
-            <div className="mt-6 grid grid-cols-1 gap-3 border-t border-white/[0.07] pt-5 sm:grid-cols-2 lg:grid-cols-4">
-              {perfil.data_nascimento && (
-                <InfoCell
-                  icon={CalendarDays}
-                  label="Data de nascimento"
-                  value={new Date(perfil.data_nascimento.split("T")[0] + "T00:00:00").toLocaleDateString("pt-BR")}
-                />
-              )}
-              {perfil.sexo && (
-                <InfoCell icon={UserRound} label="Sexo" value={formatarSexo(perfil.sexo)} />
-              )}
-              {(perfil.municipio || perfil.estado) && (
-                <InfoCell
-                  icon={MapPin}
-                  label="Localização"
-                  value={perfil.municipio ? `${perfil.municipio}${perfil.estado ? `, ${perfil.estado}` : ""}` : perfil.estado || ""}
-                />
-              )}
-              <InfoCell icon={Mail} label="Email" value={perfil.email || ""} truncate />
             </div>
           </article>
 
@@ -2265,12 +2182,59 @@ export default function PerfilPage() {
 
       {/* Modal de Edição de Perfil */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
+            <DialogDescription>
+              Atualize seus dados pessoais e veja o status da sua conta.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Seção: Conta & Verificação (migrado do headcard) */}
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                  Conta & Verificação
+                </div>
+                {emailVerified ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+                    <BadgeCheck className="h-3 w-3" />
+                    Email verificado
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
+                    <AlertCircle className="h-3 w-3" />
+                    Não verificado
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email" className="text-xs text-white/55">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={perfil.email || ""}
+                    readOnly
+                    disabled
+                    className="bg-white/[0.03] text-white/70"
+                  />
+                </div>
+                {!emailVerified && (
+                  <Link
+                    href="/verificar-email"
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 px-3 text-[12px] font-medium text-amber-200 transition hover:bg-amber-400/15"
+                  >
+                    Verificar agora
+                  </Link>
+                )}
+              </div>
+              <p className="text-[11px] text-white/40">
+                O email é usado para login e não pode ser alterado por aqui.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-nome">Nome</Label>
