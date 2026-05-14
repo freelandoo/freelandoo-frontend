@@ -200,65 +200,6 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
           </div>
         </section>
 
-        {courses.length > 0 && (
-          <section className="mb-14">
-            <div className="mb-5 flex items-center justify-center md:justify-start">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
-                  Meus cursos
-                </h2>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {courses.map((course) => (
-                <article
-                  key={course.id}
-                  className="group overflow-hidden rounded-xl border border-border/70 bg-card transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="grid grid-cols-[112px_1fr] md:grid-cols-[148px_1fr]">
-                    <div className="aspect-[4/5] bg-muted">
-                      {course.cover_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={course.cover_url}
-                          alt={course.title}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <BookOpen className="h-8 w-8 text-muted-foreground/40" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex min-w-0 flex-col justify-between p-4">
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-2 text-base font-semibold leading-snug">
-                          {course.title}
-                        </h3>
-                        {course.short_description && (
-                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                            {course.short_description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                          Publicado
-                        </span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {formatPrice(course.price_cents)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
         <section className="mb-16">
           <div className="mb-8 flex items-center justify-center md:justify-start">
             <div className="flex items-center gap-2">
@@ -328,6 +269,65 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
             </div>
           )}
         </section>
+
+        {courses.length > 0 && (
+          <section className="mb-14">
+            <div className="mb-5 flex items-center justify-center md:justify-start">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
+                  Meus cursos
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {courses.map((course) => (
+                <article
+                  key={course.id}
+                  className="group overflow-hidden rounded-xl border border-border/70 bg-card transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="grid grid-cols-[112px_1fr] md:grid-cols-[148px_1fr]">
+                    <div className="aspect-[4/5] bg-muted">
+                      {course.cover_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={course.cover_url}
+                          alt={course.title}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <BookOpen className="h-8 w-8 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-col justify-between p-4">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-2 text-base font-semibold leading-snug">
+                          {course.title}
+                        </h3>
+                        {course.short_description && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {course.short_description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                          Publicado
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatPrice(course.price_cents)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )

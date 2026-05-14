@@ -1412,9 +1412,114 @@ export default function PerfilPage() {
     <div className="bg-page-shell-dark min-h-[100dvh]">
       <main className="container mx-auto px-4 py-10 md:py-12">
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
+          <article className="overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <div className="relative h-40 bg-zinc-900 md:h-52">
+              {manifestation?.active?.banner_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={manifestation.active.banner_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
+              {manifestation?.active && (
+                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-zinc-950/80 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {manifestation.active.tag_label}
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 pb-6 md:px-7">
+              <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+                <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10">
+                  <Avatar className="h-full w-full rounded-full">
+                    {perfil.avatar && (
+                      <AvatarImage
+                        src={perfil.avatar}
+                        alt={perfil.nome}
+                        className="rounded-full object-cover"
+                      />
+                    )}
+                    <AvatarFallback className="rounded-full bg-primary/10 text-2xl font-semibold text-primary">
+                      {getInitials(perfil.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    aria-label="Trocar foto"
+                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="min-w-0 flex-1 pb-1">
+                  <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
+                    {perfil.nome}
+                  </h1>
+                  {perfil.username && (
+                    <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
+                  )}
+                </div>
+              </div>
+
+              {perfil.bio && (
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/65">
+                  {perfil.bio}
+                </p>
+              )}
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
+                  <span
+                    key={status.id_status}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
+                  >
+                    {status.desc_status.replace(/_/g, " ")}
+                  </span>
+                ))}
+                {perfil.coupon_code ? (
+                  <button
+                    onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
+                    title={couponCopied ? "Copiado!" : "Clique para copiar"}
+                  >
+                    {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {perfil.coupon_code}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleGenerateCoupon}
+                    disabled={isGeneratingCoupon}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 divide-x divide-y divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 sm:grid-cols-4 sm:divide-y-0">
+                <PrivateHeadStat icon={UserRound} label="Perfis" value={totalProfiles} />
+                <PrivateHeadStat icon={Eye} label="Visiveis" value={visibleProfiles} />
+                <PrivateHeadStat icon={Users} label="Clans" value={totalClans} />
+                <PrivateHeadStat
+                  icon={MessageCircle}
+                  label="Nao lidas"
+                  value={unreadMessages}
+                  accent={unreadMessages > 0}
+                />
+              </div>
+            </div>
+          </article>
           {/* Head Card — perfil do usuario (com footer fino de Pólens) */}
           <article
-            className="relative overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+            className="hidden"
           >
             {manifestation?.active?.banner_url && (
               <>
@@ -2636,6 +2741,30 @@ function InfoCell({
  * Versão "strip" do StatCell — para a faixa horizontal colada ao headcard.
  * Sem bordas arredondadas, separados só por gap-px (linhas de divisão sutis).
  */
+function PrivateHeadStat({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: typeof Mail
+  label: string
+  value: number
+  accent?: boolean
+}) {
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-center gap-2 text-white/55 md:justify-start">
+        <Icon className={accent ? "h-4 w-4 text-primary" : "h-4 w-4"} />
+        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
+      </div>
+      <p className={accent ? "mt-2 text-2xl font-semibold text-primary" : "mt-2 text-2xl font-semibold text-white"}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
 function StatStripCell({
   icon: Icon,
   label,
