@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createPortal } from "react-dom"
@@ -42,9 +42,7 @@ type Action = {
 
 export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogout }: Props) {
   const router = useRouter()
-  const panelRef = useRef<HTMLDivElement | null>(null)
-  const backdropRef = useRef<HTMLDivElement | null>(null)
-  const [mounted, setMounted] = React.useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -69,32 +67,6 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       document.body.style.overflow = prev
     }
   }, [open])
-
-  // GSAP de entrada / saída
-  useEffect(() => {
-    if (!mounted) return
-    let cancelled = false
-    ;(async () => {
-      const { gsap } = await import("gsap")
-      if (cancelled || !panelRef.current || !backdropRef.current) return
-      if (open) {
-        gsap.set(backdropRef.current, { autoAlpha: 0 })
-        gsap.set(panelRef.current, { xPercent: 100 })
-        gsap.to(backdropRef.current, { autoAlpha: 1, duration: 0.25, ease: "power2.out" })
-        gsap.to(panelRef.current, {
-          xPercent: 0,
-          duration: 0.42,
-          ease: "expo.out",
-        })
-      } else {
-        gsap.to(backdropRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.in" })
-        gsap.to(panelRef.current, { xPercent: 100, duration: 0.3, ease: "power3.in" })
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [open, mounted])
 
   if (!mounted) return null
 
@@ -142,23 +114,26 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const node = (
     <div
       aria-hidden={!open}
-      className={cn("fixed inset-0 z-[100]", open ? "pointer-events-auto" : "pointer-events-none")}
+      className={cn(
+        "fixed inset-0 z-[100] transition-opacity duration-300",
+        open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+      )}
     >
       {/* Backdrop */}
       <div
-        ref={backdropRef}
         onClick={onClose}
-        className="absolute inset-0 bg-black/65 backdrop-blur-sm opacity-0"
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
       />
 
       {/* Painel */}
       <aside
-        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Menu da conta"
-        className="absolute right-0 top-0 flex h-full w-full max-w-[420px] translate-x-full flex-col border-l border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[-20px_0_60px_-20px_rgba(0,0,0,0.85)]"
-        style={{ willChange: "transform" }}
+        className={cn(
+          "absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col border-l border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[-20px_0_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "translate-x-full",
+        )}
       >
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-white/8 px-5 py-4">
