@@ -1435,16 +1435,16 @@ export default function PerfilPage() {
 
             <div className="px-5 pb-6 md:px-7">
               <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10">
-                  <Avatar className="h-full w-full rounded-full">
+                <div className="relative flex aspect-[4/5] w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-28">
+                  <Avatar className="h-full w-full rounded-none">
                     {perfil.avatar && (
                       <AvatarImage
                         src={perfil.avatar}
                         alt={perfil.nome}
-                        className="rounded-full object-cover"
+                        className="rounded-none object-cover"
                       />
                     )}
-                    <AvatarFallback className="rounded-full bg-primary/10 text-2xl font-semibold text-primary">
+                    <AvatarFallback className="rounded-none bg-primary/10 text-2xl font-semibold text-primary">
                       {getInitials(perfil.nome)}
                     </AvatarFallback>
                   </Avatar>
@@ -1676,7 +1676,7 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          className={`relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border bg-white/[0.02] transition cursor-pointer hover:border-primary/30 ${
+                          className={`relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border bg-white/[0.02] transition cursor-pointer hover:border-primary/30 ${
                             hasNotification
                               ? "border-red-500 animate-pulse"
                               : "border-white/[0.07]"
@@ -1859,7 +1859,7 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/clans/${clan.id_profile}`)}
-                          className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
+                          className="relative block aspect-[4/5] w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] transition hover:border-primary/30"
                           aria-label={`Abrir clan ${clan.display_name}`}
                         >
                           {imgSrc ? (
