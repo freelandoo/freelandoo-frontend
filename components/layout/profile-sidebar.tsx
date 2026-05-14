@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Boxes, Crown, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
@@ -7,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
+import { UserDropside } from "./UserDropside"
 
 interface SidebarItem {
   href: string
@@ -118,14 +120,40 @@ function buildContextBundle(
 }
 
 export function ProfileSidebar() {
-  const { user, status } = useAuth()
+  const { user, status, logout } = useAuth()
   const pathname = usePathname() || "/"
   const active = useActiveContext()
+  const [dropsideOpen, setDropsideOpen] = useState(false)
+  const [unreadSR, setUnreadSR] = useState(false)
+
+  const isLoggedIn = status === "authenticated" && !!user
+
+  // Polling do badge de service-request (a cada 60s)
+  useEffect(() => {
+    if (!isLoggedIn) return
+    let cancelled = false
+    const fetchBadge = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) return
+      try {
+        const res = await fetch("/api/service-requests/badge/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (!cancelled) setUnreadSR(!!data.has_new || (data.unread_chats ?? 0) > 0)
+        }
+      } catch { /* silent */ }
+    }
+    fetchBadge()
+    const interval = setInterval(fetchBadge, 60000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [isLoggedIn])
 
   if (HIDDEN_ON_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return null
   }
-  if (status !== "authenticated" || !user) return null
+  if (!isLoggedIn) return null
 
   const bundle = buildContextBundle(active, user)
 
@@ -159,7 +187,11 @@ export function ProfileSidebar() {
           aria-hidden
           className="absolute -right-1 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-full bg-primary/70 opacity-70 transition-opacity group-hover/sidebar:opacity-100"
         />
-        <ProfileContextLink bundle={bundle} active={pathname === bundle.homeHref} />
+        <ProfileTriggerButton
+          bundle={bundle}
+          onClick={() => setDropsideOpen(true)}
+          unread={unreadSR}
+        />
 
         <div className="mx-2 my-1 h-px bg-white/[0.07]" />
 
@@ -173,54 +205,60 @@ export function ProfileSidebar() {
         className="fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-zinc-950/90 px-2 py-1.5 shadow-[0_18px_42px_-24px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden"
         style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
-        <ProfileContextLink bundle={bundle} active={pathname === bundle.homeHref} compact />
+        <ProfileTriggerButton
+          bundle={bundle}
+          onClick={() => setDropsideOpen(true)}
+          unread={unreadSR}
+          compact
+        />
         <span aria-hidden className="mx-0.5 h-7 w-px bg-white/[0.08]" />
         {items.map((item) => (
           <ToolbarItemLink key={item.label} item={item} pathname={pathname} compact />
         ))}
       </nav>
+
+      <UserDropside
+        open={dropsideOpen}
+        onClose={() => setDropsideOpen(false)}
+        user={user}
+        unreadServiceRequest={unreadSR}
+        onLogout={logout}
+      />
     </>
   )
 }
 
-function isItemActive(item: SidebarItem, pathname: string) {
-  if (item.activePath) return pathname === item.activePath
-  if (item.matchPrefix) {
-    return pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/")
-  }
-  return pathname === item.href
-}
-
-interface ProfileContextLinkProps {
+interface ProfileTriggerButtonProps {
   bundle: ContextBundle
-  active?: boolean
+  onClick: () => void
+  unread?: boolean
   compact?: boolean
 }
 
-function ProfileContextLink({ bundle, active, compact }: ProfileContextLinkProps) {
+function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTriggerButtonProps) {
   return (
-    <Link
-      href={bundle.homeHref}
-      aria-label={bundle.displayName}
-      title={bundle.displayName}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Menu de ${bundle.displayName}`}
+      title="Abrir menu da conta"
       className={cn(
-        "relative flex h-11 items-center gap-3 overflow-hidden rounded-full px-1.5 text-sm font-medium transition-colors",
-        active ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/5 hover:text-white",
+        "relative flex h-11 items-center gap-3 overflow-hidden rounded-full px-1.5 text-sm font-medium text-white/85 transition-colors hover:bg-primary/10 hover:text-primary",
         compact && "h-10 w-10 justify-center px-0"
       )}
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center">
-        <Avatar className="h-8 w-8 ring-1 ring-white/15">
+        <Avatar className="h-8 w-8 ring-1 ring-primary/30">
           {bundle.avatar_url && (
             <AvatarImage src={bundle.avatar_url} alt={bundle.displayName} />
           )}
-          <AvatarFallback className="bg-white/5 text-[11px] font-semibold text-white/85">
+          <AvatarFallback className="bg-primary/10 text-[11px] font-semibold text-primary">
             {getInitials(bundle.displayName)}
           </AvatarFallback>
         </Avatar>
       </span>
       {!compact && (
-        <span className="min-w-0 flex-1 whitespace-nowrap pr-2 opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100">
+        <span className="min-w-0 flex-1 whitespace-nowrap pr-2 text-left opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100">
           {bundle.contextTag && (
             <span className="block text-[10px] font-medium uppercase tracking-normal text-white/45">
               {bundle.contextTag}
@@ -231,8 +269,19 @@ function ProfileContextLink({ bundle, active, compact }: ProfileContextLinkProps
           </span>
         </span>
       )}
-    </Link>
+      {unread && (
+        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
+      )}
+    </button>
   )
+}
+
+function isItemActive(item: SidebarItem, pathname: string) {
+  if (item.activePath) return pathname === item.activePath
+  if (item.matchPrefix) {
+    return pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/")
+  }
+  return pathname === item.href
 }
 
 interface ToolbarItemLinkProps {
