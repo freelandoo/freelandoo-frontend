@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -11,10 +12,20 @@ import { UserDropside } from "@/components/layout/UserDropside"
 
 export default function SiteHeader() {
   const { user, status, logout } = useAuth()
+  const pathname = usePathname() || "/"
+  const router = useRouter()
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [unreadSR, setUnreadSR] = useState(false)
 
   const isLoggedIn = status === "authenticated" && !!user
+  const isOnAccountHome = pathname === "/account"
+  const handleUserClick = () => {
+    if (isOnAccountHome) {
+      setDropsideOpen(true)
+    } else {
+      router.push("/account")
+    }
+  }
 
   // Polling leve do badge de service-request (a cada 60s) para acender o ponto no dropside
   useEffect(() => {
@@ -65,9 +76,10 @@ export default function SiteHeader() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setDropsideOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={dropsideOpen}
+                  onClick={handleUserClick}
+                  aria-haspopup={isOnAccountHome ? "dialog" : undefined}
+                  aria-expanded={isOnAccountHome ? dropsideOpen : undefined}
+                  title={isOnAccountHome ? "Abrir menu da conta" : "Ir para minha conta"}
                   className="relative border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground md:h-9"
                 >
                   <User className="mr-1 h-4 w-4" />
