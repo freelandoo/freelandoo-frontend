@@ -8,7 +8,7 @@ import { Alert } from "@/components/ui/alert"
 
 import React, { useRef } from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import type { MediaItem, PerfilCompleto, Profile, RedeSocial } from "@/lib/types/account"
@@ -59,6 +59,7 @@ import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-p
 
 export default function PerfilPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
   const [unreadMessages, setUnreadMessages] = React.useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -206,6 +207,20 @@ export default function PerfilPage() {
       .then((data) => { if (data) setManifestation(data) })
       .catch(() => {})
   }, [])
+
+  // Deep-link: ?edit=1 abre o modal Editar (dropside da toolbar entra aqui em /account?edit=1)
+  const editDeeplinkOpenedRef = useRef(false)
+  React.useEffect(() => {
+    if (editDeeplinkOpenedRef.current) return
+    if (!perfil) return
+    if (searchParams?.get("edit") !== "1") return
+    editDeeplinkOpenedRef.current = true
+    openEditModal()
+    // Limpa o param da URL pra não reabrir se o usuário só fechar o modal
+    const url = new URL(window.location.href)
+    url.searchParams.delete("edit")
+    window.history.replaceState({}, "", url.toString())
+  }, [perfil, searchParams])
 
   // Badge por sub-perfil — só perfis ativos e visíveis (não-clan)
   React.useEffect(() => {
