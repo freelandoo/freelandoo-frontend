@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Boxes, Crown, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -122,9 +122,20 @@ function buildContextBundle(
 export function ProfileSidebar() {
   const { user, status, logout } = useAuth()
   const pathname = usePathname() || "/"
+  const router = useRouter()
   const active = useActiveContext()
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [unreadSR, setUnreadSR] = useState(false)
+
+  // Em /account o avatar abre o dropside; em outras telas, navega pra /account.
+  const isOnAccountHome = pathname === "/account"
+  const handleTriggerClick = () => {
+    if (isOnAccountHome) {
+      setDropsideOpen(true)
+    } else {
+      router.push("/account")
+    }
+  }
 
   const isLoggedIn = status === "authenticated" && !!user
 
@@ -189,7 +200,7 @@ export function ProfileSidebar() {
         />
         <ProfileTriggerButton
           bundle={bundle}
-          onClick={() => setDropsideOpen(true)}
+          onClick={handleTriggerClick}
           unread={unreadSR}
         />
 
@@ -207,7 +218,7 @@ export function ProfileSidebar() {
       >
         <ProfileTriggerButton
           bundle={bundle}
-          onClick={() => setDropsideOpen(true)}
+          onClick={handleTriggerClick}
           unread={unreadSR}
           compact
         />
