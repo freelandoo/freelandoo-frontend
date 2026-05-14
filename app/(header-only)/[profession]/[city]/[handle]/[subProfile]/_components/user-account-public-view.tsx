@@ -137,7 +137,7 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
 
           <div className="px-5 pb-6 md:px-7">
             <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-              <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-primary/10 ring-1 ring-border">
+              <div className="relative flex aspect-[4/5] w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-background bg-primary/10 ring-1 ring-border md:w-28">
                 {profile.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

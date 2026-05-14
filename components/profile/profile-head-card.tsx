@@ -214,7 +214,7 @@ export function ProfileHeadCard({
           className
         )}
       >
-        <div className="relative h-44 bg-zinc-900 md:h-56">
+        <div className="relative h-24 bg-zinc-900 md:h-56">
           {profile.manifestation?.banner_url && !isClan ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -248,10 +248,10 @@ export function ProfileHeadCard({
           )}
         </div>
 
-        <div className="px-5 pb-6 md:px-7">
-          <div className="-mt-12 flex flex-col gap-4 md:flex-row md:items-end md:gap-6">
+        <div className="px-4 pb-5 md:px-7 md:pb-6">
+          <div className="-mt-8 flex items-start gap-4 md:-mt-12 md:items-end md:gap-6">
             <div className="flex shrink-0 flex-col items-center md:items-start">
-              <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:h-32 md:w-32">
+              <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-32">
                 {avatarSrc ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -270,23 +270,42 @@ export function ProfileHeadCard({
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 text-center md:text-left">
-              <h1 className="flex flex-wrap items-center justify-center gap-2 text-balance text-2xl font-semibold leading-tight tracking-tight text-white md:justify-start md:text-3xl">
-                <span className="min-w-0 truncate">{displayName}</span>
-                <MachineTop10Crown
-                  profileId={profileId}
-                  iconClassName="h-5 w-5 md:h-6 md:w-6"
-                />
-              </h1>
-              {profile.bio && (
-                <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-sm leading-relaxed text-white/70">
-                  {profile.bio}
-                </p>
-              )}
+            <div className="min-w-0 flex-1 text-left">
+              <div className="mb-3 grid grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/55 md:hidden">
+                <HeadStat label="Posts" value={portfolioCount} compact />
+                <button
+                  type="button"
+                  onClick={() => setOpenFollowers(true)}
+                  className="p-3 text-left transition hover:bg-white/[0.04]"
+                  aria-label="Ver quem acompanha"
+                >
+                  <span className="block text-[10px] font-medium uppercase tracking-wide text-white/55">
+                    Acompanham
+                  </span>
+                  <span className="mt-1 block text-xl font-semibold tabular-nums text-white">
+                    {counts.followers_count}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 divide-x divide-y divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 md:grid-cols-4 md:divide-y-0">
+          <div className="mt-4 text-left md:mt-5">
+            <h1 className="flex flex-wrap items-center gap-2 text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
+              <span className="min-w-0 truncate">{displayName}</span>
+              <MachineTop10Crown
+                profileId={profileId}
+                iconClassName="h-5 w-5 md:h-6 md:w-6"
+              />
+            </h1>
+            {profile.bio && (
+              <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
+                {profile.bio}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-6 hidden max-w-md grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 md:grid">
             <HeadStat label="Posts" value={portfolioCount} />
             <button
               type="button"
@@ -301,12 +320,6 @@ export function ProfileHeadCard({
                 {counts.followers_count}
               </span>
             </button>
-            {isClan && typeof profile.members_count === "number" ? (
-              <HeadStat label="Membros" value={profile.members_count} />
-            ) : (
-              <HeadStat label="Seguindo" value={counts.following_count} />
-            )}
-            <HeadStat label={isClan ? "Tipo" : "Nivel"} value={isClan ? "Clan" : xpData?.xp_level ?? "-"} />
           </div>
 
           {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
@@ -773,16 +786,18 @@ function ToolbarButton({
 function HeadStat({
   label,
   value,
+  compact,
 }: {
   label: string
   value: number | string
+  compact?: boolean
 }) {
   return (
-    <div className="p-4">
-      <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
+    <div className={compact ? "p-3" : "p-4"}>
+      <span className={compact ? "block text-[10px] font-medium uppercase tracking-wide text-white/55" : "block text-xs font-medium uppercase tracking-wide text-white/55"}>
         {label}
       </span>
-      <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
+      <span className={compact ? "mt-1 block text-xl font-semibold tabular-nums text-white" : "mt-2 block text-2xl font-semibold tabular-nums text-white"}>
         {value}
       </span>
     </div>
