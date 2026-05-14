@@ -32,6 +32,7 @@ import { ManifestationBadge } from "@/components/manifestation/ManifestationBadg
 import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { CoursesSection } from "./_components/courses-section"
+import { UserPortfolio } from "./_components/UserPortfolio"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -1491,6 +1492,9 @@ export default function PerfilPage() {
             {/* Footer fino de Pólens — colado ao headcard */}
             <HeadcardPolensFooter className="relative" />
           </article>
+
+          {/* Portfólio do user account — feed=true, vitrine=false, ranking=false */}
+          <UserPortfolio />
 
           {/* Stats row — compacta */}
           <section className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-2.5">
