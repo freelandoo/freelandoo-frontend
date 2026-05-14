@@ -214,7 +214,7 @@ export function ProfileHeadCard({
           className
         )}
       >
-        <div className="relative h-24 bg-zinc-900 md:h-56">
+        <div className="relative h-28 bg-zinc-900 md:h-52">
           {profile.manifestation?.banner_url && !isClan ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -248,9 +248,9 @@ export function ProfileHeadCard({
           )}
         </div>
 
-        <div className="px-4 pb-5 md:px-7 md:pb-6">
-          <div className="-mt-8 flex items-start gap-4 md:-mt-12 md:items-end md:gap-6">
-            <div className="flex shrink-0 flex-col items-center md:items-start">
+        <div className="px-4 pb-4 md:px-7 md:pb-5">
+          <div className="-mt-10 flex items-start gap-4 md:-mt-14 md:gap-5">
+            <div className="flex shrink-0 flex-col items-center">
               <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-32">
                 {avatarSrc ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -270,8 +270,8 @@ export function ProfileHeadCard({
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 text-left">
-              <div className="mb-3 grid grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/55 md:hidden">
+            <div className="min-w-0 flex-1 pt-6 text-left md:pt-7">
+              <div className="grid max-w-md grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/55">
                 <HeadStat label="Posts" value={portfolioCount} compact />
                 <button
                   type="button"
@@ -287,10 +287,37 @@ export function ProfileHeadCard({
                   </span>
                 </button>
               </div>
+
+              {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
+                <div className="mt-2 grid max-w-md grid-cols-2 gap-1.5">
+                  {profile.machine_name && (
+                    <HeadInfo icon={Megaphone} label="Maquina" value={profile.machine_name} />
+                  )}
+                  {profile.desc_category && (
+                    <HeadInfo
+                      icon={isClan ? Users : UserRound}
+                      label={isClan ? "Categoria" : "Profissao"}
+                      value={profile.desc_category}
+                    />
+                  )}
+                  {location && (
+                    <div className="col-span-2">
+                      <HeadInfo icon={MapPin} label="Localizacao" value={location} />
+                    </div>
+                  )}
+                  {isClan && typeof profile.members_count === "number" && (
+                    <HeadInfo
+                      icon={Users}
+                      label="Integrantes"
+                      value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-4 text-left md:mt-5">
+          <div className="mt-4 text-left">
             <h1 className="flex flex-wrap items-center gap-2 text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
               <span className="min-w-0 truncate">{displayName}</span>
               <MachineTop10Crown
@@ -305,50 +332,8 @@ export function ProfileHeadCard({
             )}
           </div>
 
-          <div className="mt-6 hidden max-w-md grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 md:grid">
-            <HeadStat label="Posts" value={portfolioCount} />
-            <button
-              type="button"
-              onClick={() => setOpenFollowers(true)}
-              className="p-4 text-left transition hover:bg-white/[0.04]"
-              aria-label="Ver quem acompanha"
-            >
-              <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
-                Acompanham
-              </span>
-              <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
-                {counts.followers_count}
-              </span>
-            </button>
-          </div>
-
-          {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
-            <div className="mt-5 grid gap-2 md:grid-cols-3">
-              {profile.machine_name && (
-                <HeadInfo icon={Megaphone} label="Maquina" value={profile.machine_name} />
-              )}
-              {profile.desc_category && (
-                <HeadInfo
-                  icon={isClan ? Users : UserRound}
-                  label={isClan ? "Categoria" : "Profissao"}
-                  value={profile.desc_category}
-                />
-              )}
-              {location && (
-                <HeadInfo icon={MapPin} label="Localizacao" value={location} />
-              )}
-              {isClan && typeof profile.members_count === "number" && (
-                <HeadInfo
-                  icon={Users}
-                  label="Integrantes"
-                  value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
-                />
-              )}
-            </div>
-          )}
-
           {!isClan && xpData && (
-            <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
+            <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                   Nivel {xpData.xp_level}
@@ -370,12 +355,12 @@ export function ProfileHeadCard({
             </div>
           )}
 
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             {isOwnProfile ? (
               <Link
                 href={ownerActions?.editHref || "#"}
                 onClick={ownerActions?.onEdit}
-                className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
+                className="inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[11px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
                 style={{
                   boxShadow:
                     "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
@@ -389,7 +374,7 @@ export function ProfileHeadCard({
                 <button
                   type="button"
                   onClick={visitorActions?.onScheduleScroll}
-                  className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
+                  className="inline-flex h-8 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[11px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
                   style={{
                     boxShadow:
                       "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
@@ -403,7 +388,7 @@ export function ProfileHeadCard({
                     targetId={profileId}
                     onChanged={onFollowChanged}
                     compact
-                    className="!h-9 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[12px] !font-bold !uppercase !tracking-wider"
+                    className="!h-8 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[11px] !font-bold !uppercase !tracking-wider"
                   />
                 </div>
               </>
@@ -416,7 +401,7 @@ export function ProfileHeadCard({
               }
               aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
               title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
             >
               <MessageCircle className="h-3.5 w-3.5" />
             </Link>
@@ -425,7 +410,7 @@ export function ProfileHeadCard({
           {isOwnProfile && !profile.is_paid && (
             <Link
               href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
-              className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+              className="mt-2 inline-flex h-8 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
               style={{
                 boxShadow:
                   "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
@@ -793,11 +778,11 @@ function HeadStat({
   compact?: boolean
 }) {
   return (
-    <div className={compact ? "p-3" : "p-4"}>
-      <span className={compact ? "block text-[10px] font-medium uppercase tracking-wide text-white/55" : "block text-xs font-medium uppercase tracking-wide text-white/55"}>
+    <div className={compact ? "p-3 md:p-3.5" : "p-4"}>
+      <span className={compact ? "block text-[10px] font-medium uppercase tracking-wide text-white/45" : "block text-xs font-medium uppercase tracking-wide text-white/55"}>
         {label}
       </span>
-      <span className={compact ? "mt-1 block text-xl font-semibold tabular-nums text-white" : "mt-2 block text-2xl font-semibold tabular-nums text-white"}>
+      <span className={compact ? "mt-1 block text-xl font-semibold tabular-nums text-white md:text-2xl" : "mt-2 block text-2xl font-semibold tabular-nums text-white"}>
         {value}
       </span>
     </div>
@@ -814,15 +799,15 @@ function HeadInfo({
   value: string
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/25 bg-primary/[0.08] text-primary">
-        <Icon className="h-4 w-4" />
+    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-2 py-2">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/[0.08] text-primary">
+        <Icon className="h-3.5 w-3.5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-[10px] font-medium uppercase tracking-wide text-white/40">
+        <span className="block text-[9px] font-medium uppercase tracking-wide text-white/40">
           {label}
         </span>
-        <span className="block truncate text-sm font-medium text-white/85">
+        <span className="block truncate text-xs font-semibold text-white/85 md:text-[13px]">
           {value}
         </span>
       </span>
