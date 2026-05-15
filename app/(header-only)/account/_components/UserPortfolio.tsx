@@ -14,6 +14,8 @@ import {
   AlertCircle,
   Hexagon,
   GraduationCap,
+  UserRound,
+  Users,
 } from "lucide-react"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { Button } from "@/components/ui/button"
@@ -80,11 +82,19 @@ const BACKEND_DIRECT = "https://freelandoo-backend-production.up.railway.app"
  */
 interface UserPortfolioProps {
   coursesProfileOptions?: ProfileOption[]
+  /** Conteúdo da aba "Meus Perfis" (só renderizado em /account). */
+  myProfilesSlot?: React.ReactNode
+  /** Conteúdo da aba "Meus Clans" (só renderizado em /account). */
+  myClansSlot?: React.ReactNode
 }
 
-type PortfolioTab = "feed" | "bees" | "courses"
+type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans"
 
-export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps = {}) {
+export function UserPortfolio({
+  coursesProfileOptions = [],
+  myProfilesSlot,
+  myClansSlot,
+}: UserPortfolioProps = {}) {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
@@ -151,12 +161,13 @@ export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps
     void fetchItems()
   }, [fetchItems])
 
+  const isPortfolioGridTab = portfolioTab === "feed" || portfolioTab === "bees"
   const filteredItems = useMemo(
     () =>
-      portfolioTab === "courses"
-        ? []
-        : items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab),
-    [items, portfolioTab],
+      isPortfolioGridTab
+        ? items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab)
+        : [],
+    [items, portfolioTab, isPortfolioGridTab],
   )
   const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
   const emptyLabel =
@@ -514,8 +525,36 @@ export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps
             <GraduationCap className="h-3.5 w-3.5" />
             Meus Cursos
           </button>
+          {myProfilesSlot !== undefined && (
+            <button
+              type="button"
+              onClick={() => setPortfolioTab("profiles")}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                portfolioTab === "profiles"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <UserRound className="h-3.5 w-3.5" />
+              Meus Perfis
+            </button>
+          )}
+          {myClansSlot !== undefined && (
+            <button
+              type="button"
+              onClick={() => setPortfolioTab("clans")}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                portfolioTab === "clans"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Meus Clans
+            </button>
+          )}
         </div>
-        {portfolioTab !== "courses" && (
+        {isPortfolioGridTab && (
           <Button
             size="sm"
             variant="ghost"
@@ -530,7 +569,7 @@ export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps
       </div>
 
       {/* Mobile Novo Item button */}
-      {portfolioTab !== "courses" && (
+      {isPortfolioGridTab && (
         <div className="flex md:hidden justify-center mb-6">
           <Button
             size="sm"
@@ -547,6 +586,10 @@ export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps
 
       {portfolioTab === "courses" ? (
         <CoursesSection profileOptions={coursesProfileOptions} />
+      ) : portfolioTab === "profiles" ? (
+        <>{myProfilesSlot}</>
+      ) : portfolioTab === "clans" ? (
+        <>{myClansSlot}</>
       ) : (
         <>
       {listError && (

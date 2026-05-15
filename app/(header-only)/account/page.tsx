@@ -32,7 +32,6 @@ import { ManifestationBadge } from "@/components/manifestation/ManifestationBadg
 import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { UserPortfolio } from "./_components/UserPortfolio"
-import { CollapsibleSection } from "@/components/ui/collapsible-section"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -1629,7 +1628,7 @@ export default function PerfilPage() {
             </div>
           </article>
 
-          {/* Portfólio do user account — feed=true, vitrine=false, ranking=false */}
+          {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
           <UserPortfolio
             coursesProfileOptions={(perfil.profiles || [])
               .filter((p) => !p.is_clan)
@@ -1637,36 +1636,19 @@ export default function PerfilPage() {
                 id: p.id_profile,
                 name: p.display_name || "Perfil sem nome",
               }))}
-          />
-
-
-
-          {/* Meus Perfis — retrátil */}
-          {(() => {
-            const list = (perfil.profiles || []).filter((p) => !p.is_clan)
-            const total = list.length
-            const visible = list.filter((p) => p.is_published).length
-            const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
-            const unpaid = list.filter((p) => !p.is_paid).length
-            return (
-              <CollapsibleSection
-                title="Meus Perfis"
-                icon={UserRound}
-                storageKey="account.profiles.open"
-                className="rounded-none border-0 bg-transparent shadow-none"
-                summary={`${total} criado${total === 1 ? "" : "s"} · ${visible} visível${visible === 1 ? "" : "is"} · ${paidInvisible} invisível${paidInvisible === 1 ? "" : "is"} · ${unpaid} aguardando assinatura`}
-                actions={
+            myProfilesSlot={
+              <div className="space-y-4">
+                <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
+                    onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
                     style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)" }}
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Novo Perfil
                   </button>
-                }
-              >
+                </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
                 <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
@@ -1825,35 +1807,19 @@ export default function PerfilPage() {
                 </div>
               )}
             </div>
-              </CollapsibleSection>
-            )
-          })()}
-
-          {/* Meus Clans — retrátil */}
-          {(() => {
-            const list = (perfil.profiles || []).filter((p) => p.is_clan)
-            const total = list.length
-            const visible = list.filter((p) => p.is_published).length
-            const paidInvisible = list.filter((p) => p.is_paid && !p.is_visible).length
-            return (
-              <CollapsibleSection
-                title="Meus Clans"
-                icon={Users}
-                storageKey="account.clans.open"
-                defaultOpen={false}
-                className="rounded-none border-0 bg-transparent shadow-none"
-                summary={`${total} clan${total === 1 ? "" : "s"} · ${visible} visível${visible === 1 ? "" : "is"} · ${paidInvisible} invisível${paidInvisible === 1 ? "" : "is"}`}
-                actions={
+              </div>
+            }
+            myClansSlot={
+              <div className="space-y-4">
+                <div className="flex justify-end">
                   <Link
                     href="/account/clans"
-                    onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
                   >
                     Gerenciar clans
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
-                }
-              >
+                </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
                 <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
@@ -1980,9 +1946,9 @@ export default function PerfilPage() {
                 </div>
               )}
             </div>
-              </CollapsibleSection>
-            )
-          })()}
+              </div>
+            }
+          />
 
         </div>
       </main>
