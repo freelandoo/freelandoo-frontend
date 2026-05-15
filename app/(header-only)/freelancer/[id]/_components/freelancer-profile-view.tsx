@@ -40,10 +40,12 @@ import { MuralModal } from "@/components/profile/mural-modal"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
+  BEES_VIDEO_ASPECT_RATIO_MAX,
   POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
   POST_IMAGE_OUTPUT,
   getImageDimensions,
+  getVideoDimensions,
   isAspectRatio,
   validateImageFile,
   validateVideoFile,
@@ -221,10 +223,38 @@ export default function FreelancerProfileView({
     }
   }
 
+  const validateBeesVideo = async (file: File): Promise<string | null> => {
+    if (!file.type.startsWith("video/")) {
+      return "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM."
+    }
+    const v = validateVideoFile(file)
+    if (!v.ok) return v.error
+    try {
+      const dim = await getVideoDimensions(file)
+      if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
+        return "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16)."
+      }
+    } catch (err) {
+      return err instanceof Error ? err.message : "Não foi possível validar o vídeo."
+    }
+    return null
+  }
+
   const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, itemId: string) => {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
+
+    if (portfolioTab === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      await uploadPortfolioFile(itemId, file)
+      return
+    }
 
     if (file.type.startsWith("image/")) {
       await preparePostImage(file, "existing", itemId)
@@ -243,13 +273,38 @@ export default function FreelancerProfileView({
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
+    if (portfolioTab === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      setPendingFile(file)
+      setPendingOriginalFile(file)
+      setPendingPreview(URL.createObjectURL(file))
+      return
+    }
     await preparePostImage(file, "new")
   }
 
   const handlePendingFileDrop = async (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
-    if (!file || !file.type.startsWith("image/")) return
+    if (!file) return
+    if (portfolioTab === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      setPendingFile(file)
+      setPendingOriginalFile(file)
+      setPendingPreview(URL.createObjectURL(file))
+      return
+    }
+    if (!file.type.startsWith("image/")) return
     await preparePostImage(file, "new")
   }
 
@@ -649,7 +704,7 @@ export default function FreelancerProfileView({
                               <input
                                 type="file"
                                 className="hidden"
-                                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                                accept={portfolioTab === "bees" ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"}
                                 onChange={(e) => handlePortfolioUpload(e, item.id_portfolio_item)}
                                 disabled={isUploadingPortfolio === item.id_portfolio_item}
                               />
@@ -709,7 +764,7 @@ export default function FreelancerProfileView({
                               <input
                                 type="file"
                                 className="hidden"
-                                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                                accept={portfolioTab === "bees" ? "video/mp4,video/webm,video/quicktime" : "image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"}
                                 onChange={(e) => handlePortfolioUpload(e, item.id_portfolio_item)}
                                 disabled={isUploadingPortfolio === item.id_portfolio_item}
                               />
@@ -850,14 +905,30 @@ export default function FreelancerProfileView({
           </DialogHeader>
           <div className="space-y-4 py-2">
 
-            {/* Upload de imagem */}
+            {/* Upload de mídia */}
             {!editingPortfolioItemId && (
               <div className="space-y-2">
-                <Label>Imagem</Label>
+                <Label>{portfolioTab === "bees" ? "Vídeo 9:16" : "Imagem"}</Label>
                 {pendingPreview ? (
-                  <div className="relative w-full aspect-[4/5] max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted">
-                    <img src={pendingPreview} alt="Preview" className="w-full h-full object-cover" />
-                    {pendingOriginalFile && (
+                  <div
+                    className={`relative w-full ${
+                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+                    } max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted`}
+                  >
+                    {portfolioTab === "bees" ? (
+                      // eslint-disable-next-line jsx-a11y/media-has-caption
+                      <video
+                        src={pendingPreview}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        autoPlay
+                        loop
+                      />
+                    ) : (
+                      <img src={pendingPreview} alt="Preview" className="w-full h-full object-cover" />
+                    )}
+                    {pendingOriginalFile && portfolioTab !== "bees" && (
                       <button
                         type="button"
                         onClick={() => setCropTarget({ file: pendingOriginalFile, mode: "new" })}
@@ -876,20 +947,40 @@ export default function FreelancerProfileView({
                   </div>
                 ) : (
                   <label
-                    className="flex flex-col items-center justify-center w-full aspect-[4/5] max-h-[460px] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors"
+                    className={`flex flex-col items-center justify-center w-full ${
+                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+                    } max-h-[460px] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors`}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handlePendingFileDrop}
                   >
-                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePendingFileSelect} disabled={processingMedia} />
+                    <input
+                      type="file"
+                      accept={
+                        portfolioTab === "bees"
+                          ? "video/mp4,video/webm,video/quicktime"
+                          : "image/jpeg,image/png,image/webp"
+                      }
+                      className="hidden"
+                      onChange={handlePendingFileSelect}
+                      disabled={processingMedia}
+                    />
                     {processingMedia ? (
                       <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
                     ) : (
                       <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                     )}
                     <span className="text-sm text-muted-foreground font-medium">
-                      {processingMedia ? "Otimizando imagem..." : "Clique ou arraste uma imagem"}
+                      {processingMedia
+                        ? "Otimizando..."
+                        : portfolioTab === "bees"
+                          ? "Clique ou arraste um vídeo 9:16"
+                          : "Clique ou arraste uma imagem"}
                     </span>
-                    <span className="text-xs text-muted-foreground/60 mt-1">JPG, PNG ou WebP - 4:5 - max 3MB</span>
+                    <span className="text-xs text-muted-foreground/60 mt-1">
+                      {portfolioTab === "bees"
+                        ? "MP4 ou WebM - 9:16 - max 100MB"
+                        : "JPG, PNG ou WebP - 4:5 - max 3MB"}
+                    </span>
                   </label>
                 )}
               </div>
