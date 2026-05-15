@@ -179,16 +179,16 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
         <Link
           href={post.public_profile_url || "#"}
           onClick={handleProfileClick}
-          className="flex items-center gap-3 flex-1 min-w-0"
+          className="flex min-w-0 flex-1 items-center gap-3"
         >
           <Avatar
-            className="h-10 w-10 ring-1 transition"
+            className="h-10 w-10 shrink-0 ring-1 transition"
             style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
           >
             {post.avatar_url ? (
               <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} />
             ) : null}
-            <AvatarFallback className="bg-white/5 text-white/70 text-xs">
+            <AvatarFallback className="bg-white/5 text-xs text-white/70">
               {initials(post.profile_name)}
             </AvatarFallback>
           </Avatar>
@@ -236,125 +236,219 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
         )}
       </div>
 
-      {/* Media */}
-      <PostMedia media={post.media} glow={machineGlow} fillContainer={paged} />
-
-      {/* Actions */}
-      <div className={cn("flex shrink-0 items-center gap-1 px-3 pt-3", paged && "pt-2")}>
-        <button
-          type="button"
-          aria-label={liked ? "Descurtir" : "Curtir"}
-          onClick={handleLike}
-          disabled={likePending}
-          className="rounded-full p-2 text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white active:scale-90 disabled:opacity-60"
-          style={liked ? { color: machineColor } : undefined}
-        >
-          <Heart
-            className={cn(
-              "h-5 w-5 transition-transform duration-200",
-              liked ? "fill-current scale-110" : ""
-            )}
-          />
-        </button>
-        <button
-          type="button"
-          aria-label="Compartilhar"
-          onClick={handleShare}
-          className="rounded-full p-2 text-white/70 transition hover:bg-white/5 hover:text-white active:scale-90"
-        >
-          {copied ? (
-            <Check className="h-5 w-5 text-emerald-400 animate-in zoom-in-50 duration-200" />
-          ) : (
-            <Share2 className="h-5 w-5" />
-          )}
-        </button>
-        {primaryUrl && (
-          <Link
-            href={primaryUrl}
-            onClick={handleProfileClick}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/85 transition hover:text-white active:scale-95"
-            style={{
-              border: `1px solid ${machineColor}40`,
-              background: `${machineColor}10`,
-            }}
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            {primaryLabel}
-          </Link>
-        )}
-      </div>
-
-      {/* Quick contact */}
-      {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
-        <div className={cn("flex shrink-0 items-center gap-2 px-3 pt-2", paged && "pt-1.5")}>
-          {post.whatsapp_url && (
-            <a
-              href={post.whatsapp_url}
-              target="_blank"
-              rel="noreferrer"
-              onClick={handleWhatsappClick}
-              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/25"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              WhatsApp
-            </a>
-          )}
-          {post.social_links && post.social_links.length > 0 && (
-            <SocialLinksSheet
-              links={post.social_links}
-              onLinkClick={handleSocialClick}
-              trigger={
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
-                >
-                  <Link2 className="h-3.5 w-3.5" />
-                  {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
-                </button>
-              }
+      {paged ? (
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="absolute inset-0 flex min-h-0 flex-col">
+            <PostMedia
+              media={post.media}
+              glow={machineGlow}
+              fillContainer
+              reserveBottomOverlay
             />
-          )}
-        </div>
-      )}
+          </div>
 
-      {/* Caption */}
-      {(post.title || post.caption) && (
-        <div className={cn("shrink-0 px-4 pt-3 pb-1", paged && "min-h-0 pt-2")}>
-          {post.title && (
-            <h3 className="text-[15px] font-semibold leading-tight text-white">
-              {post.title}
-            </h3>
-          )}
-          {post.caption && (
-            <p
-              className={cn(
-                "mt-1.5 text-sm leading-relaxed text-white/65",
-                paged ? "line-clamp-2" : "line-clamp-3"
-              )}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-44 bg-gradient-to-t from-black via-black/70 to-transparent"
+          />
+
+          <div
+            className={cn(
+              "absolute inset-x-0 bottom-0 z-[2] p-4 pr-[4.5rem] pt-2",
+              post.media.length > 1 && "pb-14"
+            )}
+          >
+            {(post.title || post.caption) && (
+              <div className="pointer-events-none">
+                {post.title && (
+                  <h3 className="text-balance text-lg font-bold leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+                    {post.title}
+                  </h3>
+                )}
+                {post.caption && (
+                  <p className="mt-1.5 line-clamp-4 text-sm leading-relaxed text-white/90 drop-shadow-[0_1px_6px_rgba(0,0,0,0.75)]">
+                    {post.caption}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
+              <div className="pointer-events-auto mt-3 flex flex-wrap gap-2">
+                {post.whatsapp_url && (
+                  <a
+                    href={post.whatsapp_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={handleWhatsappClick}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/25 px-3 py-1.5 text-xs font-medium text-emerald-100 ring-1 ring-emerald-400/30 backdrop-blur-sm transition hover:bg-emerald-500/35"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    WhatsApp
+                  </a>
+                )}
+                {post.social_links && post.social_links.length > 0 && (
+                  <SocialLinksSheet
+                    links={post.social_links}
+                    onLinkClick={handleSocialClick}
+                    trigger={
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/20 backdrop-blur-sm transition hover:bg-white/25"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
+                      </button>
+                    }
+                  />
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="absolute bottom-28 right-2 z-[3] flex flex-col items-center gap-5">
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                aria-label={liked ? "Descurtir" : "Curtir"}
+                onClick={handleLike}
+                disabled={likePending}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60"
+                style={liked ? { color: machineColor, boxShadow: `0 0 0 1px ${machineColor}55` } : undefined}
+              >
+                <Heart
+                  className={cn(
+                    "h-7 w-7 transition-transform duration-200",
+                    liked ? "fill-current scale-110" : ""
+                  )}
+                />
+              </button>
+              <span className="text-[11px] font-semibold tabular-nums text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                {likesCount.toLocaleString("pt-BR")}
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                aria-label="Compartilhar"
+                onClick={handleShare}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95"
+              >
+                {copied ? (
+                  <Check className="h-6 w-6 text-emerald-400" />
+                ) : (
+                  <Share2 className="h-6 w-6" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <PostMedia media={post.media} glow={machineGlow} />
+
+          <div className="flex shrink-0 items-center gap-1 px-3 pt-3">
+            <button
+              type="button"
+              aria-label={liked ? "Descurtir" : "Curtir"}
+              onClick={handleLike}
+              disabled={likePending}
+              className="rounded-full p-2 text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white active:scale-90 disabled:opacity-60"
+              style={liked ? { color: machineColor } : undefined}
             >
-              {post.caption}
-            </p>
-          )}
-        </div>
-      )}
+              <Heart
+                className={cn(
+                  "h-5 w-5 transition-transform duration-200",
+                  liked ? "fill-current scale-110" : ""
+                )}
+              />
+            </button>
+            <button
+              type="button"
+              aria-label="Compartilhar"
+              onClick={handleShare}
+              className="rounded-full p-2 text-white/70 transition hover:bg-white/5 hover:text-white active:scale-90"
+            >
+              {copied ? (
+                <Check className="h-5 w-5 text-emerald-400 animate-in zoom-in-50 duration-200" />
+              ) : (
+                <Share2 className="h-5 w-5" />
+              )}
+            </button>
+            {primaryUrl && (
+              <Link
+                href={primaryUrl}
+                onClick={handleProfileClick}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/85 transition hover:text-white active:scale-95"
+                style={{
+                  border: `1px solid ${machineColor}40`,
+                  background: `${machineColor}10`,
+                }}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                {primaryLabel}
+              </Link>
+            )}
+          </div>
 
-      {/* Counters */}
-      <div
-        className={cn(
-          "flex shrink-0 items-center gap-1.5 px-4 pb-4 pt-3 text-[11px] font-medium text-white/40",
-          paged && "pb-3 pt-2"
-        )}
-      >
-        <span>
-          {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
-        </span>
-        {post.shares_count > 0 && (
-          <>
-            <span aria-hidden>·</span>
-            <span>{post.shares_count.toLocaleString("pt-BR")} compart.</span>
-          </>
-        )}
-      </div>
+          {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
+            <div className="flex shrink-0 items-center gap-2 px-3 pt-2">
+              {post.whatsapp_url && (
+                <a
+                  href={post.whatsapp_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={handleWhatsappClick}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/25"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </a>
+              )}
+              {post.social_links && post.social_links.length > 0 && (
+                <SocialLinksSheet
+                  links={post.social_links}
+                  onLinkClick={handleSocialClick}
+                  trigger={
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
+                    </button>
+                  }
+                />
+              )}
+            </div>
+          )}
+
+          {(post.title || post.caption) && (
+            <div className="shrink-0 px-4 pb-1 pt-3">
+              {post.title && (
+                <h3 className="text-[15px] font-semibold leading-tight text-white">{post.title}</h3>
+              )}
+              {post.caption && (
+                <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-white/65">
+                  {post.caption}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex shrink-0 items-center gap-1.5 px-4 pb-4 pt-3 text-[11px] font-medium text-white/40">
+            <span>
+              {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
+            </span>
+            {post.shares_count > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{post.shares_count.toLocaleString("pt-BR")} compart.</span>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </article>
   )
 }

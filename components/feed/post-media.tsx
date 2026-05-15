@@ -10,9 +10,11 @@ interface PostMediaProps {
   glow?: string | null
   /** Preenche altura disponível (ex.: feed estilo TikTok) em vez de proporção 4:5 fixa */
   fillContainer?: boolean
+  /** Sobe indicadores inferiores para não colidir com legenda sobreposta (feed paged). */
+  reserveBottomOverlay?: boolean
 }
 
-export function PostMedia({ media, glow, fillContainer }: PostMediaProps) {
+export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay }: PostMediaProps) {
   const [index, setIndex] = useState(0)
   if (!media || media.length === 0) {
     return (
@@ -70,7 +72,10 @@ export function PostMedia({ media, glow, fillContainer }: PostMediaProps) {
       {/* Bottom legibility gradient */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/55 to-transparent"
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t to-transparent",
+          reserveBottomOverlay ? "h-28 from-black/70" : "h-16 from-black/55"
+        )}
       />
 
       {total > 1 && (
@@ -87,12 +92,20 @@ export function PostMedia({ media, glow, fillContainer }: PostMediaProps) {
             type="button"
             aria-label="Próxima mídia"
             onClick={() => setIndex((i) => (i + 1) % total)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95"
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95",
+              reserveBottomOverlay ? "right-14" : "right-2"
+            )}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
 
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
+          <div
+            className={cn(
+              "absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5",
+              reserveBottomOverlay ? "bottom-20" : "bottom-3"
+            )}
+          >
             {media.map((_, i) => (
               <span
                 key={i}
