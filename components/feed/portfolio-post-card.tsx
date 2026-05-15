@@ -19,6 +19,8 @@ interface PortfolioPostCardProps {
   post: FeedPost
   filters: FeedFilters
   onLikeChange?: (postId: string, liked: boolean, likes_count: number | null) => void
+  /** Um post por ecrã: mídia cresce e o cartão preenche a altura do snap */
+  paged?: boolean
 }
 
 function initials(name: string | null | undefined) {
@@ -31,7 +33,7 @@ function initials(name: string | null | undefined) {
     .join("")
 }
 
-export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPostCardProps) {
+export function PortfolioPostCard({ post, filters, onLikeChange, paged }: PortfolioPostCardProps) {
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
   const machineColor = post.machine?.color_accent || "#fbbf24"
@@ -165,12 +167,15 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
   return (
     <article
       ref={impressionRef}
-      className="group/post overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15"
+      className={cn(
+        "group/post overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15",
+        paged && "flex h-full min-h-0 flex-col"
+      )}
       data-post-id={post.post_id}
       style={machineGlow ? { boxShadow: `0 1px 0 0 ${machineGlow}, 0 12px 40px -28px ${machineGlow}` } : undefined}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className={cn("flex shrink-0 items-center gap-3 px-4 py-3", paged && "py-2")}>
         <Link
           href={post.public_profile_url || "#"}
           onClick={handleProfileClick}
@@ -232,10 +237,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
       </div>
 
       {/* Media */}
-      <PostMedia media={post.media} glow={machineGlow} />
+      <PostMedia media={post.media} glow={machineGlow} fillContainer={paged} />
 
       {/* Actions */}
-      <div className="flex items-center gap-1 px-3 pt-3">
+      <div className={cn("flex shrink-0 items-center gap-1 px-3 pt-3", paged && "pt-2")}>
         <button
           type="button"
           aria-label={liked ? "Descurtir" : "Curtir"}
@@ -281,7 +286,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
 
       {/* Quick contact */}
       {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
-        <div className="flex items-center gap-2 px-3 pt-2">
+        <div className={cn("flex shrink-0 items-center gap-2 px-3 pt-2", paged && "pt-1.5")}>
           {post.whatsapp_url && (
             <a
               href={post.whatsapp_url}
@@ -314,14 +319,19 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
 
       {/* Caption */}
       {(post.title || post.caption) && (
-        <div className="px-4 pt-3 pb-1">
+        <div className={cn("shrink-0 px-4 pt-3 pb-1", paged && "min-h-0 pt-2")}>
           {post.title && (
             <h3 className="text-[15px] font-semibold leading-tight text-white">
               {post.title}
             </h3>
           )}
           {post.caption && (
-            <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-white/65">
+            <p
+              className={cn(
+                "mt-1.5 text-sm leading-relaxed text-white/65",
+                paged ? "line-clamp-2" : "line-clamp-3"
+              )}
+            >
               {post.caption}
             </p>
           )}
@@ -329,7 +339,12 @@ export function PortfolioPostCard({ post, filters, onLikeChange }: PortfolioPost
       )}
 
       {/* Counters */}
-      <div className="flex items-center gap-1.5 px-4 pb-4 pt-3 text-[11px] font-medium text-white/40">
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-1.5 px-4 pb-4 pt-3 text-[11px] font-medium text-white/40",
+          paged && "pb-3 pt-2"
+        )}
+      >
         <span>
           {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
         </span>
