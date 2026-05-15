@@ -168,19 +168,27 @@ export function ProfileSidebar() {
       ]
     : bundle.items
 
+  // Em /bees a toolbar fica transparente pra não atrapalhar o vídeo.
+  const isBeesRoute = pathname === "/bees" || pathname.startsWith("/bees/")
+
   return (
     <>
       <aside
         aria-label="Toolbar do perfil"
         className={cn(
           "group/sidebar fixed left-3 top-1/2 z-40 hidden -translate-y-1/2 md:flex",
-          "w-14 flex-col gap-1 rounded-[22px] border border-white/[0.08] bg-zinc-950/75 p-1.5 shadow-[0_20px_44px_-30px_rgba(0,0,0,0.85)] backdrop-blur-xl",
-          "transition-[width,background-color,border-color] duration-300 ease-out hover:w-[216px] hover:border-white/15 hover:bg-zinc-950/90"
+          "w-14 flex-col gap-1 rounded-[22px] border p-1.5 transition-[width,background-color,border-color] duration-300 ease-out",
+          isBeesRoute
+            ? "border-white/10 bg-transparent shadow-none hover:w-[216px] hover:border-white/20 hover:bg-zinc-950/55 hover:backdrop-blur-xl"
+            : "border-white/[0.08] bg-zinc-950/75 shadow-[0_20px_44px_-30px_rgba(0,0,0,0.85)] backdrop-blur-xl hover:w-[216px] hover:border-white/15 hover:bg-zinc-950/90"
         )}
       >
         <span
           aria-hidden
-          className="absolute -right-1 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-full bg-primary/70 opacity-70 transition-opacity group-hover/sidebar:opacity-100"
+          className={cn(
+            "absolute -right-1 top-1/2 h-8 w-1.5 -translate-y-1/2 rounded-full transition-opacity group-hover/sidebar:opacity-100",
+            isBeesRoute ? "bg-primary/40 opacity-50" : "bg-primary/70 opacity-70"
+          )}
         />
         <ProfileTriggerButton
           bundle={bundle}
@@ -197,7 +205,12 @@ export function ProfileSidebar() {
 
       <nav
         aria-label="Toolbar do perfil"
-        className="fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-zinc-950/90 px-2 py-1.5 shadow-[0_18px_42px_-24px_rgba(0,0,0,0.9)] backdrop-blur-xl md:hidden"
+        className={cn(
+          "fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border px-2 py-1.5 md:hidden",
+          isBeesRoute
+            ? "border-white/10 bg-transparent shadow-none"
+            : "border-white/10 bg-zinc-950/90 shadow-[0_18px_42px_-24px_rgba(0,0,0,0.9)] backdrop-blur-xl"
+        )}
         style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
         <ProfileTriggerButton
