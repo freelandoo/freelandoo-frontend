@@ -242,7 +242,7 @@ function FeedPageInner() {
 
   return (
     <div
-      className="relative grid w-full grid-rows-[auto_1fr] overflow-hidden bg-black"
+      className="relative grid w-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden overflow-y-hidden bg-black"
       style={{
         height: `calc(100dvh - ${headerOffsetPx}px)`,
         maxHeight: `calc(100dvh - ${headerOffsetPx}px)`,
@@ -260,7 +260,7 @@ function FeedPageInner() {
         />
       )}
 
-      <div className="min-h-0 shrink-0">
+      <div className="min-h-0 min-w-0 shrink-0">
         <div className="px-4 pt-1">
           <PortfolioFeedHeadcard
             machines={machines}
@@ -297,14 +297,14 @@ function FeedPageInner() {
         ref={scrollRef}
         role="feed"
         aria-label="Feed de portfólios. Deslize verticalmente ou use a roda do rato para ver o próximo post."
-        className="mx-auto min-h-0 w-full max-w-xl overflow-y-auto overscroll-y-contain px-3 pb-2 [scrollbar-width:none] snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+        className="mx-auto min-h-0 min-w-0 w-full max-w-xl overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-2 [scrollbar-width:none] snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
       >
         {loadingInitial ? (
-          <div className="box-border h-full min-h-full shrink-0 snap-start">
+          <div className="box-border h-full min-h-full min-w-0 max-w-full shrink-0 snap-start">
             <FeedSkeleton paged />
           </div>
         ) : items.length === 0 ? (
-          <div className="box-border flex h-full min-h-full shrink-0 snap-start items-center justify-center py-2">
+          <div className="box-border flex h-full min-h-full min-w-0 max-w-full shrink-0 snap-start items-center justify-center py-2">
             <div className="w-full">
               <EmptyFeedState
                 hasFilters={hasFilters}
@@ -320,7 +320,7 @@ function FeedPageInner() {
             {items.map((post) => (
               <div
                 key={post.post_id}
-                className="box-border h-full min-h-full shrink-0 snap-start pb-2"
+                className="box-border h-full min-h-full min-w-0 max-w-full shrink-0 snap-start pb-2"
               >
                 <PortfolioPostCard
                   paged
@@ -343,7 +343,7 @@ function FeedPageInner() {
               </div>
             ))}
             {loadingMore && hasMore && (
-              <div className="box-border h-full min-h-full shrink-0 snap-start pb-2">
+              <div className="box-border h-full min-h-full min-w-0 max-w-full shrink-0 snap-start pb-2">
                 <FeedSkeleton paged />
               </div>
             )}

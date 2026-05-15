@@ -168,14 +168,14 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
     <article
       ref={impressionRef}
       className={cn(
-        "group/post overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15",
-        paged && "flex h-full min-h-0 flex-col"
+        "group/post box-border max-w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15",
+        paged && "flex h-full min-h-0 min-w-0 flex-col"
       )}
       data-post-id={post.post_id}
       style={machineGlow ? { boxShadow: `0 1px 0 0 ${machineGlow}, 0 12px 40px -28px ${machineGlow}` } : undefined}
     >
       {/* Header */}
-      <div className={cn("flex shrink-0 items-center gap-3 px-4 py-3", paged && "py-2")}>
+      <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3 px-4 py-3", paged && "py-2")}>
         <Link
           href={post.public_profile_url || "#"}
           onClick={handleProfileClick}
@@ -224,12 +224,13 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
 
         {post.machine?.name && (
           <span
-            className="shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider"
+            className="min-w-0 max-w-[38%] shrink truncate rounded-full px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider sm:max-w-[45%]"
             style={{
               color: machineColor,
               background: `${machineColor}14`,
               border: `1px solid ${machineColor}33`,
             }}
+            title={post.machine.name}
           >
             {post.machine.name.replace(/^Máquina de\s+/i, "")}
           </span>
@@ -237,8 +238,8 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
       </div>
 
       {paged ? (
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          <div className="absolute inset-0 flex min-h-0 flex-col">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+          <div className="absolute inset-0 flex min-h-0 min-w-0 flex-col">
             <PostMedia
               media={post.media}
               glow={machineGlow}
@@ -254,7 +255,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
 
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 z-[2] p-4 pr-[4.5rem] pt-2",
+              "absolute inset-x-0 bottom-0 z-[2] box-border min-w-0 max-w-full p-4 pr-[4.5rem] pt-2",
               post.media.length > 1 && "pb-14"
             )}
           >
@@ -306,7 +307,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
             )}
           </div>
 
-          <div className="absolute bottom-28 right-2 z-[3] flex flex-col items-center gap-5">
+          <div className="absolute bottom-28 right-2 z-[3] flex max-w-[3.5rem] flex-col items-center gap-5">
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
