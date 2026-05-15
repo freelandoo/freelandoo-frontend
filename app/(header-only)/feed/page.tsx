@@ -8,6 +8,7 @@ import { PortfolioFeedHeadcard } from "@/components/feed/portfolio-feed-headcard
 import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
 import { FeedSkeleton } from "@/components/feed/feed-skeleton"
+import { CommentsPanel } from "@/components/comments/comments-panel"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
@@ -82,6 +83,7 @@ function FeedPageInner() {
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
 
   const hydrated = useRef(false)
   useEffect(() => {
@@ -326,6 +328,8 @@ function FeedPageInner() {
                   paged
                   post={post}
                   filters={filtersForEvents}
+                  commentsCount={post.comments_count ?? 0}
+                  onOpenComments={(postId) => setOpenCommentsFor(postId)}
                   onLikeChange={(postId, liked, likes_count) => {
                     setItems((prev) =>
                       prev.map((p) =>
@@ -350,6 +354,24 @@ function FeedPageInner() {
           </>
         )}
       </div>
+      <CommentsPanel
+        postId={openCommentsFor}
+        open={!!openCommentsFor}
+        onClose={() => setOpenCommentsFor(null)}
+        loginNextPath="/feed"
+        onCountChange={(postId, delta) => {
+          setItems((prev) =>
+            prev.map((p) =>
+              p.post_id === postId
+                ? {
+                    ...p,
+                    comments_count: Math.max(0, (p.comments_count ?? 0) + delta),
+                  }
+                : p,
+            ),
+          )
+        }}
+      />
     </div>
   )
 }

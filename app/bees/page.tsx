@@ -5,6 +5,7 @@ import { Loader2, Sparkles } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
+import { CommentsPanel } from "@/components/comments/comments-panel"
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
@@ -32,6 +33,7 @@ function BeesPageInner() {
   const [error, setError] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [muted, setMuted] = useState(true)
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
 
   const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
     const sp = new URLSearchParams()
@@ -97,27 +99,48 @@ function BeesPageInner() {
       ) : items.length === 0 ? (
         <EmptyState />
       ) : (
-        <BeesScroller
-          items={items}
-          filtersForEvents={filtersForEvents}
-          muted={muted}
-          onToggleMute={() => setMuted((m) => !m)}
-          activeIndex={activeIndex}
-          onActiveChange={setActiveIndex}
-          onLikeChange={(postId, liked, likes_count) => {
-            setItems((prev) =>
-              prev.map((p) =>
-                p.post_id === postId
-                  ? {
-                      ...p,
-                      viewer_has_liked: liked,
-                      likes_count: likes_count ?? p.likes_count,
-                    }
-                  : p
+        <>
+          <BeesScroller
+            items={items}
+            filtersForEvents={filtersForEvents}
+            muted={muted}
+            onToggleMute={() => setMuted((m) => !m)}
+            activeIndex={activeIndex}
+            onActiveChange={setActiveIndex}
+            onOpenComments={(postId) => setOpenCommentsFor(postId)}
+            onLikeChange={(postId, liked, likes_count) => {
+              setItems((prev) =>
+                prev.map((p) =>
+                  p.post_id === postId
+                    ? {
+                        ...p,
+                        viewer_has_liked: liked,
+                        likes_count: likes_count ?? p.likes_count,
+                      }
+                    : p,
+                ),
               )
-            )
-          }}
-        />
+            }}
+          />
+          <CommentsPanel
+            postId={openCommentsFor}
+            open={!!openCommentsFor}
+            onClose={() => setOpenCommentsFor(null)}
+            loginNextPath="/bees"
+            onCountChange={(postId, delta) => {
+              setItems((prev) =>
+                prev.map((p) =>
+                  p.post_id === postId
+                    ? {
+                        ...p,
+                        comments_count: Math.max(0, (p.comments_count ?? 0) + delta),
+                      }
+                    : p,
+                ),
+              )
+            }}
+          />
+        </>
       )}
     </div>
   )
@@ -131,6 +154,7 @@ function BeesScroller({
   activeIndex,
   onActiveChange,
   onLikeChange,
+  onOpenComments,
 }: {
   items: FeedPost[]
   filtersForEvents: FeedFilters
@@ -139,6 +163,7 @@ function BeesScroller({
   activeIndex: number
   onActiveChange: (i: number) => void
   onLikeChange: (postId: string, liked: boolean, likes_count: number | null) => void
+  onOpenComments: (postId: string) => void
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
@@ -165,6 +190,8 @@ function BeesScroller({
             if (activeIndex !== idx) onActiveChange(idx)
           }}
           onLikeChange={onLikeChange}
+          onOpenComments={onOpenComments}
+          commentsCount={post.comments_count ?? 0}
         />
       ))}
     </div>

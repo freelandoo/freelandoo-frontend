@@ -54,6 +54,7 @@ export interface FeedPost {
   profile_clicks_count: number
   whatsapp_clicks_count: number
   social_clicks_count: number
+  comments_count?: number
   engagement_score: number
   published_at: string | null
   viewer_has_liked: boolean
