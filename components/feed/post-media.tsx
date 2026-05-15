@@ -8,13 +8,20 @@ import { cn } from "@/lib/utils"
 interface PostMediaProps {
   media: FeedMedia[]
   glow?: string | null
+  /** Preenche altura disponível (ex.: feed estilo TikTok) em vez de proporção 4:5 fixa */
+  fillContainer?: boolean
 }
 
-export function PostMedia({ media, glow }: PostMediaProps) {
+export function PostMedia({ media, glow, fillContainer }: PostMediaProps) {
   const [index, setIndex] = useState(0)
   if (!media || media.length === 0) {
     return (
-      <div className="flex aspect-[4/5] items-center justify-center bg-white/[0.03] text-xs text-white/30">
+      <div
+        className={cn(
+          "flex items-center justify-center bg-white/[0.03] text-xs text-white/30",
+          fillContainer ? "min-h-0 flex-1 w-full" : "aspect-[4/5] w-full"
+        )}
+      >
         sem mídia
       </div>
     )
@@ -24,7 +31,12 @@ export function PostMedia({ media, glow }: PostMediaProps) {
   const total = media.length
 
   return (
-    <div className="relative aspect-[4/5] w-full overflow-hidden bg-black">
+    <div
+      className={cn(
+        "relative w-full overflow-hidden bg-black",
+        fillContainer ? "min-h-0 flex-1" : "aspect-[4/5]"
+      )}
+    >
       {current.type === "video" ? (
         <video
           key={current.url}
