@@ -1,14 +1,13 @@
 "use client"
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMachinesCatalog } from "@/components/home/machines/use-machines-catalog"
 import { MACHINES } from "@/components/home/machines/tokens"
 import { PortfolioFeedHeadcard } from "@/components/feed/portfolio-feed-headcard"
 import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
-import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
-import { InfiniteScrollSentinel } from "@/components/feed/infinite-scroll-sentinel"
+import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
@@ -22,14 +21,41 @@ function parseLevelMin(value: string | null): number | null {
   return LEVEL_OPTIONS.has(parsed) ? parsed : null
 }
 
+/** Altura do header do site para o feed ocupar só o espaço visível (evita scroll duplo). */
+function useSiteHeaderOffsetPx() {
+  const [px, setPx] = useState(64)
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = document.querySelector("header.sticky")
+      setPx(el ? Math.ceil(el.getBoundingClientRect().height) : 64)
+    }
+    measure()
+    const el = document.querySelector("header.sticky")
+    const ro = new ResizeObserver(measure)
+    if (el) ro.observe(el)
+    window.addEventListener("resize", measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [])
+  return px
+}
+
 export default function FeedPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-black">
-          <main className="mx-auto w-full max-w-xl px-4 py-6">
-            <FeedSkeleton />
-          </main>
+        <div
+          className="grid w-full grid-rows-[auto_1fr] overflow-hidden bg-black"
+          style={{ height: "calc(100dvh - 64px)", maxHeight: "calc(100dvh - 64px)" }}
+        >
+          <div className="h-28 shrink-0 px-4 pt-2">
+            <div className="h-full rounded-xl bg-white/[0.04]" />
+          </div>
+          <div className="min-h-0 px-3 pb-2 pt-1">
+            <FeedSkeleton paged />
+          </div>
         </div>
       }
     >
@@ -42,6 +68,7 @@ function FeedPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { machines } = useMachinesCatalog()
+  const headerOffsetPx = useSiteHeaderOffsetPx()
 
   const [idMachine, setIdMachine] = useState<number | null>(null)
   const [idCategory, setIdCategory] = useState<number | null>(null)
@@ -172,6 +199,29 @@ function FeedPageInner() {
       .finally(() => setLoadingMore(false))
   }, [cursor, hasMore, loadingInitial, loadingMore, fetchPage])
 
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = 0
+  }, [filtersKey])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || loadingInitial) return
+
+    const maybeLoadMore = () => {
+      if (!hasMore || !cursor || loadingMore) return
+      const { scrollTop, scrollHeight, clientHeight } = el
+      const remaining = scrollHeight - scrollTop - clientHeight
+      if (remaining < clientHeight * 0.45) loadMore()
+    }
+
+    maybeLoadMore()
+    el.addEventListener("scroll", maybeLoadMore, { passive: true })
+    return () => el.removeEventListener("scroll", maybeLoadMore)
+  }, [loadingInitial, loadingMore, hasMore, cursor, items.length, loadMore])
+
   const clearAll = () => {
     setIdMachine(null)
     setIdCategory(null)
@@ -191,11 +241,17 @@ function FeedPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div
+      className="relative grid w-full grid-rows-[auto_1fr] overflow-hidden bg-black"
+      style={{
+        height: `calc(100dvh - ${headerOffsetPx}px)`,
+        maxHeight: `calc(100dvh - ${headerOffsetPx}px)`,
+      }}
+    >
       {activeMachine && (
         <div
           aria-hidden
-          className="fixed inset-x-0 top-0 z-40 h-px transition-colors duration-500"
+          className="pointer-events-none fixed inset-x-0 top-0 z-40 h-px transition-colors duration-500"
           style={{
             background: `linear-gradient(90deg, transparent, ${
               activeMachine.color_from || accent
@@ -203,81 +259,97 @@ function FeedPageInner() {
           }}
         />
       )}
-      <main className="mx-auto w-full max-w-xl px-4 pb-16">
-        <PortfolioFeedHeadcard
-          machines={machines}
-          categories={machineCategories}
-          selectedMachineId={idMachine}
-          selectedCategoryId={idCategory}
-          state={estado}
-          city={municipio}
-          levelMin={levelMin}
-          accent={accent}
-          onMachineChange={(id) => {
-            setIdMachine(id)
-            setIdCategory(null)
-          }}
-          onCategoryChange={setIdCategory}
-          onLocationChange={({ state: s, city: c }) => {
-            setEstado(s)
-            setMunicipio(c)
-          }}
-          onLevelChange={setLevelMin}
-          onClearAll={clearAll}
-        />
 
-        {error && !loadingInitial && (
-          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-
-        {loadingInitial ? (
-          <FeedSkeleton />
-        ) : items.length === 0 ? (
-          <EmptyFeedState
-            hasFilters={hasFilters}
-            levelFiltered={levelMin != null}
-            onReset={clearAll}
-            onClearLevel={() => setLevelMin(null)}
+      <div className="min-h-0 shrink-0">
+        <div className="px-4 pt-1">
+          <PortfolioFeedHeadcard
+            machines={machines}
+            categories={machineCategories}
+            selectedMachineId={idMachine}
+            selectedCategoryId={idCategory}
+            state={estado}
+            city={municipio}
+            levelMin={levelMin}
             accent={accent}
+            onMachineChange={(id) => {
+              setIdMachine(id)
+              setIdCategory(null)
+            }}
+            onCategoryChange={setIdCategory}
+            onLocationChange={({ state: s, city: c }) => {
+              setEstado(s)
+              setMunicipio(c)
+            }}
+            onLevelChange={setLevelMin}
+            onClearAll={clearAll}
           />
-        ) : (
-          <div className="flex flex-col gap-6">
-            {items.map((post) => (
-              <PortfolioPostCard
-                key={post.post_id}
-                post={post}
-                filters={filtersForEvents}
-                onLikeChange={(postId, liked, likes_count) => {
-                  setItems((prev) =>
-                    prev.map((p) =>
-                      p.post_id === postId
-                        ? {
-                            ...p,
-                            viewer_has_liked: liked,
-                            likes_count: likes_count ?? p.likes_count,
-                          }
-                        : p
-                    )
-                  )
-                }}
-              />
-            ))}
+        </div>
+        {error && !loadingInitial && (
+          <div className="px-4 pb-2">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {error}
+            </div>
           </div>
         )}
+      </div>
 
-        {!loadingInitial && hasMore && items.length > 0 && (
+      <div
+        ref={scrollRef}
+        role="feed"
+        aria-label="Feed de portfólios. Deslize verticalmente ou use a roda do rato para ver o próximo post."
+        className="mx-auto min-h-0 w-full max-w-xl overflow-y-auto overscroll-y-contain px-3 pb-2 [scrollbar-width:none] snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+      >
+        {loadingInitial ? (
+          <div className="box-border h-full min-h-full shrink-0 snap-start">
+            <FeedSkeleton paged />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="box-border flex h-full min-h-full shrink-0 snap-start items-center justify-center py-2">
+            <div className="w-full">
+              <EmptyFeedState
+                hasFilters={hasFilters}
+                levelFiltered={levelMin != null}
+                onReset={clearAll}
+                onClearLevel={() => setLevelMin(null)}
+                accent={accent}
+              />
+            </div>
+          </div>
+        ) : (
           <>
-            <InfiniteScrollSentinel onIntersect={loadMore} disabled={loadingMore} />
-            {loadingMore && (
-              <div className="mt-4">
-                <FeedSkeleton count={1} />
+            {items.map((post) => (
+              <div
+                key={post.post_id}
+                className="box-border h-full min-h-full shrink-0 snap-start pb-2"
+              >
+                <PortfolioPostCard
+                  paged
+                  post={post}
+                  filters={filtersForEvents}
+                  onLikeChange={(postId, liked, likes_count) => {
+                    setItems((prev) =>
+                      prev.map((p) =>
+                        p.post_id === postId
+                          ? {
+                              ...p,
+                              viewer_has_liked: liked,
+                              likes_count: likes_count ?? p.likes_count,
+                            }
+                          : p
+                      )
+                    )
+                  }}
+                />
+              </div>
+            ))}
+            {loadingMore && hasMore && (
+              <div className="box-border h-full min-h-full shrink-0 snap-start pb-2">
+                <FeedSkeleton paged />
               </div>
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   )
 }
