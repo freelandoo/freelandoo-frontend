@@ -1415,6 +1415,67 @@ export default function PerfilPage() {
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={perfil.nome || perfil.username || ""}
+        addMenu={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Criar"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_8px_18px_-12px_rgba(242,196,9,0.65)] transition active:scale-[0.96]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem
+                onSelect={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("freelandoo:create", { detail: { kind: "post" } }),
+                  )
+                }
+              >
+                <ImageIcon className="h-4 w-4" />
+                Post
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("freelandoo:create", { detail: { kind: "bees" } }),
+                  )
+                }
+              >
+                <Sparkles className="h-4 w-4" />
+                Bees
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setNewProfileError(null)
+                  setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
+                  setProfessions([])
+                  fetchMachines()
+                  setIsNewProfileModalOpen(true)
+                }}
+              >
+                <UserRound className="h-4 w-4" />
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push("/account/clans")}>
+                <Users className="h-4 w-4" />
+                Clan
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("freelandoo:create", { detail: { kind: "curso" } }),
+                  )
+                }
+              >
+                <Crown className="h-4 w-4" />
+                Curso
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
       >
         <span className="inline-flex items-center gap-1">
           <span className="text-white/55 uppercase tracking-wide">Perfis</span>
@@ -1650,17 +1711,6 @@ export default function PerfilPage() {
               }))}
             myProfilesSlot={
               <div className="space-y-4">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
-                    style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)" }}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Novo Perfil
-                  </button>
-                </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
                 <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">

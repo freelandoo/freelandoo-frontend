@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -533,6 +533,20 @@ export function CoursesSection({ profileOptions = [] }: Props) {
   // Modal de exclusão
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
+  useEffect(() => {
+    const onCreate = (e: Event) => {
+      const detail = (e as CustomEvent<{ kind: string }>).detail
+      if (detail?.kind === "curso" || detail?.kind === "cursos") {
+        setTab("created")
+        setNewForm(emptyNewForm())
+        setIsNewOpen(true)
+      }
+    }
+    window.addEventListener("freelandoo:create", onCreate)
+    return () => window.removeEventListener("freelandoo:create", onCreate)
+  }, [])
 
   const counts = useMemo(
     () => ({

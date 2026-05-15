@@ -36,6 +36,12 @@ interface XpSummary {
   xp_progress_percent: number
   xp_next_level: number
 }
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -361,6 +367,31 @@ export default function FreelancerProfileView({
     setIsPortfolioModalOpen(true)
   }
 
+  // Escuta o + do RetractableProfileHeader pra abrir o modal certo.
+  useEffect(() => {
+    const onCreate = (e: Event) => {
+      const detail = (e as CustomEvent<{ kind: string }>).detail
+      if (!detail) return
+      if (detail.kind === "post") {
+        setPortfolioTab("feed")
+        handleAddPortfolioItem()
+      } else if (detail.kind === "bees") {
+        setPortfolioTab("bees")
+        handleAddPortfolioItem()
+      } else if (detail.kind === "servico") {
+        setPortfolioTab("services")
+        // ProfilePublicServicesSection tem seu próprio + interno.
+      } else if (detail.kind === "curso") {
+        setPortfolioTab("courses")
+        // Curso é criado em /account, então redireciona.
+        router.push("/account?tab=cursos")
+      }
+    }
+    window.addEventListener("freelandoo:create-subprofile", onCreate)
+    return () => window.removeEventListener("freelandoo:create-subprofile", onCreate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleEditPortfolioItem = (item: PortfolioItem) => {
     setEditingPortfolioItemId(item.id_portfolio_item)
     setPortfolioForm({
@@ -558,6 +589,63 @@ export default function FreelancerProfileView({
         targetRef={headcardRef}
         name={profile.display_name || ""}
         progress={!isClan && xpData ? xpData.xp_progress_percent : undefined}
+        addMenu={
+          isOwnProfile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Criar"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_8px_18px_-12px_rgba(242,196,9,0.65)] transition active:scale-[0.96]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "post" } }),
+                    )
+                  }
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Post
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "bees" } }),
+                    )
+                  }
+                >
+                  <Hexagon className="h-4 w-4" />
+                  Bees
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "servico" } }),
+                    )
+                  }
+                >
+                  <Briefcase className="h-4 w-4" />
+                  Serviço
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "curso" } }),
+                    )
+                  }
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  Curso
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : undefined
+        }
       >
         {!isClan && xpData && (
           <div className="flex shrink-0 items-center gap-2">
@@ -673,36 +761,9 @@ export default function FreelancerProfileView({
                 Cursos
               </button>
             </div>
-            {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="hidden md:flex font-medium text-primary hover:bg-primary/10"
-                onClick={handleAddPortfolioItem}
-                disabled={isAddingPortfolioItem}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                {isAddingPortfolioItem ? "..." : "Novo"}
-              </Button>
-            )}
           </div>
+          {/* "+ Novo" migrou pro dropdown do RetractableProfileHeader. */}
           <div className="mt-6">
-
-          {/* Mobile Novo Item button */}
-          {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
-            <div className="flex md:hidden justify-center mb-6">
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full max-w-xs font-medium"
-                onClick={handleAddPortfolioItem}
-                disabled={isAddingPortfolioItem}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {isAddingPortfolioItem ? "Criando..." : "Novo item"}
-              </Button>
-            </div>
-          )}
 
           {portfolioError && (portfolioTab === "feed" || portfolioTab === "bees") && (
             <p className="text-sm text-destructive mb-6 text-center">{portfolioError}</p>

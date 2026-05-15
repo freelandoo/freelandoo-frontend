@@ -161,6 +161,31 @@ export function UserPortfolio({
     void fetchItems()
   }, [fetchItems])
 
+  // Escuta o + do RetractableProfileHeader pra abrir o modal certo.
+  useEffect(() => {
+    const onCreate = (e: Event) => {
+      const detail = (e as CustomEvent<{ kind: string }>).detail
+      if (!detail) return
+      if (detail.kind === "post" || detail.kind === "bees") {
+        const next = detail.kind === "bees" ? "bees" : "feed"
+        setPortfolioTab(next)
+        setEditingItemId(null)
+        setForm({ title: "", description: "", project_url: "" })
+        setPortfolioError(null)
+        if (pendingPreview) URL.revokeObjectURL(pendingPreview)
+        setPendingFile(null)
+        setPendingOriginalFile(null)
+        setPendingPreview(null)
+        setIsModalOpen(true)
+      } else if (detail.kind === "curso") {
+        setPortfolioTab("courses")
+        // CoursesSection abre seu próprio modal escutando o mesmo evento.
+      }
+    }
+    window.addEventListener("freelandoo:create", onCreate)
+    return () => window.removeEventListener("freelandoo:create", onCreate)
+  }, [pendingPreview])
+
   const isPortfolioGridTab = portfolioTab === "feed" || portfolioTab === "bees"
   const filteredItems = useMemo(
     () =>
@@ -544,35 +569,8 @@ export function UserPortfolio({
             </button>
           )}
         </div>
-        {isPortfolioGridTab && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="hidden md:flex font-medium text-primary hover:bg-primary/10"
-            onClick={handleAddItem}
-            disabled={isAddingItem}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {isAddingItem ? "Criando..." : "Novo item"}
-          </Button>
-        )}
       </div>
-
-      {/* Mobile Novo Item button */}
-      {isPortfolioGridTab && (
-        <div className="flex md:hidden justify-center mb-6">
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full max-w-xs font-medium"
-            onClick={handleAddItem}
-            disabled={isAddingItem}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {isAddingItem ? "Criando..." : "Novo item"}
-          </Button>
-        </div>
-      )}
+      {/* Botões "Novo item" e "Novo Bees" migraram pro + do RetractableProfileHeader. */}
 
       {portfolioTab === "courses" ? (
         <CoursesSection profileOptions={coursesProfileOptions} />
