@@ -1455,12 +1455,6 @@ export default function PerfilPage() {
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
-              {manifestation?.active && (
-                <div className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-primary/35 bg-zinc-950/80 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {manifestation.active.tag_label}
-                </div>
-              )}
             </div>
 
             <div className="px-5 pb-6 md:px-7">
@@ -1642,20 +1636,8 @@ export default function PerfilPage() {
                 </div>
               </div>
             </div>
-            {/* Footer 1 — Pólens (colado ao headcard) */}
+            {/* Footer — Pólens (colado ao headcard). Stats migraram pro RetractableProfileHeader. */}
             <HeadcardPolensFooter className="relative" />
-            {/* Footer 2 — Stats (segunda faixa fina, grudada ao headcard) */}
-            <div className="grid grid-cols-2 gap-px border-t border-white/[0.06] bg-white/[0.03] sm:grid-cols-4">
-              <StatStripCell icon={UserRound} label="Perfis" value={totalProfiles} />
-              <StatStripCell icon={Eye} label="Visíveis" value={visibleProfiles} />
-              <StatStripCell icon={Users} label="Clans" value={totalClans} />
-              <StatStripCell
-                icon={MessageCircle}
-                label="Não lidas"
-                value={unreadMessages}
-                accent={unreadMessages > 0}
-              />
-            </div>
           </article>
 
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
