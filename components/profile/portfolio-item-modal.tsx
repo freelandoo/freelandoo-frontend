@@ -195,7 +195,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
               variant={liked ? "default" : "outline"}
               onClick={toggleLike}
               disabled={pending}
-              className="flex-1 gap-2"
+              className={`flex-1 gap-2 ${liked ? "bg-yellow-400 text-zinc-900 hover:bg-yellow-300" : ""}`}
             >
               <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
               {count} {count === 1 ? "like" : "likes"}

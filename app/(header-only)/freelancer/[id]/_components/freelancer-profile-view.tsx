@@ -850,7 +850,7 @@ export default function FreelancerProfileView({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenPortfolioItemId(item.id_portfolio_item) }}
-                            className={`flex items-center gap-1 text-xs transition-colors ${item.liked_by_me ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                            className={`flex items-center gap-1 text-xs transition-colors ${item.liked_by_me ? "text-yellow-400" : "text-muted-foreground hover:text-yellow-400"}`}
                             title={item.liked_by_me ? "Remover like" : "Curtir"}
                           >
                             <Heart className={`h-3.5 w-3.5 ${item.liked_by_me ? "fill-current" : ""}`} />

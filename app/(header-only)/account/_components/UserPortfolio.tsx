@@ -753,7 +753,7 @@ export function UserPortfolio({
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={`flex items-center gap-1 text-xs ${
-                          item.liked_by_me ? "text-red-500" : "text-muted-foreground"
+                          item.liked_by_me ? "text-yellow-400" : "text-muted-foreground"
                         }`}
                         title={`${item.likes_count ?? 0} curtidas`}
                       >

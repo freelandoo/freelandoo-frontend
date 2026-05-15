@@ -62,8 +62,6 @@ export function BeesPost({
   const [copied, setCopied] = useState(false)
   const [expandCaption, setExpandCaption] = useState(false)
 
-  const machineColor = post.machine?.color_accent || "#fbbf24"
-
   useEffect(() => {
     const node = sectionRef.current
     if (!node) return
@@ -245,9 +243,8 @@ export function BeesPost({
               <Heart
                 className={cn(
                   "h-7 w-7 transition-transform",
-                  liked ? "fill-current scale-110" : ""
+                  liked ? "fill-current scale-110 text-yellow-400" : ""
                 )}
-                style={liked ? { color: machineColor } : undefined}
               />
               <CounterLabel value={likesCount} />
             </ActionButton>
