@@ -31,7 +31,6 @@ import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, C
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
-import { CoursesSection } from "./_components/courses-section"
 import { UserPortfolio } from "./_components/UserPortfolio"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
@@ -1631,7 +1630,14 @@ export default function PerfilPage() {
           </article>
 
           {/* Portfólio do user account — feed=true, vitrine=false, ranking=false */}
-          <UserPortfolio />
+          <UserPortfolio
+            coursesProfileOptions={(perfil.profiles || [])
+              .filter((p) => !p.is_clan)
+              .map((p) => ({
+                id: p.id_profile,
+                name: p.display_name || "Perfil sem nome",
+              }))}
+          />
 
 
 
@@ -1978,24 +1984,6 @@ export default function PerfilPage() {
             )
           })()}
 
-          {/* Meus Cursos — retrátil */}
-          <CollapsibleSection
-            title="Meus Cursos"
-            icon={Crown}
-            storageKey="account.courses.open"
-            defaultOpen={false}
-            className="rounded-none border-0 bg-transparent shadow-none"
-            summary="Acompanhe matrículas e progresso"
-          >
-            <CoursesSection
-              profileOptions={(perfil.profiles || [])
-                .filter((p) => !p.is_clan)
-                .map((p) => ({
-                  id: p.id_profile,
-                  name: p.display_name || "Perfil sem nome",
-                }))}
-            />
-          </CollapsibleSection>
         </div>
       </main>
 
