@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Heart, Share2, MessageCircle, Check, ChevronUp } from "lucide-react"
+import { Heart, Share2, MessageCircle, MessageSquare, Check, ChevronUp } from "lucide-react"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { sendFeedEvent } from "@/lib/feed-events"
@@ -20,6 +20,8 @@ interface BeesPostProps {
   onToggleMute: () => void
   onActivate: () => void
   onLikeChange?: (postId: string, liked: boolean, likes_count: number | null) => void
+  onOpenComments?: (postId: string) => void
+  commentsCount?: number
 }
 
 function initials(name: string | null | undefined) {
@@ -43,6 +45,8 @@ export function BeesPost({
   onToggleMute,
   onActivate,
   onLikeChange,
+  onOpenComments,
+  commentsCount,
 }: BeesPostProps) {
   const router = useRouter()
   const sectionRef = useRef<HTMLElement | null>(null)
@@ -196,7 +200,9 @@ export function BeesPost({
     >
       {/* Vídeo ou fallback */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-full w-full max-w-[min(100vw,calc(100dvh*9/16))]">
+        <div
+          className="relative h-full w-full max-w-[min(100vw,calc(100dvh*9/16))]"
+        >
           {hasVideo ? (
             <BeesVideo
               url={video.url}
@@ -210,65 +216,78 @@ export function BeesPost({
               Sem vídeo disponível
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Gradiente inferior pra leitura do texto */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/85 via-black/30 to-transparent"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[20%] bg-gradient-to-b from-black/55 via-black/10 to-transparent"
-      />
-
-      {/* Coluna direita — ações */}
-      <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-5">
-        <ActionButton
-          ariaLabel={liked ? "Descurtir" : "Curtir"}
-          onClick={handleLike}
-          disabled={likePending}
-        >
-          <Heart
-            className={cn(
-              "h-7 w-7 transition-transform",
-              liked ? "fill-current scale-110" : ""
-            )}
-            style={liked ? { color: machineColor } : undefined}
+          {/* Gradientes (relativos ao vídeo) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-black/85 via-black/30 to-transparent"
           />
-          <CounterLabel value={likesCount} />
-        </ActionButton>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[20%] bg-gradient-to-b from-black/55 via-black/10 to-transparent"
+          />
 
-        <ActionButton ariaLabel="Compartilhar" onClick={handleShare}>
-          {copied ? (
-            <Check className="h-7 w-7 text-emerald-400" />
-          ) : (
-            <Share2 className="h-7 w-7" />
-          )}
-          <CounterLabel value={post.shares_count} />
-        </ActionButton>
-
-        {post.whatsapp_url && (
-          <a
-            href={post.whatsapp_url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={handleWhatsappClick}
-            aria-label="WhatsApp"
-            className="flex flex-col items-center gap-1 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+          {/* Coluna de ações — overlay no mobile, fora do vídeo no desktop */}
+          <div
+            className={cn(
+              "absolute z-20 flex flex-col items-center gap-5",
+              // mobile: overlay no canto inferior direito do vídeo
+              "bottom-24 right-3",
+              // desktop: fora do vídeo, grudado na borda direita
+              "md:bottom-12 md:right-auto md:left-full md:ml-3"
+            )}
           >
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/90 transition active:scale-90">
-              <MessageCircle className="h-6 w-6 text-white" />
-            </span>
-            <span className="text-[10px] font-medium text-white/85">Chat</span>
-          </a>
-        )}
-      </div>
+            <ActionButton
+              ariaLabel={liked ? "Descurtir" : "Curtir"}
+              onClick={handleLike}
+              disabled={likePending}
+            >
+              <Heart
+                className={cn(
+                  "h-7 w-7 transition-transform",
+                  liked ? "fill-current scale-110" : ""
+                )}
+                style={liked ? { color: machineColor } : undefined}
+              />
+              <CounterLabel value={likesCount} />
+            </ActionButton>
 
-      {/* Bloco inferior — perfil + caption */}
-      <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6">
-        <div className="mx-auto w-full max-w-[min(100vw,calc(100dvh*9/16))] pr-16">
+            <ActionButton
+              ariaLabel="Comentários"
+              onClick={() => onOpenComments?.(post.post_id)}
+            >
+              <MessageSquare className="h-7 w-7" />
+              <CounterLabel value={commentsCount ?? 0} />
+            </ActionButton>
+
+            <ActionButton ariaLabel="Compartilhar" onClick={handleShare}>
+              {copied ? (
+                <Check className="h-7 w-7 text-emerald-400" />
+              ) : (
+                <Share2 className="h-7 w-7" />
+              )}
+              <CounterLabel value={post.shares_count} />
+            </ActionButton>
+
+            {post.whatsapp_url && (
+              <a
+                href={post.whatsapp_url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={handleWhatsappClick}
+                aria-label="WhatsApp"
+                className="flex flex-col items-center gap-1 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+              >
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/90 transition active:scale-90">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </span>
+                <span className="text-[10px] font-medium text-white/85">Chat</span>
+              </a>
+            )}
+          </div>
+
+          {/* Bloco inferior — perfil + caption (dentro do vídeo) */}
+          <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 pr-16 md:pr-4">
           <div className="flex items-center gap-2.5">
             <Link
               href={post.public_profile_url || "#"}
@@ -322,6 +341,7 @@ export function BeesPost({
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
 

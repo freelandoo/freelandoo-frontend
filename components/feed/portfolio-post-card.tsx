@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Heart, Share2, ExternalLink, MessageCircle, Link2, Check } from "lucide-react"
+import { Heart, Share2, ExternalLink, MessageCircle, MessageSquare, Link2, Check } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,8 @@ interface PortfolioPostCardProps {
   post: FeedPost
   filters: FeedFilters
   onLikeChange?: (postId: string, liked: boolean, likes_count: number | null) => void
+  onOpenComments?: (postId: string) => void
+  commentsCount?: number
   /** Um post por ecrã: mídia cresce e o cartão preenche a altura do snap */
   paged?: boolean
 }
@@ -33,7 +35,7 @@ function initials(name: string | null | undefined) {
     .join("")
 }
 
-export function PortfolioPostCard({ post, filters, onLikeChange, paged }: PortfolioPostCardProps) {
+export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged }: PortfolioPostCardProps) {
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
   const machineColor = post.machine?.color_accent || "#fbbf24"
@@ -331,6 +333,21 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
+                aria-label="Comentários"
+                onClick={() => onOpenComments?.(post.post_id)}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95"
+              >
+                <MessageSquare className="h-6 w-6" />
+              </button>
+              {!!(commentsCount && commentsCount > 0) && (
+                <span className="text-[11px] font-semibold tabular-nums text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                  {commentsCount.toLocaleString("pt-BR")}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
                 aria-label="Compartilhar"
                 onClick={handleShare}
                 className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95"
@@ -363,6 +380,14 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
                   liked ? "fill-current scale-110" : ""
                 )}
               />
+            </button>
+            <button
+              type="button"
+              aria-label="Comentários"
+              onClick={() => onOpenComments?.(post.post_id)}
+              className="rounded-full p-2 text-white/70 transition hover:bg-white/5 hover:text-white active:scale-90"
+            >
+              <MessageSquare className="h-5 w-5" />
             </button>
             <button
               type="button"
@@ -441,6 +466,12 @@ export function PortfolioPostCard({ post, filters, onLikeChange, paged }: Portfo
             <span>
               {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
             </span>
+            {!!(commentsCount && commentsCount > 0) && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{commentsCount.toLocaleString("pt-BR")} coment.</span>
+              </>
+            )}
             {post.shares_count > 0 && (
               <>
                 <span aria-hidden>·</span>
