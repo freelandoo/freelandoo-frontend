@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { SiteHeader } from "@/components/layout"
 import {
   SocialHero,
   PortfolioWorksSection,
@@ -58,25 +59,28 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex-1 bg-zinc-950 text-white">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
-      />
+    <>
+      <SiteHeader />
+      <main className="flex-1 bg-zinc-950 text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
+        />
 
-      <SocialHero />
-      <PortfolioWorksSection />
-      <FeedShowcaseSection />
-      <MachinesIntentSection />
-      <MessagesSection />
-      <AcompanharClansSection />
-      <EarnMoneySection />
-      <ForWhomSection />
-      <SocialFinalCTASection />
-    </main>
+          <SocialHero />
+        <PortfolioWorksSection />
+        <FeedShowcaseSection />
+        <MachinesIntentSection />
+        <MessagesSection />
+        <AcompanharClansSection />
+        <EarnMoneySection />
+        <ForWhomSection />
+        <SocialFinalCTASection />
+      </main>
+    </>
   )
 }
