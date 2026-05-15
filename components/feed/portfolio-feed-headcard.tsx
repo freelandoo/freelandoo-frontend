@@ -64,7 +64,7 @@ export function PortfolioFeedHeadcard({
   const greetingName = (user?.nome || "").trim().split(/\s+/)[0] || ""
 
   return (
-    <div className="z-30 -mx-4 mb-2 border-b border-white/10 bg-zinc-950/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/70">
+    <div className="z-30 -mx-4 mb-2 box-border min-w-0 w-full border-b border-white/10 bg-zinc-950/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/70">
       <div className="flex items-center gap-3">
         {isLoggedIn ? (
           <Avatar className="h-9 w-9 shrink-0 ring-1 ring-white/15">
