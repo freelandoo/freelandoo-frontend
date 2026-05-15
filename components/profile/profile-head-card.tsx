@@ -10,6 +10,7 @@ import {
   MapPin,
   Megaphone,
   MessageCircle,
+  Pencil,
   Phone,
   Settings,
   Sparkles,
@@ -304,62 +305,116 @@ export function ProfileHeadCard({
             </p>
           )}
 
-          <div className="mt-3 flex items-center gap-2">
-            {isOwnProfile ? (
-              <Link
-                href={ownerActions?.editHref || "#"}
-                onClick={ownerActions?.onEdit}
-                className="inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[11px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
-                style={{
-                  boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
-                }}
-              >
-                <Settings className="h-3.5 w-3.5" />
-                {isClan ? "Editar clan" : "Editar perfil"}
-              </Link>
+          {/* FOOTER — todas as ações como ícones */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {isOwnProfile && ownerActions ? (
+              <>
+                <IconAction
+                  href={ownerActions.editHref}
+                  onClick={ownerActions.onEdit}
+                  icon={Pencil}
+                  label={isClan ? "Editar clan" : "Editar perfil"}
+                  accent
+                />
+                <IconAction
+                  href={"/mensagens"}
+                  icon={MessageCircle}
+                  label="Minhas mensagens"
+                />
+                {!isClan && ownerActions.clansHref && (
+                  <IconAction
+                    href={ownerActions.clansHref}
+                    icon={Users}
+                    label="Clans"
+                  />
+                )}
+                {isClan && ownerActions.onShowMembers && (
+                  <IconAction
+                    onClick={ownerActions.onShowMembers}
+                    icon={Users}
+                    label="Membros"
+                  />
+                )}
+                {isClan && ownerActions.manageHref && (
+                  <IconAction
+                    href={ownerActions.manageHref}
+                    icon={Cog}
+                    label="Gerenciar"
+                  />
+                )}
+                {ownerActions.onShowEngagement && (
+                  <IconAction
+                    onClick={ownerActions.onShowEngagement}
+                    icon={BarChart2}
+                    label="Engajamento"
+                  />
+                )}
+                {ownerActions.onShowRanking && (
+                  <IconAction
+                    onClick={ownerActions.onShowRanking}
+                    icon={Trophy}
+                    label="Ranking"
+                  />
+                )}
+                {ownerActions.onShowMural && (
+                  <IconAction
+                    onClick={ownerActions.onShowMural}
+                    icon={Megaphone}
+                    label="Mural"
+                    badge={
+                      !!(
+                        ownerActions.muralBadge?.has_new ||
+                        (ownerActions.muralBadge?.chat_unread || 0) > 0
+                      )
+                    }
+                  />
+                )}
+                {ownerActions.agendaHref && (
+                  <IconAction
+                    href={ownerActions.agendaHref}
+                    icon={CalendarDays}
+                    label="Agenda"
+                  />
+                )}
+                <SocialIcons socials={socials} />
+              </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={visitorActions?.onScheduleScroll}
-                  className="inline-flex h-8 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[11px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
-                  style={{
-                    boxShadow:
-                      "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
-                  }}
-                >
-                  {visitorScheduleButtonLabel}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <FollowButton
-                    targetType={entityType}
-                    targetId={profileId}
-                    onChanged={onFollowChanged}
-                    compact
-                    className="!h-8 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[11px] !font-bold !uppercase !tracking-wider"
+                <FollowButton
+                  targetType={entityType}
+                  targetId={profileId}
+                  onChanged={onFollowChanged}
+                  compact
+                  className="!h-9 !w-9 !rounded-full !p-0"
+                />
+                <IconAction
+                  href={`/mensagens?with=${encodeURIComponent(profileId)}`}
+                  icon={MessageCircle}
+                  label="Enviar mensagem"
+                />
+                {isClan && visitorActions?.onShowMembers && (
+                  <IconAction
+                    onClick={visitorActions.onShowMembers}
+                    icon={Users}
+                    label="Ver membros"
                   />
-                </div>
+                )}
+                {visitorActions?.onShowRanking && (
+                  <IconAction
+                    onClick={visitorActions.onShowRanking}
+                    icon={Trophy}
+                    label="Ranking"
+                  />
+                )}
+                <SocialIcons socials={socials} />
               </>
             )}
-            <Link
-              href={
-                isOwnProfile
-                  ? "/mensagens"
-                  : `/mensagens?with=${encodeURIComponent(profileId)}`
-              }
-              aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-              title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-            </Link>
           </div>
 
           {isOwnProfile && !profile.is_paid && (
             <Link
               href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
-              className="mt-2 inline-flex h-8 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+              className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
               style={{
                 boxShadow:
                   "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
@@ -520,64 +575,117 @@ export function ProfileHeadCard({
           </p>
         )}
 
-        {/* PRIMARY ACTIONS */}
-        <div className="mt-4 flex items-center gap-2">
-          {isOwnProfile ? (
-            <Link
-              href={ownerActions?.editHref || "#"}
-              onClick={ownerActions?.onEdit}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
-              style={{
-                boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
-              }}
-            >
-              <Settings className="h-3.5 w-3.5" />
-              {isClan ? "Editar clan" : "Editar perfil"}
-            </Link>
+        {/* FOOTER — todas as ações como ícones (substitui PRIMARY ACTIONS + SECONDARY TOOLBAR) */}
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
+          {isOwnProfile && ownerActions ? (
+            <>
+              <IconAction
+                href={ownerActions.editHref}
+                onClick={ownerActions.onEdit}
+                icon={Pencil}
+                label={isClan ? "Editar clan" : "Editar perfil"}
+                accent
+              />
+              <IconAction
+                href={"/mensagens"}
+                icon={MessageCircle}
+                label="Minhas mensagens"
+              />
+              {!isClan && ownerActions.clansHref && (
+                <IconAction
+                  href={ownerActions.clansHref}
+                  icon={Users}
+                  label="Clans"
+                />
+              )}
+              {isClan && ownerActions.onShowMembers && (
+                <IconAction
+                  onClick={ownerActions.onShowMembers}
+                  icon={Users}
+                  label="Membros"
+                />
+              )}
+              {isClan && ownerActions.manageHref && (
+                <IconAction
+                  href={ownerActions.manageHref}
+                  icon={Cog}
+                  label="Gerenciar"
+                />
+              )}
+              {ownerActions.onShowEngagement && (
+                <IconAction
+                  onClick={ownerActions.onShowEngagement}
+                  icon={BarChart2}
+                  label="Engajamento"
+                />
+              )}
+              {ownerActions.onShowRanking && (
+                <IconAction
+                  onClick={ownerActions.onShowRanking}
+                  icon={Trophy}
+                  label="Ranking"
+                />
+              )}
+              {ownerActions.onShowMural && (
+                <IconAction
+                  onClick={ownerActions.onShowMural}
+                  icon={Megaphone}
+                  label="Mural"
+                  badge={
+                    !!(
+                      ownerActions.muralBadge?.has_new ||
+                      (ownerActions.muralBadge?.chat_unread || 0) > 0
+                    )
+                  }
+                />
+              )}
+              {ownerActions.agendaHref && (
+                <IconAction
+                  href={ownerActions.agendaHref}
+                  icon={CalendarDays}
+                  label="Agenda"
+                />
+              )}
+              <SocialIcons socials={socials} />
+            </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={visitorActions?.onScheduleScroll}
-                className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-primary px-4 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition active:scale-[0.98]"
-                style={{
-                  boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(242,196,9,0.5)",
-                }}
-              >
-                {visitorScheduleButtonLabel}
-              </button>
-              <div className="min-w-0 flex-1">
-                <FollowButton
-                  targetType={entityType}
-                  targetId={profileId}
-                  onChanged={onFollowChanged}
-                  compact
-                  className="!h-9 !w-full !min-w-0 !flex-1 !rounded-full !px-4 !text-[12px] !font-bold !uppercase !tracking-wider"
+              <FollowButton
+                targetType={entityType}
+                targetId={profileId}
+                onChanged={onFollowChanged}
+                compact
+                className="!h-9 !w-9 !rounded-full !p-0"
+              />
+              <IconAction
+                href={`/mensagens?with=${encodeURIComponent(profileId)}`}
+                icon={MessageCircle}
+                label="Enviar mensagem"
+              />
+              {isClan && visitorActions?.onShowMembers && (
+                <IconAction
+                  onClick={visitorActions.onShowMembers}
+                  icon={Users}
+                  label="Ver membros"
                 />
-              </div>
+              )}
+              {visitorActions?.onShowRanking && (
+                <IconAction
+                  onClick={visitorActions.onShowRanking}
+                  icon={Trophy}
+                  label="Ranking"
+                />
+              )}
+              <SocialIcons socials={socials} />
             </>
           )}
-          <Link
-            href={
-              isOwnProfile
-                ? "/mensagens"
-                : `/mensagens?with=${encodeURIComponent(profileId)}`
-            }
-            aria-label={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-            title={isOwnProfile ? "Minhas mensagens" : "Enviar mensagem"}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-          </Link>
         </div>
 
         {/* ACTIVATE ACCOUNT — só p/ próprio perfil ainda não pago */}
         {isOwnProfile && !profile.is_paid && (
           <Link
             href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
-            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
             style={{
               boxShadow:
                 "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
@@ -590,63 +698,6 @@ export function ProfileHeadCard({
         </div>
       </article>
 
-      {/* SECONDARY TOOLBAR */}
-      {isOwnProfile && ownerActions && (
-        <nav
-          aria-label="Ações do perfil"
-          className="mt-3 flex flex-wrap items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {!isClan && ownerActions.clansHref && (
-            <ToolbarLink href={ownerActions.clansHref} icon={Users} label="Clans" />
-          )}
-          {isClan && ownerActions.onShowMembers && (
-            <ToolbarButton onClick={ownerActions.onShowMembers} icon={Users} label="Membros" />
-          )}
-          {isClan && ownerActions.manageHref && (
-            <ToolbarLink href={ownerActions.manageHref} icon={Cog} label="Gerenciar" />
-          )}
-          {ownerActions.onShowEngagement && (
-            <ToolbarButton
-              onClick={ownerActions.onShowEngagement}
-              icon={BarChart2}
-              label="Engajamento"
-            />
-          )}
-          {ownerActions.onShowRanking && (
-            <ToolbarButton onClick={ownerActions.onShowRanking} icon={Trophy} label="Ranking" />
-          )}
-          <SocialToolbar socials={socials} />
-          {ownerActions.onShowMural && (
-            <ToolbarButton
-              onClick={ownerActions.onShowMural}
-              icon={Megaphone}
-              label="Mural"
-              badge={
-                !!(
-                  ownerActions.muralBadge?.has_new ||
-                  (ownerActions.muralBadge?.chat_unread || 0) > 0
-                )
-              }
-            />
-          )}
-          {ownerActions.agendaHref && (
-            <ToolbarLink href={ownerActions.agendaHref} icon={CalendarDays} label="Agenda" />
-          )}
-        </nav>
-      )}
-
-      {!isOwnProfile && visitorActions && (
-        <nav aria-label="Ações" className="mt-3 flex flex-wrap items-center gap-2">
-          {isClan && visitorActions.onShowMembers && (
-            <ToolbarButton onClick={visitorActions.onShowMembers} icon={Users} label="Ver membros" />
-          )}
-          {visitorActions.onShowRanking && (
-            <ToolbarButton onClick={visitorActions.onShowRanking} icon={Trophy} label="Ranking" />
-          )}
-          <SocialToolbar socials={socials} />
-        </nav>
-      )}
-
       <EntityFollowModal
         open={openFollowers}
         onOpenChange={setOpenFollowers}
@@ -655,32 +706,6 @@ export function ProfileHeadCard({
         mode="followers"
       />
     </>
-  )
-}
-
-function ToolbarButton({
-  onClick,
-  icon: Icon,
-  label,
-  badge,
-}: {
-  onClick: () => void
-  icon: typeof Users
-  label: string
-  badge?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
-    >
-      <Icon className="h-3 w-3" />
-      {label}
-      {badge && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
-      )}
-    </button>
   )
 }
 
@@ -743,27 +768,62 @@ function HeadInfo({
   )
 }
 
-function ToolbarLink({
+function IconAction({
   href,
+  onClick,
   icon: Icon,
   label,
+  badge,
+  accent,
 }: {
-  href: string
+  href?: string
+  onClick?: () => void
   icon: typeof Users
   label: string
+  badge?: boolean
+  accent?: boolean
 }) {
+  const baseClass = cn(
+    "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition",
+    accent
+      ? "border-primary/40 bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_10px_24px_-16px_rgba(242,196,9,0.5)] hover:bg-primary/90"
+      : "border-white/12 bg-white/[0.04] text-white/85 hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary",
+  )
+  const body = (
+    <>
+      <Icon className="h-3.5 w-3.5" />
+      {badge && (
+        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
+      )}
+    </>
+  )
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={onClick}
+        aria-label={label}
+        title={label}
+        className={baseClass}
+      >
+        {body}
+      </Link>
+    )
+  }
   return (
-    <Link
-      href={href}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-white/75 transition hover:border-white/25 hover:bg-white/[0.06] hover:text-white"
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={baseClass}
     >
-      <Icon className="h-3 w-3" />
-      {label}
-    </Link>
+      {body}
+    </button>
   )
 }
 
-function SocialToolbar({ socials }: { socials: ProfileSocialLink[] }) {
+function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
   if (socials.length === 0) return null
 
   return (
@@ -776,7 +836,7 @@ function SocialToolbar({ socials }: { socials: ProfileSocialLink[] }) {
           rel="noopener noreferrer"
           title={social.desc_social_media_type || "Rede social"}
           aria-label={social.desc_social_media_type || "Rede social"}
-          className="inline-flex h-9 min-w-12 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/[0.03] px-3 text-white/75 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
         >
           {getSocialIcon(social.icon)}
         </a>
