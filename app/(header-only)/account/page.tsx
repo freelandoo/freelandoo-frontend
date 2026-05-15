@@ -1489,11 +1489,9 @@ export default function PerfilPage() {
                 </div>
 
                 <div className="min-w-0 flex-1 pb-1">
-                  <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-                    {perfil.nome}
-                  </h1>
+                  {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
                   {perfil.username && (
-                    <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
+                    <p className="text-sm text-white/55">@{perfil.username}</p>
                   )}
                 </div>
               </div>
