@@ -168,7 +168,12 @@ export default function FreelancerProfileView({
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch(`/api/profile/${profileId}/portfolio/${itemId}/upload`, {
+      // Vídeos vão direto ao backend pra escapar do limite de body do Vercel.
+      const isVideo = file.type.startsWith("video/")
+      const uploadUrl = isVideo
+        ? `https://freelandoo-backend-production.up.railway.app/profile/${profileId}/portfolio/${itemId}/upload`
+        : `/api/profile/${profileId}/portfolio/${itemId}/upload`
+      const res = await fetch(uploadUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${currentToken}` },
         body: formData,
@@ -377,18 +382,24 @@ export default function FreelancerProfileView({
       }
       const created = await res.json()
       const newItemId: string = isEditing ? editingPortfolioItemId! : (created.id_portfolio_item ?? created.item?.id_portfolio_item)
-      // Upload da imagem pendente (só na criação ou se houver arquivo)
+      // Upload da mídia pendente. Vídeos vão direto ao backend (bypassa o
+      // body limit do Vercel Hobby, ~4.5MB). Imagens — sempre <3MB depois
+      // do compress — continuam via proxy.
       if (pendingFile && newItemId) {
         const fd = new FormData()
         fd.append("file", pendingFile)
-        const uploadRes = await fetch(`/api/profile/${profileId}/portfolio/${newItemId}/upload`, {
+        const isVideo = pendingFile.type.startsWith("video/")
+        const uploadUrl = isVideo
+          ? `https://freelandoo-backend-production.up.railway.app/profile/${profileId}/portfolio/${newItemId}/upload`
+          : `/api/profile/${profileId}/portfolio/${newItemId}/upload`
+        const uploadRes = await fetch(uploadUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${currentToken}` },
           body: fd,
         })
         if (!uploadRes.ok) {
           const uploadData = await uploadRes.json().catch(() => ({}))
-          setPortfolioError(uploadData.error || "Erro ao fazer upload da imagem")
+          setPortfolioError(uploadData.error || "Erro ao fazer upload da mídia")
           return
         }
       }
