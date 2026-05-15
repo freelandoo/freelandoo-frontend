@@ -21,7 +21,7 @@ export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay }: 
       <div
         className={cn(
           "flex items-center justify-center bg-white/[0.03] text-xs text-white/30",
-          fillContainer ? "min-h-0 flex-1 w-full" : "aspect-[4/5] w-full"
+          fillContainer ? "min-h-0 min-w-0 max-w-full flex-1" : "aspect-[4/5] w-full"
         )}
       >
         sem mídia
