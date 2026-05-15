@@ -276,13 +276,13 @@ export function ProfileHeadCard({
                 <button
                   type="button"
                   onClick={() => setOpenFollowers(true)}
-                  className="p-3 text-left transition hover:bg-white/[0.04]"
+                  className="flex items-center justify-start gap-2 px-3 py-3 text-left transition hover:bg-white/[0.04] md:px-3.5"
                   aria-label="Ver quem acompanha"
                 >
-                  <span className="block text-[10px] font-medium uppercase tracking-wide text-white/55">
-                    Acompanham
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
+                    Acomp.
                   </span>
-                  <span className="mt-1 block text-xl font-semibold tabular-nums text-white">
+                  <span className="text-xl font-semibold tabular-nums text-white md:text-2xl">
                     {counts.followers_count}
                   </span>
                 </button>
@@ -494,26 +494,26 @@ export function ProfileHeadCard({
           {/* Coluna direita: stats (Posts | Acompanham) + info com icones */}
           <div className="flex min-w-0 flex-1 flex-col">
             <dl className="grid grid-cols-2 divide-x divide-white/[0.06]">
-              <div className="flex flex-col items-center justify-center px-2 py-1">
+              <div className="flex items-center justify-center gap-2 px-2 py-1">
+                <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">
+                  Posts
+                </dt>
                 <dd className="text-xl font-semibold tabular-nums text-white">
                   {portfolioCount}
                 </dd>
-                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-white/45">
-                  Posts
-                </dt>
               </div>
               <button
                 type="button"
                 onClick={() => setOpenFollowers(true)}
-                className="flex flex-col items-center justify-center rounded-xl px-2 py-1 transition hover:bg-white/[0.04]"
+                className="flex items-center justify-center gap-2 rounded-xl px-2 py-1 transition hover:bg-white/[0.04]"
                 aria-label="Ver quem acompanha"
               >
+                <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">
+                  Acomp.
+                </dt>
                 <dd className="text-xl font-semibold tabular-nums text-white">
                   {counts.followers_count}
                 </dd>
-                <dt className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-white/45">
-                  Acompanham
-                </dt>
               </button>
             </dl>
 
@@ -777,12 +777,24 @@ function HeadStat({
   value: number | string
   compact?: boolean
 }) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-3 md:px-3.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
+          {label}
+        </span>
+        <span className="text-xl font-semibold tabular-nums text-white md:text-2xl">
+          {value}
+        </span>
+      </div>
+    )
+  }
   return (
-    <div className={compact ? "p-3 md:p-3.5" : "p-4"}>
-      <span className={compact ? "block text-[10px] font-medium uppercase tracking-wide text-white/45" : "block text-xs font-medium uppercase tracking-wide text-white/55"}>
+    <div className="p-4">
+      <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
         {label}
       </span>
-      <span className={compact ? "mt-1 block text-xl font-semibold tabular-nums text-white md:text-2xl" : "mt-2 block text-2xl font-semibold tabular-nums text-white"}>
+      <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
         {value}
       </span>
     </div>
