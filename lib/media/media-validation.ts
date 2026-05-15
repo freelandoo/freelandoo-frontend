@@ -2,6 +2,10 @@
 
 export const POST_IMAGE_ASPECT_RATIO = 4 / 5
 export const AVATAR_IMAGE_ASPECT_RATIO = 1
+export const BEES_VIDEO_ASPECT_RATIO = 9 / 16
+// Bees aceita qualquer ratio <= 0.6 (cobre 9:16 = 0.5625 com folga;
+// alinhado com o backfill da migration 053).
+export const BEES_VIDEO_ASPECT_RATIO_MAX = 0.6
 export const POST_IMAGE_MAX_SIZE_BYTES = 3 * 1024 * 1024
 export const AVATAR_IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024
 export const POST_IMAGE_OUTPUT = { width: 1080, height: 1350 }
@@ -76,4 +80,33 @@ export function validateVideoFile(file: File) {
     return { ok: false as const, error: "O vídeo precisa ter no máximo 100MB." }
   }
   return { ok: true as const }
+}
+
+/**
+ * Lê width/height de um arquivo de vídeo via <video> oculto.
+ * Usado pra validar 9:16 nos uploads do Bees.
+ */
+export function getVideoDimensions(file: File): Promise<ImageDimensions> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const video = document.createElement("video")
+    video.preload = "metadata"
+    video.muted = true
+    video.playsInline = true
+    video.onloadedmetadata = () => {
+      const width = video.videoWidth
+      const height = video.videoHeight
+      URL.revokeObjectURL(url)
+      if (!width || !height) {
+        reject(new Error("Não foi possível ler esse vídeo. Tente outro arquivo."))
+        return
+      }
+      resolve({ width, height, aspectRatio: width / height })
+    }
+    video.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Não foi possível ler esse vídeo. Tente outro arquivo."))
+    }
+    video.src = url
+  })
 }
