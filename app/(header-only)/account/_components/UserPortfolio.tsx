@@ -934,18 +934,20 @@ export function UserPortfolio() {
       </Dialog>
 
       {/* Crop modal pra imagens fora do 4:5 */}
-      <MediaCropModal
-        open={!!cropTarget}
-        file={cropTarget?.file ?? null}
-        aspectRatio={POST_IMAGE_ASPECT_RATIO}
-        outputWidth={POST_IMAGE_OUTPUT.width}
-        outputHeight={POST_IMAGE_OUTPUT.height}
-        maxSizeBytes={POST_IMAGE_MAX_SIZE_BYTES}
-        mimeType="image/webp"
-        title="Cortar imagem para 4:5"
-        onCancel={() => setCropTarget(null)}
-        onConfirm={handleCropConfirm}
-      />
+      {cropTarget && (
+        <MediaCropModal
+          file={cropTarget.file}
+          aspectRatio={POST_IMAGE_ASPECT_RATIO}
+          outputWidth={POST_IMAGE_OUTPUT.width}
+          outputHeight={POST_IMAGE_OUTPUT.height}
+          maxSizeMB={3}
+          mediaType="post_image"
+          title="Cortar imagem"
+          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          onCancel={() => setCropTarget(null)}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </section>
   )
 }
