@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import {
   ImageIcon,
   Plus,
@@ -19,10 +19,28 @@ import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  BEES_VIDEO_ASPECT_RATIO_MAX,
+  POST_IMAGE_ASPECT_RATIO,
+  POST_IMAGE_MAX_SIZE_BYTES,
+  POST_IMAGE_OUTPUT,
+  getImageDimensions,
+  getVideoDimensions,
+  isAspectRatio,
+  validateImageFile,
+  validateVideoFile,
+} from "@/lib/media/media-validation"
+import {
+  compressImageToMaxSize,
+  type ProcessedImage,
+} from "@/lib/media/image-processing"
 
 type Media = {
   id_portfolio_media: string
@@ -39,6 +57,7 @@ type Item = {
   project_url: string | null
   is_featured?: boolean
   sort_order?: number
+  feed_kind?: "feed" | "bees"
   likes_count?: number
   liked_by_me?: boolean
   media: Media[]
@@ -48,17 +67,20 @@ function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
 
+const BACKEND_DIRECT = "https://freelandoo-backend-production.up.railway.app"
+
 /**
  * Portfólio do user-account (perfil-fantasma).
- * Visual idêntico ao do subperfil (grid 3-col aspect-[4/5], header com
- * "PORTFÓLIO" + botão "Novo item", overlay de ações, suporte vídeo/imagem,
- * múltiplas mídias por item). Endpoints /api/me/portfolio/*.
+ * Espelha o subperfil: tabs Portfolio/Bees, modal com preview, crop modal pra
+ * imagens 4:5 e validação 9:16 pra vídeos do Bees. Vídeos vão direto pro
+ * backend pra escapar do body limit do Vercel.
  */
 export function UserPortfolio() {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
+  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees">("feed")
 
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -69,14 +91,32 @@ export function UserPortfolio() {
     project_url: "",
   })
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingOriginalFile, setPendingOriginalFile] = useState<File | null>(null)
   const [pendingPreview, setPendingPreview] = useState<string | null>(null)
+  const [cropTarget, setCropTarget] = useState<{
+    file: File
+    itemId?: string
+    mode: "new" | "existing"
+  } | null>(null)
+  const [processingMedia, setProcessingMedia] = useState(false)
   const [uploadingForItem, setUploadingForItem] = useState<string | null>(null)
 
   const clearPending = useCallback(() => {
     if (pendingPreview) URL.revokeObjectURL(pendingPreview)
     setPendingFile(null)
+    setPendingOriginalFile(null)
     setPendingPreview(null)
   }, [pendingPreview])
+
+  const setPendingProcessedImage = useCallback(
+    (processed: ProcessedImage, originalFile: File) => {
+      if (pendingPreview) URL.revokeObjectURL(pendingPreview)
+      setPendingFile(processed.file)
+      setPendingOriginalFile(originalFile)
+      setPendingPreview(processed.previewUrl)
+    },
+    [pendingPreview],
+  )
 
   const fetchItems = useCallback(async () => {
     const t = token()
@@ -102,6 +142,14 @@ export function UserPortfolio() {
     void fetchItems()
   }, [fetchItems])
 
+  const filteredItems = useMemo(
+    () => items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab),
+    [items, portfolioTab],
+  )
+  const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+  const emptyLabel =
+    portfolioTab === "bees" ? "Nenhum Bees ainda." : "Nenhum item no portfólio ainda."
+
   const handleAddItem = () => {
     setEditingItemId(null)
     setForm({ title: "", description: "", project_url: "" })
@@ -122,19 +170,175 @@ export function UserPortfolio() {
     setIsModalOpen(true)
   }
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    const isImage = f.type.startsWith("image/")
-    const isVideo = f.type.startsWith("video/")
-    if (!isImage && !isVideo) {
-      setPortfolioError("Envie uma imagem (JPG/PNG/WebP) ou vídeo (MP4/WebM).")
+  const validateBeesVideo = useCallback(async (file: File): Promise<string | null> => {
+    if (!file.type.startsWith("video/")) {
+      return "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM."
+    }
+    const v = validateVideoFile(file)
+    if (!v.ok) return v.error
+    try {
+      const dim = await getVideoDimensions(file)
+      if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
+        return "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16)."
+      }
+    } catch (err) {
+      return err instanceof Error ? err.message : "Não foi possível validar o vídeo."
+    }
+    return null
+  }, [])
+
+  const preparePostImage = useCallback(
+    async (file: File, mode: "new" | "existing", itemId?: string) => {
+      const imageValidation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+      if (!imageValidation.ok) {
+        setPortfolioError(imageValidation.error)
+        return
+      }
+      setPortfolioError(null)
+      try {
+        const dimensions = await getImageDimensions(file)
+        if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+          setCropTarget({ file, itemId, mode })
+          return
+        }
+        setProcessingMedia(true)
+        const processed = await compressImageToMaxSize(file, {
+          outputWidth: POST_IMAGE_OUTPUT.width,
+          outputHeight: POST_IMAGE_OUTPUT.height,
+          maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+          mimeType: "image/webp",
+          errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+        })
+        if (mode === "new") {
+          setPendingProcessedImage(processed, file)
+        } else if (itemId) {
+          URL.revokeObjectURL(processed.previewUrl)
+          await uploadFileToItem(itemId, processed.file)
+        }
+      } catch (err) {
+        setPortfolioError(
+          err instanceof Error
+            ? err.message
+            : "Não foi possível otimizar esse arquivo. Tente outro.",
+        )
+      } finally {
+        setProcessingMedia(false)
+      }
+    },
+    [setPendingProcessedImage],
+  )
+
+  const handlePendingFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    if (portfolioTab === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      setPendingFile(file)
+      setPendingOriginalFile(file)
+      setPendingPreview(URL.createObjectURL(file))
       return
     }
-    clearPending()
-    setPendingFile(f)
-    setPendingPreview(URL.createObjectURL(f))
-    setPortfolioError(null)
+    await preparePostImage(file, "new")
+  }
+
+  const handlePendingFileDrop = async (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    if (portfolioTab === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      setPendingFile(file)
+      setPendingOriginalFile(file)
+      setPendingPreview(URL.createObjectURL(file))
+      return
+    }
+    if (!file.type.startsWith("image/")) return
+    await preparePostImage(file, "new")
+  }
+
+  const handleCropConfirm = async (image: ProcessedImage) => {
+    const target = cropTarget
+    if (!target) return
+    setCropTarget(null)
+    if (target.mode === "new") {
+      setPendingProcessedImage(image, target.file)
+      return
+    }
+    URL.revokeObjectURL(image.previewUrl)
+    if (target.itemId) {
+      await uploadFileToItem(target.itemId, image.file)
+    }
+  }
+
+  const uploadFileToItem = async (itemId: string, file: File) => {
+    const t = token()
+    if (!t) return
+    setUploadingForItem(itemId)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      // Vídeos vão direto ao backend pra escapar do body limit do Vercel.
+      const isVideo = file.type.startsWith("video/")
+      const uploadUrl = isVideo
+        ? `${BACKEND_DIRECT}/me/portfolio/${itemId}/upload`
+        : `/api/me/portfolio/${itemId}/upload`
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}` },
+        body: fd,
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setPortfolioError(data.error || "Erro ao fazer upload da mídia")
+        return
+      }
+      await fetchItems()
+    } catch {
+      setPortfolioError("Erro ao fazer upload da mídia. Tente novamente.")
+    } finally {
+      setUploadingForItem(null)
+    }
+  }
+
+  const handleUploadToExistingItem = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    itemId: string,
+    itemKind: "feed" | "bees",
+  ) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    if (itemKind === "bees") {
+      const err = await validateBeesVideo(file)
+      if (err) {
+        setPortfolioError(err)
+        return
+      }
+      setPortfolioError(null)
+      await uploadFileToItem(itemId, file)
+      return
+    }
+    if (file.type.startsWith("image/")) {
+      await preparePostImage(file, "existing", itemId)
+      return
+    }
+    const v = validateVideoFile(file)
+    if (!v.ok) {
+      setPortfolioError(v.error)
+      return
+    }
+    await uploadFileToItem(itemId, file)
   }
 
   const handleSubmitItem = async () => {
@@ -156,6 +360,7 @@ export function UserPortfolio() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          ...(isEditing ? {} : { feed_kind: portfolioTab }),
           title: form.title.trim() || null,
           description: form.description.trim() || null,
           project_url: form.project_url.trim() || null,
@@ -173,11 +378,15 @@ export function UserPortfolio() {
         ? editingItemId!
         : created.id_portfolio_item ?? created.item?.id_portfolio_item
 
-      // Upload da mídia pendente (se houver)
+      // Upload da mídia pendente. Vídeos via backend direto.
       if (pendingFile && newItemId) {
         const fd = new FormData()
         fd.append("file", pendingFile)
-        const uploadRes = await fetch(`/api/me/portfolio/${newItemId}/upload`, {
+        const isVideo = pendingFile.type.startsWith("video/")
+        const uploadUrl = isVideo
+          ? `${BACKEND_DIRECT}/me/portfolio/${newItemId}/upload`
+          : `/api/me/portfolio/${newItemId}/upload`
+        const uploadRes = await fetch(uploadUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${t}` },
           body: fd,
@@ -198,44 +407,11 @@ export function UserPortfolio() {
         err instanceof Error
           ? err.message
           : isEditing
-          ? "Erro ao editar. Tente novamente."
-          : "Erro ao criar. Tente novamente."
+            ? "Erro ao editar. Tente novamente."
+            : "Erro ao criar. Tente novamente.",
       )
     } finally {
       setIsAddingItem(false)
-    }
-  }
-
-  const handleUploadToExistingItem = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    itemId: string,
-  ) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    const t = token()
-    if (!t) return
-
-    setUploadingForItem(itemId)
-    try {
-      const fd = new FormData()
-      fd.append("file", f)
-      const res = await fetch(`/api/me/portfolio/${itemId}/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${t}` },
-        body: fd,
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        alert(data.error || "Erro ao enviar mídia")
-        return
-      }
-      await fetchItems()
-    } catch {
-      alert("Erro ao enviar mídia. Tente novamente.")
-    } finally {
-      setUploadingForItem(null)
-      // Reset input
-      e.target.value = ""
     }
   }
 
@@ -287,13 +463,33 @@ export function UserPortfolio() {
 
   return (
     <section className="mb-4">
-      {/* Header */}
-      <div className="flex items-center justify-center md:justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
+      {/* Header + Tabs */}
+      <div className="flex items-center justify-center md:justify-between mb-6 gap-3 flex-wrap">
+        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+          <button
+            type="button"
+            onClick={() => setPortfolioTab("feed")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+              portfolioTab === "feed"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
             Portfólio
-          </h2>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPortfolioTab("bees")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+              portfolioTab === "bees"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span aria-hidden>🐝</span>
+            Bees
+          </button>
         </div>
         <Button
           size="sm"
@@ -328,39 +524,49 @@ export function UserPortfolio() {
         </div>
       )}
 
+      {portfolioError && (
+        <p className="text-sm text-destructive mb-4 text-center">{portfolioError}</p>
+      )}
+
       {loading && items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando portfólio…
         </div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
           <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
             <ImageIcon className="h-8 w-8 opacity-50" />
           </div>
-          <p className="text-sm font-medium">Nenhum item no portfólio ainda.</p>
+          <p className="text-sm font-medium">{emptyLabel}</p>
           <Button variant="link" onClick={handleAddItem} className="mt-2 text-primary">
             Adicionar o primeiro item
           </Button>
         </div>
       ) : (
         <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
-          {items.map((item) => {
+          {filteredItems.map((item) => {
             const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
             const firstMedia = activeMedias[0]
+            const itemKind = item.feed_kind ?? "feed"
             return (
               <div key={item.id_portfolio_item} className="group relative flex flex-col">
-                {/* Media Container 4:5 */}
+                {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                 {firstMedia ? (
-                  <div className="relative aspect-[4/5] bg-muted overflow-hidden">
+                  <div className={`relative ${aspectClass} bg-muted overflow-hidden`}>
                     {firstMedia.media_type === "video" ? (
                       <video
                         src={firstMedia.media_url}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         muted
                         playsInline
-                        onMouseEnter={(e) => { void e.currentTarget.play() }}
-                        onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
+                        onMouseEnter={(e) => {
+                          void e.currentTarget.play()
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause()
+                          e.currentTarget.currentTime = 0
+                        }}
                       />
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -371,14 +577,13 @@ export function UserPortfolio() {
                       />
                     )}
 
-                    {/* Multiple media indicator */}
                     {activeMedias.length > 1 && (
                       <div className="absolute top-3 right-3">
                         <ImageIcon className="h-5 w-5 text-white drop-shadow-md opacity-90" />
                       </div>
                     )}
 
-                    {/* Owner Overlay Actions */}
+                    {/* Owner Overlay */}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                       <label
                         className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm cursor-pointer transition-colors"
@@ -387,8 +592,14 @@ export function UserPortfolio() {
                         <input
                           type="file"
                           className="hidden"
-                          accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-                          onChange={(e) => handleUploadToExistingItem(e, item.id_portfolio_item)}
+                          accept={
+                            itemKind === "bees"
+                              ? "video/mp4,video/webm,video/quicktime"
+                              : "image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                          }
+                          onChange={(e) =>
+                            handleUploadToExistingItem(e, item.id_portfolio_item, itemKind)
+                          }
                           disabled={uploadingForItem === item.id_portfolio_item}
                         />
                         {uploadingForItem === item.id_portfolio_item ? (
@@ -418,7 +629,9 @@ export function UserPortfolio() {
                     </div>
                   </div>
                 ) : (
-                  <div className="relative aspect-[4/5] bg-muted flex items-center justify-center">
+                  <div
+                    className={`relative ${aspectClass} bg-muted flex items-center justify-center`}
+                  >
                     <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <label
@@ -428,8 +641,14 @@ export function UserPortfolio() {
                         <input
                           type="file"
                           className="hidden"
-                          accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-                          onChange={(e) => handleUploadToExistingItem(e, item.id_portfolio_item)}
+                          accept={
+                            itemKind === "bees"
+                              ? "video/mp4,video/webm,video/quicktime"
+                              : "image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                          }
+                          onChange={(e) =>
+                            handleUploadToExistingItem(e, item.id_portfolio_item, itemKind)
+                          }
                           disabled={uploadingForItem === item.id_portfolio_item}
                         />
                         {uploadingForItem === item.id_portfolio_item ? (
@@ -487,7 +706,6 @@ export function UserPortfolio() {
                     </p>
                   )}
 
-                  {/* Secondary Media Thumbnails */}
                   {activeMedias.length > 1 && (
                     <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 no-scrollbar">
                       {activeMedias.slice(1).map((media) => (
@@ -545,10 +763,111 @@ export function UserPortfolio() {
       >
         <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingItemId ? "Editar item" : "Novo item de portfólio"}</DialogTitle>
+            <DialogTitle>
+              {editingItemId
+                ? "Editar item de portfólio"
+                : portfolioTab === "bees"
+                  ? "Novo Bees"
+                  : "Novo item de portfólio"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingItemId
+                ? "Atualize as informações do item."
+                : portfolioTab === "bees"
+                  ? "Envie um vídeo vertical 9:16."
+                  : "Preencha as informações do novo item do seu portfólio."}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {/* Upload de mídia */}
+            {!editingItemId && (
+              <div className="space-y-2">
+                <Label>{portfolioTab === "bees" ? "Vídeo 9:16" : "Imagem"}</Label>
+                {pendingPreview ? (
+                  <div
+                    className={`relative w-full ${
+                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+                    } max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted`}
+                  >
+                    {portfolioTab === "bees" ? (
+                      // eslint-disable-next-line jsx-a11y/media-has-caption
+                      <video
+                        src={pendingPreview}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        autoPlay
+                        loop
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={pendingPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {pendingOriginalFile && portfolioTab !== "bees" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCropTarget({ file: pendingOriginalFile, mode: "new" })
+                        }
+                        className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
+                      >
+                        Cortar imagem
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={clearPending}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    className={`flex flex-col items-center justify-center w-full ${
+                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+                    } max-h-[460px] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handlePendingFileDrop}
+                  >
+                    <input
+                      type="file"
+                      accept={
+                        portfolioTab === "bees"
+                          ? "video/mp4,video/webm,video/quicktime"
+                          : "image/jpeg,image/png,image/webp"
+                      }
+                      className="hidden"
+                      onChange={handlePendingFileSelect}
+                      disabled={processingMedia}
+                    />
+                    {processingMedia ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    ) : (
+                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    )}
+                    <span className="text-sm text-muted-foreground font-medium">
+                      {processingMedia
+                        ? "Otimizando..."
+                        : portfolioTab === "bees"
+                          ? "Clique ou arraste um vídeo 9:16"
+                          : "Clique ou arraste uma imagem"}
+                    </span>
+                    <span className="text-xs text-muted-foreground/60 mt-1">
+                      {portfolioTab === "bees"
+                        ? "MP4 ou WebM - 9:16 - max 100MB"
+                        : "JPG, PNG ou WebP - 4:5 - max 3MB"}
+                    </span>
+                  </label>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="up-title">Título</Label>
               <Input
@@ -562,13 +881,12 @@ export function UserPortfolio() {
 
             <div className="space-y-2">
               <Label htmlFor="up-desc">Descrição (opcional)</Label>
-              <textarea
+              <Textarea
                 id="up-desc"
-                placeholder="Conte algo sobre essa publicação…"
+                placeholder="Descreva o trabalho, cliente, contexto..."
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 maxLength={500}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
 
@@ -581,37 +899,6 @@ export function UserPortfolio() {
                 value={form.project_url}
                 onChange={(e) => setForm({ ...form, project_url: e.target.value })}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="up-file">Imagem ou vídeo</Label>
-              <Input
-                id="up-file"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-                onChange={onFileChange}
-              />
-              {pendingPreview && pendingFile && (
-                <div className="mt-2 overflow-hidden rounded-lg border border-border">
-                  {pendingFile.type.startsWith("video/") ? (
-                    <video
-                      src={pendingPreview}
-                      className="h-48 w-full object-cover"
-                      muted
-                      playsInline
-                      controls
-                    />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={pendingPreview} alt="" className="h-48 w-full object-cover" />
-                  )}
-                </div>
-              )}
-              {editingItemId && (
-                <p className="text-[11px] text-muted-foreground">
-                  Sem arquivo selecionado, mantém as mídias atuais.
-                </p>
-              )}
             </div>
 
             {portfolioError && (
@@ -639,12 +926,26 @@ export function UserPortfolio() {
               ) : editingItemId ? (
                 "Salvar"
               ) : (
-                "Publicar"
+                "Criar item"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Crop modal pra imagens fora do 4:5 */}
+      <MediaCropModal
+        open={!!cropTarget}
+        file={cropTarget?.file ?? null}
+        aspectRatio={POST_IMAGE_ASPECT_RATIO}
+        outputWidth={POST_IMAGE_OUTPUT.width}
+        outputHeight={POST_IMAGE_OUTPUT.height}
+        maxSizeBytes={POST_IMAGE_MAX_SIZE_BYTES}
+        mimeType="image/webp"
+        title="Cortar imagem para 4:5"
+        onCancel={() => setCropTarget(null)}
+        onConfirm={handleCropConfirm}
+      />
     </section>
   )
 }
