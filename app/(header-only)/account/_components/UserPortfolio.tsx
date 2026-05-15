@@ -12,7 +12,10 @@ import {
   ExternalLink,
   X,
   AlertCircle,
+  Hexagon,
+  GraduationCap,
 } from "lucide-react"
+import { CoursesSection, type ProfileOption } from "./courses-section"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -75,12 +78,18 @@ const BACKEND_DIRECT = "https://freelandoo-backend-production.up.railway.app"
  * imagens 4:5 e validação 9:16 pra vídeos do Bees. Vídeos vão direto pro
  * backend pra escapar do body limit do Vercel.
  */
-export function UserPortfolio() {
+interface UserPortfolioProps {
+  coursesProfileOptions?: ProfileOption[]
+}
+
+type PortfolioTab = "feed" | "bees" | "courses"
+
+export function UserPortfolio({ coursesProfileOptions = [] }: UserPortfolioProps = {}) {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
-  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees">("feed")
+  const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("feed")
 
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -143,7 +152,10 @@ export function UserPortfolio() {
   }, [fetchItems])
 
   const filteredItems = useMemo(
-    () => items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab),
+    () =>
+      portfolioTab === "courses"
+        ? []
+        : items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab),
     [items, portfolioTab],
   )
   const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
@@ -487,36 +499,56 @@ export function UserPortfolio() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span aria-hidden>🐝</span>
+            <Hexagon className="h-3.5 w-3.5" />
             Bees
           </button>
+          <button
+            type="button"
+            onClick={() => setPortfolioTab("courses")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+              portfolioTab === "courses"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <GraduationCap className="h-3.5 w-3.5" />
+            Meus Cursos
+          </button>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="hidden md:flex font-medium text-primary hover:bg-primary/10"
-          onClick={handleAddItem}
-          disabled={isAddingItem}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isAddingItem ? "Criando..." : "Novo item"}
-        </Button>
+        {portfolioTab !== "courses" && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="hidden md:flex font-medium text-primary hover:bg-primary/10"
+            onClick={handleAddItem}
+            disabled={isAddingItem}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isAddingItem ? "Criando..." : "Novo item"}
+          </Button>
+        )}
       </div>
 
       {/* Mobile Novo Item button */}
-      <div className="flex md:hidden justify-center mb-6">
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full max-w-xs font-medium"
-          onClick={handleAddItem}
-          disabled={isAddingItem}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {isAddingItem ? "Criando..." : "Novo item"}
-        </Button>
-      </div>
+      {portfolioTab !== "courses" && (
+        <div className="flex md:hidden justify-center mb-6">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full max-w-xs font-medium"
+            onClick={handleAddItem}
+            disabled={isAddingItem}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isAddingItem ? "Criando..." : "Novo item"}
+          </Button>
+        </div>
+      )}
 
+      {portfolioTab === "courses" ? (
+        <CoursesSection profileOptions={coursesProfileOptions} />
+      ) : (
+        <>
       {listError && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           <AlertCircle className="h-4 w-4" />
@@ -747,6 +779,8 @@ export function UserPortfolio() {
             )
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* Modal Novo/Editar */}
