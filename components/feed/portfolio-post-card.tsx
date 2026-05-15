@@ -316,8 +316,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 aria-label={liked ? "Descurtir" : "Curtir"}
                 onClick={handleLike}
                 disabled={likePending}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60"
-                style={liked ? { color: machineColor, boxShadow: `0 0 0 1px ${machineColor}55` } : undefined}
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60",
+                  liked && "text-yellow-400 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]"
+                )}
               >
                 <Heart
                   className={cn(
@@ -371,8 +373,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               aria-label={liked ? "Descurtir" : "Curtir"}
               onClick={handleLike}
               disabled={likePending}
-              className="rounded-full p-2 text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white active:scale-90 disabled:opacity-60"
-              style={liked ? { color: machineColor } : undefined}
+              className={cn(
+                "rounded-full p-2 text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white active:scale-90 disabled:opacity-60",
+                liked && "text-yellow-400"
+              )}
             >
               <Heart
                 className={cn(
