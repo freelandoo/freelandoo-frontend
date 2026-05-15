@@ -21,15 +21,7 @@ import {
 import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
-import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
-
-type XpSummary = {
-  xp_total: number
-  xp_level: number
-  xp_next_level: number
-  xp_progress_percent: number
-}
 
 type EntityType = "profile" | "clan"
 
@@ -158,7 +150,6 @@ export function ProfileHeadCard({
 }: ProfileHeadCardProps) {
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
   const [openFollowers, setOpenFollowers] = useState(false)
-  const [xpData, setXpData] = useState<XpSummary | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -180,16 +171,6 @@ export function ProfileHeadCard({
       cancelled = true
     }
   }, [profileId, entityType, followRefreshKey])
-
-  useEffect(() => {
-    if (isClan) return
-    let cancelled = false
-    fetch(`/api/subprofiles/${profileId}/xp-summary`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (!cancelled && data) setXpData(data) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [profileId, isClan])
 
   const isPublished = !!(profile.is_paid && profile.is_visible && profile.is_active)
   const statusBadge = useMemo(() => {
@@ -317,42 +298,10 @@ export function ProfileHeadCard({
             </div>
           </div>
 
-          <div className="mt-4 text-left">
-            <h1 className="flex flex-wrap items-center gap-2 text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-              <span className="min-w-0 truncate">{displayName}</span>
-              <MachineTop10Crown
-                profileId={profileId}
-                iconClassName="h-5 w-5 md:h-6 md:w-6"
-              />
-            </h1>
-            {profile.bio && (
-              <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
-                {profile.bio}
-              </p>
-            )}
-          </div>
-
-          {!isClan && xpData && (
-            <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                  Nivel {xpData.xp_level}
-                </span>
-                <span className="text-sm font-bold tabular-nums text-primary">
-                  {xpData.xp_total.toLocaleString("pt-BR")} XP
-                </span>
-              </div>
-              <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
-                <div
-                  className="h-full rounded-full bg-primary transition-[width] duration-700"
-                  style={{ width: `${xpData.xp_progress_percent}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex justify-between text-[10px] text-white/30">
-                <span>Proximo nivel: {xpData.xp_next_level.toLocaleString("pt-BR")} XP</span>
-                <span>{xpData.xp_progress_percent}%</span>
-              </div>
-            </div>
+          {profile.bio && (
+            <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
+              {profile.bio}
+            </p>
           )}
 
           <div className="mt-3 flex items-center gap-2">
@@ -564,44 +513,11 @@ export function ProfileHeadCard({
           </div>
         </div>
 
-        {/* NOME + BIO */}
-        <div className="mt-5">
-          <h1 className="flex flex-wrap items-center gap-2 text-balance text-xl font-semibold leading-tight tracking-tight text-white md:text-2xl">
-            <span className="min-w-0">{displayName}</span>
-            <MachineTop10Crown
-              profileId={profileId}
-              iconClassName="h-5 w-5 md:h-6 md:w-6"
-            />
-          </h1>
-          {profile.bio && (
-            <p className="mt-2 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
-              {profile.bio}
-            </p>
-          )}
-        </div>
-
-        {/* XP e Nível — somente para subperfis profissionais */}
-        {!isClan && xpData && (
-          <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Nível {xpData.xp_level}
-              </span>
-              <span className="text-sm font-bold tabular-nums text-primary">
-                {xpData.xp_total.toLocaleString("pt-BR")} XP
-              </span>
-            </div>
-            <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.07]">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-700"
-                style={{ width: `${xpData.xp_progress_percent}%` }}
-              />
-            </div>
-            <div className="mt-1.5 flex justify-between text-[10px] text-white/30">
-              <span>Próximo nível: {xpData.xp_next_level.toLocaleString("pt-BR")} XP</span>
-              <span>{xpData.xp_progress_percent}%</span>
-            </div>
-          </div>
+        {/* BIO — nome e XP migraram pro RetractableProfileHeader */}
+        {profile.bio && (
+          <p className="mt-5 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
+            {profile.bio}
+          </p>
         )}
 
         {/* PRIMARY ACTIONS */}
