@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Home, MessageCircle, Settings, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -71,33 +71,22 @@ function buildContextBundle(
       ...userBundle,
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
+        { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `${root}?ranking=1`, label: "Ranking", icon: Trophy, activePath: root },
-        {
-          href: `${root}/settings`,
-          label: "Configurações",
-          icon: Settings,
-          matchPrefix: `${root}/settings`,
-        },
       ],
     }
   }
   if (active.kind === "clan" && active.id_profile) {
-    const root = `/account/clans/${active.id_profile}`
     return {
       ...userBundle,
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
+        { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
         { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `/clans/${active.id_profile}?ranking=1`, label: "Ranking", icon: Trophy },
-        {
-          href: `${root}/edit`,
-          label: "Configurações",
-          icon: Settings,
-          matchPrefix: `${root}/edit`,
-        },
       ],
     }
   }
@@ -106,15 +95,10 @@ function buildContextBundle(
     ...userBundle,
     items: [
       { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
+      { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
       { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
       { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
       { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },
-      {
-        href: "/account/dados",
-        label: "Configurações",
-        icon: Settings,
-        matchPrefix: "/account/dados",
-      },
     ],
   }
 }
