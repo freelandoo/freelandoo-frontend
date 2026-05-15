@@ -16,6 +16,12 @@ interface Props {
    * o XP aumenta (animada).
    */
   progress?: number
+  /**
+   * Dropdown ou botão "+" pra criar coisa nova. Aparece grudado atrás
+   * do nome (à esquerda). Tipicamente um DropdownMenu com itens
+   * (Post, Bees, Serviço, etc).
+   */
+  addMenu?: React.ReactNode
 }
 
 /**
@@ -29,7 +35,7 @@ interface Props {
  * Sem logo, sem botões. Só nome + slot via children + (opcional) linha de
  * progresso de XP.
  */
-export function RetractableProfileHeader({ name, children, progress }: Props) {
+export function RetractableProfileHeader({ name, children, progress, addMenu }: Props) {
   const [show, setShow] = useState(true)
 
   useEffect(() => {
@@ -67,7 +73,8 @@ export function RetractableProfileHeader({ name, children, progress }: Props) {
       aria-hidden={!show}
     >
       <div className="pointer-events-auto border-b border-white/[0.06] bg-zinc-950/45 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center gap-3 px-4 py-2.5 md:gap-4">
+        <div className="container mx-auto flex items-center gap-2 px-4 py-2.5 md:gap-3">
+          {addMenu !== undefined && <div className="shrink-0">{addMenu}</div>}
           <span className="truncate text-sm font-semibold text-white md:text-base">
             {name}
           </span>
