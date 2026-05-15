@@ -1,5 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { BookOpen, ImageIcon, Layers3, MapPin, Shield, Sparkles } from "lucide-react"
+import { UserAccountPortfolioTabs } from "./user-account-portfolio-tabs"
 
 type Media = {
   id_portfolio_media: string
@@ -13,6 +14,7 @@ type Item = {
   title: string | null
   description: string | null
   project_url: string | null
+  feed_kind?: "feed" | "bees"
   media: Media[]
 }
 
@@ -200,75 +202,7 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
           </div>
         </section>
 
-        <section className="mb-16">
-          <div className="mb-8 flex items-center justify-center md:justify-start">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">
-                Portfolio
-              </h2>
-            </div>
-          </div>
-
-          {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-20 text-muted-foreground">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2">
-                <ImageIcon className="h-8 w-8 opacity-50" />
-              </div>
-              <p className="text-sm font-medium">Sem itens no portfolio.</p>
-            </div>
-          ) : (
-            <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
-              {items.map((item) => {
-                const activeMedias = item.media?.filter((media) => media.is_active !== false) ?? []
-                const firstMedia = activeMedias[0]
-                return (
-                  <div key={item.id_portfolio_item} className="group relative flex flex-col">
-                    {firstMedia ? (
-                      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-                        {firstMedia.media_type === "video" ? (
-                          <video
-                            src={firstMedia.media_url}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            muted
-                            playsInline
-                            controls
-                          />
-                        ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={firstMedia.media_url}
-                            alt={item.title ?? "Midia do portfolio"}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        )}
-                        {activeMedias.length > 1 && (
-                          <div className="absolute right-3 top-3">
-                            <ImageIcon className="h-5 w-5 text-white opacity-90 drop-shadow-md" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="relative flex aspect-[4/5] items-center justify-center bg-muted">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
-                      </div>
-                    )}
-                    <div className="px-2 pt-3 md:px-0">
-                      <h3 className="line-clamp-1 text-sm font-semibold">
-                        {item.title || "Sem titulo"}
-                      </h3>
-                      {item.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
+        <UserAccountPortfolioTabs items={items} />
 
         {courses.length > 0 && (
           <section className="mb-14">
