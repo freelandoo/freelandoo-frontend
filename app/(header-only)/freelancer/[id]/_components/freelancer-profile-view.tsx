@@ -89,6 +89,7 @@ export default function FreelancerProfileView({
   const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
+  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees">("feed")
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -306,6 +307,7 @@ export default function FreelancerProfileView({
         headers: { Authorization: `Bearer ${currentToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           ...(isEditing ? {} : { id_user: profile?.id_user ?? null, id_profile: profileId }),
+          ...(isEditing ? {} : { feed_kind: portfolioTab }),
           title: portfolioForm.title.trim() || null,
           description: portfolioForm.description.trim() || null,
           project_url: portfolioForm.project_url.trim() || null,
@@ -512,10 +514,32 @@ export default function FreelancerProfileView({
 
         {/* PORTFOLIO SECTION */}
         <section className="mb-16">
-          <div className="flex items-center justify-center md:justify-between mb-8">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold tracking-wide uppercase text-muted-foreground">Portfólio</h2>
+          <div className="flex items-center justify-center md:justify-between mb-8 gap-3 flex-wrap">
+            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("feed")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                  portfolioTab === "feed"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                Portfólio
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("bees")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                  portfolioTab === "bees"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span aria-hidden>🐝</span>
+                Bees
+              </button>
             </div>
             {isOwnProfile && (
               <Button
@@ -551,17 +575,26 @@ export default function FreelancerProfileView({
             <p className="text-sm text-destructive mb-6 text-center">{portfolioError}</p>
           )}
 
-          {portfolioItems.length > 0 ? (
+          {(() => {
+            const filteredItems = portfolioItems.filter(
+              (it) => (it.feed_kind ?? "feed") === portfolioTab
+            )
+            const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+            const emptyLabel =
+              portfolioTab === "bees"
+                ? "Nenhum Bees ainda."
+                : "Nenhum item no portfólio ainda."
+            return filteredItems.length > 0 ? (
             <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
-              {portfolioItems.map((item) => {
+              {filteredItems.map((item) => {
                 const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
                 return (
                   <div key={item.id_portfolio_item} className="group relative flex flex-col">
-                    {/* Media Container 4:5 aspect ratio */}
+                    {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                     {firstMedia ? (
                       <div
-                        className={`relative aspect-[4/5] bg-muted overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
+                        className={`relative ${aspectClass} bg-muted overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
                         onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
                       >
                         {firstMedia.media_type === "video" ? (
@@ -665,7 +698,7 @@ export default function FreelancerProfileView({
                         )}
                       </div>
                     ) : (
-                      <div className="relative aspect-[4/5] bg-muted flex items-center justify-center">
+                      <div className={`relative ${aspectClass} bg-muted flex items-center justify-center`}>
                         <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
                         {isOwnProfile && (
                           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -763,14 +796,15 @@ export default function FreelancerProfileView({
               <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
                 <ImageIcon className="h-8 w-8 opacity-50" />
               </div>
-              <p className="text-sm font-medium">Nenhum item no portfólio ainda.</p>
+              <p className="text-sm font-medium">{emptyLabel}</p>
               {isOwnProfile && (
                 <Button variant="link" onClick={handleAddPortfolioItem} className="mt-2 text-primary">
                   Adicionar o primeiro item
                 </Button>
               )}
             </div>
-          )}
+          )
+          })()}
         </section>
 
         {/* SERVIÇOS + AGENDA */}
