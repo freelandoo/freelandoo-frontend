@@ -484,73 +484,63 @@ export function UserPortfolio({
     }
   }
 
+  // Abas retangulares grudadas no headcard — Portfolio/Bees só ícone, restantes com texto.
+  const tabBtn = (active: boolean) =>
+    `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+      active
+        ? "border-primary bg-primary/[0.08] text-primary"
+        : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+    }`
+
   return (
-    <section className="mb-4">
-      {/* Header + Tabs */}
-      <div className="flex items-center justify-center md:justify-between mb-6 gap-3 flex-wrap">
-        <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+    <section className="-mt-px mb-4">
+      {/* Tabs grudadas no headcard (sem mb pra colar visualmente) */}
+      <div className="flex items-stretch justify-between border-b border-white/[0.07] bg-zinc-950/40">
+        <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={() => setPortfolioTab("feed")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
-              portfolioTab === "feed"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            aria-label="Portfólio"
+            title="Portfólio"
+            className={tabBtn(portfolioTab === "feed") + " w-10 px-0"}
           >
-            <ImageIcon className="h-3.5 w-3.5" />
-            Portfólio
+            <ImageIcon className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={() => setPortfolioTab("bees")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
-              portfolioTab === "bees"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            aria-label="Bees"
+            title="Bees"
+            className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
           >
-            <Hexagon className="h-3.5 w-3.5" />
-            Bees
+            <Hexagon className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={() => setPortfolioTab("courses")}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
-              portfolioTab === "courses"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={tabBtn(portfolioTab === "courses")}
           >
             <GraduationCap className="h-3.5 w-3.5" />
-            Meus Cursos
+            Cursos
           </button>
           {myProfilesSlot !== undefined && (
             <button
               type="button"
               onClick={() => setPortfolioTab("profiles")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
-                portfolioTab === "profiles"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={tabBtn(portfolioTab === "profiles")}
             >
               <UserRound className="h-3.5 w-3.5" />
-              Meus Perfis
+              Perfis
             </button>
           )}
           {myClansSlot !== undefined && (
             <button
               type="button"
               onClick={() => setPortfolioTab("clans")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
-                portfolioTab === "clans"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={tabBtn(portfolioTab === "clans")}
             >
               <Users className="h-3.5 w-3.5" />
-              Meus Clans
+              Clans
             </button>
           )}
         </div>

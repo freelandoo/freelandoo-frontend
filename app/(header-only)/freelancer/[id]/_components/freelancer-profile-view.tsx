@@ -618,41 +618,43 @@ export default function FreelancerProfileView({
           />
         </section>
 
-        {/* PORTFOLIO SECTION */}
-        <section className="mb-16">
-          <div className="flex items-center justify-center md:justify-between mb-8 gap-3 flex-wrap">
-            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+        {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
+        <section className="-mt-6 mb-16">
+          <div className="flex items-stretch justify-between border-y border-white/[0.07] bg-zinc-950/40">
+            <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
                 onClick={() => setPortfolioTab("feed")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                aria-label="Portfólio"
+                title="Portfólio"
+                className={`inline-flex h-9 w-10 items-center justify-center border-b-2 transition ${
                   portfolioTab === "feed"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "border-primary bg-primary/[0.08] text-primary"
+                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
                 }`}
               >
-                <ImageIcon className="h-3.5 w-3.5" />
-                Portfólio
+                <ImageIcon className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setPortfolioTab("bees")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                aria-label="Bees"
+                title="Bees"
+                className={`inline-flex h-9 w-10 items-center justify-center border-b-2 transition ${
                   portfolioTab === "bees"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "border-primary bg-primary/[0.08] text-primary"
+                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
                 }`}
               >
-                <Hexagon className="h-3.5 w-3.5" />
-                Bees
+                <Hexagon className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setPortfolioTab("services")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
                   portfolioTab === "services"
-                    ? "bg-amber-400 text-zinc-900 shadow-sm"
-                    : "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 hover:text-amber-100"
+                    ? "border-amber-400 bg-amber-400 text-zinc-900"
+                    : "border-transparent bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 hover:text-amber-100"
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
@@ -661,14 +663,14 @@ export default function FreelancerProfileView({
               <button
                 type="button"
                 onClick={() => setPortfolioTab("courses")}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
                   portfolioTab === "courses"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "border-primary bg-primary/[0.08] text-primary"
+                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
                 }`}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                Meus Cursos
+                Cursos
               </button>
             </div>
             {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
@@ -679,11 +681,12 @@ export default function FreelancerProfileView({
                 onClick={handleAddPortfolioItem}
                 disabled={isAddingPortfolioItem}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {isAddingPortfolioItem ? "Criando..." : "Novo item"}
+                <Plus className="h-4 w-4 mr-1" />
+                {isAddingPortfolioItem ? "..." : "Novo"}
               </Button>
             )}
           </div>
+          <div className="mt-6">
 
           {/* Mobile Novo Item button */}
           {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
@@ -951,6 +954,7 @@ export default function FreelancerProfileView({
             </div>
           )
           })()}
+          </div>
         </section>
 
         {/* Avaliação (visitante) — fica fora das abas */}
