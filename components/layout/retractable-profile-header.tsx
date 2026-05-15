@@ -4,45 +4,64 @@ import { useEffect, useState, type RefObject } from "react"
 import { cn } from "@/lib/utils"
 
 interface Props {
-  /** Quando esse elemento sai da viewport, o header aparece. */
-  targetRef: RefObject<HTMLElement | null>
+  /** Ref opcional pro headcard (não usado mais — mantido pra compat). */
+  targetRef?: RefObject<HTMLElement | null>
   /** Nome do perfil exibido no header. */
   name: string
-  /** Conteúdo extra à direita (stats, barra de nível, etc). */
+  /** Conteúdo extra à direita (stats, nivel, XP, etc). */
   children?: React.ReactNode
+  /**
+   * Progresso de XP em porcentagem (0–100). Quando definido, uma linha
+   * fina amarela aparece grudada na base do header e cresce conforme
+   * o XP aumenta (animada).
+   */
+  progress?: number
 }
 
 /**
- * Header transparente que aparece quando o headcard rola pra cima da viewport
- * e some quando o headcard volta a aparecer. Sem logo, sem botões — só nome
- * + conteúdo passado via children.
+ * Header transparente que segue o padrão "show on scroll up, hide on scroll
+ * down":
+ * - Visível ao carregar a página.
+ * - Some quando o user scrolla pra baixo.
+ * - Reaparece assim que o user scrolla pra cima.
+ * - Sempre visível quando está no topo da página (scrollY === 0).
+ *
+ * Sem logo, sem botões. Só nome + slot via children + (opcional) linha de
+ * progresso de XP.
  */
-export function RetractableProfileHeader({ targetRef, name, children }: Props) {
-  const [show, setShow] = useState(false)
+export function RetractableProfileHeader({ name, children, progress }: Props) {
+  const [show, setShow] = useState(true)
 
   useEffect(() => {
-    const node = targetRef.current
-    if (!node) return
+    let lastY = typeof window === "undefined" ? 0 : window.scrollY
 
-    // Mostra assim que o TOPO do headcard passa pra cima da viewport
-    // (com 80px de buffer pra evitar flicker em micro-scrolls).
     const update = () => {
-      const rect = node.getBoundingClientRect()
-      setShow(rect.top < -80)
+      const currentY = window.scrollY
+      if (currentY <= 0) {
+        setShow(true)
+      } else if (currentY < lastY) {
+        // Subindo: mostra.
+        setShow(true)
+      } else if (currentY > lastY) {
+        // Descendo: esconde.
+        setShow(false)
+      }
+      lastY = currentY
     }
-    update()
+
     window.addEventListener("scroll", update, { passive: true })
-    window.addEventListener("resize", update)
-    return () => {
-      window.removeEventListener("scroll", update)
-      window.removeEventListener("resize", update)
-    }
-  }, [targetRef])
+    return () => window.removeEventListener("scroll", update)
+  }, [])
+
+  const clampedProgress =
+    typeof progress === "number"
+      ? Math.max(0, Math.min(100, progress))
+      : null
 
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out",
+        "pointer-events-none fixed inset-x-0 top-0 z-30 transition-transform duration-300 ease-out",
         show ? "translate-y-0" : "-translate-y-full",
       )}
       aria-hidden={!show}
@@ -58,6 +77,14 @@ export function RetractableProfileHeader({ targetRef, name, children }: Props) {
             </div>
           )}
         </div>
+        {clampedProgress !== null && (
+          <div className="h-[3px] w-full bg-white/[0.06]">
+            <div
+              className="h-full bg-primary transition-[width] duration-700 ease-out"
+              style={{ width: `${clampedProgress}%` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

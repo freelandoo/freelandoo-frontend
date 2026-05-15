@@ -557,19 +557,14 @@ export default function FreelancerProfileView({
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={profile.display_name || ""}
+        progress={!isClan && xpData ? xpData.xp_progress_percent : undefined}
       >
         {!isClan && xpData && (
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-white/55">
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
               Nv {xpData.xp_level}
             </span>
-            <div className="relative h-1.5 max-w-[180px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${xpData.xp_progress_percent}%` }}
-              />
-            </div>
-            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-primary">
+            <span className="text-[11px] font-semibold tabular-nums text-primary">
               {xpData.xp_total.toLocaleString("pt-BR")} XP
             </span>
           </div>
