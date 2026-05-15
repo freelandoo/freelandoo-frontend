@@ -23,12 +23,34 @@ export function RetractableProfileHeader({ targetRef, name, children }: Props) {
   useEffect(() => {
     const node = targetRef.current
     if (!node) return
+
+    // Mostra quando o BOTTOM do headcard passa acima do topo da viewport.
+    // IntersectionObserver com threshold 0 e bottom-margin gigante:
+    // o "root" vira só uma faixa fininha grudada no topo da viewport.
+    // entry.isIntersecting === true → o headcard ainda toca essa faixa
+    //   (parte do card ainda na viewport ou abaixo dela).
+    // entry.isIntersecting === false + boundingClientRect.bottom <= 0
+    //   → o card já passou inteirinho acima do topo da viewport.
     const observer = new IntersectionObserver(
-      ([entry]) => setShow(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "0px" },
+      ([entry]) => {
+        setShow(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0)
+      },
+      { threshold: 0 },
     )
     observer.observe(node)
-    return () => observer.disconnect()
+
+    // Fallback: força um check no scroll porque o IntersectionObserver não
+    // dispara enquanto o card está totalmente acima/abaixo sem cruzar fronteira.
+    const onScroll = () => {
+      const rect = node.getBoundingClientRect()
+      setShow(rect.bottom <= 0)
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("scroll", onScroll)
+    }
   }, [targetRef])
 
   return (
