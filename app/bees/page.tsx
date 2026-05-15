@@ -1,0 +1,208 @@
+"use client"
+
+import { Suspense, useCallback, useEffect, useRef, useState } from "react"
+import { Loader2, Sparkles } from "lucide-react"
+import { getToken } from "@/lib/auth"
+import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
+import { BeesPost } from "@/components/bees/bees-post"
+
+const PAGE_LIMIT = 6
+const PREFETCH_THRESHOLD = 2
+
+export default function BeesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-black text-white/60">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      }
+    >
+      <BeesPageInner />
+    </Suspense>
+  )
+}
+
+function BeesPageInner() {
+  const [items, setItems] = useState<FeedPost[]>([])
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingInitial, setLoadingInitial] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [muted, setMuted] = useState(true)
+
+  const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
+    const sp = new URLSearchParams()
+    if (nextCursor) sp.set("cursor", nextCursor)
+    sp.set("limit", String(PAGE_LIMIT))
+
+    const headers: Record<string, string> = {}
+    const token = getToken()
+    if (token) headers["Authorization"] = `Bearer ${token}`
+
+    const res = await fetch(`/api/feed/bees?${sp.toString()}`, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = (await res.json()) as FeedResponse
+    setItems((prev) => (replace ? data.items : [...prev, ...data.items]))
+    setCursor(data.next_cursor)
+    setHasMore(!!data.has_more)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingInitial(true)
+    setError(null)
+    fetchPage(null, true)
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Erro ao carregar Bees")
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInitial(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [fetchPage])
+
+  // Prefetch quando estiver perto do fim
+  useEffect(() => {
+    if (loadingInitial || loadingMore || !hasMore || !cursor) return
+    if (activeIndex < items.length - PREFETCH_THRESHOLD) return
+    setLoadingMore(true)
+    fetchPage(cursor, false)
+      .catch(() => {})
+      .finally(() => setLoadingMore(false))
+  }, [activeIndex, items.length, cursor, hasMore, loadingInitial, loadingMore, fetchPage])
+
+  const filtersForEvents: FeedFilters = {
+    id_machine: null,
+    id_category: null,
+    estado: null,
+    municipio: null,
+    level_min: null,
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 bg-black md:left-[80px]">
+      {loadingInitial ? (
+        <LoadingState />
+      ) : error && items.length === 0 ? (
+        <ErrorState message={error} onRetry={() => fetchPage(null, true)} />
+      ) : items.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <BeesScroller
+          items={items}
+          filtersForEvents={filtersForEvents}
+          muted={muted}
+          onToggleMute={() => setMuted((m) => !m)}
+          activeIndex={activeIndex}
+          onActiveChange={setActiveIndex}
+          onLikeChange={(postId, liked, likes_count) => {
+            setItems((prev) =>
+              prev.map((p) =>
+                p.post_id === postId
+                  ? {
+                      ...p,
+                      viewer_has_liked: liked,
+                      likes_count: likes_count ?? p.likes_count,
+                    }
+                  : p
+              )
+            )
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function BeesScroller({
+  items,
+  filtersForEvents,
+  muted,
+  onToggleMute,
+  activeIndex,
+  onActiveChange,
+  onLikeChange,
+}: {
+  items: FeedPost[]
+  filtersForEvents: FeedFilters
+  muted: boolean
+  onToggleMute: () => void
+  activeIndex: number
+  onActiveChange: (i: number) => void
+  onLikeChange: (postId: string, liked: boolean, likes_count: number | null) => void
+}) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null)
+
+  return (
+    <div
+      ref={scrollerRef}
+      className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth"
+      style={{ scrollbarWidth: "none" }}
+    >
+      <style jsx>{`
+        div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      {items.map((post, idx) => (
+        <BeesPost
+          key={post.post_id}
+          post={post}
+          filters={filtersForEvents}
+          isActive={idx === activeIndex}
+          muted={muted}
+          onToggleMute={onToggleMute}
+          onActivate={() => {
+            if (activeIndex !== idx) onActiveChange(idx)
+          }}
+          onLikeChange={onLikeChange}
+        />
+      ))}
+    </div>
+  )
+}
+
+function LoadingState() {
+  return (
+    <div className="flex h-full w-full items-center justify-center text-white/70">
+      <Loader2 className="h-7 w-7 animate-spin" />
+    </div>
+  )
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center text-white/80">
+      <p className="text-sm">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
+      >
+        Tentar de novo
+      </button>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center text-white/75">
+      <Sparkles className="h-10 w-10 text-amber-300" />
+      <p className="text-base font-semibold">Ainda não tem Bees por aqui</p>
+      <p className="max-w-xs text-sm text-white/55">
+        Bees é o feed vertical 9:16. Quando alguém publicar um vídeo nesse formato, ele aparece
+        aqui automaticamente.
+      </p>
+    </div>
+  )
+}
