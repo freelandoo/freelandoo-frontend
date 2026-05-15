@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
@@ -28,6 +28,14 @@ import {
   X,
 } from "lucide-react"
 import { useMyCourses } from "@/hooks/use-my-courses"
+import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
+
+interface XpSummary {
+  xp_level: number
+  xp_total: number
+  xp_progress_percent: number
+  xp_next_level: number
+}
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -72,6 +80,18 @@ export default function FreelancerProfileView({
   const [showMembers, setShowMembers] = useState(false)
   const [membersQuery, setMembersQuery] = useState("")
   const [followRefreshKey, setFollowRefreshKey] = useState(0)
+  const [xpData, setXpData] = useState<XpSummary | null>(null)
+  const headcardRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (isClan) return
+    let cancelled = false
+    fetch(`/api/subprofiles/${profileId}/xp-summary`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (!cancelled && data) setXpData(data) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [profileId, isClan])
 
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
@@ -534,6 +554,27 @@ export default function FreelancerProfileView({
 
   return (
     <div className="bg-background min-h-screen">
+      <RetractableProfileHeader
+        targetRef={headcardRef}
+        name={profile.display_name || ""}
+      >
+        {!isClan && xpData && (
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-white/55">
+              Nv {xpData.xp_level}
+            </span>
+            <div className="relative h-1.5 max-w-[180px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-500"
+                style={{ width: `${xpData.xp_progress_percent}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-primary">
+              {xpData.xp_total.toLocaleString("pt-BR")} XP
+            </span>
+          </div>
+        )}
+      </RetractableProfileHeader>
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Button
           onClick={() => router.back()}
@@ -545,7 +586,7 @@ export default function FreelancerProfileView({
         </Button>
 
         {/* HEADER CARD */}
-        <section className="mb-10">
+        <section ref={headcardRef} className="mb-10">
           <ProfileHeadCard
             profile={profile}
             profileId={profileId}

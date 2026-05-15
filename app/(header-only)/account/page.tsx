@@ -57,6 +57,7 @@ import {
   validateVideoFile,
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
+import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -207,6 +208,9 @@ export default function PerfilPage() {
       .then((data) => { if (data) setManifestation(data) })
       .catch(() => {})
   }, [])
+
+  // Ref no headcard pro RetractableProfileHeader observar.
+  const headcardRef = useRef<HTMLElement | null>(null)
 
   // Deep-link: ?edit=1 abre o modal Editar (dropside da toolbar entra aqui em /account?edit=1)
   const editDeeplinkOpenedRef = useRef(false)
@@ -1408,9 +1412,37 @@ export default function PerfilPage() {
 
   return (
     <div className="bg-page-shell-dark min-h-[100dvh]">
+      <RetractableProfileHeader
+        targetRef={headcardRef}
+        name={perfil.nome || perfil.username || ""}
+      >
+        <span className="inline-flex items-center gap-1">
+          <span className="text-white/55 uppercase tracking-wide">Perfis</span>
+          <span className="font-semibold tabular-nums text-white">{totalProfiles}</span>
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="text-white/55 uppercase tracking-wide">Visíveis</span>
+          <span className="font-semibold tabular-nums text-white">{visibleProfiles}</span>
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="text-white/55 uppercase tracking-wide">Clans</span>
+          <span className="font-semibold tabular-nums text-white">{totalClans}</span>
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="text-white/55 uppercase tracking-wide">Não lidas</span>
+          <span
+            className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-amber-300" : "text-white"}`}
+          >
+            {unreadMessages}
+          </span>
+        </span>
+      </RetractableProfileHeader>
       <main className="container mx-auto px-4 py-10 md:py-12">
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
-          <article className="overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <article
+            ref={headcardRef}
+            className="overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+          >
             <div className="relative h-40 bg-zinc-900 md:h-52">
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
