@@ -10,11 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   ArrowLeft,
+  Briefcase,
   Crown,
   Edit2,
   ExternalLink,
   EyeOff,
+  GraduationCap,
   Heart,
+  Hexagon,
   ImageIcon,
   Loader2,
   Plus,
@@ -24,6 +27,7 @@ import {
   Users,
   X,
 } from "lucide-react"
+import { useMyCourses } from "@/hooks/use-my-courses"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -91,7 +95,7 @@ export default function FreelancerProfileView({
   const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
-  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees">("feed")
+  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses">("feed")
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -603,11 +607,35 @@ export default function FreelancerProfileView({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span aria-hidden>🐝</span>
+                <Hexagon className="h-3.5 w-3.5" />
                 Bees
               </button>
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("services")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                  portfolioTab === "services"
+                    ? "bg-amber-400 text-zinc-900 shadow-sm"
+                    : "bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 hover:text-amber-100"
+                }`}
+              >
+                <Briefcase className="h-3.5 w-3.5" />
+                Serviços
+              </button>
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("courses")}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+                  portfolioTab === "courses"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                Meus Cursos
+              </button>
             </div>
-            {isOwnProfile && (
+            {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -622,7 +650,7 @@ export default function FreelancerProfileView({
           </div>
 
           {/* Mobile Novo Item button */}
-          {isOwnProfile && (
+          {isOwnProfile && (portfolioTab === "feed" || portfolioTab === "bees") && (
             <div className="flex md:hidden justify-center mb-6">
               <Button
                 size="sm"
@@ -637,11 +665,27 @@ export default function FreelancerProfileView({
             </div>
           )}
 
-          {portfolioError && (
+          {portfolioError && (portfolioTab === "feed" || portfolioTab === "bees") && (
             <p className="text-sm text-destructive mb-6 text-center">{portfolioError}</p>
           )}
 
-          {(() => {
+          {portfolioTab === "services" && (
+            <ProfilePublicServicesSection
+              profileId={profileId}
+              allowPublicBooking={profileAllowsPublicBooking(profile)}
+              showOwnerControls={isOwnProfile}
+              isClan={isClan}
+              clanMembers={
+                isClan ? (members as ProfileServiceEditClanMember[]) : []
+              }
+            />
+          )}
+
+          {portfolioTab === "courses" && (
+            <ProfileCoursesTab profileId={profileId} isOwnProfile={isOwnProfile} />
+          )}
+
+          {(portfolioTab === "feed" || portfolioTab === "bees") && (() => {
             const filteredItems = portfolioItems.filter(
               (it) => (it.feed_kind ?? "feed") === portfolioTab
             )
@@ -873,22 +917,12 @@ export default function FreelancerProfileView({
           })()}
         </section>
 
-        {/* SERVIÇOS + AGENDA */}
+        {/* Avaliação (visitante) — fica fora das abas */}
         {!isOwnProfile && (
           <section className="mb-8">
             <RateProfile profileId={profileId} />
           </section>
         )}
-
-        <ProfilePublicServicesSection
-          profileId={profileId}
-          allowPublicBooking={profileAllowsPublicBooking(profile)}
-          showOwnerControls={isOwnProfile}
-          isClan={isClan}
-          clanMembers={
-            isClan ? (members as ProfileServiceEditClanMember[]) : []
-          }
-        />
 
         {isOwnProfile && (
           <section id="agenda-section" className="mb-20 scroll-mt-24">
@@ -1195,6 +1229,92 @@ export default function FreelancerProfileView({
           profileId={profileId}
         />
       )}
+    </div>
+  )
+}
+
+function ProfileCoursesTab({
+  profileId,
+  isOwnProfile,
+}: {
+  profileId: string
+  isOwnProfile: boolean
+}) {
+  const { courses, isLoading } = useMyCourses()
+
+  if (!isOwnProfile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
+        <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
+          <GraduationCap className="h-8 w-8 opacity-50" />
+        </div>
+        <p className="text-sm font-medium">Em breve.</p>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Os cursos públicos deste perfil aparecerão aqui.
+        </p>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Carregando cursos…
+      </div>
+    )
+  }
+
+  const linked = courses.filter((c) => c.profile_id === profileId)
+
+  if (linked.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
+        <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
+          <GraduationCap className="h-8 w-8 opacity-50" />
+        </div>
+        <p className="text-sm font-medium">Nenhum curso vinculado a este perfil.</p>
+        <Link
+          href="/account?tab=courses"
+          className="mt-3 text-xs font-medium text-primary hover:underline"
+        >
+          Criar curso na sua conta
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+      {linked.map((c) => (
+        <Link
+          key={c.id}
+          href={c.slug ? `/cursos/${c.slug}` : `/account/courses/${c.id}`}
+          className="group relative block aspect-[4/5] overflow-hidden bg-muted"
+        >
+          {c.cover_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={c.cover_url}
+              alt={c.title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <GraduationCap className="h-12 w-12 text-muted-foreground/30" />
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-3">
+            <p className="text-xs font-semibold text-white line-clamp-2">{c.title}</p>
+            {c.status !== "published" && (
+              <span className="mt-1 inline-block rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+                {c.status === "draft" ? "Rascunho" : "Pausado"}
+              </span>
+            )}
+          </div>
+        </Link>
+      ))}
     </div>
   )
 }
