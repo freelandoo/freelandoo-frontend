@@ -10,6 +10,9 @@ import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
 import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { CommentsPanel } from "@/components/comments/comments-panel"
+import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
+import { StoryPlayer } from "@/components/stories/story-player"
+import { StoryCreator } from "@/components/stories/story-creator"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
@@ -47,6 +50,9 @@ function FeedPageInner() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  const [storyOpen, setStoryOpen] = useState<{ entries: StoryBarEntry[]; index: number } | null>(null)
+  const [creatorOpen, setCreatorOpen] = useState(false)
+  const [storyBarKey, setStoryBarKey] = useState(0)
 
   const hydrated = useRef(false)
   useEffect(() => {
@@ -203,6 +209,21 @@ function FeedPageInner() {
         aria-label="Feed de portfólios. Role para ver o próximo post."
         className="relative h-full w-full overflow-y-auto overflow-x-hidden overscroll-y-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
+        <div className="h-[64px] sm:h-[68px]" aria-hidden />
+        <div className="border-b border-white/[0.06] bg-black/35 backdrop-blur-sm">
+          <StoryBar
+            key={storyBarKey}
+            kind="rest"
+            defaultAccent={accent}
+            showCreateSlot
+            onCreate={() => setCreatorOpen(true)}
+            onOpenProfile={(entry, all) => {
+              const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
+              setStoryOpen({ entries: all, index: Math.max(0, idx) })
+            }}
+          />
+        </div>
+
         {error && !loadingInitial && (
           <div className="sticky top-16 z-10 mx-auto mt-16 max-w-md px-4">
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 backdrop-blur">
@@ -282,6 +303,21 @@ function FeedPageInner() {
             ),
           )
         }}
+      />
+
+      {storyOpen && (
+        <StoryPlayer
+          entries={storyOpen.entries}
+          initialIndex={storyOpen.index}
+          onClose={() => setStoryOpen(null)}
+        />
+      )}
+
+      <StoryCreator
+        open={creatorOpen}
+        initialKind="rest"
+        onClose={() => setCreatorOpen(false)}
+        onPosted={() => setStoryBarKey((k) => k + 1)}
       />
     </div>
   )
