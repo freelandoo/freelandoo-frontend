@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
+import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -97,6 +98,7 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         {children}
         <ProfileSidebar />
+        <BirthdateGate />
         <CookieConsent />
         <AnalyticsProvider />
         <Script
