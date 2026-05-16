@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, GraduationCap, Loader2, ShoppingCart } from "lucide-react"
+import { ArrowLeft, GraduationCap, Loader2, ShoppingCart, Settings, Check } from "lucide-react"
 
 interface PublicCourse {
   id: string
@@ -14,6 +14,7 @@ interface PublicCourse {
   cover_url: string | null
   price_cents: number
   status: "draft" | "published" | "paused"
+  owner_user_id: string
   modules_count: number
   lessons_count: number
 }
@@ -25,14 +26,26 @@ function formatPrice(cents: number): string {
   }).format(cents / 100)
 }
 
+function authHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {}
+  const token = localStorage.getItem("token")
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export default function PublicCoursePage() {
   const params = useParams<{ slug: string }>()
+  const search = useSearchParams()
   const router = useRouter()
   const slug = params?.slug
 
   const [course, setCourse] = useState<PublicCourse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [myUserId, setMyUserId] = useState<string | null>(null)
+  const [buying, setBuying] = useState(false)
+  const [buyError, setBuyError] = useState<string | null>(null)
+
+  const checkoutStatus = search?.get("course_checkout")
 
   useEffect(() => {
     if (!slug) return
@@ -41,16 +54,21 @@ export default function PublicCoursePage() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`/api/courses/public/by-slug/${slug}`, {
-          cache: "no-store",
-        })
-        const data = await res.json()
+        const [courseRes, meRes] = await Promise.all([
+          fetch(`/api/courses/public/by-slug/${slug}`, { cache: "no-store" }),
+          fetch("/api/users/me", { headers: authHeaders(), cache: "no-store" }),
+        ])
         if (cancelled) return
-        if (!res.ok) {
+        const data = await courseRes.json()
+        if (!courseRes.ok) {
           setError(data?.error || "Curso não encontrado")
           return
         }
         setCourse(data?.course || null)
+        if (meRes.ok) {
+          const me = await meRes.json()
+          setMyUserId(me?.id_user || null)
+        }
       } catch {
         if (!cancelled) setError("Erro ao carregar")
       } finally {
@@ -62,6 +80,35 @@ export default function PublicCoursePage() {
       cancelled = true
     }
   }, [slug])
+
+  const isOwner = !!(course && myUserId && course.owner_user_id === myUserId)
+
+  const handleBuy = async () => {
+    if (!course) return
+    if (!myUserId) {
+      router.push("/login")
+      return
+    }
+    setBuying(true)
+    setBuyError(null)
+    try {
+      const res = await fetch(`/api/me/courses/${course.id}/checkout`, {
+        method: "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: "{}",
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.checkout_url) {
+        setBuyError(data?.error || "Falha ao criar checkout")
+        setBuying(false)
+        return
+      }
+      window.location.href = data.checkout_url as string
+    } catch {
+      setBuyError("Erro ao conectar com o servidor")
+      setBuying(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -132,6 +179,18 @@ export default function PublicCoursePage() {
           </div>
         )}
 
+        {checkoutStatus === "success" && (
+          <div className="mt-6 flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-sm text-green-400">
+            <Check className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>Pagamento confirmado! O curso já está disponível na sua conta.</span>
+          </div>
+        )}
+        {checkoutStatus === "cancel" && (
+          <div className="mt-6 rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-300">
+            Compra cancelada. Você pode tentar novamente quando quiser.
+          </div>
+        )}
+
         {/* Preço + CTA */}
         <div className="mt-10 flex flex-col items-start gap-4 rounded-2xl border border-primary/30 bg-primary/[0.04] p-6 md:flex-row md:items-center md:justify-between">
           <div>
@@ -140,14 +199,25 @@ export default function PublicCoursePage() {
               {formatPrice(course.price_cents)}
             </p>
           </div>
-          <Button
-            size="lg"
-            onClick={() => router.push(`/checkout/curso/${course.id}`)}
-          >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Comprar curso
-          </Button>
+          {isOwner ? (
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => router.push(`/account/courses/${course.id}`)}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Gerenciar curso
+            </Button>
+          ) : (
+            <Button size="lg" onClick={handleBuy} disabled={buying}>
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              {buying ? "Redirecionando..." : "Comprar curso"}
+            </Button>
+          )}
         </div>
+        {buyError && (
+          <p className="mt-2 text-xs text-red-400">{buyError}</p>
+        )}
       </main>
     </div>
   )

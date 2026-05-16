@@ -1334,6 +1334,16 @@ export default function FreelancerProfileView({
   )
 }
 
+interface PublicCourseLite {
+  id: string
+  title: string
+  slug: string | null
+  cover_url: string | null
+  status: "draft" | "published" | "paused"
+  profile_id: string | null
+  price_cents: number
+}
+
 function ProfileCoursesTab({
   profileId,
   isOwnProfile,
@@ -1341,21 +1351,39 @@ function ProfileCoursesTab({
   profileId: string
   isOwnProfile: boolean
 }) {
-  const { courses, isLoading } = useMyCourses()
+  // Dono usa o catálogo "meus cursos" (inclui rascunhos/pausados).
+  // Visitante busca o endpoint público (só publicados).
+  const myCoursesHook = useMyCourses()
+  const [publicCourses, setPublicCourses] = useState<PublicCourseLite[]>([])
+  const [publicLoading, setPublicLoading] = useState(!isOwnProfile)
 
-  if (!isOwnProfile) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
-        <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
-          <GraduationCap className="h-8 w-8 opacity-50" />
-        </div>
-        <p className="text-sm font-medium">Em breve.</p>
-        <p className="mt-1 text-xs text-muted-foreground/80">
-          Os cursos públicos deste perfil aparecerão aqui.
-        </p>
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (isOwnProfile) return
+    let cancelled = false
+    setPublicLoading(true)
+    fetch(`/api/courses/public/by-profile/${profileId}`, { cache: "no-store" })
+      .then(async (r) => {
+        const data = await r.json()
+        if (cancelled) return
+        setPublicCourses(Array.isArray(data?.courses) ? data.courses : [])
+      })
+      .catch(() => {
+        if (!cancelled) setPublicCourses([])
+      })
+      .finally(() => {
+        if (!cancelled) setPublicLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isOwnProfile, profileId])
+
+  const isLoading = isOwnProfile ? myCoursesHook.isLoading : publicLoading
+  const linked: PublicCourseLite[] = isOwnProfile
+    ? (myCoursesHook.courses as PublicCourseLite[]).filter(
+        (c) => c.profile_id === profileId,
+      )
+    : publicCourses
 
   if (isLoading) {
     return (
@@ -1366,21 +1394,25 @@ function ProfileCoursesTab({
     )
   }
 
-  const linked = courses.filter((c) => c.profile_id === profileId)
-
   if (linked.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
         <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
           <GraduationCap className="h-8 w-8 opacity-50" />
         </div>
-        <p className="text-sm font-medium">Nenhum curso vinculado a este perfil.</p>
-        <Link
-          href="/account?tab=courses"
-          className="mt-3 text-xs font-medium text-primary hover:underline"
-        >
-          Criar curso na sua conta
-        </Link>
+        <p className="text-sm font-medium">
+          {isOwnProfile
+            ? "Nenhum curso vinculado a este perfil."
+            : "Em breve."}
+        </p>
+        {isOwnProfile && (
+          <Link
+            href="/account?tab=courses"
+            className="mt-3 text-xs font-medium text-primary hover:underline"
+          >
+            Criar curso na sua conta
+          </Link>
+        )}
       </div>
     )
   }
@@ -1390,7 +1422,13 @@ function ProfileCoursesTab({
       {linked.map((c) => (
         <Link
           key={c.id}
-          href={c.slug ? `/cursos/${c.slug}` : `/account/courses/${c.id}`}
+          href={
+            isOwnProfile
+              ? `/account/courses/${c.id}`
+              : c.slug
+                ? `/cursos/${c.slug}`
+                : `/account/courses/${c.id}`
+          }
           className="group relative block aspect-[4/5] overflow-hidden bg-muted"
         >
           {c.cover_url ? (
@@ -1408,7 +1446,7 @@ function ProfileCoursesTab({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-3">
             <p className="text-xs font-semibold text-white line-clamp-2">{c.title}</p>
-            {c.status !== "published" && (
+            {isOwnProfile && c.status !== "published" && (
               <span className="mt-1 inline-block rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
                 {c.status === "draft" ? "Rascunho" : "Pausado"}
               </span>
