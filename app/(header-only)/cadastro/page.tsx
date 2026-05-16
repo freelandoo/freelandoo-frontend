@@ -311,45 +311,19 @@ export default function CadastroPage() {
                 <CardDescription>Crie suas credenciais para acessar a Freelandoo</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <GoogleSignInButton
-                  text="signup_with"
-                  getExtraPayload={() => {
-                    const extra: Record<string, unknown> = {}
-                    if (formData.dataNascimento) {
-                      extra.data_nascimento = formData.dataNascimento
-                    }
-                    if (isMinorBirth && responsibleCode) {
-                      extra.responsible_code = responsibleCode
-                    }
-                    return extra
-                  }}
-                  validate={() => {
-                    // Se o user informou data e é menor, exige código válido
-                    // antes de mandar pro Google (evita criar conta órfã).
-                    if (isMinorBirth) {
-                      if (!responsibleCode) {
-                        return "Informe o código do responsável antes de continuar com o Google."
-                      }
-                      if (codeStatus !== "valid") {
-                        return "Aguarde a validação do código do responsável."
-                      }
-                    }
-                    return null
-                  }}
-                />
-                {isMinorBirth && (
-                  <p className="text-center text-xs text-amber-400">
-                    Conta supervisionada: preencha o código do responsável abaixo antes de usar o Google.
-                  </p>
+                {!isMinorBirth && (
+                  <>
+                    <GoogleSignInButton text="signup_with" />
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                      </div>
+                    </div>
+                  </>
                 )}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou com email</span>
-                  </div>
-                </div>
                 <form className="space-y-6" onSubmit={handleStep1Continue}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">

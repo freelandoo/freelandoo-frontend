@@ -43,17 +43,6 @@ type Props = {
   /** Override de tema. */
   theme?: "outline" | "filled_blue" | "filled_black"
   className?: string
-  /**
-   * Lido no momento do callback do Google. Retorna campos extras a serem
-   * mandados junto com `credential` no POST /api/google-signin
-   * (ex.: data_nascimento, responsible_code no cadastro de menor).
-   */
-  getExtraPayload?: () => Record<string, unknown>
-  /**
-   * Validação síncrona antes de enviar o credential ao backend. Retornar
-   * uma string aborta o submit e mostra-a como erro. Retornar null permite.
-   */
-  validate?: () => string | null
 }
 
 export function GoogleSignInButton({
@@ -61,8 +50,6 @@ export function GoogleSignInButton({
   redirectTo,
   theme = "filled_black",
   className,
-  getExtraPayload,
-  validate,
 }: Props) {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -71,14 +58,6 @@ export function GoogleSignInButton({
   const [loading, setLoading] = useState(false)
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-
-  // Refs para evitar re-render do Google iframe quando os deps mudarem.
-  const getExtraPayloadRef = useRef(getExtraPayload)
-  const validateRef = useRef(validate)
-  useEffect(() => {
-    getExtraPayloadRef.current = getExtraPayload
-    validateRef.current = validate
-  }, [getExtraPayload, validate])
 
   useEffect(() => {
     if (!scriptReady) return
@@ -90,19 +69,13 @@ export function GoogleSignInButton({
     if (!window.google || !containerRef.current) return
 
     const handleCredential = async ({ credential }: { credential: string }) => {
-      const validationError = validateRef.current?.() ?? null
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-      const extra = getExtraPayloadRef.current?.() ?? {}
       setLoading(true)
       setError(null)
       try {
         const res = await fetch("/api/google-signin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ credential, ...extra }),
+          body: JSON.stringify({ credential }),
         })
         const data = await res.json()
         if (!res.ok) {
