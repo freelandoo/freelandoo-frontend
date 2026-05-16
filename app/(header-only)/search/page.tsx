@@ -379,17 +379,19 @@ function SearchPageInner() {
       >
         <div className="h-[64px] sm:h-[68px]" aria-hidden />
         <div className="border-y border-white/[0.06] bg-black/40 backdrop-blur-sm">
-          <StoryBar
-            key={storyBarKey}
-            kind="trampo"
-            defaultAccent={accent}
-            showCreateSlot
-            onCreate={() => setCreatorOpen(true)}
-            onOpenProfile={(entry, all) => {
-              const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
-              setStoryOpen({ entries: all, index: Math.max(0, idx) })
-            }}
-          />
+          <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
+            <StoryBar
+              key={storyBarKey}
+              kind="trampo"
+              defaultAccent={accent}
+              showCreateSlot
+              onCreate={() => setCreatorOpen(true)}
+              onOpenProfile={(entry, all) => {
+                const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
+                setStoryOpen({ entries: all, index: Math.max(0, idx) })
+              }}
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -411,7 +413,7 @@ function SearchPageInner() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-px bg-white/[0.03] pb-6">
+          <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] md:grid-cols-4 lg:max-w-[1080px] lg:grid-cols-5">
             {display.map((c) => (
               <FreelancerTile
                 key={c.id_profile}
