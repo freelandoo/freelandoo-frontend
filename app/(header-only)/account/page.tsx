@@ -29,7 +29,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
-import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
 import { UserPortfolio } from "./_components/UserPortfolio"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
@@ -1558,6 +1557,9 @@ export default function PerfilPage() {
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                {manifestation?.active && (
+                  <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
+                )}
                 {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
                   <span
                     key={status.id_status}
@@ -1566,6 +1568,26 @@ export default function PerfilPage() {
                     {status.desc_status.replace(/_/g, " ")}
                   </span>
                 ))}
+                {/* Botão Parental: sempre presente. Menor → pedir permissão; adulto → painel. */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      perfil.is_minor === true
+                        ? "/account/parental/request"
+                        : "/account/parental"
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                  title={
+                    perfil.is_minor === true
+                      ? "Pedir permissão ao responsável"
+                      : "Gerenciar contas supervisionadas (filhos)"
+                  }
+                >
+                  <ShieldCheck className="h-3 w-3" />
+                  {perfil.is_minor === true ? "Supervisionada" : "Parental"}
+                </button>
                 {perfil.coupon_code ? (
                   <button
                     onClick={() => handleCopyCoupon(perfil.coupon_code!)}
@@ -1586,142 +1608,8 @@ export default function PerfilPage() {
                   </button>
                 )}
               </div>
-
-              <div className="mt-6 grid grid-cols-2 divide-x divide-y divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/50 sm:grid-cols-4 sm:divide-y-0">
-                <PrivateHeadStat icon={UserRound} label="Perfis" value={totalProfiles} />
-                <PrivateHeadStat icon={Eye} label="Visiveis" value={visibleProfiles} />
-                <PrivateHeadStat icon={Users} label="Clans" value={totalClans} />
-                <PrivateHeadStat
-                  icon={MessageCircle}
-                  label="Nao lidas"
-                  value={unreadMessages}
-                  accent={unreadMessages > 0}
-                />
-              </div>
             </div>
           </article>
-          {/* Head Card — perfil do usuario (com footer fino de Pólens) */}
-          <article
-            className="hidden"
-          >
-            {manifestation?.active?.banner_url && (
-              <>
-                <img src={manifestation.active.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
-                <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/68 to-zinc-950/42" />
-              </>
-            )}
-            <div className="relative flex flex-col gap-6 p-5 md:flex-row md:items-start md:gap-8 md:p-7">
-              {/* Avatar */}
-              <div className="relative mx-auto shrink-0 md:mx-0">
-                <div
-                  className="relative h-32 w-32 overflow-hidden rounded-full ring-1 ring-primary/30"
-                  style={{
-                    boxShadow:
-                      "0 0 0 1px rgba(242,196,9,0.08), 0 24px 60px -28px rgba(242,196,9,0.45)",
-                  }}
-                >
-                  <Avatar className="h-full w-full rounded-full">
-                    {perfil.avatar && (
-                      <AvatarImage
-                        src={perfil.avatar}
-                        alt={perfil.nome}
-                        className="rounded-full object-cover"
-                      />
-                    )}
-                    <AvatarFallback
-                      className="rounded-full text-2xl font-semibold text-primary"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(242,196,9,0.22), rgba(242,196,9,0.05))",
-                      }}
-                    >
-                      {getInitials(perfil.nome)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(true)}
-                  aria-label="Trocar foto"
-                  className="absolute bottom-1 right-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary"
-                >
-                  <Camera className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Info — headcard limpo (ações migraram para o dropside da toolbar; dados pessoais para o modal Editar) */}
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate text-2xl font-semibold leading-tight tracking-tight text-white md:text-3xl">
-                  {perfil.nome}
-                </h1>
-                {perfil.username && (
-                  <p className="mt-0.5 text-sm text-white/55">@{perfil.username}</p>
-                )}
-                {perfil.bio && (
-                  <p className="mt-3 line-clamp-2 max-w-xl text-sm leading-relaxed text-white/65">
-                    {perfil.bio}
-                  </p>
-                )}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {manifestation?.active && (
-                    <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
-                  )}
-                  {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
-                    <span
-                      key={status.id_status}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
-                    >
-                      {status.desc_status.replace(/_/g, " ")}
-                    </span>
-                  ))}
-                  {/* Botão Parental — sempre presente. Adulto vai ao painel de gerenciamento;
-                      menor vai à página de pedido de permissão ao responsável. */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        perfil.is_minor === true
-                          ? "/account/parental/request"
-                          : "/account/parental"
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
-                    title={
-                      perfil.is_minor === true
-                        ? "Pedir permissão ao responsável"
-                        : "Gerenciar contas supervisionadas (filhos)"
-                    }
-                  >
-                    <ShieldCheck className="h-3 w-3" />
-                    {perfil.is_minor === true ? "Supervisionada" : "Parental"}
-                  </button>
-                  {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
-                  {perfil.coupon_code ? (
-                    <button
-                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
-                      title={couponCopied ? "Copiado!" : "Clique para copiar"}
-                    >
-                      {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                      {perfil.coupon_code}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleGenerateCoupon}
-                      disabled={isGeneratingCoupon}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
-                    >
-                      {isGeneratingCoupon ? "Gerando…" : "Gerar cupom"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Footer — Pólens (colado ao headcard). Stats migraram pro RetractableProfileHeader. */}
-            <HeadcardPolensFooter className="relative" />
-          </article>
-
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
           <UserPortfolio
             coursesProfileOptions={(perfil.profiles || [])
@@ -2773,34 +2661,6 @@ function InfoCell({
           {value}
         </p>
       </div>
-    </div>
-  )
-}
-
-/**
- * Versão "strip" do StatCell — para a faixa horizontal colada ao headcard.
- * Sem bordas arredondadas, separados só por gap-px (linhas de divisão sutis).
- */
-function PrivateHeadStat({
-  icon: Icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: typeof Mail
-  label: string
-  value: number
-  accent?: boolean
-}) {
-  return (
-    <div className="p-4">
-      <div className="flex items-center justify-center gap-2 text-white/55 md:justify-start">
-        <Icon className={accent ? "h-4 w-4 text-primary" : "h-4 w-4"} />
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-      </div>
-      <p className={accent ? "mt-2 text-2xl font-semibold text-primary" : "mt-2 text-2xl font-semibold text-white"}>
-        {value}
-      </p>
     </div>
   )
 }
