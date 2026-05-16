@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   BarChart2,
   CalendarDays,
@@ -151,6 +152,33 @@ export function ProfileHeadCard({
 }: ProfileHeadCardProps) {
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
   const [openFollowers, setOpenFollowers] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return
+      setMenuOpen(false)
+    }
+    document.addEventListener("mousedown", onClick)
+    return () => document.removeEventListener("mousedown", onClick)
+  }, [menuOpen])
+
+  const handleEditClick = () => {
+    if (!menuOpen) {
+      setMenuOpen(true)
+      return
+    }
+    // segundo click no lápis (com menu aberto): vai pro editar
+    setMenuOpen(false)
+    if (ownerActions?.onEdit) {
+      ownerActions.onEdit()
+    } else if (ownerActions?.editHref) {
+      router.push(ownerActions.editHref)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -305,78 +333,80 @@ export function ProfileHeadCard({
             </p>
           )}
 
-          {/* FOOTER — todas as ações como ícones */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {/* FOOTER — lápis amarelo como menu retrátil: 1º click expande, 2º click edita, click fora fecha */}
+          <div ref={menuRef} className="mt-3 flex flex-wrap items-center gap-1.5">
             {isOwnProfile && ownerActions ? (
               <>
                 <IconAction
-                  href={ownerActions.editHref}
-                  onClick={ownerActions.onEdit}
+                  onClick={handleEditClick}
                   icon={Pencil}
-                  label={isClan ? "Editar clan" : "Editar perfil"}
+                  label={menuOpen ? (isClan ? "Editar clan" : "Editar perfil") : "Mais ações"}
                   accent
+                  ariaExpanded={menuOpen}
                 />
-                <IconAction
-                  href={"/mensagens"}
-                  icon={MessageCircle}
-                  label="Minhas mensagens"
-                />
-                {!isClan && ownerActions.clansHref && (
+                <RetractableIcons open={menuOpen}>
                   <IconAction
-                    href={ownerActions.clansHref}
-                    icon={Users}
-                    label="Clans"
+                    href={"/mensagens"}
+                    icon={MessageCircle}
+                    label="Minhas mensagens"
                   />
-                )}
-                {isClan && ownerActions.onShowMembers && (
-                  <IconAction
-                    onClick={ownerActions.onShowMembers}
-                    icon={Users}
-                    label="Membros"
-                  />
-                )}
-                {isClan && ownerActions.manageHref && (
-                  <IconAction
-                    href={ownerActions.manageHref}
-                    icon={Cog}
-                    label="Gerenciar"
-                  />
-                )}
-                {ownerActions.onShowEngagement && (
-                  <IconAction
-                    onClick={ownerActions.onShowEngagement}
-                    icon={BarChart2}
-                    label="Engajamento"
-                  />
-                )}
-                {ownerActions.onShowRanking && (
-                  <IconAction
-                    onClick={ownerActions.onShowRanking}
-                    icon={Trophy}
-                    label="Ranking"
-                  />
-                )}
-                {ownerActions.onShowMural && (
-                  <IconAction
-                    onClick={ownerActions.onShowMural}
-                    icon={Megaphone}
-                    label="Mural"
-                    badge={
-                      !!(
-                        ownerActions.muralBadge?.has_new ||
-                        (ownerActions.muralBadge?.chat_unread || 0) > 0
-                      )
-                    }
-                  />
-                )}
-                {ownerActions.agendaHref && (
-                  <IconAction
-                    href={ownerActions.agendaHref}
-                    icon={CalendarDays}
-                    label="Agenda"
-                  />
-                )}
-                <SocialIcons socials={socials} />
+                  {!isClan && ownerActions.clansHref && (
+                    <IconAction
+                      href={ownerActions.clansHref}
+                      icon={Users}
+                      label="Clans"
+                    />
+                  )}
+                  {isClan && ownerActions.onShowMembers && (
+                    <IconAction
+                      onClick={ownerActions.onShowMembers}
+                      icon={Users}
+                      label="Membros"
+                    />
+                  )}
+                  {isClan && ownerActions.manageHref && (
+                    <IconAction
+                      href={ownerActions.manageHref}
+                      icon={Cog}
+                      label="Gerenciar"
+                    />
+                  )}
+                  {ownerActions.onShowEngagement && (
+                    <IconAction
+                      onClick={ownerActions.onShowEngagement}
+                      icon={BarChart2}
+                      label="Engajamento"
+                    />
+                  )}
+                  {ownerActions.onShowRanking && (
+                    <IconAction
+                      onClick={ownerActions.onShowRanking}
+                      icon={Trophy}
+                      label="Ranking"
+                    />
+                  )}
+                  {ownerActions.onShowMural && (
+                    <IconAction
+                      onClick={ownerActions.onShowMural}
+                      icon={Megaphone}
+                      label="Mural"
+                      badge={
+                        !!(
+                          ownerActions.muralBadge?.has_new ||
+                          (ownerActions.muralBadge?.chat_unread || 0) > 0
+                        )
+                      }
+                    />
+                  )}
+                  {ownerActions.agendaHref && (
+                    <IconAction
+                      href={ownerActions.agendaHref}
+                      icon={CalendarDays}
+                      label="Agenda"
+                    />
+                  )}
+                  <SocialIcons socials={socials} />
+                </RetractableIcons>
               </>
             ) : (
               <>
@@ -775,6 +805,7 @@ function IconAction({
   label,
   badge,
   accent,
+  ariaExpanded,
 }: {
   href?: string
   onClick?: () => void
@@ -782,6 +813,7 @@ function IconAction({
   label: string
   badge?: boolean
   accent?: boolean
+  ariaExpanded?: boolean
 }) {
   const baseClass = cn(
     "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition",
@@ -816,10 +848,31 @@ function IconAction({
       onClick={onClick}
       aria-label={label}
       title={label}
+      aria-expanded={ariaExpanded}
       className={baseClass}
     >
       {body}
     </button>
+  )
+}
+
+/**
+ * Wrapper que retrai a fila de ícones a partir do botão amarelo do lápis.
+ * Animado por max-width + opacity, sem reflow brusco do header.
+ */
+function RetractableIcons({ open, children }: { open: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out",
+        open
+          ? "max-w-[640px] translate-x-0 opacity-100"
+          : "pointer-events-none max-w-0 -translate-x-1 opacity-0",
+      )}
+      aria-hidden={!open}
+    >
+      {children}
+    </div>
   )
 }
 
