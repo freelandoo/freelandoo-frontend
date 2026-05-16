@@ -669,7 +669,7 @@ export default function FreelancerProfileView({
         </Button>
 
         {/* HEADER CARD */}
-        <section ref={headcardRef} className="mb-10">
+        <section ref={headcardRef} className="mb-0">
           <ProfileHeadCard
             profile={profile}
             profileId={profileId}
@@ -707,8 +707,8 @@ export default function FreelancerProfileView({
         </section>
 
         {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
-        <section className="-mt-6 mb-16">
-          <div className="flex items-stretch justify-between border-y border-white/[0.07] bg-zinc-950/40">
+        <section className="mb-16">
+          <div className="flex items-stretch justify-between border-y-2 border-white/[0.12] bg-zinc-950/40">
             <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
@@ -763,7 +763,7 @@ export default function FreelancerProfileView({
             </div>
           </div>
           {/* "+ Novo" migrou pro dropdown do RetractableProfileHeader. */}
-          <div className="mt-6">
+          <div className="mt-0">
 
           {portfolioError && (portfolioTab === "feed" || portfolioTab === "bees") && (
             <p className="text-sm text-destructive mb-6 text-center">{portfolioError}</p>
