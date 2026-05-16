@@ -374,15 +374,16 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               onClick={handleLike}
               disabled={likePending}
               className={cn(
-                "rounded-full p-2 text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white active:scale-90 disabled:opacity-60",
-                liked && "text-yellow-400"
+                "rounded-full p-2 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
+                liked ? "text-yellow-400" : "text-white"
               )}
             >
               <Heart
                 className={cn(
-                  "h-5 w-5 transition-transform duration-200",
-                  liked ? "fill-current scale-110" : ""
+                  "h-5 w-5 transition-all duration-300",
+                  liked && "scale-110"
                 )}
+                strokeWidth={2}
               />
             </button>
             <button
