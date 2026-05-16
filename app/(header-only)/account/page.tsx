@@ -27,7 +27,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HeadcardPolensFooter } from "@/components/polens/HeadcardPolensFooter"
 import { ServiceRequestModal } from "./_components/service-request-modal"
@@ -1674,6 +1674,16 @@ export default function PerfilPage() {
                       {status.desc_status.replace(/_/g, " ")}
                     </span>
                   ))}
+                  {/* Botão Parental — abre painel de Conta Supervisionada (gerar código + filhos vinculados) */}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/account/parental")}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                    title="Gerenciar contas supervisionadas (filhos)"
+                  >
+                    <ShieldCheck className="h-3 w-3" />
+                    Parental
+                  </button>
                   {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
                   {perfil.coupon_code ? (
                     <button
