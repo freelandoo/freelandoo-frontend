@@ -1686,15 +1686,17 @@ export default function PerfilPage() {
                       Parental
                     </button>
                   )}
-                  {/* Badge para a própria conta supervisionada */}
+                  {/* Badge para a própria conta supervisionada — clicável: leva ao pedido de permissão */}
                   {perfil.is_minor && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300"
-                      title="Conta supervisionada pelo responsável"
+                    <button
+                      type="button"
+                      onClick={() => router.push("/account/parental/request")}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                      title="Pedir permissão ao responsável"
                     >
                       <ShieldCheck className="h-3 w-3" />
                       Supervisionada
-                    </span>
+                    </button>
                   )}
                   {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
                   {perfil.coupon_code ? (
