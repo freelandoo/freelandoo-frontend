@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import Link from "next/link"
 import { Loader2, Send, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -309,16 +308,9 @@ export function CommentsPanel({
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 text-xs text-white/55">
-                        {c.user?.username ? (
-                          <Link
-                            href={`/account`}
-                            className="font-semibold text-white/85 hover:text-white"
-                          >
-                            @{c.user.username}
-                          </Link>
-                        ) : (
-                          <span className="font-semibold text-white/85">{handle}</span>
-                        )}
+                        <span className="font-semibold text-white/85">
+                          {c.user?.username ? `@${c.user.username}` : handle}
+                        </span>
                         <span aria-hidden>·</span>
                         <span>{timeAgo(c.created_at)}</span>
                         {canDelete && (
