@@ -281,44 +281,38 @@ export function ProfileHeadCard({
             </div>
 
             <div className="min-w-0 flex-1 pt-6 text-left md:pt-7">
-              <div className="grid max-w-md grid-cols-2 divide-x divide-white/[0.07] rounded-xl border border-white/[0.07] bg-zinc-950/55">
+              <div className="grid max-w-md grid-cols-2 divide-x divide-white/[0.07]">
                 <HeadStat label="Posts" value={portfolioCount} compact />
                 <button
                   type="button"
                   onClick={() => setOpenFollowers(true)}
-                  className="flex items-center justify-start gap-2 px-3 py-3 text-left transition hover:bg-white/[0.04] md:px-3.5"
+                  className="flex items-center justify-start gap-2 px-3 py-1.5 text-left transition hover:bg-white/[0.04]"
                   aria-label="Ver quem acompanha"
                 >
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
                     Acomp.
                   </span>
-                  <span className="text-xl font-semibold tabular-nums text-white md:text-2xl">
+                  <span className="text-base font-semibold tabular-nums text-white md:text-lg">
                     {counts.followers_count}
                   </span>
                 </button>
               </div>
 
               {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
-                <div className="mt-2 grid max-w-md grid-cols-2 gap-1.5">
+                <div className="mt-3 flex flex-col gap-1">
                   {profile.machine_name && (
-                    <HeadInfo icon={Megaphone} label="Maquina" value={profile.machine_name} />
+                    <HeadInfo icon={Megaphone} value={profile.machine_name} />
                   )}
                   {profile.desc_category && (
                     <HeadInfo
                       icon={isClan ? Users : UserRound}
-                      label={isClan ? "Categoria" : "Profissao"}
                       value={profile.desc_category}
                     />
                   )}
-                  {location && (
-                    <div className="col-span-2">
-                      <HeadInfo icon={MapPin} label="Localizacao" value={location} />
-                    </div>
-                  )}
+                  {location && <HeadInfo icon={MapPin} value={location} />}
                   {isClan && typeof profile.members_count === "number" && (
                     <HeadInfo
                       icon={Users}
-                      label="Integrantes"
                       value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
                     />
                   )}
@@ -750,11 +744,11 @@ function HeadStat({
 }) {
   if (compact) {
     return (
-      <div className="flex items-center gap-2 px-3 py-3 md:px-3.5">
+      <div className="flex items-center gap-2 px-3 py-1.5">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
           {label}
         </span>
-        <span className="text-xl font-semibold tabular-nums text-white md:text-2xl">
+        <span className="text-base font-semibold tabular-nums text-white md:text-lg">
           {value}
         </span>
       </div>
@@ -774,26 +768,15 @@ function HeadStat({
 
 function HeadInfo({
   icon: Icon,
-  label,
   value,
 }: {
   icon: typeof Users
-  label: string
   value: string
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-2 py-2">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/[0.08] text-primary">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[9px] font-medium uppercase tracking-wide text-white/40">
-          {label}
-        </span>
-        <span className="block truncate text-xs font-semibold text-white/85 md:text-[13px]">
-          {value}
-        </span>
-      </span>
+    <div className="flex min-w-0 items-center gap-1.5 text-white/75">
+      <Icon className="h-3 w-3 shrink-0 text-primary/80" />
+      <span className="truncate text-[11px] font-medium md:text-xs">{value}</span>
     </div>
   )
 }
