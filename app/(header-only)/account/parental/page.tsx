@@ -494,7 +494,7 @@ export default function ParentalPage() {
                           Revogar
                         </Button>
                         <Link
-                          href={`/mensagens?supervised=${minor.minor_user_id}`}
+                          href={`/account/parental/${minor.minor_user_id}/messages`}
                           className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
                         >
                           <MessageSquare className="h-3 w-3" />
