@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
@@ -41,6 +41,18 @@ function relativeTime(iso: string) {
   return `${Math.floor(d / 7)}sem`
 }
 
+const PERM_LABELS: Record<string, string> = {
+  can_view_feed: "ver o feed",
+  can_post_feed: "postar no feed",
+  can_use_bees: "usar Bees",
+  can_watch_courses: "assistir cursos",
+  can_sell_courses: "vender cursos",
+  can_message: "enviar mensagens",
+  can_receive_messages: "receber mensagens",
+  can_use_global_chat: "chat global",
+  can_use_machine_chat: "chat de máquinas",
+}
+
 function labelFor(item: NotificationItem) {
   const who = item.actor?.profile_display_name || item.actor?.username || "Alguém"
   switch (item.type) {
@@ -48,6 +60,12 @@ function labelFor(item: NotificationItem) {
     case "comment_received": return `${who} comentou no seu portfólio`
     case "follow_received": return `${who} começou a seguir`
     case "message_received": return `${who} mandou uma mensagem`
+    case "supervised_message_received": return `Conta supervisionada recebeu uma mensagem de ${who}`
+    case "parental_permission_request": {
+      const key = String((item.payload as { permission_key?: string })?.permission_key || "")
+      const what = PERM_LABELS[key] || key || "uma permissão"
+      return `${who} pediu permissão para ${what}`
+    }
     default: return who
   }
 }
@@ -58,6 +76,8 @@ function iconFor(type: string) {
     case "comment_received": return <MessageSquare className="h-3.5 w-3.5" />
     case "follow_received": return <UserPlus className="h-3.5 w-3.5" />
     case "message_received": return <Mail className="h-3.5 w-3.5" />
+    case "supervised_message_received": return <ShieldCheck className="h-3.5 w-3.5" />
+    case "parental_permission_request": return <KeyRound className="h-3.5 w-3.5" />
     default: return null
   }
 }
@@ -71,6 +91,12 @@ function hrefFor(item: NotificationItem): string {
       return item.actor?.username ? `/account` : "/account"
     case "message_received":
       return "/mensagens"
+    case "supervised_message_received": {
+      const minorId = (item.payload as { minor_user_id?: string })?.minor_user_id
+      return minorId ? `/account/parental/${minorId}/messages` : "/account/parental"
+    }
+    case "parental_permission_request":
+      return "/account/parental"
     default:
       return "/account"
   }
