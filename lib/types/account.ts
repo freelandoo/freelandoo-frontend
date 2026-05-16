@@ -69,6 +69,8 @@ export interface PerfilCompleto {
   roles?: { id_role: string; desc_role: string }[]
   profiles?: Profile[]
   coupon_code?: string | null
+  is_minor?: boolean
+  responsible_user_id?: string | null
 }
 
 export interface MediaItem {

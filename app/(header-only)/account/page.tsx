@@ -1674,16 +1674,28 @@ export default function PerfilPage() {
                       {status.desc_status.replace(/_/g, " ")}
                     </span>
                   ))}
-                  {/* Botão Parental — abre painel de Conta Supervisionada (gerar código + filhos vinculados) */}
-                  <button
-                    type="button"
-                    onClick={() => router.push("/account/parental")}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
-                    title="Gerenciar contas supervisionadas (filhos)"
-                  >
-                    <ShieldCheck className="h-3 w-3" />
-                    Parental
-                  </button>
+                  {/* Botão Parental — só aparece para adultos (menor não pode supervisionar outros) */}
+                  {!perfil.is_minor && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/account/parental")}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                      title="Gerenciar contas supervisionadas (filhos)"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Parental
+                    </button>
+                  )}
+                  {/* Badge para a própria conta supervisionada */}
+                  {perfil.is_minor && (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300"
+                      title="Conta supervisionada pelo responsável"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Supervisionada
+                    </span>
+                  )}
                   {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
                   {perfil.coupon_code ? (
                     <button
