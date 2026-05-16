@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { fetchWithLog } from "@/lib/fetch-with-log"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 const ITEM_ID = "0fe91e60-12f0-4a1c-a297-262d73e5fce5"
 
@@ -113,6 +114,7 @@ function CheckoutContent() {
       }
 
       try {
+        const sharedCoupon = getCapturedCoupon()
         const res = await fetchWithLog("checkout:page", "/api/checkout", {
           method: "POST",
           headers: {
@@ -122,6 +124,7 @@ function CheckoutContent() {
           body: JSON.stringify({
             id_item: ITEM_ID,
             ...(idProfile ? { id_profile: idProfile } : {}),
+            ...(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
           }),
         })
 

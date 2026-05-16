@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { getBackendApiUrl } from "@/lib/backend"
 import { buildProfileUrl } from "@/lib/slug"
+import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
 
 type PortfolioItemPublic = {
   id_portfolio_item: string
@@ -147,16 +148,22 @@ export default async function PortfolioItemPage({
             </p>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t border-border">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
             <p className="text-sm text-muted-foreground">
               por <span className="font-medium text-foreground">{author}</span>
             </p>
-            <Link
-              href={profileHref(item)}
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
-            >
-              Ver perfil completo
-            </Link>
+            <div className="flex items-center gap-2">
+              <ShareWithCouponButton
+                path={`/p/${item.id_portfolio_item}`}
+                title={item.title || author}
+              />
+              <Link
+                href={profileHref(item)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+              >
+                Ver perfil completo
+              </Link>
+            </div>
           </div>
         </div>
       </div>
