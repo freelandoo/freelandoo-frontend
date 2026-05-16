@@ -151,16 +151,19 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
         headers: { Authorization: `Bearer ${getToken() || ""}` },
         body: fd,
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data: { error?: string; story?: unknown } = {}
+      try { data = text ? JSON.parse(text) : {} } catch { /* non-JSON */ }
       if (!res.ok) {
-        setError(data?.error || "Falha ao publicar story.")
+        setError(data?.error || `Erro ${res.status}${text && text.length < 200 ? `: ${text}` : ""}`)
         return
       }
       onPosted?.()
       onClose()
       router.refresh()
-    } catch {
-      setError("Falha de rede ao publicar.")
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "desconhecido"
+      setError(`Falha de rede ao publicar: ${msg}`)
     } finally {
       setSubmitting(false)
     }

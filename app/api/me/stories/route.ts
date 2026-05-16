@@ -1,6 +1,9 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 const BACKEND = getBackendApiUrl()
 
 export async function GET(request: Request) {
@@ -46,12 +49,19 @@ export async function POST(request: Request) {
       status = 401
       return Response.json({ error: "Token não fornecido" }, { status: 401 })
     }
-    const formData = await request.formData()
+    const contentType = request.headers.get("content-type") || ""
     const url = `${BACKEND}/me/stories`
     const response = await fetch(url, {
       method: "POST",
-      headers: { Authorization: authHeader },
-      body: formData,
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": contentType,
+      },
+      // Stream o corpo bruto preservando o boundary original — evita o
+      // roundtrip via FormData() que pode perder o stream do arquivo.
+      body: request.body,
+      // @ts-expect-error duplex é exigido pelo undici para body streams
+      duplex: "half",
     })
     log.backendFetch("POST", url, response.status)
     const text = await response.text()
@@ -62,7 +72,8 @@ export async function POST(request: Request) {
   } catch (error) {
     log.fail(error)
     status = 500
-    return Response.json({ error: "Erro ao criar story" }, { status: 500 })
+    const msg = error instanceof Error ? error.message : "desconhecido"
+    return Response.json({ error: `Erro ao criar story: ${msg}` }, { status: 500 })
   } finally {
     log.end(status)
   }
