@@ -158,17 +158,20 @@ export function ProfileHeadCard({
 
   useEffect(() => {
     if (!menuOpen) return
-    const onClick = (e: MouseEvent) => {
+    // pointerdown cobre mouse e touch — necessário p/ mobile fechar ao tocar fora.
+    const onPointerDown = (e: PointerEvent) => {
       if (menuRef.current?.contains(e.target as Node)) return
       setMenuOpen(false)
     }
-    document.addEventListener("mousedown", onClick)
-    return () => document.removeEventListener("mousedown", onClick)
+    document.addEventListener("pointerdown", onPointerDown)
+    return () => document.removeEventListener("pointerdown", onPointerDown)
   }, [menuOpen])
 
+  // Engrenagem serve apenas como toggle (hover já abre/fecha; click para mobile).
+  const handleSettingsClick = () => setMenuOpen((v) => !v)
+
+  // Item "Editar perfil" dentro do menu retrátil.
   const handleEditClick = () => {
-    // O menu já abre/fecha por hover (mouseenter/mouseleave). Click no lápis
-    // sempre vai pro editar — não é mais usado como toggle.
     setMenuOpen(false)
     if (ownerActions?.onEdit) {
       ownerActions.onEdit()
@@ -346,13 +349,18 @@ export function ProfileHeadCard({
             {isOwnProfile && ownerActions ? (
               <>
                 <IconAction
-                  onClick={handleEditClick}
-                  icon={Pencil}
-                  label={isClan ? "Editar clan" : "Editar perfil"}
+                  onClick={handleSettingsClick}
+                  icon={Settings}
+                  label={menuOpen ? "Fechar" : "Configurações"}
                   accent
                   ariaExpanded={menuOpen}
                 />
                 <RetractableIcons open={menuOpen}>
+                  <IconAction
+                    onClick={handleEditClick}
+                    icon={Pencil}
+                    label={isClan ? "Editar clan" : "Editar perfil"}
+                  />
                   <IconAction
                     href={"/mensagens"}
                     icon={MessageCircle}
