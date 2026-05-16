@@ -259,7 +259,7 @@ export function ProfileHeadCard({
         </div>
 
         <div className="px-4 pb-4 md:px-7 md:pb-5">
-          <div className="-mt-10 flex items-start gap-4 md:-mt-14 md:gap-5">
+          <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
             <div className="flex shrink-0 flex-col items-center">
               <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-32">
                 {avatarSrc ? (
@@ -280,46 +280,56 @@ export function ProfileHeadCard({
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 pt-6 text-left md:pt-7">
-              <div className="grid max-w-md grid-cols-2 divide-x divide-white/[0.07]">
-                <HeadStat label="Posts" value={portfolioCount} compact />
+            {/* Posts | Acomp inline, alinhados ao rodapé do avatar p/ ficar fora do banner */}
+            <div className="min-w-0 flex-1 pb-2 text-left">
+              <div className="flex items-baseline gap-4">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-lg font-semibold tabular-nums text-white md:text-xl">
+                    {portfolioCount}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+                    Posts
+                  </span>
+                </div>
+                <span className="text-white/15">|</span>
                 <button
                   type="button"
                   onClick={() => setOpenFollowers(true)}
-                  className="flex items-center justify-start gap-2 px-3 py-1.5 text-left transition hover:bg-white/[0.04]"
+                  className="flex items-baseline gap-1.5 transition hover:opacity-80"
                   aria-label="Ver quem acompanha"
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
-                    Acomp.
-                  </span>
-                  <span className="text-base font-semibold tabular-nums text-white md:text-lg">
+                  <span className="text-lg font-semibold tabular-nums text-white md:text-xl">
                     {counts.followers_count}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+                    Acomp.
                   </span>
                 </button>
               </div>
-
-              {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
-                <div className="mt-3 flex flex-col gap-1">
-                  {profile.machine_name && (
-                    <HeadInfo icon={Megaphone} value={profile.machine_name} />
-                  )}
-                  {profile.desc_category && (
-                    <HeadInfo
-                      icon={isClan ? Users : UserRound}
-                      value={profile.desc_category}
-                    />
-                  )}
-                  {location && <HeadInfo icon={MapPin} value={location} />}
-                  {isClan && typeof profile.members_count === "number" && (
-                    <HeadInfo
-                      icon={Users}
-                      value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
-                    />
-                  )}
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Máquina / Profissão / Localização — abaixo do avatar p/ ganhar espaço e contraste */}
+          {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
+            <div className="mt-4 flex flex-col gap-1">
+              {profile.machine_name && (
+                <HeadInfo icon={Megaphone} value={profile.machine_name} />
+              )}
+              {profile.desc_category && (
+                <HeadInfo
+                  icon={isClan ? Users : UserRound}
+                  value={profile.desc_category}
+                />
+              )}
+              {location && <HeadInfo icon={MapPin} value={location} />}
+              {isClan && typeof profile.members_count === "number" && (
+                <HeadInfo
+                  icon={Users}
+                  value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
+                />
+              )}
+            </div>
+          )}
 
           {profile.bio && (
             <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
