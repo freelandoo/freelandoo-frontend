@@ -6,6 +6,7 @@ import { Loader2, Upload, Video, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 import { cn } from "@/lib/utils"
 
 type StoryKind = "trampo" | "rest"
@@ -146,7 +147,10 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
       if (height) fd.append("height", String(height))
       if (caption.trim()) fd.append("caption", caption.trim())
 
-      const res = await fetch("/api/me/stories", {
+      // Upload direto pro backend (não pelo proxy /api) — Vercel limita serverless
+      // function body a 4.5MB, então vídeos maiores quebram via proxy. CORS no
+      // backend já libera *.vercel.app + freelandoo.com.br.
+      const res = await fetch(`${getPublicBackendUrl()}/me/stories`, {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken() || ""}` },
         body: fd,
