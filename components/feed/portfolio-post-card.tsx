@@ -416,7 +416,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               disabled={likePending}
               className={cn(
                 "rounded-full p-1.5 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
-                liked ? "text-red-500" : "text-white"
+                liked ? "text-yellow-400" : "text-white"
               )}
             >
               <Heart
