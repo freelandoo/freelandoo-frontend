@@ -57,6 +57,7 @@ export interface FeedPost {
   comments_count?: number
   engagement_score: number
   published_at: string | null
+  feed_kind: "feed" | "bees"
   viewer_has_liked: boolean
   public_profile_url: string | null
   whatsapp_url: string | null
