@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { machineDescription } from "@/lib/constants/machine-descriptions"
-import { checkPassword, isPasswordStrong, isAdult, isValidEmail } from "@/lib/validation/signup"
-import { Check, X, ArrowLeft, User, Briefcase, Info } from "lucide-react"
+import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge } from "@/lib/validation/signup"
+import { Check, X, ArrowLeft, User, Briefcase, Info, ShieldCheck } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 
 interface Category {
@@ -57,6 +57,12 @@ export default function CadastroPage() {
   const [openTermosModal, setOpenTermosModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
+  // Conta supervisionada (menor de idade)
+  const [responsibleCode, setResponsibleCode] = useState("")
+  const [codeStatus, setCodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle")
+  const [codeMsg, setCodeMsg] = useState("")
+  const codeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Username availability
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
   const [usernameMsg, setUsernameMsg] = useState("")
@@ -84,8 +90,10 @@ export default function CadastroPage() {
   const passwordsMatch = formData.senha.length > 0 && formData.senha === formData.confirmarSenha
 
   // Step 1 derived validity
-  const ageOk = !formData.dataNascimento || isAdult(formData.dataNascimento)
-  const ageBlocked = !!formData.dataNascimento && !ageOk
+  const userAge = calculateAge(formData.dataNascimento)
+  const isAdultBirth = !formData.dataNascimento || isAdult(formData.dataNascimento)
+  const isMinorBirth = !!formData.dataNascimento && userAge != null && userAge < 18
+  const dateOk = !!formData.dataNascimento && userAge != null
   const emailOk = !formData.email || isValidEmail(formData.email)
   const emailBlocked = !!formData.email && !emailOk
 
@@ -95,8 +103,8 @@ export default function CadastroPage() {
     usernameStatus === "available" &&
     !!formData.email &&
     emailOk &&
-    !!formData.dataNascimento &&
-    ageOk &&
+    dateOk &&
+    (isAdultBirth || (isMinorBirth && codeStatus === "valid")) &&
     passwordStrong &&
     passwordsMatch &&
     acceptedTerms
@@ -134,6 +142,55 @@ export default function CadastroPage() {
       usernameTimer.current = setTimeout(() => checkUsername(u), 400)
     }
   }
+
+  const validateResponsibleCode = useCallback(async (raw: string) => {
+    const code = raw.trim().toUpperCase()
+    if (code.length < 6) {
+      setCodeStatus("invalid")
+      setCodeMsg("")
+      return
+    }
+    setCodeStatus("checking")
+    setCodeMsg("Verificando...")
+    try {
+      const res = await fetch("/api/supervision/codes/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      })
+      const data = await res.json()
+      if (res.ok && data?.valid) {
+        setCodeStatus("valid")
+        setCodeMsg("Código válido — responsável encontrado.")
+      } else {
+        setCodeStatus("invalid")
+        setCodeMsg(data?.error || "Código inválido")
+      }
+    } catch {
+      setCodeStatus("invalid")
+      setCodeMsg("Falha ao validar — tente novamente.")
+    }
+  }, [])
+
+  const handleResponsibleCodeChange = (raw: string) => {
+    const code = raw.toUpperCase().replace(/[^A-Z0-9-]/g, "")
+    setResponsibleCode(code)
+    setCodeStatus("idle")
+    setCodeMsg("")
+    if (codeTimer.current) clearTimeout(codeTimer.current)
+    if (code.length >= 6) {
+      codeTimer.current = setTimeout(() => validateResponsibleCode(code), 400)
+    }
+  }
+
+  // Reseta estado do código se a data muda para adulto
+  useEffect(() => {
+    if (!isMinorBirth && responsibleCode) {
+      setResponsibleCode("")
+      setCodeStatus("idle")
+      setCodeMsg("")
+    }
+  }, [isMinorBirth, responsibleCode])
 
   const handleEstadoChange = async (uf: string) => {
     setProfileData((prev) => ({ ...prev, estado: uf, municipio: "" }))
@@ -198,6 +255,9 @@ export default function CadastroPage() {
       sexo: formData.sexo || null,
       senha: formData.senha,
     }
+    if (isMinorBirth) {
+      payload.responsible_code = responsibleCode
+    }
     if (asFreelancer) {
       payload.id_machine = selectedMachineId
       payload.id_category = selectedCategoryId
@@ -251,15 +311,19 @@ export default function CadastroPage() {
                 <CardDescription>Crie suas credenciais para acessar a Freelandoo</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <GoogleSignInButton text="signup_with" />
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou com email</span>
-                  </div>
-                </div>
+                {!isMinorBirth && (
+                  <>
+                    <GoogleSignInButton text="signup_with" />
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <form className="space-y-6" onSubmit={handleStep1Continue}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -331,15 +395,59 @@ export default function CadastroPage() {
                         value={formData.dataNascimento}
                         onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
                         required
-                        className={ageBlocked ? "border-red-500 focus-visible:ring-red-500" : ""}
                       />
-                      {ageBlocked && (
-                        <p className="text-xs text-red-500">
-                          Você precisa ter 18 anos ou mais para criar uma conta.
-                        </p>
-                      )}
                     </div>
                   </div>
+
+                  {/* Bloco Conta Supervisionada — aparece apenas se idade < 18 */}
+                  {isMinorBirth && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                            Conta supervisionada
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Para criar uma conta menor de idade, informe o <strong>código do responsável</strong>.
+                            O código é gerado por um adulto na conta dele, em <em>Conta &rsaquo; Parental</em>, e
+                            vale por 24 horas.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="responsibleCode">Código do responsável</Label>
+                        <Input
+                          id="responsibleCode"
+                          placeholder="PAR-XXXXXXXX"
+                          value={responsibleCode}
+                          onChange={(e) => handleResponsibleCodeChange(e.target.value)}
+                          maxLength={16}
+                          autoComplete="off"
+                          className={
+                            codeStatus === "invalid" && responsibleCode.length >= 6
+                              ? "border-red-500 focus-visible:ring-red-500"
+                              : codeStatus === "valid"
+                                ? "border-green-500 focus-visible:ring-green-500"
+                                : ""
+                          }
+                        />
+                        {codeMsg && (
+                          <p
+                            className={`text-xs font-medium ${
+                              codeStatus === "valid"
+                                ? "text-green-500"
+                                : codeStatus === "checking"
+                                  ? "text-muted-foreground"
+                                  : "text-red-500"
+                            }`}
+                          >
+                            {codeMsg}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="sexo">Sexo (opcional)</Label>
