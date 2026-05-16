@@ -6,6 +6,7 @@ import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
+import { CouponCapture } from "@/components/share/coupon-capture"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -101,6 +102,7 @@ export default function RootLayout({
         <BirthdateGate />
         <CookieConsent />
         <AnalyticsProvider />
+        <CouponCapture />
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
           strategy="afterInteractive"
