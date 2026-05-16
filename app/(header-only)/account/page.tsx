@@ -1674,30 +1674,27 @@ export default function PerfilPage() {
                       {status.desc_status.replace(/_/g, " ")}
                     </span>
                   ))}
-                  {/* Botão Parental — só aparece para adultos (menor não pode supervisionar outros) */}
-                  {!perfil.is_minor && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/account/parental")}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
-                      title="Gerenciar contas supervisionadas (filhos)"
-                    >
-                      <ShieldCheck className="h-3 w-3" />
-                      Parental
-                    </button>
-                  )}
-                  {/* Badge para a própria conta supervisionada — clicável: leva ao pedido de permissão */}
-                  {perfil.is_minor && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/account/parental/request")}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
-                      title="Pedir permissão ao responsável"
-                    >
-                      <ShieldCheck className="h-3 w-3" />
-                      Supervisionada
-                    </button>
-                  )}
+                  {/* Botão Parental — sempre presente. Adulto vai ao painel de gerenciamento;
+                      menor vai à página de pedido de permissão ao responsável. */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        perfil.is_minor === true
+                          ? "/account/parental/request"
+                          : "/account/parental"
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                    title={
+                      perfil.is_minor === true
+                        ? "Pedir permissão ao responsável"
+                        : "Gerenciar contas supervisionadas (filhos)"
+                    }
+                  >
+                    <ShieldCheck className="h-3 w-3" />
+                    {perfil.is_minor === true ? "Supervisionada" : "Parental"}
+                  </button>
                   {/* Cupom de afiliado — voltou ao headcard a pedido do dono da conta */}
                   {perfil.coupon_code ? (
                     <button
