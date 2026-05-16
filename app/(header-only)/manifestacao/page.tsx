@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { BadgeCheck, ChevronRight, CreditCard, Hexagon, Loader2, Search, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
 
 type Product = {
   id: string
@@ -133,9 +134,18 @@ export default function ManifestacaoPage() {
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-12">
         <div className="flex min-h-[520px] flex-col justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-              Banners e tags para o seu perfil
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                Banners e tags para o seu perfil
+              </div>
+              <ShareWithCouponButton
+                path="/manifestacao"
+                title="Manifestação no Freelandoo"
+                variant="ghost"
+                size="sm"
+                iconOnly
+              />
             </div>
             <h1 className="mt-7 max-w-[760px] text-4xl font-semibold leading-none tracking-tight text-zinc-950 md:text-6xl">
               Manifestacao

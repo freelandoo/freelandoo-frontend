@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, GraduationCap, Loader2, ShoppingCart, Settings, Check } from "lucide-react"
+import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
 
 interface PublicCourse {
   id: string
@@ -209,10 +210,17 @@ export default function PublicCoursePage() {
               Gerenciar curso
             </Button>
           ) : (
-            <Button size="lg" onClick={handleBuy} disabled={buying}>
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              {buying ? "Redirecionando..." : "Comprar curso"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <ShareWithCouponButton
+                path={`/cursos/${course.slug}`}
+                title={course.title}
+                description="Envie este link. Quem comprar por ele ganha desconto automaticamente usando seu cupom."
+              />
+              <Button size="lg" onClick={handleBuy} disabled={buying}>
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                {buying ? "Redirecionando..." : "Comprar curso"}
+              </Button>
+            </div>
           )}
         </div>
         {buyError && (

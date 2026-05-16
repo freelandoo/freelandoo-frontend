@@ -14,6 +14,7 @@ import { sendFeedEvent } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -65,6 +66,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
+  const { coupon: shareCoupon } = useShareCoupon()
   const primaryUrl = post.project_url || post.public_profile_url
   const primaryLabel =
     post.source_type === "course"
@@ -123,13 +125,14 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   }
 
   const handleShare = async () => {
-    const url =
+    const baseUrl =
       (primaryUrl
         ? new URL(
             primaryUrl,
             typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
           ).toString()
         : null) || (typeof window !== "undefined" ? window.location.href : "")
+    const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
 
     const shareData: ShareData = {
       title: post.profile_name || "Freelandoo",

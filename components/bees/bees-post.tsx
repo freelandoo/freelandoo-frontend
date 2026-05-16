@@ -10,6 +10,7 @@ import { sendFeedEvent } from "@/lib/feed-events"
 import { queueImpression } from "@/lib/feed-impressions"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { BeesVideo } from "./bees-video"
 
 interface BeesPostProps {
@@ -61,6 +62,7 @@ export function BeesPost({
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
   const [expandCaption, setExpandCaption] = useState(false)
+  const { coupon: shareCoupon } = useShareCoupon()
 
   useEffect(() => {
     const node = sectionRef.current
@@ -148,10 +150,11 @@ export function BeesPost({
   }
 
   const handleShare = async () => {
-    const url =
+    const baseUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/p/${post.post_id}`
         : ""
+    const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
 
     const shareData: ShareData = {
       title: post.profile_name || "Freelandoo",
