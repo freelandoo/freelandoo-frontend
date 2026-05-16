@@ -8,20 +8,23 @@ import { cn } from "@/lib/utils"
 interface PostMediaProps {
   media: FeedMedia[]
   glow?: string | null
-  /** Preenche altura disponível (ex.: feed estilo TikTok) em vez de proporção 4:5 fixa */
+  /** Preenche altura disponível (ex.: feed estilo TikTok) em vez de proporção fixa */
   fillContainer?: boolean
   /** Sobe indicadores inferiores para não colidir com legenda sobreposta (feed paged). */
   reserveBottomOverlay?: boolean
+  /** Proporção quando não é fillContainer. Default 4:5. */
+  aspect?: "4:5" | "9:16"
 }
 
-export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay }: PostMediaProps) {
+export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, aspect = "4:5" }: PostMediaProps) {
+  const aspectClass = aspect === "9:16" ? "aspect-[9/16]" : "aspect-[4/5]"
   const [index, setIndex] = useState(0)
   if (!media || media.length === 0) {
     return (
       <div
         className={cn(
           "flex items-center justify-center bg-white/[0.03] text-xs text-white/30",
-          fillContainer ? "min-h-0 min-w-0 max-w-full flex-1" : "aspect-[4/5] w-full"
+          fillContainer ? "min-h-0 min-w-0 max-w-full flex-1" : `${aspectClass} w-full`
         )}
       >
         sem mídia
@@ -36,7 +39,7 @@ export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay }: 
     <div
       className={cn(
         "relative w-full overflow-hidden bg-black",
-        fillContainer ? "min-h-0 flex-1" : "aspect-[4/5]"
+        fillContainer ? "min-h-0 flex-1" : aspectClass
       )}
     >
       {current.type === "video" ? (

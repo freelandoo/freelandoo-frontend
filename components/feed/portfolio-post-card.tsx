@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Heart, Share2, ExternalLink, MessageCircle, MessageSquare, Link2, Check } from "lucide-react"
+import { Heart, Share2, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,26 @@ import { sendFeedEvent } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000))
+  if (diff < 60) return "agora"
+  const minutes = Math.floor(diff / 60)
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} h`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days} d`
+  const weeks = Math.floor(days / 7)
+  if (weeks < 5) return `${weeks} sem`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months} m`
+  const years = Math.floor(days / 365)
+  return `${years} a`
+}
 
 interface PortfolioPostCardProps {
   post: FeedPost
@@ -166,25 +186,31 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     })
   }
 
+  // Edge-to-edge Instagram-style quando não é paged (bees vertical).
   return (
     <article
       ref={impressionRef}
       className={cn(
-        "group/post box-border max-w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15",
-        paged && "flex h-full min-h-0 min-w-0 flex-col"
+        "group/post box-border w-full max-w-full",
+        paged
+          ? "flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15"
+          : "bg-black"
       )}
       data-post-id={post.post_id}
-      style={machineGlow ? { boxShadow: `0 1px 0 0 ${machineGlow}, 0 12px 40px -28px ${machineGlow}` } : undefined}
+      style={paged && machineGlow ? { boxShadow: `0 1px 0 0 ${machineGlow}, 0 12px 40px -28px ${machineGlow}` } : undefined}
     >
       {/* Header */}
-      <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3 px-4 py-3", paged && "py-2")}>
+      <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3", paged ? "px-4 py-2" : "px-3 py-2.5")}>
         <Link
           href={post.public_profile_url || "#"}
           onClick={handleProfileClick}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
           <Avatar
-            className="h-10 w-10 shrink-0 ring-1 transition"
+            className={cn(
+              "shrink-0 ring-1 transition",
+              paged ? "h-10 w-10" : "h-8 w-8"
+            )}
             style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
           >
             {post.avatar_url ? (
@@ -214,9 +240,19 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 </Badge>
               )}
             </div>
-            <p className="truncate text-xs text-white/50">
-              {post.profession?.name && <span>{post.profession.name}</span>}
-              {post.profession?.name && (post.city || post.state) && <span> · </span>}
+            <p className="truncate text-[11px] text-white/50">
+              {!paged && post.published_at && (
+                <>
+                  <span>{timeAgo(post.published_at)}</span>
+                  {(post.city || post.state) && <span> · </span>}
+                </>
+              )}
+              {paged && post.profession?.name && (
+                <>
+                  <span>{post.profession.name}</span>
+                  {(post.city || post.state) && <span> · </span>}
+                </>
+              )}
               {post.city && <span>{post.city}</span>}
               {post.city && post.state && <span>/</span>}
               {post.state && <span>{post.state}</span>}
@@ -224,7 +260,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           </div>
         </Link>
 
-        {post.machine?.name && (
+        {paged && post.machine?.name && (
           <span
             className="min-w-0 max-w-[38%] shrink truncate rounded-full px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider sm:max-w-[45%]"
             style={{
@@ -365,23 +401,28 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         </div>
       ) : (
         <>
-          <PostMedia media={post.media} glow={machineGlow} />
+          <PostMedia
+            media={post.media}
+            glow={machineGlow}
+            aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
+          />
 
-          <div className="flex shrink-0 items-center gap-1 px-3 pt-3">
+          {/* Ações: like, comentar, compartilhar */}
+          <div className="flex shrink-0 items-center gap-1 px-2 pt-2">
             <button
               type="button"
               aria-label={liked ? "Descurtir" : "Curtir"}
               onClick={handleLike}
               disabled={likePending}
               className={cn(
-                "rounded-full p-2 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
-                liked ? "text-yellow-400" : "text-white"
+                "rounded-full p-1.5 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
+                liked ? "text-red-500" : "text-white"
               )}
             >
               <Heart
                 className={cn(
-                  "h-5 w-5 transition-all duration-300",
-                  liked && "scale-110"
+                  "h-6 w-6 transition-all duration-300",
+                  liked && "fill-current scale-110"
                 )}
                 strokeWidth={2}
               />
@@ -390,49 +431,64 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               type="button"
               aria-label="Comentários"
               onClick={() => onOpenComments?.(post.post_id)}
-              className="rounded-full p-2 text-white/70 transition hover:bg-white/5 hover:text-white active:scale-90"
+              className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
             >
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="h-6 w-6" />
             </button>
             <button
               type="button"
               aria-label="Compartilhar"
               onClick={handleShare}
-              className="rounded-full p-2 text-white/70 transition hover:bg-white/5 hover:text-white active:scale-90"
+              className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
             >
               {copied ? (
-                <Check className="h-5 w-5 text-emerald-400 animate-in zoom-in-50 duration-200" />
+                <Check className="h-6 w-6 text-emerald-400 animate-in zoom-in-50 duration-200" />
               ) : (
-                <Share2 className="h-5 w-5" />
+                <Share2 className="h-6 w-6" />
               )}
             </button>
-            {primaryUrl && (
-              <Link
-                href={primaryUrl}
-                onClick={handleProfileClick}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/85 transition hover:text-white active:scale-95"
-                style={{
-                  border: `1px solid ${machineColor}40`,
-                  background: `${machineColor}10`,
-                }}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                {primaryLabel}
-              </Link>
-            )}
           </div>
 
+          {/* Contador de curtidas */}
+          <div className="px-3 pt-1 text-[13px] font-semibold text-white">
+            {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
+          </div>
+
+          {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend */}
+          {(post.title || post.caption) && (
+            <div className="shrink-0 px-3 pt-1 text-[14px] leading-snug text-white">
+              {post.title && (
+                <span className="mr-1.5 font-semibold">
+                  {post.profile_name || post.username || "Perfil"}
+                </span>
+              )}
+              <PostCaption
+                title={post.title}
+                caption={post.caption}
+                profileLabel={post.profile_name || post.username || "Perfil"}
+                onExpand={() =>
+                  sendFeedEvent({
+                    post_id: post.post_id,
+                    event_type: "view_more_caption",
+                    filters,
+                  })
+                }
+              />
+            </div>
+          )}
+
+          {/* WhatsApp + links sociais (mantidos do design anterior) */}
           {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
-            <div className="flex shrink-0 items-center gap-2 px-3 pt-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 px-3 pt-2">
               {post.whatsapp_url && (
                 <a
                   href={post.whatsapp_url}
                   target="_blank"
                   rel="noreferrer"
                   onClick={handleWhatsappClick}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/25"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-500/25"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
+                  <MessageCircle className="h-3 w-3" />
                   WhatsApp
                 </a>
               )}
@@ -443,9 +499,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                   trigger={
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
                     >
-                      <Link2 className="h-3.5 w-3.5" />
+                      <Link2 className="h-3 w-3" />
                       {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
                     </button>
                   }
@@ -454,38 +510,84 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </div>
           )}
 
-          {(post.title || post.caption) && (
-            <div className="shrink-0 px-4 pb-1 pt-3">
-              {post.title && (
-                <h3 className="text-[15px] font-semibold leading-tight text-white">{post.title}</h3>
-              )}
-              {post.caption && (
-                <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-white/65">
-                  {post.caption}
-                </p>
-              )}
-            </div>
+          {/* Ver comentários */}
+          {!!(commentsCount && commentsCount > 0) && (
+            <button
+              type="button"
+              onClick={() => onOpenComments?.(post.post_id)}
+              className="px-3 pt-2 text-left text-[13px] text-white/55 transition hover:text-white/80"
+            >
+              Ver {commentsCount === 1 ? "1 comentário" : `os ${commentsCount.toLocaleString("pt-BR")} comentários`}
+            </button>
           )}
 
-          <div className="flex shrink-0 items-center gap-1.5 px-4 pb-4 pt-3 text-[11px] font-medium text-white/40">
-            <span>
-              {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
-            </span>
-            {!!(commentsCount && commentsCount > 0) && (
-              <>
-                <span aria-hidden>·</span>
-                <span>{commentsCount.toLocaleString("pt-BR")} coment.</span>
-              </>
-            )}
-            {post.shares_count > 0 && (
-              <>
-                <span aria-hidden>·</span>
-                <span>{post.shares_count.toLocaleString("pt-BR")} compart.</span>
-              </>
+          {/* Linha discreta no rodapé (separador antes do próximo post) */}
+          <div className="px-3 pb-3 pt-1 text-[10px] uppercase tracking-wider text-white/30">
+            {post.feed_kind === "bees" && (
+              <span className="inline-flex items-center gap-1 text-amber-300/80">
+                <Sparkles className="h-3 w-3" /> Bee
+              </span>
             )}
           </div>
         </>
       )}
     </article>
+  )
+}
+
+interface PostCaptionProps {
+  title: string | null
+  caption: string | null
+  profileLabel: string
+  onExpand?: () => void
+}
+
+function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProps) {
+  const [expanded, setExpanded] = useState(false)
+  const parts: string[] = []
+  if (title) parts.push(title)
+  if (caption) parts.push(caption)
+  const text = parts.join("\n\n")
+  if (!text) return null
+
+  // Trecho prévio: ~140 chars (uma linha + meia em mobile)
+  const PREVIEW = 140
+  const needsToggle = text.length > PREVIEW
+  const visible = expanded || !needsToggle ? text : text.slice(0, PREVIEW).trimEnd()
+
+  return (
+    <span className="whitespace-pre-wrap text-white/85">
+      {!title && (
+        <span className="mr-1.5 font-semibold text-white">{profileLabel}</span>
+      )}
+      {visible}
+      {needsToggle && !expanded && (
+        <>
+          {"… "}
+          <button
+            type="button"
+            onClick={() => {
+              setExpanded(true)
+              onExpand?.()
+            }}
+            className="text-white/55 transition hover:text-white"
+          >
+            mais
+          </button>
+        </>
+      )}
+      {needsToggle && expanded && (
+        <>
+          {" "}
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="text-white/55 transition hover:text-white"
+          >
+            menos
+          </button>
+        </>
+      )}
+    </span>
   )
 }

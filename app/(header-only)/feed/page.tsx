@@ -249,7 +249,7 @@ function FeedPageInner() {
             </div>
           </div>
         ) : (
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 pb-6 pt-2 sm:gap-4 sm:pt-3">
+          <div className="mx-auto flex w-full max-w-[470px] flex-col gap-1 pb-8 pt-2 sm:gap-2 sm:pt-3">
             {items.map((post) => (
               <PortfolioPostCard
                 key={post.post_id}
