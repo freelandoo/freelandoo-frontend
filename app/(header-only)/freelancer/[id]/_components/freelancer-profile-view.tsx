@@ -741,8 +741,8 @@ export default function FreelancerProfileView({
                 onClick={() => setPortfolioTab("services")}
                 className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
                   portfolioTab === "services"
-                    ? "border-amber-400 bg-amber-400 text-zinc-900"
-                    : "border-transparent bg-amber-400/15 text-amber-200 hover:bg-amber-400/25 hover:text-amber-100"
+                    ? "border-primary bg-primary/[0.08] text-primary"
+                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
