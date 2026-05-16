@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Loader2, Send, Trash2, X } from "lucide-react"
+import { Heart, Loader2, Send, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -20,6 +20,8 @@ export interface CommentItem {
   content: string
   created_at: string
   updated_at: string
+  likes_count?: number
+  viewer_has_liked?: boolean
   user: CommentUser
 }
 
@@ -239,6 +241,63 @@ export function CommentsPanel({
     }
   }
 
+  const handleToggleLike = async (commentId: string) => {
+    const token = getToken()
+    if (!token) {
+      const next = encodeURIComponent(loginNextPath || "/feed")
+      window.location.href = `/login?next=${next}`
+      return
+    }
+    // Update otimista
+    let prevLiked = false
+    let prevCount = 0
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id_portfolio_comment !== commentId) return c
+        prevLiked = !!c.viewer_has_liked
+        prevCount = c.likes_count ?? 0
+        const nextLiked = !prevLiked
+        return {
+          ...c,
+          viewer_has_liked: nextLiked,
+          likes_count: Math.max(0, prevCount + (nextLiked ? 1 : -1)),
+        }
+      }),
+    )
+    try {
+      const res = await fetch(`/api/portfolio/comments/${commentId}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = (await res.json()) as { liked?: boolean; likes_count?: number }
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id_portfolio_comment === commentId
+            ? {
+                ...c,
+                viewer_has_liked:
+                  typeof data.liked === "boolean" ? data.liked : c.viewer_has_liked,
+                likes_count:
+                  typeof data.likes_count === "number"
+                    ? data.likes_count
+                    : c.likes_count,
+              }
+            : c,
+        ),
+      )
+    } catch {
+      // Rollback otimista
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id_portfolio_comment === commentId
+            ? { ...c, viewer_has_liked: prevLiked, likes_count: prevCount }
+            : c,
+        ),
+      )
+    }
+  }
+
   if (!mounted) return null
 
   const node = (
@@ -296,6 +355,8 @@ export function CommentsPanel({
                   !!me &&
                   (me.id_user === c.id_user || !!me.is_admin)
                 const handle = c.user?.username || c.user?.display_name || "perfil"
+                const liked = !!c.viewer_has_liked
+                const likesCount = c.likes_count ?? 0
                 return (
                   <li key={c.id_portfolio_comment} className="flex gap-3">
                     <Avatar className="h-8 w-8 shrink-0 ring-1 ring-white/15">
@@ -327,6 +388,27 @@ export function CommentsPanel({
                       <p className="mt-0.5 whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/85">
                         {c.content}
                       </p>
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-white/45">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLike(c.id_portfolio_comment)}
+                          aria-label={liked ? "Descurtir comentário" : "Curtir comentário"}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 transition hover:bg-white/5 active:scale-95",
+                            liked ? "text-yellow-400" : "text-white/55 hover:text-white",
+                          )}
+                        >
+                          <Heart
+                            className={cn("h-3.5 w-3.5", liked && "fill-current")}
+                            strokeWidth={2}
+                          />
+                          {likesCount > 0 && (
+                            <span className="tabular-nums">
+                              {likesCount.toLocaleString("pt-BR")}
+                            </span>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </li>
                 )
