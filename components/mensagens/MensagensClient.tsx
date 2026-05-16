@@ -11,9 +11,12 @@ import {
   Loader2,
   MapPin,
   MessageCircle,
+  Radio,
   Send,
+  Sparkles,
   Users,
 } from "lucide-react"
+import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -166,7 +169,7 @@ interface SendResponse {
   conversation: { id_conversation: string; other_entity_id: string | null }
 }
 
-type OsTab = "conv" | "os"
+type MainTab = "conv" | "os" | "global" | "machine"
 
 interface OsChatRequest {
   id_request: string
@@ -248,7 +251,12 @@ export default function MensagensClient() {
   const initialOpenWith = searchParams.get("with")
   const initialOpenAs = searchParams.get("as")
   const initialActorId = searchParams.get("actor") || initialOpenAs
-  const initialTab = (searchParams.get("tab") === "os" ? "os" : "conv") as OsTab
+  const tabParam = searchParams.get("tab")
+  const initialTab: MainTab =
+    tabParam === "os" ? "os" :
+    tabParam === "global" ? "global" :
+    tabParam === "machine" ? "machine" :
+    "conv"
   const initialOsResponseId = searchParams.get("response")
 
   const [actors, setActors] = useState<MensagensActor[]>([])
@@ -269,7 +277,7 @@ export default function MensagensClient() {
   const [sending, setSending] = useState(false)
 
   // ----- Aba O.S. -----
-  const [tab, setTab] = useState<OsTab>(initialTab)
+  const [tab, setTab] = useState<MainTab>(initialTab)
   const [osChats, setOsChats] = useState<OsChatItem[]>([])
   const [osChatsLoading, setOsChatsLoading] = useState(false)
   const [osChatsError, setOsChatsError] = useState<string | null>(null)
@@ -283,6 +291,17 @@ export default function MensagensClient() {
   const [osSending, setOsSending] = useState(false)
   const osThreadEndRef = useRef<HTMLDivElement | null>(null)
 
+  // ----- Chat ao vivo (Global / Máquinas) -----
+  const initialMachineId = searchParams.get("machine_id")
+  const [chatMachineId, setChatMachineId] = useState<number | null>(
+    initialMachineId ? Number(initialMachineId) || null : null
+  )
+  const [userMachines, setUserMachines] = useState<ChatMachine[]>([])
+  const [allMachines, setAllMachines] = useState<ChatMachine[]>([])
+  const [machinesLoaded, setMachinesLoaded] = useState(false)
+  const [machinesLoading, setMachinesLoading] = useState(false)
+  const [, setNeedsMachinePick] = useState(false)
+
   const threadEndRef = useRef<HTMLDivElement | null>(null)
   const lastMsgIdRef = useRef<string | null>(null)
 
@@ -290,6 +309,10 @@ export default function MensagensClient() {
     () => actors.find((a) => a.id === actorId) || null,
     [actors, actorId]
   )
+
+  // Clans não têm acesso às salas de chat ao vivo — o chat é por user,
+  // mas o contexto do actor "clan" não faz sentido nessas abas.
+  const isClanActor = activeActor?.type === "clan"
 
   // Carrega atores
   useEffect(() => {
@@ -549,18 +572,97 @@ export default function MensagensClient() {
     osThreadEndRef.current?.scrollIntoView({ block: "end" })
   }, [osMessages.length])
 
-  const handleSelectTab = useCallback((next: OsTab) => {
+  const handleSelectTab = useCallback((next: MainTab) => {
     setTab(next)
     const params = new URLSearchParams(searchParams.toString())
-    if (next === "os") {
-      params.set("tab", "os")
-      params.delete("c")
-    } else {
+    if (next === "conv") {
       params.delete("tab")
       params.delete("response")
+      params.delete("machine_id")
+    } else if (next === "os") {
+      params.set("tab", "os")
+      params.delete("c")
+      params.delete("machine_id")
+    } else if (next === "global") {
+      params.set("tab", "global")
+      params.delete("c")
+      params.delete("response")
+      params.delete("machine_id")
+    } else {
+      params.set("tab", "machine")
+      params.delete("c")
+      params.delete("response")
+      if (chatMachineId) {
+        params.set("machine_id", String(chatMachineId))
+      }
     }
     const qs = params.toString()
     router.replace(qs ? `/mensagens?${qs}` : "/mensagens")
+  }, [router, searchParams, chatMachineId])
+
+  // Carrega máquinas (uma vez) — usado pelo seletor da aba "Máquinas"
+  useEffect(() => {
+    if (status !== "authenticated") return
+    if (machinesLoaded || machinesLoading) return
+    let cancelled = false
+    setMachinesLoading(true)
+    jsonFetch<{ user_machines: ChatMachine[]; all_machines: ChatMachine[] }>(
+      "/api/chat/machines"
+    )
+      .then((data) => {
+        if (cancelled) return
+        const own = Array.isArray(data?.user_machines) ? data.user_machines : []
+        const all = Array.isArray(data?.all_machines) ? data.all_machines : []
+        setUserMachines(own)
+        setAllMachines(all)
+        setMachinesLoaded(true)
+        // Auto-seleciona se houver exatamente uma máquina e nenhuma vinda da URL
+        if (!chatMachineId && own.length === 1) {
+          setChatMachineId(own[0].id_machine)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setMachinesLoaded(true)
+      })
+      .finally(() => {
+        if (!cancelled) setMachinesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // chatMachineId apenas como leitura aqui; effect roda só uma vez por sessão autenticada
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
+
+  const handlePickMachine = useCallback((id: number) => {
+    setChatMachineId(id)
+    setNeedsMachinePick(false)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", "machine")
+    params.set("machine_id", String(id))
+    router.replace(`/mensagens?${params.toString()}`)
+  }, [router, searchParams])
+
+  // Se o usuário troca para um actor clan enquanto está em Global/Máquinas,
+  // volta automaticamente para Conversas (clans não têm essas abas).
+  useEffect(() => {
+    if (!isClanActor) return
+    if (tab !== "global" && tab !== "machine") return
+    setTab("conv")
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("tab")
+    params.delete("machine_id")
+    params.delete("response")
+    const qs = params.toString()
+    router.replace(qs ? `/mensagens?${qs}` : "/mensagens")
+  }, [isClanActor, tab, router, searchParams])
+
+  const handleClearMachine = useCallback(() => {
+    setChatMachineId(null)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", "machine")
+    params.delete("machine_id")
+    router.replace(`/mensagens?${params.toString()}`)
   }, [router, searchParams])
 
   const handleSelectOsChat = useCallback((idResponse: string) => {
@@ -707,7 +809,18 @@ export default function MensagensClient() {
         <aside
           className={cn(
             "flex flex-col border-r border-white/10",
-            (tab === "conv" ? activeConvId : activeOsResponseId) ? "hidden md:flex" : "flex"
+            // Mobile: esconde aside quando uma thread/sala está aberta.
+            // Para global, sempre que a aba está ativa, o painel direito assume a tela.
+            // Para machine, esconde se já tem máquina escolhida (sala aberta).
+            (tab === "conv"
+              ? activeConvId
+              : tab === "os"
+                ? activeOsResponseId
+                : tab === "global"
+                  ? true
+                  : chatMachineId)
+              ? "hidden md:flex"
+              : "flex"
           )}
         >
           <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] px-4 py-3.5">
@@ -731,30 +844,38 @@ export default function MensagensClient() {
 
           {/* Tabs */}
           <div className="flex items-stretch border-b border-white/[0.07]">
-            <button
+            <TabBtn
+              active={tab === "conv"}
               onClick={() => handleSelectTab("conv")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors",
-                tab === "conv"
-                  ? "border-b-2 border-primary text-white"
-                  : "border-b-2 border-transparent text-white/50 hover:text-white"
-              )}
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Conversas
-            </button>
-            <button
+              icon={<MessageCircle className="h-3.5 w-3.5" />}
+              label="Conversas"
+              shortLabel="Conv."
+            />
+            <TabBtn
+              active={tab === "os"}
               onClick={() => handleSelectTab("os")}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors",
-                tab === "os"
-                  ? "border-b-2 border-primary text-white"
-                  : "border-b-2 border-transparent text-white/50 hover:text-white"
-              )}
-            >
-              <ClipboardList className="h-3.5 w-3.5" />
-              Ordens de serviço
-            </button>
+              icon={<ClipboardList className="h-3.5 w-3.5" />}
+              label="O.S."
+              shortLabel="O.S."
+            />
+            {!isClanActor && (
+              <>
+                <TabBtn
+                  active={tab === "global"}
+                  onClick={() => handleSelectTab("global")}
+                  icon={<Radio className="h-3.5 w-3.5" />}
+                  label="Global"
+                  shortLabel="Global"
+                />
+                <TabBtn
+                  active={tab === "machine"}
+                  onClick={() => handleSelectTab("machine")}
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  label="Máquinas"
+                  shortLabel="Máq."
+                />
+              </>
+            )}
           </div>
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
@@ -917,10 +1038,90 @@ export default function MensagensClient() {
               </ul>
             )}
           </div>
+
+          {/* Lista — Chat Global (info estática) */}
+          <div className={cn("flex-1 overflow-y-auto px-4 py-6", tab !== "global" && "hidden")}>
+            <div className="rounded-xl border border-white/10 bg-neutral-900/60 p-4">
+              <div className="mb-2 flex items-center gap-2 text-white">
+                <Radio className="h-4 w-4 text-emerald-400" />
+                <span className="text-sm font-semibold">Chat global</span>
+              </div>
+              <p className="text-[12px] leading-relaxed text-white/60">
+                Sala aberta com até 200 usuários simultâneos. Quando lota,
+                uma segunda instância é criada automaticamente.
+              </p>
+              <ul className="mt-3 space-y-1.5 text-[11px] text-white/55">
+                <li>• Mensagens são removidas após 24h.</li>
+                <li>• Comportamento abusivo pode ser denunciado.</li>
+                <li>• Não compartilhe dados pessoais.</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Lista — Máquinas */}
+          <div className={cn("flex-1 overflow-y-auto", tab !== "machine" && "hidden")}>
+            <MachineList
+              userMachines={userMachines}
+              allMachines={allMachines}
+              loading={machinesLoading && !machinesLoaded}
+              activeId={chatMachineId}
+              onPick={handlePickMachine}
+            />
+          </div>
         </aside>
 
-        {/* Thread O.S. */}
-        {tab === "os" ? (
+        {/* Painel direito — Chat ao vivo Global */}
+        {tab === "global" ? (
+          <section className="flex min-w-0 flex-col">
+            <ChatRoomPanel
+              kind="global"
+              pageTitle="Chat ao vivo"
+              pageSubtitle="Sala global — todos os usuários do Freelandoo"
+            />
+          </section>
+        ) : tab === "machine" ? (
+          <section
+            className={cn(
+              "flex min-w-0 flex-col",
+              chatMachineId ? "flex" : "hidden md:flex"
+            )}
+          >
+            {chatMachineId ? (
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-center gap-2 border-b border-white/[0.07] bg-black/20 px-3 py-2 md:hidden">
+                  <button
+                    onClick={handleClearMachine}
+                    className="text-white/60 hover:text-white"
+                    aria-label="Trocar máquina"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <span className="text-xs text-white/60">Trocar máquina</span>
+                </div>
+                <ChatRoomPanel
+                  key={`m-${chatMachineId}`}
+                  kind="machine"
+                  machineId={chatMachineId}
+                  pageTitle="Chat ao vivo"
+                  pageSubtitle="Sala da sua máquina"
+                />
+                <div className="hidden border-t border-white/10 px-4 py-2 md:flex md:items-center md:justify-between">
+                  <span className="text-[11px] text-white/45">
+                    Trocar de máquina não afeta sua máquina principal.
+                  </span>
+                  <button
+                    onClick={handleClearMachine}
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    Trocar máquina
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <EmptyMachinePick />
+            )}
+          </section>
+        ) : tab === "os" ? (
           <section
             className={cn(
               "flex min-w-0 flex-col",
@@ -1404,6 +1605,135 @@ function EmptyOsThread() {
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
       <ClipboardList className="mb-3 h-12 w-12" />
       <p className="text-sm">Selecione uma O.S. para abrir o chat.</p>
+    </div>
+  )
+}
+
+function TabBtn({
+  active,
+  onClick,
+  icon,
+  label,
+  shortLabel,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+  shortLabel: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider transition-colors",
+        active
+          ? "border-b-2 border-primary text-white"
+          : "border-b-2 border-transparent text-white/55 hover:text-white"
+      )}
+    >
+      {icon}
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sm:hidden">{shortLabel}</span>
+    </button>
+  )
+}
+
+function EmptyMachinePick() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
+      <Sparkles className="mb-3 h-12 w-12" />
+      <p className="text-sm">Selecione uma máquina ao lado para entrar na sala.</p>
+    </div>
+  )
+}
+
+function MachineList({
+  userMachines,
+  allMachines,
+  loading,
+  activeId,
+  onPick,
+}: {
+  userMachines: ChatMachine[]
+  allMachines: ChatMachine[]
+  loading: boolean
+  activeId: number | null
+  onPick: (id: number) => void
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-2 p-3">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-md" />
+        ))}
+      </div>
+    )
+  }
+
+  const ownIds = new Set(userMachines.map((m) => m.id_machine))
+  const others = allMachines.filter((m) => !ownIds.has(m.id_machine))
+
+  const renderItem = (m: ChatMachine, mine: boolean) => {
+    const isActive = m.id_machine === activeId
+    return (
+      <li key={m.id_machine}>
+        <button
+          onClick={() => onPick(m.id_machine)}
+          className={cn(
+            "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/5",
+            isActive && "bg-white/[0.06]"
+          )}
+        >
+          <span
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: m.color_accent || "#888" }}
+          />
+          <span className={cn(
+            "flex-1 truncate text-sm",
+            isActive ? "text-white" : "text-white/85"
+          )}>
+            {m.name}
+          </span>
+          {mine && (
+            <span className="shrink-0 rounded-sm bg-emerald-400/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-300">
+              Sua
+            </span>
+          )}
+        </button>
+      </li>
+    )
+  }
+
+  return (
+    <div className="py-2">
+      {userMachines.length > 0 && (
+        <>
+          <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
+            Suas máquinas
+          </div>
+          <ul className="divide-y divide-white/5">
+            {userMachines.map((m) => renderItem(m, true))}
+          </ul>
+        </>
+      )}
+      {others.length > 0 && (
+        <>
+          <div className="mt-3 px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
+            Outras máquinas
+          </div>
+          <ul className="divide-y divide-white/5">
+            {others.map((m) => renderItem(m, false))}
+          </ul>
+        </>
+      )}
+      {userMachines.length === 0 && others.length === 0 && (
+        <div className="flex flex-col items-center justify-center px-6 py-10 text-center text-sm text-white/45">
+          <Sparkles className="mb-2 h-8 w-8 text-white/30" />
+          Nenhuma máquina disponível.
+        </div>
+      )}
     </div>
   )
 }
