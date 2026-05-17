@@ -59,6 +59,8 @@ import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { MuralModal } from "@/components/profile/mural-modal"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
+import { ShareIconButton } from "@/components/share/share-icon-button"
+import { buildProfileUrl } from "@/lib/slug"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
   BEES_VIDEO_ASPECT_RATIO_MAX,
@@ -705,6 +707,26 @@ export default function FreelancerProfileView({
                 const el = document.getElementById("services-section")
                 if (el) el.scrollIntoView({ behavior: "smooth" })
               },
+              shareButton: (() => {
+                const handle = profile.username || ""
+                const sharePath =
+                  profile.profession_slug && handle
+                    ? buildProfileUrl({
+                        profession_slug: profile.profession_slug,
+                        municipio: profile.municipio,
+                        handle,
+                        sub_profile_slug: (profile as { sub_profile_slug?: string | null }).sub_profile_slug || null,
+                      })
+                    : pathname || `/freelancer/${profileId}`
+                return (
+                  <ShareIconButton
+                    path={sharePath}
+                    title={`${profile.display_name} no Freelandoo`}
+                    description={profile.bio?.slice(0, 140) || undefined}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-white/85 transition hover:bg-white/[0.08]"
+                  />
+                )
+              })(),
             }}
           />
         </section>
