@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, Loader2, MapPin, Package, ShoppingCart, Truck } from "lucide-react"
 import Link from "next/link"
+import { BuyProductDialog } from "./buy-product-dialog"
 
 interface Media {
   id_product_media: number
@@ -73,6 +74,8 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
   const [shippingState, setShippingState] = useState<"idle" | "loading" | "loaded" | "error">("idle")
   const [shippingError, setShippingError] = useState<string | null>(null)
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null)
+
+  const [buyOpen, setBuyOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -326,20 +329,32 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
             )}
           </div>
 
-          {/* Comprar — habilitado no Slice 4 */}
           <button
             type="button"
-            disabled
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary/40 px-6 py-3 text-sm font-semibold text-primary-foreground/80 cursor-not-allowed"
+            onClick={() => setBuyOpen(true)}
+            disabled={outOfStock || !selectedOption}
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShoppingCart className="h-4 w-4" aria-hidden />
-            {outOfStock ? "Esgotado" : selectedOption ? `Comprar — ${formatBRL(product.price_amount + selectedOption.price_cents)}` : "Compra disponível em breve"}
+            {outOfStock
+              ? "Esgotado"
+              : selectedOption
+                ? `Comprar — ${formatBRL(product.price_amount + selectedOption.price_cents)}`
+                : "Selecione o frete"}
           </button>
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            Checkout será habilitado em instantes.
-          </p>
         </div>
       </div>
+
+      {selectedOption && shipping && (
+        <BuyProductDialog
+          open={buyOpen}
+          onClose={() => setBuyOpen(false)}
+          product={product}
+          shipping={selectedOption}
+          destinationZipcode={shipping.destination_zipcode}
+          destinationAddress={shipping.destination_address}
+        />
+      )}
     </main>
   )
 }
