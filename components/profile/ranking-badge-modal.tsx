@@ -212,7 +212,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
     if (tops[tab] !== null) return
     const url = tabUrl[tab]
     if (!url) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setTops((p) => ({ ...p, [tab]: [] }))
       return
     }

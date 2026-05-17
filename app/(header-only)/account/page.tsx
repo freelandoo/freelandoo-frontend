@@ -225,6 +225,10 @@ export default function PerfilPage() {
     const url = new URL(window.location.href)
     url.searchParams.delete("edit")
     window.history.replaceState({}, "", url.toString())
+    // openEditModal é estável (declarado no escopo do componente) — dispara
+    // só quando `perfil` carrega; rodar de novo a cada referência nova de
+    // openEditModal reabriria o modal indevidamente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfil])
 
   // Badge por sub-perfil — só perfis ativos e visíveis (não-clan)

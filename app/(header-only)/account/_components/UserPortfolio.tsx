@@ -273,6 +273,9 @@ export function UserPortfolio({
         setProcessingMedia(false)
       }
     },
+    // uploadFileToItem é declarado abaixo (closure estável dentro do componente).
+    // Envolvê-lo em useCallback exigiria propagar deps de várias funções vizinhas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setPendingProcessedImage],
   )
 

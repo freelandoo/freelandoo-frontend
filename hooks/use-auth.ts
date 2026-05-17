@@ -82,7 +82,7 @@ export function useAuth(): UseAuthResult {
   }, [router])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     validate()
 
     const onAuthChange = () => validate()

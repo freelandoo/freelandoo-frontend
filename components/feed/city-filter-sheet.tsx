@@ -42,7 +42,7 @@ export function CityFilterSheet({
 
   useEffect(() => {
     if (!draftState) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setMunicipios([])
       return
     }

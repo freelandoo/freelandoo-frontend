@@ -68,7 +68,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
   useEffect(() => {
     if (!authed) {
       // reset defensivo quando o usuário desloga sem unmount.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setUnread(0)
       return
     }
