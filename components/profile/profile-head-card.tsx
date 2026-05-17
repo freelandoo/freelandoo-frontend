@@ -91,6 +91,7 @@ interface ProfileHeadCardProps {
     onShowRanking?: () => void
     onShowMembers?: () => void
     onScheduleScroll?: () => void
+    shareButton?: React.ReactNode
   }
   /** Rótulo do botão principal para visitantes (ex.: rolar à secção de serviços). */
   visitorScheduleButtonLabel?: string
@@ -453,6 +454,7 @@ export function ProfileHeadCard({
                   />
                 )}
                 <SocialIcons socials={socials} />
+                {visitorActions?.shareButton}
               </>
             )}
           </div>
