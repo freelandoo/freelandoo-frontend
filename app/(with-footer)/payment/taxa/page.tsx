@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, CheckCircle2, Loader2, Shield, Zap } from "lucide-react"
+import { usePricing, formatBRL } from "@/lib/pricing"
 
 interface ProfileSummary {
   id_profile: string
@@ -22,6 +23,7 @@ function TaxaPageInner() {
   const search = useSearchParams()
   const profileIdParam = search.get("profile_id")
 
+  const pricing = usePricing()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [couponCode, setCouponCode] = useState("")
@@ -125,7 +127,7 @@ function TaxaPageInner() {
             <CardContent className="space-y-6">
               <div className="text-center py-6">
                 <p className="text-sm text-muted-foreground mb-2">Cobrança anual por perfil</p>
-                <p className="text-4xl font-bold">R$ 300,00</p>
+                <p className="text-4xl font-bold">{formatBRL(pricing.subscription_annual.amount_cents, pricing.subscription_annual.currency)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Renovação automática a cada ano. Cada perfil tem assinatura própria.
                 </p>
