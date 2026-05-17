@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { AnimatePresence, motion } from "framer-motion"
 import { ServiceChatModal } from "@/components/profile/service-chat-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, MessageCircle, Clock, Megaphone, Package, X } from "lucide-react"
+import { Loader2, MessageCircle, Clock, Megaphone, Package, X, Sparkles, MapPin } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -21,21 +22,6 @@ interface MuralRequest {
   user_avatar?: string
   created_at: string
   responses_count?: number
-}
-
-interface ActiveConversation {
-  id_response: string
-  id_request: string
-  status?: string
-  user_name?: string
-  user_avatar?: string
-  description?: string
-  estado?: string
-  municipio?: string
-  last_message?: string
-  last_message_at?: string
-  unread_count?: number
-  created_at?: string
 }
 
 interface ProductRequestMuralItem {
@@ -92,15 +78,14 @@ function initials(name: string) {
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 export function MuralModal({ open, onOpenChange, profileId }: Props) {
-  const [tab, setTab] = useState<"new" | "products" | "active">("new")
+  const [tab, setTab] = useState<"services" | "products">("services")
   const [muralItems, setMuralItems] = useState<MuralRequest[]>([])
   const [productItems, setProductItems] = useState<ProductRequestMuralItem[]>([])
-  const [conversations, setConversations] = useState<ActiveConversation[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [respondTo, setRespondTo] = useState<ProductRequestMuralItem | null>(null)
 
-  // --- chat ---
+  // chat preview
   const [chatOpen, setChatOpen] = useState(false)
   const [chatIdResponse, setChatIdResponse] = useState("")
   const [chatPeerName, setChatPeerName] = useState("")
@@ -127,7 +112,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
     }).catch(() => {})
   }, [open, profileId])
 
-  // Fetch mural data
+  // Fetch services mural
   const fetchData = useCallback(async () => {
     const token = getToken()
     if (!token) return
@@ -138,19 +123,10 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
       })
       if (res.ok) {
         const data = await res.json()
-        // Backend may return { requests: [...] }, { items: [...] }, or an array.
-        if (Array.isArray(data.requests)) {
-          setMuralItems(data.requests)
-        } else if (Array.isArray(data.items)) {
-          setMuralItems(data.items)
-        } else if (Array.isArray(data)) {
-          setMuralItems(data)
-        } else {
-          setMuralItems([])
-        }
-        if (data.conversations) {
-          setConversations(Array.isArray(data.conversations) ? data.conversations : [])
-        }
+        if (Array.isArray(data.requests)) setMuralItems(data.requests)
+        else if (Array.isArray(data.items)) setMuralItems(data.items)
+        else if (Array.isArray(data)) setMuralItems(data)
+        else setMuralItems([])
       }
     } catch { /* silent */ }
     setLoading(false)
@@ -158,9 +134,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
 
   useEffect(() => {
     if (!open) return
-    const timeout = window.setTimeout(() => {
-      void fetchData()
-    }, 0)
+    const timeout = window.setTimeout(() => { void fetchData() }, 0)
     return () => window.clearTimeout(timeout)
   }, [open, fetchData])
 
@@ -205,251 +179,268 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Megaphone className="h-5 w-5" />
-            Mural
-          </DialogTitle>
-          <DialogDescription>Serviços e pedidos de produto compatíveis com seu perfil.</DialogDescription>
-        </DialogHeader>
-
-        {/* Tabs */}
-        <div className="flex gap-1 border-b pb-0">
-          <button
-            onClick={() => setTab("new")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "new" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            Serviços
-          </button>
-          <button
-            onClick={() => setTab("products")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1 ${tab === "products" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            <Package className="h-3.5 w-3.5" />
-            Produtos
-          </button>
-          <button
-            onClick={() => setTab("active")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors relative ${tab === "active" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            Conversas ativas
-            {conversations.some(c => (c.unread_count ?? 0) > 0) && (
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
-            )}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto pr-1">
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[620px] max-h-[88vh] flex flex-col overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
+                <Megaphone className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <DialogTitle className="text-base text-white">Mural</DialogTitle>
+                <DialogDescription className="text-xs text-white/50">
+                  Solicitações compatíveis com seu perfil. As conversas ficam em <span className="text-yellow-300/80">Mensagens</span>.
+                </DialogDescription>
+              </div>
             </div>
-          )}
+          </DialogHeader>
 
-          {/* ========== TAB: SOLICITAÇÕES NOVAS ========== */}
-          {!loading && tab === "new" && (
-            <div className="space-y-3 py-2">
-              {muralItems.length === 0 && (
-                <div className="text-center py-12">
-                  <Megaphone className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-1">Nenhuma solicitação nova</p>
-                  <p className="text-sm text-muted-foreground">Quando alguém pedir um serviço compatível, aparecerá aqui.</p>
-                </div>
-              )}
+          {/* Segmented tabs */}
+          <div className="px-6 pt-4">
+            <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+              <SegmentButton
+                active={tab === "services"}
+                onClick={() => setTab("services")}
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                label="Serviços"
+                count={muralItems.length}
+              />
+              <SegmentButton
+                active={tab === "products"}
+                onClick={() => setTab("products")}
+                icon={<Package className="h-3.5 w-3.5" />}
+                label="Produtos"
+                count={productItems.length || undefined}
+              />
+            </div>
+          </div>
 
-              {muralItems.map(req => (
-                <button
-                  key={req.id_request}
-                  type="button"
-                  className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors text-left"
-                  onClick={() => openPreviewChat(req)}
+          <div className="flex-1 overflow-y-auto px-6 py-4 [scrollbar-width:thin]">
+            <AnimatePresence mode="wait" initial={false}>
+              {tab === "services" && (
+                <motion.div
+                  key="services"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                  className="space-y-2.5"
                 >
-                  <Avatar className="h-9 w-9 shrink-0">
-                    {req.user_avatar && <AvatarImage src={req.user_avatar} alt={req.user_name || ""} />}
-                    <AvatarFallback className="text-xs">{initials(req.user_name || "?")}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium">{req.user_name || "Usuário"}</span>
-                      <span className="text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 inline mr-0.5" />
-                        {new Date(req.created_at).toLocaleDateString("pt-BR")}
-                      </span>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
                     </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      {req.machine_name && <Badge variant="outline" className="text-[10px] py-0 h-5">{req.machine_name}</Badge>}
-                      {req.category_name && <Badge variant="secondary" className="text-[10px] py-0 h-5">{req.category_name}</Badge>}
-                      {req.municipio && <span className="text-[10px] text-muted-foreground">📍 {req.municipio}{req.estado ? `, ${req.estado}` : ""}</span>}
-                      {typeof req.responses_count === "number" && req.responses_count > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] py-0 h-5 border-primary/40 bg-primary/10 text-primary gap-1"
-                          title={`${req.responses_count} ${req.responses_count === 1 ? "subperfil já respondeu" : "subperfis já responderam"}`}
-                        >
-                          <MessageCircle className="h-2.5 w-2.5" />
-                          {req.responses_count} {req.responses_count === 1 ? "conversa aberta" : "conversas abertas"}
-                        </Badge>
-                      )}
-                    </div>
-                    {req.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{req.description}</p>
-                    )}
-                  </div>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* ========== TAB: PRODUTOS (Pedido de Produto) ========== */}
-          {tab === "products" && (
-            <div className="space-y-3 py-2">
-              {loadingProducts && (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              )}
-              {!loadingProducts && productItems.length === 0 && (
-                <div className="text-center py-12">
-                  <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-1">Nenhum pedido de produto compatível</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pedidos só aparecem se sua loja tem produto ativo na categoria e cidade do comprador.
-                  </p>
-                </div>
-              )}
-              {!loadingProducts && productItems.map((item) => (
-                <div key={item.id_product_request} className="border rounded-lg p-3 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-start gap-3">
-                    {item.reference_image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={item.reference_image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-cover" />
-                    ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-muted">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <h3 className="text-sm font-medium">{item.title}</h3>
-                        <Badge variant="outline" className="text-[10px] py-0 h-5">{item.category_name}</Badge>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        📍 {item.city}/{item.state}
-                        {(item.min_price_cents != null || item.max_price_cents != null) && (
-                          <> · <span className="tabular-nums">{formatPrice(item.min_price_cents)} — {formatPrice(item.max_price_cents)}</span></>
-                        )}
-                        {" · "}
-                        <Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRespondTo(item)}
-                      className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                    >
-                      Responder
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ========== TAB: CONVERSAS ATIVAS ========== */}
-          {!loading && tab === "active" && (
-            <div className="space-y-2 py-2">
-              {conversations.length === 0 && (
-                <div className="text-center py-12">
-                  <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-1">Nenhuma conversa ativa</p>
-                  <p className="text-sm text-muted-foreground">Aceite solicitações para iniciar conversas.</p>
-                </div>
+                  ) : muralItems.length === 0 ? (
+                    <EmptyState
+                      icon={<Megaphone className="h-8 w-8" />}
+                      title="Nenhuma solicitação nova"
+                      hint="Quando alguém pedir um serviço compatível, ela aparece aqui em tempo real."
+                    />
+                  ) : (
+                    muralItems.map((req) => (
+                      <motion.button
+                        key={req.id_request}
+                        type="button"
+                        onClick={() => openPreviewChat(req)}
+                        whileHover={{ y: -1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        className="group flex w-full items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 text-left transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                      >
+                        <Avatar className="h-10 w-10 shrink-0 ring-1 ring-white/10">
+                          {req.user_avatar && <AvatarImage src={req.user_avatar} alt={req.user_name || ""} />}
+                          <AvatarFallback className="text-xs bg-white/[0.06] text-white/70">
+                            {initials(req.user_name || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-white">{req.user_name || "Usuário"}</span>
+                            <span className="text-[10px] text-white/40">
+                              {new Date(req.created_at).toLocaleDateString("pt-BR")}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            {req.machine_name && (
+                              <Badge className="border-white/15 bg-white/[0.05] text-[10px] text-white/80 h-5 py-0">
+                                {req.machine_name}
+                              </Badge>
+                            )}
+                            {req.category_name && (
+                              <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                                {req.category_name}
+                              </Badge>
+                            )}
+                            {req.municipio && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] text-white/40">
+                                <MapPin className="h-2.5 w-2.5" />
+                                {req.municipio}{req.estado ? `, ${req.estado}` : ""}
+                              </span>
+                            )}
+                          </div>
+                          {req.description && (
+                            <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{req.description}</p>
+                          )}
+                        </div>
+                        <MessageCircle className="h-4 w-4 text-white/30 group-hover:text-yellow-300 transition-colors shrink-0 mt-1" />
+                      </motion.button>
+                    ))
+                  )}
+                </motion.div>
               )}
 
-              {conversations.map(conv => (
-                <button
-                  key={conv.id_response}
-                  type="button"
-                  className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors text-left"
-                  onClick={() => {
-                    setChatIdResponse(conv.id_response)
-                    setChatPeerName(conv.user_name || "Usuário")
-                    setChatPeerAvatar(conv.user_avatar)
-                    setChatPreview({
-                      idRequest: conv.id_request,
-                      idProfile: profileId,
-                      description: conv.description || "",
-                      estado: conv.estado,
-                      municipio: conv.municipio,
-                    })
-                    setChatOpen(true)
-                  }}
+              {tab === "products" && (
+                <motion.div
+                  key="products"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                  className="space-y-2.5"
                 >
-                  <div className="relative">
-                    <Avatar className="h-10 w-10">
-                      {conv.user_avatar && <AvatarImage src={conv.user_avatar} alt={conv.user_name || ""} />}
-                      <AvatarFallback className="text-xs">{initials(conv.user_name || "?")}</AvatarFallback>
-                    </Avatar>
-                    {(conv.unread_count ?? 0) > 0 && (
-                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
-                        {conv.unread_count}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-sm font-medium">{conv.user_name || "Usuário"}</span>
-                    {conv.last_message && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{conv.last_message}</p>
-                    )}
-                  </div>
-                  <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                  {loadingProducts ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                    </div>
+                  ) : productItems.length === 0 ? (
+                    <EmptyState
+                      icon={<Package className="h-8 w-8" />}
+                      title="Nenhum pedido de produto"
+                      hint="Pedidos aparecem se sua loja tem produto ativo na categoria e cidade do comprador."
+                    />
+                  ) : (
+                    productItems.map((item) => (
+                      <motion.div
+                        key={item.id_product_request}
+                        whileHover={{ y: -1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                      >
+                        <div className="flex items-start gap-3">
+                          {item.reference_image_url ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={item.reference_image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/10" />
+                          ) : (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/10">
+                              <Package className="h-5 w-5 text-white/40" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <h3 className="text-sm font-medium text-white">{item.title}</h3>
+                              <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                                {item.category_name}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-[11px] text-white/45">
+                              <MapPin className="h-2.5 w-2.5 inline mr-0.5" />
+                              {item.city}/{item.state}
+                              {(item.min_price_cents != null || item.max_price_cents != null) && (
+                                <> · <span className="tabular-nums text-white/70">{formatPrice(item.min_price_cents)} — {formatPrice(item.max_price_cents)}</span></>
+                              )}
+                              {" · "}
+                              <Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                            </p>
+                            <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{item.description}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setRespondTo(item)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Responder
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-    {/* Modal de resposta a Pedido de Produto */}
-    {respondTo && (
-      <ProductRequestResponseModal
-        item={respondTo}
-        profileId={profileId}
-        onClose={() => setRespondTo(null)}
-        onSent={() => { setRespondTo(null); void fetchProductMural() }}
+      {respondTo && (
+        <ProductRequestResponseModal
+          item={respondTo}
+          profileId={profileId}
+          onClose={() => setRespondTo(null)}
+          onSent={() => { setRespondTo(null); void fetchProductMural() }}
+        />
+      )}
+
+      <ServiceChatModal
+        open={chatOpen}
+        onOpenChange={(v) => {
+          setChatOpen(v)
+          if (!v) {
+            setChatPreview(undefined)
+            fetchData()
+          }
+        }}
+        idResponse={chatIdResponse}
+        peerName={chatPeerName}
+        peerAvatar={chatPeerAvatar}
+        viewerSide="PRO"
+        previewRequest={chatPreview}
+        onPreviewAccepted={(newId) => { setChatIdResponse(newId) }}
+        onReject={() => fetchData()}
+        onFinalize={() => fetchData()}
       />
-    )}
-
-    {/* Chat modal — pro side (preview ao clicar em Solicitação nova) */}
-    <ServiceChatModal
-      open={chatOpen}
-      onOpenChange={(v) => {
-        setChatOpen(v)
-        if (!v) {
-          setChatPreview(undefined)
-          fetchData()
-        }
-      }}
-      idResponse={chatIdResponse}
-      peerName={chatPeerName}
-      peerAvatar={chatPeerAvatar}
-      viewerSide="PRO"
-      previewRequest={chatPreview}
-      onPreviewAccepted={(newId) => {
-        // 'open' criou PENDING — só registra o id pra continuar a conversa
-        setChatIdResponse(newId)
-      }}
-      onReject={() => fetchData()}
-      onFinalize={() => fetchData()}
-    />
     </>
+  )
+}
+
+function SegmentButton({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+  count?: number
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors ${
+        active
+          ? "bg-gradient-to-r from-yellow-400/20 to-amber-500/10 text-yellow-200"
+          : "text-white/55 hover:text-white/85"
+      }`}
+    >
+      {icon}
+      {label}
+      {typeof count === "number" && count > 0 && (
+        <span className={`tabular-nums text-[10px] rounded-full px-1.5 ${active ? "bg-yellow-400/20 text-yellow-100" : "bg-white/[0.06] text-white/55"}`}>
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+function EmptyState({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <motion.div
+        animate={{ y: [0, -4, 0] }}
+        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+        className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] text-white/40 ring-1 ring-white/10"
+      >
+        {icon}
+      </motion.div>
+      <p className="text-sm font-medium text-white/80">{title}</p>
+      <p className="mt-1 max-w-xs text-xs text-white/40">{hint}</p>
+    </div>
   )
 }
 
@@ -524,29 +515,40 @@ function ProductRequestResponseModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 p-4" onClick={onClose} role="presentation">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card text-foreground" onClick={(e) => e.stopPropagation()} role="dialog">
-        <div className="flex items-center justify-between border-b border-border p-4">
-          <div>
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose} role="presentation">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+      >
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+          <div className="min-w-0">
             <h3 className="text-sm font-semibold">Responder pedido</h3>
-            <p className="text-xs text-muted-foreground line-clamp-1">{item.title}</p>
+            <p className="text-xs text-white/45 line-clamp-1">{item.title}</p>
           </div>
-          <button onClick={onClose} className="rounded p-1 text-muted-foreground hover:text-foreground" aria-label="Fechar">
+          <button onClick={onClose} className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white" aria-label="Fechar">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-3 p-4">
+        <div className="space-y-4 px-5 py-4">
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Sugerir produto da sua loja (opcional)</label>
+            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+              Produto da sua loja (opcional)
+            </label>
             {loadingProducts ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando produtos…</div>
+              <div className="flex items-center gap-2 text-xs text-white/50">
+                <Loader2 className="h-3 w-3 animate-spin" /> Carregando produtos…
+              </div>
             ) : products.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Sem produtos ativos nesta categoria. Você pode enviar proposta livre.</p>
+              <p className="text-xs text-white/40">Sem produtos ativos nesta categoria. Você pode enviar proposta livre.</p>
             ) : (
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white focus:border-yellow-400/40 focus:outline-none"
               >
                 <option value="">— Proposta livre —</option>
                 {products.map((p) => (
@@ -558,36 +560,51 @@ function ProductRequestResponseModal({
             )}
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Mensagem ao comprador <span className="text-destructive">*</span></label>
+            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+              Mensagem ao comprador <span className="text-red-400">*</span>
+            </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
               maxLength={4000}
               placeholder="Tenho um produto que combina. Posso enviar mais fotos…"
-              className="w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm"
+              className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Preço proposto (R$, opcional)</label>
+            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+              Preço proposto (R$, opcional)
+            </label>
             <input
               type="text"
               value={priceReais}
               onChange={(e) => setPriceReais(e.target.value)}
               placeholder="0,00"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 font-mono text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p className="rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-xs text-red-200">{error}</p>
+          )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-border p-4">
-          <button onClick={onClose} className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
-          <button onClick={submit} disabled={submitting} className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <div className="flex justify-end gap-2 border-t border-white/[0.06] bg-black/40 px-5 py-3">
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/65 hover:bg-white/[0.04] hover:text-white"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:from-yellow-300 hover:to-amber-400 disabled:opacity-50"
+          >
             {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
             Enviar resposta
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
