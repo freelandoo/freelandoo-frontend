@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { GripVertical, ImagePlus, Loader2, Save, Trash2, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
 import { compressImageToMaxSize } from "@/lib/media/image-processing"
 import {
   POST_IMAGE_MAX_SIZE_BYTES,
@@ -64,6 +64,85 @@ function parsePriceReais(input: string): number {
   return Math.round(n * 100)
 }
 
+function formatPriceParts(cents: number) {
+  const safe = Math.max(0, Math.round(Number.isFinite(cents) ? cents : 0))
+  const intPart = Math.floor(safe / 100)
+  const frac = safe % 100
+  return {
+    integer: intPart.toLocaleString("pt-BR"),
+    cents: frac.toString().padStart(2, "0"),
+  }
+}
+
+/**
+ * Espelha o card público de `profile-public-products-section.tsx`.
+ * Se mudar o visual da vitrine, atualizar aqui também.
+ */
+function ProductCardPreview({
+  name,
+  description,
+  priceCents,
+  stockQty,
+  coverUrl,
+}: {
+  name: string
+  description: string
+  priceCents: number
+  stockQty: number
+  coverUrl: string | null
+}) {
+  const { integer, cents } = formatPriceParts(priceCents)
+  const desc = description.trim()
+  const outOfStock = stockQty <= 0
+  const displayName = name.trim() || "Nome do produto"
+
+  return (
+    <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left">
+      <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+        {outOfStock && (
+          <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/85 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-100">
+            Esgotado
+          </span>
+        )}
+        {coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverUrl}
+            alt={displayName}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+            <Package className="h-11 w-11 text-zinc-600/90" aria-hidden />
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col p-2">
+        <h3 className="truncate text-xs font-bold leading-snug text-white">{displayName}</h3>
+        <div className="mt-1.5 min-h-0 flex-1">
+          {desc ? (
+            <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300">
+              {desc}
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-auto shrink-0">
+          <div className="mt-2 flex items-center justify-between gap-1.5">
+            <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums">
+              R$ {integer}
+              <span className="align-top text-[10px] font-semibold text-white/95">,{cents}</span>
+            </p>
+            <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary">
+              Ver
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function parseDecimal(input: string): number {
   const cleaned = input.replace(/\./g, "").replace(",", ".").trim()
   const n = Number(cleaned)
@@ -122,6 +201,21 @@ export function ProfileProductEditModal({
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const previewCoverUrl = useMemo(() => {
+    const cover =
+      mediaList.find((m) => m.media_type === "image" || m.mime_type?.startsWith("image/")) ||
+      mediaList[0]
+    return cover?.url || cover?.media_url || cover?.thumbnail_url || null
+  }, [mediaList])
+  const previewPriceCents = useMemo(() => {
+    const cents = parsePriceReais(form.price_reais)
+    return cents < 0 ? 0 : cents
+  }, [form.price_reais])
+  const previewStock = useMemo(() => {
+    const n = Number(form.stock_quantity.replace(/\D/g, ""))
+    return Number.isFinite(n) ? n : 0
+  }, [form.stock_quantity])
 
   useEffect(() => {
     if (!open || product !== null) return
@@ -398,6 +492,22 @@ export function ProfileProductEditModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        <div className="border-b border-zinc-800 bg-zinc-950/50 px-6 py-4">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+            Pré-visualização na vitrine
+          </p>
+          <div className="mx-auto w-[180px] overflow-hidden rounded-lg ring-1 ring-zinc-800/80">
+            <ProductCardPreview
+              name={form.name}
+              description={form.description}
+              priceCents={previewPriceCents}
+              stockQty={previewStock}
+              coverUrl={previewCoverUrl}
+            />
+          </div>
+        </div>
+
         <div className="space-y-4 p-6">
           <div>
             <label className="mb-1 block text-xs text-zinc-400">Nome</label>
