@@ -13,11 +13,19 @@ const EmojiPicker = dynamic(
 interface EmojiPickerButtonProps {
   onPick: (emoji: string) => void
   className?: string
-  /** Posição do painel: "top-right" (default) ou "top-center" */
-  align?: "top-right" | "top-center"
+  /**
+   * Posição do painel em relação ao botão:
+   * - "top-left" (default): abre acima e ALINHADO à esquerda do botão
+   *   (painel se expande pra direita). Usado quando o botão fica no canto
+   *   esquerdo do composer e a esquerda do botão é a sidebar/borda.
+   * - "top-right": abre acima e ALINHADO à direita do botão (painel se
+   *   expande pra esquerda). Usar quando o botão fica no canto direito.
+   * - "top-center": centralizado acima do botão.
+   */
+  align?: "top-left" | "top-right" | "top-center"
 }
 
-export function EmojiPickerButton({ onPick, className, align = "top-right" }: EmojiPickerButtonProps) {
+export function EmojiPickerButton({ onPick, className, align = "top-left" }: EmojiPickerButtonProps) {
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -79,12 +87,14 @@ export function EmojiPickerButton({ onPick, className, align = "top-right" }: Em
           )}
           <div
             className={cn(
-              "absolute z-[70]",
+              "absolute z-[70] mb-2",
               isMobile
-                ? "bottom-full left-1/2 mb-2 -translate-x-1/2 origin-bottom"
+                ? "bottom-full left-1/2 -translate-x-1/2 origin-bottom"
                 : align === "top-center"
-                  ? "bottom-full left-1/2 mb-2 -translate-x-1/2 origin-bottom"
-                  : "bottom-full right-0 mb-2 origin-bottom-right"
+                  ? "bottom-full left-1/2 -translate-x-1/2 origin-bottom"
+                  : align === "top-right"
+                    ? "bottom-full right-0 origin-bottom-right"
+                    : "bottom-full left-0 origin-bottom-left"
             )}
           >
             <EmojiPicker
