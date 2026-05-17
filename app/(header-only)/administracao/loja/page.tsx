@@ -14,11 +14,12 @@ import {
   Inbox,
   ShieldAlert,
   Flag,
-  Settings,
+  Scale,
   X,
+  Save,
 } from "lucide-react"
 
-type Tab = "products" | "categories" | "requests" | "prohibited" | "reports" | "settings"
+type Tab = "products" | "categories" | "requests" | "prohibited" | "reports" | "governance"
 
 type ProductCategory = {
   id_product_category: number
@@ -52,7 +53,7 @@ const TAB_LIST: { key: Tab; label: string; icon: typeof Tag }[] = [
   { key: "requests",   label: "Pedidos de Produto",icon: Inbox },
   { key: "prohibited", label: "Produtos Proibidos",icon: ShieldAlert },
   { key: "reports",    label: "Denúncias",         icon: Flag },
-  { key: "settings",   label: "Configurações",     icon: Settings },
+  { key: "governance", label: "Governança",        icon: Scale },
 ]
 
 export default function AdminLojaPage() {
@@ -104,7 +105,7 @@ export default function AdminLojaPage() {
         {tab === "requests" && <Placeholder label="Pedidos de Produto" hint="Listagem de pedidos abertos no mural — chega nos próximos slices." />}
         {tab === "prohibited" && <ProhibitedRulesTab />}
         {tab === "reports" && <Placeholder label="Denúncias da Loja" hint="Em breve." />}
-        {tab === "settings" && <Placeholder label="Configurações da Loja" hint="Em breve." />}
+        {tab === "governance" && <GovernanceTab />}
       </div>
     </div>
   )
@@ -228,6 +229,293 @@ function CategoriesTab() {
           onSaved={() => { setCreating(false); setEditing(null); load() }}
         />
       )}
+    </div>
+  )
+}
+
+// ─── Governança da Loja ──────────────────────────────────────────────────────
+
+type GovernanceSettings = {
+  id_settings: 1
+  service_fee_percent: string | number
+  service_fee_fixed_cents: number
+  service_fee_min_cents: number | null
+  service_fee_max_cents: number | null
+  processor_fee_mode: "auto_stripe" | "manual"
+  processor_fee_percent_fallback: string | number
+  processor_fee_fixed_cents_fallback: number
+  updated_at: string
+}
+
+function brl(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+
+function parseCents(input: string): number | null {
+  if (!input.trim()) return null
+  const cleaned = input.replace(/\./g, "").replace(",", ".").trim()
+  const n = Number(cleaned)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100)
+}
+
+function GovernanceTab() {
+  const [settings, setSettings] = useState<GovernanceSettings | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  // Form state — strings p/ inputs
+  const [form, setForm] = useState({
+    service_fee_percent: "5.000",
+    service_fee_fixed_reais: "0,00",
+    service_fee_min_reais: "",
+    service_fee_max_reais: "",
+    processor_fee_mode: "auto_stripe" as "auto_stripe" | "manual",
+    processor_fee_percent_fallback: "3.990",
+    processor_fee_fixed_reais: "0,39",
+  })
+
+  // Preview state
+  const [previewSellerReais, setPreviewSellerReais] = useState("100,00")
+  const [preview, setPreview] = useState<{
+    seller_amount_cents: number
+    service_fee_cents: number
+    processor_fee_cents: number
+    display_price_cents: number
+  } | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const r = await fetch("/api/admin/store/governance", { headers: authHeaders() })
+      const d = await r.json()
+      if (!r.ok) { setError(d?.error || "Erro ao carregar"); setLoading(false); return }
+      const s: GovernanceSettings = d.settings
+      setSettings(s)
+      setForm({
+        service_fee_percent: String(s.service_fee_percent),
+        service_fee_fixed_reais: ((s.service_fee_fixed_cents || 0) / 100).toFixed(2).replace(".", ","),
+        service_fee_min_reais: s.service_fee_min_cents != null ? (s.service_fee_min_cents / 100).toFixed(2).replace(".", ",") : "",
+        service_fee_max_reais: s.service_fee_max_cents != null ? (s.service_fee_max_cents / 100).toFixed(2).replace(".", ",") : "",
+        processor_fee_mode: s.processor_fee_mode,
+        processor_fee_percent_fallback: String(s.processor_fee_percent_fallback),
+        processor_fee_fixed_reais: ((s.processor_fee_fixed_cents_fallback || 0) / 100).toFixed(2).replace(".", ","),
+      })
+    } catch { setError("Erro de conexão") }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  // Preview ao vivo — refaz sempre que valor muda
+  useEffect(() => {
+    const cents = parseCents(previewSellerReais)
+    if (cents == null || cents === 0) { setPreview(null); return }
+    let cancelled = false
+    const t = window.setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/store/price-preview?seller_cents=${cents}`, { headers: authHeaders() })
+        const d = await r.json()
+        if (!cancelled && r.ok) setPreview(d.pricing)
+      } catch { /* silencioso */ }
+    }, 250)
+    return () => { cancelled = true; window.clearTimeout(t) }
+  }, [previewSellerReais, settings])
+
+  async function save() {
+    setError(null); setSuccess(null)
+
+    const servicePct = Number(form.service_fee_percent)
+    if (!Number.isFinite(servicePct) || servicePct < 0 || servicePct >= 100) { setError("Taxa de serviço (%) inválida"); return }
+
+    const serviceFixed = parseCents(form.service_fee_fixed_reais) ?? 0
+    const procPct = Number(form.processor_fee_percent_fallback)
+    if (!Number.isFinite(procPct) || procPct < 0 || procPct >= 100) { setError("Taxa Stripe fallback (%) inválida"); return }
+    const procFixed = parseCents(form.processor_fee_fixed_reais) ?? 0
+
+    const minCents = form.service_fee_min_reais ? parseCents(form.service_fee_min_reais) : null
+    const maxCents = form.service_fee_max_reais ? parseCents(form.service_fee_max_reais) : null
+    if (form.service_fee_min_reais && minCents == null) { setError("Piso da taxa de serviço inválido"); return }
+    if (form.service_fee_max_reais && maxCents == null) { setError("Teto da taxa de serviço inválido"); return }
+    if (minCents != null && maxCents != null && minCents > maxCents) { setError("Piso não pode ser maior que o teto"); return }
+
+    setSaving(true)
+    try {
+      const body = {
+        service_fee_percent: servicePct,
+        service_fee_fixed_cents: serviceFixed,
+        service_fee_min_cents: minCents,
+        service_fee_max_cents: maxCents,
+        processor_fee_mode: form.processor_fee_mode,
+        processor_fee_percent_fallback: procPct,
+        processor_fee_fixed_cents_fallback: procFixed,
+      }
+      const r = await fetch("/api/admin/store/governance", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      })
+      const d = await r.json()
+      if (!r.ok) { setError(d?.error || "Erro ao salvar"); return }
+      setSettings(d.settings)
+      setSuccess("Configurações salvas. Vale para novos pedidos.")
+      setTimeout(() => setSuccess(null), 4000)
+    } catch { setError("Erro de conexão") }
+    finally { setSaving(false) }
+  }
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Governança da Loja</h2>
+          <p className="text-xs text-muted-foreground">
+            Taxas aplicadas sobre o preço do vendedor. O <strong>comprador</strong> paga as taxas;
+            o vendedor recebe exatamente o valor que cravou. Mudanças valem só para <strong>novos pedidos</strong>.
+          </p>
+        </div>
+
+        <section className="rounded-xl border border-border bg-card/40 p-4">
+          <h3 className="mb-3 text-sm font-semibold">Taxa de serviço (plataforma)</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Percentual (%)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.service_fee_percent}
+                onChange={(e) => setForm((f) => ({ ...f, service_fee_percent: e.target.value }))}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Fixo (R$)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.service_fee_fixed_reais}
+                onChange={(e) => setForm((f) => ({ ...f, service_fee_fixed_reais: e.target.value }))}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Piso (R$, opcional)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.service_fee_min_reais}
+                onChange={(e) => setForm((f) => ({ ...f, service_fee_min_reais: e.target.value }))}
+                placeholder="—"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Teto (R$, opcional)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.service_fee_max_reais}
+                onChange={(e) => setForm((f) => ({ ...f, service_fee_max_reais: e.target.value }))}
+                placeholder="—"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Modelo Stripe: cobramos <span className="font-mono">{form.service_fee_percent}%</span> + <span className="font-mono">{form.service_fee_fixed_reais.replace(",", ".")}</span> sobre o que o vendedor recebe.
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card/40 p-4">
+          <h3 className="mb-3 text-sm font-semibold">Taxa da maquininha (Stripe)</h3>
+          <div className="mb-3">
+            <label className="mb-1 block text-xs text-muted-foreground">Modo</label>
+            <select
+              value={form.processor_fee_mode}
+              onChange={(e) => setForm((f) => ({ ...f, processor_fee_mode: e.target.value as "auto_stripe" | "manual" }))}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="auto_stripe">Automático (usa fee real do Stripe via webhook)</option>
+              <option value="manual">Manual (sempre usa o fallback abaixo)</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">% fallback (pré-webhook)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.processor_fee_percent_fallback}
+                onChange={(e) => setForm((f) => ({ ...f, processor_fee_percent_fallback: e.target.value }))}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Fixo fallback (R$)</label>
+              <input
+                type="text" inputMode="decimal"
+                value={form.processor_fee_fixed_reais}
+                onChange={(e) => setForm((f) => ({ ...f, processor_fee_fixed_reais: e.target.value }))}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            No modo automático, no webhook <span className="font-mono">charge.succeeded</span> o Freelandoo lê o valor real que a Stripe cobrou
+            (<span className="font-mono">balance_transaction.fee</span>) e substitui o estimado no pedido. O vendedor sempre recebe o valor cravado;
+            a diferença entre estimado e real é absorvida pela plataforma.
+          </p>
+        </section>
+
+        {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>}
+        {success && <p className="rounded-md bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">{success}</p>}
+
+        <div className="flex justify-end">
+          <button
+            onClick={save}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            Salvar
+          </button>
+        </div>
+      </div>
+
+      {/* Calculadora */}
+      <aside className="rounded-xl border border-border bg-card/40 p-4">
+        <h3 className="mb-2 text-sm font-semibold">Calculadora</h3>
+        <p className="mb-3 text-xs text-muted-foreground">Use após salvar para ver o efeito real:</p>
+        <label className="mb-1 block text-xs text-muted-foreground">Vendedor recebe (R$)</label>
+        <input
+          type="text" inputMode="decimal"
+          value={previewSellerReais}
+          onChange={(e) => setPreviewSellerReais(e.target.value)}
+          className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
+        />
+        {preview ? (
+          <div className="mt-4 space-y-2 text-xs">
+            <Row label="Vendedor recebe" value={brl(preview.seller_amount_cents)} />
+            <Row label="Taxa de serviço" value={brl(preview.service_fee_cents)} muted />
+            <Row label="Taxa Stripe (est.)" value={brl(preview.processor_fee_cents)} muted />
+            <div className="my-2 border-t border-border" />
+            <Row label="Comprador paga" value={brl(preview.display_price_cents)} bold />
+            <p className="mt-3 text-[10px] text-muted-foreground">
+              O frete (Melhor Envio) é somado em cima do "comprador paga" no checkout, e fica retido com a plataforma para custear a etiqueta.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 text-xs text-muted-foreground">Informe um valor para ver o cálculo.</p>
+        )}
+      </aside>
+    </div>
+  )
+}
+
+function Row({ label, value, muted, bold }: { label: string; value: string; muted?: boolean; bold?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between ${muted ? "text-muted-foreground" : "text-foreground"}`}>
+      <span className={bold ? "font-semibold" : ""}>{label}</span>
+      <span className={`tabular-nums ${bold ? "font-bold" : "font-mono"}`}>{value}</span>
     </div>
   )
 }

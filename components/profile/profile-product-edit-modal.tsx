@@ -202,6 +202,12 @@ export function ProfileProductEditModal({
   })
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<ProductCategoryOption[]>([])
+  const [pricingPreview, setPricingPreview] = useState<{
+    seller_amount_cents: number
+    service_fee_cents: number
+    processor_fee_cents: number
+    display_price_cents: number
+  } | null>(null)
 
   const [mediaList, setMediaList] = useState<ProfileProductMedia[]>([])
   const [mediaLoading, setMediaLoading] = useState(false)
@@ -275,6 +281,22 @@ export function ProfileProductEditModal({
       .catch(() => { /* silencioso */ })
     return () => { cancelled = true }
   }, [open])
+
+  // Preview do preço final ao comprador
+  useEffect(() => {
+    if (!open) return
+    const cents = parsePriceReais(form.price_reais)
+    if (cents < 0 || cents === 0) { setPricingPreview(null); return }
+    let cancelled = false
+    const t = window.setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/store/price-preview?seller_cents=${cents}`, { headers: headers() })
+        const d = await r.json()
+        if (!cancelled && r.ok) setPricingPreview(d.pricing)
+      } catch { /* silencioso */ }
+    }, 300)
+    return () => { cancelled = true; window.clearTimeout(t) }
+  }, [open, form.price_reais])
 
   const isEdit = product !== null
   const mediaUrl = (pid: number) =>
@@ -577,7 +599,7 @@ export function ProfileProductEditModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">Preço (R$)</label>
+              <label className="mb-1 block text-xs text-zinc-400">Preço (R$) — você recebe</label>
               <input
                 type="text"
                 value={form.price_reais}
@@ -598,6 +620,26 @@ export function ProfileProductEditModal({
               />
             </div>
           </div>
+
+          {pricingPreview && pricingPreview.display_price_cents > 0 && (
+            <div className="rounded-lg border border-amber-400/20 bg-amber-400/[0.04] px-3 py-2">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-amber-300/80">
+                Preço final ao comprador (com taxas)
+              </p>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-mono text-lg font-bold text-amber-200 tabular-nums">
+                  {(pricingPreview.display_price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </span>
+                <span className="text-[10px] text-zinc-400">
+                  Serviço {(pricingPreview.service_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {" · "}Maquininha {(pricingPreview.processor_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </span>
+              </div>
+              <p className="mt-1 text-[10px] text-zinc-500">
+                Frete (Melhor Envio) é somado em cima desse valor no checkout.
+              </p>
+            </div>
+          )}
 
           <div>
             <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (para frete)</p>
