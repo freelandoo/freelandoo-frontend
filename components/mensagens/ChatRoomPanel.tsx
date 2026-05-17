@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { EmojiPickerButton } from "./EmojiPickerButton"
+import { ReportMessageDialog } from "./ReportMessageDialog"
 
 const POLL_MS = 3500
 const HEARTBEAT_MS = 30_000
@@ -44,6 +45,8 @@ interface ChatRoom {
 interface ChatMessage {
   id_chat_message: string
   content: string
+  hidden?: boolean
+  hidden_reason?: string | null
   message_type: string
   created_at: string
   sender: {
@@ -336,23 +339,20 @@ export function ChatRoomPanel({
     } catch { /* silent */ }
   }
 
-  const reportMessage = async (id: string) => {
-    const reason = prompt("Motivo da denúncia (opcional):")
-    if (reason === null) return
-    try {
-      const res = await fetch(`/api/chat/messages/${id}/report`, {
-        method: "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      })
-      if (res.ok) {
-        alert("Denúncia enviada.")
-      } else {
-        const data = await res.json().catch(() => null)
-        alert(data?.error || "Não foi possível enviar a denúncia.")
-      }
-    } catch {
-      alert("Erro de rede ao denunciar.")
+  const [reportingId, setReportingId] = useState<string | null>(null)
+
+  const openReport = (id: string) => setReportingId(id)
+
+  const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
+    if (!reportingId) return
+    const res = await fetch(`/api/chat/messages/${reportingId}/report`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ reason_category, reason }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      throw new Error(data?.error || "Não foi possível enviar a denúncia")
     }
   }
 
@@ -527,9 +527,15 @@ export function ChatRoomPanel({
                         {timeOnly(m.created_at)}
                       </span>
                     </div>
-                    <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/90">
-                      {m.content}
-                    </p>
+                    {m.hidden ? (
+                      <p className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[12px] italic text-white/40">
+                        <Flag className="h-3 w-3" aria-hidden /> Esta mensagem foi ocultada por denúncias.
+                      </p>
+                    ) : (
+                      <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/90">
+                        {m.content}
+                      </p>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/m:opacity-100">
                     {mine ? (
@@ -545,7 +551,7 @@ export function ChatRoomPanel({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => reportMessage(m.id_chat_message)}
+                        onClick={() => openReport(m.id_chat_message)}
                         aria-label="Denunciar"
                         title="Denunciar"
                         className="rounded p-1 text-white/40 hover:bg-white/5 hover:text-amber-300"
@@ -598,6 +604,12 @@ export function ChatRoomPanel({
           <span className="tabular-nums">{draft.length}/{MAX_LENGTH}</span>
         </div>
       </div>
+
+      <ReportMessageDialog
+        open={reportingId !== null}
+        onOpenChange={(open) => { if (!open) setReportingId(null) }}
+        onSubmit={submitReport}
+      />
     </div>
   )
 }
