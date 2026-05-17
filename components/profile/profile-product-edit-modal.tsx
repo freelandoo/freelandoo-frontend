@@ -23,9 +23,16 @@ export interface ProfileProduct {
   length_cm: number | string
   origin_zipcode_override: string | null
   is_active: boolean
+  id_product_category: number | null
   created_at?: string
   updated_at?: string
   media?: ProfileProductMedia[]
+}
+
+export interface ProductCategoryOption {
+  id_product_category: number
+  name: string
+  slug: string
 }
 
 export interface ProfileProductMedia {
@@ -191,8 +198,10 @@ export function ProfileProductEditModal({
     length_cm: "0",
     origin_zipcode_override: "",
     is_active: true,
+    id_product_category: "" as string,
   })
   const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState<ProductCategoryOption[]>([])
 
   const [mediaList, setMediaList] = useState<ProfileProductMedia[]>([])
   const [mediaLoading, setMediaLoading] = useState(false)
@@ -230,6 +239,7 @@ export function ProfileProductEditModal({
       length_cm: "0",
       origin_zipcode_override: "",
       is_active: true,
+      id_product_category: "",
     })
   }, [open, product])
 
@@ -248,8 +258,23 @@ export function ProfileProductEditModal({
         ? `${product.origin_zipcode_override.slice(0, 5)}-${product.origin_zipcode_override.slice(5, 8)}`
         : "",
       is_active: product.is_active !== false,
+      id_product_category: product.id_product_category != null ? String(product.id_product_category) : "",
     })
   }, [open, product])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    fetch("/api/product-categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        const list: ProductCategoryOption[] = Array.isArray(data?.categories) ? data.categories : []
+        setCategories(list)
+      })
+      .catch(() => { /* silencioso */ })
+    return () => { cancelled = true }
+  }, [open])
 
   const isEdit = product !== null
   const mediaUrl = (pid: number) =>
@@ -429,6 +454,9 @@ export function ProfileProductEditModal({
       onError?.("CEP de origem do produto inválido (8 dígitos)"); return
     }
 
+    const categoryId = form.id_product_category ? Number(form.id_product_category) : 0
+    if (!categoryId) { onError?.("Selecione uma categoria para o produto"); return }
+
     setSaving(true)
     const body: Record<string, unknown> = {
       name,
@@ -441,6 +469,7 @@ export function ProfileProductEditModal({
       length_cm,
       origin_zipcode_override: zipDigits || null,
       is_active: form.is_active,
+      id_product_category: categoryId,
     }
     try {
       const url = product
@@ -528,6 +557,22 @@ export function ProfileProductEditModal({
               rows={3}
               className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-zinc-400">Categoria</label>
+            <select
+              value={form.id_product_category}
+              onChange={(e) => setForm((f) => ({ ...f, id_product_category: e.target.value }))}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+            >
+              <option value="">Selecione uma categoria…</option>
+              {categories.map((c) => (
+                <option key={c.id_product_category} value={c.id_product_category}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
