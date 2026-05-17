@@ -123,10 +123,7 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
         setError("Não consegui ler a duração do vídeo.")
         return
       }
-      if (v.duration > MAX_DURATION + 0.5) {
-        setError(`Stories aceitam até ${MAX_DURATION}s. Corte o vídeo antes de subir (split automático em breve).`)
-        return
-      }
+      // Vídeos > 60s entram em fluxo de split automático no backend.
       setFile(f)
     }
     v.onerror = () => setError("Não consegui ler esse vídeo.")
@@ -142,7 +139,12 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
       fd.append("video", file)
       fd.append("id_profile", selectedProfileId)
       fd.append("kind", effectiveKind)
-      fd.append("duration_seconds", String(duration))
+      const willSplit = duration > MAX_DURATION
+      if (willSplit) {
+        fd.append("auto_split", "true")
+      } else {
+        fd.append("duration_seconds", String(duration))
+      }
       if (width) fd.append("width", String(width))
       if (height) fd.append("height", String(height))
       if (caption.trim()) fd.append("caption", caption.trim())
@@ -267,13 +269,16 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
           </section>
 
           <section className="mb-4">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/55">Vídeo (até 60s)</p>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/55">Vídeo (segmentos de 60s)</p>
             {previewUrl ? (
               <div className="relative aspect-[9/16] w-full overflow-hidden rounded-xl border border-white/10 bg-black">
                 <video src={previewUrl} controls className="absolute inset-0 h-full w-full object-contain" />
                 {duration != null && (
                   <span className="absolute right-2 top-2 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white/85 backdrop-blur">
                     {duration}s · {width || "?"}×{height || "?"}
+                    {duration > MAX_DURATION && (
+                      <span className="ml-1 text-amber-300">· {Math.ceil(duration / MAX_DURATION)} partes</span>
+                    )}
                   </span>
                 )}
                 <button
