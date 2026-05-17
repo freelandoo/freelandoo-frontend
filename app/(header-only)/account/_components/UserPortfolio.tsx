@@ -856,7 +856,6 @@ export function UserPortfolio({
                     } max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted`}
                   >
                     {portfolioTab === "bees" ? (
-                      // eslint-disable-next-line jsx-a11y/media-has-caption
                       <video
                         src={pendingPreview}
                         className="w-full h-full object-cover"

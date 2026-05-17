@@ -181,7 +181,6 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
           <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border bg-zinc-900">
             {cover ? (
               cover.media_type === "video" ? (
-                // eslint-disable-next-line jsx-a11y/media-has-caption
                 <video src={cover.media_url} poster={cover.thumbnail_url || undefined} controls className="h-full w-full object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element

@@ -840,6 +840,7 @@ export default function FreelancerProfileView({
                             onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
                           />
                         ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={firstMedia.media_url}
                             alt={item.title ?? "Mídia do portfólio"}
@@ -855,6 +856,7 @@ export default function FreelancerProfileView({
                         {isClan && item.is_clan_self === false && item.author_display_name && (
                           <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 text-white text-xs">
                             {item.author_avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={item.author_avatar_url}
                                 alt={item.author_display_name}
@@ -1005,6 +1007,7 @@ export default function FreelancerProfileView({
                               {media.media_type === "video" ? (
                                 <video src={media.media_url} className="w-full h-full object-cover" muted playsInline />
                               ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img src={media.media_url} alt="Mídia" className="w-full h-full object-cover" />
                               )}
                               <button
@@ -1085,7 +1088,6 @@ export default function FreelancerProfileView({
                     } max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted`}
                   >
                     {portfolioTab === "bees" ? (
-                      // eslint-disable-next-line jsx-a11y/media-has-caption
                       <video
                         src={pendingPreview}
                         className="w-full h-full object-cover"
@@ -1095,6 +1097,7 @@ export default function FreelancerProfileView({
                         loop
                       />
                     ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={pendingPreview} alt="Preview" className="w-full h-full object-cover" />
                     )}
                     {pendingOriginalFile && portfolioTab !== "bees" && (

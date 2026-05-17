@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, Crown } from "lucide-react"
 import { MACHINES } from "@/components/home/machines/tokens"
@@ -103,11 +104,12 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
       data-machine={creator.machine_slug || undefined}
     >
       {image ? (
-        <img
+        <Image
           src={image}
           alt={name}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
+          fill
+          sizes="(max-width: 768px) 33vw, 20vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
         <div

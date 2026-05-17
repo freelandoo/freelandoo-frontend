@@ -137,6 +137,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
                 playsInline
               />
             ) : (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={currentMedia.media_url}
                 alt={item.title ?? "Mídia do portfólio"}

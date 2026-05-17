@@ -111,6 +111,7 @@ export default async function PortfolioItemPage({
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {item.manifestation?.banner_url && (
           <div className="relative min-h-32 overflow-hidden border-b border-border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.manifestation.banner_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/70 to-zinc-950/20" />
             <div className="relative p-5 text-white">
@@ -131,6 +132,7 @@ export default async function PortfolioItemPage({
                 className="w-full max-h-[80vh] object-contain"
               />
             ) : (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={firstMedia.media_url}
                 alt={item.title ?? "Portfólio"}

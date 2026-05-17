@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Trophy, RefreshCw, Loader2, Save, Eye, Heart, Star, Clock,
@@ -510,7 +511,7 @@ export default function AdminRankingPage() {
                               <div className="flex items-center gap-2.5">
                                 <div className="h-8 w-8 rounded-full bg-muted overflow-hidden shrink-0">
                                   {row.avatar_url
-                                    ? <img src={row.avatar_url} alt="" className="h-full w-full object-cover" />
+                                    ? <Image src={row.avatar_url} alt="" width={32} height={32} className="h-full w-full object-cover" />
                                     : <div className="h-full w-full flex items-center justify-center text-xs font-bold text-muted-foreground">{row.display_name.charAt(0)}</div>}
                                 </div>
                                 <div>

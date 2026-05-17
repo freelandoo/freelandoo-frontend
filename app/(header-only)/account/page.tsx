@@ -2133,6 +2133,7 @@ export default function PerfilPage() {
               <div className="flex flex-col items-center gap-4">
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden shadow-lg">
                   {perfil?.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={perfil.avatar || "/placeholder.svg"}
                       alt={perfil.nome}
@@ -2186,6 +2187,7 @@ export default function PerfilPage() {
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleMouseUp}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     ref={imageRef}
                     src={fotoTemp || "/placeholder.svg"}
@@ -2456,6 +2458,7 @@ export default function PerfilPage() {
                 <div className={`relative bg-muted rounded-lg overflow-hidden ${selectedMediaType === "image" ? "aspect-[4/5]" : "aspect-video"}`}>
                   {selectedMediaType === "image" ? (
                     <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={uploadingMedia.preview || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
                       {originalUploadImage && (
                         <button
@@ -2556,6 +2559,7 @@ export default function PerfilPage() {
             <div className="grid gap-4 py-4">
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
                 {editingMedia.media_type === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={editingMedia.media_url || "/placeholder.svg"} alt={editingMedia.title || "Preview"} className="w-full h-full object-cover" />
                 ) : (
                   <video src={editingMedia.media_url} className="w-full h-full object-cover" controls />
