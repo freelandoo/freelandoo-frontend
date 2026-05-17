@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     log.fail(error)
     status = 500
-    return NextResponse.json({ error: "Erro ao carregar dados de assinatura" }, { status: 500 })
+    return NextResponse.json({ error: "Erro ao carregar dados de ativação" }, { status: 500 })
   } finally {
     log.end(status)
   }

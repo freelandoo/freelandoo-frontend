@@ -194,7 +194,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
           <Lock className="mx-auto mb-3 h-10 w-10 text-zinc-500" aria-hidden />
           <h3 className="mb-1 text-base font-semibold text-zinc-100">Loja disponível apenas para subperfis pagos</h3>
           <p className="mb-5 text-sm text-zinc-400">
-            Ative a assinatura deste subperfil para começar a vender produtos.
+            Ative este subperfil para começar a vender produtos.
           </p>
           <Link
             href={`/payment/taxa?profile_id=${profileId}`}

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error("[stripe/subscription/me] Exception:", msg)
     return NextResponse.json(
-      { error: "Erro ao consultar assinatura", detail: msg },
+      { error: "Erro ao consultar ativação", detail: msg },
       { status: 500 }
     )
   }

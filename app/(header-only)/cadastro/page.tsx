@@ -604,7 +604,7 @@ export default function CadastroPage() {
                 </Button>
                 <CardTitle>Perfil profissional</CardTitle>
                 <CardDescription>
-                  Seu perfil nasce <strong>aguardando assinatura</strong>. Ele só aparece publicamente após você ativar a anuidade.
+                  Seu perfil nasce <strong>aguardando ativação</strong>. Ele só aparece publicamente após você ativar o perfil.
                 </CardDescription>
               </CardHeader>
               <CardContent>

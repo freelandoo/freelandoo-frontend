@@ -247,7 +247,7 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
                 )}
               >
                 <div className="font-semibold">Trampo</div>
-                <div className="text-[11px] text-white/55">Aparece em /maquinas. Requer assinatura ativa.</div>
+                <div className="text-[11px] text-white/55">Aparece em /maquinas. Requer perfil ativado.</div>
               </button>
               <button
                 type="button"

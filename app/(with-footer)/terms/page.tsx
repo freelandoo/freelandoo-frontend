@@ -43,12 +43,12 @@ export default function TermsPage() {
           </ul>
         </Section>
 
-        <Section title="4. Pagamentos e assinatura">
+        <Section title="4. Pagamentos e ativação">
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-            <li>O acesso à plataforma é concedido mediante pagamento da assinatura anual.</li>
+            <li>O acesso à plataforma é concedido mediante pagamento da ativação do perfil.</li>
             <li>
-              Valores, formas de pagamento e políticas de renovação/cancelamento estão disponíveis na{" "}
-              <Link href="/subscription-terms" className="text-primary hover:underline">página de assinatura</Link>.
+              Valores, formas de pagamento e política de reembolso estão disponíveis na{" "}
+              <Link href="/subscription-terms" className="text-primary hover:underline">página de ativação</Link>.
             </li>
             <li>O usuário é responsável por seus dados de pagamento; a Freelandoo não guarda informações sensíveis de cartão (usamos Stripe).</li>
           </ul>
@@ -100,7 +100,7 @@ export default function TermsPage() {
         <div className="mt-10 pt-8 border-t border-border text-sm text-muted-foreground">
           Ao utilizar o Freelandoo, você concorda integralmente com estes Termos de Uso. Veja também nossa{" "}
           <Link href="/privacy-policy" className="text-primary hover:underline">Política de Privacidade</Link> e{" "}
-          <Link href="/subscription-terms" className="text-primary hover:underline">Contrato de Assinatura</Link>.
+          <Link href="/subscription-terms" className="text-primary hover:underline">Termo de Ativação</Link>.
         </div>
       </div>
     </main>

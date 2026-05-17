@@ -62,7 +62,7 @@ function formatBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export default function AnuidadeAdminPage() {
+export default function AtivacaoAdminPage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -157,9 +157,9 @@ export default function AnuidadeAdminPage() {
         <div className="flex items-center gap-3 mb-6">
           <Wallet className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Anuidade</h1>
+            <h1 className="text-2xl font-bold">Ativação do perfil</h1>
             <p className="text-sm text-muted-foreground">
-              Configurar valor e status da taxa anual de criadores.
+              Configurar valor e status da ativação única de criadores.
             </p>
           </div>
         </div>
@@ -174,8 +174,7 @@ export default function AnuidadeAdminPage() {
           <CardHeader>
             <CardTitle className="text-lg">Configuração atual</CardTitle>
             <CardDescription>
-              O valor é cobrado uma vez por ano via Stripe. Alterações aqui afetam novas cobranças;
-              assinaturas já ativas continuam no valor anterior até a renovação.
+              O valor é cobrado uma única vez por perfil via Stripe. Alterações aqui afetam novas ativações.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -236,7 +235,7 @@ export default function AnuidadeAdminPage() {
                       Cobrança ativa
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      Desative para pausar novas assinaturas.
+                      Desative para pausar novas ativações.
                     </p>
                   </div>
                   <Checkbox
@@ -254,8 +253,7 @@ export default function AnuidadeAdminPage() {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Alterar o valor aqui não recria o Price no Stripe. Para atualizar o Price,
-                  execute novamente <code>scripts/stripe-bootstrap.js</code> no backend.
+                  No modelo atual, o checkout usa o valor configurado aqui para criar o pagamento único.
                 </p>
               </>
             )}

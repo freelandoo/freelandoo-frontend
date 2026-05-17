@@ -17,7 +17,7 @@ export function FeaturesSection() {
     {
       icon: Sparkles,
       title: "Para Creators",
-      description: `Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com anuidade de ${annual}. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.`,
+      description: `Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com ativação de ${annual}. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.`,
     },
   ]
   return (

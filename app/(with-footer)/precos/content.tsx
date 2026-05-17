@@ -26,8 +26,8 @@ const noCommission = [
 
 const faqs = [
   { q: "A Freelandoo cobra comissão?", a: "Não. A Freelandoo não cobra comissão sobre serviços fechados diretamente entre clientes e profissionais." },
-  { q: "O valor é mensal ou anual?", a: "O valor é anual. A assinatura do perfil profissional custa R$ 300 por ano." },
-  { q: "Posso cancelar?", a: "O usuário pode cancelar a renovação conforme as regras da assinatura e do meio de pagamento utilizado." },
+  { q: "O valor é mensal ou recorrente?", a: "Não. A ativação do perfil profissional custa R$ 300 em pagamento único." },
+  { q: "Posso solicitar reembolso?", a: "Sim. O reembolso integral pode ser solicitado em até 7 dias corridos após o pagamento." },
   { q: "O pagamento ativa meu perfil automaticamente?", a: "A ativação depende da confirmação do pagamento. Após aprovação, o perfil pode ficar ativo conforme as regras da plataforma." },
   { q: "Tenho garantia de clientes?", a: "Não. A Freelandoo aumenta sua exposição, mas não garante contratação." },
 ]
@@ -81,7 +81,7 @@ export function PrecosContent() {
             Preço simples para profissionais que querem aparecer
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-10" data-reveal>
-            Uma anuidade para manter seu perfil ativo na vitrine da Freelandoo, sem comissão por serviço fechado.
+            Uma ativação única para manter seu perfil ativo na vitrine da Freelandoo, sem comissão por serviço fechado.
           </p>
           <div className="flex flex-wrap gap-4" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
@@ -98,13 +98,13 @@ export function PrecosContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center" data-reveal>
-            Assinatura anual Freelandoo
+            Ativação do perfil Freelandoo
           </h2>
           <div className="max-w-md mx-auto bg-card border border-primary/20 rounded-2xl p-8 shadow-[0_0_60px_rgba(242,196,9,0.08)]" data-reveal>
             <div className="text-center mb-8">
-              <div className="font-semibold text-foreground mb-1">Perfil Profissional Anual</div>
+              <div className="font-semibold text-foreground mb-1">Perfil profissional ativado</div>
               <div className="text-5xl font-bold text-primary mt-4 mb-1">R$ 300</div>
-              <div className="text-sm text-muted-foreground">por ano</div>
+              <div className="text-sm text-muted-foreground">pagamento único</div>
               <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
                 Mantenha seu perfil ativo na plataforma e apareça na vitrine pública da Freelandoo.
               </p>
@@ -118,7 +118,7 @@ export function PrecosContent() {
               ))}
             </div>
             <Link href="/cadastro" className="inline-flex items-center justify-center w-full bg-primary text-black font-semibold px-8 py-3.5 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              Assinar agora
+              Ativar agora
             </Link>
           </div>
         </div>
@@ -128,7 +128,7 @@ export function PrecosContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Você paga a assinatura. O serviço fechado é seu.
+            Você paga a ativação. O serviço fechado é seu.
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
             A Freelandoo não cobra comissão sobre os serviços que você fechar com clientes. A plataforma funciona como uma vitrine de divulgação e conexão. Depois do contato, a negociação acontece diretamente entre você e o cliente.
@@ -149,7 +149,7 @@ export function PrecosContent() {
           <div className="border border-border rounded-xl p-6 md:p-8" data-reveal>
             <h3 className="font-semibold text-foreground mb-3">Exposição não é promessa de contratação</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              A assinatura aumenta sua exposição dentro da plataforma, mas não garante contratação, quantidade de contatos ou volume de faturamento. Os resultados dependem da demanda, qualidade do perfil, portfólio, localização, categoria, atividade e negociação do próprio profissional.
+            A ativação aumenta sua exposição dentro da plataforma, mas não garante contratação, quantidade de contatos ou volume de faturamento. Os resultados dependem da demanda, qualidade do perfil, portfólio, localização, categoria, atividade e negociação do próprio profissional.
             </p>
           </div>
         </div>
@@ -181,7 +181,7 @@ export function PrecosContent() {
           </p>
           <div data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">
-              Assinar e ativar perfil
+              Ativar perfil
             </Link>
           </div>
         </div>

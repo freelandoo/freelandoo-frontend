@@ -111,7 +111,7 @@ export function ForProfessionalsSection() {
               R$ 300 <span className="text-sm font-normal text-white/50">/ ano por perfil</span>
             </p>
             <p className="mt-2 max-w-md text-sm text-white/55">
-              A assinatura aumenta sua exposição, mas não garante contratação.
+              A ativação aumenta sua exposição, mas não garante contratação.
             </p>
           </div>
 

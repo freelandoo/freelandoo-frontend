@@ -87,7 +87,7 @@ export default function AdminPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Histórico de assinaturas pagas e taxas de agendamento recebidas.</p>
+              <p className="text-sm text-muted-foreground">Histórico de ativações pagas e taxas de agendamento recebidas.</p>
             </CardContent>
           </Card>
 
@@ -156,12 +156,12 @@ export default function AdminPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-primary" />
-                Anuidade
+                Ativação do perfil
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Configurar valor e status da taxa anual cobrada via Stripe.
+                Configurar valor e status da ativação única cobrada via Stripe.
               </p>
             </CardContent>
           </Card>

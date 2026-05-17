@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 
 const categories = [
   "Conta e cadastro",
-  "Assinatura e pagamento",
+  "Ativação e pagamento",
   "Perfil profissional",
   "Portfólio",
   "Serviços e agenda",
@@ -20,8 +20,8 @@ const categories = [
 
 const faqs = [
   { q: "Como criar minha conta?", a: "Você pode criar sua conta informando seus dados básicos ou usando as opções de login disponíveis. Depois disso, poderá acessar sua área e configurar seu perfil." },
-  { q: "Como ativar meu perfil profissional?", a: "Para aparecer na vitrine pública da Freelandoo, o profissional precisa configurar seu perfil e manter a assinatura ativa. A ativação acontece após a confirmação do pagamento." },
-  { q: "Quanto custa anunciar na Freelandoo?", a: "A assinatura anual do perfil profissional custa R$ 300 por ano." },
+  { q: "Como ativar meu perfil profissional?", a: "Para aparecer na vitrine pública da Freelandoo, o profissional precisa configurar seu perfil e concluir a ativação. A ativação acontece após a confirmação do pagamento." },
+  { q: "Quanto custa anunciar na Freelandoo?", a: "A ativação do perfil profissional custa R$ 300 em pagamento único." },
   { q: "A Freelandoo cobra comissão sobre serviços fechados?", a: "Não. A Freelandoo não cobra comissão sobre os serviços negociados diretamente entre cliente e profissional." },
   { q: "Como funcionam as máquinas?", a: "As máquinas organizam profissionais por intenção. Em vez de navegar por categorias soltas, o usuário escolhe uma máquina, como Views, Divulgação, Limpeza, Construção, Negócios, Oportunidades, Saúde e Beleza ou Saúde do Pet." },
   { q: "Como escolher minha profissão?", a: "Sua profissão deve estar ligada à máquina principal do seu perfil. Isso ajuda a plataforma a mostrar seu perfil para buscas mais compatíveis." },
@@ -87,7 +87,7 @@ export function CentralDeAjudaContent() {
             Central de ajuda
           </h1>
           <p className="text-xl text-muted-foreground mb-10" data-reveal>
-            Encontre respostas sobre conta, assinatura, perfis, máquinas, serviços, agenda, cupons e segurança.
+            Encontre respostas sobre conta, ativação, perfis, máquinas, serviços, agenda, cupons e segurança.
           </p>
           <div className="relative" data-reveal>
             <input

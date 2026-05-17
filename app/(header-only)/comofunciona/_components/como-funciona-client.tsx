@@ -459,7 +459,7 @@ export function ComoFuncionaClient() {
               <span style={{ color: yellow }}>transforme presença em oportunidade</span>
             </SectionTitle>
             <SectionSubtitle>
-              Com a assinatura anual, o profissional mantém seu perfil ativo na plataforma,
+              Com a ativação única, o profissional mantém seu perfil ativo na plataforma,
               cadastra serviços, mostra portfólio, aparece nas buscas e recebe contatos diretos.
             </SectionSubtitle>
           </div>
@@ -467,7 +467,7 @@ export function ComoFuncionaClient() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[
               { n: 1, title: "Crie seu perfil", text: "Cadastre suas informações, localização, máquina principal e profissão." },
-              { n: 2, title: "Ative sua assinatura", text: "Com a anuidade ativa, seu perfil pode aparecer na vitrine pública da Freelandoo." },
+              { n: 2, title: "Ative seu perfil", text: "Com a ativação concluída, seu perfil pode aparecer na vitrine pública da Freelandoo." },
               { n: 3, title: "Mostre seu trabalho", text: "Use o portfólio para apresentar imagens, vídeos, projetos e provas do que você faz." },
               { n: 4, title: "Receba contatos", text: "Clientes interessados podem chamar você diretamente pelo WhatsApp." },
             ].map((step) => (
@@ -480,7 +480,7 @@ export function ComoFuncionaClient() {
           </div>
 
           <div className="mb-10 p-4 rounded-xl text-sm max-w-2xl" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", color: "#d1d5db" }}>
-            <strong style={{ color: yellow }}>Importante:</strong> A assinatura aumenta sua exposição dentro da plataforma,
+            <strong style={{ color: yellow }}>Importante:</strong> A ativação aumenta sua exposição dentro da plataforma,
             mas não garante contratação. A negociação acontece diretamente entre cliente e profissional.
           </div>
 
@@ -768,7 +768,7 @@ export function ComoFuncionaClient() {
               <div className="space-y-4">
                 {[
                   "Crio meu perfil",
-                  "Ativo minha assinatura",
+                  "Ativo meu perfil",
                   "Cadastro serviços e portfólio",
                   "Apareço na vitrine",
                   "Recebo contatos diretos",
