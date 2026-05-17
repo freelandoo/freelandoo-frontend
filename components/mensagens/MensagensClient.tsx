@@ -21,6 +21,7 @@ import {
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
+import { AudioMessage, AudioRecorder } from "@/components/mensagens/AudioRecorder"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -280,6 +281,7 @@ export default function MensagensClient() {
 
   const [composer, setComposer] = useState("")
   const [sending, setSending] = useState(false)
+  const [audioRecorderActive, setAudioRecorderActive] = useState(false)
 
   // ----- Aba O.S. -----
   const [tab, setTab] = useState<MainTab>(initialTab)
@@ -317,6 +319,14 @@ export default function MensagensClient() {
     () => actors.find((a) => a.id === actorId) || null,
     [actors, actorId]
   )
+
+  const activeConv = useMemo(
+    () => conversations.find((c) => c.id_conversation === activeConvId) || null,
+    [conversations, activeConvId]
+  )
+
+  // Áudio só em conversa privada 1-a-1 (não em grupos). Regra batida no backend.
+  const canSendAudio = !!activeConvId && activeConv?.kind !== "group" && !!actorId
 
   // Clans não têm acesso às salas de chat ao vivo — o chat é por user,
   // mas o contexto do actor "clan" não faz sentido nessas abas.
@@ -1473,13 +1483,22 @@ export default function MensagensClient() {
                               <div className={cn("flex max-w-[80%] min-w-0 flex-col", mine ? "items-end" : "items-start")}>
                                 <div
                                   className={cn(
-                                    "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                    "relative text-sm leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                    m.kind === "audio" ? "" : "px-4 py-2.5 whitespace-pre-wrap break-words",
                                     mine
                                       ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                                       : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                                   )}
                                 >
-                                  {m.body}
+                                  {m.kind === "audio" && m.audio_url ? (
+                                    <AudioMessage
+                                      src={m.audio_url}
+                                      durationSeconds={m.audio_duration_seconds}
+                                      mine={mine}
+                                    />
+                                  ) : (
+                                    m.body
+                                  )}
                                 </div>
                                 <span
                                   className={cn(
@@ -1501,41 +1520,68 @@ export default function MensagensClient() {
               </div>
 
               <div className="shrink-0 border-t border-white/[0.06] bg-gradient-to-t from-black/60 to-black/20 px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-xl sm:px-4">
-                <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
-                  <EmojiPickerButton
-                    onPick={(emoji) =>
-                      setComposer((c) => (c + emoji).slice(0, 4000))
-                    }
-                  />
-                  <Textarea
-                    value={composer}
-                    onChange={(e) => setComposer(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault()
-                        handleSend()
-                      }
+                {audioRecorderActive && canSendAudio ? (
+                  <AudioRecorder
+                    conversationId={activeConvId}
+                    actorId={actorId!}
+                    actorType={activeActor?.type === "clan" ? "clan" : "profile"}
+                    onActiveChange={setAudioRecorderActive}
+                    onSent={() => {
+                      setAudioRecorderActive(false)
+                      void loadThread(activeConvId)
+                      void loadConversations()
                     }}
-                    placeholder="Escrever mensagem"
-                    rows={1}
-                    className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                   />
-                  <motion.button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={sending || !composer.trim()}
-                    whileTap={{ scale: 0.94 }}
-                    transition={SPRING}
-                    aria-label="Enviar"
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                  >
-                    {sending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
+                ) : (
+                  <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+                    <EmojiPickerButton
+                      onPick={(emoji) =>
+                        setComposer((c) => (c + emoji).slice(0, 4000))
+                      }
+                    />
+                    <Textarea
+                      value={composer}
+                      onChange={(e) => setComposer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSend()
+                        }
+                      }}
+                      placeholder="Escrever mensagem"
+                      rows={1}
+                      className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
+                    />
+                    {canSendAudio && (
+                      <AudioRecorder
+                        conversationId={activeConvId}
+                        actorId={actorId!}
+                        actorType={activeActor?.type === "clan" ? "clan" : "profile"}
+                        onActiveChange={setAudioRecorderActive}
+                        onSent={() => {
+                          setAudioRecorderActive(false)
+                          void loadThread(activeConvId)
+                          void loadConversations()
+                        }}
+                      />
                     )}
-                  </motion.button>
-                </div>
+                    <motion.button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={sending || !composer.trim()}
+                      whileTap={{ scale: 0.94 }}
+                      transition={SPRING}
+                      aria-label="Enviar"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                    >
+                      {sending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </>
           )}

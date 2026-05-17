@@ -43,8 +43,16 @@ export interface MessageItem {
   sender_entity_type: string
   sender_entity_id: string
   sender_user_id: string
-  body: string
+  body: string | null
+  kind?: "text" | "audio"
   status: string
+  audio_url?: string | null
+  audio_duration_seconds?: number | null
+  audio_size_bytes?: number | null
+  audio_mime_type?: string | null
+  audio_codec?: string | null
+  audio_bitrate?: number | null
+  media_processing_status?: "ready" | "processing" | "failed"
   created_at: string
   deleted_at: string | null
 }
