@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   ImageIcon,
   Plus,
@@ -9,13 +10,14 @@ import {
   Trash2,
   Loader2,
   Heart,
-  ExternalLink,
   X,
   AlertCircle,
   Hexagon,
   GraduationCap,
   UserRound,
   Users,
+  Sparkles,
+  Crop,
 } from "lucide-react"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { Button } from "@/components/ui/button"
@@ -59,7 +61,6 @@ type Item = {
   id_portfolio_item: string
   title: string | null
   description: string | null
-  project_url: string | null
   is_featured?: boolean
   sort_order?: number
   feed_kind?: "feed" | "bees"
@@ -107,7 +108,6 @@ export function UserPortfolio({
   const [form, setForm] = useState({
     title: "",
     description: "",
-    project_url: "",
   })
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [pendingOriginalFile, setPendingOriginalFile] = useState<File | null>(null)
@@ -170,7 +170,7 @@ export function UserPortfolio({
         const next = detail.kind === "bees" ? "bees" : "feed"
         setPortfolioTab(next)
         setEditingItemId(null)
-        setForm({ title: "", description: "", project_url: "" })
+        setForm({ title: "", description: "" })
         setPortfolioError(null)
         if (pendingPreview) URL.revokeObjectURL(pendingPreview)
         setPendingFile(null)
@@ -200,7 +200,7 @@ export function UserPortfolio({
 
   const handleAddItem = () => {
     setEditingItemId(null)
-    setForm({ title: "", description: "", project_url: "" })
+    setForm({ title: "", description: "" })
     setPortfolioError(null)
     clearPending()
     setIsModalOpen(true)
@@ -211,7 +211,6 @@ export function UserPortfolio({
     setForm({
       title: item.title ?? "",
       description: item.description ?? "",
-      project_url: item.project_url ?? "",
     })
     setPortfolioError(null)
     clearPending()
@@ -414,7 +413,6 @@ export function UserPortfolio({
           ...(isEditing ? {} : { feed_kind: portfolioTab }),
           title: form.title.trim() || null,
           description: form.description.trim() || null,
-          project_url: form.project_url.trim() || null,
           is_featured: false,
           sort_order: 0,
         }),
@@ -753,17 +751,6 @@ export function UserPortfolio({
                         />
                         <span className="tabular-nums">{item.likes_count ?? 0}</span>
                       </span>
-                      {item.project_url && (
-                        <a
-                          href={item.project_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center"
-                          title="Ver projeto"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      )}
                     </div>
                   </div>
                   {item.description && (
@@ -829,174 +816,251 @@ export function UserPortfolio({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingItemId
-                ? "Editar item de portfólio"
-                : portfolioTab === "bees"
-                  ? "Novo Bees"
-                  : "Novo item de portfólio"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingItemId
-                ? "Atualize as informações do item."
-                : portfolioTab === "bees"
-                  ? "Envie um vídeo vertical 9:16."
-                  : "Preencha as informações do novo item do seu portfólio."}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
+          <div className="relative overflow-y-auto max-h-[92vh] [scrollbar-width:thin]">
+            <DialogHeader className="px-6 pt-6 pb-3 border-b border-white/[0.06]">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                    portfolioTab === "bees"
+                      ? "bg-gradient-to-br from-amber-400/30 to-orange-500/20 text-amber-300"
+                      : "bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300"
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <DialogTitle className="text-base text-white">
+                    {editingItemId
+                      ? "Editar item"
+                      : portfolioTab === "bees"
+                        ? "Novo Bees"
+                        : "Novo post"}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-white/50">
+                    {editingItemId
+                      ? "Atualize as informações."
+                      : portfolioTab === "bees"
+                        ? "Envie um vídeo vertical 9:16."
+                        : "Mostre seu trabalho com uma imagem 4:5."}
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            {/* Upload de mídia */}
-            {!editingItemId && (
-              <div className="space-y-2">
-                <Label>{portfolioTab === "bees" ? "Vídeo 9:16" : "Imagem"}</Label>
-                {pendingPreview ? (
-                  <div
-                    className={`relative w-full ${
-                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
-                    } max-h-[460px] rounded-xl overflow-hidden border border-border bg-muted`}
-                  >
-                    {portfolioTab === "bees" ? (
-                      <video
-                        src={pendingPreview}
-                        className="w-full h-full object-cover"
-                        muted
-                        playsInline
-                        autoPlay
-                        loop
-                      />
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={pendingPreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    {pendingOriginalFile && portfolioTab !== "bees" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCropTarget({ file: pendingOriginalFile, mode: "new" })
-                        }
-                        className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
-                      >
-                        Cortar imagem
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={clearPending}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+            <div className="px-6 pt-5 pb-4 space-y-5">
+              {/* Preview / Upload */}
+              {!editingItemId && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] uppercase tracking-wider text-white/50">
+                      {portfolioTab === "bees" ? "Vídeo" : "Imagem"}
+                    </Label>
+                    <span className="text-[10px] uppercase tracking-wider text-white/30">
+                      {portfolioTab === "bees" ? "9:16 · até 100MB" : "4:5 · até 3MB"}
+                    </span>
                   </div>
-                ) : (
-                  <label
-                    className={`flex flex-col items-center justify-center w-full ${
-                      portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
-                    } max-h-[460px] rounded-xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/40 hover:bg-muted/70 cursor-pointer transition-colors`}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handlePendingFileDrop}
-                  >
-                    <input
-                      type="file"
-                      accept={
-                        portfolioTab === "bees"
-                          ? "video/mp4,video/webm,video/quicktime"
-                          : "image/jpeg,image/png,image/webp"
-                      }
-                      className="hidden"
-                      onChange={handlePendingFileSelect}
-                      disabled={processingMedia}
-                    />
-                    {processingMedia ? (
-                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+
+                  <AnimatePresence mode="wait" initial={false}>
+                    {pendingPreview ? (
+                      <motion.div
+                        key="preview"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                        className={`relative mx-auto w-full ${
+                          portfolioTab === "bees" ? "aspect-[9/16] max-w-[260px]" : "aspect-[4/5]"
+                        } max-h-[460px] overflow-hidden rounded-2xl ring-1 ring-white/10 bg-black shadow-[0_30px_60px_-30px_rgba(0,0,0,0.8)]`}
+                      >
+                        <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl bg-gradient-to-tr from-yellow-400/0 via-amber-300/[0.04] to-transparent" />
+                        {portfolioTab === "bees" ? (
+                          <video
+                            src={pendingPreview}
+                            className="h-full w-full object-cover"
+                            muted
+                            playsInline
+                            autoPlay
+                            loop
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={pendingPreview}
+                            alt="Pré-visualização"
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2">
+                          {pendingOriginalFile && portfolioTab !== "bees" ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCropTarget({ file: pendingOriginalFile, mode: "new" })
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-black/90 transition-colors"
+                            >
+                              <Crop className="h-3 w-3" />
+                              Recortar
+                            </button>
+                          ) : <span />}
+                          <button
+                            type="button"
+                            onClick={clearPending}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-red-500/30 hover:text-red-100 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                            Remover
+                          </button>
+                        </div>
+                      </motion.div>
                     ) : (
-                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                      <motion.label
+                        key="empty"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                        className={`group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.02] ${
+                          portfolioTab === "bees" ? "aspect-[9/16] max-w-[260px]" : "aspect-[4/5]"
+                        } max-h-[460px] transition-all hover:border-yellow-400/40 hover:bg-yellow-400/[0.04]`}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={handlePendingFileDrop}
+                      >
+                        <input
+                          type="file"
+                          accept={
+                            portfolioTab === "bees"
+                              ? "video/mp4,video/webm,video/quicktime"
+                              : "image/jpeg,image/png,image/webp"
+                          }
+                          className="hidden"
+                          onChange={handlePendingFileSelect}
+                          disabled={processingMedia}
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(250,204,21,0.06),transparent_70%)] opacity-0 transition-opacity group-hover:opacity-100" />
+                        <motion.div
+                          animate={processingMedia ? { rotate: 360 } : { y: [0, -4, 0] }}
+                          transition={
+                            processingMedia
+                              ? { repeat: Infinity, duration: 1, ease: "linear" }
+                              : { repeat: Infinity, duration: 2.4, ease: "easeInOut" }
+                          }
+                          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10"
+                        >
+                          {processingMedia ? (
+                            <Loader2 className="h-5 w-5 text-yellow-300" />
+                          ) : portfolioTab === "bees" ? (
+                            <Upload className="h-5 w-5 text-amber-300" />
+                          ) : (
+                            <ImageIcon className="h-5 w-5 text-yellow-300" />
+                          )}
+                        </motion.div>
+                        <span className="px-6 text-center text-sm font-medium text-white/85">
+                          {processingMedia
+                            ? "Otimizando..."
+                            : portfolioTab === "bees"
+                              ? "Toque ou arraste seu vídeo 9:16"
+                              : "Toque ou arraste sua imagem"}
+                        </span>
+                        <span className="mt-1 px-6 text-center text-[11px] text-white/40">
+                          {portfolioTab === "bees"
+                            ? "MP4 ou WebM, vertical"
+                            : "JPG, PNG ou WebP — recortamos pra 4:5"}
+                        </span>
+                      </motion.label>
                     )}
-                    <span className="text-sm text-muted-foreground font-medium">
-                      {processingMedia
-                        ? "Otimizando..."
-                        : portfolioTab === "bees"
-                          ? "Clique ou arraste um vídeo 9:16"
-                          : "Clique ou arraste uma imagem"}
-                    </span>
-                    <span className="text-xs text-muted-foreground/60 mt-1">
-                      {portfolioTab === "bees"
-                        ? "MP4 ou WebM - 9:16 - max 100MB"
-                        : "JPG, PNG ou WebP - 4:5 - max 3MB"}
-                    </span>
-                  </label>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="up-title">Título</Label>
-              <Input
-                id="up-title"
-                placeholder="Ex.: Trabalho que fiz ontem"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                maxLength={120}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="up-desc">Descrição (opcional)</Label>
-              <Textarea
-                id="up-desc"
-                placeholder="Descreva o trabalho, cliente, contexto..."
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                maxLength={500}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="up-url">URL do projeto (opcional)</Label>
-              <Input
-                id="up-url"
-                type="url"
-                placeholder="https://…"
-                value={form.project_url}
-                onChange={(e) => setForm({ ...form, project_url: e.target.value })}
-              />
-            </div>
-
-            {portfolioError && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                <AlertCircle className="h-4 w-4" />
-                {portfolioError}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsModalOpen(false)}
-              disabled={isAddingItem}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmitItem} disabled={isAddingItem}>
-              {isAddingItem ? (
-                <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  Salvando…
-                </>
-              ) : editingItemId ? (
-                "Salvar"
-              ) : (
-                "Criar item"
+                  </AnimatePresence>
+                </div>
               )}
-            </Button>
-          </DialogFooter>
+
+              {/* Título */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="up-title" className="text-[11px] uppercase tracking-wider text-white/50">
+                    Título
+                  </Label>
+                  <span className="text-[10px] tabular-nums text-white/30">
+                    {form.title.length}/120
+                  </span>
+                </div>
+                <Input
+                  id="up-title"
+                  placeholder="Trabalho que fiz ontem..."
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  maxLength={120}
+                  className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
+                />
+              </div>
+
+              {/* Descrição */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="up-desc" className="text-[11px] uppercase tracking-wider text-white/50">
+                    Descrição
+                  </Label>
+                  <span className="text-[10px] tabular-nums text-white/30">
+                    {form.description.length}/500
+                  </span>
+                </div>
+                <Textarea
+                  id="up-desc"
+                  placeholder="Conte o contexto: cliente, processo, resultado..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  maxLength={500}
+                  rows={3}
+                  className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 resize-none focus-visible:ring-yellow-400/40"
+                />
+              </div>
+
+              <AnimatePresence>
+                {portfolioError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 24 }}
+                    className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-xs text-red-200"
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-px" />
+                    <span>{portfolioError}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <DialogFooter className="px-6 py-4 border-t border-white/[0.06] bg-black/40 backdrop-blur-sm">
+              <Button
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                disabled={isAddingItem}
+                className="h-10 rounded-xl border-white/10 bg-transparent text-white/70 hover:bg-white/[0.04] hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSubmitItem}
+                disabled={isAddingItem}
+                className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 font-medium text-black hover:from-yellow-300 hover:to-amber-400 shadow-[0_8px_24px_-8px_rgba(250,204,21,0.5)]"
+              >
+                {isAddingItem ? (
+                  <>
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    Publicando…
+                  </>
+                ) : editingItemId ? (
+                  "Salvar"
+                ) : (
+                  <>
+                    <Sparkles className="mr-1.5 h-4 w-4" />
+                    Publicar
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
