@@ -22,6 +22,7 @@ import {
   Loader2,
   Plus,
   Search,
+  ShoppingBag,
   Trash2,
   Upload,
   Users,
@@ -49,6 +50,7 @@ import { Label } from "@/components/ui/label"
 import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
 import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
+import { ProfileOwnerProductsSection } from "@/components/profile/profile-owner-products-section"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
@@ -121,7 +123,7 @@ export default function FreelancerProfileView({
   const [openPortfolioItemId, setOpenPortfolioItemId] = useState<string | null>(null)
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
-  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses">("feed")
+  const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -760,6 +762,20 @@ export default function FreelancerProfileView({
                 <GraduationCap className="h-3.5 w-3.5" />
                 Cursos
               </button>
+              {isOwnProfile && !isClan && (
+                <button
+                  type="button"
+                  onClick={() => setPortfolioTab("shop")}
+                  className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+                    portfolioTab === "shop"
+                      ? "border-primary bg-primary/[0.08] text-primary"
+                      : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                  }`}
+                >
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  Loja
+                </button>
+              )}
             </div>
           </div>
           {/* "+ Novo" migrou pro dropdown do RetractableProfileHeader. */}
@@ -783,6 +799,10 @@ export default function FreelancerProfileView({
 
           {portfolioTab === "courses" && (
             <ProfileCoursesTab profileId={profileId} isOwnProfile={isOwnProfile} />
+          )}
+
+          {portfolioTab === "shop" && isOwnProfile && !isClan && (
+            <ProfileOwnerProductsSection profileId={profileId} />
           )}
 
           {(portfolioTab === "feed" || portfolioTab === "bees") && (() => {
