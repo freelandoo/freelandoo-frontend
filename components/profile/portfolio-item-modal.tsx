@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Heart, Share2, X, ExternalLink, Check } from "lucide-react"
+import { Heart, Send, X, ExternalLink, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PortfolioItem } from "@/lib/types/freelancer-profile"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 
 type Props = {
   item: PortfolioItem
@@ -28,9 +29,13 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
   const activeMedias = item.media.filter((m) => m.is_active !== false)
   const currentMedia = activeMedias[activeMediaIdx] ?? activeMedias[0]
 
-  const shareUrl = typeof window !== "undefined"
+  const { coupon: shareCoupon } = useShareCoupon()
+  const baseShareUrl = typeof window !== "undefined"
     ? `${window.location.origin}/p/${item.id_portfolio_item}`
     : ""
+  const shareUrl = shareCoupon?.code && baseShareUrl
+    ? buildShareUrlWithCoupon(baseShareUrl, shareCoupon.code)
+    : baseShareUrl
 
   const toggleLike = async () => {
     if (pending) return
@@ -201,7 +206,7 @@ export function PortfolioItemModal({ item, profileId, onClose, onLikeChange }: P
               {count} {count === 1 ? "like" : "likes"}
             </Button>
             <Button variant="outline" onClick={share} className="gap-2">
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Share2 className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Send className="h-4 w-4" />}
               {copied ? "Copiado" : "Compartilhar"}
             </Button>
           </div>

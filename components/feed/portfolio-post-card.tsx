@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Heart, Share2, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
+import { Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import { sendFeedEvent } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
-import { ShareWithCouponDialog } from "@/components/share/share-with-coupon-dialog"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -66,7 +66,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
+  const { coupon: shareCoupon } = useShareCoupon()
   const primaryUrl = post.project_url || post.public_profile_url
   const primaryLabel =
     post.source_type === "course"
@@ -124,30 +124,44 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     }
   }
 
-  const handleShare = () => {
-    setShareOpen(true)
-  }
+  const handleShare = async () => {
+    const baseUrl =
+      (primaryUrl
+        ? new URL(
+            primaryUrl,
+            typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
+          ).toString()
+        : null) || (typeof window !== "undefined" ? window.location.href : "")
+    const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
 
-  const sharePath = (() => {
-    if (primaryUrl) {
-      try {
-        return new URL(
-          primaryUrl,
-          typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
-        ).toString()
-      } catch {
-        // fallthrough
-      }
+    const shareData: ShareData = {
+      title: post.profile_name || "Freelandoo",
+      text: post.title || post.caption || "",
+      url,
     }
-    return typeof window !== "undefined" ? window.location.href : ""
-  })()
 
-  const handleShared = () => {
-    sendFeedEvent({
-      post_id: post.post_id,
-      event_type: "share",
-      filters,
-    })
+    let shared = false
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData)
+        shared = true
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        shared = true
+      }
+    } catch {
+      // Cancelado ou bloqueado — não trackear.
+    }
+
+    if (shared) {
+      sendFeedEvent({
+        post_id: post.post_id,
+        event_type: "share",
+        filters,
+      })
+    }
   }
 
   const handleProfileClick = () => {
@@ -382,7 +396,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 {copied ? (
                   <Check className="h-6 w-6 text-emerald-400" />
                 ) : (
-                  <Share2 className="h-6 w-6" />
+                  <Send className="h-6 w-6" />
                 )}
               </button>
             </div>
@@ -433,7 +447,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               {copied ? (
                 <Check className="h-6 w-6 text-emerald-400 animate-in zoom-in-50 duration-200" />
               ) : (
-                <Share2 className="h-6 w-6" />
+                <Send className="h-6 w-6" />
               )}
             </button>
           </div>
@@ -521,14 +535,6 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         </>
       )}
 
-      <ShareWithCouponDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        path={sharePath}
-        title={post.profile_name || post.username || "Freelandoo"}
-        description={post.title || post.caption || "Confira no Freelandoo. Quem comprar pelo seu link ganha desconto com seu cupom."}
-        onShared={handleShared}
-      />
     </article>
   )
 }

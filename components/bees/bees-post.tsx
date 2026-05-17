@@ -3,14 +3,14 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Heart, Share2, MessageCircle, MessageSquare, Check, ChevronUp } from "lucide-react"
+import { Heart, Send, MessageCircle, MessageSquare, Check, ChevronUp } from "lucide-react"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { sendFeedEvent } from "@/lib/feed-events"
 import { queueImpression } from "@/lib/feed-impressions"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
-import { ShareWithCouponDialog } from "@/components/share/share-with-coupon-dialog"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { BeesVideo } from "./bees-video"
 
 interface BeesPostProps {
@@ -62,7 +62,7 @@ export function BeesPost({
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
   const [expandCaption, setExpandCaption] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
+  const { coupon: shareCoupon } = useShareCoupon()
 
   useEffect(() => {
     const node = sectionRef.current
@@ -149,17 +149,37 @@ export function BeesPost({
     }
   }
 
-  const handleShare = () => {
-    setShareOpen(true)
-  }
+  const handleShare = async () => {
+    const baseUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/p/${post.post_id}`
+        : ""
+    const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
 
-  const sharePath =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/p/${post.post_id}`
-      : `/p/${post.post_id}`
+    const shareData: ShareData = {
+      title: post.profile_name || "Freelandoo",
+      text: post.title || post.caption || "",
+      url,
+    }
 
-  const handleShared = () => {
-    sendFeedEvent({ post_id: post.post_id, event_type: "share", filters })
+    let shared = false
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share(shareData)
+        shared = true
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        shared = true
+      }
+    } catch {
+      /* cancelado */
+    }
+
+    if (shared) {
+      sendFeedEvent({ post_id: post.post_id, event_type: "share", filters })
+    }
   }
 
   const handleProfileClick = () => {
@@ -244,7 +264,7 @@ export function BeesPost({
               {copied ? (
                 <Check className="h-7 w-7 text-emerald-400" />
               ) : (
-                <Share2 className="h-7 w-7" />
+                <Send className="h-7 w-7" />
               )}
               <CounterLabel value={post.shares_count} />
             </ActionButton>
@@ -335,14 +355,6 @@ export function BeesPost({
         </div>
       )}
 
-      <ShareWithCouponDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        path={sharePath}
-        title={post.profile_name || post.username || "Freelandoo"}
-        description={post.title || post.caption || "Confira no Freelandoo. Quem comprar pelo seu link ganha desconto com seu cupom."}
-        onShared={handleShared}
-      />
     </section>
   )
 }

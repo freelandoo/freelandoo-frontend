@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { getBackendApiUrl } from "@/lib/backend"
 import { buildProfileUrl } from "@/lib/slug"
-import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
+import { ShareIconButton } from "@/components/share/share-icon-button"
 
 type PortfolioItemPublic = {
   id_portfolio_item: string
@@ -153,7 +153,7 @@ export default async function PortfolioItemPage({
               por <span className="font-medium text-foreground">{author}</span>
             </p>
             <div className="flex items-center gap-2">
-              <ShareWithCouponButton
+              <ShareIconButton
                 path={`/p/${item.id_portfolio_item}`}
                 title={item.title || author}
               />

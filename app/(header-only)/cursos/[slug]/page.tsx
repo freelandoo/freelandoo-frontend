@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, GraduationCap, Loader2, ShoppingCart, Settings, Check } from "lucide-react"
-import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
+import { ShareIconButton } from "@/components/share/share-icon-button"
 
 interface PublicCourse {
   id: string
@@ -211,10 +211,10 @@ export default function PublicCoursePage() {
             </Button>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <ShareWithCouponButton
+              <ShareIconButton
                 path={`/cursos/${course.slug}`}
                 title={course.title}
-                description="Envie este link. Quem comprar por ele ganha desconto automaticamente usando seu cupom."
+                description="Confira este curso no Freelandoo."
               />
               <Button size="lg" onClick={handleBuy} disabled={buying}>
                 <ShoppingCart className="mr-2 h-4 w-4" />

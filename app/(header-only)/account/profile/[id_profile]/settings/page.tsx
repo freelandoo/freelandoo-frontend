@@ -14,8 +14,9 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle, Camera, Link2, Copy, Check, ExternalLink, Share2 } from "lucide-react"
+import { ArrowLeft, Loader2, Trash2, Eye, EyeOff, Plus, Edit2, Instagram, Youtube, Video, MessageCircle, Camera, Link2, Copy, Check, ExternalLink, Send } from "lucide-react"
 import { buildProfileUrl } from "@/lib/slug"
+import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
@@ -169,9 +170,13 @@ export default function ProfileSettingsPage() {
           sub_profile_slug: subProfileSlug,
         })
       : null
-  const canonicalUrl = canonicalPath
+  const baseCanonicalUrl = canonicalPath
     ? (typeof window !== "undefined" ? `${window.location.origin}${canonicalPath}` : canonicalPath)
     : null
+  const { coupon: shareCoupon } = useShareCoupon()
+  const canonicalUrl = baseCanonicalUrl && shareCoupon?.code
+    ? buildShareUrlWithCoupon(baseCanonicalUrl, shareCoupon.code)
+    : baseCanonicalUrl
 
   const refreshMe = async () => {
     const token = localStorage.getItem("token")
@@ -906,7 +911,7 @@ export default function ProfileSettingsPage() {
                   }
                 }}
               >
-                <Share2 className="h-3.5 w-3.5 mr-1.5" /> Compartilhar
+                <Send className="h-3.5 w-3.5 mr-1.5" /> Compartilhar
               </Button>
             </div>
           </CardContent>

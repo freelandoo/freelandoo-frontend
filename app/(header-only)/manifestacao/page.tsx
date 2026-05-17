@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { BadgeCheck, ChevronRight, CreditCard, Hexagon, Loader2, Search, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { ShareWithCouponButton } from "@/components/share/share-with-coupon-button"
+import { ShareIconButton } from "@/components/share/share-icon-button"
 
 type Product = {
   id: string
@@ -139,12 +139,9 @@ export default function ManifestacaoPage() {
                 <Sparkles className="h-3.5 w-3.5 text-amber-600" />
                 Banners e tags para o seu perfil
               </div>
-              <ShareWithCouponButton
+              <ShareIconButton
                 path="/manifestacao"
                 title="Manifestação no Freelandoo"
-                variant="ghost"
-                size="sm"
-                iconOnly
               />
             </div>
             <h1 className="mt-7 max-w-[760px] text-4xl font-semibold leading-none tracking-tight text-zinc-950 md:text-6xl">
