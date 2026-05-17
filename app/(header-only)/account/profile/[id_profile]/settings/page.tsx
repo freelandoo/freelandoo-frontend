@@ -124,6 +124,8 @@ export default function ProfileSettingsPage() {
       .finally(() => setLoadingMunicipios(false))
   }, [form.estado])
 
+  const { coupon: shareCoupon } = useShareCoupon()
+
   if (isLoading) {
     return (
       <main className="container mx-auto px-4 py-12 flex items-center justify-center">
@@ -173,7 +175,6 @@ export default function ProfileSettingsPage() {
   const baseCanonicalUrl = canonicalPath
     ? (typeof window !== "undefined" ? `${window.location.origin}${canonicalPath}` : canonicalPath)
     : null
-  const { coupon: shareCoupon } = useShareCoupon()
   const canonicalUrl = baseCanonicalUrl && shareCoupon?.code
     ? buildShareUrlWithCoupon(baseCanonicalUrl, shareCoupon.code)
     : baseCanonicalUrl
