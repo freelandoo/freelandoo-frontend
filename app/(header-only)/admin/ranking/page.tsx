@@ -652,7 +652,7 @@ export default function AdminRankingPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {[
                         { key: "profile_activation_xp" as const, label: "Perfil ativado (pago)" },
-                        { key: "renewal_xp" as const, label: "Renovação anual" },
+                        { key: "renewal_xp" as const, label: "Renovação legacy" },
                         { key: "affiliate_sale_xp" as const, label: "Venda afiliada confirmada" },
                         { key: "review_received_xp" as const, label: "Avaliação recebida" },
                         { key: "whatsapp_click_xp" as const, label: "Clique no WhatsApp" },

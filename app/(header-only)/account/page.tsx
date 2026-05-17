@@ -1934,8 +1934,8 @@ export default function PerfilPage() {
           <DialogHeader>
             <DialogTitle>Criar novo perfil</DialogTitle>
             <DialogDescription>
-              O perfil é criado como <strong>Aguardando assinatura</strong>. Ele só
-              aparece nos classificados após você ativar a anuidade desse perfil.
+              O perfil é criado como <strong>Aguardando ativação</strong>. Ele só
+              aparece nos classificados após você ativar esse perfil.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">

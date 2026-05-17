@@ -421,13 +421,13 @@ export default function MyClansPage() {
                   {eligibleSubProfiles.map((p) => (
                     <SelectItem key={p.id_profile} value={p.id_profile}>
                       {p.display_name}
-                      {p.is_paid === false ? " (sem assinatura)" : ""}
+                      {p.is_paid === false ? " (sem ativação)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Apenas sub-perfis com assinatura ativa podem criar clan, e cada
+                Apenas subperfis ativados podem criar clan, e cada
                 sub-perfil só pode estar em 1 clan.
               </p>
             </div>

@@ -170,7 +170,7 @@ export default function AdminEntradasPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Entradas</h1>
             <p className="text-sm text-muted-foreground">
-              Histórico de receitas: assinaturas e taxas de agendamento
+              Histórico de receitas: ativações e taxas de agendamento
             </p>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function AdminEntradasPage() {
               <DollarSign className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-2xl font-bold text-foreground">{formatCents(subsCents)}</p>
-                <p className="text-xs text-muted-foreground">Assinaturas</p>
+                <p className="text-xs text-muted-foreground">Ativações</p>
               </div>
             </CardContent>
           </Card>

@@ -88,7 +88,7 @@ export default function DadosPage() {
               <Download className="h-4 w-4" /> Exportar meus dados
             </CardTitle>
             <CardDescription>
-              Baixe um arquivo JSON com todos os seus dados: perfil, assinaturas e cupons.
+              Baixe um arquivo JSON com todos os seus dados: perfil, ativações e cupons.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -104,7 +104,7 @@ export default function DadosPage() {
               <Trash2 className="h-4 w-4" /> Desativar conta
             </CardTitle>
             <CardDescription>
-              Desativa sua conta e cancela assinaturas ativas. Esta ação não pode ser desfeita.
+              Desativa sua conta e preserva o histórico de ativações. Esta ação não pode ser desfeita.
               Seus dados são mantidos por obrigação legal e removidos após o prazo regulatório.
             </CardDescription>
           </CardHeader>

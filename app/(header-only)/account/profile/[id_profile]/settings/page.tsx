@@ -460,7 +460,6 @@ export default function ProfileSettingsPage() {
   }
 
   const sub = profile.subscription
-  const periodEnd = sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString("pt-BR") : null
 
   // Janela de reembolso: 7 dias corridos após o pagamento
   const paidAt = sub?.paid_at ? new Date(sub.paid_at) : null
@@ -507,7 +506,7 @@ export default function ProfileSettingsPage() {
         <div className="flex flex-wrap gap-2">
           {!isPaid ? (
             <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
-              Aguardando assinatura
+              Aguardando ativação
             </Badge>
           ) : isPublished ? (
             <Badge className="bg-green-600 hover:bg-green-700">Ativo e visível</Badge>
@@ -764,17 +763,16 @@ export default function ProfileSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Status da assinatura */}
+      {/* Status da ativação */}
       <Card>
         <CardHeader>
-          <CardTitle>Status da assinatura</CardTitle>
+          <CardTitle>Status da ativação</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {isPaid ? (
             <>
               <p className="text-sm">
-                Assinatura <strong>ativa</strong>
-                {periodEnd ? <> · próximo ciclo em {periodEnd}</> : null}.
+                Ativação <strong>ativa</strong>.
               </p>
               {!refundConfirm && (
                 <div className={`rounded-md border p-3 space-y-2 ${canRefund ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
@@ -791,11 +789,11 @@ export default function ProfileSettingsPage() {
                         <>
                           Prazo de reembolso encerrado em{" "}
                           <strong>{refundDeadline.toLocaleDateString("pt-BR")}</strong>.
-                          Para cancelar, entre em contato pelo suporte.
+                          Para suporte sobre reembolso, entre em contato com a Freelandoo.
                         </>
                       )
                     ) : (
-                      "Para cancelar, entre em contato pelo suporte."
+                      "Para suporte sobre reembolso, entre em contato com a Freelandoo."
                     )}
                   </p>
                   <Button
@@ -840,7 +838,7 @@ export default function ProfileSettingsPage() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Este perfil ainda não possui assinatura. Ele continua editável, mas não aparece publicamente.
+                Este perfil ainda não foi ativado. Ele continua editável, mas não aparece publicamente.
               </p>
               <Button onClick={() => router.push(`/payment/taxa?profile_id=${id_profile}`)}>
                 Ativar perfil
@@ -925,7 +923,7 @@ export default function ProfileSettingsPage() {
           <CardHeader>
             <CardTitle>Visibilidade pública</CardTitle>
             <CardDescription>
-              Controle se o perfil aparece nas máquinas, buscas e vitrine. A assinatura continua ativa quando você deixa invisível.
+              Controle se o perfil aparece nas máquinas, buscas e vitrine. A ativação continua ativa quando você deixa invisível.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">

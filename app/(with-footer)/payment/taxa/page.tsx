@@ -53,7 +53,7 @@ function TaxaPageInner() {
           return
         }
         if (found.is_published) {
-          setError("Este perfil já está com a anuidade ativa.")
+          setError("Este perfil já está ativado.")
         }
         setProfile(found)
       } catch (err) {
@@ -71,7 +71,7 @@ function TaxaPageInner() {
     try {
       const token = localStorage.getItem("token")
       if (!token) {
-        setError("Você precisa estar logado para pagar a anuidade")
+        setError("Você precisa estar logado para ativar o perfil")
         return
       }
       if (!profileIdParam) {
@@ -117,7 +117,7 @@ function TaxaPageInner() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Anuidade Freelandoo</CardTitle>
+              <CardTitle>Ativação do perfil</CardTitle>
               <CardDescription>
                 {profile
                   ? `Ativando o perfil "${profile.display_name}"`
@@ -126,10 +126,10 @@ function TaxaPageInner() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-center py-6">
-                <p className="text-sm text-muted-foreground mb-2">Cobrança anual por perfil</p>
+                <p className="text-sm text-muted-foreground mb-2">Pagamento único por perfil</p>
                 <p className="text-4xl font-bold">{formatBRL(pricing.subscription_annual.amount_cents, pricing.subscription_annual.currency)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Renovação automática a cada ano. Cada perfil tem assinatura própria.
+                  Sem renovação automática. Cada perfil tem ativação própria.
                 </p>
               </div>
 
@@ -139,7 +139,7 @@ function TaxaPageInner() {
                   <div>
                     <p className="font-medium">Apareça nos Classificados</p>
                     <p className="text-sm text-muted-foreground">
-                      Somente o perfil pago aparece publicamente. Seus outros perfis seguem inativos.
+                      Somente o perfil ativado aparece publicamente. Seus outros perfis seguem inativos.
                     </p>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ function TaxaPageInner() {
                 <div className="flex items-start gap-3">
                   <Zap className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <div>
-                    <p className="font-medium">Ativação Imediata</p>
+                    <p className="font-medium">Ativação imediata</p>
                     <p className="text-sm text-muted-foreground">
                       Confirmação via Stripe ativa o perfil automaticamente.
                     </p>
@@ -157,7 +157,7 @@ function TaxaPageInner() {
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Pagamento Seguro</p>
+                    <p className="font-medium">Pagamento seguro</p>
                     <p className="text-sm text-muted-foreground">
                       Processado pelo Stripe com criptografia ponta a ponta.
                     </p>
@@ -169,7 +169,7 @@ function TaxaPageInner() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Finalizar Pagamento</CardTitle>
+              <CardTitle>Finalizar pagamento</CardTitle>
               <CardDescription>
                 {profile
                   ? profile.is_clan
@@ -211,7 +211,7 @@ function TaxaPageInner() {
                   <p className="text-xs text-center text-muted-foreground">
                     Ao continuar, você concorda com o{" "}
                     <a href="/subscription-terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
-                      Contrato de Assinatura
+                      Termo de ativação
                     </a>{" "}
                     e os{" "}
                     <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">

@@ -20,7 +20,7 @@ export default function AffiliateTermsPage() {
 
         <Section title="1. Objetivo">
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-            <li>O sistema permite que usuários afiliados promovam a plataforma e recebam comissão sobre novas assinaturas de usuários que utilizem seus cupons.</li>
+            <li>O sistema permite que usuários afiliados promovam a plataforma e recebam comissão sobre novas ativações de usuários que utilizem seus cupons.</li>
             <li>Cada usuário pode gerar um código de cupom para compartilhar.</li>
           </ul>
         </Section>
@@ -28,16 +28,16 @@ export default function AffiliateTermsPage() {
         <Section title="2. Descontos e comissões">
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
             <li>A plataforma define o valor de desconto aplicado a cada cupom.</li>
-            <li>Cada afiliado recebe <strong className="text-foreground">comissão sobre o valor líquido da assinatura</strong>, ou seja, após aplicação de qualquer desconto.</li>
+            <li>Cada afiliado recebe <strong className="text-foreground">comissão sobre o valor líquido da ativação</strong>, ou seja, após aplicação de qualquer desconto.</li>
             <li>Percentuais de desconto e de comissão podem ser alterados a qualquer momento pelo administrador da plataforma.</li>
-            <li>As alterações serão aplicadas <strong className="text-foreground">somente para assinaturas geradas após a modificação</strong>.</li>
+            <li>As alterações serão aplicadas <strong className="text-foreground">somente para ativações geradas após a modificação</strong>.</li>
           </ul>
         </Section>
 
         <Section title="3. Registro e validação">
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-            <li>Para participar do programa de afiliados, o usuário deve ter assinatura ativa.</li>
-            <li>O cadastro no sistema de afiliados é automático após ativação da assinatura.</li>
+            <li>Para participar do programa de afiliados, o usuário deve ter um perfil ativado.</li>
+            <li>O cadastro no sistema de afiliados é automático após ativação do perfil.</li>
             <li>Cada cupom é vinculado ao usuário que o criou, garantindo rastreabilidade.</li>
           </ul>
         </Section>
@@ -46,7 +46,7 @@ export default function AffiliateTermsPage() {
           <p className="text-muted-foreground mb-2">O pagamento das comissões será realizado conforme histórico registrado no painel de administração. A plataforma disponibiliza um dashboard para que cada afiliado acompanhe:</p>
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
             <li>Cupons utilizados.</li>
-            <li>Valor líquido da assinatura.</li>
+            <li>Valor líquido da ativação.</li>
             <li>Comissão recebida.</li>
             <li>Status do pagamento.</li>
           </ul>
@@ -84,7 +84,7 @@ export default function AffiliateTermsPage() {
         <div className="mt-10 pt-8 border-t border-border text-sm text-muted-foreground">
           Ao gerar ou compartilhar um cupom, você concorda com este contrato. Veja também nossos{" "}
           <Link href="/terms" className="text-primary hover:underline">Termos de Uso</Link> e{" "}
-          <Link href="/subscription-terms" className="text-primary hover:underline">Contrato de Assinatura</Link>.
+          <Link href="/subscription-terms" className="text-primary hover:underline">Termo de Ativação</Link>.
         </div>
       </div>
     </main>

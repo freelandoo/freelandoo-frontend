@@ -245,7 +245,7 @@ export default function AdministracaoPage() {
             className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
           >
             <CreditCard className="h-4 w-4" />
-            Anuidade
+            Ativação do perfil
           </button>
           <button
             onClick={() => router.push("/administracao/taxas-agendamento")}
@@ -545,7 +545,7 @@ export default function AdministracaoPage() {
                                 )}
                               </td>
 
-                              {/* Ativo: mesma regra da vitrine (flags + assinatura ativa) */}
+                              {/* Ativo: mesma regra da vitrine (flags + ativação ativa) */}
                               <td className="px-4 py-2 text-center">
                                 {p.is_active && p.is_visible && !p.deleted_at && p.is_paid ? (
                                   <CheckCircle2 className="mx-auto h-3.5 w-3.5 text-green-500" />
@@ -554,7 +554,7 @@ export default function AdministracaoPage() {
                                 )}
                               </td>
 
-                              {/* Status assinatura (no lugar de Local) */}
+                              {/* Status de ativação (no lugar de Local) */}
                               <td className="hidden px-4 py-2 md:table-cell">
                                 {subscriptionStatusBadge(p.subscription_status)}
                               </td>

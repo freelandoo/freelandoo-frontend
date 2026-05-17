@@ -28,7 +28,7 @@ interface Subscription {
   id_user: string
   id_profile: string | null
   profile_name: string | null
-  status: "pending" | "active" | "past_due" | "canceled" | "incomplete"
+  status: "pending" | "active" | "past_due" | "canceled" | "expired" | "failed" | "incomplete"
   amount_cents: number
   currency: string
   stripe_customer_id: string | null
@@ -106,6 +106,24 @@ const STATUS_CONFIG = {
     dot: "bg-rose-400",
     ring: "ring-rose-500/20",
   },
+  expired: {
+    label: "Reembolsada",
+    icon: RotateCcw,
+    color: "text-rose-600",
+    bg: "bg-muted/60",
+    border: "border-border",
+    dot: "bg-rose-400",
+    ring: "ring-rose-500/20",
+  },
+  failed: {
+    label: "Falhou",
+    icon: XCircle,
+    color: "text-rose-600",
+    bg: "bg-rose-50 dark:bg-rose-950/30",
+    border: "border-rose-200 dark:border-rose-800",
+    dot: "bg-rose-400",
+    ring: "ring-rose-500/20",
+  },
   incomplete: {
     label: "Incompleta",
     icon: XCircle,
@@ -137,17 +155,6 @@ function formatarData(d: string) {
     hour: "2-digit",
     minute: "2-digit",
   })
-}
-
-function getPeriodProgress(start: string, end: string): number {
-  const s = new Date(start).getTime()
-  const e = new Date(end).getTime()
-  const now = Date.now()
-  return Math.min(100, Math.max(0, ((now - s) / (e - s)) * 100))
-}
-
-function getDaysRemaining(end: string): number {
-  return Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 86_400_000))
 }
 
 /* ── Bloco com ID copiável ── */
@@ -193,36 +200,6 @@ const PulseDot = memo(function PulseDot({ color }: { color: string }) {
       />
       <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${color}`} />
     </span>
-  )
-})
-
-/* ── Barra de progresso do período ── */
-const PeriodBar = memo(function PeriodBar({
-  start,
-  end,
-}: {
-  start: string
-  end: string
-}) {
-  const pct = getPeriodProgress(start, end)
-  const days = getDaysRemaining(end)
-
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{formatarDataCurta(start)}</span>
-        <span className="font-medium text-foreground">{days}d restantes</span>
-        <span>{formatarDataCurta(end)}</span>
-      </div>
-      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-foreground"
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </div>
-    </div>
   )
 })
 
@@ -302,75 +279,6 @@ function RefundDrawer({
   )
 }
 
-/* ── Drawer de cancelamento ── */
-function CancelDrawer({
-  sub,
-  onConfirm,
-  loading,
-}: {
-  sub: Subscription
-  onConfirm: () => void
-  loading: boolean
-}) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Drawer.Root open={open} onOpenChange={setOpen}>
-      <Drawer.Trigger asChild>
-        <button className="text-xs text-muted-foreground hover:text-rose-500 transition-colors underline underline-offset-4 mt-1">
-          Cancelar renovação automática
-        </button>
-      </Drawer.Trigger>
-      <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-background border-t border-border max-h-[45vh] px-6 pt-5 pb-10">
-          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/50">
-              <XCircle className="h-5 w-5 text-rose-600" />
-            </div>
-            <div>
-              <Drawer.Title className="font-semibold text-base text-foreground">
-                Cancelar renovação automática?
-              </Drawer.Title>
-              <Drawer.Description className="text-sm text-muted-foreground mt-1">
-                Seu perfil continua ativo até{" "}
-                <span className="font-medium text-foreground">
-                  {sub.current_period_end
-                    ? formatarDataCurta(sub.current_period_end)
-                    : "o fim do período"}
-                </span>
-                . Não haverá reembolso.
-              </Drawer.Description>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="destructive"
-              className="flex-1 h-11"
-              disabled={loading}
-              onClick={onConfirm}
-            >
-              {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cancelando...</>
-              ) : (
-                "Sim, cancelar"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 h-11"
-              onClick={() => setOpen(false)}
-            >
-              Manter assinatura
-            </Button>
-          </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
-  )
-}
-
 /* ── Skeleton loader ── */
 function Skeleton({ className }: { className?: string }) {
   return (
@@ -409,34 +317,30 @@ function EmptyState({ onActivate }: { onActivate: () => void }) {
         <Sparkles className="h-10 w-10 text-muted-foreground" />
       </motion.div>
       <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
-        Nenhuma assinatura ativa
+        Nenhuma ativação ativa
       </h2>
       <p className="text-muted-foreground max-w-xs mb-8 text-sm leading-relaxed">
-        Ative sua anuidade para aparecer nas buscas e receber propostas de trabalho.
+        Ative seu perfil para aparecer nas buscas e receber propostas de trabalho.
       </p>
       <Button
         onClick={onActivate}
         className="h-11 px-7 gap-2 text-sm font-medium"
       >
-        Ativar anuidade
+        Ativar perfil
         <ChevronRight className="h-4 w-4" />
       </Button>
     </motion.div>
   )
 }
 
-/* ── Cartão principal de assinatura ── */
+/* ── Cartão principal de ativação ── */
 function SubscriptionCard({
   sub,
-  onCancel,
-  cancelling,
   onRefund,
   refunding,
   isRefunded,
 }: {
   sub: Subscription
-  onCancel: (id: string) => void
-  cancelling: string | null
   onRefund: (id: string) => void
   refunding: string | null
   isRefunded: boolean
@@ -458,11 +362,11 @@ function SubscriptionCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">
-            Anuidade Freelandoo
+            Ativação do perfil
           </p>
           <p className="text-3xl font-bold tracking-tight text-foreground">
             {formatarValor(sub.amount_cents, sub.currency)}
-            <span className="text-sm font-normal text-muted-foreground ml-1">/ano</span>
+            <span className="text-sm font-normal text-muted-foreground ml-1">único</span>
           </p>
           {sub.profile_name && (
             <p className="text-sm text-muted-foreground mt-0.5">{sub.profile_name}</p>
@@ -478,16 +382,11 @@ function SubscriptionCard({
         </span>
       </div>
 
-      {/* Barra de progresso do período */}
-      {sub.current_period_start && sub.current_period_end && sub.status === "active" && (
-        <PeriodBar start={sub.current_period_start} end={sub.current_period_end} />
-      )}
-
       {/* Metadados */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
-          <span>Adesão: <span className="text-foreground font-medium">{formatarDataCurta(sub.created_at)}</span></span>
+          <span>Ativo desde: <span className="text-foreground font-medium">{formatarDataCurta(sub.paid_at || sub.created_at)}</span></span>
         </div>
 
         {sub.id_coupon && (
@@ -497,12 +396,6 @@ function SubscriptionCard({
           </div>
         )}
 
-        {sub.canceled_at && sub.status === "active" && (
-          <div className="flex items-center gap-2 col-span-full text-amber-600 text-xs font-medium">
-            <Clock className="h-3.5 w-3.5 shrink-0" />
-            Cancelamento agendado — ativo até {formatarDataCurta(sub.canceled_at)}
-          </div>
-        )}
       </div>
 
       {/* Detalhes do reembolso */}
@@ -520,14 +413,9 @@ function SubscriptionCard({
       )}
 
       {/* Ações */}
-      {sub.status === "active" && !sub.canceled_at && !isRefunded && (
+      {sub.status === "active" && !isRefunded && (
         <div className="space-y-2 pt-1">
           <div className="flex flex-wrap items-center gap-4">
-            <CancelDrawer
-              sub={sub}
-              onConfirm={() => onCancel(sub.id_subscription)}
-              loading={cancelling === sub.id_subscription}
-            />
             {isWithin7Days(sub.paid_at) && (
               <RefundDrawer
                 sub={sub}
@@ -556,7 +444,7 @@ function SubscriptionCard({
             className="border-amber-300 text-amber-800 hover:bg-amber-100"
             onClick={() => window.location.href = "/payment/taxa"}
           >
-            Finalizar pagamento
+            Finalizar ativação
           </Button>
         </div>
       )}
@@ -586,7 +474,7 @@ function HistoryTimeline({
     <div className="relative space-y-0">
       {entries.map((s, i) => {
         const isSelected = s.id_subscription === selectedId
-        const isRefunded = !!s.refunded_at
+        const isRefunded = !!s.refunded_at || s.status === "expired"
         return (
           <motion.button
             key={s.id_subscription}
@@ -612,7 +500,7 @@ function HistoryTimeline({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {s.profile_name || "Anuidade Freelandoo"}
+                {s.profile_name || "Ativação do perfil"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatarData(s.paid_at || s.created_at)}
@@ -642,7 +530,6 @@ export default function PagamentosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAutenticado, setIsAutenticado] = useState(false)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [refundingId, setRefundingId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [manifestationHistory, setManifestationHistory] = useState<ManifestationHistory[]>([])
@@ -679,7 +566,7 @@ export default function PagamentosPage() {
           setManifestationHistory(manifestationData.history || [])
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar assinatura.")
+        setError(err instanceof Error ? err.message : "Erro ao carregar pagamentos.")
       } finally {
         setIsLoading(false)
       }
@@ -687,30 +574,6 @@ export default function PagamentosPage() {
 
     fetchSubscriptions()
   }, [router])
-
-  const handleCancel = async (id_subscription: string) => {
-    const token = localStorage.getItem("token")
-    if (!token) return
-    setCancellingId(id_subscription)
-    try {
-      const res = await fetch("/api/stripe/subscription/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id_subscription }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Erro ao cancelar")
-      setSubscriptions((prev) =>
-        prev.map((s) =>
-          s.id_subscription === id_subscription ? { ...s, canceled_at: data.cancel_at } : s
-        )
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao cancelar assinatura")
-    } finally {
-      setCancellingId(null)
-    }
-  }
 
   const handleRefund = async (id_subscription: string) => {
     const token = localStorage.getItem("token")
@@ -745,8 +608,8 @@ export default function PagamentosPage() {
   }
 
   const defaultSubscription =
-    subscriptions.find((s) => (s.status === "active" || s.status === "past_due") && !s.refunded_at) ||
-    subscriptions.find((s) => s.refunded_at) ||
+    subscriptions.find((s) => s.status === "active" && !s.refunded_at) ||
+    subscriptions.find((s) => s.refunded_at || s.status === "expired") ||
     subscriptions.find((s) => s.status === "pending") ||
     null
 
@@ -754,7 +617,7 @@ export default function PagamentosPage() {
     subscriptions.find((s) => s.id_subscription === selectedId) || defaultSubscription
 
   const paidEntries = subscriptions
-    .filter((s) => s.paid_at && (s.status === "active" || s.refunded_at))
+    .filter((s) => s.paid_at && (s.status === "active" || s.refunded_at || s.status === "expired"))
     .sort((a, b) => {
       const aDate = new Date(a.paid_at || a.created_at).getTime()
       const bDate = new Date(b.paid_at || b.created_at).getTime()
@@ -776,7 +639,7 @@ export default function PagamentosPage() {
           <div className="flex items-center gap-2 mb-1">
             <CreditCard className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Assinatura
+              Ativação
             </span>
           </div>
           <h1 className="text-4xl font-bold tracking-tighter leading-none text-foreground">
@@ -816,11 +679,9 @@ export default function PagamentosPage() {
                 >
                   <SubscriptionCard
                     sub={selectedSubscription}
-                    onCancel={handleCancel}
-                    cancelling={cancellingId}
                     onRefund={handleRefund}
                     refunding={refundingId}
-                    isRefunded={!!selectedSubscription.refunded_at}
+                    isRefunded={!!selectedSubscription.refunded_at || selectedSubscription.status === "expired"}
                   />
                 </motion.div>
               )}
@@ -834,7 +695,7 @@ export default function PagamentosPage() {
                 transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
                 <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
-                  Suas assinaturas
+                  Suas ativações
                 </p>
                 <HistoryTimeline
                   entries={paidEntries}

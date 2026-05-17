@@ -24,6 +24,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
-    return NextResponse.json({ error: "Erro ao cancelar assinatura", detail: msg }, { status: 500 })
+    return NextResponse.json({ error: "Erro ao cancelar renovação legacy", detail: msg }, { status: 500 })
   }
 }

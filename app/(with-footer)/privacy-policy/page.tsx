@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
             <li>Informações de cadastro: nome, e-mail, CPF (opcional), senha.</li>
             <li>Informações de perfil: profissão, experiência, portfólio, localização.</li>
             <li>Dados de uso da plataforma: histórico de login, interações e preferências.</li>
-            <li>Dados de pagamento: informações de cartão ou Stripe, histórico de assinaturas.</li>
+            <li>Dados de pagamento: informações de cartão ou Stripe, histórico de ativações.</li>
             <li>Dados coletados via login social (Google/Apple): nome, e-mail e foto de perfil.</li>
           </ul>
         </Section>

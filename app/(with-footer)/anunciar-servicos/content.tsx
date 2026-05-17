@@ -15,7 +15,7 @@ const benefits = [
 const steps = [
   { n: "1", title: "Crie sua conta", text: "Cadastre seus dados básicos e acesse sua área de perfil." },
   { n: "2", title: "Monte seu perfil", text: "Escolha sua máquina, profissão, cidade, estado, descrição, foto e informações principais." },
-  { n: "3", title: "Ative sua assinatura", text: "Com a anuidade ativa, seu perfil pode aparecer na vitrine pública da Freelandoo." },
+  { n: "3", title: "Ative seu perfil", text: "Com a ativação concluída, seu perfil pode aparecer na vitrine pública da Freelandoo." },
   { n: "4", title: "Publique seu portfólio", text: "Adicione trabalhos e exemplos para aumentar a confiança de quem visita seu perfil." },
   { n: "5", title: "Receba contatos", text: "Clientes podem encontrar seu perfil e chamar você diretamente pelo WhatsApp." },
 ]
@@ -71,7 +71,7 @@ export function AnunciarServicosContent() {
             Crie seu perfil profissional, apareça nas máquinas da Freelandoo e receba contatos diretos de pessoas interessadas no que você faz.
           </p>
           <p className="text-muted-foreground max-w-2xl mb-8 leading-relaxed" data-reveal>
-            A Freelandoo é uma vitrine inteligente para profissionais, freelancers, criadores e prestadores de serviço. Você paga uma anuidade, mantém seu perfil ativo e pode ser encontrado por clientes que procuram exatamente o tipo de solução que você oferece.
+            A Freelandoo é uma vitrine inteligente para profissionais, freelancers, criadores e prestadores de serviço. Você paga uma ativação única, mantém seu perfil ativo e pode ser encontrado por clientes que procuram exatamente o tipo de solução que você oferece.
           </p>
           <div className="flex flex-wrap gap-4" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
@@ -156,16 +156,16 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Uma assinatura anual simples
+            Uma ativação única simples
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            A assinatura da Freelandoo custa R$&nbsp;300 por ano. Esse valor mantém seu perfil ativo na plataforma e permite que ele participe da vitrine pública, de acordo com as regras e categorias disponíveis.
+            A ativação da Freelandoo custa R$&nbsp;300 em pagamento único. Esse valor mantém seu perfil ativo na plataforma e permite que ele participe da vitrine pública, de acordo com as regras e categorias disponíveis.
           </p>
           <div className="bg-card border border-primary/20 rounded-2xl p-8 shadow-[0_0_50px_rgba(242,196,9,0.06)] mb-6" data-reveal>
             <div className="text-5xl font-bold text-primary mb-1">R$ 300</div>
-            <div className="text-muted-foreground mb-8 text-sm">por ano</div>
+            <div className="text-muted-foreground mb-8 text-sm">pagamento único</div>
             <div className="space-y-3 text-left mb-8" data-stagger>
-              {["Sem comissão por serviço fechado", "Contato direto entre cliente e profissional", "Perfil ativo enquanto a assinatura estiver vigente"].map((item) => (
+              {["Sem comissão por serviço fechado", "Contato direto entre cliente e profissional", "Perfil ativo após a ativação"].map((item) => (
                 <div key={item} className="flex items-center gap-3" data-card>
                   <span className="text-primary font-bold">✓</span>
                   <span className="text-sm text-foreground">{item}</span>
@@ -177,7 +177,7 @@ export function AnunciarServicosContent() {
             </Link>
           </div>
           <p className="text-xs text-muted-foreground border border-border rounded-xl px-4 py-3 leading-relaxed" data-reveal>
-            A assinatura aumenta sua exposição dentro da plataforma, mas não garante contratação. A negociação, valores, prazos e entregas são tratados diretamente entre cliente e profissional.
+            A ativação aumenta sua exposição dentro da plataforma, mas não garante contratação. A negociação, valores, prazos e entregas são tratados diretamente entre cliente e profissional.
           </p>
         </div>
       </section>
@@ -209,7 +209,7 @@ export function AnunciarServicosContent() {
             Seu trabalho precisa ser visto
           </h2>
           <p className="text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed" data-reveal>
-            Crie seu perfil, ative sua assinatura e comece a construir sua presença na Freelandoo.
+            Crie seu perfil, faça a ativação e comece a construir sua presença na Freelandoo.
           </p>
           <div className="flex flex-wrap gap-4 justify-center" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">

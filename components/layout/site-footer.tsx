@@ -106,7 +106,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/subscription-terms" className="transition-colors hover:text-neutral-900">
-                  Contrato de assinatura
+                  Termo de ativação
                 </Link>
               </li>
               <li>
