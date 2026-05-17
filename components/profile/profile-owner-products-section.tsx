@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Cog, Loader2, Lock, Package, Plus, Trash2 } from "lucide-react"
+import { Cog, Loader2, Lock, Package, Plus, RefreshCw, Trash2 } from "lucide-react"
 import {
   ProfileProductEditModal,
   type ProfileProduct,
@@ -41,22 +41,33 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   const [products, setProducts] = useState<ProfileProduct[]>([])
   const [profileIsPaid, setProfileIsPaid] = useState<boolean | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [productSheet, setProductSheet] = useState<ProfileProduct | "create" | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setState("loading")
+    setLoadError(null)
     try {
       const ah = authHeaders()
-      if (!ah) { setState("error"); return }
+      if (!ah) {
+        setLoadError("Você precisa estar logado para gerenciar a loja.")
+        setState("error")
+        return
+      }
       const res = await fetch(`/api/profile/${profileId}/products`, { headers: ah })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d?.error || "fail")
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setLoadError(d?.error || `Erro HTTP ${res.status}`)
+        setState("error")
+        return
+      }
       setProducts((d.products || []) as ProfileProduct[])
       setProfileIsPaid(!!d.profile_is_paid)
       setState("loaded")
-    } catch {
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Erro de conexão")
       setState("error")
     }
   }, [profileId])
@@ -117,24 +128,61 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
     }
   }
 
-  if (state === "error") {
-    return (
-      <section id="products-section" className="mb-20 scroll-mt-24">
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <p className="text-sm text-muted-foreground">
-            Não foi possível carregar os produtos agora. Tente novamente mais tarde.
-          </p>
-        </div>
-      </section>
-    )
-  }
-
   if (state === "loading") {
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
         <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/40">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
         </div>
+      </section>
+    )
+  }
+
+  if (state === "error") {
+    return (
+      <section id="products-section" className="mb-20 scroll-mt-24">
+        <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 py-10 text-center">
+          <p className="text-sm text-zinc-300">Não foi possível carregar os produtos.</p>
+          {loadError && (
+            <p className="text-xs text-red-400 break-words">{loadError}</p>
+          )}
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={load}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Tentar novamente
+            </button>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Novo produto
+            </button>
+          </div>
+        </div>
+
+        <ProfileProductEditModal
+          open={productSheet !== null}
+          onClose={() => setProductSheet(null)}
+          profileId={profileId}
+          product={productSheet !== null && productSheet !== "create" ? productSheet : null}
+          onSaved={(saved) => {
+            handleSaved(saved)
+            setProfileIsPaid(true)
+            setState("loaded")
+            setLoadError(null)
+          }}
+          onMediaChanged={handleMediaChanged}
+          onError={(msg) => {
+            setFeedbackError(msg)
+            window.setTimeout(() => setFeedbackError(null), 5000)
+          }}
+        />
       </section>
     )
   }
