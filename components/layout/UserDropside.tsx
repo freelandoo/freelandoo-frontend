@@ -89,9 +89,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     },
     {
       href: "/account/afiliado",
-      label: "Painel do afiliado",
+      label: "Meus Faturamentos",
       icon: Briefcase,
-      description: "Cupom, comissões e indicações",
+      description: "Vendas de cursos, serviços, loja e comissões",
     },
     {
       href: "/pedir-servico",
