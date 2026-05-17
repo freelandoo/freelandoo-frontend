@@ -57,11 +57,14 @@ import {
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
+import { UserDropside } from "@/components/layout/UserDropside"
 
 export default function PerfilPage() {
   const router = useRouter()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
   const [unreadMessages, setUnreadMessages] = React.useState(0)
+  const [dropsideOpen, setDropsideOpen] = useState(false)
+  const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -208,6 +211,20 @@ export default function PerfilPage() {
       .catch(() => {})
   }, [])
 
+  React.useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    fetch("/api/entity-follows/me/summary", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setFollowedProfilesCount(Number(data.following_count) || 0)
+      })
+      .catch(() => {})
+  }, [])
+
   // Ref no headcard pro RetractableProfileHeader observar.
   const headcardRef = useRef<HTMLElement | null>(null)
 
@@ -288,6 +305,12 @@ export default function PerfilPage() {
     } finally {
       setIsGeneratingCoupon(false)
     }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    router.push("/login")
   }
 
   const handleCopyCoupon = (code: string) => {
@@ -1493,6 +1516,10 @@ export default function PerfilPage() {
           <span className="font-semibold tabular-nums text-white">{totalClans}</span>
         </span>
         <span className="inline-flex items-center gap-1">
+          <span className="text-white/55 uppercase tracking-wide">Acompanhando</span>
+          <span className="font-semibold tabular-nums text-white">{followedProfilesCount}</span>
+        </span>
+        <span className="inline-flex items-center gap-1">
           <span className="text-white/55 uppercase tracking-wide">Não lidas</span>
           <span
             className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-amber-300" : "text-white"}`}
@@ -1519,6 +1546,17 @@ export default function PerfilPage() {
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
+              <button
+                type="button"
+                onClick={() => setDropsideOpen(true)}
+                aria-label="Abrir menu da conta"
+                aria-haspopup="dialog"
+                aria-expanded={dropsideOpen}
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-zinc-950/70 text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_30px_-18px_rgba(0,0,0,0.9)] backdrop-blur transition hover:border-primary/45 hover:bg-primary/[0.12] hover:text-primary active:scale-[0.97]"
+                title="Abrir configurações"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="px-5 pb-6 md:px-7">
@@ -1611,6 +1649,12 @@ export default function PerfilPage() {
                     {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
                   </button>
                 )}
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <StatCell icon={Users} label="Perfis acompanhados" value={followedProfilesCount} accent compact />
+                <StatCell icon={UserRound} label="Subperfis" value={totalProfiles} compact />
+                <StatCell icon={MessageCircle} label="Não lidas" value={unreadMessages} compact />
               </div>
             </div>
           </article>
@@ -1927,6 +1971,14 @@ export default function PerfilPage() {
 
         </div>
       </main>
+
+      <UserDropside
+        open={dropsideOpen}
+        onClose={() => setDropsideOpen(false)}
+        user={perfil}
+        unreadServiceRequest={srBadge.has_new || srBadge.unread_chats > 0}
+        onLogout={handleLogout}
+      />
 
       {/* Modal de Novo Perfil */}
       <Dialog open={isNewProfileModalOpen} onOpenChange={(open) => { if (!open) setNewProfileError(null); setIsNewProfileModalOpen(open) }}>
