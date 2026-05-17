@@ -51,6 +51,7 @@ import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExpe
 import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
 import { ProfileOwnerProductsSection } from "@/components/profile/profile-owner-products-section"
+import { ProfilePublicProductsSection } from "@/components/profile/profile-public-products-section"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
@@ -762,7 +763,7 @@ export default function FreelancerProfileView({
                 <GraduationCap className="h-3.5 w-3.5" />
                 Cursos
               </button>
-              {isOwnProfile && !isClan && (
+              {!isClan && (
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("shop")}
@@ -801,8 +802,10 @@ export default function FreelancerProfileView({
             <ProfileCoursesTab profileId={profileId} isOwnProfile={isOwnProfile} />
           )}
 
-          {portfolioTab === "shop" && isOwnProfile && !isClan && (
-            <ProfileOwnerProductsSection profileId={profileId} />
+          {portfolioTab === "shop" && !isClan && (
+            isOwnProfile
+              ? <ProfileOwnerProductsSection profileId={profileId} />
+              : <ProfilePublicProductsSection profileId={profileId} />
           )}
 
           {(portfolioTab === "feed" || portfolioTab === "bees") && (() => {
