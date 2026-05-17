@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Loader2, Package } from "lucide-react"
 import type { ProfileProduct } from "@/components/profile/profile-product-edit-modal"
 
@@ -98,50 +99,52 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
               key={p.id_profile_product}
               className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left"
             >
-              <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
-                {outOfStock && (
-                  <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/85 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-100">
-                    Esgotado
-                  </span>
-                )}
-                {img ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={img} alt={p.name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                    <Package className="h-11 w-11 text-zinc-600/90 sm:h-12 sm:w-12" aria-hidden />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
-                <h3 className="truncate text-xs font-bold leading-snug text-white md:text-sm">{p.name}</h3>
-
-                <div className="mt-1.5 min-h-0 flex-1">
-                  {desc ? (
-                    <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
-                  ) : null}
-                </div>
-
-                <div className="mt-auto shrink-0">
-                  <div className="mt-2 flex items-center justify-between gap-1.5">
-                    <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
-                      R$ {integer}
-                      <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
-                    </p>
-                    <span className="shrink-0 rounded-full bg-zinc-800 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-zinc-400 md:px-3 md:text-[10px]">
-                      Em breve
+              <Link
+                href={`/p/${profileId}/produto/${p.id_profile_product}`}
+                className="flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+                  {outOfStock && (
+                    <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/85 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-100">
+                      Esgotado
                     </span>
+                  )}
+                  {img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={img} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+                      <Package className="h-11 w-11 text-zinc-600/90 sm:h-12 sm:w-12" aria-hidden />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
+                  <h3 className="truncate text-xs font-bold leading-snug text-white md:text-sm">{p.name}</h3>
+
+                  <div className="mt-1.5 min-h-0 flex-1">
+                    {desc ? (
+                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-auto shrink-0">
+                    <div className="mt-2 flex items-center justify-between gap-1.5">
+                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
+                        R$ {integer}
+                        <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
+                      </p>
+                      <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary md:px-3 md:text-[10px]">
+                        Ver
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </li>
           )
         })}
       </ul>
-      <p className="mt-3 px-4 text-[11px] text-zinc-500 md:px-0">
-        O checkout com cálculo de frete será liberado em breve.
-      </p>
     </section>
   )
 }
