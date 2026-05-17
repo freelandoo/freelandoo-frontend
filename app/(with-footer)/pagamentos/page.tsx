@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SellerBalanceSection } from "./_components/seller-balance-section"
+import { BookingPayoutsSection } from "./_components/booking-payouts-section"
 
 interface Subscription {
   id_subscription: string
@@ -884,6 +885,8 @@ export default function PagamentosPage() {
         )}
 
         {!isLoading && <SellerBalanceSection />}
+
+        {!isLoading && <BookingPayoutsSection />}
 
       </div>
     </main>
