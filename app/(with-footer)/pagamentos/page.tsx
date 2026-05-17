@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SellerBalanceSection } from "./_components/seller-balance-section"
 
 interface Subscription {
   id_subscription: string
@@ -881,6 +882,8 @@ export default function PagamentosPage() {
             )}
           </div>
         )}
+
+        {!isLoading && <SellerBalanceSection />}
 
       </div>
     </main>
