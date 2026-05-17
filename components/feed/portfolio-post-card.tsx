@@ -14,7 +14,7 @@ import { sendFeedEvent } from "@/lib/feed-events"
 import { getToken } from "@/lib/auth"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
-import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
+import { ShareWithCouponDialog } from "@/components/share/share-with-coupon-dialog"
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -66,7 +66,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
   const [copied, setCopied] = useState(false)
-  const { coupon: shareCoupon } = useShareCoupon()
+  const [shareOpen, setShareOpen] = useState(false)
   const primaryUrl = post.project_url || post.public_profile_url
   const primaryLabel =
     post.source_type === "course"
@@ -124,44 +124,30 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     }
   }
 
-  const handleShare = async () => {
-    const baseUrl =
-      (primaryUrl
-        ? new URL(
-            primaryUrl,
-            typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
-          ).toString()
-        : null) || (typeof window !== "undefined" ? window.location.href : "")
-    const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
+  const handleShare = () => {
+    setShareOpen(true)
+  }
 
-    const shareData: ShareData = {
-      title: post.profile_name || "Freelandoo",
-      text: post.title || post.caption || "",
-      url,
-    }
-
-    let shared = false
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share(shareData)
-        shared = true
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(url)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-        shared = true
+  const sharePath = (() => {
+    if (primaryUrl) {
+      try {
+        return new URL(
+          primaryUrl,
+          typeof window !== "undefined" ? window.location.origin : "https://freelandoo.com"
+        ).toString()
+      } catch {
+        // fallthrough
       }
-    } catch {
-      // Cancelado ou bloqueado — não trackear.
     }
+    return typeof window !== "undefined" ? window.location.href : ""
+  })()
 
-    if (shared) {
-      sendFeedEvent({
-        post_id: post.post_id,
-        event_type: "share",
-        filters,
-      })
-    }
+  const handleShared = () => {
+    sendFeedEvent({
+      post_id: post.post_id,
+      event_type: "share",
+      filters,
+    })
   }
 
   const handleProfileClick = () => {
@@ -534,6 +520,15 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           </div>
         </>
       )}
+
+      <ShareWithCouponDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        path={sharePath}
+        title={post.profile_name || post.username || "Freelandoo"}
+        description={post.title || post.caption || "Confira no Freelandoo. Quem comprar pelo seu link ganha desconto com seu cupom."}
+        onShared={handleShared}
+      />
     </article>
   )
 }
