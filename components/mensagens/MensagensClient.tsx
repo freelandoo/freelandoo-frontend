@@ -11,12 +11,14 @@ import {
   Loader2,
   MapPin,
   MessageCircle,
+  Plus,
   Radio,
   Send,
   Sparkles,
   Users,
 } from "lucide-react"
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
+import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -304,6 +306,9 @@ export default function MensagensClient() {
 
   const threadEndRef = useRef<HTMLDivElement | null>(null)
   const lastMsgIdRef = useRef<string | null>(null)
+
+  // ----- Criar grupo -----
+  const [createGroupOpen, setCreateGroupOpen] = useState(false)
 
   const activeActor = useMemo(
     () => actors.find((a) => a.id === actorId) || null,
@@ -833,12 +838,24 @@ export default function MensagensClient() {
               </p>
             </div>
             {tab === "conv" ? (
-              <ActorSelector
-                actors={actors}
-                actorId={actorId}
-                loading={actorsLoading}
-                onSelect={handleSelectActor}
-              />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCreateGroupOpen(true)}
+                  disabled={!actorId || isClanActor}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-black shadow-[0_8px_20px_-6px_rgba(250,204,21,0.5)] transition-transform hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  title="Criar grupo"
+                  aria-label="Criar grupo"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <ActorSelector
+                  actors={actors}
+                  actorId={actorId}
+                  loading={actorsLoading}
+                  onSelect={handleSelectActor}
+                />
+              </div>
             ) : null}
           </div>
 
@@ -898,7 +915,11 @@ export default function MensagensClient() {
             ) : (
               <ul className="divide-y divide-white/5">
                 {conversations.map((c) => {
-                  const otherHref = entityHref(c.other_entity)
+                  const isGroup = c.kind === "group"
+                  const otherHref = isGroup ? null : entityHref(c.other_entity)
+                  const title = isGroup
+                    ? (c.name || "Grupo")
+                    : (c.other_entity?.display_name || "Sem nome")
                   return (
                   <li key={c.id_conversation} className="relative">
                     <button
@@ -908,16 +929,30 @@ export default function MensagensClient() {
                         activeConvId === c.id_conversation && "bg-white/5"
                       )}
                     >
-                      <Avatar className="h-10 w-10 shrink-0">
-                        <AvatarImage src={c.other_entity?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-neutral-800 text-xs text-white">
-                          {entityInitials(c.other_entity?.display_name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      {isGroup ? (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/10 ring-1 ring-yellow-400/30">
+                          {c.cover_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={c.cover_url} alt={title} className="h-full w-full rounded-full object-cover" />
+                          ) : (
+                            <Users className="h-5 w-5 text-yellow-300" />
+                          )}
+                        </div>
+                      ) : (
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarImage src={c.other_entity?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                            {entityInitials(c.other_entity?.display_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-white">
-                            {c.other_entity?.display_name || "Sem nome"}
+                          <span className="truncate text-sm font-medium text-white inline-flex items-center gap-1.5">
+                            {title}
+                            {isGroup && c.member_count != null && (
+                              <span className="text-[10px] text-yellow-300/80 tabular-nums">· {c.member_count}</span>
+                            )}
                           </span>
                           <span className="shrink-0 text-[10px] text-white/40">
                             {formatTime(c.last_message_at || c.created_at)}
@@ -1495,6 +1530,18 @@ export default function MensagensClient() {
         </section>
         )}
       </div>
+
+      <CreateGroupModal
+        open={createGroupOpen}
+        onOpenChange={setCreateGroupOpen}
+        ownerProfileId={!isClanActor ? actorId : null}
+        onCreated={(id) => {
+          setActiveConvId(id)
+          handleSelectTab("conv")
+          // força reload da lista
+          void loadConversations()
+        }}
+      />
     </div>
   )
 }
