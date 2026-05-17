@@ -821,8 +821,8 @@ export default function MensagensClient() {
   }
 
   return (
-    <div className="container mx-auto min-h-[100dvh] px-0 md:px-4 md:py-6">
-      <div className="grid h-[100dvh] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-neutral-950 via-neutral-950 to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+    <div className="container mx-auto min-h-[calc(100dvh-72px)] px-0 md:px-4 md:py-6">
+      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-neutral-950 via-neutral-950 to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
         {/* Lista (Conversas ou O.S.) */}
         <aside
           className={cn(
