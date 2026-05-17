@@ -1120,12 +1120,14 @@ export default function MensagensClient() {
 
         {/* Painel direito — Chat ao vivo Global */}
         {tab === "global" ? (
-          <section className="flex min-w-0 flex-col">
-            <ChatRoomPanel
-              kind="global"
-              pageTitle="Chat ao vivo"
-              pageSubtitle="Sala global — todos os usuários do Freelandoo"
-            />
+          <section className="flex min-w-0 flex-col overflow-hidden">
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              <ChatRoomPanel
+                kind="global"
+                pageTitle="Chat ao vivo"
+                pageSubtitle="Sala global — todos os usuários do Freelandoo"
+              />
+            </div>
           </section>
         ) : tab === "machine" ? (
           <section
