@@ -47,6 +47,7 @@ type XpSettings = {
   online_minute_xp: number
   profile_visit_xp: number
   review_received_xp: number
+  content_retention_second_xp: number
 }
 
 type RankingRow = {
@@ -64,6 +65,7 @@ type RankingRow = {
   ratings_count: number
   avg_rating: number
   online_minutes: number
+  content_retention_seconds: number
   position_general: number | null
   position_machine: number | null
   position_city: number | null
@@ -228,6 +230,7 @@ export default function AdminRankingPage() {
           online_minute_xp: Number(xpDraft.online_minute_xp),
           profile_visit_xp: Number(xpDraft.profile_visit_xp),
           review_received_xp: Number(xpDraft.review_received_xp),
+          content_retention_second_xp: Number(xpDraft.content_retention_second_xp),
         }),
       })
       const data = await res.json()
@@ -266,6 +269,7 @@ export default function AdminRankingPage() {
   const PERIOD_OPTIONS = [
     { label: "7 dias", value: 7 },
     { label: "30 dias", value: 30 },
+    { label: "90 dias", value: 90 },
     { label: "1 ano", value: 365 },
   ]
 
@@ -496,6 +500,9 @@ export default function AdminRankingPage() {
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden lg:table-cell">
                             <Star className="h-3 w-3 inline" />
                           </th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden lg:table-cell">
+                            <Clock className="h-3 w-3 inline" />
+                          </th>
                           <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Geral</th>
                           <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground hidden sm:table-cell">Máq.</th>
                           <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground hidden md:table-cell">Cidade</th>
@@ -549,6 +556,9 @@ export default function AdminRankingPage() {
                             <td className="px-4 py-3 text-right text-muted-foreground tabular-nums hidden md:table-cell">{row.likes_count}</td>
                             <td className="px-4 py-3 text-right text-muted-foreground tabular-nums hidden lg:table-cell">
                               {row.avg_rating > 0 ? `${Number(row.avg_rating).toFixed(1)} (${row.ratings_count})` : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right text-muted-foreground tabular-nums hidden lg:table-cell">
+                              {Math.round((row.content_retention_seconds ?? 0) / 60)} min
                             </td>
                             <td className="px-4 py-3 text-center">
                               {row.position_general
@@ -662,11 +672,12 @@ export default function AdminRankingPage() {
                         { key: "approved_post_xp" as const, label: "Post publicado/aprovado" },
                         { key: "profile_visit_xp" as const, label: "Visita ao perfil" },
                         { key: "online_minute_xp" as const, label: "Por minuto online" },
+                        { key: "content_retention_second_xp" as const, label: "Retencao de conteudo/seg" },
                       ].map(({ key, label }) => (
                         <div key={key} className="space-y-1.5">
                           <Label className="text-xs text-muted-foreground">{label}</Label>
                           <Input
-                            type="number" min={0} step={key === "online_minute_xp" ? 0.05 : 1}
+                            type="number" min={0} step={key === "online_minute_xp" || key === "content_retention_second_xp" ? 0.05 : 1}
                             value={xpDraft[key]}
                             onChange={(e) => setXpDraft((d) => d ? { ...d, [key]: parseFloat(e.target.value) ?? 0 } : d)}
                           />

@@ -59,6 +59,7 @@ export interface FeedPost {
   published_at: string | null
   feed_kind: "feed" | "bees"
   viewer_has_liked: boolean
+  viewer_has_bookmarked?: boolean
   public_profile_url: string | null
   whatsapp_url: string | null
   social_links: FeedSocialLink[]
@@ -87,3 +88,4 @@ export type FeedEventType =
   | "whatsapp_click"
   | "social_click"
   | "view_more_caption"
+  | "content_retention"
