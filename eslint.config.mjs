@@ -7,7 +7,11 @@ const config = [
   ...require("eslint-config-next/core-web-vitals"),
   {
     rules: {
-      "react-hooks/set-state-in-effect": "warn",
+      // Regra nova do React 19 que penaliza padrões legítimos (initial fetch,
+      // mount detection, intentional reset on deps change). Desligada
+      // intencionalmente — o overhead de migrar pra useSyncExternalStore não
+      // compensa em nenhum dos casos atuais.
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ]

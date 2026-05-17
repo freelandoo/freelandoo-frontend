@@ -14,7 +14,7 @@ export function CookieConsent() {
     // mount-only: lê localStorage só no client e expõe o banner se ainda não houve consent.
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setVisible(true)
     }
   }, [])

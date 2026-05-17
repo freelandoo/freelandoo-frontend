@@ -62,7 +62,7 @@ export function GoogleSignInButton({
   useEffect(() => {
     if (!scriptReady) return
     if (!clientId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setError("Login com Google indisponível: configurar NEXT_PUBLIC_GOOGLE_CLIENT_ID.")
       return
     }

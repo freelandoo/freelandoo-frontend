@@ -163,6 +163,9 @@ export function ProfileServiceEditModal({
       bookingFees.service_fee_cents,
     )
     setServiceForm((f) => ({ ...f, price_reais: (net / 100).toFixed(2).replace(".", ",") }))
+    // Reagimos só quando ids/valores monetários relevantes mudam — não
+    // queremos refazer cálculo a cada referência nova do objeto `service`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     open,
     service?.id_profile_service,
@@ -210,11 +213,18 @@ export function ProfileServiceEditModal({
       setMediaLoading(false)
     }
     return []
+    // mediaUrl é closure local (depende só de profileId); service é lido só
+    // pelo id. eslint pede ambos no array mas isso causaria refetch a cada
+    // referência nova do objeto service.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service?.id_profile_service, profileId])
 
   useEffect(() => {
     if (open && service) fetchMedia()
     if (!open) setMediaList([])
+    // Disparar só na mudança de id_profile_service — fetchMedia é estável
+    // e service como objeto inteiro não importa aqui.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, service?.id_profile_service])
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
