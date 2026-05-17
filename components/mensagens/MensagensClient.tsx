@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   ArrowLeft,
   ChevronDown,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react"
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
+import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -44,6 +46,7 @@ import type {
 const ACTOR_STORAGE_KEY = "mensagens:active_actor"
 const POLL_THREAD_MS = 5000
 const POLL_LIST_MS = 15000
+const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 function authHeaders(): HeadersInit {
   const token = getToken()
@@ -808,8 +811,8 @@ export default function MensagensClient() {
   }
 
   return (
-    <div className="container mx-auto min-h-[calc(100dvh-72px)] px-0 md:px-4 md:py-6">
-      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden border-y border-white/[0.07] bg-gradient-to-b from-neutral-950 to-neutral-900/80 md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+    <div className="container mx-auto min-h-[100dvh] px-0 md:px-4 md:py-6">
+      <div className="grid h-[100dvh] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-neutral-950 via-neutral-950 to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
         {/* Lista (Conversas ou O.S.) */}
         <aside
           className={cn(
@@ -1261,74 +1264,74 @@ export default function MensagensClient() {
                       Nenhuma mensagem ainda.
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
-                      {osMessages.map((m, idx) => {
-                        const mine = m.sender === osViewerSide
-                        const prev = osMessages[idx - 1]
-                        const showDay =
-                          !prev || dayKey(prev.created_at) !== dayKey(m.created_at)
-                        const sameSenderAsPrev =
-                          !!prev && prev.sender === m.sender && !showDay
-                        return (
-                          <div key={m.id_message}>
-                            {showDay && (
-                              <div className="my-4 flex items-center gap-3">
-                                <div className="h-px flex-1 bg-white/5" />
-                                <span className="text-[10px] uppercase tracking-wider text-white/40">
-                                  {dayLabel(m.created_at)}
-                                </span>
-                                <div className="h-px flex-1 bg-white/5" />
-                              </div>
-                            )}
-                            <div
-                              className={cn(
-                                "flex",
-                                mine ? "justify-end" : "justify-start",
-                                sameSenderAsPrev ? "mt-0.5" : "mt-2"
+                    <ul className="flex flex-col gap-2">
+                      <AnimatePresence initial={false}>
+                        {osMessages.map((m, idx) => {
+                          const mine = m.sender === osViewerSide
+                          const prev = osMessages[idx - 1]
+                          const showDay =
+                            !prev || dayKey(prev.created_at) !== dayKey(m.created_at)
+                          const sameSenderAsPrev =
+                            !!prev && prev.sender === m.sender && !showDay
+                          return (
+                            <div key={m.id_message}>
+                              {showDay && (
+                                <div className="my-4 flex items-center justify-center">
+                                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-wider text-white/55 backdrop-blur">
+                                    {dayLabel(m.created_at)}
+                                  </span>
+                                </div>
                               )}
-                            >
-                              <div
+                              <motion.li
+                                layout="position"
+                                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={SPRING}
                                 className={cn(
-                                  "max-w-[75%] px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words",
-                                  mine
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-neutral-800/90 text-white",
-                                  mine
-                                    ? sameSenderAsPrev
-                                      ? "rounded-2xl rounded-br-md"
-                                      : "rounded-2xl rounded-br-sm"
-                                    : sameSenderAsPrev
-                                      ? "rounded-2xl rounded-bl-md"
-                                      : "rounded-2xl rounded-bl-sm"
+                                  "flex items-end gap-2",
+                                  mine ? "flex-row-reverse" : "flex-row",
+                                  sameSenderAsPrev ? "mt-0" : "mt-1"
                                 )}
                               >
-                                {m.content}
-                                <span
-                                  className={cn(
-                                    "ml-2 text-[10px] tabular-nums",
-                                    mine ? "text-primary-foreground/70" : "text-white/50"
-                                  )}
-                                >
-                                  {formatTime(m.created_at)}
-                                </span>
-                              </div>
+                                <div className={cn("flex max-w-[80%] min-w-0 flex-col", mine ? "items-end" : "items-start")}>
+                                  <div
+                                    className={cn(
+                                      "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                      mine
+                                        ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                                        : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
+                                    )}
+                                  >
+                                    {m.content}
+                                  </div>
+                                  <span className={cn("mt-0.5 px-1 text-[10px] tabular-nums", mine ? "text-white/40" : "text-white/35")}>
+                                    {formatTime(m.created_at)}
+                                  </span>
+                                </div>
+                              </motion.li>
                             </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )
+                        })}
+                      </AnimatePresence>
+                    </ul>
                   )}
                   <div ref={osThreadEndRef} />
                 </div>
 
-                <div className="border-t border-white/10 px-3 py-3">
+                <div className="shrink-0 border-t border-white/[0.06] bg-gradient-to-t from-black/60 to-black/20 px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-xl sm:px-4">
                   {OS_TERMINAL_STATUS.has(osCurrentStatus || activeOsChat.response_status) ? (
-                    <div className="flex items-center justify-center gap-2 rounded-md border border-white/10 bg-neutral-900/60 px-3 py-2 text-[11px] text-white/50">
+                    <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[11px] text-white/55">
                       <Lock className="h-3.5 w-3.5" />
                       Conversa encerrada — {osStatusLabel(osCurrentStatus || activeOsChat.response_status).toLowerCase()}.
                     </div>
                   ) : (
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+                      <EmojiPickerButton
+                        onPick={(emoji) =>
+                          setOsComposer((c) => (c + emoji).slice(0, 4000))
+                        }
+                      />
                       <Textarea
                         value={osComposer}
                         onChange={(e) => setOsComposer(e.target.value)}
@@ -1340,21 +1343,23 @@ export default function MensagensClient() {
                         }}
                         placeholder="Escrever mensagem"
                         rows={1}
-                        className="min-h-[40px] max-h-32 resize-none border-white/10 bg-neutral-900 text-sm text-white placeholder:text-white/40"
+                        className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                       />
-                      <Button
+                      <motion.button
+                        type="button"
                         onClick={handleOsSend}
                         disabled={osSending || !osComposer.trim()}
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
+                        whileTap={{ scale: 0.94 }}
+                        transition={SPRING}
                         aria-label="Enviar"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                       >
                         {osSending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Send className="h-4 w-4" />
                         )}
-                      </Button>
+                      </motion.button>
                     </div>
                   )}
                 </div>
@@ -1435,68 +1440,73 @@ export default function MensagensClient() {
                     Comece a conversa.
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
-                    {messages.map((m, idx) => {
-                      const mine = m.sender_entity_id === actorId
-                      const prev = messages[idx - 1]
-                      const showDay =
-                        !prev || dayKey(prev.created_at) !== dayKey(m.created_at)
-                      const sameSenderAsPrev =
-                        !!prev && prev.sender_entity_id === m.sender_entity_id && !showDay
-                      return (
-                        <div key={m.id_message}>
-                          {showDay && (
-                            <div className="my-4 flex items-center gap-3">
-                              <div className="h-px flex-1 bg-white/5" />
-                              <span className="text-[10px] uppercase tracking-wider text-white/40">
-                                {dayLabel(m.created_at)}
-                              </span>
-                              <div className="h-px flex-1 bg-white/5" />
-                            </div>
-                          )}
-                          <div
-                            className={cn(
-                              "flex",
-                              mine ? "justify-end" : "justify-start",
-                              sameSenderAsPrev ? "mt-0.5" : "mt-2"
+                  <ul className="flex flex-col gap-2">
+                    <AnimatePresence initial={false}>
+                      {messages.map((m, idx) => {
+                        const mine = m.sender_entity_id === actorId
+                        const prev = messages[idx - 1]
+                        const showDay =
+                          !prev || dayKey(prev.created_at) !== dayKey(m.created_at)
+                        const sameSenderAsPrev =
+                          !!prev && prev.sender_entity_id === m.sender_entity_id && !showDay
+                        return (
+                          <div key={m.id_message}>
+                            {showDay && (
+                              <div className="my-4 flex items-center justify-center">
+                                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-wider text-white/55 backdrop-blur">
+                                  {dayLabel(m.created_at)}
+                                </span>
+                              </div>
                             )}
-                          >
-                            <div
+                            <motion.li
+                              layout="position"
+                              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.96 }}
+                              transition={SPRING}
                               className={cn(
-                                "max-w-[75%] px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words transition-colors",
-                                mine
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-neutral-800/90 text-white",
-                                mine
-                                  ? sameSenderAsPrev
-                                    ? "rounded-2xl rounded-br-md"
-                                    : "rounded-2xl rounded-br-sm"
-                                  : sameSenderAsPrev
-                                    ? "rounded-2xl rounded-bl-md"
-                                    : "rounded-2xl rounded-bl-sm"
+                                "flex items-end gap-2",
+                                mine ? "flex-row-reverse" : "flex-row",
+                                sameSenderAsPrev ? "mt-0" : "mt-1"
                               )}
                             >
-                              {m.body}
-                              <span
-                                className={cn(
-                                  "ml-2 text-[10px] tabular-nums",
-                                  mine ? "text-primary-foreground/70" : "text-white/50"
-                                )}
-                              >
-                                {formatTime(m.created_at)}
-                              </span>
-                            </div>
+                              <div className={cn("flex max-w-[80%] min-w-0 flex-col", mine ? "items-end" : "items-start")}>
+                                <div
+                                  className={cn(
+                                    "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                    mine
+                                      ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                                      : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
+                                  )}
+                                >
+                                  {m.body}
+                                </div>
+                                <span
+                                  className={cn(
+                                    "mt-0.5 px-1 text-[10px] tabular-nums",
+                                    mine ? "text-white/40" : "text-white/35"
+                                  )}
+                                >
+                                  {formatTime(m.created_at)}
+                                </span>
+                              </div>
+                            </motion.li>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                        )
+                      })}
+                    </AnimatePresence>
+                  </ul>
                 )}
                 <div ref={threadEndRef} />
               </div>
 
-              <div className="border-t border-white/10 px-3 py-3">
-                <div className="flex items-end gap-2">
+              <div className="shrink-0 border-t border-white/[0.06] bg-gradient-to-t from-black/60 to-black/20 px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-xl sm:px-4">
+                <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+                  <EmojiPickerButton
+                    onPick={(emoji) =>
+                      setComposer((c) => (c + emoji).slice(0, 4000))
+                    }
+                  />
                   <Textarea
                     value={composer}
                     onChange={(e) => setComposer(e.target.value)}
@@ -1508,21 +1518,23 @@ export default function MensagensClient() {
                     }}
                     placeholder="Escrever mensagem"
                     rows={1}
-                    className="min-h-[40px] max-h-32 resize-none border-white/10 bg-neutral-900 text-sm text-white placeholder:text-white/40"
+                    className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                   />
-                  <Button
+                  <motion.button
+                    type="button"
                     onClick={handleSend}
                     disabled={sending || !composer.trim()}
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
+                    whileTap={{ scale: 0.94 }}
+                    transition={SPRING}
                     aria-label="Enviar"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                   >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
-                  </Button>
+                  </motion.button>
                 </div>
               </div>
             </>

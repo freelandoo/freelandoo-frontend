@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   Flag,
   Loader2,
@@ -11,7 +12,6 @@ import {
   Users,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
@@ -22,6 +22,7 @@ import { ReportMessageDialog } from "./ReportMessageDialog"
 const POLL_MS = 3500
 const HEARTBEAT_MS = 30_000
 const MAX_LENGTH = 500
+const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 export type ChatRoomKind = "global" | "machine"
 
@@ -66,12 +67,8 @@ interface ChatMessage {
 
 interface ChatRoomPanelProps {
   kind: ChatRoomKind
-  /** Para kind=machine: máquina explícita selecionada pelo user. */
   machineId?: number | null
-  /** Callback quando precisar exibir o seletor de máquina (kind=machine sem
-   *  máquina principal e sem id explícito). */
   onNeedsMachinePick?: () => void
-  /** Cabeçalho descritivo opcional (acima do título da sala). */
   pageTitle?: string
   pageSubtitle?: string
 }
@@ -118,11 +115,9 @@ export function ChatRoomPanel({
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const stickToBottomRef = useRef(true)
 
-  // Mantém referência da máquina solicitada para reconectar se a sala morrer
   const machineRef = useRef<number | null>(machineId ?? null)
   useEffect(() => { machineRef.current = machineId ?? null }, [machineId])
 
-  // Entrar na sala (idempotente — chama sempre que kind/machineId muda)
   useEffect(() => {
     if (status !== "authenticated") return
     let cancelled = false
@@ -140,7 +135,6 @@ export function ChatRoomPanel({
         })
         const data = await res.json()
         if (!res.ok) {
-          // Caso especial: máquina ambígua/ausente → frontend mostra seletor
           if (kind === "machine" && /m[aá]quina/i.test(data?.error || "")) {
             onNeedsMachinePick?.()
             if (!cancelled) {
@@ -164,12 +158,9 @@ export function ChatRoomPanel({
         if (!cancelled) setJoining(false)
       }
     })()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [status, kind, machineId, onNeedsMachinePick])
 
-  // Mantém presença viva
   useEffect(() => {
     if (!room) return
     const ping = async () => {
@@ -193,12 +184,9 @@ export function ChatRoomPanel({
     return () => clearInterval(t)
   }, [room])
 
-  // Sai da sala ao desmontar / mudar de aba (fire-and-forget)
   useEffect(() => {
     return () => {
       if (!room) return
-      // sendBeacon dá maior chance de chegar no unload, mas não dá pra setar
-      // Authorization. Usa fetch keepalive como fallback (também envia no unload).
       try {
         fetch(`/api/chat/rooms/${room.id_chat_room}/leave`, {
           method: "POST",
@@ -209,7 +197,6 @@ export function ChatRoomPanel({
     }
   }, [room])
 
-  // Beforeunload: best effort sair da sala
   useEffect(() => {
     if (!room) return
     const onBeforeUnload = () => {
@@ -225,7 +212,6 @@ export function ChatRoomPanel({
     return () => window.removeEventListener("beforeunload", onBeforeUnload)
   }, [room])
 
-  // Carga inicial + polling de mensagens
   const loadMessages = useCallback(async (opts: { silent?: boolean } = {}) => {
     if (!room) return
     if (!opts.silent) setLoadingMessages(true)
@@ -261,7 +247,6 @@ export function ChatRoomPanel({
     return () => clearInterval(t)
   }, [room, loadMessages])
 
-  // Auto-scroll inteligente
   useEffect(() => {
     const el = scrollerRef.current
     if (!el) return
@@ -391,12 +376,9 @@ export function ChatRoomPanel({
         <button
           type="button"
           onClick={() => {
-            // re-trigger pelo state truque
             setJoinError(null)
             setRoom(null)
             setJoining(true)
-            // a effect de join roda de novo porque dependências [kind, machineId] não mudaram —
-            // forçamos via setTimeout num re-render dummy:
             setTimeout(() => {
               const dummy = machineRef.current
               machineRef.current = dummy
@@ -410,43 +392,47 @@ export function ChatRoomPanel({
     )
   }
 
-  if (!room) {
-    // Caso máquina precise ser escolhida — o pai trata isso via onNeedsMachinePick.
-    return null
-  }
+  if (!room) return null
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
-      <header className="flex flex-col gap-2 border-b border-white/[0.07] bg-black/30 px-4 py-3 backdrop-blur">
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      {/* Header glass */}
+      <header className="relative flex flex-col gap-2 border-b border-white/[0.06] bg-gradient-to-b from-black/40 to-black/10 px-4 py-3 backdrop-blur-xl">
         {(pageTitle || pageSubtitle) && (
-          <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-white/35">
             {pageTitle}
           </div>
         )}
         <div className="flex items-center gap-3">
-          <Radio
+          <motion.span
+            animate={{ scale: connState === "online" ? [1, 1.15, 1] : 1 }}
+            transition={connState === "online" ? { repeat: Infinity, duration: 2.2, ease: "easeInOut" } : { duration: 0.3 }}
             className={cn(
-              "h-4 w-4 shrink-0",
-              connState === "online" ? "text-emerald-400" : "text-amber-300"
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              connState === "online"
+                ? "bg-gradient-to-br from-emerald-400/25 to-emerald-500/10 text-emerald-300"
+                : "bg-amber-400/15 text-amber-300"
             )}
-          />
+          >
+            <Radio className="h-4 w-4" />
+          </motion.span>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-semibold text-white">{roomTitle}</h2>
-            <p className="truncate text-[11px] text-white/55">
+            <h2 className="truncate text-base font-semibold tracking-tight text-white">{roomTitle}</h2>
+            <p className="truncate text-[11px] text-white/50">
               {pageSubtitle ||
                 (kind === "global"
                   ? "Converse com usuários online no Freelandoo."
                   : "Converse com pessoas da sua área.")}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-neutral-900/70 px-2.5 py-1 text-[11px] text-white/75">
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur">
             <Users className="h-3.5 w-3.5 text-emerald-400" />
             <span className="tabular-nums">{online}</span>
-            <span className="text-white/40">online</span>
+            <span className="hidden text-white/40 sm:inline">online</span>
           </div>
           <span
             className={cn(
-              "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+              "hidden shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider sm:inline-block",
               connState === "online"
                 ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                 : connState === "reconnecting"
@@ -459,121 +445,166 @@ export function ChatRoomPanel({
         </div>
       </header>
 
+      {/* Scroller */}
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 py-3 sm:px-4"
+        className="flex-1 overflow-y-auto px-3 py-4 sm:px-5 [scrollbar-width:thin]"
       >
         {loadingMessages && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-white/55">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center px-6 text-center text-white/50">
-            <Radio className="mb-2 h-8 w-8 text-white/30" />
-            <p className="text-sm">
+          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 2.6, ease: "easeInOut" }}
+              className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] ring-1 ring-white/10"
+            >
+              <Radio className="h-7 w-7 text-white/40" />
+            </motion.div>
+            <p className="text-sm text-white/60">
               {kind === "global"
                 ? "Seja o primeiro a falar no chat global."
                 : "Seja o primeiro a falar nessa máquina."}
             </p>
           </div>
         ) : (
-          <ul className="space-y-2">
-            {messages.map((m) => {
-              const mine = m.sender.id_user === user?.id_user
-              const machine = m.profile?.machine?.name
-              const level = m.profile?.xp_level || 0
-              return (
-                <li
-                  key={m.id_chat_message}
-                  className="group/m flex items-start gap-2.5"
-                >
-                  {m.profile?.sub_profile_slug && m.sender.username ? (
-                    <Link
-                      href={`/p/${m.sender.username}/${m.profile.sub_profile_slug}`}
-                      className="shrink-0"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={m.profile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
-                          {entityInitials(m.profile?.display_name || m.sender.nome)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Link>
-                  ) : (
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={m.profile?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
-                        {entityInitials(m.profile?.display_name || m.sender.nome)}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-[12px] font-semibold text-white">
-                        {m.profile?.display_name || m.sender.nome || "Anônimo"}
-                      </span>
-                      {level > 0 && (
-                        <span className="rounded-sm bg-amber-400/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                          LV.{level}
-                        </span>
+          <ul className="flex flex-col gap-3">
+            <AnimatePresence initial={false}>
+              {messages.map((m, idx) => {
+                const mine = m.sender.id_user === user?.id_user
+                const prev = messages[idx - 1]
+                const sameSenderAsPrev = !!prev && prev.sender.id_user === m.sender.id_user
+                const machine = m.profile?.machine?.name
+                const level = m.profile?.xp_level || 0
+                return (
+                  <motion.li
+                    key={m.id_chat_message}
+                    layout="position"
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={SPRING}
+                    className={cn(
+                      "group/m flex items-end gap-2",
+                      mine ? "flex-row-reverse" : "flex-row",
+                      sameSenderAsPrev ? "mt-0" : "mt-1"
+                    )}
+                  >
+                    {/* Avatar (só no último msg do cluster ou primeiro?) — para chat ao vivo, sempre exibir, mais informativo */}
+                    {!mine ? (
+                      <div className={cn("shrink-0", sameSenderAsPrev && "opacity-0")}>
+                        {m.profile?.sub_profile_slug && m.sender.username ? (
+                          <Link href={`/p/${m.sender.username}/${m.profile.sub_profile_slug}`} className="block">
+                            <Avatar className="h-8 w-8 ring-1 ring-white/10">
+                              <AvatarImage src={m.profile?.avatar_url || undefined} />
+                              <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
+                                {entityInitials(m.profile?.display_name || m.sender.nome)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        ) : (
+                          <Avatar className="h-8 w-8 ring-1 ring-white/10">
+                            <AvatarImage src={m.profile?.avatar_url || undefined} />
+                            <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
+                              {entityInitials(m.profile?.display_name || m.sender.nome)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-0 shrink-0" />
+                    )}
+
+                    <div className={cn("max-w-[78%] min-w-0 flex flex-col", mine ? "items-end" : "items-start")}>
+                      {!sameSenderAsPrev && (
+                        <div className={cn("mb-0.5 flex items-center gap-1.5 px-1", mine ? "flex-row-reverse" : "flex-row")}>
+                          {!mine && (
+                            <span className="truncate text-[12px] font-semibold text-white">
+                              {m.profile?.display_name || m.sender.nome || "Anônimo"}
+                            </span>
+                          )}
+                          {level > 0 && (
+                            <span className="rounded-md bg-amber-400/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                              LV.{level}
+                            </span>
+                          )}
+                          {machine && (
+                            <span className="truncate rounded-md bg-white/[0.06] px-1.5 py-px text-[9px] font-medium uppercase tracking-wide text-white/65">
+                              {machine}
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {machine && (
-                        <span className="truncate rounded-sm bg-white/[0.06] px-1.5 py-px text-[9px] font-medium uppercase tracking-wide text-white/65">
-                          {machine}
-                        </span>
+
+                      {m.hidden ? (
+                        <p className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[12px] italic text-white/45">
+                          <Flag className="h-3 w-3" aria-hidden /> Mensagem ocultada por denúncias.
+                        </p>
+                      ) : (
+                        <div
+                          className={cn(
+                            "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                            mine
+                              ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                              : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
+                          )}
+                        >
+                          {m.content}
+                        </div>
                       )}
-                      <span className="ml-auto shrink-0 text-[10px] tabular-nums text-white/40">
-                        {timeOnly(m.created_at)}
-                      </span>
+                      <div className={cn("mt-0.5 flex items-center gap-1.5 px-1", mine ? "flex-row-reverse" : "flex-row")}>
+                        <span className="text-[10px] tabular-nums text-white/35">{timeOnly(m.created_at)}</span>
+                        {mine ? (
+                          <button
+                            type="button"
+                            onClick={() => deleteMine(m.id_chat_message)}
+                            aria-label="Apagar"
+                            title="Apagar"
+                            className="rounded p-0.5 text-white/30 opacity-0 transition-all hover:text-red-300 group-hover/m:opacity-100"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openReport(m.id_chat_message)}
+                            aria-label="Denunciar"
+                            title="Denunciar"
+                            className="rounded p-0.5 text-white/30 opacity-0 transition-all hover:text-amber-300 group-hover/m:opacity-100"
+                          >
+                            <Flag className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {m.hidden ? (
-                      <p className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[12px] italic text-white/40">
-                        <Flag className="h-3 w-3" aria-hidden /> Esta mensagem foi ocultada por denúncias.
-                      </p>
-                    ) : (
-                      <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/90">
-                        {m.content}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/m:opacity-100">
-                    {mine ? (
-                      <button
-                        type="button"
-                        onClick={() => deleteMine(m.id_chat_message)}
-                        aria-label="Apagar"
-                        title="Apagar"
-                        className="rounded p-1 text-white/40 hover:bg-white/5 hover:text-red-300"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => openReport(m.id_chat_message)}
-                        aria-label="Denunciar"
-                        title="Denunciar"
-                        className="rounded p-1 text-white/40 hover:bg-white/5 hover:text-amber-300"
-                      >
-                        <Flag className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
+                  </motion.li>
+                )
+              })}
+            </AnimatePresence>
           </ul>
         )}
       </div>
 
-      <div className="border-t border-white/10 px-3 py-3">
-        {sendError && (
-          <div className="mb-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-200">
-            {sendError}
-          </div>
-        )}
-        <div className="flex items-end gap-2">
+      {/* Composer — sticky no fundo, respeita safe-area mobile */}
+      <div className="shrink-0 border-t border-white/[0.06] bg-gradient-to-t from-black/60 to-black/20 px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-xl sm:px-4">
+        <AnimatePresence>
+          {sendError && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={SPRING}
+              className="mb-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-200"
+            >
+              {sendError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+          <EmojiPickerButton onPick={insertEmoji} />
           <Textarea
             ref={textareaRef}
             value={draft}
@@ -586,21 +617,23 @@ export function ChatRoomPanel({
             }}
             placeholder={placeholder}
             rows={1}
-            className="min-h-[40px] max-h-32 resize-none border-white/10 bg-neutral-900 text-sm text-white placeholder:text-white/40"
+            className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
           />
-          <EmojiPickerButton onPick={insertEmoji} />
-          <Button
+          <motion.button
+            type="button"
             onClick={handleSend}
             disabled={sending || !draft.trim()}
-            size="icon"
-            className="h-10 w-10 shrink-0"
+            whileTap={{ scale: 0.94 }}
+            transition={SPRING}
             aria-label="Enviar"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+          </motion.button>
         </div>
-        <div className="mt-1 flex items-center justify-between text-[10px] text-white/35">
-          <span>Enter envia · Shift+Enter quebra linha</span>
+        <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-white/30">
+          <span className="hidden sm:inline">Enter envia · Shift+Enter quebra linha</span>
+          <span className="sm:hidden">Enter envia</span>
           <span className="tabular-nums">{draft.length}/{MAX_LENGTH}</span>
         </div>
       </div>
