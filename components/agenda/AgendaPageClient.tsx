@@ -420,6 +420,7 @@ export default function AgendaPageClient({
                               ) : (
                                 participantes.map(m => (
                                   <Avatar key={m.id_member_profile} className="size-5 border border-zinc-600">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {m.avatar_url && <img src={m.avatar_url} alt={m.display_name} className="object-cover" />}
                                     <AvatarFallback className="text-[8px]">{getInitials(m.display_name)}</AvatarFallback>
                                   </Avatar>

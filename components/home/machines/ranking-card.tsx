@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Star, Eye, Heart } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import type { MachineTheme } from "./tokens"
 
@@ -106,7 +107,7 @@ export function RankingCard({
           }}
         >
           {avatar_url ? (
-            <img src={avatar_url} alt={name} className="h-full w-full object-cover" />
+            <Image src={avatar_url} alt={name} width={44} height={44} className="h-full w-full object-cover" />
           ) : (
             initials
           )}

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { CheckCircle2, Crown, Instagram, Youtube, Plus } from "lucide-react"
@@ -208,16 +209,20 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
 
       <div className="relative aspect-square bg-muted flex items-center justify-center">
         {creator.avatar_url ? (
-          <img
+          <Image
             src={creator.avatar_url}
             alt={creator.display_name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover"
           />
         ) : creator.user_avatar ? (
-          <img
+          <Image
             src={creator.user_avatar}
             alt={creator.user_nome}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">

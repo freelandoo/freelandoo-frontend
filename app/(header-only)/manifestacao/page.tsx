@@ -169,6 +169,7 @@ export default function ManifestacaoPage() {
 
         <div className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-900">
           {previewProduct?.banner_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={previewProduct.banner_url} alt={previewProduct.name} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(217,119,6,0.32),transparent_34%),linear-gradient(135deg,#18181b,#3f3f46)]" />
@@ -236,6 +237,7 @@ export default function ManifestacaoPage() {
                 style={{ animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 55}ms` }}
               >
                 <div className="aspect-[16/5] overflow-hidden bg-zinc-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.banner_url} alt={p.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
                 </div>
                 <div className="p-5">
