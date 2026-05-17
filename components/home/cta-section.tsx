@@ -1,7 +1,12 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Building2, Users } from "lucide-react"
+import { usePricing, formatBRL } from "@/lib/pricing"
 
 export function CtaSection() {
+  const pricing = usePricing()
+  const annual = formatBRL(pricing.subscription_annual.amount_cents, pricing.subscription_annual.currency)
   return (
     <section className="bg-gradient-to-b from-background to-neutral-900 py-20 md:py-28">
       <div className="container mx-auto px-4">
@@ -34,7 +39,7 @@ export function CtaSection() {
               </div>
               <h3 className="mb-2 text-2xl font-bold">Para Creators</h3>
               <p className="mb-6 text-muted-foreground">
-                Conecte-se com marcas que buscam seu perfil. Anuidade de R$ 300, sem comissões.
+                Conecte-se com marcas que buscam seu perfil. Anuidade de {annual}, sem comissões.
               </p>
               <Button variant="outline" className="w-full gap-2 border-primary text-primary hover:bg-primary/10">
                 Cadastrar Perfil

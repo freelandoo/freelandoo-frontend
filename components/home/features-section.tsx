@@ -1,22 +1,25 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Building2, Sparkles } from "lucide-react"
-
-const features = [
-  {
-    icon: Building2,
-    title: "Para Empresas",
-    description:
-      "Encontre influenciadores do nicho certo, no tamanho ideal para seu orçamento de forma rápida e eficiente. Acesso 100% gratuito à plataforma completa, busca avançada por filtros relevantes e contato direto sem taxas ou comissões sobre campanhas.",
-  },
-  {
-    icon: Sparkles,
-    title: "Para Creators",
-    description:
-      "Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com anuidade de R$ 300. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.",
-  },
-]
+import { usePricing, formatBRL } from "@/lib/pricing"
 
 export function FeaturesSection() {
+  const pricing = usePricing()
+  const annual = formatBRL(pricing.subscription_annual.amount_cents, pricing.subscription_annual.currency)
+  const features = [
+    {
+      icon: Building2,
+      title: "Para Empresas",
+      description:
+        "Encontre influenciadores do nicho certo, no tamanho ideal para seu orçamento de forma rápida e eficiente. Acesso 100% gratuito à plataforma completa, busca avançada por filtros relevantes e contato direto sem taxas ou comissões sobre campanhas.",
+    },
+    {
+      icon: Sparkles,
+      title: "Para Creators",
+      description: `Visibilidade real para empresas do seu nicho, perfil profissional que valoriza seu trabalho e custo previsível com anuidade de ${annual}. Mantenha 100% dos seus ganhos sem comissões por campanha e controle total das negociações.`,
+    },
+  ]
   return (
     <section className="py-20 md:py-28">
       <div className="container mx-auto px-4">
