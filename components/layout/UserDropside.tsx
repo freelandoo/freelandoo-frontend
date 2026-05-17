@@ -8,6 +8,7 @@ import {
   Edit3,
   Briefcase,
   MessageSquarePlus,
+  PackageSearch,
   Coins,
   CreditCard,
   Settings,
@@ -100,6 +101,12 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
         <span className="h-2 w-2 rounded-full bg-red-500" aria-label="Novas respostas" />
       ) : undefined,
       description: "Solicite orçamento dos profissionais",
+    },
+    {
+      href: "/pedir-produto",
+      label: "Pedir produto",
+      icon: PackageSearch,
+      description: "Encontre vendedores compatíveis pela categoria e cidade",
     },
     {
       href: "/loja-polens",
