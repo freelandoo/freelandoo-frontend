@@ -14,7 +14,7 @@ import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import {
   MessageSquarePlus, Loader2, X, ChevronDown, ChevronUp,
   CheckCircle2, XCircle, MessageCircle, Clock, Ban, AlertCircle,
-  Sparkles, PackageSearch, MapPin, Upload, Package, Briefcase,
+  Sparkles, PackageSearch, MapPin, Upload, Package, Briefcase, Trash2,
 } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
@@ -550,6 +550,18 @@ function ServiceList({ onNew, onCloseModal }: { onNew: () => void; onCloseModal:
     setActionLoading(null)
   }
 
+  const handleHide = async (idReq: string) => {
+    if (!confirm("Remover esta solicitação da sua lista? Ela continua válida para os profissionais que já responderam.")) return
+    const token = getToken()
+    if (!token) return
+    setActionLoading(idReq)
+    try {
+      await fetch(`/api/service-requests/${idReq}`, { method: "DELETE", headers: jsonHeaders(token) })
+      fetchList()
+    } catch { /* silent */ }
+    setActionLoading(null)
+  }
+
   const isTerminal = (s: string) => ["PRO_REJECTED", "USER_REJECTED", "FINALIZED", "CLOSED_OTHER_WON"].includes(s)
 
   const openResponseChat = (idResponse: string) => {
@@ -605,6 +617,16 @@ function ServiceList({ onNew, onCloseModal }: { onNew: () => void; onCloseModal:
                     {responses.length} resposta{responses.length > 1 ? "s" : ""}
                   </span>
                 )}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); handleHide(req.id_request) }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); handleHide(req.id_request) } }}
+                  title="Remover da minha lista"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white/40 hover:bg-red-500/20 hover:text-red-300 transition-colors cursor-pointer"
+                >
+                  {actionLoading === req.id_request ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                </span>
                 {isExp ? <ChevronUp className="h-4 w-4 text-white/40" /> : <ChevronDown className="h-4 w-4 text-white/40" />}
               </div>
             </button>
@@ -789,29 +811,39 @@ function ProductCreateForm({ onCreated }: { onCreated: () => void }) {
 
       <div>
         <FieldLabel required>Categoria</FieldLabel>
-        <select
+        <Select
           value={form.id_product_category}
-          onChange={(e) => setForm((f) => ({ ...f, id_product_category: e.target.value }))}
-          className={inputCls}
+          onValueChange={(v) => setForm((f) => ({ ...f, id_product_category: v }))}
         >
-          <option value="">Selecione uma categoria…</option>
-          {categories.map((c) => (
-            <option key={c.id_product_category} value={c.id_product_category}>{c.name}</option>
-          ))}
-        </select>
+          <SelectTrigger className={inputCls}>
+            <SelectValue placeholder="Selecione uma categoria…" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((c) => (
+              <SelectItem key={c.id_product_category} value={String(c.id_product_category)}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3">
         <div>
           <FieldLabel required>UF</FieldLabel>
-          <select
+          <Select
             value={form.state}
-            onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
-            className={inputCls}
+            onValueChange={(v) => setForm((f) => ({ ...f, state: v }))}
           >
-            <option value="">UF</option>
-            {ESTADOS_BRASIL.map((e) => <option key={e.uf} value={e.uf}>{e.uf}</option>)}
-          </select>
+            <SelectTrigger className={inputCls}>
+              <SelectValue placeholder="UF" />
+            </SelectTrigger>
+            <SelectContent>
+              {ESTADOS_BRASIL.map((e) => (
+                <SelectItem key={e.uf} value={e.uf}>{e.uf}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <FieldLabel required>Cidade</FieldLabel>
@@ -938,6 +970,15 @@ function ProductList({ onNew }: { onNew: () => void }) {
     } finally { setCancelingId(null) }
   }
 
+  async function hide(id: string) {
+    if (!confirm("Remover este pedido da sua lista?")) return
+    setCancelingId(id)
+    try {
+      await fetch(`/api/product-requests/${id}`, { method: "DELETE", headers: authHeaders() })
+      await load()
+    } finally { setCancelingId(null) }
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" /></div>
   }
@@ -987,16 +1028,27 @@ function ProductList({ onNew }: { onNew: () => void }) {
                   {new Date(r.created_at).toLocaleDateString("pt-BR")}
                 </p>
               </div>
-              {canCancel && (
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                {canCancel && (
+                  <button
+                    onClick={() => cancel(r.id_product_request)}
+                    disabled={cancelingId === r.id_product_request}
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/10 px-2 py-1 text-[11px] text-white/55 hover:border-amber-400/30 hover:text-amber-300 disabled:opacity-50"
+                  >
+                    {cancelingId === r.id_product_request ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3" />}
+                    Cancelar
+                  </button>
+                )}
                 <button
-                  onClick={() => cancel(r.id_product_request)}
+                  onClick={() => hide(r.id_product_request)}
                   disabled={cancelingId === r.id_product_request}
                   className="inline-flex items-center gap-1 rounded-xl border border-white/10 px-2 py-1 text-[11px] text-white/55 hover:border-red-400/30 hover:text-red-300 disabled:opacity-50"
+                  title="Remover da minha lista"
                 >
-                  {cancelingId === r.id_product_request ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3" />}
-                  Cancelar
+                  <Trash2 className="h-3 w-3" />
+                  Remover
                 </button>
-              )}
+              </div>
             </div>
           </div>
         )

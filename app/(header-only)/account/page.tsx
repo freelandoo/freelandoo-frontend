@@ -144,6 +144,7 @@ export default function PerfilPage() {
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
   const [premiumProfile, setPremiumProfile] = useState<{ id: string; name?: string } | null>(null)
   const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
+  const [serviceRequestMode, setServiceRequestMode] = useState<"service" | "product">("service")
   const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
   // bolinha vermelha por sub-perfil (mural/chat) — id_profile -> has_new
   const [profileBadges, setProfileBadges] = useState<Record<string, boolean>>({})
@@ -1656,6 +1657,30 @@ export default function PerfilPage() {
                 <StatCell icon={UserRound} label="Subperfis" value={totalProfiles} compact />
                 <StatCell icon={MessageCircle} label="Não lidas" value={unreadMessages} compact />
               </div>
+
+              {/* Pedir Serviço / Produto — atalho do headcard */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setServiceRequestMode("service"); setIsServiceRequestOpen(true) }}
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 py-2.5 text-sm font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
+                    <MessageSquarePlus className="h-3.5 w-3.5" />
+                  </span>
+                  Pedir serviço
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setServiceRequestMode("product"); setIsServiceRequestOpen(true) }}
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 py-2.5 text-sm font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </span>
+                  Pedir produto
+                </button>
+              </div>
             </div>
           </article>
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
@@ -2676,6 +2701,7 @@ export default function PerfilPage() {
       <ServiceRequestModal
         open={isServiceRequestOpen}
         onOpenChange={setIsServiceRequestOpen}
+        initialMode={serviceRequestMode}
       />
 
       {/* Modal Premium (comprar destaque pra um perfil) */}
