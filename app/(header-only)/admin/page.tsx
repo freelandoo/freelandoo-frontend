@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface UserData {
   id_user: string
@@ -264,6 +264,57 @@ export default function AdminPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Destaque por perfil — preço, dias e vagas por cidade.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/administracao/chat-moderation")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-primary" />
+                Moderação do Chat
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/administracao/blocked-terms")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldX className="h-5 w-5 text-primary" />
+                Termos bloqueados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Lista própria de palavras/expressões proibidas no chat (categoria, severity, action).
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => router.push("/administracao/loja-payouts")}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Store className="h-5 w-5 text-primary" />
+                Loja — Payouts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Saldo dos vendedores da Loja após holdback (PIX manual).
               </p>
             </CardContent>
           </Card>
