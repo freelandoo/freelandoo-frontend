@@ -61,6 +61,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [paused, setPaused] = useState(false)
+  const [reactingEmoji, setReactingEmoji] = useState<string | null>(null)
 
   const activeEntry = entries[profileIndex]
   const activeStory = stories[storyIndex]
@@ -213,6 +214,27 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
 
   const progressKey = useMemo(() => `${profileIndex}|${storyIndex}|${activeStory?.id_story || ""}`, [profileIndex, storyIndex, activeStory?.id_story])
 
+  const sendReaction = async (emoji: string) => {
+    if (!activeStory || reactingEmoji) return
+    const token = getToken()
+    if (!token) return
+    setReactingEmoji(emoji)
+    try {
+      await fetch(`/api/stories/${encodeURIComponent(activeStory.id_story)}/react`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ emoji }),
+      })
+    } catch {
+      // Reactions should never interrupt story playback.
+    } finally {
+      setTimeout(() => setReactingEmoji(null), 450)
+    }
+  }
+
   if (!activeEntry) return null
 
   return (
@@ -300,10 +322,30 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
         </div>
 
         {activeStory?.caption && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 to-transparent px-4 pb-6 pt-12">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 to-transparent px-4 pb-20 pt-12">
             <p className="text-balance text-sm leading-relaxed text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.85)]">
               {activeStory.caption}
             </p>
+          </div>
+        )}
+
+        {activeStory && (
+          <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center gap-2 px-4">
+            {["🔥", "👏", "😍", "😂", "😮"].map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => sendReaction(emoji)}
+                disabled={!!reactingEmoji}
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-xl ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/60 active:scale-95 disabled:opacity-70",
+                  reactingEmoji === emoji && "scale-110 bg-white/20"
+                )}
+                aria-label={`Reagir com ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
           </div>
         )}
 

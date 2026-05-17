@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -63,8 +63,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const machineGlow = post.machine?.color_glow || null
 
   const [liked, setLiked] = useState(post.viewer_has_liked)
+  const [bookmarked, setBookmarked] = useState(!!post.viewer_has_bookmarked)
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
+  const [bookmarkPending, setBookmarkPending] = useState(false)
   const [copied, setCopied] = useState(false)
   const { coupon: shareCoupon } = useShareCoupon()
   const primaryUrl = post.project_url || post.public_profile_url
@@ -74,6 +76,59 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       : post.project_url
         ? "Abrir link"
         : "Ver perfil"
+  const retentionSequenceRef = useRef(0)
+
+  useEffect(() => {
+    const node = impressionRef.current
+    if (!node || !post.post_id || typeof IntersectionObserver === "undefined") return
+
+    let visible = false
+    let pendingSeconds = 0
+
+    const flush = () => {
+      const seconds = Math.floor(pendingSeconds)
+      if (seconds <= 0) return
+      pendingSeconds -= seconds
+      retentionSequenceRef.current += 1
+      sendFeedEvent({
+        post_id: post.post_id,
+        event_type: "content_retention",
+        filters,
+        metadata: {
+          seconds_delta: seconds,
+          sequence: retentionSequenceRef.current,
+        },
+      })
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = !!entry?.isIntersecting && entry.intersectionRatio >= 0.5
+        if (!visible) flush()
+      },
+      { threshold: [0, 0.5, 1] }
+    )
+    observer.observe(node)
+
+    const interval = window.setInterval(() => {
+      if (visible && document.visibilityState === "visible") {
+        pendingSeconds += 5
+        if (pendingSeconds >= 10) flush()
+      }
+    }, 5000)
+
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") flush()
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisibility)
+      observer.disconnect()
+      flush()
+    }
+  }, [filters, impressionRef, post.post_id])
 
   const handleLike = async () => {
     const token = getToken()
@@ -187,6 +242,37 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       filters,
       metadata: { type: link.type },
     })
+  }
+
+  const handleBookmark = async () => {
+    const token = getToken()
+    if (!token) {
+      const next = encodeURIComponent("/feed")
+      router.push(`/login?next=${next}`)
+      return
+    }
+    if (bookmarkPending) return
+
+    const previous = bookmarked
+    setBookmarked(!previous)
+    setBookmarkPending(true)
+    try {
+      const res = await fetch("/api/me/bookmarks/toggle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ post_id: post.post_id }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setBookmarked(!!data.bookmarked)
+    } catch {
+      setBookmarked(previous)
+    } finally {
+      setBookmarkPending(false)
+    }
   }
 
   // Edge-to-edge Instagram-style quando não é paged (bees vertical).
@@ -400,6 +486,20 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 )}
               </button>
             </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                aria-label={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+                onClick={handleBookmark}
+                disabled={bookmarkPending}
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60",
+                  bookmarked && "text-yellow-400 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]"
+                )}
+              >
+                <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -449,6 +549,18 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               ) : (
                 <Send className="h-6 w-6" />
               )}
+            </button>
+            <button
+              type="button"
+              aria-label={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+              onClick={handleBookmark}
+              disabled={bookmarkPending}
+              className={cn(
+                "ml-auto rounded-full p-1.5 transition hover:bg-white/5 active:scale-90 disabled:opacity-60",
+                bookmarked ? "text-yellow-400" : "text-white/85 hover:text-white"
+              )}
+            >
+              <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
             </button>
           </div>
 
