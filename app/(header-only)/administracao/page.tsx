@@ -22,6 +22,7 @@ import {
   Sparkles,
   Hexagon,
   Store,
+  ShieldAlert,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -279,6 +280,13 @@ export default function AdministracaoPage() {
           >
             <Store className="h-4 w-4" />
             Loja — Payouts
+          </button>
+          <button
+            onClick={() => router.push("/administracao/chat-moderation")}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Moderação Chat
           </button>
         </div>
 
