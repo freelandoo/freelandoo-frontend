@@ -1,8 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2, CreditCard, Hourglass, Info, RotateCcw, Sparkles, Ticket } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
+import {
+  ArrowLeft, CheckCircle2, CreditCard, Hourglass, Info, RotateCcw,
+  Sparkles, Ticket, Briefcase, Package, GraduationCap, Users,
+  Wallet, TrendingUp, Loader2, ArrowDownRight,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +15,9 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// ─────────────────────────── Types ───────────────────────────
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Types                                                              */
+/* ──────────────────────────────────────────────────────────────────── */
 type Affiliate = {
   id_affiliate: string
   id_user: string
@@ -19,17 +26,6 @@ type Affiliate = {
   pix_key_type: string | null
   legal_name: string | null
   tax_id: string | null
-}
-
-type Aggregates = {
-  pending_cents: number
-  approved_cents: number
-  holdback_cents: number
-  eligible_cents: number
-  paid_cents: number
-  reversed_cents: number
-  total_count: number
-  converted_count: number
 }
 
 type DefaultRule = {
@@ -48,22 +44,36 @@ type Coupon = {
   is_active: boolean
 }
 
-type Conversion = {
-  id_conversion: string
-  coupon_code: string
-  order_total_cents: number
-  discount_cents: number
-  commission_cents: number
-  commission_percent: number
-  status: "PENDING" | "APPROVED" | "REVERSED" | "PAID"
-  eligible_at: string | null
-  approved_at: string | null
-  holdback_until: string | null
-  paid_at: string | null
+type EarningKind = "service" | "product" | "course" | "affiliate"
+type EarningStatus = "pending" | "available" | "paid" | "reversed"
+
+type Earning = {
+  kind: EarningKind
+  id: string
+  ref_id: string
+  title: string
+  status: EarningStatus
+  gross_cents: number
+  net_cents: number
   created_at: string
+  available_at: string | null
+  paid_at: string | null
+  meta: Record<string, unknown> | null
 }
 
-// ─────────────────────────── Helpers ───────────────────────────
+type Aggregates = {
+  by_kind: Record<EarningKind, {
+    received?: number
+    pending?: number
+    available?: number
+    reversed?: number
+  }>
+  totals: { received: number; pending: number; available: number; reversed: number; count: number }
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Helpers                                                            */
+/* ──────────────────────────────────────────────────────────────────── */
 const formatBRL = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
@@ -72,61 +82,73 @@ const formatDate = (iso: string | null) => {
   return new Date(iso).toLocaleDateString("pt-BR")
 }
 
-const STATUS_CONFIG: Record<Conversion["status"], { label: string; className: string }> = {
-  PENDING: { label: "Pendente", className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-  APPROVED: { label: "Aprovada", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  PAID: { label: "Paga", className: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
-  REVERSED: { label: "Revertida", className: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+const KIND_META: Record<EarningKind, { label: string; icon: typeof Briefcase; accent: string }> = {
+  service:   { label: "Serviço",  icon: Briefcase,      accent: "from-sky-400/20 to-cyan-400/10 text-sky-300" },
+  product:   { label: "Produto",  icon: Package,        accent: "from-emerald-400/20 to-teal-400/10 text-emerald-300" },
+  course:    { label: "Curso",    icon: GraduationCap,  accent: "from-violet-400/20 to-fuchsia-400/10 text-violet-300" },
+  affiliate: { label: "Afiliado", icon: Users,          accent: "from-yellow-400/25 to-amber-500/15 text-yellow-300" },
 }
 
-const HOLDBACK_BADGE = {
-  label: "Aguardando",
-  className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+const STATUS_META: Record<EarningStatus, { label: string; color: string }> = {
+  pending:   { label: "Aguardando", color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  available: { label: "Disponível", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+  paid:      { label: "Pago",       color: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
+  reversed:  { label: "Revertido",  color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
 }
 
-const isInHoldback = (c: Conversion) => {
-  if (c.status !== "APPROVED" || !c.holdback_until) return false
-  return new Date(c.holdback_until).getTime() > Date.now()
-}
+type Tab = "all" | EarningKind | "afiliado"
 
-// ─────────────────────────── Page ───────────────────────────
-export default function AfiliadoDashboardPage() {
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Page                                                               */
+/* ──────────────────────────────────────────────────────────────────── */
+export default function MeusFaturamentosPage() {
+  const [tab, setTab] = useState<Tab>("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [affiliate, setAffiliate] = useState<Affiliate | null>(null)
+
+  // Earnings
+  const [earnings, setEarnings] = useState<Earning[]>([])
   const [aggregates, setAggregates] = useState<Aggregates | null>(null)
+
+  // Affiliate
+  const [affiliate, setAffiliate] = useState<Affiliate | null>(null)
   const [defaultRule, setDefaultRule] = useState<DefaultRule | null>(null)
   const [coupons, setCoupons] = useState<Coupon[]>([])
-
-  const [conversions, setConversions] = useState<Conversion[]>([])
-  const [statusFilter, setStatusFilter] = useState<string>("ALL")
-  const [conversionsLoading, setConversionsLoading] = useState(false)
-
-  const [pixForm, setPixForm] = useState({
-    pix_key: "",
-    pix_key_type: "",
-    legal_name: "",
-    tax_id: "",
-  })
+  const [pixForm, setPixForm] = useState({ pix_key: "", pix_key_type: "", legal_name: "", tax_id: "" })
   const [savingPix, setSavingPix] = useState(false)
   const [pixSaved, setPixSaved] = useState(false)
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
-  const loadMe = useCallback(async () => {
-    if (!token) {
-      setError("Faça login para ver seu painel de afiliado.")
-      setLoading(false)
-      return
-    }
+  const loadEarnings = useCallback(async (kind: Tab) => {
+    if (!token) return
+    setLoading(true)
+    setError(null)
     try {
-      const res = await fetch("/api/me/affiliate", {
+      const kindParam = kind === "all" || kind === "afiliado" ? "all" : kind
+      const res = await fetch(`/api/me/earnings?kind=${kindParam}&per_page=60`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setAffiliate(data.affiliate || null)
+      setEarnings(Array.isArray(data.items) ? data.items : [])
       setAggregates(data.aggregates || null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar")
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
+  const loadAffiliate = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch("/api/me/affiliate", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setAffiliate(data.affiliate || null)
       setDefaultRule(data.default_rule || null)
       setCoupons(Array.isArray(data.coupons) ? data.coupons : [])
       if (data.affiliate) {
@@ -137,37 +159,19 @@ export default function AfiliadoDashboardPage() {
           tax_id: data.affiliate.tax_id || "",
         })
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar dados")
-    } finally {
-      setLoading(false)
-    }
+    } catch { /* silent */ }
   }, [token])
 
-  const loadConversions = useCallback(async () => {
-    if (!token) return
-    setConversionsLoading(true)
-    try {
-      const params = new URLSearchParams({ page: "1", limit: "50" })
-      if (statusFilter !== "ALL") params.set("status", statusFilter)
-      const res = await fetch(`/api/me/affiliate/conversions?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      setConversions(data.items || [])
-    } finally {
-      setConversionsLoading(false)
+  useEffect(() => {
+    if (!token) {
+      setError("Faça login para ver seus faturamentos.")
+      setLoading(false)
+      return
     }
-  }, [token, statusFilter])
+    loadEarnings(tab)
+  }, [tab, token, loadEarnings])
 
-  useEffect(() => {
-    loadMe()
-  }, [loadMe])
-
-  useEffect(() => {
-    loadConversions()
-  }, [loadConversions])
+  useEffect(() => { loadAffiliate() }, [loadAffiliate])
 
   const handleSavePix = async () => {
     if (!token) return
@@ -176,10 +180,7 @@ export default function AfiliadoDashboardPage() {
     try {
       const res = await fetch("/api/me/affiliate/payout-info", {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           pix_key: pixForm.pix_key || null,
           pix_key_type: pixForm.pix_key_type || null,
@@ -190,364 +191,354 @@ export default function AfiliadoDashboardPage() {
       if (res.ok) {
         setPixSaved(true)
         setTimeout(() => setPixSaved(false), 2500)
-        await loadMe()
+        await loadAffiliate()
       }
     } finally {
       setSavingPix(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="bg-page-shell-dark min-h-screen">
-        <main className="container mx-auto px-4 py-12">
-          <div className="max-w-5xl mx-auto text-center text-muted-foreground">Carregando…</div>
-        </main>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="bg-page-shell-dark min-h-screen">
-        <main className="container mx-auto px-4 py-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <p className="text-destructive">{error}</p>
-            <Link href="/account" className="text-sm text-muted-foreground underline mt-4 inline-block">
-              Voltar para a conta
-            </Link>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  const holdbackCents = aggregates?.holdback_cents ?? 0
-  const approvedConfirmedCents = Math.max(
-    0,
-    (aggregates?.approved_cents ?? 0) - holdbackCents
-  )
-
-  const cards = [
-    {
-      label: "Pendente",
-      value: aggregates?.pending_cents ?? 0,
-      icon: Hourglass,
-      hint: "Pedidos aguardando pagamento",
-    },
-    {
-      label: "Aguardando",
-      value: holdbackCents,
-      icon: Hourglass,
-      hint: "Janela de reembolso · 8 dias",
-    },
-    {
-      label: "Aprovada",
-      value: approvedConfirmedCents,
-      icon: CheckCircle2,
-      hint: "Confirmada · aguardando liberação",
-    },
-    {
-      label: "Paga",
-      value: aggregates?.paid_cents ?? 0,
-      icon: CreditCard,
-      hint: "Transferida pra você",
-    },
-    {
-      label: "Revertida",
-      value: aggregates?.reversed_cents ?? 0,
-      icon: RotateCcw,
-      hint: "Cancelamento ou estorno",
-    },
-  ]
+  const totals = aggregates?.totals
+  const kpis = useMemo(() => ([
+    { label: "Recebido",   value: totals?.received  ?? 0, icon: CreditCard, hint: "Já pago em sua conta" },
+    { label: "Disponível", value: totals?.available ?? 0, icon: CheckCircle2, hint: "Liberado · próximo payout" },
+    { label: "Em espera",  value: totals?.pending   ?? 0, icon: Hourglass, hint: "Janela de holdback / aprovação" },
+    { label: "Revertido",  value: totals?.reversed  ?? 0, icon: RotateCcw, hint: "Reembolso / cancelamento" },
+  ]), [totals])
 
   return (
-    <div className="bg-page-shell-dark min-h-screen">
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-950 via-black to-neutral-950">
+      <main className="container mx-auto px-4 py-10">
+        <div className="mx-auto max-w-5xl space-y-6">
           {/* Header */}
           <div>
-            <Link
-              href="/account"
-              className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
-            >
+            <Link href="/account" className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-white/45 hover:text-white">
               <ArrowLeft className="h-3.5 w-3.5" />
               Voltar
             </Link>
             <div className="mt-4 flex items-center gap-3">
-              <div className="rounded-full border border-primary/30 bg-primary/10 p-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Painel de Afiliado</h1>
-                <p className="text-sm text-muted-foreground">
-                  Acompanhe conversões, comissões e dados de pagamento.
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300 ring-1 ring-white/10">
+                <Wallet className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-white">Meus Faturamentos</h1>
+                <p className="text-sm text-white/55">
+                  Vendas de cursos, serviços, loja e comissões — tudo em um só lugar.
                 </p>
               </div>
-              <div className="ml-auto">
-                <Badge variant={affiliate?.status === "ACTIVE" ? "default" : "secondary"}>
-                  {affiliate?.status ?? "SEM AFILIAÇÃO"}
+              {affiliate && (
+                <Badge variant={affiliate.status === "ACTIVE" ? "default" : "secondary"} className="ml-auto">
+                  Afiliado · {affiliate.status}
                 </Badge>
-              </div>
+              )}
             </div>
           </div>
 
-          {!affiliate && (
-            <Card className="border-dashed">
-              <CardContent className="flex gap-3 items-start p-4">
-                <Info className="h-4 w-4 text-primary mt-0.5" />
-                <div className="text-sm text-muted-foreground">
-                  Você ainda não está cadastrado no programa de afiliados. Todos os números abaixo
-                  ficam zerados até sua primeira conversão. Fale com a equipe Freelandoo para
-                  ativar sua afiliação oficial e habilitar pagamentos.
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Coupon */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Ticket className="h-4 w-4" />
-                Seu cupom
-              </CardTitle>
-              <CardDescription>
-                Divulgue seu cupom para gerar conversões e acumular comissão.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {coupons.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Você ainda não tem cupom ativo. Fale com a equipe Freelandoo para gerar o seu.
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {coupons.map((c) => (
-                    <div
-                      key={c.id_coupon}
-                      className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 font-mono text-sm"
-                    >
-                      {c.code}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {cards.map((c) => (
-              <Card key={c.label}>
+          {/* KPIs */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {kpis.map((c) => (
+              <Card key={c.label} className="border-white/[0.06] bg-white/[0.02] backdrop-blur-sm">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      {c.label}
-                    </p>
-                    <c.icon className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/45">{c.label}</p>
+                    <c.icon className="h-4 w-4 text-white/40" />
                   </div>
-                  <p className="mt-2 text-xl font-semibold">{formatBRL(c.value)}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{c.hint}</p>
+                  <p className="mt-2 text-xl font-semibold text-white tabular-nums">{formatBRL(c.value)}</p>
+                  <p className="mt-1 text-[11px] text-white/35">{c.hint}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* Default rule */}
-          {defaultRule && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Regra vigente</CardTitle>
-                <CardDescription>
-                  Aplicada por padrão aos seus cupons. Um cupom específico pode ter override definido pelo admin.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs">Comissão</p>
-                    <p className="font-semibold">{defaultRule.commission_percent}%</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Base</p>
-                    <p className="font-semibold">
-                      {defaultRule.commission_base === "GROSS" ? "Bruto" : "Líquido do desconto"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Pedido mínimo</p>
-                    <p className="font-semibold">{formatBRL(defaultRule.min_order_cents)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Liberação após</p>
-                    <p className="font-semibold">{defaultRule.approval_delay_days} dias</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1.5">
+            <TabPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Tudo" active={tab === "all"} onClick={() => setTab("all")} />
+            <TabPill icon={<GraduationCap className="h-3.5 w-3.5" />} label="Cursos" active={tab === "course"} onClick={() => setTab("course")} />
+            <TabPill icon={<Briefcase className="h-3.5 w-3.5" />} label="Serviços" active={tab === "service"} onClick={() => setTab("service")} />
+            <TabPill icon={<Package className="h-3.5 w-3.5" />} label="Produtos" active={tab === "product"} onClick={() => setTab("product")} />
+            <TabPill icon={<Users className="h-3.5 w-3.5" />} label="Afiliado" active={tab === "afiliado" || tab === "affiliate"} onClick={() => setTab("afiliado")} />
+          </div>
 
-          {/* Payout info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Dados para pagamento</CardTitle>
-              <CardDescription>
-                Usaremos estas informações quando gerarmos um lote de pagamento pra você.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pix-type">Tipo de chave PIX</Label>
-                  <Select
-                    value={pixForm.pix_key_type}
-                    onValueChange={(v) => setPixForm((p) => ({ ...p, pix_key_type: v }))}
-                  >
-                    <SelectTrigger id="pix-type">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CPF">CPF</SelectItem>
-                      <SelectItem value="EMAIL">E-mail</SelectItem>
-                      <SelectItem value="PHONE">Telefone</SelectItem>
-                      <SelectItem value="RANDOM">Chave aleatória</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pix-key">Chave PIX</Label>
-                  <Input
-                    id="pix-key"
-                    placeholder="Sua chave"
-                    value={pixForm.pix_key}
-                    onChange={(e) => setPixForm((p) => ({ ...p, pix_key: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="legal-name">Nome completo / Razão social</Label>
-                  <Input
-                    id="legal-name"
-                    value={pixForm.legal_name}
-                    onChange={(e) => setPixForm((p) => ({ ...p, legal_name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tax-id">CPF / CNPJ</Label>
-                  <Input
-                    id="tax-id"
-                    value={pixForm.tax_id}
-                    onChange={(e) => setPixForm((p) => ({ ...p, tax_id: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-3 pt-2">
-                <Button onClick={handleSavePix} disabled={savingPix || !affiliate}>
-                  {savingPix ? "Salvando…" : "Salvar"}
-                </Button>
-                {pixSaved && <span className="text-xs text-emerald-500">Dados salvos.</span>}
-                {!affiliate && (
-                  <span className="text-xs text-muted-foreground">
-                    Disponível após ativação da afiliação.
-                  </span>
+          {/* Content */}
+          <AnimatePresence mode="wait" initial={false}>
+            {tab === "afiliado" ? (
+              <motion.div
+                key="afiliado"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                className="space-y-4"
+              >
+                <AfiliadoPanel
+                  affiliate={affiliate}
+                  defaultRule={defaultRule}
+                  coupons={coupons}
+                  pixForm={pixForm}
+                  setPixForm={setPixForm}
+                  onSavePix={handleSavePix}
+                  savingPix={savingPix}
+                  pixSaved={pixSaved}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`list-${tab}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                className="space-y-3"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                  </div>
+                ) : error ? (
+                  <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm text-red-200">{error}</div>
+                ) : earnings.length === 0 ? (
+                  <EmptyEarnings tab={tab} />
+                ) : (
+                  earnings.map((e) => <EarningRow key={`${e.kind}-${e.id}`} earning={e} />)
                 )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Conversions */}
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-3 justify-between">
-                <div>
-                  <CardTitle className="text-base">Conversões</CardTitle>
-                  <CardDescription>
-                    {aggregates?.total_count ?? 0} no total ·{" "}
-                    {aggregates?.converted_count ?? 0} confirmadas.
-                  </CardDescription>
-                </div>
-                <div className="w-48">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filtrar status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">Todos</SelectItem>
-                      <SelectItem value="PENDING">Pendente</SelectItem>
-                      <SelectItem value="APPROVED">Aprovada</SelectItem>
-                      <SelectItem value="PAID">Paga</SelectItem>
-                      <SelectItem value="REVERSED">Revertida</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {conversionsLoading ? (
-                <p className="text-sm text-muted-foreground">Carregando…</p>
-              ) : conversions.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  Nenhuma conversão neste filtro ainda.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-                        <th className="py-2 pr-4">Data</th>
-                        <th className="py-2 pr-4">Cupom</th>
-                        <th className="py-2 pr-4">Pedido</th>
-                        <th className="py-2 pr-4">Desconto</th>
-                        <th className="py-2 pr-4">Comissão</th>
-                        <th className="py-2 pr-4">Elegível em</th>
-                        <th className="py-2 pr-4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {conversions.map((c) => {
-                        const inHoldback = isInHoldback(c)
-                        const cfg = inHoldback ? HOLDBACK_BADGE : STATUS_CONFIG[c.status]
-                        return (
-                          <tr key={c.id_conversion} className="border-t border-border/60">
-                            <td className="py-3 pr-4">{formatDate(c.created_at)}</td>
-                            <td className="py-3 pr-4 font-mono text-xs">{c.coupon_code}</td>
-                            <td className="py-3 pr-4">{formatBRL(c.order_total_cents)}</td>
-                            <td className="py-3 pr-4">{formatBRL(c.discount_cents)}</td>
-                            <td className="py-3 pr-4 font-semibold">
-                              {formatBRL(c.commission_cents)}
-                              <span className="text-xs text-muted-foreground ml-1">
-                                ({Number(c.commission_percent).toFixed(0)}%)
-                              </span>
-                            </td>
-                            <td className="py-3 pr-4 text-muted-foreground">{formatDate(c.eligible_at)}</td>
-                            <td className="py-3 pr-4">
-                              <span
-                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${cfg.className}`}
-                                title={
-                                  inHoldback && c.holdback_until
-                                    ? `Aguarde até ${formatDate(c.holdback_until)} — o assinante ainda pode solicitar reembolso.`
-                                    : undefined
-                                }
-                              >
-                                {cfg.label}
-                              </span>
-                              {inHoldback && c.holdback_until && (
-                                <p className="mt-1 text-[10px] text-muted-foreground">
-                                  Confirma em {formatDate(c.holdback_until)}
-                                </p>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/*  Subcomponents                                                      */
+/* ──────────────────────────────────────────────────────────────────── */
+function TabPill({ icon, label, active, onClick }: {
+  icon: React.ReactNode; label: string; active: boolean; onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
+        active
+          ? "bg-gradient-to-r from-yellow-400/20 to-amber-500/10 text-yellow-200"
+          : "text-white/55 hover:text-white/85"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+}
+
+function EarningRow({ earning }: { earning: Earning }) {
+  const km = KIND_META[earning.kind]
+  const sm = STATUS_META[earning.status]
+  const Icon = km.icon
+
+  const meta = earning.meta || {}
+  const subtitle: string[] = []
+  if (typeof meta.buyer_name === "string" && meta.buyer_name) subtitle.push(meta.buyer_name)
+  if (typeof meta.client_name === "string" && meta.client_name) subtitle.push(meta.client_name)
+  if (typeof meta.coupon_code === "string" && meta.coupon_code) subtitle.push(`Cupom ${meta.coupon_code}`)
+  if (typeof meta.quantity === "number" && meta.quantity > 1) subtitle.push(`x${meta.quantity}`)
+
+  return (
+    <motion.div
+      whileHover={{ y: -1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-colors hover:border-white/15"
+    >
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${km.accent} ring-1 ring-white/10`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-white truncate">{earning.title}</span>
+          <Badge className="border-white/15 bg-white/[0.04] text-[10px] text-white/65 h-5 py-0">{km.label}</Badge>
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${sm.color}`}>
+            {sm.label}
+          </span>
+        </div>
+        {subtitle.length > 0 && (
+          <p className="mt-0.5 text-xs text-white/45 line-clamp-1">{subtitle.join(" · ")}</p>
+        )}
+        <p className="mt-1 text-[10px] text-white/35">
+          {formatDate(earning.created_at)}
+          {earning.paid_at && earning.status === "paid" && (
+            <> · pago em {formatDate(earning.paid_at)}</>
+          )}
+          {earning.available_at && earning.status === "pending" && (
+            <> · libera em {formatDate(earning.available_at)}</>
+          )}
+        </p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-sm font-semibold text-white tabular-nums">{formatBRL(earning.net_cents)}</p>
+        {earning.gross_cents !== earning.net_cents && (
+          <p className="text-[10px] text-white/35 tabular-nums inline-flex items-center gap-0.5">
+            <ArrowDownRight className="h-2.5 w-2.5" />
+            de {formatBRL(earning.gross_cents)}
+          </p>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+function EmptyEarnings({ tab }: { tab: Tab }) {
+  const txt: Record<Tab, { title: string; hint: string }> = {
+    all:       { title: "Nenhum faturamento ainda", hint: "Suas vendas de cursos, serviços, loja e comissões aparecem aqui." },
+    course:    { title: "Nenhuma venda de curso",   hint: "Publique um curso e venda pra ver os faturamentos aqui." },
+    service:   { title: "Nenhuma venda de serviço", hint: "Faturamentos de bookings pagos aparecem aqui após 8 dias de holdback." },
+    product:   { title: "Nenhuma venda da loja",    hint: "Adicione produtos na sua loja e venda pra ver os ganhos." },
+    afiliado:  { title: "—", hint: "—" },
+    affiliate: { title: "Nenhuma comissão", hint: "Compartilhe seu cupom de afiliado pra gerar conversões." },
+  }
+  const t = txt[tab]
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <motion.div
+        animate={{ y: [0, -4, 0] }}
+        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+        className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] text-white/40 ring-1 ring-white/10"
+      >
+        <Wallet className="h-7 w-7" />
+      </motion.div>
+      <p className="text-sm font-medium text-white/80">{t.title}</p>
+      <p className="mt-1 max-w-xs text-xs text-white/40">{t.hint}</p>
+    </div>
+  )
+}
+
+function AfiliadoPanel({
+  affiliate, defaultRule, coupons, pixForm, setPixForm, onSavePix, savingPix, pixSaved,
+}: {
+  affiliate: Affiliate | null
+  defaultRule: DefaultRule | null
+  coupons: Coupon[]
+  pixForm: { pix_key: string; pix_key_type: string; legal_name: string; tax_id: string }
+  setPixForm: React.Dispatch<React.SetStateAction<{ pix_key: string; pix_key_type: string; legal_name: string; tax_id: string }>>
+  onSavePix: () => void
+  savingPix: boolean
+  pixSaved: boolean
+}) {
+  return (
+    <>
+      {!affiliate && (
+        <Card className="border-dashed border-white/15 bg-white/[0.02]">
+          <CardContent className="flex gap-3 items-start p-4">
+            <Info className="h-4 w-4 text-yellow-300 mt-0.5" />
+            <div className="text-sm text-white/65">
+              Você ainda não está cadastrado no programa de afiliados. Fale com a equipe Freelandoo
+              para ativar sua afiliação e habilitar pagamentos.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cupom */}
+      <Card className="border-white/[0.06] bg-white/[0.02]">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2 text-white">
+            <Ticket className="h-4 w-4" />
+            Seu cupom
+          </CardTitle>
+          <CardDescription>
+            Divulgue seu cupom para gerar conversões e acumular comissão.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {coupons.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">
+              Você ainda não tem cupom ativo. Fale com a equipe Freelandoo para gerar o seu.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {coupons.map((c) => (
+                <div key={c.id_coupon} className="rounded-xl border border-yellow-400/30 bg-yellow-400/[0.05] px-3 py-2 font-mono text-sm text-yellow-200">
+                  {c.code}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Regra */}
+      {defaultRule && (
+        <Card className="border-white/[0.06] bg-white/[0.02]">
+          <CardHeader>
+            <CardTitle className="text-base text-white">Regra vigente</CardTitle>
+            <CardDescription>Aplicada por padrão aos seus cupons.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+              <Cell label="Comissão" value={`${defaultRule.commission_percent}%`} />
+              <Cell label="Base" value={defaultRule.commission_base === "GROSS" ? "Bruto" : "Líquido do desconto"} />
+              <Cell label="Pedido mínimo" value={formatBRL(defaultRule.min_order_cents)} />
+              <Cell label="Liberação após" value={`${defaultRule.approval_delay_days} dias`} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* PIX */}
+      <Card className="border-white/[0.06] bg-white/[0.02]">
+        <CardHeader>
+          <CardTitle className="text-base text-white">Dados para pagamento</CardTitle>
+          <CardDescription>Usaremos estas informações quando gerarmos um lote de pagamento.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="pix-type" className="text-[11px] uppercase tracking-wider text-white/50">Tipo de chave PIX</Label>
+              <Select value={pixForm.pix_key_type} onValueChange={(v) => setPixForm((p) => ({ ...p, pix_key_type: v }))}>
+                <SelectTrigger id="pix-type"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CPF">CPF</SelectItem>
+                  <SelectItem value="EMAIL">E-mail</SelectItem>
+                  <SelectItem value="PHONE">Telefone</SelectItem>
+                  <SelectItem value="RANDOM">Chave aleatória</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pix-key" className="text-[11px] uppercase tracking-wider text-white/50">Chave PIX</Label>
+              <Input id="pix-key" placeholder="Sua chave" value={pixForm.pix_key} onChange={(e) => setPixForm((p) => ({ ...p, pix_key: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="legal-name" className="text-[11px] uppercase tracking-wider text-white/50">Nome / Razão social</Label>
+              <Input id="legal-name" value={pixForm.legal_name} onChange={(e) => setPixForm((p) => ({ ...p, legal_name: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tax-id" className="text-[11px] uppercase tracking-wider text-white/50">CPF / CNPJ</Label>
+              <Input id="tax-id" value={pixForm.tax_id} onChange={(e) => setPixForm((p) => ({ ...p, tax_id: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-1">
+            <Button
+              onClick={onSavePix}
+              disabled={savingPix || !affiliate}
+              className="rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:from-yellow-300 hover:to-amber-400"
+            >
+              {savingPix ? (<><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />Salvando…</>) : (<><Sparkles className="mr-1.5 h-4 w-4" />Salvar</>)}
+            </Button>
+            {pixSaved && <span className="text-xs text-emerald-400">Dados salvos.</span>}
+            {!affiliate && <span className="text-xs text-white/45">Disponível após ativação.</span>}
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  )
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-white/45">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
     </div>
   )
 }
