@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Loader2, Store, Clock, CheckCircle2, RotateCcw } from "lucide-react"
+import { Loader2, Store, Clock, CheckCircle2, RotateCcw, Printer, Truck, AlertTriangle } from "lucide-react"
 
 interface BalanceItem {
   id_balance: number
@@ -21,6 +21,14 @@ interface BalanceItem {
   order_total_cents: number
   buyer_name: string | null
   order_created_at: string
+  label_pdf_url: string | null
+  label_purchased_at: string | null
+  label_purchase_error: string | null
+  label_purchase_attempts: number
+  melhor_envio_order_id: string | null
+  tracking_code: string | null
+  shipping_carrier: string | null
+  shipping_service_name: string | null
 }
 
 interface BalanceSummary {
@@ -58,6 +66,34 @@ export function SellerBalanceSection() {
   const [items, setItems] = useState<BalanceItem[]>([])
   const [summary, setSummary] = useState<BalanceSummary | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "hidden" | "error">("loading")
+  const [labelBusy, setLabelBusy] = useState<number | null>(null)
+
+  async function openLabel(id_order: number) {
+    const token = getToken()
+    if (!token) return
+    setLabelBusy(id_order)
+    try {
+      const res = await fetch(`/api/me/orders/${id_order}/label`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      const d = await res.json()
+      if (res.ok && d?.label_pdf_url) {
+        window.open(d.label_pdf_url, "_blank", "noopener,noreferrer")
+        setItems((prev) => prev.map((it) =>
+          it.id_order === id_order
+            ? { ...it, label_pdf_url: d.label_pdf_url, melhor_envio_order_id: d.melhor_envio_order_id || it.melhor_envio_order_id, tracking_code: d.tracking_code || it.tracking_code, label_purchased_at: new Date().toISOString(), label_purchase_error: null }
+            : it
+        ))
+      } else {
+        alert(d?.error || "Não foi possível gerar a etiqueta agora — tente novamente em alguns minutos.")
+      }
+    } catch {
+      alert("Erro de conexão ao gerar etiqueta.")
+    } finally {
+      setLabelBusy(null)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -145,10 +181,39 @@ export function SellerBalanceSection() {
                     Pago em {formatDate(b.paid_out_at)}{b.paid_out_note ? ` · ${b.paid_out_note}` : ""}
                   </p>
                 )}
+                {b.tracking_code && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-300">
+                    <Truck className="h-3 w-3" aria-hidden /> Rastreio: <span className="font-mono">{b.tracking_code}</span>
+                  </p>
+                )}
+                {!b.label_purchased_at && b.label_purchase_error && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-rose-500">
+                    <AlertTriangle className="h-3 w-3" aria-hidden /> Etiqueta pendente · {b.label_purchase_error.slice(0, 80)}
+                  </p>
+                )}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openLabel(b.id_order)}
+                    disabled={labelBusy === b.id_order}
+                    className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                  >
+                    {labelBusy === b.id_order
+                      ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                      : <Printer className="h-3 w-3" aria-hidden />}
+                    {b.label_purchased_at ? "Reimprimir etiqueta" : "Imprimir etiqueta"}
+                  </button>
+                  {b.shipping_carrier && (
+                    <span className="text-[11px] text-muted-foreground">
+                      {b.shipping_carrier} · {b.shipping_service_name}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold tabular-nums text-foreground">{formatBRL(b.net_cents)}</p>
                 <p className="text-[11px] text-muted-foreground">Bruto {formatBRL(b.gross_cents)}</p>
+                <p className="text-[10px] text-muted-foreground">(frete {formatBRL(b.shipping_cents)} retido)</p>
               </div>
             </li>
           )
