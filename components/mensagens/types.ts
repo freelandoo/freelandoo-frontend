@@ -11,6 +11,11 @@ export interface MensagensActor {
 export interface ConversationListItem {
   id_conversation: string
   conversation_key: string
+  kind?: "direct" | "group"
+  name?: string | null
+  cover_url?: string | null
+  owner_profile_id?: string | null
+  member_count?: number | null
   other_entity_id: string
   last_message_at: string | null
   last_message_preview: string | null
@@ -20,6 +25,16 @@ export interface ConversationListItem {
   last_read_at: string | null
   created_at: string
   other_entity: MensagensActor | null
+}
+
+export interface GroupMember {
+  id_profile: string
+  role: "owner" | "admin" | "member"
+  display_name: string | null
+  avatar_url: string | null
+  sub_profile_slug: string | null
+  username: string | null
+  joined_at: string
 }
 
 export interface MessageItem {
