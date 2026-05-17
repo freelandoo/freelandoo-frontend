@@ -48,6 +48,7 @@ export default function ProfileSettingsPage() {
     id_category: "",
     estado: "",
     municipio: "",
+    origin_zipcode: "",
   })
   const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
@@ -83,6 +84,9 @@ export default function ProfileSettingsPage() {
       id_category: profile.id_category ? String(profile.id_category) : "",
       estado: profile.estado || "",
       municipio: profile.municipio || "",
+      origin_zipcode: profile.origin_zipcode
+        ? `${profile.origin_zipcode.slice(0, 5)}-${profile.origin_zipcode.slice(5, 8)}`
+        : "",
     })
   }, [profile])
 
@@ -246,6 +250,11 @@ export default function ProfileSettingsPage() {
       setStatusMsg({ kind: "error", text: "Selecione máquina e profissão." })
       return
     }
+    const zipDigits = form.origin_zipcode.replace(/\D/g, "")
+    if (zipDigits && zipDigits.length !== 8) {
+      setStatusMsg({ kind: "error", text: "CEP de origem deve ter 8 dígitos." })
+      return
+    }
     setSaving(true)
     setStatusMsg(null)
     try {
@@ -258,6 +267,7 @@ export default function ProfileSettingsPage() {
           id_category: Number(form.id_category),
           estado: form.estado || null,
           municipio: form.municipio || null,
+          origin_zipcode: zipDigits || null,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -650,6 +660,25 @@ export default function ProfileSettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="origin_zipcode">CEP de origem (Loja)</Label>
+              <Input
+                id="origin_zipcode"
+                inputMode="numeric"
+                placeholder="00000-000"
+                maxLength={9}
+                value={form.origin_zipcode}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 8)
+                  const formatted =
+                    digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
+                  setForm((f) => ({ ...f, origin_zipcode: formatted }))
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Será usado para calcular o frete dos produtos vendidos por este perfil.
+              </p>
             </div>
           </section>
 
