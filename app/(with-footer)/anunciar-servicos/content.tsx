@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const benefits = [
   { title: "Perfil público", text: "Tenha uma página profissional com sua bio, profissão, localização, máquina principal e botão de contato." },
@@ -53,6 +54,7 @@ function useReveal() {
 }
 
 export function AnunciarServicosContent() {
+  const t = useTranslations("AdvertiseServices")
   useReveal()
 
   return (
@@ -62,27 +64,27 @@ export function AnunciarServicosContent() {
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[800px] rounded-full bg-primary/5 blur-[120px]" />
         <div className="container mx-auto px-4 relative">
           <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6" data-reveal>
-            Para profissionais
+            {t("hero.badge", "Para profissionais")}
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground max-w-3xl leading-tight mb-6" data-reveal>
-            Anuncie seus serviços e seja encontrado por quem precisa de você
+            {t("hero.title", "Anuncie seus serviços e seja encontrado por quem precisa de você")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-4" data-reveal>
-            Crie seu perfil profissional, apareça nas máquinas da Freelandoo e receba contatos diretos de pessoas interessadas no que você faz.
+            {t("hero.subtitle", "Crie seu perfil profissional, apareça nas máquinas da Freelandoo e receba contatos diretos de pessoas interessadas no que você faz.")}
           </p>
           <p className="text-muted-foreground max-w-2xl mb-8 leading-relaxed" data-reveal>
-            A Freelandoo é uma vitrine inteligente para profissionais, freelancers, criadores e prestadores de serviço. Você paga uma ativação única, mantém seu perfil ativo e pode ser encontrado por clientes que procuram exatamente o tipo de solução que você oferece.
+            {t("hero.description", "A Freelandoo é uma vitrine inteligente para profissionais, freelancers, criadores e prestadores de serviço. Você paga uma ativação única, mantém seu perfil ativo e pode ser encontrado por clientes que procuram exatamente o tipo de solução que você oferece.")}
           </p>
           <div className="flex flex-wrap gap-4" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              Criar meu perfil
+              {t("hero.primaryCta", "Criar meu perfil")}
             </Link>
             <Link href="/comofunciona" className="inline-flex items-center border border-border text-foreground font-medium px-6 py-3 rounded-lg hover:border-primary/40 transition-all">
-              Ver como funciona
+              {t("hero.secondaryCta", "Ver como funciona")}
             </Link>
           </div>
           <p className="mt-5 text-sm text-muted-foreground" data-reveal>
-            Sem comissão por serviço fechado. Contato direto pelo WhatsApp.
+            {t("hero.note", "Sem comissão por serviço fechado. Contato direto pelo WhatsApp.")}
           </p>
         </div>
       </section>
@@ -91,19 +93,19 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 max-w-2xl" data-reveal>
-            Sua presença profissional em uma vitrine feita para gerar oportunidades
+            {t("benefits.title", "Sua presença profissional em uma vitrine feita para gerar oportunidades")}
           </h2>
           <p className="text-muted-foreground mb-12 max-w-2xl leading-relaxed" data-reveal>
-            Muitos profissionais dependem apenas de indicação, redes sociais ou grupos de mensagem para conseguir clientes. A Freelandoo organiza sua presença em um perfil público, com informações claras, portfólio, serviços, localização e formas de contato.
+            {t("benefits.description", "Muitos profissionais dependem apenas de indicação, redes sociais ou grupos de mensagem para conseguir clientes. A Freelandoo organiza sua presença em um perfil público, com informações claras, portfólio, serviços, localização e formas de contato.")}
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6" data-stagger>
-            {benefits.map((card) => (
+            {benefits.map((card, i) => (
               <div key={card.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(242,196,9,0.06)] transition-all" data-card>
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-primary text-lg">◆</span>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{card.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
+                <h3 className="font-semibold text-foreground mb-2">{t(`benefits.${i}.title`, card.title)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`benefits.${i}.text`, card.text)}</p>
               </div>
             ))}
           </div>
@@ -114,17 +116,17 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 max-w-2xl" data-reveal>
-            Do cadastro à vitrine em poucos passos
+            {t("steps.title", "Do cadastro à vitrine em poucos passos")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl" data-stagger>
-            {steps.map((step) => (
+            {steps.map((step, i) => (
               <div key={step.n} className="flex gap-4" data-card>
                 <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
                   {step.n}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.text}</p>
+                  <h3 className="font-semibold text-foreground mb-1">{t(`steps.${i}.title`, step.title)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`steps.${i}.text`, step.text)}</p>
                 </div>
               </div>
             ))}
@@ -136,18 +138,18 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12" data-reveal>
-            O que você recebe ao anunciar
+            {t("included.title", "O que você recebe ao anunciar")}
           </h2>
           <div className="grid md:grid-cols-2 gap-3" data-stagger>
-            {included.map((item) => (
+            {included.map((item, i) => (
               <div key={item} className="flex items-start gap-3 bg-card border border-border rounded-lg px-4 py-3 hover:border-primary/20 transition-colors" data-card>
                 <span className="text-primary mt-0.5 font-bold">✓</span>
-                <span className="text-sm text-foreground">{item}</span>
+                <span className="text-sm text-foreground">{t(`included.${i}`, item)}</span>
               </div>
             ))}
           </div>
           <p className="mt-8 text-sm text-muted-foreground leading-relaxed" data-reveal>
-            A Freelandoo organiza sua presença para que clientes entendam melhor quem você é, o que você faz e como falar com você.
+            {t("included.note", "A Freelandoo organiza sua presença para que clientes entendam melhor quem você é, o que você faz e como falar com você.")}
           </p>
         </div>
       </section>
@@ -156,28 +158,28 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Uma ativação única simples
+            {t("activation.title", "Uma ativação única simples")}
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            A ativação da Freelandoo custa R$&nbsp;300 em pagamento único. Esse valor mantém seu perfil ativo na plataforma e permite que ele participe da vitrine pública, de acordo com as regras e categorias disponíveis.
+            {t("activation.description", "A ativação da Freelandoo custa R$ 300 em pagamento único. Esse valor mantém seu perfil ativo na plataforma e permite que ele participe da vitrine pública, de acordo com as regras e categorias disponíveis.")}
           </p>
           <div className="bg-card border border-primary/20 rounded-2xl p-8 shadow-[0_0_50px_rgba(242,196,9,0.06)] mb-6" data-reveal>
             <div className="text-5xl font-bold text-primary mb-1">R$ 300</div>
-            <div className="text-muted-foreground mb-8 text-sm">pagamento único</div>
+            <div className="text-muted-foreground mb-8 text-sm">{t("activation.payment", "pagamento único")}</div>
             <div className="space-y-3 text-left mb-8" data-stagger>
-              {["Sem comissão por serviço fechado", "Contato direto entre cliente e profissional", "Perfil ativo após a ativação"].map((item) => (
+              {["Sem comissão por serviço fechado", "Contato direto entre cliente e profissional", "Perfil ativo após a ativação"].map((item, i) => (
                 <div key={item} className="flex items-center gap-3" data-card>
                   <span className="text-primary font-bold">✓</span>
-                  <span className="text-sm text-foreground">{item}</span>
+                  <span className="text-sm text-foreground">{t(`activation.items.${i}`, item)}</span>
                 </div>
               ))}
             </div>
             <Link href="/cadastro" className="inline-flex items-center justify-center w-full bg-primary text-black font-semibold px-8 py-3.5 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              Assinar e ativar perfil
+              {t("activation.cta", "Assinar e ativar perfil")}
             </Link>
           </div>
           <p className="text-xs text-muted-foreground border border-border rounded-xl px-4 py-3 leading-relaxed" data-reveal>
-            A ativação aumenta sua exposição dentro da plataforma, mas não garante contratação. A negociação, valores, prazos e entregas são tratados diretamente entre cliente e profissional.
+            {t("activation.notice", "A ativação aumenta sua exposição dentro da plataforma, mas não garante contratação. A negociação, valores, prazos e entregas são tratados diretamente entre cliente e profissional.")}
           </p>
         </div>
       </section>
@@ -186,15 +188,15 @@ export function AnunciarServicosContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Feito para quem trabalha, cria, atende e resolve
+            {t("audience.title", "Feito para quem trabalha, cria, atende e resolve")}
           </h2>
           <p className="text-muted-foreground mb-10" data-reveal>
-            A Freelandoo é para profissionais que querem ser encontrados de forma mais organizada.
+            {t("audience.description", "A Freelandoo é para profissionais que querem ser encontrados de forma mais organizada.")}
           </p>
           <div className="flex flex-wrap gap-3" data-stagger>
-            {tags.map((tag) => (
+            {tags.map((tag, i) => (
               <span key={tag} className="bg-card border border-border rounded-full px-4 py-2 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-all cursor-default" data-card>
-                {tag}
+                {t(`audience.tags.${i}`, tag)}
               </span>
             ))}
           </div>
@@ -206,17 +208,17 @@ export function AnunciarServicosContent() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[700px] rounded-full bg-primary/5 blur-[100px]" />
         <div className="container mx-auto px-4 text-center relative">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Seu trabalho precisa ser visto
+            {t("final.title", "Seu trabalho precisa ser visto")}
           </h2>
           <p className="text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed" data-reveal>
-            Crie seu perfil, faça a ativação e comece a construir sua presença na Freelandoo.
+            {t("final.description", "Crie seu perfil, faça a ativação e comece a construir sua presença na Freelandoo.")}
           </p>
           <div className="flex flex-wrap gap-4 justify-center" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">
-              Criar meu perfil
+              {t("final.primaryCta", "Criar meu perfil")}
             </Link>
             <Link href="/precos" className="inline-flex items-center border border-border text-foreground font-medium px-8 py-4 rounded-lg hover:border-primary/40 transition-all text-lg">
-              Ver preços
+              {t("final.secondaryCta", "Ver preços")}
             </Link>
           </div>
         </div>

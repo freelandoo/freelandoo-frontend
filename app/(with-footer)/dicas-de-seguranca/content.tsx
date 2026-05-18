@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const clientTips = [
   { title: "Analise o perfil", text: "Leia a descrição, veja a profissão, localização, serviços e portfólio." },
@@ -45,6 +46,7 @@ function useReveal() {
 }
 
 export function DicasDeSegurancaContent() {
+  const t = useTranslations("SafetyTips")
   useReveal()
 
   return (
@@ -54,16 +56,16 @@ export function DicasDeSegurancaContent() {
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[350px] w-[700px] rounded-full bg-primary/5 blur-[100px]" />
         <div className="container mx-auto px-4 relative max-w-3xl">
           <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6" data-reveal>
-            Segurança
+            {t("hero.badge", "Segurança")}
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-6" data-reveal>
-            Dicas de segurança
+            {t("hero.title", "Dicas de segurança")}
           </h1>
           <p className="text-xl text-muted-foreground mb-4" data-reveal>
-            A Freelandoo conecta pessoas. A segurança começa com informação, clareza e cuidado nas negociações.
+            {t("hero.subtitle", "A Freelandoo conecta pessoas. A segurança começa com informação, clareza e cuidado nas negociações.")}
           </p>
           <p className="text-muted-foreground leading-relaxed" data-reveal>
-            A plataforma ajuda clientes e profissionais a se encontrarem, mas os combinados, pagamentos e entregas são tratados diretamente entre as partes.
+            {t("hero.description", "A plataforma ajuda clientes e profissionais a se encontrarem, mas os combinados, pagamentos e entregas são tratados diretamente entre as partes.")}
           </p>
         </div>
       </section>
@@ -72,14 +74,14 @@ export function DicasDeSegurancaContent() {
       <section className="py-16 md:py-20 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-10" data-reveal>
-            Se você vai contratar um profissional
+            {t("client.title", "Se você vai contratar um profissional")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-stagger>
             {clientTips.map((tip, i) => (
               <div key={tip.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/20 transition-all" data-card>
                 <div className="text-primary/40 text-xs font-mono mb-3">{String(i + 1).padStart(2, "0")}</div>
-                <h3 className="font-semibold text-foreground mb-2">{tip.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{tip.text}</p>
+                <h3 className="font-semibold text-foreground mb-2">{t(`client.tips.${i}.title`, tip.title)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`client.tips.${i}.text`, tip.text)}</p>
               </div>
             ))}
           </div>
@@ -90,14 +92,14 @@ export function DicasDeSegurancaContent() {
       <section className="py-16 md:py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-10" data-reveal>
-            Se você anuncia seus serviços
+            {t("pro.title", "Se você anuncia seus serviços")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-stagger>
             {proTips.map((tip, i) => (
               <div key={tip.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/20 transition-all" data-card>
                 <div className="text-primary/40 text-xs font-mono mb-3">{String(i + 1).padStart(2, "0")}</div>
-                <h3 className="font-semibold text-foreground mb-2">{tip.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{tip.text}</p>
+                <h3 className="font-semibold text-foreground mb-2">{t(`pro.tips.${i}.title`, tip.title)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`pro.tips.${i}.text`, tip.text)}</p>
               </div>
             ))}
           </div>
@@ -108,16 +110,16 @@ export function DicasDeSegurancaContent() {
       <section className="py-16 md:py-20 bg-card/20">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4" data-reveal>
-            O que a Freelandoo faz
+            {t("role.title", "O que a Freelandoo faz")}
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            A Freelandoo atua como plataforma de divulgação e conexão. Ela não intermedia diretamente pagamentos entre clientes e profissionais, não garante entrega de serviços e não participa da negociação feita entre as partes.
+            {t("role.description", "A Freelandoo atua como plataforma de divulgação e conexão. Ela não intermedia diretamente pagamentos entre clientes e profissionais, não garante entrega de serviços e não participa da negociação feita entre as partes.")}
           </p>
           <div className="flex flex-wrap gap-3" data-stagger>
-            {freelandooDoes.map((item) => (
+            {freelandooDoes.map((item, i) => (
               <div key={item} className="flex items-center gap-2 bg-card border border-border rounded-full px-4 py-2" data-card>
                 <span className="text-primary font-bold text-xs">✓</span>
-                <span className="text-sm text-foreground">{item}</span>
+                <span className="text-sm text-foreground">{t(`role.items.${i}`, item)}</span>
               </div>
             ))}
           </div>
@@ -129,14 +131,14 @@ export function DicasDeSegurancaContent() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[600px] rounded-full bg-primary/5 blur-[100px]" />
         <div className="container mx-auto px-4 text-center relative">
           <h2 className="text-3xl font-bold text-foreground mb-4" data-reveal>
-            Contrate e anuncie com mais clareza
+            {t("final.title", "Contrate e anuncie com mais clareza")}
           </h2>
           <p className="text-muted-foreground mb-10 max-w-md mx-auto leading-relaxed" data-reveal>
-            Use as informações disponíveis, converse com cuidado e combine tudo antes de avançar.
+            {t("final.description", "Use as informações disponíveis, converse com cuidado e combine tudo antes de avançar.")}
           </p>
           <div data-reveal>
             <Link href="/search" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">
-              Encontrar profissionais
+              {t("final.cta", "Encontrar profissionais")}
             </Link>
           </div>
         </div>

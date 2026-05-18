@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const steps = [
   { n: "1", title: "Escolha uma máquina", text: "Comece pela área que representa sua necessidade: views, divulgação, limpeza, construção, negócios, oportunidades, saúde e beleza ou saúde do pet." },
@@ -60,6 +61,7 @@ function useReveal() {
 }
 
 export function ContratarProfissionaisContent() {
+  const t = useTranslations("HireProfessionals")
   useReveal()
 
   return (
@@ -69,27 +71,27 @@ export function ContratarProfissionaisContent() {
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[800px] rounded-full bg-primary/5 blur-[120px]" />
         <div className="container mx-auto px-4 relative">
           <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-6" data-reveal>
-            Para clientes
+            {t("hero.badge", "Para clientes")}
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground max-w-3xl leading-tight mb-6" data-reveal>
-            Encontre profissionais sem burocracia
+            {t("hero.title", "Encontre profissionais sem burocracia")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-4" data-reveal>
-            Procure por máquina, profissão, estado e cidade. Veja perfis, analise portfólios e fale direto pelo WhatsApp.
+            {t("hero.subtitle", "Procure por máquina, profissão, estado e cidade. Veja perfis, analise portfólios e fale direto pelo WhatsApp.")}
           </p>
           <p className="text-muted-foreground max-w-2xl mb-8 leading-relaxed" data-reveal>
-            A Freelandoo ajuda você a encontrar profissionais de forma simples. Você não precisa se cadastrar para procurar. Basta escolher o que precisa, filtrar os resultados e entrar em contato diretamente com o profissional.
+            {t("hero.description", "A Freelandoo ajuda você a encontrar profissionais de forma simples. Você não precisa se cadastrar para procurar. Basta escolher o que precisa, filtrar os resultados e entrar em contato diretamente com o profissional.")}
           </p>
           <div className="flex flex-wrap gap-4" data-reveal>
             <Link href="/search" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              Encontrar freelancers
+              {t("hero.primaryCta", "Encontrar freelancers")}
             </Link>
             <Link href="/search" className="inline-flex items-center border border-border text-foreground font-medium px-6 py-3 rounded-lg hover:border-primary/40 transition-all">
-              Ver máquinas
+              {t("hero.secondaryCta", "Ver máquinas")}
             </Link>
           </div>
           <p className="mt-5 text-sm text-muted-foreground" data-reveal>
-            A negociação é direta entre cliente e profissional.
+            {t("hero.note", "A negociação é direta entre cliente e profissional.")}
           </p>
         </div>
       </section>
@@ -98,17 +100,17 @@ export function ContratarProfissionaisContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12" data-reveal>
-            Contratar ficou mais simples
+            {t("steps.title", "Contratar ficou mais simples")}
           </h2>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl" data-stagger>
-            {steps.map((step) => (
+            {steps.map((step, i) => (
               <div key={step.n} className="flex gap-4 bg-card border border-border rounded-xl p-6 hover:border-primary/20 transition-all" data-card>
                 <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
                   {step.n}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground mb-1">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.text}</p>
+                  <h3 className="font-semibold text-foreground mb-1">{t(`steps.${i}.title`, step.title)}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{t(`steps.${i}.text`, step.text)}</p>
                 </div>
               </div>
             ))}
@@ -120,13 +122,13 @@ export function ContratarProfissionaisContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12" data-reveal>
-            Profissionais para diferentes necessidades
+            {t("categories.title", "Profissionais para diferentes necessidades")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" data-stagger>
-            {categories.map((cat) => (
+            {categories.map((cat, i) => (
               <div key={cat.title} className="bg-card border border-border rounded-xl p-6 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(242,196,9,0.06)] transition-all" data-card>
-                <h3 className="font-semibold text-foreground mb-2">{cat.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{cat.text}</p>
+                <h3 className="font-semibold text-foreground mb-2">{t(`categories.${i}.title`, cat.title)}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t(`categories.${i}.text`, cat.text)}</p>
               </div>
             ))}
           </div>
@@ -137,21 +139,21 @@ export function ContratarProfissionaisContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Transparência desde o início
+            {t("transparency.title", "Transparência desde o início")}
           </h2>
           <p className="text-muted-foreground mb-12 max-w-2xl leading-relaxed" data-reveal>
-            A Freelandoo é uma plataforma de divulgação e conexão. Ela ajuda você a encontrar profissionais, mas não intermedia a negociação, não define valores, não garante entregas e não recebe pagamentos dos serviços combinados entre cliente e profissional.
+            {t("transparency.description", "A Freelandoo é uma plataforma de divulgação e conexão. Ela ajuda você a encontrar profissionais, mas não intermedia a negociação, não define valores, não garante entregas e não recebe pagamentos dos serviços combinados entre cliente e profissional.")}
           </p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-card border border-border rounded-xl p-6" data-reveal>
               <div className="flex items-center gap-2 mb-5">
                 <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">✓</span>
-                <h3 className="font-semibold text-foreground">A Freelandoo ajuda com</h3>
+                <h3 className="font-semibold text-foreground">{t("doesDo.title", "A Freelandoo ajuda com")}</h3>
               </div>
               <ul className="space-y-2">
-                {doesDo.map((item) => (
+                {doesDo.map((item, i) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="text-primary text-xs">●</span>{item}
+                    <span className="text-primary text-xs">●</span>{t(`doesDo.${i}`, item)}
                   </li>
                 ))}
               </ul>
@@ -159,12 +161,12 @@ export function ContratarProfissionaisContent() {
             <div className="bg-card border border-border rounded-xl p-6" data-reveal>
               <div className="flex items-center gap-2 mb-5">
                 <span className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center text-destructive text-xs font-bold">✗</span>
-                <h3 className="font-semibold text-foreground">A Freelandoo não faz</h3>
+                <h3 className="font-semibold text-foreground">{t("doesNotDo.title", "A Freelandoo não faz")}</h3>
               </div>
               <ul className="space-y-2">
-                {doesNotDo.map((item) => (
+                {doesNotDo.map((item, i) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="text-muted-foreground/40 text-xs">●</span>{item}
+                    <span className="text-muted-foreground/40 text-xs">●</span>{t(`doesNotDo.${i}`, item)}
                   </li>
                 ))}
               </ul>
@@ -177,13 +179,13 @@ export function ContratarProfissionaisContent() {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Antes de fechar, combine tudo com clareza
+            {t("tips.title", "Antes de fechar, combine tudo com clareza")}
           </h2>
           <div className="mt-8 space-y-3" data-stagger>
             {tips.map((tip, i) => (
               <div key={tip} className="flex items-start gap-4 bg-card border border-border rounded-lg px-5 py-3.5 hover:border-primary/20 transition-colors" data-card>
                 <span className="text-primary/50 text-xs mt-0.5 font-mono">{String(i + 1).padStart(2, "0")}</span>
-                <span className="text-sm text-foreground">{tip}</span>
+                <span className="text-sm text-foreground">{t(`tips.${i}`, tip)}</span>
               </div>
             ))}
           </div>
@@ -195,14 +197,14 @@ export function ContratarProfissionaisContent() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[700px] rounded-full bg-primary/5 blur-[100px]" />
         <div className="container mx-auto px-4 text-center relative">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            Encontre quem resolve
+            {t("final.title", "Encontre quem resolve")}
           </h2>
           <p className="text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed" data-reveal>
-            Use a vitrine da Freelandoo para encontrar profissionais e iniciar uma conversa direta.
+            {t("final.description", "Use a vitrine da Freelandoo para encontrar profissionais e iniciar uma conversa direta.")}
           </p>
           <div data-reveal>
             <Link href="/search" className="inline-flex items-center bg-primary text-black font-semibold px-8 py-4 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all text-lg">
-              Encontrar freelancers
+              {t("final.cta", "Encontrar freelancers")}
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const categories = [
   "Conta e cadastro",
@@ -67,6 +68,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export function CentralDeAjudaContent() {
+  const t = useTranslations("HelpCenter")
   const [search, setSearch] = useState("")
   useReveal()
 
@@ -84,15 +86,15 @@ export function CentralDeAjudaContent() {
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[300px] w-[700px] rounded-full bg-primary/5 blur-[100px]" />
         <div className="container mx-auto px-4 relative text-center max-w-2xl">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-reveal>
-            Central de ajuda
+            {t("hero.title", "Central de ajuda")}
           </h1>
           <p className="text-xl text-muted-foreground mb-10" data-reveal>
-            Encontre respostas sobre conta, ativação, perfis, máquinas, serviços, agenda, cupons e segurança.
+            {t("hero.description", "Encontre respostas sobre conta, ativação, perfis, máquinas, serviços, agenda, cupons e segurança.")}
           </p>
           <div className="relative" data-reveal>
             <input
               type="text"
-              placeholder="Busque uma dúvida..."
+              placeholder={t("search.placeholder", "Busque uma dúvida...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-card border border-border rounded-xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all pr-12"
@@ -106,14 +108,14 @@ export function CentralDeAjudaContent() {
       <section className="py-10 bg-card/20">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap gap-3 justify-center" data-stagger>
-            {categories.map((cat) => (
+            {categories.map((cat, i) => (
               <button
                 key={cat}
                 className="bg-card border border-border rounded-full px-4 py-2 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-all"
                 onClick={() => setSearch(cat)}
                 data-card
               >
-                {cat}
+                {t(`categories.${i}`, cat)}
               </button>
             ))}
           </div>
@@ -126,23 +128,24 @@ export function CentralDeAjudaContent() {
           {search && (
             <div className="mb-6 flex items-center gap-3">
               <span className="text-sm text-muted-foreground">
-                {filtered.length} resultado{filtered.length !== 1 ? "s" : ""} para &quot;{search}&quot;
+                {filtered.length} {filtered.length === 1 ? t("results.singular", "resultado") : t("results.plural", "resultados")} {t("results.for", "para")} &quot;{search}&quot;
               </span>
               <button onClick={() => setSearch("")} className="text-xs text-primary hover:underline">
-                limpar
+                {t("results.clear", "limpar")}
               </button>
             </div>
           )}
           {filtered.length > 0 ? (
             <div className="space-y-3">
-              {filtered.map((faq) => (
-                <FaqItem key={faq.q} q={faq.q} a={faq.a} />
-              ))}
+              {filtered.map((faq) => {
+                const originalIndex = faqs.indexOf(faq)
+                return <FaqItem key={faq.q} q={t(`faqs.${originalIndex}.q`, faq.q)} a={t(`faqs.${originalIndex}.a`, faq.a)} />
+              })}
             </div>
           ) : (
             <div className="text-center py-16 text-muted-foreground">
-              <p className="mb-2 text-lg font-medium text-foreground">Nenhum resultado encontrado</p>
-              <p className="text-sm">Tente outra busca ou fale diretamente com o suporte.</p>
+              <p className="mb-2 text-lg font-medium text-foreground">{t("empty.title", "Nenhum resultado encontrado")}</p>
+              <p className="text-sm">{t("empty.description", "Tente outra busca ou fale diretamente com o suporte.")}</p>
             </div>
           )}
         </div>
@@ -153,13 +156,13 @@ export function CentralDeAjudaContent() {
         <div className="container mx-auto px-4 max-w-xl text-center">
           <div className="bg-card border border-border rounded-2xl p-8" data-reveal>
             <h2 className="text-2xl font-bold text-foreground mb-3">
-              Não encontrou o que precisava?
+              {t("support.title", "Não encontrou o que precisava?")}
             </h2>
             <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-              Entre em contato com a Freelandoo para receber ajuda.
+              {t("support.description", "Entre em contato com a Freelandoo para receber ajuda.")}
             </p>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              Falar com suporte
+              {t("support.cta", "Falar com suporte")}
             </Link>
           </div>
         </div>
