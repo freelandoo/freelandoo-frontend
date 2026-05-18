@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   ImageIcon,
@@ -1228,32 +1229,29 @@ function SavedSection() {
                 key={it.id_bookmark}
                 className={`group relative overflow-hidden bg-zinc-900 ${aspectClass}`}
               >
-                {thumb ? (
-                  isVideo ? (
+                <Link
+                  href={`/p/${it.post_id}`}
+                  aria-label={it.title || it.display_name || "Abrir post"}
+                  className="absolute inset-0 z-0"
+                >
+                  {thumb ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={it.first_media?.thumbnail_url || ""}
+                      src={isVideo ? (it.first_media?.thumbnail_url || "") : thumb}
                       alt={it.title || it.display_name || "Salvo"}
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={thumb}
-                      alt={it.title || it.display_name || "Salvo"}
-                      className="h-full w-full object-cover"
-                    />
-                  )
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <ImageIcon className="h-8 w-8 text-white/15" />
-                  </div>
-                )}
+                    <div className="flex h-full w-full items-center justify-center">
+                      <ImageIcon className="h-8 w-8 text-white/15" />
+                    </div>
+                  )}
+                </Link>
 
                 {it.color_accent && (
                   <span
                     aria-hidden
-                    className="absolute left-2 top-2 h-2 w-2 rounded-full ring-2 ring-zinc-950"
+                    className="pointer-events-none absolute left-2 top-2 z-10 h-2 w-2 rounded-full ring-2 ring-zinc-950"
                     style={{ backgroundColor: it.color_accent }}
                     title={it.machine_name || ""}
                   />
@@ -1265,7 +1263,7 @@ function SavedSection() {
                   disabled={!!removing[it.post_id]}
                   aria-label="Remover dos salvos"
                   title="Remover dos salvos"
-                  className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:border-rose-400/40 hover:text-rose-300 disabled:opacity-40"
+                  className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:border-rose-400/40 hover:text-rose-300 disabled:opacity-40"
                 >
                   {removing[it.post_id] ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1274,7 +1272,7 @@ function SavedSection() {
                   )}
                 </button>
 
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
                   <p className="truncate font-medium">
                     {it.display_name || it.username || "Perfil"}
                   </p>
