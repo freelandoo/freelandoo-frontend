@@ -13,6 +13,7 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
+import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -31,18 +32,22 @@ export default function LoginPage() {
     try {
       console.log("[v0] Enviando dados de login:", { email })
 
-      const response = await fetch("/api/signin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await clientFetchWithTimeout(
+        "/api/signin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            senha: password,
+          }),
         },
-        body: JSON.stringify({
-          email,
-          senha: password,
-        }),
-      })
+        9000
+      )
 
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
       console.log("[v0] Resposta do login:", data)
 
       if (!response.ok) {
@@ -66,7 +71,11 @@ export default function LoginPage() {
       completeAuthRedirect(target)
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
-      setError(tErr("network", "Erro ao conectar com o servidor"))
+      if (isClientFetchTimeout(error)) {
+        setError(tErr("timeout", "Servidor demorou para responder. Tente novamente."))
+      } else {
+        setError(tErr("network", "Erro ao conectar com o servidor"))
+      }
       setIsLoading(false)
     }
   }
