@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles } from "lucide-react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ import { getToken } from "@/lib/auth"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
+import { ReportPostDialog } from "./report-post-dialog"
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -68,6 +69,21 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [likePending, setLikePending] = useState(false)
   const [bookmarkPending, setBookmarkPending] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+
+  const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
+    const token = getToken()
+    if (!token) throw new Error("Faça login para denunciar")
+    const res = await fetch(`/api/portfolio/items/${post.post_id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason_category, reason: reason || null }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data?.error || `Falha ${res.status}`)
+    }
+  }
   const { coupon: shareCoupon } = useShareCoupon()
   const primaryUrl = post.project_url || post.public_profile_url
   const primaryLabel =
@@ -505,6 +521,16 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
               </button>
             </div>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                aria-label="Denunciar publicação"
+                onClick={() => setReportOpen(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/75 shadow ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 hover:text-amber-300 active:scale-95"
+              >
+                <Flag className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -566,6 +592,14 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               )}
             >
               <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
+            </button>
+            <button
+              type="button"
+              aria-label="Denunciar publicação"
+              onClick={() => setReportOpen(true)}
+              className="rounded-full p-1.5 text-white/55 transition hover:bg-white/5 hover:text-amber-300 active:scale-90"
+            >
+              <Flag className="h-5 w-5" />
             </button>
           </div>
 
@@ -652,6 +686,11 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         </>
       )}
 
+      <ReportPostDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        onSubmit={submitReport}
+      />
     </article>
   )
 }
