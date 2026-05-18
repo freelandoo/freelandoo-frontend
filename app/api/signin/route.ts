@@ -1,5 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
+import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
 
 export async function POST(request: Request) {
   const log = apiFlow("signin")
@@ -8,13 +9,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const url = `${getBackendApiUrl()}/auth/signin`
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    })
+    }, 5000)
 
     log.backendFetch("POST", url, response.status)
 
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
     return Response.json(data)
   } catch (error) {
     log.fail(error)
+    if (isFetchTimeout(error)) {
+      status = 504
+      return Response.json({ error: "Login demorou para responder. Tente novamente." }, { status: 504 })
+    }
     status = 500
     return Response.json({ error: "Erro ao processar login" }, { status: 500 })
   } finally {

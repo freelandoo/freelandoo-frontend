@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getBackendApiUrl } from "@/lib/backend"
+import { fetchWithTimeout } from "@/lib/server-fetch"
 
 const BACKEND = getBackendApiUrl()
 
@@ -31,11 +32,11 @@ async function readJson<T>(response: Response): Promise<T | null> {
 
 async function fetchBackend<T>(path: string, auth: string): Promise<T | null> {
   try {
-    const response = await fetch(`${BACKEND}${path}`, {
+    const response = await fetchWithTimeout(`${BACKEND}${path}`, {
       method: "GET",
       headers: { Authorization: auth },
       cache: "no-store",
-    })
+    }, 2500)
     return readJson<T>(response)
   } catch {
     return null
