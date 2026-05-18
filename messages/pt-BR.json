@@ -616,5 +616,24 @@
     "subscriptionTerms": "Termo de ativação",
     "affiliateProgram": "Programa de afiliados",
     "copyright": "Todos os direitos reservados."
-  }
+  },
+  "Course": {
+    "notFoundTitle": "Curso n?o encontrado",
+    "notPublishedHint": "Este curso pode n?o estar publicado.",
+    "loadError": "Erro ao carregar",
+    "checkoutCreateError": "Falha ao criar checkout",
+    "serverConnectionError": "Erro ao conectar com o servidor",
+    "backButton": "Voltar",
+    "modulesCount": "{n} m?dulos",
+    "lessonsCount": "{n} aulas",
+    "paymentSuccessMessage": "Pagamento confirmado! O curso j? est? dispon?vel na sua conta.",
+    "paymentCancelMessage": "Compra cancelada. Voc? pode tentar novamente quando quiser.",
+    "priceLabel": "Valor",
+    "manageCourseButton": "Gerenciar curso",
+    "shareDescription": "Confira este curso no Freelandoo.",
+    "redirectingButton": "Redirecionando...",
+    "buyCourseButton": "Comprar curso"
+  },
+  "Courses": {},
+  "Quiz": {}
 }

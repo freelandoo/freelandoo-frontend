@@ -616,5 +616,24 @@
     "subscriptionTerms": "Subscription terms",
     "affiliateProgram": "Affiliate program",
     "copyright": "All rights reserved."
-  }
+  },
+  "Course": {
+    "notFoundTitle": "Course not found",
+    "notPublishedHint": "This course may not be published.",
+    "loadError": "Failed to load",
+    "checkoutCreateError": "Failed to create checkout",
+    "serverConnectionError": "Error connecting to the server",
+    "backButton": "Back",
+    "modulesCount": "{n} modules",
+    "lessonsCount": "{n} lessons",
+    "paymentSuccessMessage": "Payment confirmed! The course is now available in your account.",
+    "paymentCancelMessage": "Purchase canceled. You can try again whenever you want.",
+    "priceLabel": "Price",
+    "manageCourseButton": "Manage course",
+    "shareDescription": "Check out this course on Freelandoo.",
+    "redirectingButton": "Redirecting...",
+    "buyCourseButton": "Buy course"
+  },
+  "Courses": {},
+  "Quiz": {}
 }
