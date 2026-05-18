@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getBackendApiUrl } from "@/lib/backend"
-import { fetchWithTimeout, isFetchTimeout } from "@/lib/server-fetch"
+import { fetchWithTimeout, isFetchTimeout, readBodyWithTimeout } from "@/lib/server-fetch"
 
 const BACKEND = getBackendApiUrl()
 
@@ -26,7 +26,13 @@ export async function GET(request: Request) {
       6000
     )
     if (!response.ok) return NextResponse.json(EMPTY)
-    const data = await response.json().catch(() => null)
+    let data: unknown = null
+    try {
+      const text = await readBodyWithTimeout(response, 2000)
+      if (text) data = JSON.parse(text)
+    } catch {
+      data = null
+    }
     if (!data) return NextResponse.json(EMPTY)
     return NextResponse.json(data)
   } catch (error) {

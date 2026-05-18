@@ -1,8 +1,9 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
-import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
+import { isFetchTimeout, fetchWithTimeout, readBodyWithTimeout } from "@/lib/server-fetch"
 
 const BACKEND = getBackendApiUrl()
+const EMPTY = { has_new: false, unread_chats: 0, mural_count: 0 }
 
 /** GET /api/service-requests/badge?id_profile= — badge para o subperfil */
 export async function GET(request: Request) {
@@ -22,16 +23,21 @@ export async function GET(request: Request) {
       headers: { Authorization: authHeader, "Content-Type": "application/json" },
     }, 2500)
     log.backendFetch("GET", url, response.status)
-    const text = await response.text()
-    let data: unknown
-    try { data = JSON.parse(text) } catch { data = { error: text } }
+
+    let data: unknown = EMPTY
+    try {
+      const text = await readBodyWithTimeout(response, 1500)
+      if (text) data = JSON.parse(text)
+    } catch {
+      data = { ...EMPTY, timeout: true }
+    }
     status = response.status
-    return Response.json(data, { status: response.status })
+    return Response.json(data, { status: response.ok ? response.status : 200 })
   } catch (error) {
     log.fail(error)
     if (isFetchTimeout(error)) {
       status = 504
-      return Response.json({ has_new: false, unread_chats: 0, timeout: true }, { status: 200 })
+      return Response.json({ ...EMPTY, timeout: true }, { status: 200 })
     }
     status = 500
     return Response.json({ error: "Erro ao buscar badge" }, { status: 500 })
