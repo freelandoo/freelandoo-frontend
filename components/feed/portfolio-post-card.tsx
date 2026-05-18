@@ -286,7 +286,6 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           : "bg-black"
       )}
       data-post-id={post.post_id}
-      style={paged && machineGlow ? { boxShadow: `0 1px 0 0 ${machineGlow}, 0 12px 40px -28px ${machineGlow}` } : undefined}
     >
       {/* Header */}
       <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3", paged ? "px-4 py-2" : "px-3 py-2.5")}>
@@ -295,6 +294,12 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           onClick={handleProfileClick}
           className="flex min-w-0 flex-1 items-center gap-3"
         >
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: machineColor }}
+            title={post.machine?.name || ""}
+          />
           <Avatar
             className={cn(
               "shrink-0 ring-1 transition",
@@ -369,7 +374,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           <div className="absolute inset-0 flex min-h-0 min-w-0 flex-col">
             <PostMedia
               media={post.media}
-              glow={machineGlow}
+              glow={null}
               fillContainer
               reserveBottomOverlay
             />
@@ -506,7 +511,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         <>
           <PostMedia
             media={post.media}
-            glow={machineGlow}
+            glow={null}
             aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
           />
 

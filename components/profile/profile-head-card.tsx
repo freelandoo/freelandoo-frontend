@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import {
   BarChart2,
   CalendarDays,
+  Camera,
   Cog,
   Instagram,
   MapPin,
@@ -20,6 +21,7 @@ import {
   UserRound,
   Youtube,
 } from "lucide-react"
+import { getToken } from "@/lib/auth"
 import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
@@ -156,6 +158,41 @@ export function ProfileHeadCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+  const [avatarOverride, setAvatarOverride] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleClanAvatarSelect = () => {
+    if (!isClan || !isOwnProfile || uploadingAvatar) return
+    fileInputRef.current?.click()
+  }
+
+  const handleClanAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    setUploadingAvatar(true)
+    try {
+      const token = getToken()
+      const fd = new FormData()
+      fd.append("avatar", file)
+      const res = await fetch(`/api/profile/${profileId}/avatar`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: fd,
+      })
+      if (!res.ok) throw new Error(`upload falhou: ${res.status}`)
+      const data = await res.json()
+      if (data?.avatar_url) {
+        setAvatarOverride(`${data.avatar_url}${data.avatar_url.includes("?") ? "&" : "?"}t=${Date.now()}`)
+      }
+    } catch (err) {
+      console.error("[clan avatar] upload error", err)
+      alert("Não foi possível enviar a foto. Tente novamente.")
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
 
   useEffect(() => {
     if (!menuOpen) return
@@ -214,8 +251,9 @@ export function ProfileHeadCard({
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
-  const avatarSrc = profile.avatar_url || profile.user_avatar || undefined
+  const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
   const displayName = profile.display_name || "Sem nome"
+  const canUploadClanAvatar = isClan && isOwnProfile
 
   return (
     <>
@@ -278,10 +316,31 @@ export function ProfileHeadCard({
                     {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
                   </div>
                 )}
+                {canUploadClanAvatar && (
+                  <button
+                    type="button"
+                    onClick={handleClanAvatarSelect}
+                    disabled={uploadingAvatar}
+                    aria-label="Mudar foto"
+                    title="Mudar foto"
+                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary disabled:opacity-60"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
               <div className="mt-2">
                 <AvatarRatingStar profileId={profileId} />
               </div>
+              {canUploadClanAvatar && (
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleClanAvatarFile}
+                />
+              )}
             </div>
 
             {/* Coluna direita do avatar: Posts/Acomp no topo + Maquina/Profissao/Local em coluna. */}
@@ -333,6 +392,20 @@ export function ProfileHeadCard({
               )}
             </div>
           </div>
+
+          {isOwnProfile && ownerActions?.onShowMural && (
+            <div className="mt-4">
+              <MuralPill
+                onClick={ownerActions.onShowMural}
+                hasNew={
+                  !!(
+                    ownerActions.muralBadge?.has_new ||
+                    (ownerActions.muralBadge?.chat_unread || 0) > 0
+                  )
+                }
+              />
+            </div>
+          )}
 
           {profile.bio && (
             <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
@@ -400,19 +473,6 @@ export function ProfileHeadCard({
                       onClick={ownerActions.onShowRanking}
                       icon={Trophy}
                       label="Ranking"
-                    />
-                  )}
-                  {ownerActions.onShowMural && (
-                    <IconAction
-                      onClick={ownerActions.onShowMural}
-                      icon={Megaphone}
-                      label="Mural"
-                      badge={
-                        !!(
-                          ownerActions.muralBadge?.has_new ||
-                          (ownerActions.muralBadge?.chat_unread || 0) > 0
-                        )
-                      }
                     />
                   )}
                   {ownerActions.agendaHref && (
@@ -539,6 +599,18 @@ export function ProfileHeadCard({
                   {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
                 </div>
               )}
+              {canUploadClanAvatar && (
+                <button
+                  type="button"
+                  onClick={handleClanAvatarSelect}
+                  disabled={uploadingAvatar}
+                  aria-label="Mudar foto"
+                  title="Mudar foto"
+                  className="absolute bottom-1.5 right-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary disabled:opacity-60"
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
             <AvatarRatingStar profileId={profileId} />
           </div>
@@ -616,6 +688,20 @@ export function ProfileHeadCard({
           </div>
         </div>
 
+        {isOwnProfile && ownerActions?.onShowMural && (
+          <div className="mt-5">
+            <MuralPill
+              onClick={ownerActions.onShowMural}
+              hasNew={
+                !!(
+                  ownerActions.muralBadge?.has_new ||
+                  (ownerActions.muralBadge?.chat_unread || 0) > 0
+                )
+              }
+            />
+          </div>
+        )}
+
         {/* BIO — nome e XP migraram pro RetractableProfileHeader */}
         {profile.bio && (
           <p className="mt-5 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
@@ -672,19 +758,6 @@ export function ProfileHeadCard({
                   onClick={ownerActions.onShowRanking}
                   icon={Trophy}
                   label="Ranking"
-                />
-              )}
-              {ownerActions.onShowMural && (
-                <IconAction
-                  onClick={ownerActions.onShowMural}
-                  icon={Megaphone}
-                  label="Mural"
-                  badge={
-                    !!(
-                      ownerActions.muralBadge?.has_new ||
-                      (ownerActions.muralBadge?.chat_unread || 0) > 0
-                    )
-                  }
                 />
               )}
               {ownerActions.agendaHref && (
@@ -902,6 +975,23 @@ function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
         </a>
       ))}
     </>
+  )
+}
+
+function MuralPill({ onClick, hasNew }: { onClick: () => void; hasNew: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-primary/40 hover:bg-primary/[0.08] hover:text-primary"
+      aria-label="Abrir Mural"
+    >
+      <Megaphone className="h-3.5 w-3.5 text-primary/85" />
+      <span>Mural</span>
+      {hasNew && (
+        <span className="ml-0.5 inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_0_2px_rgba(9,9,11,0.85)]" />
+      )}
+    </button>
   )
 }
 
