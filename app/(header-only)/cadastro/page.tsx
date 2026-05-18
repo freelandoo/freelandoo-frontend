@@ -15,6 +15,7 @@ import { machineDescription } from "@/lib/constants/machine-descriptions"
 import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge } from "@/lib/validation/signup"
 import { Check, X, ArrowLeft, User, Briefcase, Info, ShieldCheck } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface Category {
   id_category: number
@@ -39,6 +40,8 @@ type UserType = "client" | "freelancer"
 
 export default function CadastroPage() {
   const router = useRouter()
+  const t = useTranslations("Signup")
+  const tAuth = useTranslations("Auth")
   const [step, setStep] = useState<Step>(1)
   const [userType, setUserType] = useState<UserType | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -112,7 +115,7 @@ export default function CadastroPage() {
   const checkUsername = useCallback(async (u: string) => {
     if (u.length < 3) {
       setUsernameStatus("invalid")
-      setUsernameMsg("Mínimo 3 caracteres")
+      setUsernameMsg(t("usernameMinChars", "Mínimo 3 caracteres"))
       return
     }
     setUsernameStatus("checking")
@@ -121,16 +124,16 @@ export default function CadastroPage() {
       const data = await res.json()
       if (data.available) {
         setUsernameStatus("available")
-        setUsernameMsg("Disponível ✓")
+        setUsernameMsg(t("usernameAvailable", "Disponível ✓"))
       } else {
         setUsernameStatus("taken")
-        setUsernameMsg("Este nome já está em uso")
+        setUsernameMsg(t("usernameTaken", "Este nome já está em uso"))
       }
     } catch {
       setUsernameStatus("idle")
       setUsernameMsg("")
     }
-  }, [])
+  }, [t])
 
   const handleUsernameChange = (raw: string) => {
     const u = raw.toLowerCase().replace(/[^a-z0-9_.]/g, "")
@@ -151,7 +154,7 @@ export default function CadastroPage() {
       return
     }
     setCodeStatus("checking")
-    setCodeMsg("Verificando...")
+    setCodeMsg(t("codeChecking", "Verificando..."))
     try {
       const res = await fetch("/api/supervision/codes/validate", {
         method: "POST",
@@ -161,16 +164,16 @@ export default function CadastroPage() {
       const data = await res.json()
       if (res.ok && data?.valid) {
         setCodeStatus("valid")
-        setCodeMsg("Código válido — responsável encontrado.")
+        setCodeMsg(t("codeValid", "Código válido — responsável encontrado."))
       } else {
         setCodeStatus("invalid")
-        setCodeMsg(data?.error || "Código inválido")
+        setCodeMsg(data?.error || t("codeInvalid", "Código inválido"))
       }
     } catch {
       setCodeStatus("invalid")
-      setCodeMsg("Falha ao validar — tente novamente.")
+      setCodeMsg(t("codeFailed", "Falha ao validar — tente novamente."))
     }
-  }, [])
+  }, [t])
 
   const handleResponsibleCodeChange = (raw: string) => {
     const code = raw.toUpperCase().replace(/[^A-Z0-9-]/g, "")
@@ -234,15 +237,15 @@ export default function CadastroPage() {
     setSubmitError(null)
     if (asFreelancer) {
       if (!selectedMachineId || !selectedCategoryId) {
-        setSubmitError("Selecione máquina e profissão.")
+        setSubmitError(t("errSelectMachine", "Selecione máquina e profissão."))
         return
       }
       if (!profileData.estado || !profileData.municipio) {
-        setSubmitError("Selecione estado e município do perfil.")
+        setSubmitError(t("errSelectLocation", "Selecione estado e município do perfil."))
         return
       }
       if (!profileData.display_name.trim()) {
-        setSubmitError("Defina o nome de exibição do perfil.")
+        setSubmitError(t("errDisplayName", "Defina o nome de exibição do perfil."))
         return
       }
     }
@@ -277,12 +280,12 @@ export default function CadastroPage() {
       if (response.ok) {
         router.push("/verify-email")
       } else {
-        setSubmitError(data.error || data.message || "Erro ao criar cadastro. Tente novamente.")
+        setSubmitError(data.error || data.message || t("errSignupFailed", "Erro ao criar cadastro. Tente novamente."))
         setIsSubmitting(false)
       }
     } catch (error) {
       console.error(error)
-      setSubmitError("Erro ao conectar com o servidor. Tente novamente.")
+      setSubmitError(t("errServer", "Erro ao conectar com o servidor. Tente novamente."))
       setIsSubmitting(false)
     }
   }
@@ -299,16 +302,20 @@ export default function CadastroPage() {
       <main className="container mx-auto px-4 py-12">
         <div className="mx-auto max-w-3xl">
           <div className="mb-6 text-center">
-            <h1 className="mb-2 text-3xl font-bold">Criar conta</h1>
-            <p className="text-muted-foreground">Etapa {step} de {userType === "client" ? 2 : 3}</p>
+            <h1 className="mb-2 text-3xl font-bold">{t("title", "Criar conta")}</h1>
+            <p className="text-muted-foreground">
+              {t("step", "Etapa {step} de {total}")
+                .replace("{step}", String(step))
+                .replace("{total}", String(userType === "client" ? 2 : 3))}
+            </p>
           </div>
 
           {/* STEP 1 — DADOS DA CONTA */}
           {step === 1 && (
             <Card>
               <CardHeader>
-                <CardTitle>Dados da conta</CardTitle>
-                <CardDescription>Crie suas credenciais para acessar a Freelandoo</CardDescription>
+                <CardTitle>{t("accountDataTitle", "Dados da conta")}</CardTitle>
+                <CardDescription>{t("accountDataDescription", "Crie suas credenciais para acessar a Freelandoo")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {!isMinorBirth && (
@@ -319,7 +326,7 @@ export default function CadastroPage() {
                         <span className="w-full border-t border-border" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                        <span className="bg-card px-2 text-muted-foreground">{t("orWithEmail", "ou com email")}</span>
                       </div>
                     </div>
                   </>
@@ -327,10 +334,10 @@ export default function CadastroPage() {
                 <form className="space-y-6" onSubmit={handleStep1Continue}>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="nome">Nome completo</Label>
+                      <Label htmlFor="nome">{t("fullName", "Nome completo")}</Label>
                       <Input
                         id="nome"
-                        placeholder="Ex: João Silva"
+                        placeholder={t("fullNamePlaceholder", "Ex: João Silva")}
                         value={formData.nome}
                         onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                         required
@@ -338,10 +345,10 @@ export default function CadastroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="username">Nome de usuário</Label>
+                      <Label htmlFor="username">{tAuth("username", "Nome de usuário")}</Label>
                       <Input
                         id="username"
-                        placeholder="ex: joao.silva"
+                        placeholder={t("usernamePlaceholder", "ex: joao.silva")}
                         value={formData.username}
                         onChange={(e) => handleUsernameChange(e.target.value)}
                         required
@@ -364,7 +371,7 @@ export default function CadastroPage() {
                                 : "text-muted-foreground"
                           }`}
                         >
-                          {usernameStatus === "checking" ? "Verificando..." : usernameMsg}
+                          {usernameStatus === "checking" ? t("usernameChecking", "Verificando...") : usernameMsg}
                         </p>
                       )}
                     </div>
@@ -372,23 +379,23 @@ export default function CadastroPage() {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="email">E-mail</Label>
+                      <Label htmlFor="email">{tAuth("email", "E-mail")}</Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="seu@email.com"
+                        placeholder={t("emailPlaceholder", "seu@email.com")}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
                         className={emailBlocked ? "border-red-500 focus-visible:ring-red-500" : ""}
                       />
                       {emailBlocked && (
-                        <p className="text-xs text-red-500">Digite um email válido.</p>
+                        <p className="text-xs text-red-500">{t("invalidEmail", "Digite um email válido.")}</p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="dataNascimento">Data de nascimento</Label>
+                      <Label htmlFor="dataNascimento">{t("birthDate", "Data de nascimento")}</Label>
                       <Input
                         id="dataNascimento"
                         type="date"
@@ -406,17 +413,15 @@ export default function CadastroPage() {
                         <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                            Conta supervisionada
+                            {t("supervisedTitle", "Conta supervisionada")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Para criar uma conta menor de idade, informe o <strong>código do responsável</strong>.
-                            O código é gerado por um adulto na conta dele, em <em>Conta &rsaquo; Parental</em>, e
-                            vale por 24 horas.
+                            {t("supervisedDescription", "Para criar uma conta menor de idade, informe o código do responsável. O código é gerado por um adulto na conta dele, em Conta › Parental, e vale por 24 horas.")}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="responsibleCode">Código do responsável</Label>
+                        <Label htmlFor="responsibleCode">{t("responsibleCode", "Código do responsável")}</Label>
                         <Input
                           id="responsibleCode"
                           placeholder="PAR-XXXXXXXX"
@@ -450,44 +455,44 @@ export default function CadastroPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="sexo">Sexo (opcional)</Label>
+                    <Label htmlFor="sexo">{t("sex", "Sexo (opcional)")}</Label>
                     <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
                       <SelectTrigger id="sexo">
-                        <SelectValue placeholder="Selecione" />
+                        <SelectValue placeholder={t("selectPlaceholder", "Selecione")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="M">Masculino</SelectItem>
-                        <SelectItem value="F">Feminino</SelectItem>
-                        <SelectItem value="O">Outro</SelectItem>
+                        <SelectItem value="M">{t("male", "Masculino")}</SelectItem>
+                        <SelectItem value="F">{t("female", "Feminino")}</SelectItem>
+                        <SelectItem value="O">{t("other", "Outro")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="senha">Senha</Label>
+                      <Label htmlFor="senha">{tAuth("password", "Senha")}</Label>
                       <Input
                         id="senha"
                         type="password"
-                        placeholder="Mínimo 8 caracteres"
+                        placeholder={t("passwordPlaceholder", "Mínimo 8 caracteres")}
                         value={formData.senha}
                         onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                         required
                       />
                       <ul className="space-y-1 mt-2">
-                        <PasswordRequirement ok={passwordChecks.min_length} label="Mínimo de 8 caracteres" />
-                        <PasswordRequirement ok={passwordChecks.uppercase} label="Pelo menos 1 letra maiúscula" />
-                        <PasswordRequirement ok={passwordChecks.number} label="Pelo menos 1 número" />
-                        <PasswordRequirement ok={passwordChecks.special_character} label="Pelo menos 1 caractere especial" />
+                        <PasswordRequirement ok={passwordChecks.min_length} label={t("passwordMinLength", "Mínimo de 8 caracteres")} />
+                        <PasswordRequirement ok={passwordChecks.uppercase} label={t("passwordUppercase", "Pelo menos 1 letra maiúscula")} />
+                        <PasswordRequirement ok={passwordChecks.number} label={t("passwordNumber", "Pelo menos 1 número")} />
+                        <PasswordRequirement ok={passwordChecks.special_character} label={t("passwordSpecial", "Pelo menos 1 caractere especial")} />
                       </ul>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmarSenha">Confirmar senha</Label>
+                      <Label htmlFor="confirmarSenha">{tAuth("confirmPassword", "Confirmar senha")}</Label>
                       <Input
                         id="confirmarSenha"
                         type="password"
-                        placeholder="Repita sua senha"
+                        placeholder={t("confirmPasswordPlaceholder", "Repita sua senha")}
                         value={formData.confirmarSenha}
                         onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
                         required
@@ -498,7 +503,7 @@ export default function CadastroPage() {
                         }
                       />
                       {formData.confirmarSenha.length > 0 && !passwordsMatch && (
-                        <p className="text-xs text-red-500">As senhas não coincidem.</p>
+                        <p className="text-xs text-red-500">{t("passwordsDontMatch", "As senhas não coincidem.")}</p>
                       )}
                     </div>
                   </div>
@@ -512,13 +517,13 @@ export default function CadastroPage() {
                         className="mt-1"
                       />
                       <span className="text-muted-foreground">
-                        Li e aceito os{" "}
+                        {t("acceptTermsPrefix", "Li e aceito os")}{" "}
                         <button
                           type="button"
                           onClick={() => setOpenTermosModal(true)}
                           className="font-medium text-blue-500 hover:underline"
                         >
-                          termos de uso
+                          {t("termsOfUse", "termos de uso")}
                         </button>
                         .
                       </span>
@@ -526,13 +531,13 @@ export default function CadastroPage() {
                   </div>
 
                   <Button type="submit" size="lg" className="w-full" disabled={!step1Valid}>
-                    Continuar
+                    {t("continue", "Continuar")}
                   </Button>
 
                   <p className="text-center text-sm text-muted-foreground">
-                    Já tem uma conta?{" "}
+                    {t("alreadyHaveAccount", "Já tem uma conta?")}{" "}
                     <Link href="/login" className="font-medium text-primary hover:underline">
-                      Faça login
+                      {t("doLogin", "Faça login")}
                     </Link>
                   </p>
                 </form>
@@ -545,10 +550,10 @@ export default function CadastroPage() {
             <Card>
               <CardHeader>
                 <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(1)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("back", "Voltar")}
                 </Button>
-                <CardTitle>Como você pretende usar a Freelandoo?</CardTitle>
-                <CardDescription>Você pode mudar isso depois pela sua conta.</CardDescription>
+                <CardTitle>{t("userTypeTitle", "Como você pretende usar a Freelandoo?")}</CardTitle>
+                <CardDescription>{t("userTypeDescription", "Você pode mudar isso depois pela sua conta.")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -562,9 +567,9 @@ export default function CadastroPage() {
                     className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
                   >
                     <User className="h-8 w-8 mb-3 text-primary" />
-                    <p className="font-semibold mb-1">Sou cliente</p>
+                    <p className="font-semibold mb-1">{t("iAmClient", "Sou cliente")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Quero contratar profissionais. Finalizar cadastro agora.
+                      {t("iAmClientDesc", "Quero contratar profissionais. Finalizar cadastro agora.")}
                     </p>
                   </button>
                   <button
@@ -581,15 +586,15 @@ export default function CadastroPage() {
                     className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
                   >
                     <Briefcase className="h-8 w-8 mb-3 text-primary" />
-                    <p className="font-semibold mb-1">Sou freelancer</p>
+                    <p className="font-semibold mb-1">{t("iAmFreelancer", "Sou freelancer")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Quero criar perfil profissional para receber contatos.
+                      {t("iAmFreelancerDesc", "Quero criar perfil profissional para receber contatos.")}
                     </p>
                   </button>
                 </div>
                 {submitError && <p className="text-sm text-red-500 mt-4">{submitError}</p>}
                 {isSubmitting && (
-                  <p className="text-sm text-muted-foreground mt-4">Criando conta...</p>
+                  <p className="text-sm text-muted-foreground mt-4">{t("creatingAccount", "Criando conta...")}</p>
                 )}
               </CardContent>
             </Card>
@@ -600,11 +605,11 @@ export default function CadastroPage() {
             <Card>
               <CardHeader>
                 <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(2)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("back", "Voltar")}
                 </Button>
-                <CardTitle>Perfil profissional</CardTitle>
+                <CardTitle>{t("profileTitle", "Perfil profissional")}</CardTitle>
                 <CardDescription>
-                  Seu perfil nasce <strong>aguardando ativação</strong>. Ele só aparece publicamente após você ativar o perfil.
+                  {t("profileDescription", "Seu perfil nasce aguardando ativação. Ele só aparece publicamente após você ativar o perfil.")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -616,7 +621,7 @@ export default function CadastroPage() {
                   }}
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="display_name">Nome de exibição</Label>
+                    <Label htmlFor="display_name">{t("displayName", "Nome de exibição")}</Label>
                     <Input
                       id="display_name"
                       value={profileData.display_name}
@@ -628,7 +633,7 @@ export default function CadastroPage() {
                   {/* Machines */}
                   {machines.length > 0 && (
                     <div className="space-y-3">
-                      <Label>Escolha sua máquina</Label>
+                      <Label>{t("chooseMachine", "Escolha sua máquina")}</Label>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {machines.map((m) => {
                           const isSelected = selectedMachineId === m.id_machine
@@ -677,7 +682,7 @@ export default function CadastroPage() {
                   {/* Profession */}
                   {selectedMachine && (
                     <div className="space-y-3">
-                      <Label>Escolha sua profissão</Label>
+                      <Label>{t("chooseProfession", "Escolha sua profissão")}</Label>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {selectedMachine.categories
                           .filter((c) => c.is_active)
@@ -710,7 +715,7 @@ export default function CadastroPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="bio">Bio (opcional)</Label>
+                    <Label htmlFor="bio">{t("bioOptional", "Bio (opcional)")}</Label>
                     <textarea
                       id="bio"
                       rows={3}
@@ -721,7 +726,7 @@ export default function CadastroPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="avatar_url">URL do avatar (opcional)</Label>
+                    <Label htmlFor="avatar_url">{t("avatarUrlOptional", "URL do avatar (opcional)")}</Label>
                     <Input
                       id="avatar_url"
                       type="url"
@@ -733,10 +738,10 @@ export default function CadastroPage() {
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="estado">Estado</Label>
+                      <Label htmlFor="estado">{t("stateLabel", "Estado")}</Label>
                       <Select value={profileData.estado} onValueChange={handleEstadoChange}>
                         <SelectTrigger id="estado">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={t("selectPlaceholder", "Selecione")} />
                         </SelectTrigger>
                         <SelectContent>
                           {estados.map((e) => (
@@ -748,14 +753,14 @@ export default function CadastroPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="municipio">Município</Label>
+                      <Label htmlFor="municipio">{t("cityLabel", "Município")}</Label>
                       <Select
                         value={profileData.municipio}
                         onValueChange={(val) => setProfileData((prev) => ({ ...prev, municipio: val }))}
                         disabled={!profileData.estado || loadingMunicipios}
                       >
                         <SelectTrigger id="municipio">
-                          <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione"} />
+                          <SelectValue placeholder={loadingMunicipios ? t("loading", "Carregando...") : t("selectPlaceholder", "Selecione")} />
                         </SelectTrigger>
                         <SelectContent>
                           {municipios.map((m) => (
@@ -771,7 +776,7 @@ export default function CadastroPage() {
                   {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
                   <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Criando conta..." : "Finalizar cadastro"}
+                    {isSubmitting ? t("creatingAccount", "Criando conta...") : t("finishSignup", "Finalizar cadastro")}
                   </Button>
                 </form>
               </CardContent>
@@ -783,27 +788,17 @@ export default function CadastroPage() {
       <Dialog open={openTermosModal} onOpenChange={setOpenTermosModal}>
         <DialogContent className="max-h-[80vh] w-full max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Termos de Uso - Freelandoo</DialogTitle>
+            <DialogTitle>{t("termsModalTitle", "Termos de Uso - Freelandoo")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda
-              integralmente com os termos.
-            </p>
-            <p>
-              A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações,
-              não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são
-              tratadas diretamente entre as partes.
-            </p>
-            <p>
-              Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se
-              responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.
-            </p>
+            <p>{t("termsP1", "Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda integralmente com os termos.")}</p>
+            <p>{t("termsP2", "A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações, não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são tratadas diretamente entre as partes.")}</p>
+            <p>{t("termsP3", "Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.")}</p>
           </div>
 
           <div className="flex justify-end gap-2 border-t pt-4">
             <Button variant="outline" onClick={() => setOpenTermosModal(false)}>
-              Fechar
+              {t("termsClose", "Fechar")}
             </Button>
             <Button
               onClick={() => {
@@ -811,7 +806,7 @@ export default function CadastroPage() {
                 setOpenTermosModal(false)
               }}
             >
-              Li e aceito
+              {t("termsAccept", "Li e aceito")}
             </Button>
           </div>
         </DialogContent>

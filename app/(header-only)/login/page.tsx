@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,6 +20,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const t = useTranslations("Auth")
+  const tCommon = useTranslations("Common")
+  const tErr = useTranslations("Errors")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +47,7 @@ export default function LoginPage() {
       console.log("[v0] Resposta do login:", data)
 
       if (!response.ok) {
-        setError(data.message || "Erro ao fazer login")
+        setError(data.message || tErr("loginFailed", "Erro ao fazer login"))
         setIsLoading(false)
         return
       }
@@ -62,7 +67,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
-      setError("Erro ao conectar com o servidor")
+      setError(tErr("network", "Erro ao conectar com o servidor"))
       setIsLoading(false)
     }
   }
@@ -72,13 +77,16 @@ export default function LoginPage() {
       <div className="container mx-auto flex items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-3 text-center">
+            <div className="flex items-center justify-end">
+              <LanguageSwitcher variant="full" className="text-foreground/70 hover:bg-foreground/10 hover:text-foreground" />
+            </div>
             <div className="flex justify-center">
               <div className="rounded-full bg-primary p-3">
                 <Star className="h-8 w-8 fill-black text-black" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Bem-vindo de volta</CardTitle>
-            <CardDescription>Faça login para acessar sua conta na Freelandoo</CardDescription>
+            <CardTitle className="text-2xl font-bold">{t("login", "Entrar")}</CardTitle>
+            <CardDescription>{t("alreadyHaveAccount", "Faça login para acessar sua conta na Freelandoo")}</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4 pt-0">
@@ -88,7 +96,7 @@ export default function LoginPage() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou com email</span>
+                <span className="bg-card px-2 text-muted-foreground">{tCommon("or", "ou")}</span>
               </div>
             </div>
           </CardContent>
@@ -100,7 +108,7 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("email", "Email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -113,9 +121,9 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
+                  <Label htmlFor="password">{t("password", "Senha")}</Label>
                   <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    Esqueceu a senha?
+                    {t("forgotPassword", "Esqueceu a senha?")}
                   </Link>
                 </div>
                 <Input
@@ -130,16 +138,16 @@ export default function LoginPage() {
 
               <div className="pt-2">
                 <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? "Entrando..." : "Entrar"}
+                  {isLoading ? t("loggingIn", "Entrando...") : t("login", "Entrar")}
                 </Button>
               </div>
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4 pt-4">
               <div className="text-center text-sm text-muted-foreground">
-                Não tem uma conta?{" "}
+                {t("noAccount", "Não tem uma conta?")}{" "}
                 <Link href="/cadastro" className="font-semibold text-primary hover:underline">
-                  Cadastre-se
+                  {t("register", "Cadastre-se")}
                 </Link>
               </div>
             </CardFooter>

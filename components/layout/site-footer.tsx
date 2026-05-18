@@ -1,7 +1,13 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export function SiteFooter() {
+  const tNav = useTranslations("Navigation")
+  const tFooter = useTranslations("Footer")
+
   return (
     <footer className="border-t border-border bg-white text-foreground">
       <div className="container mx-auto px-4 py-12">
@@ -16,51 +22,51 @@ export function SiteFooter() {
                 className="h-9 w-auto"
               />
             </Link>
-            <p className="text-sm text-neutral-600">Conectando profissionais e clientes.</p>
+            <p className="text-sm text-neutral-600">{tFooter("tagline", "Conectando profissionais e clientes.")}</p>
           </div>
 
           <div>
-            <h3 className="mb-4 text-base font-semibold text-neutral-900">Plataforma</h3>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{tFooter("platform", "Plataforma")}</h3>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li>
                 <Link href="/comofunciona" className="transition-colors hover:text-neutral-900">
-                  Como funciona
+                  {tNav("howItWorks", "Como funciona")}
                 </Link>
               </li>
               <li>
                 <Link href="/anunciar-servicos" className="transition-colors hover:text-neutral-900">
-                  Anunciar serviços
+                  {tFooter("advertiseServices", "Anunciar serviços")}
                 </Link>
               </li>
               <li>
                 <Link href="/contratar-profissionais" className="transition-colors hover:text-neutral-900">
-                  Contratar profissionais
+                  {tFooter("hireProfessionals", "Contratar profissionais")}
                 </Link>
               </li>
               <li>
                 <Link href="/precos" className="transition-colors hover:text-neutral-900">
-                  Preços
+                  {tFooter("pricing", "Preços")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="mb-4 text-base font-semibold text-neutral-900">Recursos</h3>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{tFooter("resources", "Recursos")}</h3>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li>
                 <Link href="/central-de-ajuda" className="transition-colors hover:text-neutral-900">
-                  Central de ajuda
+                  {tFooter("helpCenter", "Central de ajuda")}
                 </Link>
               </li>
               <li>
                 <Link href="/comunidade" className="transition-colors hover:text-neutral-900">
-                  Comunidade
+                  {tFooter("community", "Comunidade")}
                 </Link>
               </li>
               <li>
                 <Link href="/dicas-de-seguranca" className="transition-colors hover:text-neutral-900">
-                  Dicas de segurança
+                  {tFooter("safetyTips", "Dicas de segurança")}
                 </Link>
               </li>
               <li>
@@ -77,41 +83,41 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-base font-semibold text-neutral-900">Empresa</h3>
+            <h3 className="mb-4 text-base font-semibold text-neutral-900">{tFooter("company", "Empresa")}</h3>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li>
                 <Link href="/sobre-nos" className="transition-colors hover:text-neutral-900">
-                  Sobre nós
+                  {tFooter("about", "Sobre nós")}
                 </Link>
               </li>
               <li>
                 <Link href="/carreiras" className="transition-colors hover:text-neutral-900">
-                  Carreiras
+                  {tFooter("careers", "Carreiras")}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="transition-colors hover:text-neutral-900">
-                  Termos de uso
+                  {tFooter("terms", "Termos de uso")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy-policy" className="transition-colors hover:text-neutral-900">
-                  Privacidade
+                  {tFooter("privacy", "Privacidade")}
                 </Link>
               </li>
               <li>
                 <Link href="/cookies-policy" className="transition-colors hover:text-neutral-900">
-                  Política de cookies
+                  {tFooter("cookiesPolicy", "Política de cookies")}
                 </Link>
               </li>
               <li>
                 <Link href="/subscription-terms" className="transition-colors hover:text-neutral-900">
-                  Termo de ativação
+                  {tFooter("subscriptionTerms", "Termo de ativação")}
                 </Link>
               </li>
               <li>
                 <Link href="/affiliate-terms" className="transition-colors hover:text-neutral-900">
-                  Programa de afiliados
+                  {tFooter("affiliateProgram", "Programa de afiliados")}
                 </Link>
               </li>
             </ul>
@@ -119,7 +125,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-12 border-t border-border pt-8 text-center text-sm text-neutral-600">
-          <p>&copy; {new Date().getFullYear()} Freelandoo. Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Freelandoo. {tFooter("copyright", "Todos os direitos reservados.")}</p>
         </div>
       </div>
     </footer>
