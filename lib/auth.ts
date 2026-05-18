@@ -69,6 +69,17 @@ export function setSession(token: string, user: AuthUser) {
   dispatchAuthChanged()
 }
 
+export function completeAuthRedirect(target: string) {
+  if (typeof window === "undefined") return
+  const destination = new URL(target, window.location.origin).toString()
+  window.location.replace(destination)
+  window.setTimeout(() => {
+    if (window.location.href !== destination) {
+      window.location.href = destination
+    }
+  }, 250)
+}
+
 export function setStoredUser(user: AuthUser) {
   if (typeof window === "undefined") return
   localStorage.setItem(USER_KEY, JSON.stringify(user))

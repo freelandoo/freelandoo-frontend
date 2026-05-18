@@ -12,7 +12,7 @@ import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { extractAuthSession, setSession } from "@/lib/auth"
+import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -46,7 +46,7 @@ export default function LoginPage() {
       console.log("[v0] Resposta do login:", data)
 
       if (!response.ok) {
-        setError(data.message || tErr("loginFailed", "Erro ao fazer login"))
+        setError(data.error || data.message || tErr("loginFailed", "Erro ao fazer login"))
         setIsLoading(false)
         return
       }
@@ -63,7 +63,7 @@ export default function LoginPage() {
       console.log("[v0] Login realizado com sucesso, redirecionando...")
 
       const target = session.emailVerified === false ? "/verify-email" : "/search"
-      window.location.assign(target)
+      completeAuthRedirect(target)
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
       setError(tErr("network", "Erro ao conectar com o servidor"))

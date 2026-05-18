@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Script from "next/script"
-import { extractAuthSession, setSession } from "@/lib/auth"
+import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
 
 declare global {
   interface Window {
@@ -95,7 +95,7 @@ export function GoogleSignInButton({
         const target =
           redirectTo ||
           (session.emailVerified === false ? "/verify-email" : "/search")
-        window.location.assign(target)
+        completeAuthRedirect(target)
       } catch {
         setError("Erro ao conectar com o servidor")
         setLoading(false)
