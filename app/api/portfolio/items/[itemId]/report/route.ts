@@ -2,14 +2,14 @@ import { getBackendApiUrl } from "@/lib/backend"
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
     const auth = request.headers.get("authorization")
     if (!auth) return Response.json({ error: "Autorizacao necessaria" }, { status: 401 })
-    const { id } = await params
+    const { itemId } = await params
     const body = await request.json()
-    const res = await fetch(`${getBackendApiUrl()}/portfolio/items/${id}/report`, {
+    const res = await fetch(`${getBackendApiUrl()}/portfolio/items/${itemId}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: auth },
       body: JSON.stringify(body),
