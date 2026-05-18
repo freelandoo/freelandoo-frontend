@@ -7,6 +7,7 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
+import { DevBannerModal } from "@/components/dev-banner-modal"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -99,6 +100,7 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         {children}
         <ProfileSidebar />
+        <DevBannerModal />
         <BirthdateGate />
         <CookieConsent />
         <AnalyticsProvider />
