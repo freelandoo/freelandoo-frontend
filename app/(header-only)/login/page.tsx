@@ -13,6 +13,7 @@ import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { setSession } from "@/lib/auth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -52,19 +53,16 @@ export default function LoginPage() {
         return
       }
 
-      // Salvar token e dados do usuário no localStorage
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data.user))
-      // Notifica componentes (ex.: header) que o estado de auth mudou.
-      window.dispatchEvent(new Event("auth:changed"))
+      setSession(data.token, data.user)
 
       console.log("[v0] Login realizado com sucesso, redirecionando...")
 
-      if (data.email_verified === false || data.user?.email_verified === false) {
-        router.push("/verify-email")
-      } else {
-        router.push("/search")
-      }
+      const target =
+        data.email_verified === false || data.user?.email_verified === false
+          ? "/verify-email"
+          : "/search"
+      router.replace(target)
+      router.refresh()
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
       setError(tErr("network", "Erro ao conectar com o servidor"))
