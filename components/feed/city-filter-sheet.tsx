@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface CityFilterSheetProps {
@@ -32,6 +33,7 @@ export function CityFilterSheet({
   trigger,
   accent,
 }: CityFilterSheetProps) {
+  const t = useTranslations("Feed")
   const [open, setOpen] = useState(false)
   const [stage, setStage] = useState<"state" | "city">(state ? "city" : "state")
   const [stateFilter, setStateFilter] = useState("")
@@ -98,7 +100,7 @@ export function CityFilterSheet({
       <DialogContent className="max-w-sm gap-0 border-white/10 bg-zinc-950 p-0">
         <DialogHeader className="px-5 pt-5 pb-3">
           <DialogTitle className="text-white">
-            {stage === "state" ? "Estado" : "Cidade"}
+            {stage === "state" ? t("stateTitle", "Estado") : t("cityTitle", "Cidade")}
           </DialogTitle>
         </DialogHeader>
 
@@ -112,7 +114,7 @@ export function CityFilterSheet({
                   ? setStateFilter(e.target.value)
                   : setCityFilter(e.target.value)
               }
-              placeholder={stage === "state" ? "Buscar estado" : "Buscar cidade"}
+              placeholder={stage === "state" ? t("searchStateLabel", "Buscar estado") : t("searchCityLabel", "Buscar cidade")}
               className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
             />
           </div>
@@ -120,7 +122,7 @@ export function CityFilterSheet({
 
         <div className="max-h-[55vh] overflow-y-auto px-2 pb-3">
           <Option
-            label={stage === "state" ? "Todos os estados" : "Todas as cidades"}
+            label={stage === "state" ? t("allStates", "Todos os estados") : t("allCities", "Todas as cidades")}
             selected={stage === "state" ? !state : !city}
             onClick={() => {
               if (stage === "state") {
@@ -150,12 +152,12 @@ export function CityFilterSheet({
             <>
               {loadingMunicipios && (
                 <p className="px-4 py-6 text-center text-sm text-white/50">
-                  Carregando cidades…
+                  {t("loadingCities", "Carregando cidades…")}
                 </p>
               )}
               {!loadingMunicipios && filteredCities.length === 0 && (
                 <p className="px-4 py-6 text-center text-sm text-white/50">
-                  Nenhuma cidade encontrada.
+                  {t("noFoundCities", "Nenhuma cidade encontrada.")}
                 </p>
               )}
               {filteredCities.map((m) => (
@@ -181,7 +183,7 @@ export function CityFilterSheet({
               onClick={() => setStage("state")}
               className="text-xs font-medium text-white/60 transition hover:text-white"
             >
-              ← Trocar estado
+              ← {t("changeState", "Trocar estado")}
             </button>
           </div>
         )}

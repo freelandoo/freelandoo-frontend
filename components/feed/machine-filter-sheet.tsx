@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface MachineFilterSheetProps {
@@ -22,6 +23,7 @@ export function MachineFilterSheet({
   onChange,
   trigger,
 }: MachineFilterSheetProps) {
+  const t = useTranslations("Feed")
   const active = machines.filter((m) => m.is_active)
   return (
     <DropdownMenu>
@@ -32,7 +34,7 @@ export function MachineFilterSheet({
         className="max-h-[60vh] w-[min(260px,calc(100vw-2rem))] overflow-y-auto border-white/10 bg-zinc-950 p-1 text-white"
       >
         <Option
-          label="Todas as máquinas"
+          label={t("allMachines", "Todas as máquinas")}
           selected={selectedId == null}
           onClick={() => onChange(null)}
         />

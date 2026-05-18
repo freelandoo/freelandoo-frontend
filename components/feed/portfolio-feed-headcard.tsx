@@ -4,6 +4,7 @@ import { forwardRef } from "react"
 import { ChevronDown, MapPin, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { CatalogCategory, CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { ProfessionFilterSheet } from "./profession-filter-sheet"
@@ -51,15 +52,25 @@ export function PortfolioFeedHeadcard({
   onLevelChange,
   onClearAll,
 }: PortfolioFeedHeadcardProps) {
+  const t = useTranslations("Feed")
   const { user, status } = useAuth()
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const activeCategory = categories.find((c) => c.id_category === selectedCategoryId) || null
   const hasFilters = !!(activeMachine || activeCategory || state || city || levelMin)
 
-  const locationLabel = city || state || "Cidade"
-  const levelLabel =
+  const locationLabel = city || state || t("cityLabel", "Cidade")
+  const levelLabelRaw =
     LEVEL_FILTER_OPTIONS.find((option) => option.value === levelMin)?.label ||
     "Todos os níveis"
+  const levelLabelKeyMap: Record<string, string> = {
+    "Todos os níveis": "allLevels",
+    "Nível 1+": "level1Plus",
+    "Nível 5+": "level5Plus",
+    "Nível 10+": "level10Plus",
+    "Nível 20+": "level20Plus",
+    "Nível 30+": "level30Plus",
+  }
+  const levelLabel = t(levelLabelKeyMap[levelLabelRaw] || levelLabelRaw, levelLabelRaw)
   const isLoggedIn = status === "authenticated" && !!user
   const greetingName = (user?.nome || "").trim().split(/\s+/)[0] || ""
 
@@ -84,9 +95,11 @@ export function PortfolioFeedHeadcard({
         )}
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold leading-tight text-white">Feed</h1>
+          <h1 className="text-base font-semibold leading-tight text-white">{t("title", "Feed")}</h1>
           <p className="truncate text-[11px] text-white/50">
-            {isLoggedIn && greetingName ? `Olá, ${greetingName}` : "Descubra trabalhos perto de você"}
+            {isLoggedIn && greetingName
+              ? t("greetingUser", "Olá, {name}").replace("{name}", greetingName)
+              : t("discoverNearby", "Descubra trabalhos perto de você")}
           </p>
         </div>
 
@@ -97,7 +110,7 @@ export function PortfolioFeedHeadcard({
             className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/20 hover:text-white"
           >
             <X className="h-3 w-3" />
-            Limpar
+            {t("clearButton", "Limpar")}
           </button>
         )}
       </div>
@@ -109,7 +122,7 @@ export function PortfolioFeedHeadcard({
           onChange={onMachineChange}
           trigger={
             <Pill
-              label={activeMachine?.name || "Máquina"}
+              label={activeMachine?.name || t("machineLabel", "Máquina")}
               active={!!activeMachine}
               accent={activeMachine?.color_accent || undefined}
             />
@@ -123,7 +136,7 @@ export function PortfolioFeedHeadcard({
           accent={accent}
           trigger={
             <Pill
-              label={activeCategory?.desc_category || "Profissão"}
+              label={activeCategory?.desc_category || t("professionLabel", "Profissão")}
               active={!!activeCategory}
               accent={activeCategory ? accent : undefined}
               disabled={!activeMachine}

@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { CatalogCategory } from "@/components/home/machines/use-machines-catalog"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface ProfessionFilterSheetProps {
@@ -26,6 +27,7 @@ export function ProfessionFilterSheet({
   disabled,
   accent,
 }: ProfessionFilterSheetProps) {
+  const t = useTranslations("Feed")
   const list = categories.filter((c) => c.is_active)
   return (
     <DropdownMenu>
@@ -36,13 +38,13 @@ export function ProfessionFilterSheet({
         className="max-h-[60vh] w-[min(280px,calc(100vw-2rem))] overflow-y-auto border-white/10 bg-zinc-950 p-1 text-white"
       >
         <Option
-          label="Todas as profissões"
+          label={t("allProfessions", "Todas as profissões")}
           selected={selectedId == null}
           onClick={() => onChange(null)}
         />
         {list.length === 0 && (
           <p className="px-3 py-6 text-center text-sm text-white/50">
-            Escolha uma máquina primeiro.
+            {t("chooseMachineFirst", "Escolha uma máquina primeiro.")}
           </p>
         )}
         {list.map((c) => (

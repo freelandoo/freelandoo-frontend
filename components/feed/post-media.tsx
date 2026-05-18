@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react"
 import type { FeedMedia } from "@/lib/types/portfolio-feed"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface PostMediaProps {
@@ -68,6 +69,7 @@ interface AutoPlayVideoProps {
 }
 
 function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
+  const t = useTranslations("Post")
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [unmuted, setUnmuted] = useGlobalVideoUnmuted()
@@ -152,7 +154,7 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
       <button
         type="button"
         onClick={handleToggleSound}
-        aria-label={unmuted ? "Desligar som" : "Ligar som"}
+        aria-label={unmuted ? t("muteVideo", "Desligar som") : t("unmuteVideo", "Ligar som")}
         className="absolute bottom-3 left-3 z-[3] inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95"
       >
         {unmuted ? (
@@ -166,6 +168,7 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
 }
 
 export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, aspect = "4:5" }: PostMediaProps) {
+  const t = useTranslations("Post")
   const aspectClass = aspect === "9:16" ? "aspect-[9/16]" : "aspect-[4/5]"
   const [index, setIndex] = useState(0)
   if (!media || media.length === 0) {
@@ -176,7 +179,7 @@ export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, as
           fillContainer ? "min-h-0 min-w-0 max-w-full flex-1" : `${aspectClass} w-full`
         )}
       >
-        sem mídia
+        {t("noMedia", "sem mídia")}
       </div>
     )
   }
@@ -231,7 +234,7 @@ export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, as
         <>
           <button
             type="button"
-            aria-label="Mídia anterior"
+            aria-label={t("previousMedia", "Mídia anterior")}
             onClick={() => setIndex((i) => (i - 1 + total) % total)}
             className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95"
           >
@@ -239,7 +242,7 @@ export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, as
           </button>
           <button
             type="button"
-            aria-label="Próxima mídia"
+            aria-label={t("nextMedia", "Próxima mídia")}
             onClick={() => setIndex((i) => (i + 1) % total)}
             className={cn(
               "absolute top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95",

@@ -14,6 +14,7 @@ import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
 import { StoryCreator } from "@/components/stories/story-creator"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
 const DEFAULT_ACCENT = "#fbbf24"
@@ -35,6 +36,7 @@ export default function FeedPage() {
 }
 
 function FeedPageInner() {
+  const t = useTranslations("Feed")
   const router = useRouter()
   const searchParams = useSearchParams()
   const { machines } = useMachinesCatalog()
@@ -128,7 +130,7 @@ function FeedPageInner() {
     setHasMore(true)
     fetchPage(null, true)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Erro ao carregar feed")
+        if (!cancelled) setError(e instanceof Error ? e.message : t("errorLoadingFeed", "Erro ao carregar feed"))
       })
       .finally(() => {
         if (!cancelled) setLoadingInitial(false)
@@ -143,9 +145,9 @@ function FeedPageInner() {
     if (loadingInitial || loadingMore || !hasMore || !cursor) return
     setLoadingMore(true)
     fetchPage(cursor, false)
-      .catch((e) => setError(e instanceof Error ? e.message : "Erro ao carregar mais"))
+      .catch((e) => setError(e instanceof Error ? e.message : t("errorLoadingMore", "Erro ao carregar mais")))
       .finally(() => setLoadingMore(false))
-  }, [cursor, hasMore, loadingInitial, loadingMore, fetchPage])
+  }, [cursor, hasMore, loadingInitial, loadingMore, fetchPage, t])
 
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
@@ -206,7 +208,7 @@ function FeedPageInner() {
       <div
         ref={scrollRef}
         role="feed"
-        aria-label="Feed de portfólios. Role para ver o próximo post."
+        aria-label={t("feedAriaLabel", "Feed de portfólios. Role para ver o próximo post.")}
         className="relative h-full w-full overflow-y-auto overflow-x-hidden overscroll-y-contain scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="h-[64px] sm:h-[68px]" aria-hidden />
@@ -279,7 +281,7 @@ function FeedPageInner() {
             )}
             {!hasMore && items.length > 0 && (
               <div className="py-8 text-center text-xs text-white/30">
-                Você chegou ao fim do feed.
+                {t("feedEndMessage", "Você chegou ao fim do feed.")}
               </div>
             )}
           </div>

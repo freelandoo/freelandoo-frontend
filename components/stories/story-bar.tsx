@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Plus, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 export type StoryKind = "trampo" | "rest"
@@ -52,6 +53,7 @@ function initials(name: string | null | undefined) {
  * da máquina quando há story não-visto, transparente quando não tem.
  */
 export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCreate, showCreateSlot }: StoryBarProps) {
+  const t = useTranslations("Stories")
   const [entries, setEntries] = useState<StoryBarEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -93,7 +95,7 @@ export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCre
       <div className="flex gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {showCreateSlot && (
           <StoryTile
-            label="Postar"
+            label={t("postButton", "Postar")}
             onClick={onCreate}
             accent={defaultAccent}
             createSlot
@@ -138,13 +140,14 @@ interface StoryTileProps {
 }
 
 function StoryTile({ label, avatarUrl, hasUnviewed, accent, gradientFrom, gradientTo, onClick, createSlot }: StoryTileProps) {
+  const t = useTranslations("Stories")
   const showMetallic = !!hasUnviewed
   return (
     <button
       type="button"
       onClick={onClick}
       className="group flex w-[68px] shrink-0 flex-col items-center gap-1.5"
-      aria-label={createSlot ? "Criar story" : `Story de ${label}`}
+      aria-label={createSlot ? t("createStoryAria", "Criar story") : t("storyOf", "Story de {label}").replace("{label}", label)}
     >
       <div
         className={cn(
@@ -181,7 +184,7 @@ function StoryTile({ label, avatarUrl, hasUnviewed, accent, gradientFrom, gradie
         )}
       </div>
       <span className="line-clamp-1 max-w-[68px] text-center text-[10px] font-medium text-white/75">
-        {createSlot ? "Postar" : label}
+        {createSlot ? t("postButton", "Postar") : label}
       </span>
     </button>
   )

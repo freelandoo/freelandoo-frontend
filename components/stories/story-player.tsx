@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 import type { StoryBarEntry } from "./story-bar"
 
@@ -55,6 +56,7 @@ function formatRelative(iso: string) {
 }
 
 export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }: StoryPlayerProps) {
+  const t = useTranslations("Stories")
   const [profileIndex, setProfileIndex] = useState(initialIndex)
   const [storyIndex, setStoryIndex] = useState(0)
   const [stories, setStories] = useState<StoryItem[]>([])
@@ -306,7 +308,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
               type="button"
               onClick={() => setPaused((p) => !p)}
               className="rounded-full bg-black/35 p-1.5 text-white/85 transition hover:bg-black/55"
-              aria-label={paused ? "Reproduzir" : "Pausar"}
+              aria-label={paused ? t("playButton", "Reproduzir") : t("pauseButton", "Pausar")}
             >
               {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             </button>
@@ -314,7 +316,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
               type="button"
               onClick={onClose}
               className="rounded-full bg-black/35 p-1.5 text-white/85 transition hover:bg-black/55"
-              aria-label="Fechar"
+              aria-label={t("closeButton", "Fechar")}
             >
               <X className="h-4 w-4" />
             </button>
@@ -341,7 +343,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
                   "flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-xl ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/60 active:scale-95 disabled:opacity-70",
                   reactingEmoji === emoji && "scale-110 bg-white/20"
                 )}
-                aria-label={`Reagir com ${emoji}`}
+                aria-label={t("reactWithEmoji", "Reagir com {emoji}").replace("{emoji}", emoji)}
               >
                 {emoji}
               </button>
@@ -353,13 +355,13 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
           type="button"
           onClick={goPrevStory}
           className="absolute inset-y-0 left-0 z-[5] w-1/4"
-          aria-label="Story anterior"
+          aria-label={t("previousStory", "Story anterior")}
         />
         <button
           type="button"
           onClick={goNextStory}
           className="absolute inset-y-0 right-0 z-[5] w-1/4"
-          aria-label="Próxima story"
+          aria-label={t("nextStory", "Próxima story")}
         />
 
         {profileIndex > 0 && (
@@ -367,7 +369,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
             type="button"
             onClick={() => setProfileIndex((i) => i - 1)}
             className="absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-full bg-black/40 p-2 text-white/70 backdrop-blur transition hover:bg-black/65 hover:text-white md:block"
-            aria-label="Perfil anterior"
+            aria-label={t("previousProfile", "Perfil anterior")}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -377,7 +379,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
             type="button"
             onClick={() => setProfileIndex((i) => i + 1)}
             className="absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 rounded-full bg-black/40 p-2 text-white/70 backdrop-blur transition hover:bg-black/65 hover:text-white md:block"
-            aria-label="Próximo perfil"
+            aria-label={t("nextProfile", "Próximo perfil")}
           >
             <ChevronRight className="h-5 w-5" />
           </button>

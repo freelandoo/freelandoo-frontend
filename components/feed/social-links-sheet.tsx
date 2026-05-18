@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import type { FeedSocialLink } from "@/lib/types/portfolio-feed"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface SocialLinksSheetProps {
   links: FeedSocialLink[]
@@ -17,17 +18,18 @@ interface SocialLinksSheetProps {
 }
 
 export function SocialLinksSheet({ links, trigger, onLinkClick }: SocialLinksSheetProps) {
+  const t = useTranslations("Post")
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-sm gap-0 border-white/10 bg-zinc-950 p-0">
         <DialogHeader className="px-5 pt-5 pb-3">
-          <DialogTitle className="text-white">Redes sociais</DialogTitle>
+          <DialogTitle className="text-white">{t("socialLinksTitle", "Redes sociais")}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto px-2 pb-3">
           {links.length === 0 && (
             <p className="px-4 py-6 text-center text-sm text-white/50">
-              Sem redes cadastradas.
+              {t("noSocialLinks", "Sem redes cadastradas.")}
             </p>
           )}
           {links.map((link) => (
