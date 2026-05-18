@@ -1,5 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
+import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
 
 const BACKEND = getBackendApiUrl()
 
@@ -16,13 +17,14 @@ export async function GET(request: Request) {
     }
 
     const url = `${BACKEND}/coupon/`
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: "GET",
+        headers: { Authorization: authHeader, "Content-Type": "application/json" },
       },
-    })
+      4000
+    )
 
     log.backendFetch("GET", url, response.status)
 
@@ -34,6 +36,10 @@ export async function GET(request: Request) {
     return Response.json(data, { status: response.status })
   } catch (error) {
     log.fail(error)
+    if (isFetchTimeout(error)) {
+      status = 504
+      return Response.json({ data: [] }, { status: 200 })
+    }
     status = 500
     return Response.json({ error: "Erro ao consultar cupom" }, { status: 500 })
   } finally {
@@ -54,13 +60,14 @@ export async function POST(request: Request) {
     }
 
     const url = `${BACKEND}/coupon/`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: { Authorization: authHeader, "Content-Type": "application/json" },
       },
-    })
+      6000
+    )
 
     log.backendFetch("POST", url, response.status)
 
@@ -72,6 +79,10 @@ export async function POST(request: Request) {
     return Response.json(data, { status: response.status })
   } catch (error) {
     log.fail(error)
+    if (isFetchTimeout(error)) {
+      status = 504
+      return Response.json({ error: "Geração de cupom demorou" }, { status: 504 })
+    }
     status = 500
     return Response.json({ error: "Erro ao gerar cupom" }, { status: 500 })
   } finally {
