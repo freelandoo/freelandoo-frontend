@@ -160,7 +160,9 @@ export function ServiceChatModal({
      
     setLoading(true)
     fetchMessages().finally(() => setLoading(false))
-    const interval = setInterval(fetchMessages, 10000)
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchMessages()
+    }, 30000)
     return () => clearInterval(interval)
   }, [open, effectiveIdResponse, fetchMessages])
 

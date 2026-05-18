@@ -14,19 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-
-const POLL_MS = 30_000
-
-interface UnreadResponse {
-  total?: number
-  by_actor?: Array<{ actor_id: string; unread_count: number }>
-}
-
-interface ServiceBadgeResponse {
-  unread_chats?: number
-  mural_count?: number
-  chat_unread?: number
-}
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 interface ActorItem {
   id: string
@@ -50,11 +38,13 @@ function initials(name: string | null | undefined): string {
 export default function MessagesNavLink({ className = "" }: { className?: string }) {
   const t = useTranslations("Messages")
   const router = useRouter()
-  const [unread, setUnread] = useState(0)
+  const navCounts = useNavCounts()
   const [authed, setAuthed] = useState<boolean>(false)
+  const [open, setOpen] = useState(false)
   const [actors, setActors] = useState<ActorItem[]>([])
-  const [actorUnread, setActorUnread] = useState<Record<string, number>>({})
-  const [serviceUnread, setServiceUnread] = useState(0)
+
+  const serviceUnread = navCounts.serviceUnread
+  const unread = navCounts.conversationUnread + serviceUnread
 
   useEffect(() => {
     const sync = () => setAuthed(!!getToken())
@@ -69,87 +59,37 @@ export default function MessagesNavLink({ className = "" }: { className?: string
 
   useEffect(() => {
     if (!authed) {
-      // reset defensivo quando o usuário desloga sem unmount.
-       
-      setUnread(0)
+      setActors([])
       return
     }
-    let cancelled = false
+    if (!open) return
 
-    const fetchUnread = async () => {
+    let cancelled = false
+    const fetchActors = async () => {
       const token = getToken()
       if (!token) return
       try {
-        const [convRes, serviceRes, actorsRes] = await Promise.all([
-          fetch("/api/conversations/unread-count", {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch("/api/service-requests/badge/me", {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch("/api/entity-follows/actors", {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-        ])
-        const convData = convRes.ok ? ((await convRes.json()) as UnreadResponse) : { total: 0, by_actor: [] }
-        const serviceData = serviceRes.ok ? ((await serviceRes.json()) as ServiceBadgeResponse) : { unread_chats: 0 }
-        const actorsData = actorsRes.ok ? ((await actorsRes.json()) as ActorsResponse) : { actors: [] }
-        const actorList = Array.isArray(actorsData.actors) ? actorsData.actors : []
-        const convByActor = new Map(
-          (convData.by_actor || []).map((item) => [item.actor_id, Number(item.unread_count) || 0])
-        )
-        const serviceByActorEntries = await Promise.all(
-          actorList.map(async (actor) => {
-            try {
-              const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(actor.id)}`, {
-                headers: { Authorization: `Bearer ${token}` },
-                cache: "no-store",
-              })
-              if (!res.ok) return [actor.id, 0] as const
-              const data = (await res.json()) as ServiceBadgeResponse
-              return [actor.id, (Number(data.mural_count) || 0) + (Number(data.chat_unread) || 0)] as const
-            } catch {
-              return [actor.id, 0] as const
-            }
-          })
-        )
-        const byActor: Record<string, number> = {}
-        for (const actor of actorList) {
-          byActor[actor.id] =
-            (convByActor.get(actor.id) || 0) +
-            (serviceByActorEntries.find(([id]) => id === actor.id)?.[1] || 0)
-        }
-        const osUnread = Number(serviceData.unread_chats) || 0
-        if (!cancelled) {
-          setActors(actorList)
-          setActorUnread(byActor)
-          setServiceUnread(osUnread)
-          setUnread((Number(convData.total) || 0) + osUnread)
-        }
+        const res = await fetch("/api/entity-follows/actors", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        })
+        const data = res.ok ? ((await res.json()) as ActorsResponse) : { actors: [] }
+        if (!cancelled) setActors(Array.isArray(data.actors) ? data.actors : [])
       } catch {
-        // silencioso
+        if (!cancelled) setActors([])
       }
     }
 
-    fetchUnread()
-    const t = setInterval(fetchUnread, POLL_MS)
-    const onChanged = () => fetchUnread()
-    window.addEventListener("mensagens:unread-changed", onChanged)
-
+    void fetchActors()
     return () => {
       cancelled = true
-      clearInterval(t)
-      window.removeEventListener("mensagens:unread-changed", onChanged)
     }
-  }, [authed])
+  }, [authed, open])
 
   if (!authed) return null
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t("messagesHeaderTitle", "Mensagens")}
@@ -190,7 +130,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
           </DropdownMenuItem>
         ) : (
           actors.map((actor) => {
-            const count = actorUnread[actor.id] || 0
+            const count = navCounts.conversationByActor[actor.id] || 0
             return (
               <DropdownMenuItem
                 key={actor.id}

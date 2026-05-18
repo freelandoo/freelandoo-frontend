@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -12,13 +12,14 @@ import { UserDropside } from "@/components/layout/UserDropside"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 export default function SiteHeader() {
   const { user, status, logout } = useAuth()
   const pathname = usePathname() || "/"
   const router = useRouter()
   const [dropsideOpen, setDropsideOpen] = useState(false)
-  const [unreadSR, setUnreadSR] = useState(false)
+  const navCounts = useNavCounts()
   const tAuth = useTranslations("Auth")
   const tNav = useTranslations("Navigation")
 
@@ -32,27 +33,7 @@ export default function SiteHeader() {
     }
   }
 
-  // Polling leve do badge de service-request (a cada 60s) para acender o ponto no dropside
-  useEffect(() => {
-    if (!isLoggedIn) return
-    let cancelled = false
-    const fetchBadge = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) return
-      try {
-        const res = await fetch("/api/service-requests/badge/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (!cancelled) setUnreadSR(!!data.has_new || (data.unread_chats ?? 0) > 0)
-        }
-      } catch { /* silent */ }
-    }
-    fetchBadge()
-    const interval = setInterval(fetchBadge, 60000)
-    return () => { cancelled = true; clearInterval(interval) }
-  }, [isLoggedIn])
+  const unreadSR = navCounts.serviceHasNew || navCounts.serviceUnread > 0
 
   return (
     <header className="sticky top-0 z-50 w-full">
