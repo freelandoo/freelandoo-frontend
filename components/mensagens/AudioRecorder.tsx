@@ -6,6 +6,7 @@ import { Loader2, Mic, Play, Pause, Send, Square, Trash2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface AudioRecorderProps {
   conversationId: string
@@ -63,6 +64,7 @@ export function AudioRecorder({
   onActiveChange,
   disabled,
 }: AudioRecorderProps) {
+  const t = useTranslations("Conversation")
   const [state, setState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -118,7 +120,7 @@ export function AudioRecorder({
     if (state !== "idle" && state !== "error") return
     setError(null)
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setError("Seu navegador não suporta gravação de áudio.")
+      setError(t("noAudioSupportError", "Seu navegador não suporta gravação de áudio."))
       setState("error")
       return
     }
@@ -133,8 +135,8 @@ export function AudioRecorder({
       })
     } catch (err) {
       const msg = err instanceof DOMException && err.name === "NotAllowedError"
-        ? "Permissão de microfone negada."
-        : "Não foi possível acessar o microfone."
+        ? t("microphonePermissionDenied", "Permissão de microfone negada.")
+        : t("microphoneAccessError", "Não foi possível acessar o microfone.")
       setError(msg)
       setState("error")
       return
@@ -152,7 +154,7 @@ export function AudioRecorder({
         recorder = new MediaRecorder(stream)
       } catch (err) {
         cleanupStream()
-        setError("Gravação não suportada neste navegador.")
+        setError(t("recordingNotSupportedError", "Gravação não suportada neste navegador."))
         setState("error")
         return
       }
@@ -167,12 +169,12 @@ export function AudioRecorder({
       const finalBlob = new Blob(chunksRef.current, { type: recorderMimeRef.current })
       cleanupStream()
       if (finalBlob.size === 0) {
-        setError("Gravação vazia. Tente de novo.")
+        setError(t("emptyRecordingError", "Gravação vazia. Tente de novo."))
         setState("error")
         return
       }
       if (finalBlob.size > MAX_BYTES) {
-        setError("Áudio muito grande (>5MB). Grave mais curto.")
+        setError(t("audioTooLargeError", "Áudio muito grande (>5MB). Grave mais curto."))
         setState("error")
         return
       }
@@ -186,7 +188,7 @@ export function AudioRecorder({
       recorder.start()
     } catch {
       cleanupStream()
-      setError("Falha ao iniciar gravação.")
+      setError(t("recordingStartError", "Falha ao iniciar gravação."))
       setState("error")
       return
     }
@@ -206,7 +208,7 @@ export function AudioRecorder({
         }
       }
     }, 200)
-  }, [cleanupStream, state])
+  }, [cleanupStream, state, t])
 
   const stopRecording = useCallback(() => {
     if (state !== "recording") return
@@ -280,17 +282,17 @@ export function AudioRecorder({
       let data: { error?: string } = {}
       try { data = text ? JSON.parse(text) : {} } catch { /* non-json */ }
       if (!res.ok) {
-        setError(data?.error || `Erro ${res.status} ao enviar áudio`)
+        setError(data?.error || t("sendAudioStatusError", "Erro {status} ao enviar áudio").replace("{status}", String(res.status)))
         setState("preview")
         return
       }
       onSent?.()
       reset()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao enviar áudio")
+      setError(err instanceof Error ? err.message : t("sendAudioError", "Falha ao enviar áudio"))
       setState("preview")
     }
-  }, [actorId, actorType, blob, conversationId, elapsed, onSent, reset])
+  }, [actorId, actorType, blob, conversationId, elapsed, onSent, reset, t])
 
   if (state === "idle" || state === "error") {
     return (
@@ -304,8 +306,8 @@ export function AudioRecorder({
           disabled={disabled}
           whileTap={{ scale: 0.94 }}
           transition={SPRING}
-          aria-label="Gravar áudio"
-          title="Gravar áudio"
+          aria-label={t("startRecordingAriaLabel", "Gravar áudio")}
+          title={t("startRecordingAriaLabel", "Gravar áudio")}
           className={cn(
             "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/65 transition-colors hover:bg-white/[0.08] hover:text-yellow-300",
             disabled && "cursor-not-allowed opacity-40"
@@ -331,14 +333,15 @@ export function AudioRecorder({
           className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-400"
         />
         <span className="flex-1 text-sm tabular-nums text-red-100">
-          Gravando · {formatTime(elapsed)}
-          <span className="ml-1 text-[10px] text-red-200/55">/ {formatTime(MAX_DURATION_SEC)}</span>
+          {t("recordingLabel", "Gravando · {time} / {max}")
+            .replace("{time}", formatTime(elapsed))
+            .replace("{max}", formatTime(MAX_DURATION_SEC))}
         </span>
         <button
           type="button"
           onClick={cancelRecording}
-          aria-label="Cancelar"
-          title="Cancelar"
+          aria-label={t("cancelRecordingAriaLabel", "Cancelar")}
+          title={t("cancelRecordingAriaLabel", "Cancelar")}
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/5 hover:text-red-300"
         >
           <Trash2 className="h-4 w-4" />
@@ -348,7 +351,7 @@ export function AudioRecorder({
           onClick={stopRecording}
           whileTap={{ scale: 0.94 }}
           transition={SPRING}
-          aria-label="Parar gravação"
+          aria-label={t("stopRecordingAriaLabel", "Parar gravação")}
           className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white shadow-[0_8px_20px_-8px_rgba(239,68,68,0.55)]"
         >
           <Square className="h-4 w-4 fill-current" />
@@ -379,7 +382,7 @@ export function AudioRecorder({
       <button
         type="button"
         onClick={togglePlay}
-        aria-label={playing ? "Pausar" : "Tocar"}
+        aria-label={playing ? t("pauseAudioAriaLabel", "Pausar") : t("playAudioAriaLabel", "Tocar")}
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-yellow-300 transition hover:bg-white/[0.14]"
       >
         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-px" />}
@@ -396,7 +399,7 @@ export function AudioRecorder({
           {error ? (
             <span className="text-red-300">{error}</span>
           ) : (
-            <span className="text-white/40">Pronto pra enviar</span>
+            <span className="text-white/40">{t("readyToSendLabel", "Pronto pra enviar")}</span>
           )}
         </div>
       </div>
@@ -404,8 +407,8 @@ export function AudioRecorder({
         type="button"
         onClick={cancelRecording}
         disabled={state === "uploading"}
-        aria-label="Cancelar"
-        title="Cancelar"
+        aria-label={t("cancelAriaLabel", "Cancelar")}
+        title={t("cancelAriaLabel", "Cancelar")}
         className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/5 hover:text-red-300 disabled:opacity-40"
       >
         <Trash2 className="h-4 w-4" />
@@ -416,7 +419,7 @@ export function AudioRecorder({
         disabled={state === "uploading" || !blob}
         whileTap={{ scale: 0.94 }}
         transition={SPRING}
-        aria-label="Enviar áudio"
+        aria-label={t("sendAudioAriaLabel", "Enviar áudio")}
         className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-50"
       >
         {state === "uploading" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -436,6 +439,7 @@ interface AudioMessageProps {
 }
 
 export function AudioMessage({ src, durationSeconds, mine }: AudioMessageProps) {
+  const t = useTranslations("Conversation")
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -481,7 +485,7 @@ export function AudioMessage({ src, durationSeconds, mine }: AudioMessageProps) 
       <button
         type="button"
         onClick={toggle}
-        aria-label={playing ? "Pausar" : "Tocar"}
+        aria-label={playing ? t("pauseAudioAriaLabel", "Pausar") : t("playAudioAriaLabel", "Tocar")}
         className={cn(
           "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
           mine
@@ -494,7 +498,7 @@ export function AudioMessage({ src, durationSeconds, mine }: AudioMessageProps) 
       <div className="min-w-0 flex-1">
         <div
           role="slider"
-          aria-label="Progresso do áudio"
+          aria-label={t("audioProgressAriaLabel", "Progresso do áudio")}
           aria-valuenow={Math.round(progress * 100)}
           aria-valuemin={0}
           aria-valuemax={100}

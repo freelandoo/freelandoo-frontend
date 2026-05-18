@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react"
 import { Check, ChevronDown, Crown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type Option = { value: string; label: string }
+type LevelOption = Option & { i18nKey: string }
 
 type Field =
   | "estado"
@@ -46,16 +48,17 @@ interface FiltersMobileProps {
   resultsCount: number
 }
 
-const NIVEIS: Option[] = [
-  { value: "", label: "Todos os níveis" },
-  { value: "1", label: "Nível 1+" },
-  { value: "5", label: "Nível 5+" },
-  { value: "10", label: "Nível 10+" },
-  { value: "20", label: "Nível 20+" },
-  { value: "30", label: "Nível 30+" },
+const NIVEIS: LevelOption[] = [
+  { value: "", label: "Todos os níveis", i18nKey: "allLevelsOption" },
+  { value: "1", label: "Nível 1+", i18nKey: "level1Plus" },
+  { value: "5", label: "Nível 5+", i18nKey: "level5Plus" },
+  { value: "10", label: "Nível 10+", i18nKey: "level10Plus" },
+  { value: "20", label: "Nível 20+", i18nKey: "level20Plus" },
+  { value: "30", label: "Nível 30+", i18nKey: "level30Plus" },
 ]
 
 export function SearchFiltersMobile(props: FiltersMobileProps) {
+  const t = useTranslations("Search")
   const {
     estados,
     municipios,
@@ -89,23 +92,28 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
     }
   }, [open])
 
-  const estadoLabel = selectedEstado || "Todos"
+  const levelOptions = NIVEIS.map((opt) => ({
+    value: opt.value,
+    label: t(opt.i18nKey, opt.label),
+  }))
+
+  const estadoLabel = selectedEstado || t("allStatesOption", "Todos os estados")
   const cityLabel = (() => {
-    if (!selectedCity) return selectedEstado ? "Todas" : "—"
+    if (!selectedCity) return selectedEstado ? t("allCitiesLabel", "Todas") : t("noCityLabel", "—")
     const m = municipios.find((mu) => String(mu.id) === selectedCity)
     return m?.nome || selectedCity
   })()
   const machineLabel = (() => {
-    if (idMachine == null) return "Todas"
-    return machines.find((m) => m.id_machine === idMachine)?.name || "—"
+    if (idMachine == null) return t("allMachinesLabel", "Todas")
+    return machines.find((m) => m.id_machine === idMachine)?.name || t("noCityLabel", "—")
   })()
   const profissaoLabel = (() => {
-    if (idMachine == null) return "—"
-    if (idCategory == null) return "Todas"
-    return machineCategories.find((c) => c.id_category === idCategory)?.desc_category || "—"
+    if (idMachine == null) return t("noCityLabel", "—")
+    if (idCategory == null) return t("allProfessionsLabel", "Todas")
+    return machineCategories.find((c) => c.id_category === idCategory)?.desc_category || t("noCityLabel", "—")
   })()
   const nivelLabel = (() => {
-    if (levelMin == null) return "Todos"
+    if (levelMin == null) return t("allLevelsOption", "Todos os níveis")
     return `${levelMin}+`
   })()
 
@@ -117,14 +125,14 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
         <div className="-mx-4 overflow-x-auto px-4 pb-1">
           <div className="flex items-center gap-2 whitespace-nowrap">
             <FilterChip
-              label="Estado"
+              label={t("stateFilterLabel", "Estado")}
               value={estadoLabel}
               active={!!selectedEstado}
               onClick={() => setOpen("estado")}
               accentColor={accentColor}
             />
             <FilterChip
-              label="Cidade"
+              label={t("cityFilterLabel", "Cidade")}
               value={cityLabel}
               active={!!selectedCity}
               disabled={!selectedEstado}
@@ -132,14 +140,14 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
               accentColor={accentColor}
             />
             <FilterChip
-              label="Máquina"
+              label={t("machineFilterLabel", "Máquina")}
               value={machineLabel}
               active={idMachine != null}
               onClick={() => setOpen("maquina")}
               accentColor={accentColor}
             />
             <FilterChip
-              label="Profissão"
+              label={t("professionFilterLabel", "Profissão")}
               value={profissaoLabel}
               active={idCategory != null}
               disabled={!machineActive}
@@ -147,7 +155,7 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
               accentColor={accentColor}
             />
             <FilterChip
-              label="Nível"
+              label={t("levelFilterLabel", "Nível")}
               value={nivelLabel}
               active={levelMin != null}
               onClick={() => setOpen("nivel")}
@@ -164,13 +172,13 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
               )}
             >
               <Crown className={cn("h-3.5 w-3.5", premiumOnly ? "fill-amber-300 text-amber-300" : "text-white/60")} />
-              Premium
+              {t("premiumButtonLabel", "Premium")}
             </button>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-end px-1">
           <span className="text-[11px] uppercase tracking-wider text-white/50">
-            {resultsCount} resultado{resultsCount !== 1 ? "s" : ""}
+            {t("resultsCountLabel", "{n} resultado(s)").replace("{n}", String(resultsCount))}
           </span>
         </div>
       </div>
@@ -178,13 +186,15 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
       {/* Bottom sheets */}
       <BottomSheet
         open={open === "estado"}
-        title="Estado"
+        title={t("stateBottomSheetTitle", "Estado")}
+        closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
+        closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
       >
         <OptionList
           value={selectedEstado}
           options={[
-            { value: "", label: "Todos os estados" },
+            { value: "", label: t("allStatesOption", "Todos os estados") },
             ...estados.map((e) => ({ value: e.uf, label: `${e.nome} — ${e.uf}` })),
           ]}
           onSelect={(v) => {
@@ -196,16 +206,18 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
 
       <BottomSheet
         open={open === "cidade"}
-        title="Cidade"
+        title={t("cityBottomSheetTitle", "Cidade")}
+        closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
+        closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
       >
         {loadingMunicipios ? (
-          <p className="py-6 text-center text-sm text-white/60">Carregando…</p>
+          <p className="py-6 text-center text-sm text-white/60">{t("loadingLabel", "Carregando…")}</p>
         ) : (
           <OptionList
             value={selectedCity}
             options={[
-              { value: "", label: selectedEstado ? "Todas as cidades" : "Selecione um estado" },
+              { value: "", label: selectedEstado ? t("allCitiesOption", "Todas as cidades") : t("selectStateHint", "Selecione um estado") },
               ...municipios.map((m) => ({ value: String(m.id), label: m.nome })),
             ]}
             onSelect={(v) => {
@@ -218,13 +230,15 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
 
       <BottomSheet
         open={open === "maquina"}
-        title="Máquina"
+        title={t("machineBottomSheetTitle", "Máquina")}
+        closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
+        closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
       >
         <OptionList
           value={idMachine != null ? String(idMachine) : ""}
           options={[
-            { value: "", label: "Todas as máquinas" },
+            { value: "", label: t("allMachinesOption", "Todas as máquinas") },
             ...machines
               .filter((m) => m.is_active !== false)
               .map((m) => ({ value: String(m.id_machine), label: m.name })),
@@ -239,16 +253,18 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
 
       <BottomSheet
         open={open === "profissao"}
-        title="Profissão"
+        title={t("professionBottomSheetTitle", "Profissão")}
+        closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
+        closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
       >
         {!machineActive ? (
-          <p className="py-6 text-center text-sm text-white/60">Selecione uma máquina primeiro.</p>
+          <p className="py-6 text-center text-sm text-white/60">{t("selectMachineFirst", "Selecione uma máquina primeiro.")}</p>
         ) : (
           <OptionList
             value={idCategory != null ? String(idCategory) : ""}
             options={[
-              { value: "", label: "Todas as profissões" },
+              { value: "", label: t("allProfessionsOption", "Todas as profissões") },
               ...machineCategories.map((c) => ({
                 value: String(c.id_category),
                 label: c.desc_category,
@@ -264,12 +280,14 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
 
       <BottomSheet
         open={open === "nivel"}
-        title="Nível mínimo"
+        title={t("minimumLevelSheetTitle", "Nível mínimo")}
+        closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
+        closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
       >
         <OptionList
           value={levelMin != null ? String(levelMin) : ""}
-          options={NIVEIS}
+          options={levelOptions}
           onSelect={(v) => {
             setLevelMin(v ? Number(v) : null)
             setOpen(null)
@@ -328,11 +346,15 @@ function BottomSheet({
   open,
   onClose,
   title,
+  closeOverlayLabel,
+  closeButtonLabel,
   children,
 }: {
   open: boolean
   onClose: () => void
   title: string
+  closeOverlayLabel: string
+  closeButtonLabel: string
   children: React.ReactNode
 }) {
   if (!open) return null
@@ -340,7 +362,7 @@ function BottomSheet({
     <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={title}>
       <button
         type="button"
-        aria-label="Fechar filtro"
+        aria-label={closeOverlayLabel}
         onClick={onClose}
         className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in"
       />
@@ -350,7 +372,7 @@ function BottomSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label={closeButtonLabel}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/60 hover:bg-white/5 hover:text-white"
           >
             <X className="h-4 w-4" />

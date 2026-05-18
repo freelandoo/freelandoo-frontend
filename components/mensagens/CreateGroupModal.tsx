@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface SubprofileOption {
   id_profile: string
@@ -35,6 +36,7 @@ function initials(name: string | null | undefined) {
 const MAX_MEMBERS = 200
 
 export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated }: Props) {
+  const t = useTranslations("Messages")
   const [name, setName] = useState("")
   const [query, setQuery] = useState("")
   const [options, setOptions] = useState<SubprofileOption[]>([])
@@ -105,11 +107,11 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
   const handleSubmit = async () => {
     setError(null)
     if (!ownerProfileId) {
-      setError("Selecione um subperfil ator antes de criar grupo.")
+      setError(t("selectActorError", "Selecione um subperfil ator antes de criar grupo."))
       return
     }
     if (name.trim().length < 2) {
-      setError("Dê um nome com pelo menos 2 caracteres.")
+      setError(t("invalidGroupNameError", "Dê um nome com pelo menos 2 caracteres."))
       return
     }
     setSubmitting(true)
@@ -129,14 +131,14 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data?.error || "Erro ao criar grupo")
+        setError(data?.error || t("createGroupError", "Erro ao criar grupo"))
         return
       }
       const id = data?.conversation?.id_conversation
       onCreated(id)
       onOpenChange(false)
     } catch {
-      setError("Erro de conexão")
+      setError(t("connectionError", "Erro de conexão"))
     } finally {
       setSubmitting(false)
     }
@@ -151,9 +153,9 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
               <Users className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <DialogTitle className="text-base text-white">Criar grupo</DialogTitle>
+              <DialogTitle className="text-base text-white">{t("createGroupModalTitle", "Criar grupo")}</DialogTitle>
               <DialogDescription className="text-xs text-white/50">
-                Convide até {MAX_MEMBERS} subperfis para conversar juntos.
+                {t("createGroupDescription", "Convide até {max} subperfis para conversar juntos.").replace("{max}", String(MAX_MEMBERS))}
               </DialogDescription>
             </div>
           </div>
@@ -161,11 +163,11 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
 
         <div className="px-6 pt-5 pb-3 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-white/50">Nome do grupo</label>
+            <label className="text-[11px] uppercase tracking-wider text-white/50">{t("groupNameLabel", "Nome do grupo")}</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex.: Equipe do projeto X"
+              placeholder={t("groupNamePlaceholder", "Ex.: Equipe do projeto X")}
               maxLength={120}
               className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
             />
@@ -174,10 +176,10 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[11px] uppercase tracking-wider text-white/50">
-                Convidar membros
+                {t("inviteMembersLabel", "Convidar membros")}
               </label>
               <span className="text-[10px] tabular-nums text-white/40">
-                {selected.length}/{MAX_MEMBERS - 1}
+                {t("memberCountLabel", "{selected}/{max}").replace("{selected}", String(selected.length)).replace("{max}", String(MAX_MEMBERS - 1))}
               </span>
             </div>
             <div className="relative">
@@ -185,7 +187,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar subperfil por nome ou @username..."
+                placeholder={t("searchSubprofileInputPlaceholder", "Buscar subperfil por nome ou @username...")}
                 className="h-11 rounded-xl border-white/10 bg-white/[0.03] pl-9 text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
               />
             </div>
@@ -223,7 +225,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
           {query.trim().length < 2 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <Users className="h-7 w-7 text-white/30 mb-2" />
-              <p className="text-xs text-white/45">Digite para buscar subperfis</p>
+              <p className="text-xs text-white/45">{t("typeToSearchHint", "Digite para buscar subperfis")}</p>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-14">
@@ -232,7 +234,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
           ) : options.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <Search className="h-7 w-7 text-white/30 mb-2" />
-              <p className="text-xs text-white/45">Nenhum subperfil encontrado</p>
+              <p className="text-xs text-white/45">{t("noSubprofilesFoundMessage", "Nenhum subperfil encontrado")}</p>
             </div>
           ) : (
             <ul className="space-y-1">
@@ -294,7 +296,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
             disabled={submitting}
             className="h-10 rounded-xl border-white/10 bg-transparent text-white/70 hover:bg-white/[0.04] hover:text-white"
           >
-            Cancelar
+            {t("cancelButton", "Cancelar")}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -302,9 +304,9 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
             className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 font-medium text-black hover:from-yellow-300 hover:to-amber-400 shadow-[0_8px_24px_-8px_rgba(250,204,21,0.5)]"
           >
             {submitting ? (
-              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />Criando…</>
+              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />{t("creatingButton", "Criando…")}</>
             ) : (
-              <><Sparkles className="mr-1.5 h-4 w-4" />Criar grupo</>
+              <><Sparkles className="mr-1.5 h-4 w-4" />{t("createGroupButton", "Criar grupo")}</>
             )}
           </Button>
         </div>

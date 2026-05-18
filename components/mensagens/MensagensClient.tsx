@@ -38,6 +38,7 @@ import {
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import type {
   ConversationDetail,
   ConversationListItem,
@@ -81,7 +82,7 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
-function formatTime(iso: string | null): string {
+function formatTime(iso: string | null, locale: string = "pt-BR"): string {
   if (!iso) return ""
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
@@ -91,13 +92,13 @@ function formatTime(iso: string | null): string {
     d.getMonth() === now.getMonth() &&
     d.getDate() === now.getDate()
   if (sameDay) {
-    return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
   }
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000)
   if (diffDays < 7) {
-    return d.toLocaleDateString("pt-BR", { weekday: "short" })
+    return d.toLocaleDateString(locale, { weekday: "short" })
   }
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+  return d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
 }
 
 function dayKey(iso: string): string {
@@ -105,18 +106,22 @@ function dayKey(iso: string): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 }
 
-function dayLabel(iso: string): string {
+function dayLabel(
+  iso: string,
+  t: (key: string, fallback?: string) => string,
+  locale: string = "pt-BR"
+): string {
   const d = new Date(iso)
   const now = new Date()
   const today = dayKey(now.toISOString())
   const yesterday = new Date(now.getTime() - 86_400_000)
-  if (dayKey(iso) === today) return "Hoje"
-  if (dayKey(iso) === dayKey(yesterday.toISOString())) return "Ontem"
+  if (dayKey(iso) === today) return t("todayLabel", "Hoje")
+  if (dayKey(iso) === dayKey(yesterday.toISOString())) return t("yesterdayLabel", "Ontem")
   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000)
   if (diffDays < 7) {
-    return d.toLocaleDateString("pt-BR", { weekday: "long" })
+    return d.toLocaleDateString(locale, { weekday: "long" })
   }
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+  return d.toLocaleDateString(locale, { day: "2-digit", month: "long", year: "numeric" })
 }
 
 function entityInitials(name: string | null | undefined): string {
@@ -234,22 +239,27 @@ const OS_TERMINAL_STATUS = new Set([
   "CLOSED_OTHER_WON",
 ])
 
-function osStatusLabel(status: string): string {
-  switch (status) {
-    case "PENDING": return "Aguardando"
-    case "PRO_ACCEPTED": return "Profissional aceitou"
-    case "FINALIZED": return "Finalizada"
-    case "USER_REJECTED": return "Você rejeitou"
-    case "PRO_REJECTED": return "Profissional rejeitou"
-    case "CLOSED_OTHER_WON": return "Outro profissional foi escolhido"
-    case "OPEN": return "Aberta"
-    case "FULFILLED": return "Encerrada"
-    case "CANCELED": return "Cancelada"
-    default: return status
-  }
+const OS_STATUS_I18N: Record<string, { key: string; fallback: string }> = {
+  PENDING:          { key: "osStatusPending",       fallback: "Aguardando" },
+  PRO_ACCEPTED:     { key: "osStatusAccepted",      fallback: "Profissional aceitou" },
+  FINALIZED:        { key: "osStatusFinalized",     fallback: "Finalizada" },
+  USER_REJECTED:    { key: "osStatusUserRejected",  fallback: "Você rejeitou" },
+  PRO_REJECTED:     { key: "osStatusProRejected",   fallback: "Profissional rejeitou" },
+  CLOSED_OTHER_WON: { key: "osStatusOtherWon",      fallback: "Outro profissional foi escolhido" },
+  OPEN:             { key: "osStatusOpen",          fallback: "Aberta" },
+  FULFILLED:        { key: "osStatusFulfilled",     fallback: "Encerrada" },
+  CANCELED:         { key: "osStatusCanceled",      fallback: "Cancelada" },
+}
+
+function osStatusLabel(status: string, t?: (key: string, fallback?: string) => string): string {
+  const m = OS_STATUS_I18N[status]
+  if (!m) return status
+  return t ? t(m.key, m.fallback) : m.fallback
 }
 
 export default function MensagensClient() {
+  const t = useTranslations("Messages")
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { status } = useAuth()
@@ -413,12 +423,12 @@ export default function MensagensClient() {
       )
       setConversations(Array.isArray(data?.items) ? data.items : [])
     } catch (err) {
-      setConvsError((err as Error).message || "Erro ao carregar conversas")
+      setConvsError((err as Error).message || t("loadConversationsError", "Erro ao carregar conversas"))
       setConversations([])
     } finally {
       setConvsLoading(false)
     }
-  }, [actorId, activeActor?.type])
+  }, [actorId, activeActor?.type, t])
 
   // Carrega lista quando muda actor
   useEffect(() => {
@@ -475,13 +485,13 @@ export default function MensagensClient() {
         }
       } catch (err) {
         if (!opts?.silent) {
-          setMessagesError((err as Error).message || "Erro ao carregar mensagens")
+          setMessagesError((err as Error).message || t("loadMessagesError", "Erro ao carregar mensagens"))
         }
       } finally {
         if (!opts?.silent) setMessagesLoading(false)
       }
     },
-    [actorId, activeActor?.type]
+    [actorId, activeActor?.type, t]
   )
 
   // Carrega thread quando muda activeConv
@@ -510,12 +520,12 @@ export default function MensagensClient() {
       const data = await jsonFetch<OsChatsListResponse>(`/api/service-requests/me/chats`)
       setOsChats(Array.isArray(data?.chats) ? data.chats : [])
     } catch (err) {
-      setOsChatsError((err as Error).message || "Erro ao carregar O.S.")
+      setOsChatsError((err as Error).message || t("loadOsError", "Erro ao carregar O.S."))
       setOsChats([])
     } finally {
       setOsChatsLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -565,13 +575,13 @@ export default function MensagensClient() {
         window.dispatchEvent(new Event("mensagens:unread-changed"))
       } catch (err) {
         if (!opts?.silent) {
-          setOsMessagesError((err as Error).message || "Erro ao carregar mensagens")
+          setOsMessagesError((err as Error).message || t("loadMessagesError", "Erro ao carregar mensagens"))
         }
       } finally {
         if (!opts?.silent) setOsMessagesLoading(false)
       }
     },
-    []
+    [t]
   )
 
   useEffect(() => {
@@ -724,11 +734,11 @@ export default function MensagensClient() {
       await loadOsThread(activeOsResponseId, { silent: true })
       loadOsChats()
     } catch (err) {
-      setOsMessagesError((err as Error).message || "Erro ao enviar")
+      setOsMessagesError((err as Error).message || t("sendMessageError", "Erro ao enviar"))
     } finally {
       setOsSending(false)
     }
-  }, [osComposer, activeOsResponseId, osSending, loadOsThread, loadOsChats])
+  }, [osComposer, activeOsResponseId, osSending, loadOsThread, loadOsChats, t])
 
   const handleSelectActor = useCallback((id: string) => {
     setActorId(id)
@@ -788,11 +798,11 @@ export default function MensagensClient() {
       // refresh otimista da lista
       loadConversations()
     } catch (err) {
-      setMessagesError((err as Error).message || "Erro ao enviar")
+      setMessagesError((err as Error).message || t("sendMessageError", "Erro ao enviar"))
     } finally {
       setSending(false)
     }
-  }, [composer, actorId, activeConvId, sending, activeActor?.type, loadConversations])
+  }, [composer, actorId, activeConvId, sending, activeActor?.type, loadConversations, t])
 
   if (status === "loading") {
     return (
@@ -808,13 +818,13 @@ export default function MensagensClient() {
         <div className="max-w-md rounded-xl border border-white/10 bg-neutral-900/60 p-8 text-center">
           <MessageCircle className="mx-auto mb-3 h-10 w-10 text-primary" />
           <h1 className="mb-2 text-xl font-semibold text-white">
-            Entre para ver suas mensagens
+            {t("loginPromptTitle", "Entre para ver suas mensagens")}
           </h1>
           <p className="mb-5 text-sm text-white/60">
-            Você precisa estar logado para usar a caixa de mensagens.
+            {t("loginPromptDescription", "Você precisa estar logado para usar a caixa de mensagens.")}
           </p>
           <Link href="/login">
-            <Button>Fazer login</Button>
+            <Button>{t("loginButton", "Fazer login")}</Button>
           </Link>
         </div>
       </div>
@@ -845,10 +855,10 @@ export default function MensagensClient() {
           <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] px-4 py-3.5">
             <div className="min-w-0">
               <h2 className="text-base font-semibold tracking-tight text-white">
-                Mensagens
+                {t("messagesHeaderTitle", "Mensagens")}
               </h2>
               <p className="text-[11px] text-white/40">
-                {tab === "conv" ? "Suas conversas" : "Suas ordens de serviço"}
+                {tab === "conv" ? t("conversationsSubtitle", "Suas conversas") : t("osSubtitle", "Suas ordens de serviço")}
               </p>
             </div>
             {tab === "conv" ? (
@@ -858,8 +868,8 @@ export default function MensagensClient() {
                   onClick={() => setCreateGroupOpen(true)}
                   disabled={!actorId || isClanActor}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-black shadow-[0_8px_20px_-6px_rgba(250,204,21,0.5)] transition-transform hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  title="Criar grupo"
-                  aria-label="Criar grupo"
+                  title={t("createGroupButtonTooltip", "Criar grupo")}
+                  aria-label={t("createGroupButtonTooltip", "Criar grupo")}
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -879,15 +889,15 @@ export default function MensagensClient() {
               active={tab === "conv"}
               onClick={() => handleSelectTab("conv")}
               icon={<MessageCircle className="h-3.5 w-3.5" />}
-              label="Conversas"
-              shortLabel="Conv."
+              label={t("conversationsTabLabel", "Conversas")}
+              shortLabel={t("conversationsTabShortLabel", "Conv.")}
             />
             <TabBtn
               active={tab === "os"}
               onClick={() => handleSelectTab("os")}
               icon={<ClipboardList className="h-3.5 w-3.5" />}
-              label="O.S."
-              shortLabel="O.S."
+              label={t("osTabLabel", "O.S.")}
+              shortLabel={t("osTabLabel", "O.S.")}
             />
             {!isClanActor && (
               <>
@@ -895,15 +905,15 @@ export default function MensagensClient() {
                   active={tab === "global"}
                   onClick={() => handleSelectTab("global")}
                   icon={<Radio className="h-3.5 w-3.5" />}
-                  label="Global"
-                  shortLabel="Global"
+                  label={t("globalTabLabel", "Global")}
+                  shortLabel={t("globalTabLabel", "Global")}
                 />
                 <TabBtn
                   active={tab === "machine"}
                   onClick={() => handleSelectTab("machine")}
                   icon={<Sparkles className="h-3.5 w-3.5" />}
-                  label="Máquinas"
-                  shortLabel="Máq."
+                  label={t("machinesTabLabel", "Máquinas")}
+                  shortLabel={t("machinesTabShortLabel", "Máq.")}
                 />
               </>
             )}
@@ -932,8 +942,8 @@ export default function MensagensClient() {
                   const isGroup = c.kind === "group"
                   const otherHref = isGroup ? null : entityHref(c.other_entity)
                   const title = isGroup
-                    ? (c.name || "Grupo")
-                    : (c.other_entity?.display_name || "Sem nome")
+                    ? (c.name || t("groupFallback", "Grupo"))
+                    : (c.other_entity?.display_name || t("noNameLabel", "Sem nome"))
                   return (
                   <li key={c.id_conversation} className="relative">
                     <button
@@ -969,7 +979,7 @@ export default function MensagensClient() {
                             )}
                           </span>
                           <span className="shrink-0 text-[10px] text-white/40">
-                            {formatTime(c.last_message_at || c.created_at)}
+                            {formatTime(c.last_message_at || c.created_at, locale)}
                           </span>
                         </div>
                         <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -977,8 +987,8 @@ export default function MensagensClient() {
                             "truncate text-xs",
                             c.unread_count > 0 ? "text-white" : "text-white/50"
                           )}>
-                            {c.is_last_message_from_me ? "Você: " : ""}
-                            {c.last_message_preview || "Sem mensagens ainda"}
+                            {c.is_last_message_from_me ? t("sentByMePrefix", "Você: ") : ""}
+                            {c.last_message_preview || t("noMessagesYet", "Sem mensagens ainda")}
                           </span>
                           {c.unread_count > 0 && (
                             <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
@@ -992,7 +1002,7 @@ export default function MensagensClient() {
                       <Link
                         href={otherHref}
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={`Ver perfil de ${c.other_entity?.display_name || "contato"}`}
+                        aria-label={t("viewProfileOfAria", "Ver perfil de {name}").replace("{name}", c.other_entity?.display_name || t("contactFallback", "contato"))}
                         className="absolute left-4 top-3 h-10 w-10 rounded-full"
                       />
                     )}
@@ -1048,14 +1058,14 @@ export default function MensagensClient() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium text-white">
-                            {c.profile.display_name || "Profissional"}
+                            {c.profile.display_name || t("professionalFallback", "Profissional")}
                           </span>
                           <span className="shrink-0 text-[10px] text-white/40">
-                            {formatTime(c.last_message_at || c.response_created_at)}
+                            {formatTime(c.last_message_at || c.response_created_at, locale)}
                           </span>
                         </div>
                         <div className="mt-0.5 truncate text-[10px] text-white/50">
-                          {c.request.machine_name || "Máquina"}
+                          {c.request.machine_name || t("machineFallback", "Máquina")}
                           {c.request.category_name ? ` · ${c.request.category_name}` : ""}
                         </div>
                         <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -1063,7 +1073,7 @@ export default function MensagensClient() {
                             "truncate text-xs",
                             c.unread_count > 0 ? "text-white" : "text-white/50"
                           )}>
-                            {c.last_message || osStatusLabel(c.response_status)}
+                            {c.last_message || osStatusLabel(c.response_status, t)}
                           </span>
                           {c.unread_count > 0 && (
                             <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
@@ -1077,7 +1087,7 @@ export default function MensagensClient() {
                       <Link
                         href={profHref}
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={`Ver perfil de ${c.profile.display_name || "profissional"}`}
+                        aria-label={t("viewProfileOfAria", "Ver perfil de {name}").replace("{name}", c.profile.display_name || t("professionalFallback", "profissional"))}
                         className="absolute left-4 top-3 h-10 w-10 rounded-full"
                       />
                     )}
@@ -1093,16 +1103,15 @@ export default function MensagensClient() {
             <div className="rounded-xl border border-white/10 bg-neutral-900/60 p-4">
               <div className="mb-2 flex items-center gap-2 text-white">
                 <Radio className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm font-semibold">Chat global</span>
+                <span className="text-sm font-semibold">{t("globalChatTitle", "Chat global")}</span>
               </div>
               <p className="text-[12px] leading-relaxed text-white/60">
-                Sala aberta com até 200 usuários simultâneos. Quando lota,
-                uma segunda instância é criada automaticamente.
+                {t("globalChatInfo", "Sala aberta com até 200 usuários simultâneos. Quando lota, uma segunda instância é criada automaticamente.")}
               </p>
               <ul className="mt-3 space-y-1.5 text-[11px] text-white/55">
-                <li>• Mensagens são removidas após 24h.</li>
-                <li>• Comportamento abusivo pode ser denunciado.</li>
-                <li>• Não compartilhe dados pessoais.</li>
+                <li>{t("globalChatBulletExpiration", "• Mensagens são removidas após 24h.")}</li>
+                <li>{t("globalChatBulletReports", "• Comportamento abusivo pode ser denunciado.")}</li>
+                <li>{t("globalChatBulletPrivacy", "• Não compartilhe dados pessoais.")}</li>
               </ul>
             </div>
           </div>
@@ -1125,8 +1134,8 @@ export default function MensagensClient() {
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
               <ChatRoomPanel
                 kind="global"
-                pageTitle="Chat ao vivo"
-                pageSubtitle="Sala global — todos os usuários do Freelandoo"
+                pageTitle={t("liveChat", "Chat ao vivo")}
+                pageSubtitle={t("globalChatPageSubtitle", "Sala global — todos os usuários do Freelandoo")}
               />
             </div>
           </section>
@@ -1143,28 +1152,28 @@ export default function MensagensClient() {
                   <button
                     onClick={handleClearMachine}
                     className="text-white/60 hover:text-white"
-                    aria-label="Trocar máquina"
+                    aria-label={t("changeMachineAria", "Trocar máquina")}
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
-                  <span className="text-xs text-white/60">Trocar máquina</span>
+                  <span className="text-xs text-white/60">{t("changeMachineButton", "Trocar máquina")}</span>
                 </div>
                 <ChatRoomPanel
                   key={`m-${chatMachineId}`}
                   kind="machine"
                   machineId={chatMachineId}
-                  pageTitle="Chat ao vivo"
-                  pageSubtitle="Sala da sua máquina"
+                  pageTitle={t("liveChat", "Chat ao vivo")}
+                  pageSubtitle={t("machineChatPageSubtitle", "Sala da sua máquina")}
                 />
                 <div className="hidden border-t border-white/10 px-4 py-2 md:flex md:items-center md:justify-between">
                   <span className="text-[11px] text-white/45">
-                    Trocar de máquina não afeta sua máquina principal.
+                    {t("changeMachineHint", "Trocar de máquina não afeta sua máquina principal.")}
                   </span>
                   <button
                     onClick={handleClearMachine}
                     className="text-[11px] text-primary hover:underline"
                   >
-                    Trocar máquina
+                    {t("changeMachineButton", "Trocar máquina")}
                   </button>
                 </div>
               </div>
@@ -1188,7 +1197,7 @@ export default function MensagensClient() {
                     <button
                       onClick={handleBackToOsList}
                       className="text-white/60 hover:text-white md:hidden"
-                      aria-label="Voltar"
+                      aria-label={t("backAriaLabel", "Voltar")}
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
@@ -1208,22 +1217,22 @@ export default function MensagensClient() {
                         </Avatar>
                       )
                       return href ? (
-                        <Link href={href} aria-label="Ver perfil" className="shrink-0">{av}</Link>
+                        <Link href={href} aria-label={t("viewProfileLink", "Ver perfil")} className="shrink-0">{av}</Link>
                       ) : av
                     })()}
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-white">
-                        {activeOsChat.profile.display_name || "Profissional"}
+                        {activeOsChat.profile.display_name || t("professionalFallback", "Profissional")}
                       </div>
                       <div className="truncate text-[11px] text-white/50">
-                        {activeOsChat.profile.username ? `@${activeOsChat.profile.username}` : "Subperfil"}
+                        {activeOsChat.profile.username ? `@${activeOsChat.profile.username}` : t("subprofileLabel", "Subperfil")}
                         {" · "}
                         <span className={cn(
                           OS_TERMINAL_STATUS.has(osCurrentStatus || activeOsChat.response_status)
                             ? "text-white/40"
                             : "text-primary"
                         )}>
-                          {osStatusLabel(osCurrentStatus || activeOsChat.response_status)}
+                          {osStatusLabel(osCurrentStatus || activeOsChat.response_status, t)}
                         </span>
                       </div>
                     </div>
@@ -1232,7 +1241,7 @@ export default function MensagensClient() {
                         href={`/p/${activeOsChat.profile.username}/${activeOsChat.profile.sub_profile_slug}`}
                         className="text-xs text-primary hover:underline"
                       >
-                        Ver perfil
+                        {t("viewProfileLink", "Ver perfil")}
                       </Link>
                     ) : null}
                   </div>
@@ -1274,7 +1283,7 @@ export default function MensagensClient() {
                   ) : osMessages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center text-center text-sm text-white/40">
                       <MessageCircle className="mb-2 h-8 w-8" />
-                      Nenhuma mensagem ainda.
+                      {t("noMessagesYetThread", "Nenhuma mensagem ainda.")}
                     </div>
                   ) : (
                     <ul className="flex flex-col gap-2">
@@ -1291,7 +1300,7 @@ export default function MensagensClient() {
                               {showDay && (
                                 <div className="my-4 flex items-center justify-center">
                                   <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-wider text-white/55 backdrop-blur">
-                                    {dayLabel(m.created_at)}
+                                    {dayLabel(m.created_at, t, locale)}
                                   </span>
                                 </div>
                               )}
@@ -1324,7 +1333,7 @@ export default function MensagensClient() {
                                     </MarkdownText>
                                   </div>
                                   <span className={cn("mt-0.5 px-1 text-[10px] tabular-nums", mine ? "text-white/40" : "text-white/35")}>
-                                    {formatTime(m.created_at)}
+                                    {formatTime(m.created_at, locale)}
                                   </span>
                                 </div>
                               </motion.li>
@@ -1341,7 +1350,7 @@ export default function MensagensClient() {
                   {OS_TERMINAL_STATUS.has(osCurrentStatus || activeOsChat.response_status) ? (
                     <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[11px] text-white/55">
                       <Lock className="h-3.5 w-3.5" />
-                      Conversa encerrada — {osStatusLabel(osCurrentStatus || activeOsChat.response_status).toLowerCase()}.
+                      {t("conversationClosedStatus", "Conversa encerrada — {status}.").replace("{status}", osStatusLabel(osCurrentStatus || activeOsChat.response_status, t).toLowerCase())}
                     </div>
                   ) : (
                     <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
@@ -1359,7 +1368,7 @@ export default function MensagensClient() {
                             handleOsSend()
                           }
                         }}
-                        placeholder="Escrever mensagem"
+                        placeholder={t("writeMessagePlaceholder", "Escrever mensagem")}
                         rows={1}
                         className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                       />
@@ -1369,7 +1378,7 @@ export default function MensagensClient() {
                         disabled={osSending || !osComposer.trim()}
                         whileTap={{ scale: 0.94 }}
                         transition={SPRING}
-                        aria-label="Enviar"
+                        aria-label={t("sendMessageAriaLabel", "Enviar")}
                         className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                       >
                         {osSending ? (
@@ -1400,7 +1409,7 @@ export default function MensagensClient() {
                 <button
                   onClick={handleBackToList}
                   className="text-white/60 hover:text-white md:hidden"
-                  aria-label="Voltar"
+                  aria-label={t("backAriaLabel", "Voltar")}
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
@@ -1415,15 +1424,15 @@ export default function MensagensClient() {
                     </Avatar>
                   )
                   return href ? (
-                    <Link href={href} aria-label="Ver perfil" className="shrink-0">{av}</Link>
+                    <Link href={href} aria-label={t("viewProfileLink", "Ver perfil")} className="shrink-0">{av}</Link>
                   ) : av
                 })()}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-white">
-                    {activeDetail?.other_entity?.display_name || "Conversa"}
+                    {activeDetail?.other_entity?.display_name || t("conversationFallback", "Conversa")}
                   </div>
                   <div className="truncate text-[11px] text-white/50">
-                    {activeDetail?.other_entity?.type === "clan" ? "Clan" : "Subperfil"}
+                    {activeDetail?.other_entity?.type === "clan" ? t("clanLabel", "Clan") : t("subprofileLabel", "Subperfil")}
                     {activeDetail?.other_entity?.username
                       ? ` · @${activeDetail.other_entity.username}`
                       : ""}
@@ -1438,7 +1447,7 @@ export default function MensagensClient() {
                     }
                     className="text-xs text-primary hover:underline"
                   >
-                    Ver perfil
+                        {t("viewProfileLink", "Ver perfil")}
                   </Link>
                 ) : null}
               </header>
@@ -1455,7 +1464,7 @@ export default function MensagensClient() {
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center text-center text-sm text-white/40">
                     <MessageCircle className="mb-2 h-8 w-8" />
-                    Comece a conversa.
+                    {t("startConversationHint", "Comece a conversa.")}
                   </div>
                 ) : (
                   <ul className="flex flex-col gap-2">
@@ -1472,7 +1481,7 @@ export default function MensagensClient() {
                             {showDay && (
                               <div className="my-4 flex items-center justify-center">
                                 <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-wider text-white/55 backdrop-blur">
-                                  {dayLabel(m.created_at)}
+                                  {dayLabel(m.created_at, t, locale)}
                                 </span>
                               </div>
                             )}
@@ -1519,7 +1528,7 @@ export default function MensagensClient() {
                                     mine ? "text-white/40" : "text-white/35"
                                   )}
                                 >
-                                  {formatTime(m.created_at)}
+                                  {formatTime(m.created_at, locale)}
                                 </span>
                               </div>
                             </motion.li>
@@ -1561,7 +1570,7 @@ export default function MensagensClient() {
                           handleSend()
                         }
                       }}
-                      placeholder="Escrever mensagem"
+                      placeholder={t("writeMessagePlaceholder", "Escrever mensagem")}
                       rows={1}
                       className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                     />
@@ -1584,7 +1593,7 @@ export default function MensagensClient() {
                       disabled={sending || !composer.trim()}
                       whileTap={{ scale: 0.94 }}
                       transition={SPRING}
-                      aria-label="Enviar"
+                      aria-label={t("sendMessageAriaLabel", "Enviar")}
                       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     >
                       {sending ? (
@@ -1628,6 +1637,7 @@ function ActorSelector({
   loading: boolean
   onSelect: (id: string) => void
 }) {
+  const t = useTranslations("Messages")
   const active = actors.find((a) => a.id === actorId)
   if (loading) {
     return <Skeleton className="h-7 w-32 rounded-md" />
@@ -1635,7 +1645,7 @@ function ActorSelector({
   if (actors.length === 0) {
     return (
       <span className="text-[11px] text-white/40">
-        Sem subperfis ativos
+        {t("noActiveSubprofiles", "Sem subperfis ativos")}
       </span>
     )
   }
@@ -1650,14 +1660,14 @@ function ActorSelector({
             </AvatarFallback>
           </Avatar>
           <span className="max-w-[100px] truncate">
-            {active?.display_name || "Selecionar"}
+            {active?.display_name || t("selectSubprofileLabel", "Selecionar")}
           </span>
           <ChevronDown className="h-3.5 w-3.5 text-white/60" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-white/40">
-          Atuar como
+          {t("actAsLabel", "Atuar como")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {actors.map((a) => (
@@ -1673,7 +1683,7 @@ function ActorSelector({
               </AvatarFallback>
             </Avatar>
             <span className="flex-1 truncate text-sm">
-              {a.display_name || "Sem nome"}
+              {a.display_name || t("noNameLabel", "Sem nome")}
             </span>
             {a.type === "clan" ? (
               <Users className="ml-1 h-3.5 w-3.5 text-white/40" />
@@ -1686,43 +1696,47 @@ function ActorSelector({
 }
 
 function EmptyConversations() {
+  const t = useTranslations("Messages")
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
       <MessageCircle className="mb-3 h-10 w-10 text-white/30" />
-      <p className="text-sm font-medium text-white">Nenhuma conversa</p>
+      <p className="text-sm font-medium text-white">{t("noConversationsMessage", "Nenhuma conversa")}</p>
       <p className="mt-1 text-xs text-white/50">
-        Abra um perfil e clique em &ldquo;Enviar mensagem&rdquo; para começar.
+        {t("noConversationsHint", "Abra um perfil e clique em \"Enviar mensagem\" para começar.")}
       </p>
     </div>
   )
 }
 
 function EmptyThread() {
+  const t = useTranslations("Messages")
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
       <MessageCircle className="mb-3 h-12 w-12" />
-      <p className="text-sm">Selecione uma conversa para ler.</p>
+      <p className="text-sm">{t("selectConversationHint", "Selecione uma conversa para ler.")}</p>
     </div>
   )
 }
 
 function EmptyOsChats() {
+  const t = useTranslations("Messages")
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
       <ClipboardList className="mb-3 h-10 w-10 text-white/30" />
-      <p className="text-sm font-medium text-white">Nenhuma O.S. ativa</p>
+      <p className="text-sm font-medium text-white">{t("noOsMessage", "Nenhuma O.S. ativa")}</p>
       <p className="mt-1 text-xs text-white/50">
-        Quando um profissional responder uma das suas solicitações, ela aparece aqui.
+        {t("noOsHint", "Quando um profissional responder uma das suas solicitações, ela aparece aqui.")}
       </p>
     </div>
   )
 }
 
 function EmptyOsThread() {
+  const t = useTranslations("Messages")
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
       <ClipboardList className="mb-3 h-12 w-12" />
-      <p className="text-sm">Selecione uma O.S. para abrir o chat.</p>
+      <p className="text-sm">{t("selectOsHint", "Selecione uma O.S. para abrir o chat.")}</p>
     </div>
   )
 }
@@ -1759,10 +1773,11 @@ function TabBtn({
 }
 
 function EmptyMachinePick() {
+  const t = useTranslations("Messages")
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
       <Sparkles className="mb-3 h-12 w-12" />
-      <p className="text-sm">Selecione uma máquina ao lado para entrar na sala.</p>
+      <p className="text-sm">{t("selectMachineHint", "Selecione uma máquina ao lado para entrar na sala.")}</p>
     </div>
   )
 }
@@ -1780,6 +1795,7 @@ function MachineList({
   activeId: number | null
   onPick: (id: number) => void
 }) {
+  const t = useTranslations("Messages")
   if (loading) {
     return (
       <div className="space-y-2 p-3">
@@ -1816,7 +1832,7 @@ function MachineList({
           </span>
           {mine && (
             <span className="shrink-0 rounded-sm bg-emerald-400/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-300">
-              Sua
+              {t("yourMachineLabel", "Sua")}
             </span>
           )}
         </button>
@@ -1829,7 +1845,7 @@ function MachineList({
       {userMachines.length > 0 && (
         <>
           <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
-            Suas máquinas
+            {t("yourMachinesSection", "Suas máquinas")}
           </div>
           <ul className="divide-y divide-white/5">
             {userMachines.map((m) => renderItem(m, true))}
@@ -1839,7 +1855,7 @@ function MachineList({
       {others.length > 0 && (
         <>
           <div className="mt-3 px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
-            Outras máquinas
+            {t("otherMachinesSection", "Outras máquinas")}
           </div>
           <ul className="divide-y divide-white/5">
             {others.map((m) => renderItem(m, false))}
@@ -1849,7 +1865,7 @@ function MachineList({
       {userMachines.length === 0 && others.length === 0 && (
         <div className="flex flex-col items-center justify-center px-6 py-10 text-center text-sm text-white/45">
           <Sparkles className="mb-2 h-8 w-8 text-white/30" />
-          Nenhuma máquina disponível.
+          {t("noMachinesAvailable", "Nenhuma máquina disponível.")}
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ import { SearchRetractableHeader } from "@/components/search/search-retractable-
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
 import { StoryCreator } from "@/components/stories/story-creator"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 /**
  * Bridge map: real DB categories → machine slugs.
@@ -204,6 +205,7 @@ export default function SearchPage() {
 }
 
 function SearchPageInner() {
+  const t = useTranslations("Search")
   const searchParams = useSearchParams()
   const { machines } = useMachinesCatalog()
 
@@ -305,7 +307,7 @@ function SearchPageInner() {
         const qs = params.toString()
         const url = `/api/search${qs ? `?${qs}` : ""}`
         const response = await fetch(url, { cache: "no-store" })
-        if (!response.ok) throw new Error("Erro ao buscar")
+        if (!response.ok) throw new Error(t("searchError", "Erro ao buscar"))
         const data = await response.json()
         let list: Creator[] = Array.isArray(data) ? data : []
         list.forEach((c) => {
@@ -324,7 +326,7 @@ function SearchPageInner() {
         if (!cancelled) setCreators(list)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro ao buscar")
+          setError(err instanceof Error ? err.message : t("searchError", "Erro ao buscar"))
           setCreators([])
         }
       } finally {
@@ -333,7 +335,7 @@ function SearchPageInner() {
     }
     run()
     return () => { cancelled = true }
-  }, [selectedEstado, selectedCity, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin])
+  }, [selectedEstado, selectedCity, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin, t])
 
   const isPremium = useCallback((c: Creator) =>
     !!c.is_premium || c.profile_statuses?.some((s) => s.desc_status === "destaque_premium"),
@@ -402,14 +404,14 @@ function SearchPageInner() {
           <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
         ) : display.length === 0 ? (
           <div className="px-4 py-16 text-center">
-            <p className="text-sm text-white/65">Nenhum profissional com esses filtros.</p>
+            <p className="text-sm text-white/65">{t("noResultsMessage", "Nenhum profissional com esses filtros.")}</p>
             <button
               type="button"
               onClick={clearAll}
               className="mt-3 text-xs font-semibold underline transition hover:opacity-80"
               style={{ color: accent }}
             >
-              Limpar filtros
+              {t("clearFiltersButton", "Limpar filtros")}
             </button>
           </div>
         ) : (
