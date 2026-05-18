@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 export const LEVEL_FILTER_OPTIONS = [
@@ -17,6 +18,15 @@ export const LEVEL_FILTER_OPTIONS = [
   { value: 20, label: "Nível 20+" },
   { value: 30, label: "Nível 30+" },
 ] as const
+
+const LEVEL_FILTER_I18N_KEYS: Record<string, string> = {
+  "Todos os níveis": "allLevels",
+  "Nível 1+": "level1Plus",
+  "Nível 5+": "level5Plus",
+  "Nível 10+": "level10Plus",
+  "Nível 20+": "level20Plus",
+  "Nível 30+": "level30Plus",
+}
 
 interface LevelFilterSheetProps {
   selectedLevel: number | null
@@ -31,6 +41,7 @@ export function LevelFilterSheet({
   trigger,
   accent,
 }: LevelFilterSheetProps) {
+  const t = useTranslations("Feed")
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
@@ -42,7 +53,7 @@ export function LevelFilterSheet({
         {LEVEL_FILTER_OPTIONS.map((option) => (
           <Option
             key={option.value ?? "all"}
-            label={option.label}
+            label={t(LEVEL_FILTER_I18N_KEYS[option.label] || option.label, option.label)}
             selected={selectedLevel === option.value}
             accent={accent}
             onClick={() => onChange(option.value)}

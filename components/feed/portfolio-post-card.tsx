@@ -17,25 +17,26 @@ import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
 import { MarkdownText } from "@/components/ui/markdown-text"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
-function timeAgo(iso: string | null): string {
+function timeAgo(iso: string | null, t: (key: string, fallback?: string) => string): string {
   if (!iso) return ""
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
   const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000))
-  if (diff < 60) return "agora"
+  if (diff < 60) return t("timeNow", "agora")
   const minutes = Math.floor(diff / 60)
-  if (minutes < 60) return `${minutes} min`
+  if (minutes < 60) return t("timeMinutes", "{n} min").replace("{n}", String(minutes))
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} h`
+  if (hours < 24) return t("timeHours", "{n} h").replace("{n}", String(hours))
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days} d`
+  if (days < 7) return t("timeDays", "{n} d").replace("{n}", String(days))
   const weeks = Math.floor(days / 7)
-  if (weeks < 5) return `${weeks} sem`
+  if (weeks < 5) return t("timeWeeks", "{n} sem").replace("{n}", String(weeks))
   const months = Math.floor(days / 30)
-  if (months < 12) return `${months} m`
+  if (months < 12) return t("timeMonths", "{n} m").replace("{n}", String(months))
   const years = Math.floor(days / 365)
-  return `${years} a`
+  return t("timeYears", "{n} a").replace("{n}", String(years))
 }
 
 interface PortfolioPostCardProps {
@@ -59,6 +60,7 @@ function initials(name: string | null | undefined) {
 }
 
 export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged }: PortfolioPostCardProps) {
+  const t = useTranslations("Post")
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
   const machineColor = post.machine?.color_accent || "#fbbf24"
@@ -74,7 +76,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     const token = getToken()
-    if (!token) throw new Error("Faça login para denunciar")
+    if (!token) throw new Error(t("mustLoginToReport", "Faça login para denunciar"))
     const res = await fetch(`/api/portfolio/items/${post.post_id}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -82,17 +84,17 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      throw new Error(data?.error || `Falha ${res.status}`)
+      throw new Error(data?.error || t("reportFailureError", "Falha {status}").replace("{status}", String(res.status)))
     }
   }
   const { coupon: shareCoupon } = useShareCoupon()
   const primaryUrl = post.project_url || post.public_profile_url
   const primaryLabel =
     post.source_type === "course"
-      ? "Ver curso"
+      ? t("viewCourse", "Ver curso")
       : post.project_url
-        ? "Abrir link"
-        : "Ver perfil"
+        ? t("openLink", "Abrir link")
+        : t("viewProfile", "Ver perfil")
   const retentionSequenceRef = useRef(0)
 
   useEffect(() => {
@@ -334,7 +336,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-semibold text-white">
-                {post.profile_name || post.username || "Perfil"}
+                {post.profile_name || post.username || t("profileLabel", "Perfil")}
               </span>
               <MachineTop10Crown
                 profileId={post.profile_id}
@@ -354,7 +356,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <p className="truncate text-[11px] text-white/50">
               {!paged && post.published_at && (
                 <>
-                  <span>{timeAgo(post.published_at)}</span>
+                  <span>{timeAgo(post.published_at, t)}</span>
                   {(post.city || post.state) && <span> · </span>}
                 </>
               )}
@@ -447,7 +449,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                         className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/20 backdrop-blur-sm transition hover:bg-white/25"
                       >
                         <Link2 className="h-3.5 w-3.5" />
-                        {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
+                        {post.social_links.length === 1
+                        ? t("socialNetworksOne", "{n} rede").replace("{n}", String(post.social_links.length))
+                        : t("socialNetworksMany", "{n} redes").replace("{n}", String(post.social_links.length))}
                       </button>
                     }
                   />
@@ -460,7 +464,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
-                aria-label={liked ? "Descurtir" : "Curtir"}
+                aria-label={liked ? t("unlikeButton", "Descurtir") : t("likeButton", "Curtir")}
                 onClick={handleLike}
                 disabled={likePending}
                 className={cn(
@@ -482,7 +486,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
-                aria-label="Comentários"
+                aria-label={t("commentsButton", "Comentários")}
                 onClick={() => onOpenComments?.(post.post_id)}
                 className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95"
               >
@@ -497,7 +501,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
-                aria-label="Compartilhar"
+                aria-label={t("shareButton", "Compartilhar")}
                 onClick={handleShare}
                 className="flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95"
               >
@@ -511,7 +515,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
-                aria-label={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+                aria-label={bookmarked ? t("removeFromSaved", "Remover dos salvos") : t("saveForLater", "Salvar para depois")}
                 onClick={handleBookmark}
                 disabled={bookmarkPending}
                 className={cn(
@@ -525,7 +529,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="flex flex-col items-center gap-1">
               <button
                 type="button"
-                aria-label="Denunciar publicação"
+                aria-label={t("reportPostButton", "Denunciar publicação")}
                 onClick={() => setReportOpen(true)}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/75 shadow ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 hover:text-amber-300 active:scale-95"
               >
@@ -546,7 +550,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           <div className="flex shrink-0 items-center gap-1 px-2 pt-2">
             <button
               type="button"
-              aria-label={liked ? "Descurtir" : "Curtir"}
+              aria-label={liked ? t("unlikeButton", "Descurtir") : t("likeButton", "Curtir")}
               onClick={handleLike}
               disabled={likePending}
               className={cn(
@@ -564,7 +568,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </button>
             <button
               type="button"
-              aria-label="Comentários"
+              aria-label={t("commentsButton", "Comentários")}
               onClick={() => onOpenComments?.(post.post_id)}
               className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
             >
@@ -572,7 +576,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </button>
             <button
               type="button"
-              aria-label="Compartilhar"
+              aria-label={t("shareButton", "Compartilhar")}
               onClick={handleShare}
               className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
             >
@@ -584,7 +588,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </button>
             <button
               type="button"
-              aria-label={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+              aria-label={bookmarked ? t("removeFromSaved", "Remover dos salvos") : t("saveForLater", "Salvar para depois")}
               onClick={handleBookmark}
               disabled={bookmarkPending}
               className={cn(
@@ -596,7 +600,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </button>
             <button
               type="button"
-              aria-label="Denunciar publicação"
+              aria-label={t("reportPostButton", "Denunciar publicação")}
               onClick={() => setReportOpen(true)}
               className="rounded-full p-1.5 text-white/55 transition hover:bg-white/5 hover:text-amber-300 active:scale-90"
             >
@@ -606,7 +610,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
 
           {/* Contador de curtidas */}
           <div className="px-3 pt-1 text-[13px] font-semibold text-white">
-            {likesCount.toLocaleString("pt-BR")} curtida{likesCount !== 1 ? "s" : ""}
+            {likesCount === 1
+              ? t("likesCountOne", "{n} curtida").replace("{n}", likesCount.toLocaleString("pt-BR"))
+              : t("likesCountMany", "{n} curtidas").replace("{n}", likesCount.toLocaleString("pt-BR"))}
           </div>
 
           {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend */}
@@ -614,13 +620,13 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <div className="shrink-0 px-3 pt-1 text-[14px] leading-snug text-white">
               {post.title && (
                 <span className="mr-1.5 font-semibold">
-                  {post.profile_name || post.username || "Perfil"}
+                  {post.profile_name || post.username || t("profileLabel", "Perfil")}
                 </span>
               )}
               <PostCaption
                 title={post.title}
                 caption={post.caption}
-                profileLabel={post.profile_name || post.username || "Perfil"}
+                profileLabel={post.profile_name || post.username || t("profileLabel", "Perfil")}
                 onExpand={() =>
                   sendFeedEvent({
                     post_id: post.post_id,
@@ -657,7 +663,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                       className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
                     >
                       <Link2 className="h-3 w-3" />
-                      {post.social_links.length} rede{post.social_links.length !== 1 ? "s" : ""}
+                      {post.social_links.length === 1
+                        ? t("socialNetworksOne", "{n} rede").replace("{n}", String(post.social_links.length))
+                        : t("socialNetworksMany", "{n} redes").replace("{n}", String(post.social_links.length))}
                     </button>
                   }
                 />
@@ -672,7 +680,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               onClick={() => onOpenComments?.(post.post_id)}
               className="px-3 pt-2 text-left text-[13px] text-white/55 transition hover:text-white/80"
             >
-              Ver {commentsCount === 1 ? "1 comentário" : `os ${commentsCount.toLocaleString("pt-BR")} comentários`}
+              {commentsCount === 1
+                ? t("viewCommentsOne", "Ver {n} comentário").replace("{n}", "1")
+                : t("viewCommentsMany", "Ver os {n} comentários").replace("{n}", commentsCount.toLocaleString("pt-BR"))}
             </button>
           )}
 
@@ -680,7 +690,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
           <div className="px-3 pb-3 pt-1 text-[10px] uppercase tracking-wider text-white/30">
             {post.feed_kind === "bees" && (
               <span className="inline-flex items-center gap-1 text-amber-300/80">
-                <Sparkles className="h-3 w-3" /> Bee
+                <Sparkles className="h-3 w-3" /> {t("beeLabel", "Bee")}
               </span>
             )}
           </div>
@@ -704,6 +714,7 @@ interface PostCaptionProps {
 }
 
 function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProps) {
+  const t = useTranslations("Post")
   const [expanded, setExpanded] = useState(false)
   const parts: string[] = []
   if (title) parts.push(title)
@@ -733,7 +744,7 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
             }}
             className="text-white/55 transition hover:text-white"
           >
-            mais
+            {t("expandButton", "mais")}
           </button>
         </>
       )}
@@ -745,7 +756,7 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
             onClick={() => setExpanded(false)}
             className="text-white/55 transition hover:text-white"
           >
-            menos
+            {t("collapseButton", "menos")}
           </button>
         </>
       )}

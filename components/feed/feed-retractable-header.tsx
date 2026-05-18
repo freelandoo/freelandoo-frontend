@@ -8,6 +8,7 @@ import { MachineFilterSheet } from "./machine-filter-sheet"
 import { CityFilterSheet } from "./city-filter-sheet"
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface FeedRetractableHeaderProps {
@@ -37,9 +38,10 @@ export function FeedRetractableHeader({
   onLocationChange,
   onClearAll,
 }: FeedRetractableHeaderProps) {
+  const t = useTranslations("Feed")
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const hasFilters = !!(activeMachine || state || city)
-  const locationLabel = city || state || "Cidade"
+  const locationLabel = city || state || t("cityLabel", "Cidade")
 
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
@@ -116,7 +118,7 @@ export function FeedRetractableHeader({
               onChange={onMachineChange}
               trigger={
                 <Pill
-                  label={activeMachine?.name?.replace(/^Máquina de\s+/i, "") || "Máquina"}
+                  label={activeMachine?.name?.replace(/^Máquina de\s+/i, "") || t("machineLabel", "Máquina")}
                   active={!!activeMachine}
                   accent={activeMachine?.color_accent || undefined}
                 />
@@ -143,7 +145,7 @@ export function FeedRetractableHeader({
                 className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2.5 py-1.5 text-[11px] text-white/70 backdrop-blur transition hover:border-white/30 hover:text-white"
               >
                 <X className="h-3 w-3" />
-                Limpar
+                {t("clearButton", "Limpar")}
               </button>
             )}
           </div>
@@ -152,7 +154,7 @@ export function FeedRetractableHeader({
             type="button"
             ref={bellRef}
             onClick={() => setDropdownOpen((v) => !v)}
-            aria-label={bellActive ? `Notificações (${unread} não lidas)` : "Notificações"}
+            aria-label={bellActive ? t("notificationsLabel", "Notificações") + ` (${unread})` : t("notificationsLabel", "Notificações")}
             aria-expanded={dropdownOpen}
             className={cn(
               "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 active:scale-95"

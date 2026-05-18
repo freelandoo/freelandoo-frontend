@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { SearchX } from "lucide-react"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface EmptyFeedStateProps {
   hasFilters: boolean
@@ -18,6 +19,7 @@ export function EmptyFeedState({
   levelFiltered = false,
   accent = "#fbbf24",
 }: EmptyFeedStateProps) {
+  const t = useTranslations("Feed")
   return (
     <div
       className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/60 px-6 py-16 text-center"
@@ -37,26 +39,26 @@ export function EmptyFeedState({
       </div>
       <h3 className="text-base font-semibold text-white">
         {levelFiltered
-          ? "Nenhum profissional encontrado neste nível."
+          ? t("noProfessionalsAtLevel", "Nenhum profissional encontrado neste nível.")
           : hasFilters
-            ? "Nada por aqui"
-            : "Sem posts no momento"}
+            ? t("nothingHere", "Nada por aqui")
+            : t("noPostsYet", "Sem posts no momento")}
       </h3>
       <p className="mt-1.5 max-w-sm text-sm text-white/55">
         {levelFiltered
-          ? "Tente selecionar Todos os níveis ou ajustar os filtros."
+          ? t("trySelectAllLevels", "Tente selecionar Todos os níveis ou ajustar os filtros.")
           : hasFilters
-            ? "Tente ajustar os filtros pra ver outros posts do feed."
-            : "Volte em instantes - novos profissionais publicam todo dia."}
+            ? t("tryAdjustFilters", "Tente ajustar os filtros pra ver outros posts do feed.")
+            : t("newProfessionalsDaily", "Volte em instantes - novos profissionais publicam todo dia.")}
       </p>
       {levelFiltered && onClearLevel && (
         <FilterButton accent={accent} onClick={onClearLevel}>
-          Limpar filtro de nível
+          {t("clearLevelFilter", "Limpar filtro de nível")}
         </FilterButton>
       )}
       {!levelFiltered && hasFilters && onReset && (
         <FilterButton accent={accent} onClick={onReset}>
-          Limpar filtros
+          {t("clearFilters", "Limpar filtros")}
         </FilterButton>
       )}
     </div>
