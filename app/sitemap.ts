@@ -4,8 +4,11 @@ import { buildProfileUrl, slugify } from "@/lib/slug"
 
 const BASE_URL = "https://www.freelandoo.com.br"
 
-// Revalida o sitemap a cada 10min: dado de prod (username sujo, perfil novo,
-// máquina nova) reflete em até 10min em vez de 1h, sem ficar dinâmico de mais.
+// Força dinâmico — antes o sitemap era prerenderado em build time, mas o
+// fetch ao backend Railway pode falhar no ambiente de build do Vercel
+// (ECONNREFUSED, DNS, firewall), e isso DERRUBA O BUILD INTEIRO. Render no
+// request com revalidate é seguro.
+export const dynamic = "force-dynamic"
 export const revalidate = 600
 
 // Username válido: letras/números/underscore/ponto, 3–30 chars. Reflete a regra
@@ -46,11 +49,12 @@ const STATIC_ROUTES: MetadataRoute.Sitemap = [
 
 async function fetchMachines(): Promise<MachineEntry[]> {
   try {
-    // Endpoint público correto é /machines (plural). O nome singular nunca
-    // existiu no backend — antes essa chamada falhava em silêncio.
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
     const res = await fetch(`${getBackendApiUrl()}/machines`, {
       next: { revalidate: 3600 },
-    })
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer))
     if (!res.ok) return []
     const body = await res.json()
     const list = Array.isArray(body)
@@ -72,13 +76,23 @@ async function fetchMachines(): Promise<MachineEntry[]> {
 }
 
 async function fetchProfilesPage(offset: number, limit: number): Promise<SearchProfile[]> {
-  const res = await fetch(
-    `${getBackendApiUrl()}/search?limit=${limit}&offset=${offset}`,
-    { next: { revalidate: 3600 } }
-  )
-  if (!res.ok) return []
-  const body = await res.json()
-  return Array.isArray(body) ? body : []
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
+    try {
+      const res = await fetch(
+        `${getBackendApiUrl()}/search?limit=${limit}&offset=${offset}`,
+        { next: { revalidate: 3600 }, signal: controller.signal }
+      )
+      if (!res.ok) return []
+      const body = await res.json()
+      return Array.isArray(body) ? body : []
+    } finally {
+      clearTimeout(timer)
+    }
+  } catch {
+    return []
+  }
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
