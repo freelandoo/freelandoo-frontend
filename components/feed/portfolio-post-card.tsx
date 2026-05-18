@@ -16,6 +16,7 @@ import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
+import { MarkdownText } from "@/components/ui/markdown-text"
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -716,11 +717,11 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
   const visible = expanded || !needsToggle ? text : text.slice(0, PREVIEW).trimEnd()
 
   return (
-    <span className="whitespace-pre-wrap text-white/85">
+    <div className="text-white/85">
       {!title && (
         <span className="mr-1.5 font-semibold text-white">{profileLabel}</span>
       )}
-      {visible}
+      <MarkdownText className="inline [&_p]:inline">{visible}</MarkdownText>
       {needsToggle && !expanded && (
         <>
           {"… "}
@@ -748,6 +749,6 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
           </button>
         </>
       )}
-    </span>
+    </div>
   )
 }
