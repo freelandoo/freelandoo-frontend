@@ -8,6 +8,9 @@ import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { DevBannerModal } from "@/components/dev-banner-modal"
+import { I18nProvider } from "@/components/i18n/I18nProvider"
+import { getCountry, getLocale } from "@/lib/i18n/server"
+import { getMessages } from "@/lib/i18n/messages"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -57,11 +60,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+  const country = await getCountry()
+  const messages = getMessages(locale)
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -90,7 +96,7 @@ export default function RootLayout({
 
   return (
     <html
-      lang="pt-BR"
+      lang={locale}
       className={`dark ${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
@@ -98,13 +104,15 @@ export default function RootLayout({
         {/* JSON-LD no body evita conflito de ordem/atributos com scripts gerenciados pelo Next no <head>. */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
-        {children}
-        <ProfileSidebar />
-        <DevBannerModal />
-        <BirthdateGate />
-        <CookieConsent />
-        <AnalyticsProvider />
-        <CouponCapture />
+        <I18nProvider locale={locale} country={country} messages={messages}>
+          {children}
+          <ProfileSidebar />
+          <DevBannerModal />
+          <BirthdateGate />
+          <CookieConsent />
+          <AnalyticsProvider />
+          <CouponCapture />
+        </I18nProvider>
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
           strategy="afterInteractive"

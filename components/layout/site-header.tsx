@@ -9,6 +9,9 @@ import { User } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import MessagesNavLink from "@/components/mensagens/MessagesNavLink"
 import { UserDropside } from "@/components/layout/UserDropside"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
+import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function SiteHeader() {
   const { user, status, logout } = useAuth()
@@ -16,6 +19,8 @@ export default function SiteHeader() {
   const router = useRouter()
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [unreadSR, setUnreadSR] = useState(false)
+  const tAuth = useTranslations("Auth")
+  const tNav = useTranslations("Navigation")
 
   const isLoggedIn = status === "authenticated" && !!user
   const isOnAccountHome = pathname === "/account"
@@ -68,6 +73,10 @@ export default function SiteHeader() {
           </Link>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
+            <div className="hidden items-center gap-1 sm:flex">
+              <CountrySwitcher />
+              <LanguageSwitcher />
+            </div>
             {status === "loading" ? (
               <div className="h-9 w-24 animate-pulse rounded-md bg-white/10" />
             ) : isLoggedIn ? (
@@ -79,7 +88,7 @@ export default function SiteHeader() {
                   onClick={handleUserClick}
                   aria-haspopup={isOnAccountHome ? "dialog" : undefined}
                   aria-expanded={isOnAccountHome ? dropsideOpen : undefined}
-                  title={isOnAccountHome ? "Abrir menu da conta" : "Ir para minha conta"}
+                  title={isOnAccountHome ? tNav("account", "Minha conta") : tNav("account", "Minha conta")}
                   className="relative border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground md:h-9"
                 >
                   <User className="mr-1 h-4 w-4" />
@@ -92,7 +101,7 @@ export default function SiteHeader() {
             ) : (
               <>
                 <Link href="/login" className="text-xs font-medium text-white hover:text-white/80 sm:text-sm">
-                  Login
+                  {tAuth("loginShort", "Login")}
                 </Link>
                 <Link href="/cadastro" className="hidden sm:block">
                   <Button
@@ -100,7 +109,7 @@ export default function SiteHeader() {
                     size="sm"
                     className="border-white text-white hover:bg-white hover:text-black md:h-9"
                   >
-                    Cadastre-se
+                    {tAuth("register", "Cadastre-se")}
                   </Button>
                 </Link>
                 <Link href="/cadastro">
@@ -108,7 +117,7 @@ export default function SiteHeader() {
                     size="sm"
                     className="bg-primary font-semibold text-primary-foreground hover:bg-primary/90 md:h-9"
                   >
-                    Publicar projeto
+                    {tNav("publishProject", "Publicar projeto")}
                   </Button>
                 </Link>
               </>
@@ -121,13 +130,13 @@ export default function SiteHeader() {
         <nav className="border-b border-neutral-200 bg-white">
           <div className="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 text-sm text-neutral-600">
             <Link href="/comofunciona" className="hover:text-neutral-900">
-              Como funciona
+              {tNav("howItWorks", "Como funciona")}
             </Link>
             <Link href="/search" className="hover:text-neutral-900">
-              Encontrar Freelancers
+              {tNav("findFreelancers", "Encontrar Freelancers")}
             </Link>
             <Link href="/cadastro" className="hover:text-neutral-900">
-              Encontrar Trabalho
+              {tNav("findWork", "Encontrar Trabalho")}
             </Link>
           </div>
         </nav>

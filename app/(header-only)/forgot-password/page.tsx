@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, CheckCircle } from "lucide-react"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("ForgotPassword")
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -21,8 +23,6 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
 
     try {
-      console.log("[v0] Enviando solicitação de recuperação para:", email)
-
       const response = await fetch("/api/forgot-password", {
         method: "POST",
         headers: {
@@ -32,17 +32,14 @@ export default function ForgotPasswordPage() {
       })
 
       const data = await response.json()
-      console.log("[v0] Resposta:", data)
 
       if (!response.ok) {
         if (response.status === 500) {
-          setError(
-            "Erro temporário no servidor. Por favor, tente novamente em alguns instantes ou entre em contato com o suporte se o problema persistir.",
-          )
+          setError(t("err500", "Erro temporário no servidor. Por favor, tente novamente em alguns instantes ou entre em contato com o suporte se o problema persistir."))
         } else if (response.status === 404) {
-          setError("Email não encontrado. Verifique se o email está correto ou crie uma nova conta.")
+          setError(t("err404", "Email não encontrado. Verifique se o email está correto ou crie uma nova conta."))
         } else {
-          setError(data.message || data.error || "Erro ao enviar email de recuperação")
+          setError(data.message || data.error || t("errGeneric", "Erro ao enviar email de recuperação"))
         }
         setIsLoading(false)
         return
@@ -51,8 +48,8 @@ export default function ForgotPasswordPage() {
       setSuccess(true)
       setIsLoading(false)
     } catch (error) {
-      console.error("[v0] Erro ao enviar recuperação:", error)
-      setError("Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.")
+      console.error(error)
+      setError(t("errNetwork", "Erro ao conectar com o servidor. Verifique sua conexão e tente novamente."))
       setIsLoading(false)
     }
   }
@@ -68,33 +65,33 @@ export default function ForgotPasswordPage() {
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold">Email enviado com sucesso!</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("successTitle", "Email enviado com sucesso!")}</CardTitle>
               <CardDescription className="text-base">
-                Enviamos um link de recuperação para <strong>{email}</strong>
+                {t("successDescription", "Enviamos um link de recuperação para")} <strong>{email}</strong>
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm">
                 <p className="mb-2">
-                  <strong>Próximos passos:</strong>
+                  <strong>{t("nextStepsTitle", "Próximos passos:")}</strong>
                 </p>
                 <ol className="ml-4 list-decimal space-y-1 text-muted-foreground">
-                  <li>Verifique sua caixa de entrada</li>
-                  <li>Clique no link de recuperação</li>
-                  <li>Crie uma nova senha</li>
+                  <li>{t("step1", "Verifique sua caixa de entrada")}</li>
+                  <li>{t("step2", "Clique no link de recuperação")}</li>
+                  <li>{t("step3", "Crie uma nova senha")}</li>
                 </ol>
               </div>
 
               <p className="text-center text-sm text-muted-foreground">
-                Não recebeu o email? Verifique sua pasta de spam ou tente novamente em alguns minutos.
+                {t("checkSpam", "Não recebeu o email? Verifique sua pasta de spam ou tente novamente em alguns minutos.")}
               </p>
             </CardContent>
 
             <CardFooter>
               <Link href="/login" className="w-full">
                 <Button className="w-full bg-transparent" variant="outline">
-                  Voltar para o login
+                  {t("backToLogin", "Voltar para o login")}
                 </Button>
               </Link>
             </CardFooter>
@@ -114,9 +111,9 @@ export default function ForgotPasswordPage() {
                 <Mail className="h-8 w-8 text-primary-foreground" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Esqueceu sua senha?</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t("title", "Esqueceu sua senha?")}</CardTitle>
             <CardDescription>
-              Não se preocupe! Digite seu email e enviaremos um link para redefinir sua senha.
+              {t("description", "Não se preocupe! Digite seu email e enviaremos um link para redefinir sua senha.")}
             </CardDescription>
           </CardHeader>
 
@@ -129,7 +126,7 @@ export default function ForgotPasswordPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("emailLabel", "Email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -144,13 +141,13 @@ export default function ForgotPasswordPage() {
 
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+                {isLoading ? t("sending", "Enviando...") : t("submit", "Enviar link de recuperação")}
               </Button>
 
               <div className="text-center text-sm text-muted-foreground">
-                Lembrou sua senha?{" "}
+                {t("rememberedPassword", "Lembrou sua senha?")}{" "}
                 <Link href="/login" className="font-semibold text-primary hover:underline">
-                  Voltar para o login
+                  {t("backToLogin", "Voltar para o login")}
                 </Link>
               </div>
             </CardFooter>

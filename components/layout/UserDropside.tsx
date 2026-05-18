@@ -19,6 +19,9 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
+import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type Props = {
   open: boolean
@@ -45,6 +48,9 @@ type Action = {
 export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogout }: Props) {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
+  const tNav = useTranslations("Navigation")
+  const tAcc = useTranslations("Account")
+  const tCommon = useTranslations("Common")
 
   useEffect(() => {
     setMounted(true)
@@ -75,44 +81,44 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const actions: Action[] = [
     {
       href: "/account?edit=1",
-      label: "Editar",
+      label: tAcc("editLabel", "Editar"),
       icon: Edit3,
-      description: "Atualize seus dados e verifique sua conta",
+      description: tAcc("editDescription", "Atualize seus dados e verifique sua conta"),
     },
     {
       href: "/manifestacao",
-      label: "Manifestação",
+      label: tAcc("manifestationLabel", "Manifestação"),
       icon: () => <span className="h-4 w-4" aria-hidden />,
-      badge: <ManifestationBadge label="Premium" size="sm" />,
-      description: "Banner premium + tag dourada no seu username",
+      badge: <ManifestationBadge label={tAcc("premiumBadge", "Premium")} size="sm" />,
+      description: tAcc("manifestationDescription", "Banner premium + tag dourada no seu username"),
       highlight: true,
     },
     {
       href: "/account/afiliado",
-      label: "Meus Faturamentos",
+      label: tAcc("earningsLabel", "Meus Faturamentos"),
       icon: Briefcase,
-      description: "Vendas de cursos, serviços, loja e comissões",
+      description: tAcc("earningsDescription", "Vendas de cursos, serviços, loja e comissões"),
     },
     {
       href: "/pedir-servico",
-      label: "Pedir serviço",
+      label: tAcc("requestServiceLabel", "Pedir serviço"),
       icon: MessageSquarePlus,
       badge: unreadServiceRequest ? (
-        <span className="h-2 w-2 rounded-full bg-red-500" aria-label="Novas respostas" />
+        <span className="h-2 w-2 rounded-full bg-red-500" aria-label={tAcc("newRepliesAria", "Novas respostas")} />
       ) : undefined,
-      description: "Solicite orçamento dos profissionais",
+      description: tAcc("requestServiceDescription", "Solicite orçamento dos profissionais"),
     },
     {
       href: "/pedir-produto",
-      label: "Pedir produto",
+      label: tAcc("requestProductLabel", "Pedir produto"),
       icon: PackageSearch,
-      description: "Encontre vendedores compatíveis pela categoria e cidade",
+      description: tAcc("requestProductDescription", "Encontre vendedores compatíveis pela categoria e cidade"),
     },
     {
       href: "/loja-polens",
-      label: "Seus Pólens",
+      label: tAcc("polenLabel", "Seus Pólens"),
       icon: Coins,
-      description: "Saldo, loja e histórico",
+      description: tAcc("polenDescription", "Saldo, loja e histórico"),
     },
   ]
 
@@ -149,7 +155,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             {user?.nome ? user.nome.slice(0, 1).toUpperCase() : "?"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-white">{user?.nome || "Conta"}</p>
+            <p className="truncate text-sm font-semibold text-white">{user?.nome || tAcc("accountFallback", "Conta")}</p>
             {user?.email && (
               <p className="truncate text-[11px] text-white/45">{user.email}</p>
             )}
@@ -157,7 +163,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label={tAcc("closeMenu", "Fechar")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
           >
             <X className="h-4 w-4" />
@@ -167,7 +173,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
         {/* Ações primárias */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            Ações
+            {tAcc("actionsHeading", "Ações")}
           </p>
           <ul className="space-y-1.5">
             {actions.map((a) => {
@@ -211,7 +217,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
 
           {/* Ações secundárias */}
           <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            Conta
+            {tAcc("myAccount", "Conta")}
           </p>
           <ul className="space-y-1">
             <li>
@@ -221,7 +227,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
               >
                 <Briefcase className="h-4 w-4 text-white/45" />
-                Minha conta
+                {tNav("account", "Minha conta")}
               </Link>
             </li>
             <li>
@@ -231,7 +237,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
               >
                 <CreditCard className="h-4 w-4 text-white/45" />
-                Pagamentos & Ativações
+                {tAcc("paymentsAndActivations", "Pagamentos & Ativações")}
               </Link>
             </li>
             <li>
@@ -241,7 +247,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
               >
                 <Settings className="h-4 w-4 text-white/45" />
-                Configurações
+                {tCommon("settings", "Configurações")}
               </Link>
             </li>
             {isAdmin && (
@@ -252,7 +258,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
                 >
                   <Shield className="h-4 w-4 text-white/45" />
-                  Administração
+                  {tNav("admin", "Administração")}
                 </button>
               </li>
             )}
@@ -263,10 +269,19 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
               >
                 <LogOut className="h-4 w-4" />
-                Sair
+                {tNav("logout", "Sair")}
               </button>
             </li>
           </ul>
+
+          {/* Preferências de idioma e país */}
+          <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            {tAcc("preferences", "Preferências")}
+          </p>
+          <div className="flex items-center gap-2 px-2 py-1">
+            <CountrySwitcher variant="full" />
+            <LanguageSwitcher variant="full" />
+          </div>
         </nav>
       </aside>
     </div>
