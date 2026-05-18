@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getToken } from "@/lib/auth"
+import { emitRealtime, onRealtime } from "@/lib/realtime"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
@@ -47,8 +48,9 @@ import type {
 } from "./types"
 
 const ACTOR_STORAGE_KEY = "mensagens:active_actor"
-const POLL_THREAD_MS = 15_000
-const POLL_LIST_MS = 60_000
+// Realtime cobre o caso comum; polling fica como fallback espaçado.
+const POLL_THREAD_MS = 45_000
+const POLL_LIST_MS = 120_000
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 function authHeaders(): HeadersInit {
@@ -502,13 +504,29 @@ export default function MensagensClient() {
     loadThread(activeConvId)
   }, [activeConvId, loadThread])
 
-  // Polling da thread
+  // Polling da thread (fallback). Realtime cobre o caso normal.
   useEffect(() => {
     if (!activeConvId) return
     const t = setInterval(() => {
       if (!document.hidden) loadThread(activeConvId, { silent: true })
     }, POLL_THREAD_MS)
     return () => clearInterval(t)
+  }, [activeConvId, loadThread])
+
+  // Realtime: assina a conv ativa e recarrega thread quando o backend empurra
+  // uma mensagem nova (sem precisar esperar o poll).
+  useEffect(() => {
+    if (!activeConvId) return
+    emitRealtime("conversation:subscribe", { id_conversation: activeConvId })
+    const off = onRealtime("conversation:message", (raw) => {
+      const payload = raw as { id_conversation?: string } | null
+      if (!payload || payload.id_conversation !== activeConvId) return
+      loadThread(activeConvId, { silent: true })
+    })
+    return () => {
+      emitRealtime("conversation:unsubscribe", { id_conversation: activeConvId })
+      off()
+    }
   }, [activeConvId, loadThread])
 
   // Auto scroll quando chega nova mensagem

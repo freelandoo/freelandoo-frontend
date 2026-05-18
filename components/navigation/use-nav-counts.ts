@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getToken } from "@/lib/auth"
+import { onRealtime } from "@/lib/realtime"
 
 const POLL_MS = 10 * 60 * 1000
 const MIN_CACHE_MS = 60 * 1000
@@ -130,6 +131,16 @@ function startListeners() {
     void refreshNavCounts(true)
   })
   window.addEventListener("notifications:unread-changed", () => {
+    void refreshNavCounts(true)
+  })
+
+  // Realtime: backend empurra "nav-counts:changed" sempre que algo relevante
+  // muda (nova mensagem, nova notificação). Refrescamos imediato em vez de
+  // esperar o próximo poll.
+  onRealtime("nav-counts:changed", () => {
+    void refreshNavCounts(true)
+  })
+  onRealtime("notification:new", () => {
     void refreshNavCounts(true)
   })
 }
