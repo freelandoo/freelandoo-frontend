@@ -1652,33 +1652,42 @@ export default function PerfilPage() {
                 )}
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <StatCell icon={Users} label="Perfis acompanhados" value={followedProfilesCount} accent compact />
-                <StatCell icon={UserRound} label="Subperfis" value={totalProfiles} compact />
-                <StatCell icon={MessageCircle} label="Não lidas" value={unreadMessages} compact />
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-white/70">
+                <button
+                  type="button"
+                  onClick={() => router.push("/mensagens?tab=os")}
+                  aria-label="Abrir mensagens"
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-white/80 transition hover:border-primary/40 hover:text-primary"
+                  title="Mensagens"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-zinc-950" />
+                  )}
+                </button>
+                <span className="tabular-nums">
+                  <span className="font-semibold text-white">{followedProfilesCount}</span>{" "}
+                  <span className="text-white/55">acompanhados</span>
+                </span>
               </div>
 
-              {/* Pedir Serviço / Produto — atalho do headcard */}
+              {/* Encontrar Serviço / Produto — atalho do headcard */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => { setServiceRequestMode("service"); setIsServiceRequestOpen(true) }}
-                  className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 py-2.5 text-sm font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
+                  className="group inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 text-[13px] font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
-                    <MessageSquarePlus className="h-3.5 w-3.5" />
-                  </span>
-                  Pedir serviço
+                  <MessageSquarePlus className="h-3.5 w-3.5 text-yellow-300" />
+                  Encontrar serviço
                 </button>
                 <button
                   type="button"
                   onClick={() => { setServiceRequestMode("product"); setIsServiceRequestOpen(true) }}
-                  className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 py-2.5 text-sm font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
+                  className="group inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 text-[13px] font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </span>
-                  Pedir produto
+                  <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
+                  Encontrar produto
                 </button>
               </div>
             </div>

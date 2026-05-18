@@ -2,12 +2,10 @@
 
 import { Check } from "lucide-react"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { CatalogCategory } from "@/components/home/machines/use-machines-catalog"
 import { cn } from "@/lib/utils"
 
@@ -30,35 +28,34 @@ export function ProfessionFilterSheet({
 }: ProfessionFilterSheetProps) {
   const list = categories.filter((c) => c.is_active)
   return (
-    <Dialog>
-      <DialogTrigger asChild disabled={disabled}>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-sm gap-0 border-white/10 bg-zinc-950 p-0">
-        <DialogHeader className="px-5 pt-5 pb-3">
-          <DialogTitle className="text-white">Profissão</DialogTitle>
-        </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto px-2 pb-3">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild disabled={disabled}>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        className="max-h-[60vh] w-[min(280px,calc(100vw-2rem))] overflow-y-auto border-white/10 bg-zinc-950 p-1 text-white"
+      >
+        <Option
+          label="Todas as profissões"
+          selected={selectedId == null}
+          onClick={() => onChange(null)}
+        />
+        {list.length === 0 && (
+          <p className="px-3 py-6 text-center text-sm text-white/50">
+            Escolha uma máquina primeiro.
+          </p>
+        )}
+        {list.map((c) => (
           <Option
-            label="Todas as profissões"
-            selected={selectedId == null}
-            onClick={() => onChange(null)}
+            key={c.id_category}
+            label={c.desc_category}
+            accent={accent}
+            selected={selectedId === c.id_category}
+            onClick={() => onChange(c.id_category)}
           />
-          {list.length === 0 && (
-            <p className="px-4 py-6 text-center text-sm text-white/50">
-              Escolha uma máquina primeiro.
-            </p>
-          )}
-          {list.map((c) => (
-            <Option
-              key={c.id_category}
-              label={c.desc_category}
-              accent={accent}
-              selected={selectedId === c.id_category}
-              onClick={() => onChange(c.id_category)}
-            />
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -78,7 +75,7 @@ function Option({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition",
+        "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition",
         selected ? "bg-white/10 text-white" : "text-white/75 hover:bg-white/5"
       )}
       style={selected && accent ? { color: accent } : undefined}
