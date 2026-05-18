@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { getToken } from "@/lib/auth"
 
-const POLL_MS = 5 * 60 * 1000
+const POLL_MS = 10 * 60 * 1000
 const MIN_CACHE_MS = 60 * 1000
 
 interface NavCountsResponse {
