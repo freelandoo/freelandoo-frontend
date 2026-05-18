@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Script from "next/script"
 import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
+import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 
 declare global {
   interface Window {
@@ -71,12 +72,16 @@ export function GoogleSignInButton({
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch("/api/google-signin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ credential }),
-        })
-        const data = await res.json()
+        const res = await clientFetchWithTimeout(
+          "/api/google-signin",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential }),
+          },
+          9000
+        )
+        const data = await res.json().catch(() => ({}))
         if (!res.ok) {
           setError(data?.error || data?.message || "Erro ao entrar com Google")
           setLoading(false)
@@ -96,8 +101,12 @@ export function GoogleSignInButton({
           redirectTo ||
           (session.emailVerified === false ? "/verify-email" : "/search")
         completeAuthRedirect(target)
-      } catch {
-        setError("Erro ao conectar com o servidor")
+      } catch (err) {
+        if (isClientFetchTimeout(err)) {
+          setError("Servidor demorou para responder. Tente novamente.")
+        } else {
+          setError("Erro ao conectar com o servidor")
+        }
         setLoading(false)
       }
     }
