@@ -18,6 +18,7 @@ import {
   Users,
   Sparkles,
   Crop,
+  Bookmark,
 } from "lucide-react"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { Button } from "@/components/ui/button"
@@ -89,7 +90,27 @@ interface UserPortfolioProps {
   myClansSlot?: React.ReactNode
 }
 
-type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans"
+type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans" | "saved"
+
+type SavedKind = "feed" | "bees"
+
+type SavedItem = {
+  id_bookmark: string
+  bookmarked_at: string
+  post_id: string
+  title: string | null
+  feed_kind: SavedKind
+  display_name: string | null
+  avatar_url: string | null
+  username: string | null
+  color_accent: string | null
+  machine_name: string | null
+  first_media: {
+    url: string
+    type: "image" | "video"
+    thumbnail_url: string | null
+  } | null
+}
 
 export function UserPortfolio({
   coursesProfileOptions = [],
@@ -549,6 +570,14 @@ export function UserPortfolio({
             <GraduationCap className="h-3.5 w-3.5" />
             Cursos
           </button>
+          <button
+            type="button"
+            onClick={() => setPortfolioTab("saved")}
+            className={tabBtn(portfolioTab === "saved")}
+          >
+            <Bookmark className="h-3.5 w-3.5" />
+            Salvos
+          </button>
           {myProfilesSlot !== undefined && (
             <button
               type="button"
@@ -575,6 +604,8 @@ export function UserPortfolio({
 
       {portfolioTab === "courses" ? (
         <CoursesSection profileOptions={coursesProfileOptions} />
+      ) : portfolioTab === "saved" ? (
+        <SavedSection />
       ) : portfolioTab === "profiles" ? (
         <>{myProfilesSlot}</>
       ) : portfolioTab === "clans" ? (
@@ -1084,3 +1115,178 @@ export function UserPortfolio({
 }
 
 export default UserPortfolio
+
+function SavedSection() {
+  const [savedKind, setSavedKind] = useState<SavedKind>("feed")
+  const [items, setItems] = useState<SavedItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<Record<string, boolean>>({})
+
+  const load = useCallback(async (kind: SavedKind) => {
+    const tk = token()
+    if (!tk) {
+      setError("Faça login para ver seus salvos.")
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/me/bookmarks?kind=${kind}&per_page=48`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setItems(Array.isArray(data.items) ? data.items : [])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar salvos")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load(savedKind) }, [savedKind, load])
+
+  const handleRemove = async (post_id: string) => {
+    const tk = token()
+    if (!tk) return
+    setRemoving((r) => ({ ...r, [post_id]: true }))
+    try {
+      const res = await fetch(`/api/me/bookmarks/toggle`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tk}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ post_id }),
+      })
+      if (res.ok) {
+        setItems((prev) => prev.filter((it) => it.post_id !== post_id))
+      }
+    } finally {
+      setRemoving((r) => {
+        const next = { ...r }
+        delete next[post_id]
+        return next
+      })
+    }
+  }
+
+  const aspectClass = savedKind === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+
+  return (
+    <div className="pt-3">
+      <div className="mb-3 flex items-center gap-1.5 px-3">
+        <button
+          type="button"
+          onClick={() => setSavedKind("feed")}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+            savedKind === "feed"
+              ? "bg-primary/15 text-primary"
+              : "text-white/55 hover:text-white"
+          }`}
+        >
+          <ImageIcon className="h-3.5 w-3.5" />
+          Posts
+        </button>
+        <button
+          type="button"
+          onClick={() => setSavedKind("bees")}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+            savedKind === "bees"
+              ? "bg-primary/15 text-primary"
+              : "text-white/55 hover:text-white"
+          }`}
+        >
+          <Hexagon className="h-3.5 w-3.5" />
+          Bees
+        </button>
+      </div>
+
+      {error && (
+        <p className="mb-3 px-3 text-sm text-red-300">{error}</p>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando salvos…
+        </div>
+      ) : items.length === 0 ? (
+        <div className="mx-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 py-16 text-center text-muted-foreground">
+          <Bookmark className="mb-3 h-7 w-7 opacity-50" />
+          <p className="text-sm font-medium">Você ainda não salvou nada por aqui</p>
+          <p className="mt-1 text-xs text-white/45">
+            Toque no marcador em qualquer post pra salvar pra depois.
+          </p>
+        </div>
+      ) : (
+        <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+          {items.map((it) => {
+            const thumb = it.first_media?.thumbnail_url || it.first_media?.url || null
+            const isVideo = it.first_media?.type === "video"
+            return (
+              <div
+                key={it.id_bookmark}
+                className={`group relative overflow-hidden bg-zinc-900 ${aspectClass}`}
+              >
+                {thumb ? (
+                  isVideo ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={it.first_media?.thumbnail_url || ""}
+                      alt={it.title || it.display_name || "Salvo"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={thumb}
+                      alt={it.title || it.display_name || "Salvo"}
+                      className="h-full w-full object-cover"
+                    />
+                  )
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <ImageIcon className="h-8 w-8 text-white/15" />
+                  </div>
+                )}
+
+                {it.color_accent && (
+                  <span
+                    aria-hidden
+                    className="absolute left-2 top-2 h-2 w-2 rounded-full ring-2 ring-zinc-950"
+                    style={{ backgroundColor: it.color_accent }}
+                    title={it.machine_name || ""}
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleRemove(it.post_id)}
+                  disabled={!!removing[it.post_id]}
+                  aria-label="Remover dos salvos"
+                  title="Remover dos salvos"
+                  className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:border-rose-400/40 hover:text-rose-300 disabled:opacity-40"
+                >
+                  {removing[it.post_id] ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <X className="h-3.5 w-3.5" />
+                  )}
+                </button>
+
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                  <p className="truncate font-medium">
+                    {it.display_name || it.username || "Perfil"}
+                  </p>
+                  {it.title && (
+                    <p className="truncate text-white/75">{it.title}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
