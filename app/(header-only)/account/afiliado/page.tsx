@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   ArrowLeft, CheckCircle2, CreditCard, Hourglass, Info, RotateCcw,
   Sparkles, Ticket, Briefcase, Package, GraduationCap, Users,
-  Wallet, TrendingUp, Loader2, ArrowDownRight,
+  Wallet, TrendingUp, Loader2, ArrowDownRight, ShoppingBag,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -96,7 +96,30 @@ const STATUS_META: Record<EarningStatus, { label: string; color: string }> = {
   reversed:  { label: "Revertido",  color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
 }
 
-type Tab = "all" | EarningKind | "afiliado"
+type Tab = "all" | EarningKind | "afiliado" | "cupom"
+
+type CouponSale = {
+  id: string
+  created_at: string
+  status: "pending" | "available" | "paid" | "reversed"
+  raw_status: string
+  coupon_code: string | null
+  order: { id: string; paid_at: string | null; status: string }
+  buyer: { id: string; name: string | null; email: string | null }
+  item: { name: string | null; count: number }
+  amounts: {
+    gross_cents: number
+    discount_cents: number
+    final_cents: number
+    commission_cents: number
+    commission_percent: number | string
+  }
+  timeline: {
+    eligible_at: string | null
+    approved_at: string | null
+    paid_at: string | null
+  }
+}
 
 /* ──────────────────────────────────────────────────────────────────── */
 /*  Page                                                               */
@@ -109,6 +132,11 @@ export default function MeusFaturamentosPage() {
   // Earnings
   const [earnings, setEarnings] = useState<Earning[]>([])
   const [aggregates, setAggregates] = useState<Aggregates | null>(null)
+
+  // Coupon sales
+  const [couponSales, setCouponSales] = useState<CouponSale[]>([])
+  const [couponPage, setCouponPage] = useState(1)
+  const [couponTotalPages, setCouponTotalPages] = useState(1)
 
   // Affiliate
   const [affiliate, setAffiliate] = useState<Affiliate | null>(null)
@@ -133,6 +161,25 @@ export default function MeusFaturamentosPage() {
       const data = await res.json()
       setEarnings(Array.isArray(data.items) ? data.items : [])
       setAggregates(data.aggregates || null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar")
+    } finally {
+      setLoading(false)
+    }
+  }, [token])
+
+  const loadCouponSales = useCallback(async (page: number) => {
+    if (!token) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/me/earnings/coupon-sales?page=${page}&per_page=24`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setCouponSales(Array.isArray(data.items) ? data.items : [])
+      setCouponTotalPages(Math.max(1, Number(data?.pagination?.total_pages) || 1))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar")
     } finally {
@@ -168,8 +215,12 @@ export default function MeusFaturamentosPage() {
       setLoading(false)
       return
     }
-    loadEarnings(tab)
-  }, [tab, token, loadEarnings])
+    if (tab === "cupom") {
+      loadCouponSales(couponPage)
+    } else {
+      loadEarnings(tab)
+    }
+  }, [tab, token, loadEarnings, loadCouponSales, couponPage])
 
   useEffect(() => { loadAffiliate() }, [loadAffiliate])
 
@@ -257,11 +308,60 @@ export default function MeusFaturamentosPage() {
             <TabPill icon={<Briefcase className="h-3.5 w-3.5" />} label="Serviços" active={tab === "service"} onClick={() => setTab("service")} />
             <TabPill icon={<Package className="h-3.5 w-3.5" />} label="Produtos" active={tab === "product"} onClick={() => setTab("product")} />
             <TabPill icon={<Users className="h-3.5 w-3.5" />} label="Afiliado" active={tab === "afiliado" || tab === "affiliate"} onClick={() => setTab("afiliado")} />
+            <TabPill icon={<Ticket className="h-3.5 w-3.5" />} label="Cupom" active={tab === "cupom"} onClick={() => { setCouponPage(1); setTab("cupom") }} />
           </div>
 
           {/* Content */}
           <AnimatePresence mode="wait" initial={false}>
-            {tab === "afiliado" ? (
+            {tab === "cupom" ? (
+              <motion.div
+                key="cupom"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                className="space-y-3"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                  </div>
+                ) : error ? (
+                  <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm text-red-200">{error}</div>
+                ) : couponSales.length === 0 ? (
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-12 text-center">
+                    <Ticket className="mx-auto mb-3 h-7 w-7 text-white/35" />
+                    <p className="text-sm font-medium text-white/85">Nenhuma venda com seu cupom ainda</p>
+                    <p className="mt-1 text-xs text-white/45">Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.</p>
+                  </div>
+                ) : (
+                  <>
+                    {couponSales.map((sale) => <CouponSaleRow key={sale.id} sale={sale} />)}
+                    {couponTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 pt-3 text-xs text-white/55">
+                        <button
+                          type="button"
+                          disabled={couponPage <= 1}
+                          onClick={() => setCouponPage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 transition hover:border-white/30 hover:text-white disabled:opacity-40"
+                        >
+                          Anterior
+                        </button>
+                        <span className="tabular-nums">{couponPage} / {couponTotalPages}</span>
+                        <button
+                          type="button"
+                          disabled={couponPage >= couponTotalPages}
+                          onClick={() => setCouponPage((p) => Math.min(couponTotalPages, p + 1))}
+                          className="rounded-lg border border-white/10 px-3 py-1.5 transition hover:border-white/30 hover:text-white disabled:opacity-40"
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            ) : tab === "afiliado" ? (
               <motion.div
                 key="afiliado"
                 initial={{ opacity: 0, y: 8 }}
@@ -387,6 +487,51 @@ function EarningRow({ earning }: { earning: Earning }) {
   )
 }
 
+function CouponSaleRow({ sale }: { sale: CouponSale }) {
+  const sm = STATUS_META[sale.status] || STATUS_META.pending
+  const buyerLabel = sale.buyer.name || sale.buyer.email || "Comprador"
+  const itemLabel = sale.item.name
+    ? sale.item.count > 1
+      ? `${sale.item.name} +${sale.item.count - 1}`
+      : sale.item.name
+    : `${sale.item.count} item(s)`
+  return (
+    <motion.div
+      whileHover={{ y: -1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-colors hover:border-white/15"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300 ring-1 ring-white/10">
+        <ShoppingBag className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="truncate text-sm font-medium text-white">{buyerLabel}</span>
+          {sale.coupon_code && (
+            <Badge className="border-yellow-400/30 bg-yellow-400/10 text-[10px] text-yellow-200">
+              {sale.coupon_code}
+            </Badge>
+          )}
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${sm.color}`}>
+            {sm.label}
+          </span>
+        </div>
+        <p className="mt-0.5 truncate text-xs text-white/45">{itemLabel}</p>
+        <p className="mt-1 text-[10px] text-white/35">
+          {formatDate(sale.created_at)}
+          {sale.amounts.discount_cents > 0 && (
+            <> · desconto {formatBRL(sale.amounts.discount_cents)}</>
+          )}
+        </p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-sm font-semibold text-white tabular-nums">{formatBRL(sale.amounts.final_cents)}</p>
+        <p className="text-[10px] text-emerald-300/85 tabular-nums">+{formatBRL(sale.amounts.commission_cents)}</p>
+      </div>
+    </motion.div>
+  )
+}
+
 function EmptyEarnings({ tab }: { tab: Tab }) {
   const txt: Record<Tab, { title: string; hint: string }> = {
     all:       { title: "Nenhum faturamento ainda", hint: "Suas vendas de cursos, serviços, loja e comissões aparecem aqui." },
@@ -395,6 +540,7 @@ function EmptyEarnings({ tab }: { tab: Tab }) {
     product:   { title: "Nenhuma venda da loja",    hint: "Adicione produtos na sua loja e venda pra ver os ganhos." },
     afiliado:  { title: "—", hint: "—" },
     affiliate: { title: "Nenhuma comissão", hint: "Compartilhe seu cupom de afiliado pra gerar conversões." },
+    cupom:     { title: "—", hint: "—" },
   }
   const t = txt[tab]
   return (
