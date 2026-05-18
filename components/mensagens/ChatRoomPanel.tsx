@@ -17,6 +17,7 @@ import { MarkdownText } from "@/components/ui/markdown-text"
 import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { EmojiPickerButton } from "./EmojiPickerButton"
 import { ReportMessageDialog } from "./ReportMessageDialog"
 
@@ -79,10 +80,10 @@ function authHeaders(): HeadersInit {
   return t ? { Authorization: `Bearer ${t}` } : {}
 }
 
-function timeOnly(iso: string): string {
+function timeOnly(iso: string, locale: string = "pt-BR"): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+  return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
 }
 
 function entityInitials(name: string | null | undefined): string {
@@ -98,6 +99,8 @@ export function ChatRoomPanel({
   pageTitle,
   pageSubtitle,
 }: ChatRoomPanelProps) {
+  const t = useTranslations("Conversation")
+  const locale = useLocale()
   const { user, status } = useAuth()
   const [room, setRoom] = useState<ChatRoom | null>(null)
   const [joinError, setJoinError] = useState<string | null>(null)
@@ -144,7 +147,7 @@ export function ChatRoomPanel({
             }
             return
           }
-          throw new Error(data?.error || `Erro ${res.status}`)
+          throw new Error(data?.error || t("joinRoomError", "Erro {status}").replace("{status}", String(res.status)))
         }
         if (cancelled) return
         setRoom(data.room)
@@ -152,7 +155,7 @@ export function ChatRoomPanel({
         setConnState("online")
       } catch (e) {
         if (!cancelled) {
-          setJoinError(e instanceof Error ? e.message : "Erro ao entrar")
+          setJoinError(e instanceof Error ? e.message : t("enterRoomError", "Erro ao entrar"))
           setConnState("reconnecting")
         }
       } finally {
@@ -160,7 +163,7 @@ export function ChatRoomPanel({
       }
     })()
     return () => { cancelled = true }
-  }, [status, kind, machineId, onNeedsMachinePick])
+  }, [status, kind, machineId, onNeedsMachinePick, t])
 
   useEffect(() => {
     if (!room) return
@@ -293,7 +296,7 @@ export function ChatRoomPanel({
       })
       const data = await res.json()
       if (!res.ok) {
-        setSendError(data?.error || `Erro ${res.status}`)
+        setSendError(data?.error || t("sendStatusError", "Erro {status}").replace("{status}", String(res.status)))
         return
       }
       setDraft("")
@@ -305,7 +308,7 @@ export function ChatRoomPanel({
         stickToBottomRef.current = true
       }
     } catch (e) {
-      setSendError(e instanceof Error ? e.message : "Falha ao enviar")
+      setSendError(e instanceof Error ? e.message : t("sendMessageError", "Falha ao enviar"))
     } finally {
       setSending(false)
     }
@@ -313,7 +316,7 @@ export function ChatRoomPanel({
 
   const deleteMine = async (id: string) => {
     if (!room) return
-    if (!confirm("Apagar essa mensagem?")) return
+    if (!confirm(t("deleteMessageConfirm", "Apagar essa mensagem?"))) return
     try {
       const res = await fetch(`/api/chat/messages/${id}`, {
         method: "DELETE",
@@ -338,25 +341,25 @@ export function ChatRoomPanel({
     })
     if (!res.ok) {
       const data = await res.json().catch(() => null)
-      throw new Error(data?.error || "Não foi possível enviar a denúncia")
+      throw new Error(data?.error || t("reportSendError", "Não foi possível enviar a denúncia"))
     }
   }
 
   const roomTitle = useMemo(() => {
-    if (!room) return kind === "global" ? "Global" : "Máquina"
-    if (room.type === "global") return "Global"
-    return room.display_name || "Máquina"
-  }, [room, kind])
+    if (!room) return kind === "global" ? t("globalRoomTitle", "Global") : t("machineRoomTitle", "Máquina")
+    if (room.type === "global") return t("globalRoomTitle", "Global")
+    return room.display_name || t("machineRoomTitle", "Máquina")
+  }, [room, kind, t])
 
   const placeholder =
     kind === "global"
-      ? "Escreva no chat global..."
-      : "Converse com pessoas da sua máquina..."
+      ? t("globalChatPlaceholder", "Escreva no chat global...")
+      : t("machineChatPlaceholder", "Converse com pessoas da sua máquina...")
 
   if (status !== "authenticated") {
     return (
       <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-white/60">
-        Entre na sua conta para usar o chat ao vivo.
+        {t("loginPromptChat", "Entre na sua conta para usar o chat ao vivo.")}
       </div>
     )
   }
@@ -372,7 +375,7 @@ export function ChatRoomPanel({
   if (joinError && !room) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-red-300">
-        <p>Não conseguimos conectar ao chat agora.</p>
+        <p>{t("connectionErrorTitle", "Não conseguimos conectar ao chat agora.")}</p>
         <p className="text-xs text-white/50">{joinError}</p>
         <button
           type="button"
@@ -387,7 +390,7 @@ export function ChatRoomPanel({
           }}
           className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/80 hover:bg-white/5"
         >
-          Tentar de novo
+          {t("retryButton", "Tentar de novo")}
         </button>
       </div>
     )
@@ -422,14 +425,14 @@ export function ChatRoomPanel({
             <p className="truncate text-[11px] text-white/50">
               {pageSubtitle ||
                 (kind === "global"
-                  ? "Converse com usuários online no Freelandoo."
-                  : "Converse com pessoas da sua área.")}
+                  ? t("globalChatDescription", "Converse com usuários online no Freelandoo.")
+                  : t("machineChatDescription", "Converse com pessoas da sua área."))}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur">
             <Users className="h-3.5 w-3.5 text-emerald-400" />
             <span className="tabular-nums">{online}</span>
-            <span className="hidden text-white/40 sm:inline">online</span>
+            <span className="hidden text-white/40 sm:inline">{t("onlineText", "online")}</span>
           </div>
           <span
             className={cn(
@@ -441,7 +444,7 @@ export function ChatRoomPanel({
                   : "border-white/15 bg-white/5 text-white/55"
             )}
           >
-            {connState === "online" ? "ao vivo" : connState === "reconnecting" ? "reconectando" : "conectando"}
+            {connState === "online" ? t("liveStatus", "ao vivo") : connState === "reconnecting" ? t("reconnectingStatus", "reconectando") : t("connectingStatus", "conectando")}
           </span>
         </div>
       </header>
@@ -467,8 +470,8 @@ export function ChatRoomPanel({
             </motion.div>
             <p className="text-sm text-white/60">
               {kind === "global"
-                ? "Seja o primeiro a falar no chat global."
-                : "Seja o primeiro a falar nessa máquina."}
+                ? t("firstMessageGlobalHint", "Seja o primeiro a falar no chat global.")
+                : t("firstMessageMachineHint", "Seja o primeiro a falar nessa máquina.")}
             </p>
           </div>
         ) : (
@@ -524,12 +527,12 @@ export function ChatRoomPanel({
                         <div className={cn("mb-0.5 flex items-center gap-1.5 px-1", mine ? "flex-row-reverse" : "flex-row")}>
                           {!mine && (
                             <span className="truncate text-[12px] font-semibold text-white">
-                              {m.profile?.display_name || m.sender.nome || "Anônimo"}
+                              {m.profile?.display_name || m.sender.nome || t("anonymousUser", "Anônimo")}
                             </span>
                           )}
                           {level > 0 && (
                             <span className="rounded-md bg-amber-400/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                              LV.{level}
+                              {t("levelBadgeLabel", "LV.{n}").replace("{n}", String(level))}
                             </span>
                           )}
                           {machine && (
@@ -542,7 +545,7 @@ export function ChatRoomPanel({
 
                       {m.hidden ? (
                         <p className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[12px] italic text-white/45">
-                          <Flag className="h-3 w-3" aria-hidden /> Mensagem ocultada por denúncias.
+                          <Flag className="h-3 w-3" aria-hidden /> {t("messageHiddenLabel", "Mensagem ocultada por denúncias.")}
                         </p>
                       ) : (
                         <div
@@ -562,13 +565,13 @@ export function ChatRoomPanel({
                         </div>
                       )}
                       <div className={cn("mt-0.5 flex items-center gap-1.5 px-1", mine ? "flex-row-reverse" : "flex-row")}>
-                        <span className="text-[10px] tabular-nums text-white/35">{timeOnly(m.created_at)}</span>
+                        <span className="text-[10px] tabular-nums text-white/35">{timeOnly(m.created_at, locale)}</span>
                         {mine ? (
                           <button
                             type="button"
                             onClick={() => deleteMine(m.id_chat_message)}
-                            aria-label="Apagar"
-                            title="Apagar"
+                            aria-label={t("deleteMessageAriaLabel", "Apagar")}
+                            title={t("deleteMessageAriaLabel", "Apagar")}
                             className="rounded p-0.5 text-white/30 opacity-0 transition-all hover:text-red-300 group-hover/m:opacity-100"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -577,8 +580,8 @@ export function ChatRoomPanel({
                           <button
                             type="button"
                             onClick={() => openReport(m.id_chat_message)}
-                            aria-label="Denunciar"
-                            title="Denunciar"
+                            aria-label={t("reportMessageAriaLabel", "Denunciar")}
+                            title={t("reportMessageAriaLabel", "Denunciar")}
                             className="rounded p-0.5 text-white/30 opacity-0 transition-all hover:text-amber-300 group-hover/m:opacity-100"
                           >
                             <Flag className="h-3 w-3" />
@@ -631,15 +634,15 @@ export function ChatRoomPanel({
             disabled={sending || !draft.trim()}
             whileTap={{ scale: 0.94 }}
             transition={SPRING}
-            aria-label="Enviar"
+            aria-label={t("sendMessageAriaLabel", "Enviar")}
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </motion.button>
         </div>
         <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-white/30">
-          <span className="hidden sm:inline">Enter envia · Shift+Enter quebra linha</span>
-          <span className="sm:hidden">Enter envia</span>
+          <span className="hidden sm:inline">{t("sendKeysHintDesktop", "Enter envia · Shift+Enter quebra linha")}</span>
+          <span className="sm:hidden">{t("sendKeysHintMobile", "Enter envia")}</span>
           <span className="tabular-nums">{draft.length}/{MAX_LENGTH}</span>
         </div>
       </div>

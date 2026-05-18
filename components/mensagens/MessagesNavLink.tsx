@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const POLL_MS = 30_000
 
@@ -47,6 +48,7 @@ function initials(name: string | null | undefined): string {
 }
 
 export default function MessagesNavLink({ className = "" }: { className?: string }) {
+  const t = useTranslations("Messages")
   const router = useRouter()
   const [unread, setUnread] = useState(0)
   const [authed, setAuthed] = useState<boolean>(false)
@@ -150,7 +152,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label="Mensagens"
+          aria-label={t("messagesHeaderTitle", "Mensagens")}
           className={`relative inline-flex h-9 w-9 items-center justify-center rounded-md text-white/80 hover:bg-white/10 hover:text-white ${className}`}
         >
           <MessageCircle className="h-5 w-5" />
@@ -162,7 +164,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>Mensagens</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("messagesDropdownLabel", "Mensagens")}</DropdownMenuLabel>
         {serviceUnread > 0 && (
           <>
             <DropdownMenuItem
@@ -170,7 +172,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
               onSelect={() => router.push("/mensagens?tab=os")}
             >
               <ClipboardList className="h-4 w-4" />
-              <span className="flex-1">Minhas solicitações</span>
+              <span className="flex-1">{t("myRequestsLabel", "Minhas solicitações")}</span>
               <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
                 {serviceUnread > 99 ? "99+" : serviceUnread}
               </span>
@@ -184,7 +186,7 @@ export default function MessagesNavLink({ className = "" }: { className?: string
             onSelect={() => router.push("/mensagens")}
           >
             <MessageCircle className="h-4 w-4" />
-            Abrir mensagens
+            {t("openMessagesLabel", "Abrir mensagens")}
           </DropdownMenuItem>
         ) : (
           actors.map((actor) => {
@@ -205,9 +207,9 @@ export default function MessagesNavLink({ className = "" }: { className?: string
                   )}
                 </div>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm">{actor.display_name || "Subperfil"}</span>
+                  <span className="block truncate text-sm">{actor.display_name || t("subprofileLabel", "Subperfil")}</span>
                   <span className="block truncate text-[11px] text-muted-foreground">
-                    {actor.type === "clan" ? "Clan" : actor.username ? `@${actor.username}` : "Subperfil"}
+                    {actor.type === "clan" ? t("clanLabel", "Clan") : actor.username ? `@${actor.username}` : t("subprofileLabel", "Subperfil")}
                   </span>
                 </span>
                 {actor.type === "clan" ? <Users className="h-4 w-4 text-muted-foreground" /> : null}

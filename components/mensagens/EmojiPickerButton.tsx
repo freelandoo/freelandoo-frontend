@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useEffect, useRef, useState } from "react"
 import { Smile } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const EmojiPicker = dynamic(
   () => import("emoji-picker-react").then((m) => m.default),
@@ -26,6 +27,7 @@ interface EmojiPickerButtonProps {
 }
 
 export function EmojiPickerButton({ onPick, className, align = "top-left" }: EmojiPickerButtonProps) {
+  const t = useTranslations("Conversation")
   const [open, setOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -65,7 +67,7 @@ export function EmojiPickerButton({ onPick, className, align = "top-left" }: Emo
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Inserir emoji"
+        aria-label={t("insertEmojiAriaLabel", "Inserir emoji")}
         aria-expanded={open}
         className={cn(
           "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/65 transition-colors hover:bg-white/[0.08] hover:text-yellow-300",
@@ -103,7 +105,7 @@ export function EmojiPickerButton({ onPick, className, align = "top-left" }: Emo
                 setOpen(false)
               }}
               theme={"dark" as never}
-              searchPlaceholder="Buscar emoji"
+              searchPlaceholder={t("emojiSearchPlaceholder", "Buscar emoji")}
               width={pickerWidth}
               height={pickerHeight}
               previewConfig={{ showPreview: false }}

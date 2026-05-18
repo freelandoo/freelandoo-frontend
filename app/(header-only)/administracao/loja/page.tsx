@@ -500,7 +500,7 @@ function GovernanceTab() {
             <div className="my-2 border-t border-border" />
             <Row label="Comprador paga" value={brl(preview.display_price_cents)} bold />
             <p className="mt-3 text-[10px] text-muted-foreground">
-              O frete (Melhor Envio) é somado em cima do "comprador paga" no checkout, e fica retido com a plataforma para custear a etiqueta.
+              O frete (Melhor Envio) é somado em cima do &quot;comprador paga&quot; no checkout, e fica retido com a plataforma para custear a etiqueta.
             </p>
           </div>
         ) : (
