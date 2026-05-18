@@ -58,9 +58,7 @@ export default function SiteHeader() {
               <CountrySwitcher />
               <LanguageSwitcher />
             </div>
-            {status === "loading" ? (
-              <div className="h-9 w-24 animate-pulse rounded-md bg-white/10" />
-            ) : isLoggedIn ? (
+            {isLoggedIn ? (
               <>
                 <MessagesNavLink />
                 <Button
