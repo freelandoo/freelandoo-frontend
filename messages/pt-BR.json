@@ -884,5 +884,33 @@
     "footer.and": "e",
     "footer.links.0": "Termos de Uso",
     "footer.links.1": "Termo de Ativação"
+  },
+  "HomeSocial": {
+    "hero.badge": "rede social profissional",
+    "hero.titlePrefix": "A rede social de profissionais",
+    "hero.titleHighlight": "feita para ganhar dinheiro.",
+    "hero.description": "Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja encontrado por quem precisa do que você faz.",
+    "hero.primaryCta": "Criar meu perfil profissional",
+    "hero.secondaryCta": "Explorar profissionais",
+    "hero.affiliateCta": "Ganhar indicando ->",
+    "hero.proofs.0": "Posts de portfólio",
+    "hero.proofs.1": "Mensagens",
+    "hero.proofs.2": "Clans",
+    "hero.proofs.3": "Máquinas",
+    "hero.proofs.4": "Acompanhados",
+    "hero.proofs.5": "Indicações",
+    "hero.mock.profileName": "Camila Borba",
+    "hero.mock.profileRole": "Editora de cortes - São Paulo, SP",
+    "hero.mock.portfolioLabel": "portfólio",
+    "hero.mock.portfolioTitle": "Cortes virais para o canal Sertão Studio (3 vídeos - 1,4M views)",
+    "hero.mock.sendMessage": "Enviar mensagem",
+    "hero.mock.messagesLabel": "Mensagens",
+    "hero.mock.newMessages": "2 novas",
+    "hero.mock.messageIn": "Bom, sua thumb tem chamada de número... cabe no orçamento de 480?",
+    "hero.mock.messageOut": "Cabe sim. Te mando o briefing.",
+    "hero.mock.inputPlaceholder": "escrever mensagem",
+    "hero.mock.clanLabel": "Clan",
+    "hero.mock.clanName": "Casa Áurea Studio",
+    "hero.mock.clanDescription": "Edição & motion - 6 perfis"
   }
 }

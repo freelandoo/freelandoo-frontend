@@ -18,11 +18,11 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   es: "Español",
 }
 
-// Flags emoji por locale (usadas no seletor).
+// Short text badges for locale selector. Avoid emoji rendering inconsistencies.
 export const LOCALE_FLAGS: Record<Locale, string> = {
-  "pt-BR": "🇧🇷",
-  en: "🇺🇸",
-  es: "🇪🇸",
+  "pt-BR": "BR",
+  en: "EN",
+  es: "ES",
 }
 
 export const LOCALE_COOKIE = "NEXT_LOCALE"
