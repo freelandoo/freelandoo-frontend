@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +13,7 @@ import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
+import { extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 
 export default function LoginPage() {
@@ -20,63 +21,72 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const router = useRouter()
   const t = useTranslations("Auth")
   const tCommon = useTranslations("Common")
   const tErr = useTranslations("Errors")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setError("")
     setIsLoading(true)
 
+    let didRedirect = false
     try {
-      console.log("[v0] Enviando dados de login:", { email })
-
       const response = await clientFetchWithTimeout(
         "/api/signin",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            senha: password,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, senha: password }),
         },
         9000
       )
 
-      const data = await response.json().catch(() => ({}))
-      console.log("[v0] Resposta do login:", data)
+      const data = await response.json().catch(() => ({} as Record<string, unknown>))
 
       if (!response.ok) {
-        setError(data.error || data.message || tErr("loginFailed", "Erro ao fazer login"))
-        setIsLoading(false)
+        const msg =
+          typeof data?.error === "string"
+            ? data.error
+            : typeof data?.message === "string"
+              ? data.message
+              : tErr("loginFailed", "Erro ao fazer login")
+        setError(msg)
         return
       }
 
-      const session = extractAuthSession(data)
+      const session = extractAuthSession(data as Record<string, unknown>)
       if (!session) {
         setError(tErr("loginFailed", "Erro ao fazer login"))
-        setIsLoading(false)
         return
       }
 
       setSession(session.token, session.user)
-
-      console.log("[v0] Login realizado com sucesso, redirecionando...")
-
       const target = session.emailVerified === false ? "/verify-email" : "/search"
-      completeAuthRedirect(target)
-    } catch (error) {
-      console.error("[v0] Erro ao fazer login:", error)
-      if (isClientFetchTimeout(error)) {
+      didRedirect = true
+      // SPA primeiro (rápido, mantém socket), fallback duro depois.
+      try {
+        router.replace(target)
+        router.refresh()
+      } catch {
+        /* ignore */
+      }
+      window.setTimeout(() => {
+        if (window.location.pathname !== target) {
+          window.location.replace(target)
+        }
+      }, 400)
+    } catch (err) {
+      if (isClientFetchTimeout(err)) {
         setError(tErr("timeout", "Servidor demorou para responder. Tente novamente."))
       } else {
         setError(tErr("network", "Erro ao conectar com o servidor"))
       }
-      setIsLoading(false)
+    } finally {
+      // Loading só fica preso se já estamos saindo da página.
+      if (!didRedirect) setIsLoading(false)
     }
   }
 
