@@ -1,17 +1,14 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 
-/** Log de entrada para todas as rotas `/api/*` (path sem query). */
-export function middleware(request: NextRequest) {
-  console.info(
-    "[middleware:api]",
-    request.method,
-    request.nextUrl.pathname,
-    JSON.stringify({ ua: request.headers.get("user-agent")?.slice(0, 60) ?? "" })
-  )
+// Middleware desativado temporariamente — estava potencialmente pendurando
+// funções no Edge runtime. Logging vai pros route handlers individuais
+// (apiFlow ja loga la). Reabilitar so apos investigar Edge runtime.
+export function middleware(_request: NextRequest) {
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  // matcher vazio — middleware nao roda em nada por enquanto.
+  matcher: [],
 }
