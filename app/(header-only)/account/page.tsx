@@ -58,11 +58,13 @@ import {
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 import { UserDropside } from "@/components/layout/UserDropside"
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 export default function PerfilPage() {
   const router = useRouter()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
-  const [unreadMessages, setUnreadMessages] = React.useState(0)
+  const navCounts = useNavCounts()
+  const unreadMessages = navCounts.conversationUnread
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -145,9 +147,8 @@ export default function PerfilPage() {
   const [premiumProfile, setPremiumProfile] = useState<{ id: string; name?: string } | null>(null)
   const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
   const [serviceRequestMode, setServiceRequestMode] = useState<"service" | "product">("service")
-  const [srBadge, setSrBadge] = useState<{ has_new: boolean; unread_chats: number }>({ has_new: false, unread_chats: 0 })
-  // bolinha vermelha por sub-perfil (mural/chat) — id_profile -> has_new
-  const [profileBadges, setProfileBadges] = useState<Record<string, boolean>>({})
+  const srBadge = { has_new: navCounts.serviceHasNew, unread_chats: navCounts.serviceUnread }
+  const profileBadges = navCounts.conversationByActor
   const [manifestation, setManifestation] = useState<{
     active?: {
       id: string
@@ -162,46 +163,6 @@ export default function PerfilPage() {
   } | null>(null)
 
   const estados = ESTADOS_BRASIL
-
-  // Badge polling for service requests (30s)
-  React.useEffect(() => {
-    const fetchBadge = async () => {
-      const token = localStorage.getItem("token")
-      if (!token) return
-      try {
-        const res = await fetch("/api/service-requests/badge/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setSrBadge({ has_new: !!data.has_new, unread_chats: data.unread_chats ?? 0 })
-        }
-      } catch { /* silent */ }
-    }
-    fetchBadge()
-    const interval = setInterval(fetchBadge, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Total de mensagens nao lidas (somatorio de todos os subperfis e clans owned)
-  React.useEffect(() => {
-    const fetchUnread = async () => {
-      const token = localStorage.getItem("token")
-      if (!token) return
-      try {
-        const res = await fetch("/api/conversations/unread-count", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setUnreadMessages(Number(data?.total) || 0)
-        }
-      } catch { /* silent */ }
-    }
-    fetchUnread()
-    const interval = setInterval(fetchUnread, 30000)
-    return () => clearInterval(interval)
-  }, [])
 
   React.useEffect(() => {
     const token = localStorage.getItem("token")
@@ -248,37 +209,6 @@ export default function PerfilPage() {
     // openEditModal reabriria o modal indevidamente.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfil])
-
-  // Badge por sub-perfil — só perfis ativos e visíveis (não-clan)
-  React.useEffect(() => {
-    const profilesToCheck = (perfil?.profiles || []).filter(
-      (p) => !p.is_clan && p.is_paid && p.is_visible !== false && !p.deleted_at
-    )
-    if (profilesToCheck.length === 0) return
-    let cancelled = false
-    const fetchAll = async () => {
-      const token = localStorage.getItem("token")
-      if (!token) return
-      const out: Record<string, boolean> = {}
-      await Promise.all(
-        profilesToCheck.map(async (p) => {
-          try {
-            const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(p.id_profile)}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            if (res.ok) {
-              const d = await res.json()
-              out[p.id_profile] = !!d.has_new
-            }
-          } catch { /* silent */ }
-        })
-      )
-      if (!cancelled) setProfileBadges(out)
-    }
-    fetchAll()
-    const interval = setInterval(fetchAll, 30000)
-    return () => { cancelled = true; clearInterval(interval) }
-  }, [perfil?.profiles])
 
   if (isLoading) {
     return <AccountLoading />

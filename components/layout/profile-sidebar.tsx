@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Boxes, Crown, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
 import { UserDropside } from "./UserDropside"
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 interface SidebarItem {
   href: string
@@ -109,7 +110,7 @@ export function ProfileSidebar() {
   const router = useRouter()
   const active = useActiveContext()
   const [dropsideOpen, setDropsideOpen] = useState(false)
-  const [unreadSR, setUnreadSR] = useState(false)
+  const navCounts = useNavCounts()
 
   // Em /account o avatar abre o dropside; em outras telas, navega pra /account.
   const isOnAccountHome = pathname === "/account"
@@ -123,27 +124,7 @@ export function ProfileSidebar() {
 
   const isLoggedIn = status === "authenticated" && !!user
 
-  // Polling do badge de service-request (a cada 60s)
-  useEffect(() => {
-    if (!isLoggedIn) return
-    let cancelled = false
-    const fetchBadge = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-      if (!token) return
-      try {
-        const res = await fetch("/api/service-requests/badge/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (!cancelled) setUnreadSR(!!data.has_new || (data.unread_chats ?? 0) > 0)
-        }
-      } catch { /* silent */ }
-    }
-    fetchBadge()
-    const interval = setInterval(fetchBadge, 60000)
-    return () => { cancelled = true; clearInterval(interval) }
-  }, [isLoggedIn])
+  const unreadSR = navCounts.serviceHasNew || navCounts.serviceUnread > 0
 
   if (HIDDEN_ON_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return null

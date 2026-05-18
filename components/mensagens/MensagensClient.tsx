@@ -47,8 +47,8 @@ import type {
 } from "./types"
 
 const ACTOR_STORAGE_KEY = "mensagens:active_actor"
-const POLL_THREAD_MS = 5000
-const POLL_LIST_MS = 15000
+const POLL_THREAD_MS = 15_000
+const POLL_LIST_MS = 60_000
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 function authHeaders(): HeadersInit {
@@ -439,7 +439,9 @@ export default function MensagensClient() {
   // Polling da lista
   useEffect(() => {
     if (!actorId) return
-    const t = setInterval(loadConversations, POLL_LIST_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) loadConversations()
+    }, POLL_LIST_MS)
     return () => clearInterval(t)
   }, [actorId, loadConversations])
 
@@ -503,7 +505,9 @@ export default function MensagensClient() {
   // Polling da thread
   useEffect(() => {
     if (!activeConvId) return
-    const t = setInterval(() => loadThread(activeConvId, { silent: true }), POLL_THREAD_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) loadThread(activeConvId, { silent: true })
+    }, POLL_THREAD_MS)
     return () => clearInterval(t)
   }, [activeConvId, loadThread])
 
@@ -536,7 +540,9 @@ export default function MensagensClient() {
   useEffect(() => {
     if (status !== "authenticated") return
     if (tab !== "os") return
-    const t = setInterval(loadOsChats, POLL_LIST_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) loadOsChats()
+    }, POLL_LIST_MS)
     return () => clearInterval(t)
   }, [status, tab, loadOsChats])
 
@@ -593,7 +599,9 @@ export default function MensagensClient() {
   useEffect(() => {
     if (!activeOsResponseId) return
     if (tab !== "os") return
-    const t = setInterval(() => loadOsThread(activeOsResponseId, { silent: true }), POLL_THREAD_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) loadOsThread(activeOsResponseId, { silent: true })
+    }, POLL_THREAD_MS)
     return () => clearInterval(t)
   }, [activeOsResponseId, tab, loadOsThread])
 

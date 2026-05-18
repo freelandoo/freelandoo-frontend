@@ -7,9 +7,9 @@ import type { CatalogMachine } from "@/components/home/machines/use-machines-cat
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { CityFilterSheet } from "./city-filter-sheet"
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
-import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
+import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -45,6 +45,7 @@ export function FeedRetractableHeader({
 
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
+  const navCounts = useNavCounts()
 
   useEffect(() => {
     const el = scrollRef.current
@@ -61,27 +62,7 @@ export function FeedRetractableHeader({
     return () => el.removeEventListener("scroll", onScroll)
   }, [scrollRef])
 
-  const [unread, setUnread] = useState(0)
-  useEffect(() => {
-    const token = getToken()
-    if (!token) return
-    let cancelled = false
-    const load = async () => {
-      try {
-        const res = await fetch("/api/me/notifications/unread-count", {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        })
-        if (!res.ok) return
-        const data = await res.json()
-        const n = typeof data.unread_count === "number" ? data.unread_count : typeof data.count === "number" ? data.count : 0
-        if (!cancelled) setUnread(n)
-      } catch { /* silent */ }
-    }
-    load()
-    const i = setInterval(load, 45000)
-    return () => { cancelled = true; clearInterval(i) }
-  }, [])
+  const unread = navCounts.notificationUnread
 
   const bellActive = unread > 0
   const bellColor = bellActive ? accent : "#ffffff"
@@ -183,7 +164,9 @@ export function FeedRetractableHeader({
       open={dropdownOpen}
       anchorRef={bellRef}
       onClose={() => setDropdownOpen(false)}
-      onUnreadCountChange={setUnread}
+      onUnreadCountChange={() => {
+        window.dispatchEvent(new Event("notifications:unread-changed"))
+      }}
     />
     </>
   )

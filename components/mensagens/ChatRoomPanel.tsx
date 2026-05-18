@@ -21,8 +21,8 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { EmojiPickerButton } from "./EmojiPickerButton"
 import { ReportMessageDialog } from "./ReportMessageDialog"
 
-const POLL_MS = 3500
-const HEARTBEAT_MS = 30_000
+const POLL_MS = 10_000
+const HEARTBEAT_MS = 60_000
 const MAX_LENGTH = 500
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
@@ -184,7 +184,9 @@ export function ChatRoomPanel({
         setConnState("reconnecting")
       }
     }
-    const t = setInterval(ping, HEARTBEAT_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) ping()
+    }, HEARTBEAT_MS)
     return () => clearInterval(t)
   }, [room])
 
@@ -247,7 +249,9 @@ export function ChatRoomPanel({
 
   useEffect(() => {
     if (!room) return
-    const t = setInterval(() => loadMessages({ silent: true }), POLL_MS)
+    const t = setInterval(() => {
+      if (!document.hidden) loadMessages({ silent: true })
+    }, POLL_MS)
     return () => clearInterval(t)
   }, [room, loadMessages])
 
