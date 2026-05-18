@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Script from "next/script"
 import { useRouter } from "next/navigation"
+import { setSession, type AuthUser } from "@/lib/auth"
 
 declare global {
   interface Window {
@@ -84,16 +85,23 @@ export function GoogleSignInButton({
           return
         }
 
-        localStorage.setItem("token", data.token)
-        localStorage.setItem("user", JSON.stringify(data.user))
-        window.dispatchEvent(new Event("auth:changed"))
+        const token = data.token || data.access_token || data.jwt
+        const user = data.user || data.usuario || data.profile
+        if (!token || !user) {
+          setError("Login com Google retornou sem sessão. Tente novamente.")
+          setLoading(false)
+          return
+        }
+
+        setSession(token, user as AuthUser)
 
         const target =
           redirectTo ||
           (data.email_verified === false || data.user?.email_verified === false
             ? "/verify-email"
             : "/search")
-        router.push(target)
+        router.replace(target)
+        router.refresh()
       } catch {
         setError("Erro ao conectar com o servidor")
         setLoading(false)
