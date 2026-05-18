@@ -19,6 +19,16 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const backend =
+      process.env.BACKEND_API_URL?.trim() ||
+      "https://freelandoo-backend-production.up.railway.app"
+    return {
+      afterFiles: [
+        { source: "/api/:path*", destination: `${backend.replace(/\/$/, "")}/:path*` },
+      ],
+    }
+  },
 }
 
 export default nextConfig
