@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import Script from "next/script"
-import { completeAuthRedirect, extractAuthSession, setSession } from "@/lib/auth"
+import { extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 
 declare global {
@@ -37,11 +38,8 @@ declare global {
 }
 
 type Props = {
-  /** Texto do botão. "continue_with" = "Continuar com Google" */
   text?: "signin_with" | "signup_with" | "continue_with"
-  /** Para onde redirecionar após login bem-sucedido. */
   redirectTo?: string
-  /** Override de tema. */
   theme?: "outline" | "filled_blue" | "filled_black"
   className?: string
 }
@@ -52,6 +50,7 @@ export function GoogleSignInButton({
   theme = "filled_black",
   className,
 }: Props) {
+  const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scriptReady, setScriptReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,7 +61,6 @@ export function GoogleSignInButton({
   useEffect(() => {
     if (!scriptReady) return
     if (!clientId) {
-       
       setError("Login com Google indisponível: configurar NEXT_PUBLIC_GOOGLE_CLIENT_ID.")
       return
     }
@@ -71,6 +69,7 @@ export function GoogleSignInButton({
     const handleCredential = async ({ credential }: { credential: string }) => {
       setLoading(true)
       setError(null)
+      let didRedirect = false
       try {
         const res = await clientFetchWithTimeout(
           "/api/google-signin",
@@ -81,17 +80,21 @@ export function GoogleSignInButton({
           },
           9000
         )
-        const data = await res.json().catch(() => ({}))
+        const data = (await res.json().catch(() => ({}))) as Record<string, unknown>
         if (!res.ok) {
-          setError(data?.error || data?.message || "Erro ao entrar com Google")
-          setLoading(false)
+          const msg =
+            typeof data?.error === "string"
+              ? data.error
+              : typeof data?.message === "string"
+                ? data.message
+                : "Erro ao entrar com Google"
+          setError(msg)
           return
         }
 
         const session = extractAuthSession(data)
         if (!session) {
           setError("Login com Google retornou sem sessão. Tente novamente.")
-          setLoading(false)
           return
         }
 
@@ -100,14 +103,26 @@ export function GoogleSignInButton({
         const target =
           redirectTo ||
           (session.emailVerified === false ? "/verify-email" : "/search")
-        completeAuthRedirect(target)
+        didRedirect = true
+        try {
+          router.replace(target)
+          router.refresh()
+        } catch {
+          /* ignore */
+        }
+        window.setTimeout(() => {
+          if (window.location.pathname !== target) {
+            window.location.replace(target)
+          }
+        }, 400)
       } catch (err) {
         if (isClientFetchTimeout(err)) {
           setError("Servidor demorou para responder. Tente novamente.")
         } else {
           setError("Erro ao conectar com o servidor")
         }
-        setLoading(false)
+      } finally {
+        if (!didRedirect) setLoading(false)
       }
     }
 
@@ -129,7 +144,7 @@ export function GoogleSignInButton({
       width: 320,
       locale: "pt-BR",
     })
-  }, [scriptReady, clientId, redirectTo, theme, text])
+  }, [scriptReady, clientId, redirectTo, theme, text, router])
 
   return (
     <div className={className}>

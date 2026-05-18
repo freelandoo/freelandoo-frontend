@@ -558,9 +558,12 @@ export default function FreelancerProfileView({
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
   }
 
-  // Badge polling for mural (30s, only for owner)
+  // Badge do mural — só busca 1x ao montar. Refresh manual ao voltar pra aba.
+  // Reduzimos o poll agressivo de 30s pra evitar consumo de Vercel; eventos
+  // novos virão via realtime (nav-counts:changed) e via foco da janela.
   useEffect(() => {
     if (!isOwnProfile) return
+    let cancelled = false
     const fetchBadge = async () => {
       const token = localStorage.getItem("token")
       if (!token) return
@@ -568,15 +571,22 @@ export default function FreelancerProfileView({
         const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(profileId)}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
-        if (res.ok) {
-          const data = await res.json()
-          setMuralBadge({ has_new: !!data.has_new, chat_unread: data.chat_unread ?? 0 })
-        }
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        setMuralBadge({ has_new: !!data.has_new, chat_unread: data.chat_unread ?? 0 })
       } catch { /* silent */ }
     }
     fetchBadge()
-    const interval = setInterval(fetchBadge, 30000)
-    return () => clearInterval(interval)
+    const onFocus = () => {
+      if (!document.hidden) fetchBadge()
+    }
+    window.addEventListener("focus", onFocus)
+    document.addEventListener("visibilitychange", onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener("focus", onFocus)
+      document.removeEventListener("visibilitychange", onFocus)
+    }
   }, [isOwnProfile, profileId])
 
   if (loading) {

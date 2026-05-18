@@ -151,18 +151,19 @@ export function ServiceChatModal({
     } catch { /* silent */ }
   }, [effectiveIdResponse])
 
-  // Initial fetch + polling 10s
+  // Fetch inicial + poll bem espaçado (modal raramente fica aberto).
+  // 30s era agressivo; 90s já cobre o caso comum sem martelar o backend.
   useEffect(() => {
     if (!open) return
-     
+
     setMessages([])
     if (!effectiveIdResponse) return
-     
+
     setLoading(true)
     fetchMessages().finally(() => setLoading(false))
     const interval = setInterval(() => {
       if (!document.hidden) fetchMessages()
-    }, 30000)
+    }, 90000)
     return () => clearInterval(interval)
   }, [open, effectiveIdResponse, fetchMessages])
 
