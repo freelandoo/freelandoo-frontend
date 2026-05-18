@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,10 +12,9 @@ import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { setSession } from "@/lib/auth"
+import { extractAuthSession, setSession } from "@/lib/auth"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -53,16 +51,19 @@ export default function LoginPage() {
         return
       }
 
-      setSession(data.token, data.user)
+      const session = extractAuthSession(data)
+      if (!session) {
+        setError(tErr("loginFailed", "Erro ao fazer login"))
+        setIsLoading(false)
+        return
+      }
+
+      setSession(session.token, session.user)
 
       console.log("[v0] Login realizado com sucesso, redirecionando...")
 
-      const target =
-        data.email_verified === false || data.user?.email_verified === false
-          ? "/verify-email"
-          : "/search"
-      router.replace(target)
-      router.refresh()
+      const target = session.emailVerified === false ? "/verify-email" : "/search"
+      window.location.assign(target)
     } catch (error) {
       console.error("[v0] Erro ao fazer login:", error)
       setError(tErr("network", "Erro ao conectar com o servidor"))

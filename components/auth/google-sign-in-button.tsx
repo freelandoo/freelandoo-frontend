@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Script from "next/script"
-import { useRouter } from "next/navigation"
-import { setSession, type AuthUser } from "@/lib/auth"
+import { extractAuthSession, setSession } from "@/lib/auth"
 
 declare global {
   interface Window {
@@ -52,7 +51,6 @@ export function GoogleSignInButton({
   theme = "filled_black",
   className,
 }: Props) {
-  const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const [scriptReady, setScriptReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,23 +83,19 @@ export function GoogleSignInButton({
           return
         }
 
-        const token = data.token || data.access_token || data.jwt
-        const user = data.user || data.usuario || data.profile
-        if (!token || !user) {
+        const session = extractAuthSession(data)
+        if (!session) {
           setError("Login com Google retornou sem sessão. Tente novamente.")
           setLoading(false)
           return
         }
 
-        setSession(token, user as AuthUser)
+        setSession(session.token, session.user)
 
         const target =
           redirectTo ||
-          (data.email_verified === false || data.user?.email_verified === false
-            ? "/verify-email"
-            : "/search")
-        router.replace(target)
-        router.refresh()
+          (session.emailVerified === false ? "/verify-email" : "/search")
+        window.location.assign(target)
       } catch {
         setError("Erro ao conectar com o servidor")
         setLoading(false)
@@ -126,7 +120,7 @@ export function GoogleSignInButton({
       width: 320,
       locale: "pt-BR",
     })
-  }, [scriptReady, clientId, router, redirectTo, theme, text])
+  }, [scriptReady, clientId, redirectTo, theme, text])
 
   return (
     <div className={className}>
