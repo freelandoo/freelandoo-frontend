@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Heart, MessageCircle, Send, Share2, Sparkles, Users } from "lucide-react"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { fadeUp, GhostBorder, SPRING, stagger } from "./shared"
 
 const MICROPROVAS = [
@@ -16,6 +17,7 @@ const MICROPROVAS = [
 
 export function SocialHero() {
   const reduce = useReducedMotion()
+  const t = useTranslations("HomeSocial")
   return (
     <section className="relative isolate overflow-hidden bg-zinc-950">
       {/* Glow ambiente — bem sutil, sem saturar */}
@@ -46,17 +48,17 @@ export function SocialHero() {
               className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-primary"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              rede social profissional
+              {t("hero.badge", "rede social profissional")}
             </motion.div>
 
             <motion.h1
               variants={fadeUp}
               className="mt-6 text-balance text-[2.4rem] font-semibold leading-[1.04] tracking-tight text-white md:text-[3.6rem] md:leading-[1.02]"
             >
-              A rede social de profissionais{" "}
+              {t("hero.titlePrefix", "A rede social de profissionais")}{" "}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-br from-primary to-amber-200 bg-clip-text text-transparent">
-                  feita para ganhar dinheiro.
+                  {t("hero.titleHighlight", "feita para ganhar dinheiro.")}
                 </span>
                 <span
                   aria-hidden
@@ -69,8 +71,7 @@ export function SocialHero() {
               variants={fadeUp}
               className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-white/65 md:text-lg"
             >
-              Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja
-              encontrado por quem precisa do que você faz.
+              {t("hero.description", "Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja encontrado por quem precisa do que você faz.")}
             </motion.p>
 
             <motion.div
@@ -82,20 +83,20 @@ export function SocialHero() {
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition active:scale-[0.98]"
                 style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.2) inset, 0 12px 32px -16px rgba(242,196,9,0.5)" }}
               >
-                Criar meu perfil profissional
+                {t("hero.primaryCta", "Criar meu perfil profissional")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/feed"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.08]"
               >
-                Explorar profissionais
+                {t("hero.secondaryCta", "Explorar profissionais")}
               </Link>
               <Link
                 href="/account/afiliado"
                 className="text-sm font-medium text-white/55 underline-offset-4 transition hover:text-primary hover:underline"
               >
-                Ganhar indicando →
+                {t("hero.affiliateCta", "Ganhar indicando ->")}
               </Link>
             </motion.div>
 
@@ -103,10 +104,10 @@ export function SocialHero() {
               variants={fadeUp}
               className="mt-9 flex flex-wrap gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.2em] text-white/40"
             >
-              {MICROPROVAS.map((m) => (
+              {MICROPROVAS.map((m, i) => (
                 <li key={m} className="inline-flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-primary/70" aria-hidden />
-                  {m}
+                  {t(`hero.proofs.${i}`, m)}
                 </li>
               ))}
             </motion.ul>
@@ -127,6 +128,7 @@ export function SocialHero() {
 
 function HeroBentoVisual() {
   const reduce = useReducedMotion()
+  const t = useTranslations("HomeSocial")
   return (
     <div className="relative">
       {/* Card de post de portfólio (frente) */}
@@ -144,9 +146,9 @@ function HeroBentoVisual() {
               aria-hidden
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">Camila Borba</p>
+              <p className="truncate text-sm font-semibold text-white">{t("hero.mock.profileName", "Camila Borba")}</p>
               <p className="truncate text-[11px] text-white/50">
-                Editora de cortes · São Paulo, SP
+                {t("hero.mock.profileRole", "Editora de cortes - São Paulo, SP")}
               </p>
             </div>
             <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-primary">
@@ -162,10 +164,10 @@ function HeroBentoVisual() {
           >
             <div className="flex h-full flex-col justify-end p-5">
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">
-                portfólio
+                {t("hero.mock.portfolioLabel", "portfólio")}
               </p>
               <p className="mt-2 text-lg font-semibold leading-tight text-white">
-                Cortes virais para o canal Sertão Studio (3 vídeos · 1,4M views)
+                {t("hero.mock.portfolioTitle", "Cortes virais para o canal Sertão Studio (3 vídeos - 1,4M views)")}
               </p>
             </div>
           </div>
@@ -180,7 +182,7 @@ function HeroBentoVisual() {
             </div>
             <button className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:border-primary/30 hover:text-primary">
               <MessageCircle className="h-3.5 w-3.5" />
-              Enviar mensagem
+              {t("hero.mock.sendMessage", "Enviar mensagem")}
             </button>
           </div>
         </GhostBorder>
@@ -195,21 +197,21 @@ function HeroBentoVisual() {
       >
         <GhostBorder className="bg-zinc-900/85 p-4 backdrop-blur">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-white/45">
-            <span>Mensagens</span>
+            <span>{t("hero.mock.messagesLabel", "Mensagens")}</span>
             <span className="rounded-full bg-primary px-1.5 py-0.5 font-semibold text-primary-foreground">
-              2 novas
+              {t("hero.mock.newMessages", "2 novas")}
             </span>
           </div>
           <div className="space-y-2">
             <div className="rounded-2xl rounded-bl-sm bg-white/[0.06] px-3 py-2 text-xs text-white/85">
-              Bom, sua thumb tem chamada de número… cabe no orçamento de 480?
+              {t("hero.mock.messageIn", "Bom, sua thumb tem chamada de número... cabe no orçamento de 480?")}
             </div>
             <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">
-              Cabe sim. Te mando o briefing.
+              {t("hero.mock.messageOut", "Cabe sim. Te mando o briefing.")}
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1.5 text-[11px] text-white/45">
-            <span className="flex-1 truncate">escrever mensagem</span>
+            <span className="flex-1 truncate">{t("hero.mock.inputPlaceholder", "escrever mensagem")}</span>
             <Send className="h-3.5 w-3.5" />
           </div>
         </GhostBorder>
@@ -225,10 +227,10 @@ function HeroBentoVisual() {
         <GhostBorder className="bg-zinc-950/90 p-4 backdrop-blur">
           <div className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-white/55">Clan</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-white/55">{t("hero.mock.clanLabel", "Clan")}</span>
           </div>
-          <p className="mt-2 text-sm font-semibold text-white">Casa Áurea Studio</p>
-          <p className="text-[11px] text-white/50">Edição & motion · 6 perfis</p>
+          <p className="mt-2 text-sm font-semibold text-white">{t("hero.mock.clanName", "Casa Áurea Studio")}</p>
+          <p className="text-[11px] text-white/50">{t("hero.mock.clanDescription", "Edição & motion - 6 perfis")}</p>
           <div className="mt-3 flex -space-x-1.5">
             {["#f2c409", "#0ea5e9", "#fb7185", "#34d399"].map((c) => (
               <span

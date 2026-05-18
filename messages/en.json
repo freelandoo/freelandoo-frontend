@@ -884,5 +884,33 @@
     "footer.and": "and",
     "footer.links.0": "Terms of Use",
     "footer.links.1": "Activation Terms"
+  },
+  "HomeSocial": {
+    "hero.badge": "professional social network",
+    "hero.titlePrefix": "The social network for professionals",
+    "hero.titleHighlight": "built to make money.",
+    "hero.description": "Create your profile, publish your work, appear in the feed, receive messages, and be found by people who need what you do.",
+    "hero.primaryCta": "Create my professional profile",
+    "hero.secondaryCta": "Explore professionals",
+    "hero.affiliateCta": "Earn by referring ->",
+    "hero.proofs.0": "Portfolio posts",
+    "hero.proofs.1": "Messages",
+    "hero.proofs.2": "Clans",
+    "hero.proofs.3": "Machines",
+    "hero.proofs.4": "Following",
+    "hero.proofs.5": "Referrals",
+    "hero.mock.profileName": "Camila Borba",
+    "hero.mock.profileRole": "Video editor - São Paulo, SP",
+    "hero.mock.portfolioLabel": "portfolio",
+    "hero.mock.portfolioTitle": "Viral cuts for Sertão Studio channel (3 videos - 1.4M views)",
+    "hero.mock.sendMessage": "Send message",
+    "hero.mock.messagesLabel": "Messages",
+    "hero.mock.newMessages": "2 new",
+    "hero.mock.messageIn": "Your thumbnail has a strong number hook... does it fit the 480 budget?",
+    "hero.mock.messageOut": "Yes. I'll send the brief.",
+    "hero.mock.inputPlaceholder": "write message",
+    "hero.mock.clanLabel": "Clan",
+    "hero.mock.clanName": "Casa Áurea Studio",
+    "hero.mock.clanDescription": "Editing & motion - 6 profiles"
   }
 }

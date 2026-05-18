@@ -12,10 +12,10 @@ import {
 import {
   LOCALE_FLAGS,
   LOCALE_LABELS,
+  LOCALE_COOKIE,
   SUPPORTED_LOCALES,
   type Locale,
 } from "@/lib/i18n/config"
-import { setLocaleCookie } from "@/lib/i18n/actions"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 interface LanguageSwitcherProps {
@@ -33,7 +33,7 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
     if (next === locale || pending) return
     startTransition(async () => {
       // 1. Cookie (sempre)
-      await setLocaleCookie(next)
+      document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`
 
       // 2. Sync backend se autenticado (best-effort, não bloqueia UX)
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -57,14 +57,14 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
       <DropdownMenuTrigger
         type="button"
         className={
-          "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-white/80 hover:bg-white/10 hover:text-white disabled:opacity-50 " +
+          "inline-flex h-9 min-w-16 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-xs font-semibold text-white/85 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50 " +
           (className ?? "")
         }
         disabled={pending}
         aria-label={t("language", "Idioma")}
       >
         <Globe className="h-4 w-4" />
-        <span aria-hidden="true">{LOCALE_FLAGS[locale]}</span>
+        <span aria-hidden="true" className="font-mono text-[11px] leading-none">{LOCALE_FLAGS[locale]}</span>
         {variant === "full" && <span>{LOCALE_LABELS[locale]}</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[160px]">

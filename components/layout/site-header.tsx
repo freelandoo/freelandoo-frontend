@@ -54,7 +54,7 @@ export default function SiteHeader() {
           </Link>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
-            <div className="hidden items-center gap-1 sm:flex">
+            <div className="hidden items-center gap-2 sm:flex">
               <CountrySwitcher />
               <LanguageSwitcher />
             </div>
@@ -81,7 +81,7 @@ export default function SiteHeader() {
               </>
             ) : (
               <>
-                <Link href="/login" className="text-xs font-medium text-white hover:text-white/80 sm:text-sm">
+                <Link href="/login" className="inline-flex h-9 items-center rounded-lg px-3 text-xs font-semibold text-white/85 transition hover:bg-white/10 hover:text-white sm:text-sm">
                   {tAuth("loginShort", "Login")}
                 </Link>
                 <Link href="/cadastro" className="hidden sm:block">
@@ -96,7 +96,7 @@ export default function SiteHeader() {
                 <Link href="/cadastro">
                   <Button
                     size="sm"
-                    className="bg-primary font-semibold text-primary-foreground hover:bg-primary/90 md:h-9"
+                    className="h-9 min-w-[132px] rounded-lg bg-primary px-4 font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:bg-[#ffd21a] active:scale-[0.98]"
                   >
                     {tNav("publishProject", "Publicar projeto")}
                   </Button>
