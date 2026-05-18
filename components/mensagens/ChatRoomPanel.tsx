@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
+import { MarkdownText } from "@/components/ui/markdown-text"
 import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -546,13 +547,18 @@ export function ChatRoomPanel({
                       ) : (
                         <div
                           className={cn(
-                            "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                            "relative px-4 py-2.5 text-sm leading-relaxed break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                             mine
                               ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                               : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                           )}
                         >
-                          {m.content}
+                          <MarkdownText
+                            prose={!mine}
+                            className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                          >
+                            {m.content}
+                          </MarkdownText>
                         </div>
                       )}
                       <div className={cn("mt-0.5 flex items-center gap-1.5 px-1", mine ? "flex-row-reverse" : "flex-row")}>

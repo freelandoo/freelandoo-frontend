@@ -22,6 +22,7 @@ import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoom
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
 import { AudioMessage, AudioRecorder } from "@/components/mensagens/AudioRecorder"
+import { MarkdownText } from "@/components/ui/markdown-text"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -1309,13 +1310,18 @@ export default function MensagensClient() {
                                 <div className={cn("flex max-w-[80%] min-w-0 flex-col", mine ? "items-end" : "items-start")}>
                                   <div
                                     className={cn(
-                                      "relative px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+                                      "relative px-4 py-2.5 text-sm leading-relaxed break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                                       mine
                                         ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                                         : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                                     )}
                                   >
-                                    {m.content}
+                                    <MarkdownText
+                                      prose={!mine}
+                                      className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                                    >
+                                      {m.content}
+                                    </MarkdownText>
                                   </div>
                                   <span className={cn("mt-0.5 px-1 text-[10px] tabular-nums", mine ? "text-white/40" : "text-white/35")}>
                                     {formatTime(m.created_at)}
@@ -1486,7 +1492,7 @@ export default function MensagensClient() {
                                 <div
                                   className={cn(
                                     "relative text-sm leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-                                    m.kind === "audio" ? "" : "px-4 py-2.5 whitespace-pre-wrap break-words",
+                                    m.kind === "audio" ? "" : "px-4 py-2.5 break-words",
                                     mine
                                       ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                                       : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
@@ -1499,7 +1505,12 @@ export default function MensagensClient() {
                                       mine={mine}
                                     />
                                   ) : (
-                                    m.body
+                                    <MarkdownText
+                                      prose={!mine}
+                                      className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                                    >
+                                      {m.body || ""}
+                                    </MarkdownText>
                                   )}
                                 </div>
                                 <span

@@ -22,6 +22,7 @@ import {
   Youtube,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
+import { MarkdownText } from "@/components/ui/markdown-text"
 import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
@@ -408,9 +409,9 @@ export function ProfileHeadCard({
           )}
 
           {profile.bio && (
-            <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
+            <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
               {profile.bio}
-            </p>
+            </MarkdownText>
           )}
 
           {/* FOOTER — lápis amarelo: hover no container expande o menu; click no lápis vai pro editar. */}
@@ -704,9 +705,9 @@ export function ProfileHeadCard({
 
         {/* BIO — nome e XP migraram pro RetractableProfileHeader */}
         {profile.bio && (
-          <p className="mt-5 max-w-2xl whitespace-pre-wrap break-words text-[13px] leading-relaxed text-white/70">
+          <MarkdownText className="mt-5 max-w-2xl break-words text-[13px] leading-relaxed text-white/70">
             {profile.bio}
-          </p>
+          </MarkdownText>
         )}
 
         {/* FOOTER — todas as ações como ícones (substitui PRIMARY ACTIONS + SECONDARY TOOLBAR) */}
