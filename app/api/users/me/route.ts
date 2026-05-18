@@ -1,6 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
-import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
+import { isFetchTimeout, fetchWithTimeout, readBodyWithTimeout } from "@/lib/server-fetch"
 
 const urlMe = () => `${getBackendApiUrl()}/users/me`
 
@@ -27,7 +27,9 @@ export async function GET(request: Request) {
 
     log.backendFetch("GET", url, response.status)
 
-    const data = await response.json()
+    const text = await readBodyWithTimeout(response, 2000)
+    let data: unknown
+    try { data = JSON.parse(text) } catch { data = { error: "Resposta inválida" } }
 
     if (!response.ok) {
       status = response.status

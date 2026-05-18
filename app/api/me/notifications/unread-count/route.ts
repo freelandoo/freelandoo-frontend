@@ -1,6 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
-import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
+import { isFetchTimeout, fetchWithTimeout, readBodyWithTimeout } from "@/lib/server-fetch"
 
 const BACKEND = getBackendApiUrl()
 
@@ -23,9 +23,13 @@ export async function GET(request: Request) {
     }, 2500)
     log.backendFetch("GET", url, response.status)
 
-    const text = await response.text()
-    let data: unknown
-    try { data = JSON.parse(text) } catch { data = { error: text } }
+    let data: unknown = { unread_count: 0 }
+    try {
+      const text = await readBodyWithTimeout(response, 1500)
+      if (text) data = JSON.parse(text)
+    } catch {
+      data = { unread_count: 0, timeout: true }
+    }
     status = response.status
     return Response.json(data, { status: response.status })
   } catch (error) {
