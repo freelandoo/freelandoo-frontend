@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Loader2, X } from "lucide-react"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 interface Product {
   id_profile_product: number
@@ -33,8 +34,8 @@ interface BuyProductDialogProps {
   destinationAddress: DestinationAddress | null
 }
 
-function formatBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function formatBRL(cents: number, locale: string) {
+  return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 
 function getToken() {
@@ -45,6 +46,8 @@ function getToken() {
 export function BuyProductDialog({
   open, onClose, product, shipping, destinationZipcode, destinationAddress,
 }: BuyProductDialogProps) {
+  const t = useTranslations("Product")
+  const locale = useLocale()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
@@ -73,18 +76,18 @@ export function BuyProductDialog({
   async function submit() {
     setError(null)
     if (!name.trim() || !email.trim()) {
-      setError("Nome e e-mail são obrigatórios")
+      setError(t("nameEmailRequired", "Nome e e-mail são obrigatórios"))
       return
     }
     if (!street.trim() || !number.trim()) {
-      setError("Rua e número são obrigatórios")
+      setError(t("streetNumberRequired", "Rua e número são obrigatórios"))
       return
     }
     setSubmitting(true)
     try {
       const token = getToken()
       if (!token) {
-        setError("Faça login para continuar")
+        setError(t("loginRequired", "Faça login para continuar"))
         setSubmitting(false)
         return
       }
@@ -111,13 +114,13 @@ export function BuyProductDialog({
       })
       const data = await res.json()
       if (!res.ok || !data?.checkout_url) {
-        setError(data?.error || "Não foi possível iniciar o checkout")
+        setError(data?.error || t("checkoutStartError", "Não foi possível iniciar o checkout"))
         setSubmitting(false)
         return
       }
       window.location.href = data.checkout_url
     } catch {
-      setError("Erro de conexão. Tente novamente.")
+      setError(t("connectionTryAgain", "Erro de conexão. Tente novamente."))
       setSubmitting(false)
     }
   }
@@ -129,55 +132,55 @@ export function BuyProductDialog({
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 rounded-full p-2 text-muted-foreground hover:bg-accent"
-          aria-label="Fechar"
+          aria-label={t("closeButtonAria", "Fechar")}
         >
           <X className="h-5 w-5" aria-hidden />
         </button>
 
-        <h2 className="text-lg font-bold">Finalizar compra</h2>
+        <h2 className="text-lg font-bold">{t("finishPurchaseTitle", "Finalizar compra")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           {product.name} · {shipping.carrier} {shipping.service_name}
         </p>
 
         <dl className="mt-4 space-y-1 rounded-xl bg-muted/30 p-3 text-sm">
-          <div className="flex justify-between"><dt>Produto</dt><dd className="tabular-nums">{formatBRL(product.price_amount)}</dd></div>
-          <div className="flex justify-between"><dt>Frete</dt><dd className="tabular-nums">{formatBRL(shipping.price_cents)}</dd></div>
-          <div className="flex justify-between border-t border-border/60 pt-1 font-semibold"><dt>Total</dt><dd className="tabular-nums">{formatBRL(total)}</dd></div>
+          <div className="flex justify-between"><dt>{t("productLineLabel", "Produto")}</dt><dd className="tabular-nums">{formatBRL(product.price_amount, locale)}</dd></div>
+          <div className="flex justify-between"><dt>{t("shippingLineLabel", "Frete")}</dt><dd className="tabular-nums">{formatBRL(shipping.price_cents, locale)}</dd></div>
+          <div className="flex justify-between border-t border-border/60 pt-1 font-semibold"><dt>{t("totalLineLabel", "Total")}</dt><dd className="tabular-nums">{formatBRL(total, locale)}</dd></div>
         </dl>
 
         <div className="mt-5 space-y-3">
           <div className="grid grid-cols-1 gap-3">
             <input
               className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              placeholder="Nome completo"
+              placeholder={t("fullNamePlaceholder", "Nome completo")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <input
               type="email"
               className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              placeholder="E-mail"
+              placeholder={t("emailPlaceholder", "E-mail")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <input
               className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              placeholder="WhatsApp (opcional)"
+              placeholder={t("whatsappPlaceholder", "WhatsApp (opcional)")}
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
             />
           </div>
 
-          <p className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Endereço de entrega</p>
+          <p className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("shippingAddressTitle", "Endereço de entrega")}</p>
           <div className="grid grid-cols-3 gap-2">
-            <input className="col-span-2 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)} />
-            <input className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="Número" value={number} onChange={(e) => setNumber(e.target.value)} />
+            <input className="col-span-2 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("streetPlaceholder", "Rua")} value={street} onChange={(e) => setStreet(e.target.value)} />
+            <input className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("numberPlaceholder", "Número")} value={number} onChange={(e) => setNumber(e.target.value)} />
           </div>
-          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="Complemento (opcional)" value={complement} onChange={(e) => setComplement(e.target.value)} />
-          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="Bairro" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
+          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("complementPlaceholder", "Complemento (opcional)")} value={complement} onChange={(e) => setComplement(e.target.value)} />
+          <input className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("neighborhoodPlaceholder", "Bairro")} value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
           <div className="grid grid-cols-3 gap-2">
-            <input className="col-span-2 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-            <input className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="UF" maxLength={2} value={uf} onChange={(e) => setUf(e.target.value.toUpperCase())} />
+            <input className="col-span-2 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("cityPlaceholder", "Cidade")} value={city} onChange={(e) => setCity(e.target.value)} />
+            <input className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder={t("ufPlaceholder", "UF")} maxLength={2} value={uf} onChange={(e) => setUf(e.target.value.toUpperCase())} />
           </div>
           <p className="text-[11px] text-muted-foreground">CEP: {destinationZipcode.replace(/^(\d{5})(\d{3})$/, "$1-$2")}</p>
         </div>
@@ -190,10 +193,10 @@ export function BuyProductDialog({
           disabled={submitting}
           className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
         >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : `Pagar ${formatBRL(total)}`}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : t("payButton", "Pagar {total}").replace("{total}", formatBRL(total, locale))}
         </button>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          Você será redirecionado ao Stripe para concluir o pagamento.
+          {t("stripeRedirectNotice", "Você será redirecionado ao Stripe para concluir o pagamento.")}
         </p>
       </div>
     </div>

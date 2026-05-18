@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { fetchWithLog } from "@/lib/fetch-with-log"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 const ITEM_ID = "0fe91e60-12f0-4a1c-a297-262d73e5fce5"
 
@@ -93,6 +94,8 @@ function normalizeCheckoutPayload(
 }
 
 function CheckoutContent() {
+  const t = useTranslations("Checkout")
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const idProfile = searchParams.get("id_profile")
@@ -142,10 +145,10 @@ function CheckoutContent() {
             if (c?.code) setCupomAplicado(c.code)
           }
         } else {
-          setError(data.error || "Erro ao carregar checkout")
+          setError(data.error || t("loadCheckoutError", "Erro ao carregar checkout"))
         }
       } catch (err) {
-        setError("Erro ao carregar checkout. Tente novamente.")
+        setError(t("loadCheckoutTryAgain", "Erro ao carregar checkout. Tente novamente."))
         console.error("[v0] Fetch checkout error:", err)
       } finally {
         setLoading(false)
@@ -153,7 +156,7 @@ function CheckoutContent() {
     }
 
     fetchCheckout()
-  }, [router, idProfile])
+  }, [router, idProfile, t])
 
   const handleAplicarCupom = async () => {
     if (!cupom.trim() || !checkoutData) return
@@ -188,7 +191,7 @@ function CheckoutContent() {
           )
           setCupom("")
         } else {
-          setCupomError("Não foi possível atualizar os valores do checkout. Tente novamente.")
+          setCupomError(t("couponUpdateError", "Não foi possível atualizar os valores do checkout. Tente novamente."))
         }
       } else {
         const msg =
@@ -198,12 +201,12 @@ function CheckoutContent() {
           (typeof data === "object" && data !== null && "error" in data
             ? String((data as { error?: string }).error)
             : null) ||
-          "Cupom inválido ou expirado."
+          t("couponInvalidError", "Cupom inválido ou expirado.")
         setCupomError(msg)
       }
     } catch (err) {
       console.error("[v0] Erro ao aplicar cupom:", err)
-      setCupomError("Erro ao aplicar cupom. Tente novamente.")
+      setCupomError(t("couponApplyError", "Erro ao aplicar cupom. Tente novamente."))
     } finally {
       setIsAplicandoCupom(false)
     }
@@ -249,10 +252,10 @@ function CheckoutContent() {
           router.push("/order")
         }
       } else {
-        setError(data.error || data.message || "Erro ao confirmar checkout")
+        setError(data.error || data.message || t("confirmCheckoutError", "Erro ao confirmar checkout"))
       }
     } catch (err) {
-      setError("Erro ao confirmar checkout. Tente novamente.")
+      setError(t("confirmCheckoutTryAgain", "Erro ao confirmar checkout. Tente novamente."))
       console.error("[v0] Checkout confirm error:", err)
     } finally {
       setIsProcessing(false)
@@ -264,7 +267,7 @@ function CheckoutContent() {
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando checkout...</p>
+          <p className="text-sm text-muted-foreground">{t("loadingCheckout", "Carregando checkout...")}</p>
         </div>
       </main>
     )
@@ -276,8 +279,8 @@ function CheckoutContent() {
         <div className="container max-w-2xl py-12">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-sm text-destructive">{error || "Erro ao carregar checkout"}</p>
-              <Button onClick={() => router.back()} className="mt-4">Voltar</Button>
+              <p className="text-sm text-destructive">{error || t("loadCheckoutError", "Erro ao carregar checkout")}</p>
+              <Button onClick={() => router.back()} className="mt-4">{t("backButton", "Voltar")}</Button>
             </CardContent>
           </Card>
         </div>
@@ -298,35 +301,35 @@ function CheckoutContent() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t("backButton", "Voltar")}
         </button>
 
         <Card>
           <CardHeader>
-            <CardTitle>Pagamento - {item.current_item_name}</CardTitle>
+            <CardTitle>{t("paymentTitle", "Pagamento - {item}").replace("{item}", item.current_item_name)}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Resumo */}
             <div className="space-y-3 border-b pb-4">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Subtotal</span>
-                <span className="font-medium">{(subtotal / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                <span className="text-sm text-muted-foreground">{t("subtotalLabel", "Subtotal")}</span>
+                <span className="font-medium">{(subtotal / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span className="text-sm">Desconto</span>
-                  <span className="font-medium">-{(discount / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                  <span className="text-sm">{t("discountLabel", "Desconto")}</span>
+                  <span className="font-medium">-{(discount / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}</span>
                 </div>
               )}
               <div className="flex justify-between pt-2">
-                <span className="font-semibold">Total</span>
-                <span className="text-xl font-bold text-primary">{(total / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                <span className="font-semibold">{t("totalLabel", "Total")}</span>
+                <span className="text-xl font-bold text-primary">{(total / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}</span>
               </div>
             </div>
 
             {/* Campo de cupom */}
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Cupom de desconto</p>
+              <p className="text-sm text-muted-foreground">{t("couponSectionTitle", "Cupom de desconto")}</p>
               {cupomError && (
                 <p className="text-sm text-destructive">{cupomError}</p>
               )}
@@ -334,7 +337,7 @@ function CheckoutContent() {
                 <div className="flex items-center justify-between gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2">
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    <span>Cupom <strong className="font-mono">{cupomAplicado}</strong> aplicado</span>
+                    <span>{t("couponApplied", "Cupom {code} aplicado").replace("{code}", cupomAplicado)}</span>
                   </div>
                   <button
                     onClick={handleRemoverCupom}
@@ -347,7 +350,7 @@ function CheckoutContent() {
               ) : (
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Digite seu cupom"
+                    placeholder={t("couponPlaceholder", "Digite seu cupom")}
                     value={cupom}
                     onChange={(e) => {
                       setCupom(e.target.value.toUpperCase())
@@ -362,7 +365,7 @@ function CheckoutContent() {
                     onClick={handleAplicarCupom}
                     disabled={!cupom.trim() || isAplicandoCupom}
                   >
-                    {isAplicandoCupom ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                    {isAplicandoCupom ? <Loader2 className="h-4 w-4 animate-spin" /> : t("applyCouponButton", "Aplicar")}
                   </Button>
                 </div>
               )}
@@ -384,10 +387,10 @@ function CheckoutContent() {
                 {isProcessing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processando...
+                    {t("processingButton", "Processando...")}
                   </>
                 ) : (
-                  "Proceder com Pagamento"
+                  t("proceedPaymentButton", "Proceder com Pagamento")
                 )}
               </Button>
 
@@ -397,12 +400,12 @@ function CheckoutContent() {
                 className="w-full"
                 disabled={isProcessing}
               >
-                Cancelar
+                {t("cancelButton", "Cancelar")}
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              Você será redirecionado para a plataforma de pagamento segura após confirmar.
+              {t("securePaymentRedirectNotice", "Você será redirecionado para a plataforma de pagamento segura após confirmar.")}
             </p>
           </CardContent>
         </Card>
@@ -412,13 +415,14 @@ function CheckoutContent() {
 }
 
 export default function CheckoutPage() {
+  const t = useTranslations("Checkout")
   return (
     <Suspense
       fallback={
         <main className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Carregando checkout...</p>
+            <p className="text-sm text-muted-foreground">{t("loadingCheckout", "Carregando checkout...")}</p>
           </div>
         </main>
       }

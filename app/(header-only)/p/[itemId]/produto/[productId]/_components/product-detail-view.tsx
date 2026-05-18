@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, Loader2, MapPin, Package, ShoppingCart, Truck } from "lucide-react"
 import Link from "next/link"
 import { BuyProductDialog } from "./buy-product-dialog"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 interface Media {
   id_product_media: number
@@ -53,8 +54,8 @@ interface ShippingResponse {
   options: ShippingOption[]
 }
 
-function formatBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function formatBRL(cents: number, locale: string) {
+  return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 
 function maskCep(value: string) {
@@ -64,6 +65,8 @@ function maskCep(value: string) {
 }
 
 export function ProductDetailView({ profileId, productId }: { profileId: string; productId: string }) {
+  const t = useTranslations("Product")
+  const locale = useLocale()
   const [product, setProduct] = useState<Product | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -86,7 +89,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
         const d = await res.json()
         if (cancelled) return
         if (!res.ok) {
-          setErrorMsg(d?.error || "Produto não encontrado")
+          setErrorMsg(d?.error || t("productNotFoundError", "Produto não encontrado"))
           setState("error")
           return
         }
@@ -94,19 +97,19 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
         setState("loaded")
       } catch {
         if (!cancelled) {
-          setErrorMsg("Erro ao carregar produto")
+          setErrorMsg(t("loadProductError", "Erro ao carregar produto"))
           setState("error")
         }
       }
     }
     load()
     return () => { cancelled = true }
-  }, [profileId, productId])
+  }, [profileId, productId, t])
 
   const calcShipping = useCallback(async () => {
     const digits = cepInput.replace(/\D/g, "")
     if (digits.length !== 8) {
-      setShippingError("CEP inválido (8 dígitos)")
+      setShippingError(t("invalidCepError", "CEP inválido (8 dígitos)"))
       return
     }
     setShippingError(null)
@@ -119,7 +122,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
       })
       const d = await res.json()
       if (!res.ok) {
-        setShippingError(d?.error || "Não foi possível calcular o frete")
+        setShippingError(d?.error || t("shippingCalculateUnavailable", "Não foi possível calcular o frete"))
         setShippingState("error")
         return
       }
@@ -127,10 +130,10 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
       setSelectedShippingId(d.options?.[0] ? String(d.options[0].service_id) : null)
       setShippingState("loaded")
     } catch {
-      setShippingError("Erro ao calcular frete")
+      setShippingError(t("shippingCalculateError", "Erro ao calcular frete"))
       setShippingState("error")
     }
-  }, [profileId, productId, cepInput])
+  }, [profileId, productId, cepInput, t])
 
   const selectedOption = useMemo(() => {
     if (!shipping || !selectedShippingId) return null
@@ -149,13 +152,13 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 text-center">
         <Package className="mb-4 h-12 w-12 text-muted-foreground/40" aria-hidden />
-        <h1 className="text-lg font-semibold">Produto indisponível</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{errorMsg || "Tente novamente mais tarde."}</p>
+        <h1 className="text-lg font-semibold">{t("productUnavailableTitle", "Produto indisponível")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{errorMsg || t("tryAgainLater", "Tente novamente mais tarde.")}</p>
         <Link
           href={`/freelancer/${profileId}`}
           className="mt-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-accent"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden /> Voltar à loja
+          <ChevronLeft className="h-4 w-4" aria-hidden /> {t("backToStore", "Voltar à loja")}
         </Link>
       </main>
     )
@@ -172,7 +175,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
         href={`/freelancer/${profileId}`}
         className="mb-6 inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ChevronLeft className="h-4 w-4" aria-hidden /> Voltar à loja
+        <ChevronLeft className="h-4 w-4" aria-hidden /> {t("backToStore", "Voltar à loja")}
       </Link>
 
       <div className="grid gap-8 md:grid-cols-2">
@@ -197,7 +200,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                   type="button"
                   onClick={() => setActiveMedia((i) => (i - 1 + media.length) % media.length)}
                   className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                  aria-label="Anterior"
+                  aria-label={t("previousMediaAria", "Anterior")}
                 >
                   <ChevronLeft className="h-5 w-5" aria-hidden />
                 </button>
@@ -205,7 +208,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                   type="button"
                   onClick={() => setActiveMedia((i) => (i + 1) % media.length)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
-                  aria-label="Próximo"
+                  aria-label={t("nextMediaAria", "Próximo")}
                 >
                   <ChevronRight className="h-5 w-5" aria-hidden />
                 </button>
@@ -237,13 +240,13 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
         <div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{product.name}</h1>
           <p className="mt-3 text-3xl font-bold tabular-nums md:text-4xl">
-            {formatBRL(product.price_amount)}
+            {formatBRL(product.price_amount, locale)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {outOfStock ? (
-              <span className="font-semibold text-amber-400">Esgotado</span>
+              <span className="font-semibold text-amber-400">{t("outOfStock", "Esgotado")}</span>
             ) : (
-              <>Em estoque: <span className="font-semibold text-foreground">{product.stock_quantity}</span></>
+              <>{t("inStockLabel", "Em estoque:")} <span className="font-semibold text-foreground">{product.stock_quantity}</span></>
             )}
           </p>
 
@@ -256,7 +259,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
           {/* Frete */}
           <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Truck className="h-4 w-4" aria-hidden /> Calcular frete
+              <Truck className="h-4 w-4" aria-hidden /> {t("calculateShippingTitle", "Calcular frete")}
             </h2>
             <div className="mt-3 flex gap-2">
               <input
@@ -275,7 +278,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                 disabled={shippingState === "loading"}
                 className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
               >
-                {shippingState === "loading" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : "Calcular"}
+                {shippingState === "loading" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : t("calculateButton", "Calcular")}
               </button>
             </div>
             {shippingError && (
@@ -291,7 +294,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                   </p>
                 )}
                 {shipping.options.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhuma opção de frete disponível para este CEP.</p>
+                  <p className="text-xs text-muted-foreground">{t("noShippingOptions", "Nenhuma opção de frete disponível para este CEP.")}</p>
                 ) : (
                   <ul className="space-y-2">
                     {shipping.options.map((opt) => {
@@ -312,12 +315,14 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                                 <p className="font-semibold">{opt.carrier} · {opt.service_name}</p>
                                 <p className="text-[11px] text-muted-foreground">
                                   {opt.delivery_days_min && opt.delivery_days_max
-                                    ? `Entrega em ${opt.delivery_days_min}–${opt.delivery_days_max} dias úteis`
-                                    : "Prazo a confirmar"}
+                                    ? t("deliveryRange", "Entrega em {min}–{max} dias úteis")
+                                        .replace("{min}", String(opt.delivery_days_min))
+                                        .replace("{max}", String(opt.delivery_days_max))
+                                    : t("deliveryToConfirm", "Prazo a confirmar")}
                                 </p>
                               </div>
                             </div>
-                            <span className="font-semibold tabular-nums">{formatBRL(opt.price_cents)}</span>
+                            <span className="font-semibold tabular-nums">{formatBRL(opt.price_cents, locale)}</span>
                           </button>
                         </li>
                       )
@@ -336,10 +341,10 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
           >
             <ShoppingCart className="h-4 w-4" aria-hidden />
             {outOfStock
-              ? "Esgotado"
+              ? t("outOfStock", "Esgotado")
               : selectedOption
-                ? `Comprar — ${formatBRL(product.price_amount + selectedOption.price_cents)}`
-                : "Selecione o frete"}
+                ? t("buyWithTotal", "Comprar — {total}").replace("{total}", formatBRL(product.price_amount + selectedOption.price_cents, locale))
+                : t("selectShippingButton", "Selecione o frete")}
           </button>
         </div>
       </div>
