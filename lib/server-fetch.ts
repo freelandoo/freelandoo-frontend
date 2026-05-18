@@ -6,13 +6,19 @@ export class FetchTimeoutError extends Error {
 }
 
 /**
- * fetch que aborta tanto o request quanto a leitura do body.
+ * fetch com timeout BULLETPROOF.
  *
- * Antes só abortava o headers — se o backend retornava status code mas
- * trickle bytes do body, `await response.text()` ficava preso sem timeout
- * e a Vercel function pendurava até o teto de 15min. Agora o controller
- * é mantido vivo e o caller pode chamar `readBodyWithTimeout` pra cancelar
- * a leitura também.
+ * Por que não confiar só em AbortController: em alguns cenários do runtime
+ * Node + Vercel, o socket TCP keep-alive não respeita o abort signal,
+ * resultando em funções penduradas até o teto de 15min (Time to First Byte
+ * = 15min mesmo com timeout configurado de 4s).
+ *
+ * Solução: Promise.race entre o fetch e um setTimeout independente. Se o
+ * fetch não voltar no tempo limite, a Promise.race resolve com erro e a
+ * função pode RETORNAR mesmo que o socket continue vivo em background
+ * (será coletado pelo GC ou morto pelo runtime no fim da invocação).
+ *
+ * Combina também AbortController pra tentar fechar a conexão (melhor esforço).
  */
 export async function fetchWithTimeout(
   input: RequestInfo | URL,
@@ -20,63 +26,70 @@ export async function fetchWithTimeout(
   timeoutMs = 3500
 ): Promise<Response> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  let timer: ReturnType<typeof setTimeout> | null = null
 
-  try {
-    return await fetch(input, {
-      ...init,
-      signal: init.signal ?? controller.signal,
-    })
-  } catch (error) {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      try { controller.abort() } catch { /* ignore */ }
+      reject(new FetchTimeoutError(`Fetch timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+  })
+
+  const fetchPromise = fetch(input, {
+    ...init,
+    signal: init.signal ?? controller.signal,
+  }).catch((error) => {
     if ((error as { name?: string })?.name === "AbortError") {
-      throw new FetchTimeoutError(`Fetch timed out after ${timeoutMs}ms`)
+      throw new FetchTimeoutError(`Fetch aborted after ${timeoutMs}ms`)
     }
     throw error
+  })
+
+  try {
+    return await Promise.race([fetchPromise, timeoutPromise])
   } finally {
-    clearTimeout(timer)
+    if (timer) clearTimeout(timer)
   }
 }
 
 /**
- * Lê body de uma Response com timeout. Se o backend trickle bytes o read
- * é abortado e a function devolve resposta de fallback em vez de pendurar.
+ * Lê body com timeout. Mesmo padrão de Promise.race.
  */
 export async function readBodyWithTimeout(
   response: Response,
   timeoutMs = 3500
 ): Promise<string> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  if (!response.body) return ""
 
-  try {
-    if (!response.body) return ""
-    const reader = response.body.getReader()
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let aborted = false
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      aborted = true
+      try { response.body?.cancel().catch(() => {}) } catch { /* ignore */ }
+      reject(new FetchTimeoutError(`Body read timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+  })
+
+  const readPromise = (async () => {
+    const reader = response.body!.getReader()
     const decoder = new TextDecoder()
     let result = ""
-
-    const readChunk = async (): Promise<void> => {
-      while (true) {
-        if (controller.signal.aborted) {
-          throw new FetchTimeoutError(`Body read timed out after ${timeoutMs}ms`)
-        }
-        const { done, value } = await reader.read()
-        if (done) return
-        result += decoder.decode(value, { stream: true })
-      }
+    while (true) {
+      if (aborted) break
+      const { done, value } = await reader.read()
+      if (done) break
+      result += decoder.decode(value, { stream: true })
     }
-
-    const racePromise = new Promise<never>((_, reject) => {
-      controller.signal.addEventListener("abort", () => {
-        try { reader.cancel().catch(() => {}) } catch {}
-        reject(new FetchTimeoutError(`Body read timed out after ${timeoutMs}ms`))
-      })
-    })
-
-    await Promise.race([readChunk(), racePromise])
     result += decoder.decode()
     return result
+  })()
+
+  try {
+    return await Promise.race([readPromise, timeoutPromise])
   } finally {
-    clearTimeout(timer)
+    if (timer) clearTimeout(timer)
   }
 }
 
@@ -86,7 +99,6 @@ export async function fetchJsonWithTimeout<T = unknown>(
   init: RequestInit = {},
   timeoutMs = 3500
 ): Promise<{ ok: boolean; status: number; data: T | null }> {
-  // Divide o orçamento entre request e body read.
   const requestBudget = Math.max(1000, Math.floor(timeoutMs * 0.6))
   const bodyBudget = Math.max(500, timeoutMs - requestBudget)
 
@@ -95,14 +107,9 @@ export async function fetchJsonWithTimeout<T = unknown>(
   try {
     const text = await readBodyWithTimeout(response, bodyBudget)
     if (text) {
-      try {
-        data = JSON.parse(text) as T
-      } catch {
-        data = null
-      }
+      try { data = JSON.parse(text) as T } catch { data = null }
     }
   } catch {
-    // body read timeout — devolve null mas mantém status code.
     data = null
   }
   return { ok: response.ok, status: response.status, data }
