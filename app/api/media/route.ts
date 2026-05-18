@@ -1,5 +1,6 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
+import { fetchWithTimeout, isFetchTimeout } from "@/lib/server-fetch"
 
 const base = () => getBackendApiUrl()
 
@@ -16,12 +17,11 @@ export async function GET(request: Request) {
     }
 
     const url = `${base()}/users/me/media`
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: authHeader,
-      },
-    })
+    const response = await fetchWithTimeout(
+      url,
+      { method: "GET", headers: { Authorization: authHeader } },
+      4000
+    )
 
     log.backendFetch("GET", url, response.status)
 
@@ -43,6 +43,10 @@ export async function GET(request: Request) {
     return Response.json(data)
   } catch (error) {
     log.fail(error)
+    if (isFetchTimeout(error)) {
+      status = 504
+      return Response.json([], { status: 200 })
+    }
     status = 500
     return Response.json(
       { error: error instanceof Error ? error.message : "Erro ao listar mídia" },
