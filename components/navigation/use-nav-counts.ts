@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { getToken } from "@/lib/auth"
 import { onRealtime } from "@/lib/realtime"
 
-const POLL_MS = 10 * 60 * 1000
 const MIN_CACHE_MS = 60 * 1000
 
 interface NavCountsResponse {
@@ -109,9 +108,12 @@ function startListeners() {
   if (listenersStarted || typeof window === "undefined") return
   listenersStarted = true
 
-  setInterval(() => {
-    void refreshNavCounts()
-  }, POLL_MS)
+  // Poll removido — WebSocket cobre 100% dos updates em tempo real:
+  // - conversation:message, notification:new, nav-counts:changed
+  // Atualizamos apenas em eventos: focus, visibilitychange, auth, WS events.
+  // Se WS cair, focus/visibilitychange já cobre o refresh quando o user
+  // volta pra aba. Socket.io reconnect infinito + ping 25s detecta queda
+  // automaticamente.
 
   window.addEventListener("focus", () => {
     void refreshNavCounts()

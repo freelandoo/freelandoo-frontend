@@ -109,6 +109,7 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
           alt={name}
           fill
           sizes="(max-width: 768px) 33vw, 20vw"
+          unoptimized
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       ) : (

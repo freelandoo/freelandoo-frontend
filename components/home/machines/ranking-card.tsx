@@ -107,7 +107,7 @@ export function RankingCard({
           }}
         >
           {avatar_url ? (
-            <Image src={avatar_url} alt={name} width={44} height={44} className="h-full w-full object-cover" />
+            <Image src={avatar_url} alt={name} width={44} height={44} unoptimized className="h-full w-full object-cover" />
           ) : (
             initials
           )}
