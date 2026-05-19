@@ -21,7 +21,7 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { EmojiPickerButton } from "./EmojiPickerButton"
 import { ReportMessageDialog } from "./ReportMessageDialog"
 
-const POLL_MS = 10_000
+const POLL_MS = 60_000
 const HEARTBEAT_MS = 60_000
 const MAX_LENGTH = 500
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }

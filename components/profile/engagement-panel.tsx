@@ -117,15 +117,18 @@ export function EngagementPanel({ profileId, onClose }: Props) {
   useEffect(() => {
     fetchEngagement()
 
-    // Heartbeat a cada 60 s enquanto o painel está aberto
+    // Heartbeat a cada 5 min enquanto o painel está aberto E aba visível.
+    // Antes era 60 s sem hidden-check = bombardeio se user minimizasse
+    // a aba (1440 calls/dia/user).
     const token = localStorage.getItem("token")
     if (token) {
       heartbeatRef.current = setInterval(() => {
+        if (document.hidden) return
         fetch("/api/ranking/heartbeat", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => {})
-      }, 60_000)
+      }, 300_000)
     }
 
     return () => {

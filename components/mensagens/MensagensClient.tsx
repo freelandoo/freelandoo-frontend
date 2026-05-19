@@ -48,9 +48,11 @@ import type {
 } from "./types"
 
 const ACTOR_STORAGE_KEY = "mensagens:active_actor"
-// Realtime cobre o caso comum; polling fica como fallback espaçado.
-const POLL_THREAD_MS = 45_000
-const POLL_LIST_MS = 120_000
+// Realtime (WS) cobre o caso comum: conversation:message empurra updates
+// na hora. Polling é só safety net pra detectar reconexão silenciosa.
+// Antes 45s/120s gerava ~300 calls/h/user logado em /mensagens.
+const POLL_THREAD_MS = 300_000   // 5 min
+const POLL_LIST_MS = 600_000     // 10 min
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 function authHeaders(): HeadersInit {
