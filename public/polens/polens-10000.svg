@@ -1,0 +1,22 @@
+<svg width="960" height="600" viewBox="0 0 960 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="600" fill="#15130E"/>
+  <path d="M0 0h960v600H0z" fill="url(#bg)"/>
+  <g opacity=".96" filter="url(#soft)">
+    <path d="M109 360 240 284l131 76v152l-131 76-131-76V360Z" fill="#986000"/>
+    <path d="M246 229 392 145l146 84v168l-146 84-146-84V229Z" fill="#B97300"/>
+    <path d="M487 184 650 90l163 94v188l-163 94-163-94V184Z" fill="#DB9700"/>
+    <path d="M612 350 752 269l140 81v162l-140 81-140-81V350Z" fill="#F2B318"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M480 62 713 197v206L480 538 247 403V197L480 62Z" fill="url(#coin)" stroke="#FFF3B8" stroke-width="18"/>
+    <path d="M480 124 648 221v158L480 476 312 379V221L480 124Z" fill="none" stroke="#8D5600" stroke-width="10" opacity=".55"/>
+    <text x="480" y="360" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="218" font-weight="900" fill="#281700">P</text>
+  </g>
+  <text x="72" y="88" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#FFD54A">10.000 POLLENS</text>
+  <defs>
+    <linearGradient id="bg" x1="91" y1="36" x2="862" y2="552" gradientUnits="userSpaceOnUse"><stop stop-color="#43300A"/><stop offset=".5" stop-color="#18181B"/><stop offset="1" stop-color="#4A3105"/></linearGradient>
+    <linearGradient id="coin" x1="319" y1="92" x2="654" y2="503" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFDDD"/><stop offset=".24" stop-color="#FFDE5F"/><stop offset=".64" stop-color="#DA8B00"/><stop offset="1" stop-color="#FFF4C0"/></linearGradient>
+    <filter id="shadow" x="169" y="-4" width="622" height="612" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="36" stdDeviation="36" flood-color="#000" flood-opacity=".54"/></filter>
+    <filter id="soft" x="59" y="40" width="883" height="603" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+</svg>

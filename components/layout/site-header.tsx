@@ -103,6 +103,12 @@ export default function SiteHeader() {
             )}
           </div>
         </div>
+        <div className="border-t border-white/10 px-4 py-2 sm:hidden">
+          <div className="flex items-center justify-end gap-2">
+            <CountrySwitcher variant="full" />
+            <LanguageSwitcher variant="full" />
+          </div>
+        </div>
       </div>
 
       {!isLoggedIn && (

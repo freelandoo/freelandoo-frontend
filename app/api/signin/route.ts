@@ -2,8 +2,6 @@ import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 import { isFetchTimeout, fetchWithTimeout } from "@/lib/server-fetch"
 
-export const runtime = "edge"
-
 export async function POST(request: Request) {
   const log = apiFlow("signin")
   let status = 500

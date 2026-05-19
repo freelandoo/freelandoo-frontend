@@ -2,8 +2,6 @@ import { NextResponse } from "next/server"
 import { getBackendApiUrl } from "@/lib/backend"
 import { fetchWithTimeout, isFetchTimeout, readBodyWithTimeout } from "@/lib/server-fetch"
 
-export const runtime = "edge"
-
 const BACKEND = getBackendApiUrl()
 
 const EMPTY = {
