@@ -3,6 +3,8 @@ import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 import { fetchWithTimeout, readBodyWithTimeout, isFetchTimeout } from "@/lib/server-fetch"
 
+export const runtime = "edge"
+
 const BASE_URL = getBackendApiUrl()
 
 export async function GET(request: Request) {

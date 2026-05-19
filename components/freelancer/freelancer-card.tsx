@@ -214,6 +214,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             alt={creator.display_name}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
+            unoptimized
             className="object-cover"
           />
         ) : creator.user_avatar ? (
@@ -222,6 +223,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             alt={creator.user_nome}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
+            unoptimized
             className="object-cover"
           />
         ) : (
