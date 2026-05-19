@@ -15,7 +15,6 @@ import {
   Shield,
   LogOut,
   X,
-  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
@@ -41,7 +40,6 @@ type Action = {
   label: string
   icon: React.ComponentType<{ className?: string }>
   badge?: React.ReactNode
-  description?: string
   highlight?: boolean
 }
 
@@ -83,21 +81,18 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       href: "/account?edit=1",
       label: tAcc("editLabel", "Editar"),
       icon: Edit3,
-      description: tAcc("editDescription", "Atualize seus dados e verifique sua conta"),
     },
     {
       href: "/manifestacao",
       label: tAcc("manifestationLabel", "Manifestação"),
       icon: () => <span className="h-4 w-4" aria-hidden />,
       badge: <ManifestationBadge label={tAcc("premiumBadge", "Premium")} size="sm" />,
-      description: tAcc("manifestationDescription", "Banner premium + tag dourada no seu username"),
       highlight: true,
     },
     {
       href: "/account/afiliado",
       label: tAcc("earningsLabel", "Meus Faturamentos"),
       icon: Briefcase,
-      description: tAcc("earningsDescription", "Vendas de cursos, serviços, loja e comissões"),
     },
     {
       href: "/pedir-servico",
@@ -106,19 +101,16 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       badge: unreadServiceRequest ? (
         <span className="h-2 w-2 rounded-full bg-red-500" aria-label={tAcc("newRepliesAria", "Novas respostas")} />
       ) : undefined,
-      description: tAcc("requestServiceDescription", "Solicite orçamento dos profissionais"),
     },
     {
       href: "/pedir-produto",
       label: tAcc("requestProductLabel", "Pedir produto"),
       icon: PackageSearch,
-      description: tAcc("requestProductDescription", "Encontre vendedores compatíveis pela categoria e cidade"),
     },
     {
       href: "/loja-polens",
       label: tAcc("polenLabel", "Seus Pólens"),
       icon: Coins,
-      description: tAcc("polenDescription", "Saldo, loja e histórico"),
     },
   ]
 
@@ -145,12 +137,26 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
         aria-modal="true"
         aria-label="Menu da conta"
         className={cn(
-          "absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col border-l border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[-20px_0_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "translate-x-full",
+          "absolute left-0 top-0 flex h-full w-full max-w-[420px] flex-col border-r border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[20px_0_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Header */}
-        <header className="flex items-center gap-3 border-b border-white/8 px-5 py-4">
+        <header className="border-b border-white/8 px-5 py-4">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <Link href="/" onClick={onClose} className="text-lg font-black tracking-tight text-primary">
+              Freelandoo
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={tAcc("closeMenu", "Fechar")}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm font-semibold text-primary">
             {user?.nome ? user.nome.slice(0, 1).toUpperCase() : "?"}
           </div>
@@ -160,14 +166,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
               <p className="truncate text-[11px] text-white/45">{user.email}</p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={tAcc("closeMenu", "Fechar")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          </div>
         </header>
 
         {/* Ações primárias */}
@@ -184,31 +183,22 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                     href={a.href}
                     onClick={onClose}
                     className={cn(
-                      "group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 transition",
-                      "hover:border-primary/30 hover:bg-primary/[0.06]",
-                      a.highlight && "border-amber-400/20 bg-gradient-to-r from-amber-400/[0.06] to-amber-400/[0.02] hover:border-amber-300/35 hover:from-amber-400/[0.10]",
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white",
+                      a.highlight && "text-amber-100 hover:bg-amber-300/10",
                     )}
                   >
                     <span
                       className={cn(
-                        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/8 bg-black/40 text-white/80 transition group-hover:text-primary",
-                        a.highlight && "border-amber-300/30 bg-amber-300/10 text-amber-200 group-hover:text-amber-100",
+                        "inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70",
+                        a.highlight && "text-amber-300",
                       )}
                     >
                       <Icon className="h-4 w-4" />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-white">{a.label}</span>
-                        {a.badge}
-                      </span>
-                      {a.description && (
-                        <span className="mt-0.5 block text-[11px] text-white/45">
-                          {a.description}
-                        </span>
-                      )}
+                    <span className="min-w-0 flex flex-1 items-center gap-2">
+                      <span className="truncate font-semibold">{a.label}</span>
+                      {a.badge}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-white/30 transition group-hover:translate-x-0.5 group-hover:text-white/70" />
                   </Link>
                 </li>
               )

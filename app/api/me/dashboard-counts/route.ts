@@ -2,8 +2,6 @@ import { NextResponse } from "next/server"
 import { getBackendApiUrl } from "@/lib/backend"
 import { fetchWithTimeout } from "@/lib/server-fetch"
 
-export const runtime = "edge"
-
 const BACKEND = getBackendApiUrl()
 
 interface NavCountsResponse {

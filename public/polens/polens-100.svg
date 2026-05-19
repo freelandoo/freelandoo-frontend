@@ -1,0 +1,20 @@
+<svg width="960" height="600" viewBox="0 0 960 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="600" fill="#15130E"/>
+  <path d="M0 0h960v600H0z" fill="url(#bg)"/>
+  <g opacity=".92" filter="url(#soft)">
+    <path d="M232 285 350 217l118 68v136l-118 68-118-68V285Z" fill="#A86600"/>
+    <path d="M493 266 626 189l133 77v154l-133 77-133-77V266Z" fill="#C47A00"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M480 78 690 199v202L480 522 270 401V199L480 78Z" fill="url(#coin)" stroke="#FFE99D" stroke-width="18"/>
+    <path d="M480 132 640 224v152L480 468 320 376V224L480 132Z" fill="none" stroke="#8F5700" stroke-width="10" opacity=".55"/>
+    <text x="480" y="354" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="214" font-weight="900" fill="#281700">P</text>
+  </g>
+  <text x="72" y="88" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#FFD54A">100 POLLENS</text>
+  <defs>
+    <linearGradient id="bg" x1="95" y1="40" x2="852" y2="553" gradientUnits="userSpaceOnUse"><stop stop-color="#39290B"/><stop offset=".55" stop-color="#18181B"/><stop offset="1" stop-color="#302100"/></linearGradient>
+    <linearGradient id="coin" x1="339" y1="111" x2="642" y2="485" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF8C6"/><stop offset=".26" stop-color="#FFCF36"/><stop offset=".66" stop-color="#D78900"/><stop offset="1" stop-color="#FFEBA6"/></linearGradient>
+    <filter id="shadow" x="198" y="22" width="564" height="556" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="32" stdDeviation="32" flood-color="#000" flood-opacity=".5"/></filter>
+    <filter id="soft" x="182" y="139" width="627" height="408" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+</svg>

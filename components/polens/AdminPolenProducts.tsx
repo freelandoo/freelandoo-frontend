@@ -49,12 +49,25 @@ const EMPTY_FORM: FormState = {
   image_url: "",
 }
 
+const PRESET_PACKAGES = [
+  { amount: 10, image: "/polens/polens-10.svg" },
+  { amount: 50, image: "/polens/polens-50.svg" },
+  { amount: 100, image: "/polens/polens-100.svg" },
+  { amount: 1000, image: "/polens/polens-1000.svg" },
+  { amount: 10000, image: "/polens/polens-10000.svg" },
+  { amount: 50000, image: "/polens/polens-50000.svg" },
+]
+
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
 
 function formatBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+
+function formatPolens(n: number) {
+  return n.toLocaleString("pt-BR")
 }
 
 function parseBrlToCents(value: string): number {
@@ -101,6 +114,28 @@ export function AdminPolenProducts() {
   function openCreate() {
     setEditing(null)
     setForm(EMPTY_FORM)
+    setFile(null)
+    setFieldErrors({})
+    setError(null)
+    setOpen(true)
+  }
+
+  function openPreset(amount: number, image: string) {
+    const existing = products.find((p) => p.polens_amount === amount)
+    if (existing) {
+      openEdit(existing)
+      setForm((f) => ({ ...f, image_url: f.image_url || image }))
+      return
+    }
+    setEditing(null)
+    setForm({
+      ...EMPTY_FORM,
+      name: `Pacote ${formatPolens(amount)} Pollens`,
+      description: `${formatPolens(amount)} Pollens para usar dentro da Freelandoo.`,
+      polens_amount: String(amount),
+      sort_order: String(amount),
+      image_url: image,
+    })
     setFile(null)
     setFieldErrors({})
     setError(null)
@@ -206,6 +241,41 @@ export function AdminPolenProducts() {
           <Plus className="mr-1 h-4 w-4" />
           Novo produto
         </Button>
+      </div>
+
+      <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.04] p-3">
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-amber-100">Pacotes prontos</p>
+          <p className="text-xs text-muted-foreground">
+            Clique em um pacote para definir o valor em reais e publicar na loja.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {PRESET_PACKAGES.map((preset) => {
+            const existing = products.find((p) => p.polens_amount === preset.amount)
+            return (
+              <button
+                type="button"
+                key={preset.amount}
+                onClick={() => openPreset(preset.amount, preset.image)}
+                className="group flex items-center gap-3 rounded-lg border border-white/10 bg-zinc-950/40 p-2 text-left transition hover:border-amber-300/35 hover:bg-amber-300/[0.06] active:scale-[0.99]"
+              >
+                <span className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={preset.image} alt={`Pacote ${formatPolens(preset.amount)} Pollens`} className="h-full w-full object-cover" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-white">
+                    {formatPolens(preset.amount)} Pollens
+                  </span>
+                  <span className="mt-0.5 block text-xs text-white/45">
+                    {existing ? `Editar valor: ${formatBRL(existing.price_cents)}` : "Definir valor em R$"}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {error && <p className="text-sm text-rose-400">{error}</p>}

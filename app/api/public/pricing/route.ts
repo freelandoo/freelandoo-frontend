@@ -2,8 +2,6 @@ import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 import { fetchWithTimeout, readBodyWithTimeout, isFetchTimeout } from "@/lib/server-fetch"
 
-export const runtime = "edge"
-
 // Força dinâmico no build (evita prerender falhar se backend down).
 export const dynamic = "force-dynamic"
 export const revalidate = 300
