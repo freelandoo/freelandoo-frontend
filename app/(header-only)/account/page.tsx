@@ -388,7 +388,7 @@ export default function PerfilPage() {
       return
     }
     if (!newProfileForm.id_machine) {
-      setNewProfileError("Selecione uma máquina.")
+      setNewProfileError("Selecione um enxame.")
       return
     }
     if (!newProfileForm.id_category) {
@@ -1965,14 +1965,14 @@ export default function PerfilPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="np-machine">Máquina <span className="text-destructive">*</span></Label>
+              <Label htmlFor="np-machine">Enxame <span className="text-destructive">*</span></Label>
               <Select
                 value={newProfileForm.id_machine}
                 onValueChange={handleNewProfileMachineChange}
                 disabled={loadingMachines}
               >
                 <SelectTrigger id="np-machine">
-                  <SelectValue placeholder={loadingMachines ? "Carregando..." : "Selecione uma máquina"} />
+                  <SelectValue placeholder={loadingMachines ? "Carregando..." : "Selecione um enxame"} />
                 </SelectTrigger>
                 <SelectContent>
                   {machines.map((m) => (
@@ -1993,7 +1993,7 @@ export default function PerfilPage() {
                 <SelectTrigger id="np-profession">
                   <SelectValue placeholder={
                     !newProfileForm.id_machine
-                      ? "Selecione uma máquina primeiro"
+                      ? "Selecione um enxame primeiro"
                       : loadingProfessions
                         ? "Carregando..."
                         : "Selecione uma profissão"

@@ -350,15 +350,15 @@ export function ChatRoomPanel({
   }
 
   const roomTitle = useMemo(() => {
-    if (!room) return kind === "global" ? t("globalRoomTitle", "Global") : t("machineRoomTitle", "Máquina")
+    if (!room) return kind === "global" ? t("globalRoomTitle", "Global") : t("machineRoomTitle", "Enxame")
     if (room.type === "global") return t("globalRoomTitle", "Global")
-    return room.display_name || t("machineRoomTitle", "Máquina")
+    return room.display_name || t("machineRoomTitle", "Enxame")
   }, [room, kind, t])
 
   const placeholder =
     kind === "global"
       ? t("globalChatPlaceholder", "Escreva no chat global...")
-      : t("machineChatPlaceholder", "Converse com pessoas da sua máquina...")
+      : t("machineChatPlaceholder", "Converse com pessoas da seu enxame...")
 
   if (status !== "authenticated") {
     return (
@@ -475,7 +475,7 @@ export function ChatRoomPanel({
             <p className="text-sm text-white/60">
               {kind === "global"
                 ? t("firstMessageGlobalHint", "Seja o primeiro a falar no chat global.")
-                : t("firstMessageMachineHint", "Seja o primeiro a falar nessa máquina.")}
+                : t("firstMessageMachineHint", "Seja o primeiro a falar nesse enxame.")}
             </p>
           </div>
         ) : (

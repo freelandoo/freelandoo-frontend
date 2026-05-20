@@ -292,7 +292,7 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
                 disabled={trampoBlocked}
                 onClick={() => setKind("trampo")}
                 title={t("channelTrampoTitle", "Trampo")}
-                subtitle={t("channelTrampoSubtitle", "Aparece em /maquinas")}
+                subtitle={t("channelTrampoSubtitle", "Aparece em /enxames")}
               />
               <ChannelButton
                 active={kind === "rest"}

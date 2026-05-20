@@ -12,7 +12,7 @@ const categories = [
   "Perfil profissional",
   "Portfólio",
   "Serviços e agenda",
-  "Máquinas",
+  "Enxames",
   "Clans",
   "Cupons e afiliados",
   "Segurança",
@@ -24,12 +24,12 @@ const faqs = [
   { q: "Como ativar meu perfil profissional?", a: "Para aparecer na vitrine pública da Freelandoo, o profissional precisa configurar seu perfil e concluir a ativação. A ativação acontece após a confirmação do pagamento." },
   { q: "Quanto custa anunciar na Freelandoo?", a: "A ativação do perfil profissional custa R$ 300 em pagamento único." },
   { q: "A Freelandoo cobra comissão sobre serviços fechados?", a: "Não. A Freelandoo não cobra comissão sobre os serviços negociados diretamente entre cliente e profissional." },
-  { q: "Como funcionam as máquinas?", a: "As máquinas organizam profissionais por intenção. Em vez de navegar por categorias soltas, o usuário escolhe uma máquina, como Views, Divulgação, Limpeza, Construção, Negócios, Oportunidades, Saúde e Beleza ou Saúde do Pet." },
-  { q: "Como escolher minha profissão?", a: "Sua profissão deve estar ligada à máquina principal do seu perfil. Isso ajuda a plataforma a mostrar seu perfil para buscas mais compatíveis." },
+  { q: "Como funcionam os enxames?", a: "Os enxames organizam profissionais por intenção. Em vez de navegar por categorias soltas, o usuário escolhe um enxame, como Marketing, Tecnologia, Construção, Saúde, Beleza e Bem-estar, Pets ou Eventos." },
+  { q: "Como escolher minha profissão?", a: "Sua profissão deve estar ligada ao enxame principal do seu perfil. Isso ajuda a plataforma a mostrar seu perfil para buscas mais compatíveis." },
   { q: "Como funciona o portfólio?", a: "O portfólio permite mostrar trabalhos, imagens, vídeos, resultados e exemplos do que você faz. Ele ajuda clientes a entenderem melhor sua experiência." },
   { q: "Como funcionam os serviços?", a: "O profissional pode cadastrar serviços com descrição, duração, valor e informações importantes. Esses serviços ajudam o cliente a entender melhor o que pode contratar." },
   { q: "Como funcionam os cupons?", a: "Cupons podem oferecer desconto para novos assinantes e, em alguns casos, gerar comissão para quem indicou, conforme as regras ativas da plataforma." },
-  { q: "O que são clans?", a: "Clans são agrupamentos de profissionais, criadores ou prestadores que podem reunir competências e mostrar a distribuição de máquinas dos participantes." },
+  { q: "O que são clans?", a: "Clans são agrupamentos de profissionais, criadores ou prestadores que podem reunir competências e mostrar a distribuição de enxames dos participantes." },
   { q: "Como excluir minha conta?", a: "O usuário deve acessar sua área de conta ou entrar em contato com o suporte para solicitar exclusão, conforme as regras de privacidade da plataforma." },
   { q: "Como falar com suporte?", a: "Use o canal de suporte indicado na plataforma ou entre em contato pelo e-mail oficial da Freelandoo." },
 ]
@@ -89,7 +89,7 @@ export function CentralDeAjudaContent() {
             {t("hero.title", "Central de ajuda")}
           </h1>
           <p className="text-xl text-muted-foreground mb-10" data-reveal>
-            {t("hero.description", "Encontre respostas sobre conta, ativação, perfis, máquinas, serviços, agenda, cupons e segurança.")}
+            {t("hero.description", "Encontre respostas sobre conta, ativação, perfis, enxames, serviços, agenda, cupons e segurança.")}
           </p>
           <div className="relative" data-reveal>
             <input

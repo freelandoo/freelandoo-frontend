@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const benefits = [
-  { title: "Perfil público", text: "Tenha uma página profissional com sua bio, profissão, localização, máquina principal e botão de contato." },
+  { title: "Perfil público", text: "Tenha uma página profissional com sua bio, profissão, localização, enxame principal e botão de contato." },
   { title: "Portfólio", text: "Mostre trabalhos, imagens, vídeos, resultados e exemplos reais do que você faz." },
   { title: "Serviços", text: "Cadastre serviços com descrição, valor, duração e informações importantes para o cliente." },
   { title: "Contato direto", text: "Clientes interessados podem falar com você diretamente pelo WhatsApp." },
@@ -15,7 +15,7 @@ const benefits = [
 
 const steps = [
   { n: "1", title: "Crie sua conta", text: "Cadastre seus dados básicos e acesse sua área de perfil." },
-  { n: "2", title: "Monte seu perfil", text: "Escolha sua máquina, profissão, cidade, estado, descrição, foto e informações principais." },
+  { n: "2", title: "Monte seu perfil", text: "Escolha seu enxame, profissão, cidade, estado, descrição, foto e informações principais." },
   { n: "3", title: "Ative seu perfil", text: "Com a ativação concluída, seu perfil pode aparecer na vitrine pública da Freelandoo." },
   { n: "4", title: "Publique seu portfólio", text: "Adicione trabalhos e exemplos para aumentar a confiança de quem visita seu perfil." },
   { n: "5", title: "Receba contatos", text: "Clientes podem encontrar seu perfil e chamar você diretamente pelo WhatsApp." },
@@ -24,7 +24,7 @@ const steps = [
 const included = [
   "Perfil profissional público",
   "Exibição na vitrine da Freelandoo",
-  "Participação em uma máquina principal",
+  "Participação em um enxame principal",
   "Cadastro de profissão e localização",
   "Portfólio com trabalhos",
   "Cadastro de serviços",
@@ -70,7 +70,7 @@ export function AnunciarServicosContent() {
             {t("hero.title", "Anuncie seus serviços e seja encontrado por quem precisa de você")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-4" data-reveal>
-            {t("hero.subtitle", "Crie seu perfil profissional, apareça nas máquinas da Freelandoo e receba contatos diretos de pessoas interessadas no que você faz.")}
+            {t("hero.subtitle", "Crie seu perfil profissional, apareça nos enxames da Freelandoo e receba contatos diretos de pessoas interessadas no que você faz.")}
           </p>
           <p className="text-muted-foreground max-w-2xl mb-8 leading-relaxed" data-reveal>
             {t("hero.description", "A Freelandoo é uma vitrine inteligente para profissionais, freelancers, criadores e prestadores de serviço. Você paga uma ativação única, mantém seu perfil ativo e pode ser encontrado por clientes que procuram exatamente o tipo de solução que você oferece.")}

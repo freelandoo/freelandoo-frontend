@@ -307,10 +307,10 @@ export default function EditClanPage({
 
           {clan.machine_name && (
             <div className="space-y-2">
-              <Label>Máquina de divulgação</Label>
+              <Label>Enxame de divulgação</Label>
               <Input value={clan.machine_name} disabled />
               <p className="text-xs text-muted-foreground">
-                A máquina é definida na criação e não pode ser alterada.
+                O enxame é definido na criação e não pode ser alterado.
               </p>
             </div>
           )}

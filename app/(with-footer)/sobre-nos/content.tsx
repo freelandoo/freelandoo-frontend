@@ -9,7 +9,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 const values = [
   { title: "Autonomia", text: "Cliente e profissional negociam diretamente, com liberdade para combinar valores, prazos e entregas." },
   { title: "Visibilidade", text: "Quem trabalha precisa ser encontrado de forma mais clara e profissional." },
-  { title: "Organização", text: "Máquinas, profissões e filtros ajudam a transformar busca em direção." },
+  { title: "Organização", text: "Enxames, profissões e filtros ajudam a transformar busca em direção." },
   { title: "Oportunidade", text: "A plataforma existe para aproximar pessoas de soluções reais." },
   { title: "Transparência", text: "A Freelandoo não promete contratação garantida. Ela entrega exposição, organização e conexão." },
 ]
@@ -18,7 +18,7 @@ const platform = [
   "perfis profissionais",
   "portfólios",
   "serviços",
-  "máquinas",
+  "enxames",
   "clans",
   "cupons e afiliados",
   "métricas de engajamento",
@@ -104,10 +104,10 @@ export function SobreNosContent() {
       <section className="py-16 md:py-24 bg-card/20">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4" data-reveal>
-            {t("platform.title", "Uma vitrine com lógica de máquinas")}
+            {t("platform.title", "Uma vitrine com lógica de enxames")}
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            {t("platform.description", "As máquinas organizam profissionais por tipo de necessidade. Isso permite que clientes encontrem perfis de maneira mais intuitiva e que profissionais se posicionem com mais clareza.")}
+            {t("platform.description", "Os enxames organizam profissionais por tipo de necessidade. Isso permite que clientes encontrem perfis de maneira mais intuitiva e que profissionais se posicionem com mais clareza.")}
           </p>
           <div className="mb-4 text-sm font-medium text-foreground" data-reveal>{t("platform.label", "A Freelandoo reúne:")}</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-stagger>

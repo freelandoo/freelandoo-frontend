@@ -35,7 +35,7 @@ export interface StoryBarEntry {
 
 interface StoryBarProps {
   kind: StoryKind
-  /** Cor padrão se a entry não tiver máquina associada */
+  /** Cor padrão se a entry não tiver enxame associado */
   defaultAccent?: string
   onOpenProfile: (entry: StoryBarEntry, all: StoryBarEntry[]) => void
   onCreate?: () => void
@@ -50,7 +50,7 @@ function initials(name: string | null | undefined) {
 
 /**
  * Faixa horizontal de stories. Square avatars com borda metálica na cor
- * da máquina quando há story não-visto, transparente quando não tem.
+ * do enxame quando há story não-visto, transparente quando não tem.
  */
 export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCreate, showCreateSlot }: StoryBarProps) {
   const t = useTranslations("Stories")

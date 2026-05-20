@@ -73,7 +73,7 @@ function buildContextBundle(
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-        { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+        { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `${root}?ranking=1`, label: "Ranking", icon: Trophy, activePath: root },
       ],
@@ -85,7 +85,7 @@ function buildContextBundle(
       items: [
         { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
         { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-        { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+        { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
         { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
         { href: `/clans/${active.id_profile}?ranking=1`, label: "Ranking", icon: Trophy },
       ],
@@ -97,7 +97,7 @@ function buildContextBundle(
     items: [
       { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
       { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-      { href: "/search?machine", label: "Máquinas", icon: Boxes, activePath: "/search" },
+      { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
       { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
       { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },
     ],

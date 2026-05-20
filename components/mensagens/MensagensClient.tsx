@@ -313,7 +313,7 @@ export default function MensagensClient() {
   const [osSending, setOsSending] = useState(false)
   const osThreadEndRef = useRef<HTMLDivElement | null>(null)
 
-  // ----- Chat ao vivo (Global / Máquinas) -----
+  // ----- Chat ao vivo (Global / Enxames) -----
   const initialMachineId = searchParams.get("machine_id")
   const [chatMachineId, setChatMachineId] = useState<number | null>(
     initialMachineId ? Number(initialMachineId) || null : null
@@ -657,7 +657,7 @@ export default function MensagensClient() {
     router.replace(qs ? `/mensagens?${qs}` : "/mensagens")
   }, [router, searchParams, chatMachineId])
 
-  // Carrega máquinas (uma vez) — usado pelo seletor da aba "Máquinas"
+  // Carrega enxames (uma vez) — usado pelo seletor da aba "Enxames"
   useEffect(() => {
     if (status !== "authenticated") return
     if (machinesLoaded || machinesLoading) return
@@ -673,7 +673,7 @@ export default function MensagensClient() {
         setUserMachines(own)
         setAllMachines(all)
         setMachinesLoaded(true)
-        // Auto-seleciona se houver exatamente uma máquina e nenhuma vinda da URL
+        // Auto-seleciona se houver exatamente um enxame e nenhuma vinda da URL
         if (!chatMachineId && own.length === 1) {
           setChatMachineId(own[0].id_machine)
         }
@@ -700,7 +700,7 @@ export default function MensagensClient() {
     router.replace(`/mensagens?${params.toString()}`)
   }, [router, searchParams])
 
-  // Se o usuário troca para um actor clan enquanto está em Global/Máquinas,
+  // Se o usuário troca para um actor clan enquanto está em Global/Enxames,
   // volta automaticamente para Conversas (clans não têm essas abas).
   useEffect(() => {
     if (!isClanActor) return
@@ -868,7 +868,7 @@ export default function MensagensClient() {
             "flex flex-col border-r border-white/10",
             // Mobile: esconde aside quando uma thread/sala está aberta.
             // Para global, sempre que a aba está ativa, o painel direito assume a tela.
-            // Para machine, esconde se já tem máquina escolhida (sala aberta).
+            // Para machine, esconde se já tem enxame escolhida (sala aberta).
             (tab === "conv"
               ? activeConvId
               : tab === "os"
@@ -940,7 +940,7 @@ export default function MensagensClient() {
                   active={tab === "machine"}
                   onClick={() => handleSelectTab("machine")}
                   icon={<Sparkles className="h-3.5 w-3.5" />}
-                  label={t("machinesTabLabel", "Máquinas")}
+                  label={t("machinesTabLabel", "Enxames")}
                   shortLabel={t("machinesTabShortLabel", "Máq.")}
                 />
               </>
@@ -1093,7 +1093,7 @@ export default function MensagensClient() {
                           </span>
                         </div>
                         <div className="mt-0.5 truncate text-[10px] text-white/50">
-                          {c.request.machine_name || t("machineFallback", "Máquina")}
+                          {c.request.machine_name || t("machineFallback", "Enxame")}
                           {c.request.category_name ? ` · ${c.request.category_name}` : ""}
                         </div>
                         <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -1144,7 +1144,7 @@ export default function MensagensClient() {
             </div>
           </div>
 
-          {/* Lista — Máquinas */}
+          {/* Lista — Enxames */}
           <div className={cn("flex-1 overflow-y-auto", tab !== "machine" && "hidden")}>
             <MachineList
               userMachines={userMachines}
@@ -1180,28 +1180,28 @@ export default function MensagensClient() {
                   <button
                     onClick={handleClearMachine}
                     className="text-white/60 hover:text-white"
-                    aria-label={t("changeMachineAria", "Trocar máquina")}
+                    aria-label={t("changeMachineAria", "Trocar enxame")}
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </button>
-                  <span className="text-xs text-white/60">{t("changeMachineButton", "Trocar máquina")}</span>
+                  <span className="text-xs text-white/60">{t("changeMachineButton", "Trocar enxame")}</span>
                 </div>
                 <ChatRoomPanel
                   key={`m-${chatMachineId}`}
                   kind="machine"
                   machineId={chatMachineId}
                   pageTitle={t("liveChat", "Chat ao vivo")}
-                  pageSubtitle={t("machineChatPageSubtitle", "Sala da sua máquina")}
+                  pageSubtitle={t("machineChatPageSubtitle", "Sala da seu enxame")}
                 />
                 <div className="hidden border-t border-white/10 px-4 py-2 md:flex md:items-center md:justify-between">
                   <span className="text-[11px] text-white/45">
-                    {t("changeMachineHint", "Trocar de máquina não afeta sua máquina principal.")}
+                    {t("changeMachineHint", "Trocar de enxame não afeta seu enxame principal.")}
                   </span>
                   <button
                     onClick={handleClearMachine}
                     className="text-[11px] text-primary hover:underline"
                   >
-                    {t("changeMachineButton", "Trocar máquina")}
+                    {t("changeMachineButton", "Trocar enxame")}
                   </button>
                 </div>
               </div>
@@ -1805,7 +1805,7 @@ function EmptyMachinePick() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
       <Sparkles className="mb-3 h-12 w-12" />
-      <p className="text-sm">{t("selectMachineHint", "Selecione uma máquina ao lado para entrar na sala.")}</p>
+      <p className="text-sm">{t("selectMachineHint", "Selecione um enxame ao lado para entrar na sala.")}</p>
     </div>
   )
 }
@@ -1873,7 +1873,7 @@ function MachineList({
       {userMachines.length > 0 && (
         <>
           <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
-            {t("yourMachinesSection", "Suas máquinas")}
+            {t("yourMachinesSection", "Seus enxames")}
           </div>
           <ul className="divide-y divide-white/5">
             {userMachines.map((m) => renderItem(m, true))}
@@ -1883,7 +1883,7 @@ function MachineList({
       {others.length > 0 && (
         <>
           <div className="mt-3 px-4 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/40">
-            {t("otherMachinesSection", "Outras máquinas")}
+            {t("otherMachinesSection", "Outros enxames")}
           </div>
           <ul className="divide-y divide-white/5">
             {others.map((m) => renderItem(m, false))}
@@ -1893,7 +1893,7 @@ function MachineList({
       {userMachines.length === 0 && others.length === 0 && (
         <div className="flex flex-col items-center justify-center px-6 py-10 text-center text-sm text-white/45">
           <Sparkles className="mb-2 h-8 w-8 text-white/30" />
-          {t("noMachinesAvailable", "Nenhuma máquina disponível.")}
+          {t("noMachinesAvailable", "Nenhum enxame disponível.")}
         </div>
       )}
     </div>

@@ -12,7 +12,7 @@ const sections = [
     paragraphs: ["A ativação concede ao usuário acesso ao Freelandoo, incluindo:"],
     items: [
       "Cadastro e exibição do perfil profissional.",
-      "Acesso a máquinas de oportunidades.",
+      "Acesso a enxames de oportunidades.",
       "Participação no sistema de cupons e afiliados.",
       "Recursos e funcionalidades descritos na plataforma.",
     ],

@@ -378,7 +378,7 @@
     "noEligibleSubprofiles": "No eligible subprofiles. Create a subprofile to post stories.",
     "channelLabel": "Channel",
     "channelTrampoTitle": "Work",
-    "channelTrampoSubtitle": "Shows up in /maquinas",
+    "channelTrampoSubtitle": "Shows up in /enxames",
     "channelRestTitle": "Rest",
     "channelRestSubtitle": "Shows up in /feed",
     "clanRestOnly": "Clans don't post Work — only Rest.",

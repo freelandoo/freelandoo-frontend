@@ -23,60 +23,109 @@ type MachineCard = {
 
 const MACHINES: MachineCard[] = [
   {
-    id: "views",
-    name: "Máquina de Views",
-    description: "Crescimento de conteúdo, edição, thumbnails, roteiros e performance digital.",
-    examples: ["Editor de vídeo", "Thumbmaker", "Roteirista", "Estrategista de conteúdo"],
-    colors: { from: "#6d28d9", to: "#2563eb", glow: "rgba(139,92,246,0.5)", accent: "#a78bfa" },
+    id: "marketing",
+    name: "Enxame de Marketing",
+    description: "Estratégia, conteúdo, design e gestão para marcas crescerem e venderem.",
+    examples: ["Social Media", "Copywriter", "Designer Gráfico", "Editor de Vídeo"],
+    colors: { from: "#e11d48", to: "#f43f5e", glow: "rgba(244,63,94,0.5)", accent: "#fb7185" },
   },
   {
-    id: "divulgacao",
-    name: "Máquina de Divulgação",
-    description: "Alcance para marcas, negócios e campanhas por meio de criadores e influencers.",
-    examples: ["Influenciador", "Creator UGC", "Microinfluenciador", "Afiliado"],
-    colors: { from: "#e11d48", to: "#db2777", glow: "rgba(244,63,94,0.5)", accent: "#fb7185" },
+    id: "tecnologia",
+    name: "Enxame de Tecnologia",
+    description: "Desenvolvimento, dados, infraestrutura e IA para produtos digitais.",
+    examples: ["Desenvolvedor", "Engenheiro de Software", "Especialista em IA", "DevOps"],
+    colors: { from: "#2563eb", to: "#3b82f6", glow: "rgba(59,130,246,0.5)", accent: "#60a5fa" },
   },
   {
-    id: "limpeza",
-    name: "Máquina de Limpeza",
-    description: "Limpeza, organização, faxina, pós-obra e apoio residencial e comercial.",
-    examples: ["Diarista", "Faxineira", "Auxiliar de limpeza", "Organização residencial"],
+    id: "transporte",
+    name: "Enxame de Transporte",
+    description: "Motoristas, entregas, logística e mudanças para mover pessoas e cargas.",
+    examples: ["Motoboy", "Caminhoneiro", "Entregador de Aplicativo", "Operador de Logística"],
+    colors: { from: "#d97706", to: "#f59e0b", glow: "rgba(245,158,11,0.5)", accent: "#fbbf24" },
+  },
+  {
+    id: "artistas",
+    name: "Enxame de Artistas",
+    description: "Música, atuação, ilustração e palco para quem cria e performa.",
+    examples: ["Cantor", "DJ", "Ilustrador", "Ator/Atriz"],
+    colors: { from: "#7c3aed", to: "#a855f7", glow: "rgba(168,85,247,0.5)", accent: "#c084fc" },
+  },
+  {
+    id: "justica",
+    name: "Enxame de Justiça",
+    description: "Direito, política, fiscalização e atuação pública para causas e instituições.",
+    examples: ["Advogado", "Jornalista", "Servidor Público", "Cientista Político"],
+    colors: { from: "#4338ca", to: "#6366f1", glow: "rgba(99,102,241,0.5)", accent: "#818cf8" },
+  },
+  {
+    id: "influencer",
+    name: "Enxame de Influencer",
+    description: "Creators de todos os nichos que produzem conteúdo e engajam audiências.",
+    examples: ["Streamer", "YouTuber", "Podcaster", "Tiktoker"],
+    colors: { from: "#db2777", to: "#ec4899", glow: "rgba(236,72,153,0.5)", accent: "#f472b6" },
+  },
+  {
+    id: "servicos_residenciais",
+    name: "Enxame de Serviços Residenciais",
+    description: "Limpeza, cuidados, manutenção e apoio para o dia a dia da casa.",
+    examples: ["Diarista", "Jardineiro", "Babá", "Chaveiro"],
     colors: { from: "#059669", to: "#10b981", glow: "rgba(16,185,129,0.5)", accent: "#34d399" },
   },
   {
     id: "construcao",
-    name: "Máquina de Construção",
-    description: "Reformas, obras, manutenção, instalações e acabamentos.",
+    name: "Enxame de Construção",
+    description: "Obra, reforma, instalações e acabamento — do alicerce à entrega.",
     examples: ["Pedreiro", "Pintor", "Eletricista", "Encanador"],
-    colors: { from: "#ea580c", to: "#f59e0b", glow: "rgba(249,115,22,0.5)", accent: "#fb923c" },
+    colors: { from: "#ea580c", to: "#f97316", glow: "rgba(249,115,22,0.5)", accent: "#fb923c" },
   },
   {
-    id: "negocios",
-    name: "Máquina de Negócios",
-    description: "Marketing, design, vendas, atendimento e operação para empresas.",
-    examples: ["Social media", "Designer", "Gestor de tráfego", "Copywriter"],
-    colors: { from: "#0ea5e9", to: "#06b6d4", glow: "rgba(14,165,233,0.5)", accent: "#38bdf8" },
+    id: "saude",
+    name: "Enxame de Saúde",
+    description: "Médicos, terapeutas e profissionais de cuidado do corpo e da mente.",
+    examples: ["Médico", "Fisioterapeuta", "Psicólogo", "Nutricionista"],
+    colors: { from: "#0d9488", to: "#06b6d4", glow: "rgba(6,182,212,0.5)", accent: "#22d3ee" },
   },
   {
-    id: "oportunidades",
-    name: "Máquina de Oportunidades",
-    description: "Profissionais generalistas, prestadores locais e divulgadores prontos para novas demandas.",
-    examples: ["Freelancer geral", "Assistente geral", "Promotor", "Captador de leads"],
-    colors: { from: "#e6b800", to: "#f59e0b", glow: "rgba(230,184,0,0.5)", accent: "#fbbf24" },
+    id: "beleza_bem_estar",
+    name: "Enxame de Beleza e Bem-estar",
+    description: "Cabelo, estética, terapias e autocuidado para se sentir bem.",
+    examples: ["Cabeleireiro", "Barbeiro", "Manicure", "Massagista"],
+    colors: { from: "#c026d3", to: "#d946ef", glow: "rgba(217,70,239,0.5)", accent: "#e879f9" },
   },
   {
-    id: "saude_beleza",
-    name: "Máquina de Saúde e Beleza",
-    description: "Cuidados pessoais, estética, bem-estar, beleza e serviços corporais.",
-    examples: ["Massagista", "Esteticista", "Manicure", "Barbeiro"],
-    colors: { from: "#d946ef", to: "#ec4899", glow: "rgba(217,70,239,0.5)", accent: "#e879f9" },
+    id: "veiculos",
+    name: "Enxame de Veículos",
+    description: "Mecânica, estética automotiva, reparos e serviços para veículos.",
+    examples: ["Mecânico Automotivo", "Funileiro", "Borracheiro", "Detailer Automotivo"],
+    colors: { from: "#dc2626", to: "#ef4444", glow: "rgba(239,68,68,0.5)", accent: "#f87171" },
   },
   {
-    id: "saude_pet",
-    name: "Máquina de Saúde do Pet",
-    description: "Cuidados, higiene, bem-estar, rotina e serviços para animais.",
-    examples: ["Tosador", "Dog walker", "Pet sitter", "Adestrador"],
-    colors: { from: "#0d9488", to: "#14b8a6", glow: "rgba(20,184,166,0.5)", accent: "#2dd4bf" },
+    id: "pets",
+    name: "Enxame de Pets",
+    description: "Veterinária, banho e tosa, adestramento e cuidados para animais.",
+    examples: ["Veterinário", "Tosador", "Adestrador de Cães", "Dog Walker"],
+    colors: { from: "#16a34a", to: "#22c55e", glow: "rgba(34,197,94,0.5)", accent: "#4ade80" },
+  },
+  {
+    id: "rural",
+    name: "Enxame Rural",
+    description: "Agropecuária, máquinas, manejo e gestão para o campo.",
+    examples: ["Produtor Rural", "Engenheiro Agrônomo", "Veterinário Rural", "Apicultor"],
+    colors: { from: "#65a30d", to: "#84cc16", glow: "rgba(132,204,22,0.5)", accent: "#a3e635" },
+  },
+  {
+    id: "educacao",
+    name: "Enxame de Educação",
+    description: "Ensino, mentoria, treinamento e desenvolvimento de pessoas.",
+    examples: ["Professor", "Mentor", "Palestrante", "Treinador Corporativo"],
+    colors: { from: "#0284c7", to: "#0ea5e9", glow: "rgba(14,165,233,0.5)", accent: "#38bdf8" },
+  },
+  {
+    id: "eventos",
+    name: "Enxame de Eventos",
+    description: "Produção, gastronomia, animação e estrutura para festas e eventos.",
+    examples: ["Cerimonialista", "DJ", "Bartender", "Fotógrafo de Eventos"],
+    colors: { from: "#ca8a04", to: "#eab308", glow: "rgba(234,179,8,0.5)", accent: "#facc15" },
   },
 ]
 
@@ -355,7 +404,7 @@ export function ComoFuncionaClient() {
             style={{ color: "#6b7280" }}
           >
             Na Freelandoo, você não perde tempo navegando por categorias confusas. Você
-            escolhe uma máquina, encontra profissionais reais, analisa perfis, vê
+            escolhe um enxame, encontra profissionais reais, analisa perfis, vê
             portfólios e fala direto pelo WhatsApp.
           </p>
 
@@ -397,9 +446,9 @@ export function ComoFuncionaClient() {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Users, title: "Profissionais aparecem", text: "Freelancers e prestadores criam perfis públicos para divulgar seus serviços." },
-              { icon: Search, title: "Clientes encontram", text: "Quem precisa contratar pode buscar por localização, máquina e profissão." },
+              { icon: Search, title: "Clientes encontram", text: "Quem precisa contratar pode buscar por localização, enxame e profissão." },
               { icon: MessageCircle, title: "Contato é direto", text: "A conversa acontece pelo WhatsApp, sem etapas desnecessárias." },
-              { icon: Zap, title: "A plataforma organiza", text: "Máquinas, filtros, portfólios e métricas ajudam a tornar a busca mais inteligente." },
+              { icon: Zap, title: "A plataforma organiza", text: "Enxames, filtros, portfólios e métricas ajudam a tornar a busca mais inteligente." },
             ].map((card) => (
               <GlowCard key={card.title} className="reveal-card">
                 <IconBadge icon={card.icon} />
@@ -423,15 +472,15 @@ export function ComoFuncionaClient() {
               <span style={{ color: yellow }}>enrolação</span>
             </SectionTitle>
             <SectionSubtitle>
-              Explore as máquinas, escolha a área da sua necessidade, filtre por estado,
+              Explore os enxames, escolha a área da sua necessidade, filtre por estado,
               cidade e profissão, analise perfis e fale diretamente pelo WhatsApp.
             </SectionSubtitle>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
             {[
-              { n: 1, title: "Escolha uma máquina", text: "Comece pelo tipo de solução que você procura: views, divulgação, limpeza, construção, negócios, saúde, beleza, pets ou oportunidades." },
-              { n: 2, title: "Refine sua busca", text: "Use filtros por estado, cidade, máquina e profissão para encontrar profissionais mais próximos e compatíveis." },
+              { n: 1, title: "Escolha um enxame", text: "Comece pela área da sua necessidade: marketing, tecnologia, construção, saúde, beleza, pets, eventos e outros." },
+              { n: 2, title: "Refine sua busca", text: "Use filtros por estado, cidade, enxame e profissão para encontrar profissionais mais próximos e compatíveis." },
               { n: 3, title: "Veja o perfil", text: "Analise descrição, portfólio, serviços, avaliações e informações públicas do profissional." },
               { n: 4, title: "Fale pelo WhatsApp", text: "Entre em contato direto, combine detalhes e avance sem intermediação da plataforma." },
             ].map((step) => (
@@ -466,7 +515,7 @@ export function ComoFuncionaClient() {
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[
-              { n: 1, title: "Crie seu perfil", text: "Cadastre suas informações, localização, máquina principal e profissão." },
+              { n: 1, title: "Crie seu perfil", text: "Cadastre suas informações, localização, enxame principal e profissão." },
               { n: 2, title: "Ative seu perfil", text: "Com a ativação concluída, seu perfil pode aparecer na vitrine pública da Freelandoo." },
               { n: 3, title: "Mostre seu trabalho", text: "Use o portfólio para apresentar imagens, vídeos, projetos e provas do que você faz." },
               { n: 4, title: "Receba contatos", text: "Clientes interessados podem chamar você diretamente pelo WhatsApp." },
@@ -494,15 +543,15 @@ export function ComoFuncionaClient() {
       <section ref={section5Ref} className="px-4 py-14 md:py-20" style={sectionStyle}>
         <div className="max-w-6xl mx-auto">
           <div className="section-header text-center mb-10">
-            <SectionLabel>As máquinas</SectionLabel>
+            <SectionLabel>Os enxames</SectionLabel>
             <SectionTitle className="text-center">
-              Máquinas que organizam{" "}
+              Enxames que organizam{" "}
               <span style={{ color: yellow }}>oportunidades</span>
             </SectionTitle>
             <div className="flex justify-center">
               <SectionSubtitle>
                 Em vez de uma lista confusa de categorias, a Freelandoo organiza profissionais
-                por intenção. Cada máquina tem profissões próprias, filtros e identidade visual.
+                por intenção. Cada enxame tem profissões próprias, filtros e identidade visual.
               </SectionSubtitle>
             </div>
           </div>
@@ -569,7 +618,7 @@ export function ComoFuncionaClient() {
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {[
-              { icon: Users, title: "Perfil público", text: "Nome, bio, profissão, localização, máquina e informações relevantes." },
+              { icon: Users, title: "Perfil público", text: "Nome, bio, profissão, localização, enxame e informações relevantes." },
               { icon: Camera, title: "Portfólio", text: "Trabalhos, imagens, vídeos, resultados e exemplos reais." },
               { icon: Briefcase, title: "Serviços", text: "Serviços com descrição, valor e duração cadastrados pelo profissional." },
               { icon: Calendar, title: "Agenda", text: "Organiza horários, disponibilidade e solicitações quando disponível." },
@@ -608,7 +657,7 @@ export function ComoFuncionaClient() {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Users, title: "Reúna participantes", text: "Organize profissionais, criadores ou prestadores em um grupo." },
-              { icon: Star, title: "Mostre competências", text: "Veja a distribuição das máquinas dentro do clan." },
+              { icon: Star, title: "Mostre competências", text: "Veja a distribuição dos enxames dentro do clan." },
               { icon: TrendingUp, title: "Fortaleça presença", text: "Um grupo bem estruturado pode transmitir mais confiança e ampliar oportunidades." },
               { icon: MessageCircle, title: "Direcione contatos", text: "Quando aplicável, o clan pode ter agenda, botão ou fluxo próprio de atendimento." },
             ].map((card) => (
@@ -703,7 +752,7 @@ export function ComoFuncionaClient() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { icon: TrendingUp, label: "Ranking geral" },
-                { icon: Zap, label: "Ranking por máquina" },
+                { icon: Zap, label: "Ranking por enxame" },
                 { icon: MapPin, label: "Ranking por cidade" },
                 { icon: Briefcase, label: "Ranking por profissão" },
               ].map((r) => (
@@ -739,7 +788,7 @@ export function ComoFuncionaClient() {
               </div>
               <div className="space-y-4">
                 {[
-                  "Escolho uma máquina",
+                  "Escolho um enxame",
                   "Filtro por cidade e profissão",
                   "Vejo perfis e portfólios",
                   "Chamo no WhatsApp",
@@ -809,7 +858,7 @@ export function ComoFuncionaClient() {
           </SectionTitle>
           <div className="flex justify-center">
             <SectionSubtitle>
-              A Freelandoo organiza profissionais, máquinas e oportunidades para que a
+              A Freelandoo organiza profissionais, enxames e oportunidades para que a
               conexão aconteça com menos fricção e mais clareza.
             </SectionSubtitle>
           </div>

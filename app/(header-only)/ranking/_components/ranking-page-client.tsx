@@ -95,7 +95,7 @@ const scopeOptions: {
   icon: ComponentType<{ className?: string }>
 }[] = [
   { key: "general", label: "Geral", icon: Globe2 },
-  { key: "machine", label: "Máquina", icon: Building2 },
+  { key: "machine", label: "Enxame", icon: Building2 },
   { key: "profession", label: "Profissão", icon: Briefcase },
   { key: "city", label: "Cidade", icon: MapPin },
 ]
@@ -243,7 +243,7 @@ export function RankingPageClient() {
 
   const scopeLabel = useMemo(() => {
     if (scope === "general") return "Brasil"
-    if (scope === "machine") return selectedMachine?.name || "Máquina"
+    if (scope === "machine") return selectedMachine?.name || "Enxame"
     if (scope === "profession") return selectedProfession?.label || "Profissão"
     if (city && cityState) return `${city}, ${cityState}`
     return "Cidade"
@@ -417,7 +417,7 @@ export function RankingPageClient() {
                       boxShadow: active ? `0 0 26px -14px ${machineTheme.glow}` : "none",
                     }}
                   >
-                    {machine.name.replace("Maquina de ", "").replace("Máquina de ", "")}
+                    {machine.name.replace("Enxame de ", "").replace("Enxame de ", "")}
                   </button>
                 )
               })}

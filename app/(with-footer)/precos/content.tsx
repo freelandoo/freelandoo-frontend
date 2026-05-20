@@ -8,7 +8,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const planIncludes = [
   "Perfil profissional público",
-  "Participação em uma máquina principal",
+  "Participação em um enxame principal",
   "Exibição por profissão e localização",
   "Botão de WhatsApp",
   "Portfólio",

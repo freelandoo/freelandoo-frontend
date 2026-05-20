@@ -7,8 +7,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const steps = [
-  { n: "1", title: "Escolha uma máquina", text: "Comece pela área que representa sua necessidade: views, divulgação, limpeza, construção, negócios, oportunidades, saúde e beleza ou saúde do pet." },
-  { n: "2", title: "Use os filtros", text: "Refine por estado, cidade, máquina e profissão para encontrar perfis mais alinhados." },
+  { n: "1", title: "Escolha um enxame", text: "Comece pela área que representa sua necessidade: marketing, tecnologia, construção, saúde, beleza, pets, eventos e outros." },
+  { n: "2", title: "Use os filtros", text: "Refine por estado, cidade, enxame e profissão para encontrar perfis mais alinhados." },
   { n: "3", title: "Analise o perfil", text: "Veja descrição, portfólio, serviços, avaliações e informações públicas." },
   { n: "4", title: "Chame pelo WhatsApp", text: "Converse diretamente com o profissional e combine valores, prazos e detalhes." },
 ]
@@ -77,7 +77,7 @@ export function ContratarProfissionaisContent() {
             {t("hero.title", "Encontre profissionais sem burocracia")}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mb-4" data-reveal>
-            {t("hero.subtitle", "Procure por máquina, profissão, estado e cidade. Veja perfis, analise portfólios e fale direto pelo WhatsApp.")}
+            {t("hero.subtitle", "Procure por enxame, profissão, estado e cidade. Veja perfis, analise portfólios e fale direto pelo WhatsApp.")}
           </p>
           <p className="text-muted-foreground max-w-2xl mb-8 leading-relaxed" data-reveal>
             {t("hero.description", "A Freelandoo ajuda você a encontrar profissionais de forma simples. Você não precisa se cadastrar para procurar. Basta escolher o que precisa, filtrar os resultados e entrar em contato diretamente com o profissional.")}
@@ -87,7 +87,7 @@ export function ContratarProfissionaisContent() {
               {t("hero.primaryCta", "Encontrar freelancers")}
             </Link>
             <Link href="/search" className="inline-flex items-center border border-border text-foreground font-medium px-6 py-3 rounded-lg hover:border-primary/40 transition-all">
-              {t("hero.secondaryCta", "Ver máquinas")}
+              {t("hero.secondaryCta", "Ver enxames")}
             </Link>
           </div>
           <p className="mt-5 text-sm text-muted-foreground" data-reveal>

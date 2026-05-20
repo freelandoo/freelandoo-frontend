@@ -16,7 +16,7 @@ const REQUESTABLE: Array<{ key: string; label: string; hint?: string }> = [
   { key: "can_message", label: "Enviar mensagens" },
   { key: "can_receive_messages", label: "Receber mensagens" },
   { key: "can_use_global_chat", label: "Chat global" },
-  { key: "can_use_machine_chat", label: "Chat de máquinas" },
+  { key: "can_use_machine_chat", label: "Chat de enxames" },
 ]
 
 function authHeaders(): HeadersInit {

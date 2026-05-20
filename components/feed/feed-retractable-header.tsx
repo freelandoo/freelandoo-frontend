@@ -25,7 +25,7 @@ interface FeedRetractableHeaderProps {
 
 /**
  * Header transparente que retrai ao scrollar para baixo e reaparece ao subir.
- * Logo "freelandoo" amarelo, filtros máquina/cidade e sino de notificações.
+ * Logo "freelandoo" amarelo, filtros enxame/cidade e sino de notificações.
  */
 export function FeedRetractableHeader({
   machines,
@@ -99,7 +99,7 @@ export function FeedRetractableHeader({
               onChange={onMachineChange}
               trigger={
                 <Pill
-                  label={activeMachine?.name?.replace(/^Máquina de\s+/i, "") || t("machineLabel", "Máquina")}
+                  label={activeMachine?.name?.replace(/^Enxame de\s+/i, "") || t("machineLabel", "Enxame")}
                   active={!!activeMachine}
                   accent={activeMachine?.color_accent || undefined}
                 />

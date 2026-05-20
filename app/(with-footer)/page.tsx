@@ -14,7 +14,7 @@ import {
 
 const TITLE = "Freelandoo — A rede social de profissionais feita para ganhar dinheiro"
 const DESCRIPTION =
-  "Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja encontrado por quem precisa do que você faz. Posts de portfólio, máquinas, clans, mensagens e indicações."
+  "Crie seu perfil, publique seus trabalhos, apareça no feed, receba mensagens e seja encontrado por quem precisa do que você faz. Posts de portfólio, enxames, clans, mensagens e indicações."
 
 export const metadata: Metadata = {
   title: TITLE,

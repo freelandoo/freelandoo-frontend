@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const building = [
-  "máquinas de intenção",
+  "enxames de intenção",
   "perfis profissionais",
   "portfólios",
   "serviços e agenda",

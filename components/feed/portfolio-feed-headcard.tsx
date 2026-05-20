@@ -122,7 +122,7 @@ export function PortfolioFeedHeadcard({
           onChange={onMachineChange}
           trigger={
             <Pill
-              label={activeMachine?.name || t("machineLabel", "Máquina")}
+              label={activeMachine?.name || t("machineLabel", "Enxame")}
               active={!!activeMachine}
               accent={activeMachine?.color_accent || undefined}
             />
