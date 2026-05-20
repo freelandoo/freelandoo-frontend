@@ -358,7 +358,7 @@ export function ChatRoomPanel({
   const placeholder =
     kind === "global"
       ? t("globalChatPlaceholder", "Escreva no chat global...")
-      : t("machineChatPlaceholder", "Converse com pessoas da seu enxame...")
+      : t("machineChatPlaceholder", "Converse com pessoas do seu enxame...")
 
   if (status !== "authenticated") {
     return (

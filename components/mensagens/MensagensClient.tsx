@@ -673,7 +673,7 @@ export default function MensagensClient() {
         setUserMachines(own)
         setAllMachines(all)
         setMachinesLoaded(true)
-        // Auto-seleciona se houver exatamente um enxame e nenhuma vinda da URL
+        // Auto-seleciona se houver exatamente um enxame e nenhum vindo da URL
         if (!chatMachineId && own.length === 1) {
           setChatMachineId(own[0].id_machine)
         }
@@ -868,7 +868,7 @@ export default function MensagensClient() {
             "flex flex-col border-r border-white/10",
             // Mobile: esconde aside quando uma thread/sala está aberta.
             // Para global, sempre que a aba está ativa, o painel direito assume a tela.
-            // Para machine, esconde se já tem enxame escolhida (sala aberta).
+            // Para machine, esconde se já tem enxame escolhido (sala aberta).
             (tab === "conv"
               ? activeConvId
               : tab === "os"
@@ -1191,7 +1191,7 @@ export default function MensagensClient() {
                   kind="machine"
                   machineId={chatMachineId}
                   pageTitle={t("liveChat", "Chat ao vivo")}
-                  pageSubtitle={t("machineChatPageSubtitle", "Sala da seu enxame")}
+                  pageSubtitle={t("machineChatPageSubtitle", "Sala do seu enxame")}
                 />
                 <div className="hidden border-t border-white/10 px-4 py-2 md:flex md:items-center md:justify-between">
                   <span className="text-[11px] text-white/45">

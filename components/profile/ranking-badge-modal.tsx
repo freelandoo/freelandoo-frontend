@@ -48,7 +48,7 @@ type TopRow = {
 type TabKey = "machine" | "city" | "general" | "profession"
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: "machine", label: "Na enxame", icon: Briefcase },
+  { key: "machine", label: "No enxame", icon: Briefcase },
   { key: "city", label: "Na cidade", icon: MapPin },
   { key: "general", label: "Geral", icon: Globe },
   { key: "profession", label: "Profissão", icon: Trophy },
