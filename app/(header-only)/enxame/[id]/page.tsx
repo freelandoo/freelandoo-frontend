@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { MACHINES } from "@/components/home/machines"
+import { MACHINES } from "@/components/home/machines/tokens"
 
 export default async function EnxameRedirect({
   params,

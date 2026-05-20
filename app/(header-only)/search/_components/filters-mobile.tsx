@@ -238,7 +238,7 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
         <OptionList
           value={idMachine != null ? String(idMachine) : ""}
           options={[
-            { value: "", label: t("allMachinesOption", "Todas os enxames") },
+            { value: "", label: t("allMachinesOption", "Todos os enxames") },
             ...machines
               .filter((m) => m.is_active !== false)
               .map((m) => ({ value: String(m.id_machine), label: m.name })),

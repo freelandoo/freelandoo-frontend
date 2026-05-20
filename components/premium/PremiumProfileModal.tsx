@@ -156,7 +156,7 @@ export function PremiumProfileModal({
               <li className="flex gap-2">
                 <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  Card com fundo e borda da cor da seu enxame, com brilho e botão preto destacado.
+                  Card com fundo e borda da cor do seu enxame, com brilho e botão preto destacado.
                 </span>
               </li>
             </ul>
