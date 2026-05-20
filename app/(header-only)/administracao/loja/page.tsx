@@ -164,7 +164,7 @@ function CategoriesTab() {
         <div>
           <h2 className="text-base font-semibold text-foreground">Categorias de Produto</h2>
           <p className="text-xs text-muted-foreground">
-            Categorias usadas na vitrine das lojas e no fluxo &quot;Pedir Produto&quot;. Separadas das máquinas de serviço.
+            Categorias usadas na vitrine das lojas e no fluxo &quot;Pedir Produto&quot;. Separadas dos enxames de serviço.
           </p>
         </div>
         <button

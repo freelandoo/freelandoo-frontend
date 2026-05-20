@@ -229,7 +229,7 @@ export default function AdminPostsPage() {
                 <tr>
                   <th className="px-3 py-2 text-left">Post</th>
                   <th className="px-3 py-2 text-left">Autor</th>
-                  <th className="px-3 py-2 text-left">Máquina</th>
+                  <th className="px-3 py-2 text-left">Enxame</th>
                   <th className="px-3 py-2 text-right">Denúncias</th>
                   <th className="px-3 py-2 text-left">Motivo top</th>
                   <th className="px-3 py-2 text-left">Status</th>
