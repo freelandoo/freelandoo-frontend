@@ -444,7 +444,7 @@ export default function AdminRankingPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <CardTitle className="text-base">Rankings por Perfil</CardTitle>
-                    <CardDescription>Filtrar por máquina ou cidade.</CardDescription>
+                    <CardDescription>Filtrar por enxame ou cidade.</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={loadRankings} disabled={loadingRows}>
@@ -458,7 +458,7 @@ export default function AdminRankingPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
-                  <Input placeholder="Filtrar por máquina (slug)" value={filterMachine}
+                  <Input placeholder="Filtrar por enxame (slug)" value={filterMachine}
                     onChange={(e) => setFilterMachine(e.target.value)}
                     className="h-8 text-sm max-w-[200px]" />
                   <Input placeholder="Filtrar por cidade" value={filterCity}
@@ -488,7 +488,7 @@ export default function AdminRankingPage() {
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">#</th>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Perfil</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Máquina</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Enxame</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden sm:table-cell">Nível/XP</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Pts</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground hidden md:table-cell">
@@ -539,7 +539,7 @@ export default function AdminRankingPage() {
                             <td className="px-4 py-3 hidden sm:table-cell">
                               {row.machine_name && (
                                 <Badge variant="outline" className="text-xs">
-                                  {row.machine_name.replace("Máquina de ", "")}
+                                  {row.machine_name.replace("Enxame de ", "")}
                                 </Badge>
                               )}
                             </td>

@@ -11,7 +11,7 @@ type LevelOption = Option & { i18nKey: string }
 type Field =
   | "estado"
   | "cidade"
-  | "maquina"
+  | "enxame"
   | "profissao"
   | "nivel"
   | null
@@ -42,7 +42,7 @@ interface FiltersMobileProps {
   setIdCategory: (v: number | null) => void
   setLevelMin: (v: number | null) => void
   setPremiumOnly: (v: boolean) => void
-  // Cor da máquina ativa (opcional)
+  // Cor do enxame ativo (opcional)
   accentColor?: string
   // Total de resultados
   resultsCount: number
@@ -140,10 +140,10 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
               accentColor={accentColor}
             />
             <FilterChip
-              label={t("machineFilterLabel", "Máquina")}
+              label={t("machineFilterLabel", "Enxame")}
               value={machineLabel}
               active={idMachine != null}
-              onClick={() => setOpen("maquina")}
+              onClick={() => setOpen("enxame")}
               accentColor={accentColor}
             />
             <FilterChip
@@ -229,8 +229,8 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
       </BottomSheet>
 
       <BottomSheet
-        open={open === "maquina"}
-        title={t("machineBottomSheetTitle", "Máquina")}
+        open={open === "enxame"}
+        title={t("machineBottomSheetTitle", "Enxame")}
         closeOverlayLabel={t("closeFilterAriaLabel", "Fechar filtro")}
         closeButtonLabel={t("closeButtonAriaLabel", "Fechar")}
         onClose={() => setOpen(null)}
@@ -238,7 +238,7 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
         <OptionList
           value={idMachine != null ? String(idMachine) : ""}
           options={[
-            { value: "", label: t("allMachinesOption", "Todas as máquinas") },
+            { value: "", label: t("allMachinesOption", "Todas os enxames") },
             ...machines
               .filter((m) => m.is_active !== false)
               .map((m) => ({ value: String(m.id_machine), label: m.name })),
@@ -259,7 +259,7 @@ export function SearchFiltersMobile(props: FiltersMobileProps) {
         onClose={() => setOpen(null)}
       >
         {!machineActive ? (
-          <p className="py-6 text-center text-sm text-white/60">{t("selectMachineFirst", "Selecione uma máquina primeiro.")}</p>
+          <p className="py-6 text-center text-sm text-white/60">{t("selectMachineFirst", "Selecione um enxame primeiro.")}</p>
         ) : (
           <OptionList
             value={idCategory != null ? String(idCategory) : ""}

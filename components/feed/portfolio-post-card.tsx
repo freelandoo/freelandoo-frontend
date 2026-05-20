@@ -383,7 +383,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             }}
             title={post.machine.name}
           >
-            {post.machine.name.replace(/^Máquina de\s+/i, "")}
+            {post.machine.name.replace(/^Enxame de\s+/i, "")}
           </span>
         )}
       </div>

@@ -191,7 +191,7 @@ export default function MyClansPage() {
   async function handleCreate() {
     setFormError("")
     if (!form.id_profile_owner) return setFormError("Escolha o sub-perfil que vai criar o clan")
-    if (!form.id_machine) return setFormError("Escolha a máquina do clan")
+    if (!form.id_machine) return setFormError("Escolha o enxame do clan")
     if (!form.display_name.trim()) return setFormError("Dê um nome ao clan")
 
     setSaving(true)
@@ -433,13 +433,13 @@ export default function MyClansPage() {
             </div>
 
             <div>
-              <Label>Máquina</Label>
+              <Label>Enxame</Label>
               <Select
                 value={form.id_machine}
                 onValueChange={(v) => setForm({ ...form, id_machine: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Em qual máquina o clan atua?" />
+                  <SelectValue placeholder="Em qual enxame o clan atua?" />
                 </SelectTrigger>
                 <SelectContent>
                   {machines.map((m) => (

@@ -109,7 +109,7 @@ export function SearchRetractableHeader({
               onChange={(id) => { onMachineChange(id); onCategoryChange(null) }}
               trigger={
                 <Pill
-                  label={activeMachine?.name?.replace(/^Máquina de\s+/i, "") || "Máquina"}
+                  label={activeMachine?.name?.replace(/^Enxame de\s+/i, "") || "Enxame"}
                   active={!!activeMachine}
                   accent={activeMachine?.color_accent || undefined}
                 />

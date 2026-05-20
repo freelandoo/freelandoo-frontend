@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const connectionCards = [
-  { title: "Profissionais conectados", text: "Pessoas de diferentes máquinas podem se aproximar, trocar referências e gerar oportunidades." },
+  { title: "Profissionais conectados", text: "Pessoas de diferentes enxames podem se aproximar, trocar referências e gerar oportunidades." },
   { title: "Clans", text: "Grupos podem reunir participantes e mostrar competências coletivas." },
   { title: "Divulgação", text: "A comunidade pode ajudar profissionais a ganharem mais visibilidade." },
   { title: "Crescimento coletivo", text: "Quanto mais organizada a rede, mais fácil fica encontrar e ser encontrado." },
@@ -51,7 +51,7 @@ export function ComunidadeContent() {
             {t("hero.subtitle", "A Freelandoo aproxima profissionais, criadores, prestadores, empresas e pessoas que procuram soluções reais.")}
           </p>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            {t("hero.description", "Mais do que uma vitrine, a Freelandoo está construindo uma rede de profissionais conectados por máquinas, interesses, serviços e oportunidades.")}
+            {t("hero.description", "Mais do que uma vitrine, a Freelandoo está construindo uma rede de profissionais conectados por enxames, interesses, serviços e oportunidades.")}
           </p>
           <div data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-primary text-black font-semibold px-6 py-3 rounded-lg hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">

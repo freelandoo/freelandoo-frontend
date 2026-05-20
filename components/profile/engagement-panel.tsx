@@ -216,7 +216,7 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <RankBadge pos={data.position_general} label="Geral" />
-                  <RankBadge pos={data.position_machine} label="Máquina" />
+                  <RankBadge pos={data.position_machine} label="Enxame" />
                   <RankBadge pos={data.position_city} label="Cidade" />
                   <RankBadge pos={data.position_profession} label="Profissão" />
                 </div>

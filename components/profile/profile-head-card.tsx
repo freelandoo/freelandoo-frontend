@@ -344,7 +344,7 @@ export function ProfileHeadCard({
               )}
             </div>
 
-            {/* Coluna direita do avatar: Posts/Acomp no topo + Maquina/Profissao/Local em coluna. */}
+            {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna. */}
             <div className="min-w-0 flex-1 pb-1 text-left">
               <div className="flex items-baseline gap-4">
                 <div className="flex items-baseline gap-1.5">
@@ -642,7 +642,7 @@ export function ProfileHeadCard({
               </button>
             </dl>
 
-            {/* Info em linhas: maquina, profissao, cidade */}
+            {/* Info em linhas: enxame, profissao, cidade */}
             {(profile.machine_name || profile.desc_category || location) && (
               <ul className="mt-4 space-y-2.5">
                 {profile.machine_name && (

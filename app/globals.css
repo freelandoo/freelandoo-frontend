@@ -219,15 +219,22 @@
   }
 }
 
-/* Per-machine glow colors */
-[data-machine="views"]         { --glow-c1: #6d28d9; --glow-c2: #2563eb; }
-[data-machine="divulgacao"]    { --glow-c1: #e11d48; --glow-c2: #db2777; }
-[data-machine="limpeza"]       { --glow-c1: #059669; --glow-c2: #10b981; }
-[data-machine="construcao"]    { --glow-c1: #ea580c; --glow-c2: #f59e0b; }
-[data-machine="negocios"]      { --glow-c1: #0ea5e9; --glow-c2: #06b6d4; }
-[data-machine="oportunidades"] { --glow-c1: #e6b800; --glow-c2: #f59e0b; }
-[data-machine="saude_beleza"]  { --glow-c1: #d946ef; --glow-c2: #ec4899; }
-[data-machine="saude_pet"]     { --glow-c1: #0d9488; --glow-c2: #14b8a6; }
+/* Per-enxame glow colors (data-machine = slug do enxame; tabela física legada) */
+[data-machine="marketing"]             { --glow-c1: #e11d48; --glow-c2: #f43f5e; }
+[data-machine="tecnologia"]            { --glow-c1: #2563eb; --glow-c2: #3b82f6; }
+[data-machine="transporte"]            { --glow-c1: #d97706; --glow-c2: #f59e0b; }
+[data-machine="artistas"]              { --glow-c1: #7c3aed; --glow-c2: #a855f7; }
+[data-machine="justica"]               { --glow-c1: #4338ca; --glow-c2: #6366f1; }
+[data-machine="influencer"]            { --glow-c1: #db2777; --glow-c2: #ec4899; }
+[data-machine="servicos_residenciais"] { --glow-c1: #059669; --glow-c2: #10b981; }
+[data-machine="construcao"]            { --glow-c1: #ea580c; --glow-c2: #f97316; }
+[data-machine="saude"]                 { --glow-c1: #0d9488; --glow-c2: #06b6d4; }
+[data-machine="beleza_bem_estar"]      { --glow-c1: #c026d3; --glow-c2: #d946ef; }
+[data-machine="veiculos"]              { --glow-c1: #dc2626; --glow-c2: #ef4444; }
+[data-machine="pets"]                  { --glow-c1: #16a34a; --glow-c2: #22c55e; }
+[data-machine="rural"]                 { --glow-c1: #65a30d; --glow-c2: #84cc16; }
+[data-machine="educacao"]              { --glow-c1: #0284c7; --glow-c2: #0ea5e9; }
+[data-machine="eventos"]               { --glow-c1: #ca8a04; --glow-c2: #eab308; }
 
 /* The glowing border wrapper */
 .card-glow {

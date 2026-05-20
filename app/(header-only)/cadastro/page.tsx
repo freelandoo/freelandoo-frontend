@@ -237,7 +237,7 @@ export default function CadastroPage() {
     setSubmitError(null)
     if (asFreelancer) {
       if (!selectedMachineId || !selectedCategoryId) {
-        setSubmitError(t("errSelectMachine", "Selecione máquina e profissão."))
+        setSubmitError(t("errSelectMachine", "Selecione enxame e profissão."))
         return
       }
       if (!profileData.estado || !profileData.municipio) {
@@ -633,7 +633,7 @@ export default function CadastroPage() {
                   {/* Machines */}
                   {machines.length > 0 && (
                     <div className="space-y-3">
-                      <Label>{t("chooseMachine", "Escolha sua máquina")}</Label>
+                      <Label>{t("chooseMachine", "Escolha seu enxame")}</Label>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {machines.map((m) => {
                           const isSelected = selectedMachineId === m.id_machine

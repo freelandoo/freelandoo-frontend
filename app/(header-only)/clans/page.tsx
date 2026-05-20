@@ -101,10 +101,10 @@ export default function ClansVitrinePage() {
             <div className="sm:col-span-3">
               <Select value={filterMachine} onValueChange={setFilterMachine}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas as máquinas" />
+                  <SelectValue placeholder="Todas os enxames" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">Todas as máquinas</SelectItem>
+                  <SelectItem value="__all__">Todas os enxames</SelectItem>
                   {machines.map((m) => (
                     <SelectItem key={m.id_machine} value={m.slug}>
                       {m.name}

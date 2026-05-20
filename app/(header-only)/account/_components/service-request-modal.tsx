@@ -357,7 +357,7 @@ function ServiceCreateForm({ onCreated }: { onCreated: () => void }) {
 
   const handleCreate = async () => {
     if (!form.id_machine || !form.id_category || !form.description.trim()) {
-      setCreateError("Preencha máquina, profissão e descrição.")
+      setCreateError("Preencha enxame, profissão e descrição.")
       return
     }
     const token = getToken()
@@ -393,7 +393,7 @@ function ServiceCreateForm({ onCreated }: { onCreated: () => void }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <FieldLabel required>Máquina</FieldLabel>
+          <FieldLabel required>Enxame</FieldLabel>
           <Select value={form.id_machine} onValueChange={handleMachineChange} disabled={loadingM}>
             <SelectTrigger className={inputCls}>
               <SelectValue placeholder={loadingM ? "Carregando..." : "Selecione"} />
@@ -407,7 +407,7 @@ function ServiceCreateForm({ onCreated }: { onCreated: () => void }) {
           <FieldLabel required>Profissão</FieldLabel>
           <Select value={form.id_category} onValueChange={v => setForm(f => ({ ...f, id_category: v }))} disabled={!form.id_machine || loadingP}>
             <SelectTrigger className={inputCls}>
-              <SelectValue placeholder={!form.id_machine ? "Escolha a máquina" : loadingP ? "Carregando..." : "Selecione"} />
+              <SelectValue placeholder={!form.id_machine ? "Escolha o enxame" : loadingP ? "Carregando..." : "Selecione"} />
             </SelectTrigger>
             <SelectContent>
               {professions.map(p => <SelectItem key={p.id_category} value={String(p.id_category)}>{p.desc_category}</SelectItem>)}
@@ -598,7 +598,7 @@ function ServiceList({ onNew, onCloseModal }: { onNew: () => void; onCloseModal:
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-white">{req.machine_name || "Máquina"}</span>
+                  <span className="text-sm font-medium text-white">{req.machine_name || "Enxame"}</span>
                   <span className="text-white/30">·</span>
                   <span className="text-sm text-white/65">{req.category_name || "Profissão"}</span>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${st.color}`}>{st.text}</span>

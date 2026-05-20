@@ -253,7 +253,7 @@ export default function ProfileSettingsPage() {
       return
     }
     if (!form.id_machine || !form.id_category) {
-      setStatusMsg({ kind: "error", text: "Selecione máquina e profissão." })
+      setStatusMsg({ kind: "error", text: "Selecione enxame e profissão." })
       return
     }
     const zipDigits = form.origin_zipcode.replace(/\D/g, "")
@@ -582,12 +582,12 @@ export default function ProfileSettingsPage() {
 
           <Separator />
 
-          {/* Máquina e profissão */}
+          {/* Enxame e profissão */}
           <section className="space-y-3">
-            <h3 className="font-semibold">Máquina e profissão</h3>
+            <h3 className="font-semibold">Enxame e profissão</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Máquina</Label>
+                <Label>Enxame</Label>
                 <Select
                   value={form.id_machine}
                   onValueChange={(val) => setForm((f) => ({ ...f, id_machine: val, id_category: "" }))}
@@ -612,7 +612,7 @@ export default function ProfileSettingsPage() {
                   disabled={!form.id_machine}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={form.id_machine ? "Selecione" : "Selecione uma máquina primeiro"} />
+                    <SelectValue placeholder={form.id_machine ? "Selecione" : "Selecione um enxame primeiro"} />
                   </SelectTrigger>
                   <SelectContent>
                     {professions.map((p) => (
@@ -923,7 +923,7 @@ export default function ProfileSettingsPage() {
           <CardHeader>
             <CardTitle>Visibilidade pública</CardTitle>
             <CardDescription>
-              Controle se o perfil aparece nas máquinas, buscas e vitrine. A ativação continua ativa quando você deixa invisível.
+              Controle se o perfil aparece nos enxames, buscas e vitrine. A ativação continua ativa quando você deixa invisível.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">

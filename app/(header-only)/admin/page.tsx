@@ -212,7 +212,7 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Configurar pesos, período e visualizar posições por máquina, cidade e geral.
+                Configurar pesos, período e visualizar posições por enxame, cidade e geral.
               </p>
             </CardContent>
           </Card>

@@ -143,7 +143,7 @@ export function PremiumProfileModal({
               <li className="flex gap-2">
                 <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  <strong className="text-white">Primeiras posições</strong> nas vitrines de máquina e
+                  <strong className="text-white">Primeiras posições</strong> nas vitrines de enxame e
                   profissão na sua cidade.
                 </span>
               </li>
@@ -156,7 +156,7 @@ export function PremiumProfileModal({
               <li className="flex gap-2">
                 <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  Card com fundo e borda da cor da sua máquina, com brilho e botão preto destacado.
+                  Card com fundo e borda da cor da seu enxame, com brilho e botão preto destacado.
                 </span>
               </li>
             </ul>

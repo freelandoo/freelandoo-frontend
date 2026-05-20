@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s | Freelandoo",
   },
   description:
-    "Freelandoo é a plataforma que conecta freelancers, influenciadores e prestadores de serviço com seus clientes. Ative uma máquina, encontre profissionais e fale direto pelo WhatsApp.",
+    "Freelandoo é a plataforma que conecta freelancers, influenciadores e prestadores de serviço com seus clientes. Ative um enxame, encontre profissionais e fale direto pelo WhatsApp.",
   keywords:
     "Freelandoo, freelancer, freelancers, influenciadores, prestadores de serviço, contratar, plataforma de freelancers, profissionais autônomos",
   authors: [{ name: "Freelandoo" }],
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     siteName: "Freelandoo",
     title: "Freelandoo — Plataforma para freelancers e clientes",
     description:
-      "Conecta freelancers, influenciadores e prestadores de serviço com clientes. Ative uma máquina e encontre quem resolve.",
+      "Conecta freelancers, influenciadores e prestadores de serviço com clientes. Ative um enxame e encontre quem resolve.",
     url: "https://www.freelandoo.com.br",
     locale: "pt_BR",
     images: [{ url: "/og-image.png", width: 1024, height: 1024, alt: "Freelandoo" }],

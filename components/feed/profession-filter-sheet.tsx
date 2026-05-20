@@ -44,7 +44,7 @@ export function ProfessionFilterSheet({
         />
         {list.length === 0 && (
           <p className="px-3 py-6 text-center text-sm text-white/50">
-            {t("chooseMachineFirst", "Escolha uma máquina primeiro.")}
+            {t("chooseMachineFirst", "Escolha um enxame primeiro.")}
           </p>
         )}
         {list.map((c) => (

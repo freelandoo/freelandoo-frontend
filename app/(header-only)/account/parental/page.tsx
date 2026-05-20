@@ -99,7 +99,7 @@ const PERMISSION_GROUPS: Array<{
       { key: "can_message", label: "Enviar mensagens" },
       { key: "can_receive_messages", label: "Receber mensagens" },
       { key: "can_use_global_chat", label: "Chat global" },
-      { key: "can_use_machine_chat", label: "Chat de máquinas" },
+      { key: "can_use_machine_chat", label: "Chat de enxames" },
     ],
   },
   {
@@ -409,7 +409,7 @@ export default function ParentalPage() {
             <CardDescription>
               {minors.length === 0
                 ? "Quando o menor usar o seu código no cadastro, ele aparecerá aqui."
-                : "Toque em um menor para abrir permissões e máquinas liberadas."}
+                : "Toque em um menor para abrir permissões e enxames liberadas."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -545,12 +545,12 @@ export default function ParentalPage() {
                         <p className="text-sm text-muted-foreground">Permissões não disponíveis.</p>
                       )}
 
-                      {/* Máquinas */}
+                      {/* Enxames */}
                       <div className="space-y-2">
                         <div>
-                          <p className="text-sm font-medium text-white">Máquinas liberadas</p>
+                          <p className="text-sm font-medium text-white">Enxames liberadas</p>
                           <p className="text-xs text-muted-foreground">
-                            Marque as máquinas que o menor pode usar. Sem marcação = bloqueada.
+                            Marque os enxames que o menor pode usar. Sem marcação = bloqueada.
                           </p>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

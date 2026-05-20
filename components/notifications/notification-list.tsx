@@ -50,7 +50,7 @@ const PERM_LABELS: Record<string, string> = {
   can_message: "enviar mensagens",
   can_receive_messages: "receber mensagens",
   can_use_global_chat: "chat global",
-  can_use_machine_chat: "chat de máquinas",
+  can_use_machine_chat: "chat de enxames",
 }
 
 function labelFor(item: NotificationItem) {

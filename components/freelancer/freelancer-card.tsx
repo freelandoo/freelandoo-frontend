@@ -120,7 +120,7 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
 
   // Premium: gradiente metálico idêntico ao TOP 01 do pódio (3 stops:
   // highlight quase-branco → accent → from → âncora dark off-black).
-  // Cores derivadas da máquina; dark anchor garante o fade escuro no rodapé.
+  // Cores derivadas do enxame; dark anchor garante o fade escuro no rodapé.
   const premiumGradient = colors
     ? `linear-gradient(160deg, color-mix(in srgb, ${colors.accent} 30%, #ffffff) 0%, ${colors.accent} 38%, ${colors.from} 78%, color-mix(in srgb, ${colors.from} 55%, #1a1a1a) 100%)`
     : "linear-gradient(160deg, #fde047 0%, #facc15 42%, #ca8a04 100%)"

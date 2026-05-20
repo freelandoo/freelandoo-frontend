@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 type Props = {
   profileId: string
-  /** Cor do ícone (ex.: accent da máquina). Sem isso usa `text-primary`. */
+  /** Cor do ícone (ex.: accent do enxame). Sem isso usa `text-primary`. */
   accentColor?: string | null
   className?: string
   iconClassName?: string
@@ -31,7 +31,7 @@ export function MachineTop10Crown({
 
   if (!show) return null
 
-  const label = `Top ${pos} no ranking da máquina`
+  const label = `Top ${pos} no ranking do enxame`
 
   const toneStyle =
     accentColor != null && accentColor !== ""
