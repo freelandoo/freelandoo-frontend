@@ -117,17 +117,17 @@ export default function AdminPage() {
 
           <Card
             className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/maquinas")}
+            onClick={() => router.push("/administracao/enxames")}
           >
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Controle de Máquinas
+                Controle de Enxames
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Ativar/desativar máquinas, cores e profissões.
+                Ativar/desativar enxames, cores e profissões.
               </p>
             </CardContent>
           </Card>

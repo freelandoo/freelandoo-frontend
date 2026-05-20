@@ -34,6 +34,7 @@ type Category = {
   is_active: boolean
 }
 
+// Enxame — a tabela física do backend ainda é tb_machine/id_machine (legado).
 type Machine = {
   id_machine: number
   slug: string
@@ -75,7 +76,7 @@ function autoSlug(s: string) {
     .slice(0, 40)
 }
 
-export default function AdminMachinesPage() {
+export default function AdminEnxamesPage() {
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -134,12 +135,12 @@ export default function AdminMachinesPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/admin/machines", {
+      const res = await fetch("/api/admin/enxames", {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setMachines(Array.isArray(data.machines) ? data.machines : [])
+      setMachines(Array.isArray(data.enxames) ? data.enxames : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar")
     } finally {
@@ -156,12 +157,12 @@ export default function AdminMachinesPage() {
     const next = !m.is_active
     const confirmed = window.confirm(
       next
-        ? `Reativar "${m.name}"? Ela voltará a aparecer na home e nos filtros públicos.`
-        : `Desativar "${m.name}"? Ela some da home, filtros e vitrine pública. Pode ser reativada depois.`,
+        ? `Reativar "${m.name}"? Volta a aparecer na home e nos filtros públicos.`
+        : `Desativar "${m.name}"? Some da home, filtros e vitrine pública. Pode reativar depois.`,
     )
     if (!confirmed) return
     try {
-      const res = await fetch(`/api/admin/machines/${m.id_machine}/status`, {
+      const res = await fetch(`/api/admin/enxames/${m.id_machine}/status`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: next }),
@@ -178,7 +179,7 @@ export default function AdminMachinesPage() {
     if (!newCatName.trim()) return
     setSavingCat(true)
     try {
-      const res = await fetch(`/api/admin/machines/${id_machine}/categories`, {
+      const res = await fetch(`/api/admin/enxames/${id_machine}/categories`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ desc_category: newCatName.trim() }),
@@ -257,7 +258,7 @@ export default function AdminMachinesPage() {
         ...createForm,
         slug: createForm.slug.trim() || autoSlug(createForm.name),
       }
-      const res = await fetch(`/api/admin/machines`, {
+      const res = await fetch(`/api/admin/enxames`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -280,11 +281,11 @@ export default function AdminMachinesPage() {
   async function handleDeleteMachine(m: Machine) {
     if (!token) return
     const confirmed = window.confirm(
-      `Excluir "${m.name}" PERMANENTEMENTE? As profissões vinculadas serão desvinculadas (não excluídas) e a máquina some da home, filtros e vitrine. Não dá para desfazer.`,
+      `Excluir "${m.name}" PERMANENTEMENTE? As profissões vinculadas serão desvinculadas (não excluídas) e o enxame some da home, filtros e vitrine. Não dá para desfazer.`,
     )
     if (!confirmed) return
     try {
-      const res = await fetch(`/api/admin/machines/${m.id_machine}`, {
+      const res = await fetch(`/api/admin/enxames/${m.id_machine}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })
@@ -302,7 +303,7 @@ export default function AdminMachinesPage() {
     if (!token || !editMachine) return
     setSavingEdit(true)
     try {
-      const res = await fetch(`/api/admin/machines/${editMachine.id_machine}`, {
+      const res = await fetch(`/api/admin/enxames/${editMachine.id_machine}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
@@ -340,14 +341,14 @@ export default function AdminMachinesPage() {
         <div className="mb-8 flex flex-wrap items-center gap-3">
           <Sparkles className="h-6 w-6 text-primary" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold">Governança de Máquinas</h1>
+            <h1 className="text-2xl font-semibold">Governança de Enxames</h1>
             <p className="text-sm text-muted-foreground">
-              Habilitar/desabilitar máquinas, gerenciar profissões e identidade visual.
+              Habilitar/desabilitar enxames, gerenciar profissões e identidade visual.
             </p>
           </div>
           <Button onClick={() => setCreatingOpen(true)} size="sm">
             <Plus className="h-4 w-4 mr-1" />
-            Nova máquina
+            Novo enxame
           </Button>
         </div>
 
@@ -378,7 +379,7 @@ export default function AdminMachinesPage() {
                       <CardTitle className="text-base flex items-center gap-2">
                         {m.name}
                         <Badge variant={m.is_active ? "default" : "secondary"}>
-                          {m.is_active ? "Ativa" : "Desativada"}
+                          {m.is_active ? "Ativo" : "Desativado"}
                         </Badge>
                         <span className="text-xs font-mono text-muted-foreground">
                           {m.slug}
@@ -532,7 +533,7 @@ export default function AdminMachinesPage() {
         <Dialog open={!!editMachine} onOpenChange={(v) => !v && setEditMachine(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar máquina</DialogTitle>
+              <DialogTitle>Editar enxame</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">
@@ -642,7 +643,7 @@ export default function AdminMachinesPage() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nova máquina</DialogTitle>
+              <DialogTitle>Novo enxame</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -658,7 +659,7 @@ export default function AdminMachinesPage() {
                         slug: slugTouched ? p.slug : autoSlug(name),
                       }))
                     }}
-                    placeholder="Máquina de Eventos"
+                    placeholder="Enxame de Eventos"
                   />
                 </div>
                 <div className="space-y-1">
@@ -763,7 +764,7 @@ export default function AdminMachinesPage() {
                 Cancelar
               </Button>
               <Button onClick={handleCreateMachine} disabled={savingCreate}>
-                {savingCreate ? "Criando…" : "Criar máquina"}
+                {savingCreate ? "Criando…" : "Criar enxame"}
               </Button>
             </DialogFooter>
           </DialogContent>
