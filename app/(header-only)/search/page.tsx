@@ -229,7 +229,7 @@ function SearchPageInner() {
   const pendingSlug =
     searchParams.get("machine") ||
     searchParams.get("machine_slug") ||
-    searchParams.get("from")?.replace("maquina-", "") ||
+    searchParams.get("from")?.replace("enxame-", "") ||
     null
 
   useEffect(() => {

@@ -26,8 +26,8 @@ export function EarnMoneySection() {
     },
     {
       icon: Sparkles,
-      title: "Aparecendo nas máquinas",
-      desc: "Cada máquina é um canal de intenção. Apareça onde a procura é forte.",
+      title: "Aparecendo nos enxames",
+      desc: "Cada enxame é um canal de intenção. Apareça onde a procura é forte.",
       tone: "from-emerald-400/15 to-emerald-400/[0.02]",
       span: "md:col-span-5",
     },

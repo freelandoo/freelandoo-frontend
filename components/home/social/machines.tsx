@@ -6,8 +6,7 @@ import { ArrowUpRight } from "lucide-react"
 import { fadeUp, GhostBorder, SectionTitle, SectionWrap, stagger } from "./shared"
 import { MACHINES } from "@/components/home/machines/tokens"
 
-// Bento asimétrico em 12 colunas — 8 máquinas em ritmos diferentes:
-// linha 1: 5/4/3 ; linha 2: 3/4/5 ; linha 3: 6/6
+// Bento assimétrico em 12 colunas — 15 enxames em ritmos diferentes.
 const SPANS = [
   "md:col-span-5",
   "md:col-span-4",
@@ -17,6 +16,13 @@ const SPANS = [
   "md:col-span-5",
   "md:col-span-6",
   "md:col-span-6",
+  "md:col-span-4",
+  "md:col-span-3",
+  "md:col-span-5",
+  "md:col-span-4",
+  "md:col-span-5",
+  "md:col-span-3",
+  "md:col-span-12",
 ]
 
 export function MachinesIntentSection() {
@@ -24,9 +30,9 @@ export function MachinesIntentSection() {
   return (
     <SectionWrap id="machines">
       <SectionTitle
-        eyebrow="máquinas de intenção"
-        title={<>As máquinas mostram seu trabalho para a intenção certa.</>}
-        desc="Na Freelandoo, profissionais não ficam jogados em uma lista genérica. Eles entram em máquinas de intenção — e cada máquina tem público próprio."
+        eyebrow="enxames de intenção"
+        title={<>Os enxames mostram seu trabalho para a intenção certa.</>}
+        desc="Na Freelandoo, profissionais não ficam jogados em uma lista genérica. Eles entram em enxames de intenção — e cada enxame tem público próprio."
       />
 
       <motion.div
@@ -43,12 +49,12 @@ export function MachinesIntentSection() {
             className={"group relative " + (SPANS[i] ?? "md:col-span-3")}
           >
             <Link
-              href={`/maquina/${m.id}`}
+              href={`/enxame/${m.id}`}
               className="block h-full"
-              aria-label={`Entrar na ${m.name}`}
+              aria-label={`Entrar no ${m.name}`}
             >
               <GhostBorder className="relative h-full overflow-hidden p-6 transition-colors duration-300 md:p-7">
-                {/* tinte por máquina, baixa saturação */}
+                {/* tinte por enxame, baixa saturação */}
                 <div
                   aria-hidden
                   className="pointer-events-none absolute inset-0 -z-0 opacity-[0.18] transition-opacity duration-500 group-hover:opacity-[0.32]"
@@ -69,13 +75,13 @@ export function MachinesIntentSection() {
                         background: `${m.colors.accent}12`,
                       }}
                     >
-                      Máquina
+                      Enxame
                     </span>
                   </div>
 
                   <div>
                     <h3 className="text-pretty text-xl font-semibold leading-tight text-white md:text-2xl">
-                      {m.name.replace("Máquina de ", "")}
+                      {m.name.replace(/^Enxame (de )?/, "")}
                     </h3>
                     <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/55">
                       {m.microcopy}
@@ -84,7 +90,7 @@ export function MachinesIntentSection() {
 
                   <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
                     <span className="text-[11px] font-medium uppercase tracking-wider text-white/40">
-                      Entrar nessa máquina
+                      Entrar nesse enxame
                     </span>
                     <ArrowUpRight
                       className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"

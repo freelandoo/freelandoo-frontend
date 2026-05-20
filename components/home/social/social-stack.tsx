@@ -36,7 +36,7 @@ export function PortfolioWorksSection() {
     },
     {
       title: "Ganhe visibilidade",
-      desc: "Cada post entra no feed e na sua máquina, na frente de quem busca o que você faz.",
+      desc: "Cada post entra no feed e no seu enxame, na frente de quem busca o que você faz.",
       icon: Eye,
     },
     {
@@ -103,7 +103,7 @@ export function PortfolioWorksSection() {
                 </div>
               </div>
               <p className="text-sm leading-relaxed text-white/65">
-                Um único post pode ser visto por quem busca a sua máquina, sua profissão e
+                Um único post pode ser visto por quem busca o seu enxame, sua profissão e
                 a sua cidade — e cada interação é uma oportunidade direta de fechar serviço.
               </p>
             </div>
@@ -177,7 +177,7 @@ export function FeedShowcaseSection() {
       <SectionTitle
         eyebrow="feed · descoberta"
         title={<>Um feed profissional para descobrir quem resolve.</>}
-        desc="Role o feed, veja trabalhos reais e encontre profissionais por máquina, profissão e cidade."
+        desc="Role o feed, veja trabalhos reais e encontre profissionais por enxame, profissão e cidade."
       />
 
       <motion.div
@@ -254,8 +254,8 @@ export function FeedShowcaseSection() {
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Filtros do feed</p>
               <div className="mt-3 space-y-2">
                 {[
-                  { label: "Máquina", value: "Views" },
-                  { label: "Profissão", value: "Editor de cortes" },
+                  { label: "Enxame", value: "Marketing" },
+                  { label: "Profissão", value: "Editor de Vídeo" },
                   { label: "Cidade", value: "São Paulo, SP" },
                 ].map((f) => (
                   <div
