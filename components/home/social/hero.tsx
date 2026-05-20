@@ -10,7 +10,7 @@ const MICROPROVAS = [
   "Posts de portfólio",
   "Mensagens",
   "Clans",
-  "Máquinas",
+  "Enxames",
   "Acompanhados",
   "Indicações",
 ]

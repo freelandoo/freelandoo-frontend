@@ -51,7 +51,7 @@ async function fetchMachines(): Promise<MachineEntry[]> {
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(`${getBackendApiUrl()}/machines`, {
+    const res = await fetch(`${getBackendApiUrl()}/enxames`, {
       next: { revalidate: 3600 },
       signal: controller.signal,
     }).finally(() => clearTimeout(timer))
@@ -59,8 +59,8 @@ async function fetchMachines(): Promise<MachineEntry[]> {
     const body = await res.json()
     const list = Array.isArray(body)
       ? body
-      : Array.isArray(body?.machines)
-        ? body.machines
+      : Array.isArray(body?.enxames)
+        ? body.enxames
         : []
     return list
       .filter(
@@ -108,10 +108,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   for (const r of STATIC_ROUTES) push(r)
 
-  // Máquinas — uma página de pouso por máquina é página de funil.
+  // Enxames — uma página de pouso por enxame é página de funil.
   for (const m of await fetchMachines()) {
     push({
-      url: `${BASE_URL}/maquina/${m.slug}`,
+      url: `${BASE_URL}/enxame/${m.slug}`,
       changeFrequency: "daily",
       priority: 0.85,
     })
