@@ -1,22 +1,36 @@
-// Descrições resumidas das máquinas — usadas em selects/tooltips no cadastro.
-// Indexadas por slug do tb_machine.
+// Descrições resumidas dos enxames — usadas em selects/tooltips no cadastro.
+// Indexadas por slug do enxame (tb_machine.slug).
 export const MACHINE_DESCRIPTIONS: Record<string, string> = {
-  "views":
-    "Para quem cria, edita ou impulsiona conteúdo em vídeos, cortes, thumbnails, YouTube, TikTok e Reels.",
-  "divulgacao":
-    "Para influenciadores, creators, afiliados e profissionais que divulgam marcas, produtos e campanhas.",
-  "limpeza":
-    "Para serviços de limpeza residencial, comercial, pós-obra, organização e cuidados com ambientes.",
+  "marketing":
+    "Para estrategistas, designers, social media e quem faz marcas crescerem e venderem.",
+  "tecnologia":
+    "Para devs, engenheiros, dados, IA e infraestrutura — quem constrói produtos digitais.",
+  "transporte":
+    "Para motoristas, entregadores, logística e mudanças — quem move pessoas e cargas.",
+  "artistas":
+    "Para músicos, atores, ilustradores e performers — quem vive de criar e se apresentar.",
+  "justica":
+    "Para advogados, jornalistas, servidores e atuação política e institucional.",
+  "influencer":
+    "Para creators de todos os nichos que produzem conteúdo e engajam audiências.",
+  "servicos_residenciais":
+    "Para limpeza, cuidados, manutenção e apoio ao dia a dia da casa.",
   "construcao":
-    "Para profissionais de obra, reformas, elétrica, pintura, hidráulica, marcenaria e instalação.",
-  "negocios":
-    "Para serviços que ajudam empresas a vender, operar, atender, criar presença digital e crescer.",
-  "oportunidades":
-    "Para profissionais gerais, multitarefas, suporte, atendimento, captação, promoção e serviços locais.",
-  "saude-beleza":
-    "Para estética, beleza, massagem, cabelo, unhas, sobrancelhas, terapias corporais e bem-estar.",
-  "saude-pet":
-    "Para banho, tosa, pet sitter, dog walker, adestramento, cuidados, transporte e serviços veterinários.",
+    "Para obra, reforma, instalações e acabamento — do alicerce à entrega.",
+  "saude":
+    "Para médicos, terapeutas e profissionais de cuidado do corpo e da mente.",
+  "beleza_bem_estar":
+    "Para cabelo, estética, terapias e autocuidado — quem cuida da imagem e do bem-estar.",
+  "veiculos":
+    "Para mecânica, estética automotiva, reparos e serviços para todo tipo de veículo.",
+  "pets":
+    "Para veterinária, banho e tosa, adestramento e cuidados com animais.",
+  "rural":
+    "Para agropecuária, máquinas, manejo e gestão da produção rural.",
+  "educacao":
+    "Para professores, mentores e treinadores que desenvolvem pessoas.",
+  "eventos":
+    "Para produção, gastronomia, animação e estrutura de festas e eventos.",
 }
 
 export function machineDescription(slug?: string | null): string {

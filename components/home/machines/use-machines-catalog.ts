@@ -68,11 +68,11 @@ let inflight: Promise<CatalogMachine[]> | null = null
 async function fetchCatalog(): Promise<CatalogMachine[]> {
   if (cached) return cached
   if (inflight) return inflight
-  inflight = fetch("/api/machines", { cache: "no-store" })
+  inflight = fetch("/api/enxames", { cache: "no-store" })
     .then(async (r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const body = await r.json()
-      const list: CatalogMachine[] = Array.isArray(body?.machines) ? body.machines : []
+      const list: CatalogMachine[] = Array.isArray(body?.enxames) ? body.enxames : []
       if (list.length === 0) throw new Error("empty response")
       cached = list
       return list
@@ -107,7 +107,7 @@ export function useMachinesCatalog(): State {
         // Fall back to seed — never leave machines empty
         setState({
           loading: false,
-          error: e instanceof Error ? e.message : "Erro ao carregar máquinas",
+          error: e instanceof Error ? e.message : "Erro ao carregar enxames",
           machines: SEED_CATALOG,
         })
       })
