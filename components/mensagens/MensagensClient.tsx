@@ -16,6 +16,7 @@ import {
   Radio,
   Send,
   Sparkles,
+  Trash2,
   Users,
   X,
 } from "lucide-react"
@@ -937,6 +938,47 @@ export default function MensagensClient() {
     router.replace(qs ? `/mensagens?${qs}` : "/mensagens")
   }, [router, searchParams])
 
+  const handleDeleteConversation = useCallback(async () => {
+    if (!activeConvId) return
+    const ok = window.confirm(
+      t(
+        "deleteConversationConfirm",
+        "Excluir esta conversa? O histórico some dos dois lados. Sem volta.",
+      ),
+    )
+    if (!ok) return
+    try {
+      await jsonFetch(`/api/conversations/${encodeURIComponent(activeConvId)}`, {
+        method: "DELETE",
+      })
+      handleBackToList()
+      await loadConversations()
+    } catch (err) {
+      alert((err as Error).message || t("deleteConversationError", "Erro ao excluir conversa"))
+    }
+  }, [activeConvId, handleBackToList, loadConversations, t])
+
+  const handleDeleteOsChat = useCallback(async () => {
+    if (!activeOsResponseId) return
+    const ok = window.confirm(
+      t(
+        "deleteOsChatConfirm",
+        "Excluir esta conversa de O.S.? O histórico some dos dois lados. Sem volta.",
+      ),
+    )
+    if (!ok) return
+    try {
+      const base = osEndpointBase(activeOsResponseId)
+      await jsonFetch(`${base}/responses/${encodeURIComponent(activeOsResponseId)}`, {
+        method: "DELETE",
+      })
+      handleBackToOsList()
+      await loadOsChats()
+    } catch (err) {
+      alert((err as Error).message || t("deleteOsChatError", "Erro ao excluir conversa"))
+    }
+  }, [activeOsResponseId, handleBackToOsList, loadOsChats, osEndpointBase, t])
+
   const handleSend = useCallback(async () => {
     const body = composer.trim()
     if (!body || !actorId || !activeConvId || sending) return
@@ -1431,6 +1473,15 @@ export default function MensagensClient() {
                         {t("viewProfileLink", "Ver perfil")}
                       </Link>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={handleDeleteOsChat}
+                      className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-white/55 transition hover:bg-red-500/10 hover:text-red-300"
+                      aria-label={t("deleteConversationAria", "Excluir conversa")}
+                      title={t("deleteConversationAria", "Excluir conversa")}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-neutral-900/40 px-3 py-2">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -1637,6 +1688,15 @@ export default function MensagensClient() {
                         {t("viewProfileLink", "Ver perfil")}
                   </Link>
                 ) : null}
+                <button
+                  type="button"
+                  onClick={handleDeleteConversation}
+                  className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-white/55 transition hover:bg-red-500/10 hover:text-red-300"
+                  aria-label={t("deleteConversationAria", "Excluir conversa")}
+                  title={t("deleteConversationAria", "Excluir conversa")}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </header>
 
               <div className="flex-1 overflow-y-auto px-4 py-4">
