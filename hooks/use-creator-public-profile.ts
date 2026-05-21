@@ -74,7 +74,7 @@ export function useCreatorPublicProfile(profileId: string, options: Options = {}
         const url =
           kind === "clan"
             ? `/api/public/clans/${profileId}`
-            : `/api/creator/${profileId}`
+            : `/api/profile/${profileId}`
         const response = await fetchWithLog(`useCreatorPublicProfile:${kind}`, url)
 
         if (!response.ok) throw new Error(kind === "clan" ? "Clan não encontrado" : "Perfil não encontrado")
