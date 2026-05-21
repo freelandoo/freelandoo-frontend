@@ -7,7 +7,6 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
-import { DevBannerModal } from "@/components/dev-banner-modal"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
 import { getCountry, getLocale } from "@/lib/i18n/server"
@@ -109,7 +108,6 @@ export default async function RootLayout({
           <TourProvider>
             {children}
             <ProfileSidebar />
-            <DevBannerModal />
             <BirthdateGate />
             <CookieConsent />
             <AnalyticsProvider />
