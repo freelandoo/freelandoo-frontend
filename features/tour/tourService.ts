@@ -18,7 +18,7 @@ export interface TourSettings {
   hide_all_tours: boolean;
 }
 
-function authHeaders() {
+function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
