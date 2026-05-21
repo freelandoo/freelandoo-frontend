@@ -11,6 +11,7 @@ import { CityFilterSheet } from "@/components/feed/city-filter-sheet"
 import { LevelFilterSheet, LEVEL_FILTER_OPTIONS } from "@/components/feed/level-filter-sheet"
 import { cn } from "@/lib/utils"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+import { HoverHint } from "@/features/tour/HoverHint"
 
 interface SearchRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -103,89 +104,102 @@ export function SearchRetractableHeader({
           </Link>
 
           <div className="ml-2 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <MachineFilterSheet
-              machines={machines}
-              selectedId={selectedMachineId}
-              onChange={(id) => { onMachineChange(id); onCategoryChange(null) }}
-              trigger={
-                <Pill
-                  label={activeMachine?.name?.replace(/^Enxame de\s+/i, "") || "Enxame"}
-                  active={!!activeMachine}
-                  accent={activeMachine?.color_accent || undefined}
-                />
-              }
-            />
-            <ProfessionFilterSheet
-              categories={categories}
-              selectedId={selectedCategoryId}
-              onChange={onCategoryChange}
-              disabled={!activeMachine}
-              accent={accent}
-              trigger={
-                <Pill
-                  label={activeCategory?.desc_category || "Profissão"}
-                  active={!!activeCategory}
-                  accent={activeCategory ? accent : undefined}
-                  disabled={!activeMachine}
-                />
-              }
-            />
-            <CityFilterSheet
-              state={state}
-              city={city}
-              onChange={onLocationChange}
-              accent={accent}
-              trigger={
-                <Pill
-                  label={locationLabel}
-                  active={!!(state || city)}
-                  accent={state || city ? accent : undefined}
-                  icon={<MapPin className="h-3.5 w-3.5" />}
-                />
-              }
-            />
-            <LevelFilterSheet
-              selectedLevel={levelMin}
-              onChange={onLevelChange}
-              accent={accent}
-              trigger={
-                <Pill
-                  label={levelMin != null ? levelLabel : "Nível"}
-                  active={levelMin != null}
-                  accent={levelMin != null ? accent : undefined}
-                />
-              }
-            />
-            <button
-              type="button"
-              onClick={onPremiumToggle}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur transition-all duration-200 hover:border-white/40 hover:text-white active:scale-95"
-              style={
-                premiumOnly
-                  ? {
-                      color: accent,
-                      borderColor: `${accent}66`,
-                      background: `${accent}22`,
-                      boxShadow: `0 0 0 1px ${accent}22, 0 4px 16px -8px ${accent}55`,
-                    }
-                  : undefined
-              }
-            >
-              <Star className={cn("h-3.5 w-3.5", premiumOnly && "fill-current")} />
-              Premium
-            </button>
-            {hasFilters && (
+            <HoverHint id="search-filter-machine" side="bottom">
+              <MachineFilterSheet
+                machines={machines}
+                selectedId={selectedMachineId}
+                onChange={(id) => { onMachineChange(id); onCategoryChange(null) }}
+                trigger={
+                  <Pill
+                    label={activeMachine?.name?.replace(/^Enxame de\s+/i, "") || "Enxame"}
+                    active={!!activeMachine}
+                    accent={activeMachine?.color_accent || undefined}
+                  />
+                }
+              />
+            </HoverHint>
+            <HoverHint id="search-filter-profession" side="bottom">
+              <ProfessionFilterSheet
+                categories={categories}
+                selectedId={selectedCategoryId}
+                onChange={onCategoryChange}
+                disabled={!activeMachine}
+                accent={accent}
+                trigger={
+                  <Pill
+                    label={activeCategory?.desc_category || "Profissão"}
+                    active={!!activeCategory}
+                    accent={activeCategory ? accent : undefined}
+                    disabled={!activeMachine}
+                  />
+                }
+              />
+            </HoverHint>
+            <HoverHint id="search-filter-city" side="bottom">
+              <CityFilterSheet
+                state={state}
+                city={city}
+                onChange={onLocationChange}
+                accent={accent}
+                trigger={
+                  <Pill
+                    label={locationLabel}
+                    active={!!(state || city)}
+                    accent={state || city ? accent : undefined}
+                    icon={<MapPin className="h-3.5 w-3.5" />}
+                  />
+                }
+              />
+            </HoverHint>
+            <HoverHint id="search-filter-level" side="bottom">
+              <LevelFilterSheet
+                selectedLevel={levelMin}
+                onChange={onLevelChange}
+                accent={accent}
+                trigger={
+                  <Pill
+                    label={levelMin != null ? levelLabel : "Nível"}
+                    active={levelMin != null}
+                    accent={levelMin != null ? accent : undefined}
+                  />
+                }
+              />
+            </HoverHint>
+            <HoverHint id="search-filter-premium" side="bottom">
               <button
                 type="button"
-                onClick={onClearAll}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2.5 py-1.5 text-[11px] text-white/70 backdrop-blur transition hover:border-white/30 hover:text-white"
+                onClick={onPremiumToggle}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur transition-all duration-200 hover:border-white/40 hover:text-white active:scale-95"
+                style={
+                  premiumOnly
+                    ? {
+                        color: accent,
+                        borderColor: `${accent}66`,
+                        background: `${accent}22`,
+                        boxShadow: `0 0 0 1px ${accent}22, 0 4px 16px -8px ${accent}55`,
+                      }
+                    : undefined
+                }
               >
-                <X className="h-3 w-3" />
-                Limpar
+                <Star className={cn("h-3.5 w-3.5", premiumOnly && "fill-current")} />
+                Premium
               </button>
+            </HoverHint>
+            {hasFilters && (
+              <HoverHint id="search-clear-filters" side="bottom">
+                <button
+                  type="button"
+                  onClick={onClearAll}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2.5 py-1.5 text-[11px] text-white/70 backdrop-blur transition hover:border-white/30 hover:text-white"
+                >
+                  <X className="h-3 w-3" />
+                  Limpar
+                </button>
+              </HoverHint>
             )}
           </div>
 
+          <HoverHint id="search-bell" side="left">
           <button
             type="button"
             ref={bellRef}
@@ -210,6 +224,7 @@ export function SearchRetractableHeader({
               </span>
             )}
           </button>
+          </HoverHint>
         </div>
       </div>
     </div>
