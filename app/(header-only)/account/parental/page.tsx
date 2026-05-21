@@ -143,7 +143,7 @@ export default function ParentalPage() {
       const [invitesRes, minorsRes, machinesRes] = await Promise.all([
         fetch("/api/supervision/codes", { headers: authHeaders(), cache: "no-store" }),
         fetch("/api/supervision/minors", { headers: authHeaders(), cache: "no-store" }),
-        fetch("/api/machines", { cache: "no-store" }),
+        fetch("/api/enxames", { cache: "no-store" }),
       ])
 
       if (invitesRes.status === 401 || minorsRes.status === 401) {
@@ -162,7 +162,7 @@ export default function ParentalPage() {
       setMachines(
         Array.isArray(machinesData)
           ? machinesData
-          : machinesData.machines || []
+          : machinesData.enxames || machinesData.machines || []
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado")

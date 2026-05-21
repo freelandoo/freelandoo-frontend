@@ -254,10 +254,10 @@ export default function PerfilPage() {
     if (machines.length > 0) return
     setLoadingMachines(true)
     try {
-      const res = await fetch("/api/machines")
+      const res = await fetch("/api/enxames")
       if (res.ok) {
         const data = await res.json()
-        const list = Array.isArray(data) ? data : (data.machines ?? [])
+        const list = Array.isArray(data) ? data : (data.enxames ?? data.machines ?? [])
         setMachines(list)
       }
     } catch {
@@ -270,7 +270,7 @@ export default function PerfilPage() {
   const fetchProfessions = async (id_machine: string) => {
     setLoadingProfessions(true)
     try {
-      const res = await fetch(`/api/machines/${encodeURIComponent(id_machine)}/categories`)
+      const res = await fetch(`/api/enxames/${encodeURIComponent(id_machine)}/categories`)
       if (res.ok) {
         const data = await res.json()
         const list = Array.isArray(data) ? data : (data.categories ?? [])

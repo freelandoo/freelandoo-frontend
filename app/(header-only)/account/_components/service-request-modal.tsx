@@ -314,15 +314,15 @@ function ServiceCreateForm({ onCreated }: { onCreated: () => void }) {
   useEffect(() => {
     if (machines.length > 0) return
     setLoadingM(true)
-    fetch("/api/machines").then(r => r.json()).then(d => {
-      setMachines(Array.isArray(d) ? d : d.machines ?? [])
+    fetch("/api/enxames").then(r => r.json()).then(d => {
+      setMachines(Array.isArray(d) ? d : d.enxames ?? d.machines ?? [])
     }).catch(() => {}).finally(() => setLoadingM(false))
   }, [machines.length])
 
   const fetchProfessions = async (idMachine: string) => {
     setLoadingP(true)
     try {
-      const res = await fetch(`/api/machines/${encodeURIComponent(idMachine)}/categories`)
+      const res = await fetch(`/api/enxames/${encodeURIComponent(idMachine)}/categories`)
       if (res.ok) {
         const d = await res.json()
         setProfessions(Array.isArray(d) ? d : d.categories ?? [])

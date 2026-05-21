@@ -92,9 +92,9 @@ export default function ProfileSettingsPage() {
   }, [profile])
 
   useEffect(() => {
-    fetch("/api/machines")
+    fetch("/api/enxames")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setMachines(Array.isArray(data) ? data : data.machines ?? []))
+      .then((data) => setMachines(Array.isArray(data) ? data : data.enxames ?? data.machines ?? []))
       .catch(() => {})
   }, [])
 
@@ -103,7 +103,7 @@ export default function ProfileSettingsPage() {
       setProfessions([])
       return
     }
-    fetch(`/api/machines/${encodeURIComponent(form.id_machine)}/categories`)
+    fetch(`/api/enxames/${encodeURIComponent(form.id_machine)}/categories`)
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => setProfessions(Array.isArray(data) ? data : data.categories ?? []))
       .catch(() => setProfessions([]))

@@ -68,9 +68,9 @@ export default function ClansVitrinePage() {
   }
 
   useEffect(() => {
-    fetch("/api/machines")
+    fetch("/api/enxames")
       .then((r) => r.json())
-      .then((d) => setMachines(d.machines || d || []))
+      .then((d) => setMachines(d.enxames || d.machines || d || []))
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
