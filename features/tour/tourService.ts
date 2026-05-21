@@ -12,6 +12,7 @@ export interface TourProgressItem {
   tour_key: TourKey;
   status: TourStatus;
   current_step: number;
+  seen_version?: number;
 }
 
 export interface TourSettings {
@@ -43,16 +44,21 @@ export async function fetchTourSettings(): Promise<TourSettings> {
   return data.settings || { hide_all_tours: false };
 }
 
-async function postStatus(path: string, tourKey: TourKey, currentStep = 0) {
+async function postStatus(path: string, tourKey: TourKey, currentStep = 0, version = 1) {
   const token = getToken();
   if (!token) {
-    writeLocalProgress(tourKey, path === "complete" ? "completed" : path === "skip" ? "skipped" : path === "start" ? "in_progress" : "not_started", currentStep);
+    writeLocalProgress(
+      tourKey,
+      path === "complete" ? "completed" : path === "skip" ? "skipped" : path === "start" ? "in_progress" : "not_started",
+      currentStep,
+      version,
+    );
     return;
   }
   await fetch(`${API}/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ tourKey, currentStep }),
+    body: JSON.stringify({ tourKey, currentStep, version }),
   });
 }
 
@@ -68,27 +74,27 @@ export function readLocalProgress(): TourProgressItem[] {
   }
 }
 
-export function writeLocalProgress(tourKey: TourKey, status: TourStatus, currentStep = 0) {
+export function writeLocalProgress(tourKey: TourKey, status: TourStatus, currentStep = 0, version = 1) {
   if (typeof window === "undefined") return;
   const current = readLocalProgress().filter((item) => item.tour_key !== tourKey);
-  current.push({ tour_key: tourKey, status, current_step: currentStep });
+  current.push({ tour_key: tourKey, status, current_step: currentStep, seen_version: version });
   window.localStorage.setItem(LOCAL_KEY, JSON.stringify(current));
 }
 
-export function startTourProgress(tourKey: TourKey, currentStep = 0) {
-  return postStatus("start", tourKey, currentStep);
+export function startTourProgress(tourKey: TourKey, currentStep = 0, version = 1) {
+  return postStatus("start", tourKey, currentStep, version);
 }
 
-export function completeTourProgress(tourKey: TourKey, currentStep = 0) {
-  return postStatus("complete", tourKey, currentStep);
+export function completeTourProgress(tourKey: TourKey, currentStep = 0, version = 1) {
+  return postStatus("complete", tourKey, currentStep, version);
 }
 
-export function skipTourProgress(tourKey: TourKey, currentStep = 0) {
-  return postStatus("skip", tourKey, currentStep);
+export function skipTourProgress(tourKey: TourKey, currentStep = 0, version = 1) {
+  return postStatus("skip", tourKey, currentStep, version);
 }
 
 export function resetTourProgress(tourKey: TourKey) {
-  return postStatus("reset", tourKey, 0);
+  return postStatus("reset", tourKey, 0, 1);
 }
 
 export async function setHideAllTours(hideAllTours: boolean) {

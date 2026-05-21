@@ -18,11 +18,15 @@ import { TourManager } from "./TourManager";
 import { trackTourEvent } from "./tourAnalytics";
 import { markPathVisited } from "./visitedPaths";
 
-type ProgressMap = Record<string, { status: TourStatus; current_step: number }>;
+type ProgressMap = Record<string, { status: TourStatus; current_step: number; seen_version: number }>;
 
 function pathMatches(pagePaths: string[] | undefined, currentPath: string | null) {
   if (!currentPath || !pagePaths || pagePaths.length === 0) return false;
   return pagePaths.some((prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`));
+}
+
+function tourVersion(tourKey: TourKey) {
+  return TOUR_CONFIGS.find((tour) => tour.tourKey === tourKey)?.version ?? 1;
 }
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
@@ -38,7 +42,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       const next: ProgressMap = {};
       items.forEach((item) => {
-        next[item.tour_key] = { status: item.status, current_step: item.current_step };
+        next[item.tour_key] = {
+          status: item.status,
+          current_step: item.current_step,
+          seen_version: item.seen_version ?? 1,
+        };
       });
       setProgress(next);
     });
@@ -56,27 +64,29 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     if (!found) return;
     setActiveTour(found);
     setStepIndex(0);
-    setProgress((prev) => ({ ...prev, [tourKey]: { status: "in_progress", current_step: 0 } }));
-    void startTourProgress(tourKey, 0);
+    setProgress((prev) => ({ ...prev, [tourKey]: { status: "in_progress", current_step: 0, seen_version: found.version } }));
+    void startTourProgress(tourKey, 0, found.version);
     trackTourEvent("tour_started", { tour_key: tourKey, step_id: found.steps[0]?.id || "", page: pathname || "" });
   }, [pathname]);
 
   const completeTour = (tourKey: TourKey) => {
-    setProgress((prev) => ({ ...prev, [tourKey]: { status: "completed", current_step: stepIndex } }));
+    const version = tourVersion(tourKey);
+    setProgress((prev) => ({ ...prev, [tourKey]: { status: "completed", current_step: stepIndex, seen_version: version } }));
     setActiveTour(null);
-    void completeTourProgress(tourKey, stepIndex);
+    void completeTourProgress(tourKey, stepIndex, version);
     trackTourEvent("tour_completed", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
   };
 
   const skipTour = (tourKey: TourKey) => {
-    setProgress((prev) => ({ ...prev, [tourKey]: { status: "skipped", current_step: stepIndex } }));
+    const version = tourVersion(tourKey);
+    setProgress((prev) => ({ ...prev, [tourKey]: { status: "skipped", current_step: stepIndex, seen_version: version } }));
     setActiveTour(null);
-    void skipTourProgress(tourKey, stepIndex);
+    void skipTourProgress(tourKey, stepIndex, version);
     trackTourEvent("tour_skipped", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
   };
 
   const resetTour = (tourKey: TourKey) => {
-    setProgress((prev) => ({ ...prev, [tourKey]: { status: "not_started", current_step: 0 } }));
+    setProgress((prev) => ({ ...prev, [tourKey]: { status: "not_started", current_step: 0, seen_version: 1 } }));
     void resetTourProgress(tourKey);
   };
 
@@ -118,16 +128,22 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     if (hideAllTours) return;
     if (activeTour) return;
     if (!pathname) return;
-    const candidate = eligibleTours.find(
-      (tour) =>
-        pathMatches(tour.pagePath, pathname) &&
-        (progress[tour.tourKey]?.status || "not_started") === "not_started",
-    );
+    const candidate = eligibleTours.find((tour) => {
+      if (!pathMatches(tour.pagePath, pathname)) return false;
+      const p = progress[tour.tourKey];
+      // Nunca visto → dispara.
+      if (!p || p.status === "not_started") return true;
+      // Já visto, mas o tour subiu de versão desde então → reexibe.
+      return (p.seen_version ?? 1) < tour.version;
+    });
     if (!candidate) return;
     setActiveTour(candidate);
     setStepIndex(0);
-    setProgress((prev) => ({ ...prev, [candidate.tourKey]: { status: "in_progress", current_step: 0 } }));
-    void startTourProgress(candidate.tourKey, 0);
+    setProgress((prev) => ({
+      ...prev,
+      [candidate.tourKey]: { status: "in_progress", current_step: 0, seen_version: candidate.version },
+    }));
+    void startTourProgress(candidate.tourKey, 0, candidate.version);
     trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
   }, [pathname, hideAllTours, activeTour, eligibleTours, progress]);
 

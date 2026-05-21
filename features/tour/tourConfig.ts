@@ -94,7 +94,7 @@ export const TOUR_CONFIGS: TourConfig[] = [
     tourKey: "enxames",
     title: "Vitrine de Enxames",
     description: "Filtros e descoberta na /search",
-    version: 1,
+    version: 2,
     autoStart: true,
     pagePath: ["/search", "/enxame"],
     steps: [
