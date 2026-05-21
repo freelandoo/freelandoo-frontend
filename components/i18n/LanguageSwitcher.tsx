@@ -67,7 +67,7 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
         <span aria-hidden="true" className="font-mono text-[11px] leading-none">{LOCALE_FLAGS[locale]}</span>
         {variant === "full" && <span>{LOCALE_LABELS[locale]}</span>}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[160px]">
+      <DropdownMenuContent align="end" className="z-[120] min-w-[160px]">
         {SUPPORTED_LOCALES.map((code) => (
           <DropdownMenuItem
             key={code}
