@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { HINTS, type HintId } from "./hints"
-import { isPathVisited } from "./visitedPaths"
+import { useTour } from "./useTour"
 
 type Side = "top" | "right" | "bottom" | "left"
 
@@ -28,18 +27,16 @@ const TOOLTIP_MAX_W = 260
  */
 export function HoverHint({ id, side = "bottom", className, dataTour, children }: HoverHintProps) {
   const hint = HINTS[id]
-  const pathname = usePathname()
+  const { hideAllTours } = useTour()
   const triggerRef = useRef<HTMLSpanElement | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [alreadyVisited, setAlreadyVisited] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    setAlreadyVisited(isPathVisited(pathname))
-  }, [pathname])
+  }, [])
 
   const computePosition = useCallback(() => {
     const trigger = triggerRef.current
@@ -94,7 +91,7 @@ export function HoverHint({ id, side = "bottom", className, dataTour, children }
   }, [open, computePosition])
 
   if (!hint) return <>{children}</>
-  if (alreadyVisited) {
+  if (hideAllTours) {
     if (!dataTour) return <>{children}</>
     return (
       <span data-tour={dataTour} className={cn("relative inline-flex", className)}>
