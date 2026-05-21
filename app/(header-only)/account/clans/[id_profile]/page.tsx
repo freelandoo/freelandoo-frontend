@@ -37,6 +37,7 @@ import {
   validateVideoFile,
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 type Member = {
   id_member_profile: string
@@ -432,13 +433,15 @@ export default function ManageClanPage({
   }
 
   async function handleBuySlot() {
-    if (!confirm("Comprar uma vaga adicional por R$50? Você será redirecionado ao pagamento.")) return
+    if (!confirm("Comprar uma vaga adicional por R$39? Você será redirecionado ao pagamento.")) return
     setBuyingSlot(true)
     try {
       const token = localStorage.getItem("token")
+      const sharedCoupon = getCapturedCoupon()
       const res = await fetch(`/api/clans/${id_profile}/slots/checkout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
       if (!res.ok || !data?.checkout_url) {
@@ -542,7 +545,7 @@ export default function ManageClanPage({
   const totalUnlocked = freeSlots + paidSlots
   const slotsAvailable = totalUnlocked - occupied
   const lockedSlots = 6 - totalUnlocked
-  const slotPrice = ((clan.settings?.slot_price_cents ?? 5000) / 100).toFixed(2)
+  const slotPrice = ((clan.settings?.slot_price_cents ?? 3900) / 100).toFixed(2)
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12 space-y-8">
