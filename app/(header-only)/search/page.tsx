@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
+import { Loader2, MessageSquarePlus } from "lucide-react"
 import {
   useMachinesCatalog,
   type CatalogMachine,
@@ -13,6 +13,7 @@ import { SearchRetractableHeader } from "@/components/search/search-retractable-
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
 import { StoryCreator } from "@/components/stories/story-creator"
+import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 /**
@@ -222,6 +223,7 @@ function SearchPageInner() {
 
   const [storyOpen, setStoryOpen] = useState<{ entries: StoryBarEntry[]; index: number } | null>(null)
   const [creatorOpen, setCreatorOpen] = useState(false)
+  const [openChamadoOpen, setOpenChamadoOpen] = useState(false)
   const [storyBarKey, setStoryBarKey] = useState(0)
 
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -443,6 +445,24 @@ function SearchPageInner() {
         initialKind="trampo"
         onClose={() => setCreatorOpen(false)}
         onPosted={() => setStoryBarKey((k) => k + 1)}
+      />
+
+      {/* FAB: Abrir chamado — broadcast pra todo o Enxame escolhido */}
+      <button
+        type="button"
+        data-tour="search-open-chamado"
+        onClick={() => setOpenChamadoOpen(true)}
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-3 text-sm font-semibold text-zinc-950 shadow-[0_12px_40px_-12px_rgba(250,204,21,0.6)] transition hover:bg-yellow-300 active:scale-95 sm:bottom-7 sm:right-7"
+        aria-label="Abrir chamado"
+      >
+        <MessageSquarePlus className="h-4 w-4" />
+        <span className="hidden sm:inline">Abrir chamado</span>
+      </button>
+
+      <OpenChamadoModal
+        open={openChamadoOpen}
+        onOpenChange={setOpenChamadoOpen}
+        defaultMachineId={idMachine && idMachine > 0 ? idMachine : null}
       />
     </div>
   )
