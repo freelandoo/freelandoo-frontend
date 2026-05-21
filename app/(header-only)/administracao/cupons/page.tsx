@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2, Ticket, Search, Percent, Wallet, Check, AlertCircle, Plus, RefreshCw } from "lucide-react"
+import { ArrowLeft, Loader2, Ticket, Search, Percent, Wallet, Check, AlertCircle, Plus, RefreshCw, Calculator, GraduationCap, Briefcase, User, Package } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 
-type Tab = "discount" | "commission" | "specific" | "create"
+type Tab = "discount" | "commission" | "specific" | "create" | "simulation"
 
 type DiscountSettings = {
   id_settings: string
@@ -884,6 +884,363 @@ function CreateManualCouponTab() {
   )
 }
 
+// ─────────────────────────────── Tab: Simulação ───────────────────────────────
+type SimCategory = "course" | "service" | "profile" | "product"
+
+const SIM_CATEGORIES: { id: SimCategory; label: string; icon: React.ReactNode; hint: string }[] = [
+  { id: "course",  label: "Curso",              icon: <GraduationCap className="h-4 w-4" />, hint: "Venda única do curso." },
+  { id: "service", label: "Serviço (booking)",  icon: <Briefcase className="h-4 w-4" />,     hint: "Agendamento pago." },
+  { id: "profile", label: "Perfil (assinatura)", icon: <User className="h-4 w-4" />,         hint: "Mensalidade/anuidade do subperfil." },
+  { id: "product", label: "Produto (loja)",     icon: <Package className="h-4 w-4" />,       hint: "Venda da loja. Frete sai da margem da plataforma." },
+]
+
+function parseBRL(raw: string): number | null {
+  if (!raw) return null
+  const cleaned = raw.replace(/[^\d,.\-]/g, "").replace(/\./g, "").replace(",", ".")
+  const n = Number(cleaned)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100)
+}
+
+function formatBRL(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+
+function SimulationTab() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [generalDiscount, setGeneralDiscount] = useState<DiscountSettings>(null)
+  const [generalCommission, setGeneralCommission] = useState<CommissionSettings>(null)
+
+  const [category, setCategory] = useState<SimCategory>("course")
+  const [priceBRL, setPriceBRL] = useState("")
+  const [shippingBRL, setShippingBRL] = useState("")
+  const [couponCode, setCouponCode] = useState("")
+  const [lookupLoading, setLookupLoading] = useState(false)
+  const [coupon, setCoupon] = useState<CouponSearchResult | null>(null)
+  const [lookupError, setLookupError] = useState<string | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [d, c] = await Promise.all([
+          api<{ settings: DiscountSettings }>("/api/admin/coupons/discount-settings"),
+          api<{ settings: CommissionSettings }>("/api/admin/coupons/commission-settings"),
+        ])
+        setGeneralDiscount(d.settings)
+        setGeneralCommission(c.settings)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao carregar regras")
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
+
+  async function lookupCoupon() {
+    setLookupError(null)
+    setCoupon(null)
+    const code = couponCode.trim()
+    if (!code) return
+    setLookupLoading(true)
+    try {
+      const data = await api<CouponSearchResult>(
+        `/api/admin/coupons/search?code=${encodeURIComponent(code)}`
+      )
+      setCoupon(data)
+    } catch (e) {
+      setLookupError(e instanceof Error ? e.message : "Cupom não encontrado")
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
+  function clearCoupon() {
+    setCouponCode("")
+    setCoupon(null)
+    setLookupError(null)
+  }
+
+  const priceCents = parseBRL(priceBRL)
+  const shippingCents = category === "product" ? (parseBRL(shippingBRL) ?? 0) : 0
+
+  const sim = useMemo(() => {
+    if (priceCents == null || priceCents <= 0) return null
+
+    // Desconto
+    const effDiscount = coupon?.discount?.effective
+    const discType: "percent" | "amount" =
+      (effDiscount?.discount_type as "percent" | "amount")
+      || (generalDiscount?.discount_type as "percent" | "amount")
+      || "percent"
+    const discValue = Number(
+      effDiscount?.discount_value
+      ?? generalDiscount?.discount_value
+      ?? 0
+    )
+    const discMaxCents = (effDiscount?.max_discount_cents ?? generalDiscount?.max_discount_cents) ?? null
+    const discountSource: "override" | "general" | "coupon" | "none" =
+      coupon
+        ? (effDiscount?.source === "override" ? "override"
+          : effDiscount?.source === "general" ? "general"
+          : effDiscount?.source === "coupon"  ? "coupon" : "none")
+        : (generalDiscount && generalDiscount.is_active && discValue > 0 ? "general" : "none")
+
+    let discountCents = 0
+    if (discValue > 0 && (coupon ? effDiscount : (generalDiscount && generalDiscount.is_active))) {
+      if (discType === "percent") {
+        discountCents = Math.floor(priceCents * (discValue / 100))
+      } else {
+        discountCents = Math.floor(discValue)
+      }
+      if (discMaxCents != null && discMaxCents > 0) {
+        discountCents = Math.min(discountCents, discMaxCents)
+      }
+      discountCents = Math.min(discountCents, priceCents)
+    }
+
+    const netCents = priceCents - discountCents
+
+    // Comissão
+    const commissionPercent = coupon?.commission?.effective_percent
+      ?? Number(generalCommission?.default_commission_percent ?? 0)
+    const commissionBase: "GROSS" | "NET_OF_DISCOUNT" = generalCommission?.commission_base ?? "NET_OF_DISCOUNT"
+    const commissionMaxCents = generalCommission?.max_commission_cents ?? null
+    const minOrderCents = generalCommission?.min_order_cents ?? 0
+    const commissionSource: "override" | "general" | "none" =
+      coupon
+        ? coupon.commission.source
+        : (generalCommission && commissionPercent > 0 ? "general" : "none")
+
+    const baseForCommissionCents = commissionBase === "GROSS" ? priceCents : netCents
+    const eligibleForCommission = baseForCommissionCents >= minOrderCents && commissionPercent > 0
+    let commissionCents = 0
+    if (eligibleForCommission) {
+      commissionCents = Math.floor(baseForCommissionCents * (commissionPercent / 100))
+      if (commissionMaxCents != null && commissionMaxCents > 0) {
+        commissionCents = Math.min(commissionCents, commissionMaxCents)
+      }
+    }
+
+    // Plataforma fica com (receita líquida da plataforma)
+    // Para produto, plataforma paga o frete; para os demais, sem frete.
+    const platformCents = netCents - commissionCents - shippingCents
+
+    return {
+      priceCents,
+      shippingCents,
+      discountCents,
+      discType,
+      discValue,
+      discMaxCents,
+      discountSource,
+      netCents,
+      commissionCents,
+      commissionPercent,
+      commissionBase,
+      minOrderCents,
+      commissionMaxCents,
+      eligibleForCommission,
+      commissionSource,
+      platformCents,
+      baseForCommissionCents,
+    }
+  }, [priceCents, shippingCents, coupon, generalDiscount, generalCommission])
+
+  if (loading) return <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calculator className="h-4 w-4 text-primary" /> Simular desconto e comissão
+          </CardTitle>
+          <CardDescription>
+            Aplica as regras vigentes (geral + override de cupom, se informado) sobre um preço hipotético e mostra o breakdown.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && <Banner ok={false} msg={error} />}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Categoria</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as SimCategory)}
+              >
+                {SIM_CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                {SIM_CATEGORIES.find((c) => c.id === category)?.hint}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Preço bruto (R$)</Label>
+              <Input
+                inputMode="decimal"
+                placeholder="Ex.: 199,90"
+                value={priceBRL}
+                onChange={(e) => setPriceBRL(e.target.value)}
+              />
+            </div>
+
+            {category === "product" && (
+              <div className="space-y-1">
+                <Label>Frete (R$) — opcional</Label>
+                <Input
+                  inputMode="decimal"
+                  placeholder="Ex.: 18,90"
+                  value={shippingBRL}
+                  onChange={(e) => setShippingBRL(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">A plataforma paga a etiqueta; o frete sai da margem.</p>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <Label>Cupom (opcional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => { if (e.key === "Enter") lookupCoupon() }}
+                  placeholder="Deixe em branco para usar regra geral"
+                />
+                {coupon ? (
+                  <Button variant="outline" size="sm" onClick={clearCoupon}>Limpar</Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={lookupCoupon} disabled={lookupLoading || !couponCode.trim()}>
+                    {lookupLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Aplicar"}
+                  </Button>
+                )}
+              </div>
+              {lookupError && <p className="text-[11px] text-destructive">{lookupError}</p>}
+              {coupon && (
+                <p className="text-[11px] text-emerald-500">
+                  Usando regras de <strong>{coupon.coupon.code}</strong>
+                  {coupon.coupon.owner_name && <> · dono: {coupon.coupon.owner_name}</>}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {!generalDiscount?.is_active && !coupon && (
+            <Banner ok={false} msg="Nenhuma regra geral de desconto ativa — só sobrará comissão para simular." />
+          )}
+          {!generalCommission && !coupon && (
+            <Banner ok={false} msg="Regra geral de comissão não configurada. Cadastre na aba 'Comissões'." />
+          )}
+        </CardContent>
+      </Card>
+
+      {sim && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Resultado da simulação</CardTitle>
+            <CardDescription>
+              Categoria: <span className="text-foreground">{SIM_CATEGORIES.find((c) => c.id === category)?.label}</span>
+              {coupon && <> · Cupom: <span className="text-foreground font-mono">{coupon.coupon.code}</span></>}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-border divide-y divide-border">
+              <SimRow label="Preço bruto" value={formatBRL(sim.priceCents)} />
+              <SimRow
+                label="Desconto aplicado"
+                value={`− ${formatBRL(sim.discountCents)}`}
+                hint={
+                  sim.discountSource === "none"
+                    ? "Nenhuma regra de desconto ativa"
+                    : `${sim.discType === "percent" ? `${sim.discValue}%` : formatBRL(sim.discValue)}${sim.discMaxCents != null ? ` · teto ${formatBRL(sim.discMaxCents)}` : ""} · fonte: ${labelSource(sim.discountSource)}`
+                }
+                emphasis={sim.discountCents > 0 ? "discount" : undefined}
+              />
+              <SimRow label="Preço líquido (cobrado)" value={formatBRL(sim.netCents)} strong />
+              {category === "product" && sim.shippingCents > 0 && (
+                <SimRow label="Frete (pago pela plataforma)" value={`− ${formatBRL(sim.shippingCents)}`} hint="Plataforma cobre a etiqueta ME" />
+              )}
+              <SimRow
+                label="Comissão de afiliado"
+                value={`− ${formatBRL(sim.commissionCents)}`}
+                hint={
+                  !sim.eligibleForCommission
+                    ? sim.minOrderCents > 0 && sim.baseForCommissionCents < sim.minOrderCents
+                      ? `Não atinge pedido mínimo (${formatBRL(sim.minOrderCents)})`
+                      : "Sem regra de comissão ativa"
+                    : `${sim.commissionPercent}% sobre ${sim.commissionBase === "GROSS" ? "valor bruto" : "valor após desconto"} (${formatBRL(sim.baseForCommissionCents)})${sim.commissionMaxCents != null ? ` · teto ${formatBRL(sim.commissionMaxCents)}` : ""} · fonte: ${labelSource(sim.commissionSource)}`
+                }
+                emphasis={sim.commissionCents > 0 ? "commission" : undefined}
+              />
+              <SimRow label="Plataforma fica com" value={formatBRL(sim.platformCents)} strong emphasis="platform" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Kpi label="Desconto" value={formatBRL(sim.discountCents)} tone="discount" />
+              <Kpi label="Comissão" value={formatBRL(sim.commissionCents)} tone="commission" />
+              <Kpi label="Plataforma" value={formatBRL(sim.platformCents)} tone="platform" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+function labelSource(s: "override" | "general" | "coupon" | "none"): string {
+  switch (s) {
+    case "override": return "específico do cupom"
+    case "general": return "regra geral"
+    case "coupon": return "valor do próprio cupom"
+    case "none": return "—"
+  }
+}
+
+function SimRow({
+  label, value, hint, strong, emphasis,
+}: {
+  label: string
+  value: string
+  hint?: string
+  strong?: boolean
+  emphasis?: "discount" | "commission" | "platform"
+}) {
+  const valueColor =
+    emphasis === "discount" ? "text-rose-400"
+    : emphasis === "commission" ? "text-amber-400"
+    : emphasis === "platform" ? "text-emerald-400"
+    : "text-foreground"
+  return (
+    <div className="flex items-start justify-between gap-3 px-4 py-2.5">
+      <div className="min-w-0">
+        <div className={`text-sm ${strong ? "font-semibold" : ""}`}>{label}</div>
+        {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
+      </div>
+      <div className={`text-sm font-mono tabular-nums ${strong ? "font-semibold" : ""} ${valueColor}`}>{value}</div>
+    </div>
+  )
+}
+
+function Kpi({ label, value, tone }: { label: string; value: string; tone: "discount" | "commission" | "platform" }) {
+  const cls =
+    tone === "discount" ? "border-rose-500/30 bg-rose-500/5 text-rose-300"
+    : tone === "commission" ? "border-amber-500/30 bg-amber-500/5 text-amber-300"
+    : "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+  return (
+    <div className={`rounded-lg border p-3 ${cls}`}>
+      <div className="text-[11px] uppercase tracking-wide opacity-80">{label}</div>
+      <div className="text-xl font-mono tabular-nums font-semibold mt-1">{value}</div>
+    </div>
+  )
+}
+
 // ─────────────────────────────── Página raiz ───────────────────────────────
 export default function CouponsAdminPage() {
   const router = useRouter()
@@ -919,6 +1276,7 @@ export default function CouponsAdminPage() {
     { id: "commission", label: "Comissões", icon: <Wallet className="h-4 w-4" /> },
     { id: "specific", label: "Cupons específicos", icon: <Search className="h-4 w-4" /> },
     { id: "create", label: "Criar cupom", icon: <Plus className="h-4 w-4" /> },
+    { id: "simulation", label: "Simulação", icon: <Calculator className="h-4 w-4" /> },
   ]
 
   return (
@@ -962,6 +1320,7 @@ export default function CouponsAdminPage() {
         {tab === "commission" && <CommissionTab />}
         {tab === "specific" && <SpecificTab />}
         {tab === "create" && <CreateManualCouponTab />}
+        {tab === "simulation" && <SimulationTab />}
       </main>
     </div>
   )
