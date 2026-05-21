@@ -4,6 +4,22 @@ import Image from "next/image"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
+const legalLinks = [
+  { href: "/terms", key: "terms", label: "Termos de Uso" },
+  { href: "/privacy-policy", key: "privacy", label: "Política de Privacidade" },
+  { href: "/cookies-policy", key: "cookiesPolicy", label: "Política de Cookies" },
+  { href: "/subscription-terms", key: "subscriptionTerms", label: "Termo de Ativação" },
+  { href: "/affiliate-terms", key: "affiliateProgram", label: "Contrato de Afiliados" },
+  { href: "/marketplace-terms", key: "marketplaceTerms", label: "Termos do Marketplace" },
+  { href: "/return-policy", key: "returnPolicy", label: "Trocas e Devoluções" },
+  { href: "/community-guidelines", key: "communityGuidelines", label: "Diretrizes da Comunidade" },
+  { href: "/moderation-policy", key: "moderationPolicy", label: "Moderação e Denúncias" },
+  { href: "/copyright-policy", key: "copyrightPolicy", label: "Direitos Autorais" },
+  { href: "/polens-terms", key: "polensTerms", label: "Poléns e Itens Digitais" },
+  { href: "/minors-policy", key: "minorsPolicy", label: "Privacidade de Menores" },
+  { href: "/advertising-policy", key: "advertisingPolicy", label: "Política de Publicidade" },
+]
+
 export function SiteFooter() {
   const tNav = useTranslations("Navigation")
   const tFooter = useTranslations("Footer")
@@ -95,36 +111,24 @@ export function SiteFooter() {
                   {tFooter("careers", "Carreiras")}
                 </Link>
               </li>
-              <li>
-                <Link href="/terms" className="transition-colors hover:text-neutral-900">
-                  {tFooter("terms", "Termos de uso")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy-policy" className="transition-colors hover:text-neutral-900">
-                  {tFooter("privacy", "Privacidade")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/cookies-policy" className="transition-colors hover:text-neutral-900">
-                  {tFooter("cookiesPolicy", "Política de cookies")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/subscription-terms" className="transition-colors hover:text-neutral-900">
-                  {tFooter("subscriptionTerms", "Termo de ativação")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/affiliate-terms" className="transition-colors hover:text-neutral-900">
-                  {tFooter("affiliateProgram", "Programa de afiliados")}
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-border pt-8 text-center text-sm text-neutral-600">
+        <div className="mt-10 border-t border-border pt-8">
+          <h3 className="mb-3 text-sm font-semibold text-neutral-900">{tFooter("legal", "Jurídico")}</h3>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600">
+            {legalLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="transition-colors hover:text-neutral-900">
+                  {tFooter(link.key, link.label)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-10 border-t border-border pt-8 text-center text-sm text-neutral-600">
           <p>&copy; {new Date().getFullYear()} Freelandoo. {tFooter("copyright", "Todos os direitos reservados.")}</p>
         </div>
       </div>

@@ -42,9 +42,19 @@ const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${BASE_URL}/central-de-ajuda`, changeFrequency: "monthly", priority: 0.5 },
   { url: `${BASE_URL}/carreiras`, changeFrequency: "monthly", priority: 0.4 },
   { url: `${BASE_URL}/dicas-de-seguranca`, changeFrequency: "yearly", priority: 0.4 },
+  { url: `${BASE_URL}/terms`, changeFrequency: "yearly", priority: 0.3 },
   { url: `${BASE_URL}/privacy-policy`, changeFrequency: "yearly", priority: 0.3 },
   { url: `${BASE_URL}/cookies-policy`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/subscription-terms`, changeFrequency: "yearly", priority: 0.3 },
   { url: `${BASE_URL}/affiliate-terms`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/marketplace-terms`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/return-policy`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/community-guidelines`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/moderation-policy`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/copyright-policy`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/polens-terms`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/minors-policy`, changeFrequency: "yearly", priority: 0.3 },
+  { url: `${BASE_URL}/advertising-policy`, changeFrequency: "yearly", priority: 0.3 },
 ]
 
 async function fetchMachines(): Promise<MachineEntry[]> {
