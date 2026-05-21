@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ContentAd } from "@/components/ads/content-ad"
 import { ContratarProfissionaisContent } from "./content"
 
 export const metadata: Metadata = {
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 }
 
 export default function ContratarProfissionaisPage() {
-  return <ContratarProfissionaisContent />
+  return (
+    <>
+      <ContratarProfissionaisContent />
+      <ContentAd />
+    </>
+  )
 }
