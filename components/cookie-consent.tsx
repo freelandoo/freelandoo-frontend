@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button"
 
 const STORAGE_KEY = "fl_cookie_consent"
 
+/** Atualiza o Google Consent Mode conforme a escolha do usuário. */
+function applyConsent(granted: boolean) {
+  const value = granted ? "granted" : "denied"
+  window.gtag?.("consent", "update", {
+    ad_storage: value,
+    ad_user_data: value,
+    ad_personalization: value,
+    analytics_storage: value,
+  })
+}
+
 export function CookieConsent() {
   const [visible, setVisible] = useState(false)
 
@@ -14,19 +25,23 @@ export function CookieConsent() {
     // mount-only: lê localStorage só no client e expõe o banner se ainda não houve consent.
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-       
       setVisible(true)
+    } else if (stored === "accepted") {
+      // Consent Mode reinicia como "denied" a cada carregamento; reaplica o aceite.
+      applyConsent(true)
     }
   }, [])
 
   const accept = () => {
     localStorage.setItem(STORAGE_KEY, "accepted")
+    applyConsent(true)
     window.dispatchEvent(new Event("cookieConsentChanged"))
     setVisible(false)
   }
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "dismissed")
+    applyConsent(false)
     setVisible(false)
   }
 
