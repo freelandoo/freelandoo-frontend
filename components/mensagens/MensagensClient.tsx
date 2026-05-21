@@ -919,6 +919,7 @@ export default function MensagensClient() {
               icon={<MessageCircle className="h-3.5 w-3.5" />}
               label={t("conversationsTabLabel", "Conversas")}
               shortLabel={t("conversationsTabShortLabel", "Conv.")}
+              dataTour="messages-tab-conv"
             />
             <TabBtn
               active={tab === "os"}
@@ -926,6 +927,7 @@ export default function MensagensClient() {
               icon={<ClipboardList className="h-3.5 w-3.5" />}
               label={t("osTabLabel", "O.S.")}
               shortLabel={t("osTabLabel", "O.S.")}
+              dataTour="messages-tab-os"
             />
             {!isClanActor && (
               <>
@@ -935,6 +937,7 @@ export default function MensagensClient() {
                   icon={<Radio className="h-3.5 w-3.5" />}
                   label={t("globalTabLabel", "Global")}
                   shortLabel={t("globalTabLabel", "Global")}
+                  dataTour="messages-tab-global"
                 />
                 <TabBtn
                   active={tab === "machine"}
@@ -942,6 +945,7 @@ export default function MensagensClient() {
                   icon={<Sparkles className="h-3.5 w-3.5" />}
                   label={t("machinesTabLabel", "Enxames")}
                   shortLabel={t("machinesTabShortLabel", "Máq.")}
+                  dataTour="messages-tab-machine"
                 />
               </>
             )}
@@ -1775,17 +1779,20 @@ function TabBtn({
   icon,
   label,
   shortLabel,
+  dataTour,
 }: {
   active: boolean
   onClick: () => void
   icon: React.ReactNode
   label: string
   shortLabel: string
+  dataTour?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-tour={dataTour}
       className={cn(
         "flex flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider transition-colors",
         active

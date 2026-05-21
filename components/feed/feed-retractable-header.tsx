@@ -92,7 +92,7 @@ export function FeedRetractableHeader({
             freelandoo
           </Link>
 
-          <div className="ml-2 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div data-tour="feed-filters" className="ml-2 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <MachineFilterSheet
               machines={machines}
               selectedId={selectedMachineId}
@@ -135,6 +135,7 @@ export function FeedRetractableHeader({
             type="button"
             ref={bellRef}
             onClick={() => setDropdownOpen((v) => !v)}
+            data-tour="feed-bell"
             aria-label={bellActive ? t("notificationsLabel", "Notificações") + ` (${unread})` : t("notificationsLabel", "Notificações")}
             aria-expanded={dropdownOpen}
             className={cn(

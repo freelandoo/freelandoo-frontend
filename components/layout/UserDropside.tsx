@@ -197,6 +197,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 <Link
                   href={a.href}
                   onClick={onClose}
+                  data-tour={hintId}
                   className={cn(
                     "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white",
                     a.highlight && "text-amber-100 hover:bg-amber-300/10",
@@ -266,6 +267,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 <Link
                   href="/account/dados"
                   onClick={onClose}
+                  data-tour="dropside-settings"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
                 >
                   <Settings className="h-4 w-4 text-white/45" />
@@ -279,6 +281,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                   <button
                     type="button"
                     onClick={() => { onClose(); router.push("/admin") }}
+                    data-tour="dropside-admin"
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
                   >
                     <Shield className="h-4 w-4 text-white/45" />
@@ -292,6 +295,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 <button
                   type="button"
                   onClick={() => { onClose(); onLogout() }}
+                  data-tour="dropside-logout"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
                 >
                   <LogOut className="h-4 w-4" />
@@ -305,7 +309,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
           <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
             {tAcc("preferences", "Preferências")}
           </p>
-          <div className="flex items-center gap-2 px-2 py-1">
+          <div className="flex items-center gap-2 px-2 py-1" data-tour="dropside-preferences">
             <HoverHint id="dropside-country" side="top">
               <CountrySwitcher variant="full" />
             </HoverHint>
