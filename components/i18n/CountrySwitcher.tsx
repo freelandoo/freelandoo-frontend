@@ -118,7 +118,7 @@ export function CountrySwitcher({
         <span aria-hidden="true" className="font-mono text-[11px] leading-none">{currentFlag}</span>
         {variant === "full" && <span>{currentName}</span>}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-[320px] min-w-[200px] overflow-y-auto">
+      <DropdownMenuContent align="end" className="z-[120] max-h-[320px] min-w-[200px] overflow-y-auto">
         {showAllOption && (
           <>
             <DropdownMenuItem onSelect={() => handleSelect("ALL")}>
