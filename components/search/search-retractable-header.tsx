@@ -104,7 +104,7 @@ export function SearchRetractableHeader({
           </Link>
 
           <div className="ml-2 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <HoverHint id="search-filter-machine" side="bottom">
+            <HoverHint id="search-filter-machine" side="bottom" dataTour="search-filter-machine">
               <MachineFilterSheet
                 machines={machines}
                 selectedId={selectedMachineId}
@@ -118,7 +118,7 @@ export function SearchRetractableHeader({
                 }
               />
             </HoverHint>
-            <HoverHint id="search-filter-profession" side="bottom">
+            <HoverHint id="search-filter-profession" side="bottom" dataTour="search-filter-profession">
               <ProfessionFilterSheet
                 categories={categories}
                 selectedId={selectedCategoryId}
@@ -135,7 +135,7 @@ export function SearchRetractableHeader({
                 }
               />
             </HoverHint>
-            <HoverHint id="search-filter-city" side="bottom">
+            <HoverHint id="search-filter-city" side="bottom" dataTour="search-filter-city">
               <CityFilterSheet
                 state={state}
                 city={city}
@@ -151,7 +151,7 @@ export function SearchRetractableHeader({
                 }
               />
             </HoverHint>
-            <HoverHint id="search-filter-level" side="bottom">
+            <HoverHint id="search-filter-level" side="bottom" dataTour="search-filter-level">
               <LevelFilterSheet
                 selectedLevel={levelMin}
                 onChange={onLevelChange}
@@ -165,7 +165,7 @@ export function SearchRetractableHeader({
                 }
               />
             </HoverHint>
-            <HoverHint id="search-filter-premium" side="bottom">
+            <HoverHint id="search-filter-premium" side="bottom" dataTour="search-filter-premium">
               <button
                 type="button"
                 onClick={onPremiumToggle}
@@ -199,7 +199,7 @@ export function SearchRetractableHeader({
             )}
           </div>
 
-          <HoverHint id="search-bell" side="left">
+          <HoverHint id="search-bell" side="left" dataTour="search-bell">
           <button
             type="button"
             ref={bellRef}

@@ -13,6 +13,7 @@ interface HoverHintProps {
   id: HintId
   side?: Side
   className?: string
+  dataTour?: string
   children: React.ReactNode
 }
 
@@ -25,7 +26,7 @@ const TOOLTIP_MAX_W = 260
  * `overflow:hidden|auto` (ex.: nav da dropside). Posição é calculada a
  * partir do bounding rect do trigger, com clamp aos limites do viewport.
  */
-export function HoverHint({ id, side = "bottom", className, children }: HoverHintProps) {
+export function HoverHint({ id, side = "bottom", className, dataTour, children }: HoverHintProps) {
   const hint = HINTS[id]
   const pathname = usePathname()
   const triggerRef = useRef<HTMLSpanElement | null>(null)
@@ -93,11 +94,19 @@ export function HoverHint({ id, side = "bottom", className, children }: HoverHin
   }, [open, computePosition])
 
   if (!hint) return <>{children}</>
-  if (alreadyVisited) return <>{children}</>
+  if (alreadyVisited) {
+    if (!dataTour) return <>{children}</>
+    return (
+      <span data-tour={dataTour} className={cn("relative inline-flex", className)}>
+        {children}
+      </span>
+    )
+  }
 
   return (
     <span
       ref={triggerRef}
+      data-tour={dataTour}
       className={cn("relative inline-flex", className)}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
