@@ -1435,30 +1435,40 @@ export default function PerfilPage() {
           </DropdownMenu>
         }
       >
-        <span className="inline-flex items-center gap-1">
-          <span className="text-white/55 uppercase tracking-wide">Perfis</span>
-          <span className="font-semibold tabular-nums text-white">{totalProfiles}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="text-white/55 uppercase tracking-wide">Visíveis</span>
-          <span className="font-semibold tabular-nums text-white">{visibleProfiles}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="text-white/55 uppercase tracking-wide">Clans</span>
-          <span className="font-semibold tabular-nums text-white">{totalClans}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="text-white/55 uppercase tracking-wide">Acompanhando</span>
-          <span className="font-semibold tabular-nums text-white">{followedProfilesCount}</span>
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="text-white/55 uppercase tracking-wide">Não lidas</span>
-          <span
-            className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-amber-300" : "text-white"}`}
-          >
-            {unreadMessages}
+        <HoverHint id="account-counter-profiles" side="bottom">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-white/55 uppercase tracking-wide">Perfis</span>
+            <span className="font-semibold tabular-nums text-white">{totalProfiles}</span>
           </span>
-        </span>
+        </HoverHint>
+        <HoverHint id="account-counter-visible" side="bottom">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-white/55 uppercase tracking-wide">Visíveis</span>
+            <span className="font-semibold tabular-nums text-white">{visibleProfiles}</span>
+          </span>
+        </HoverHint>
+        <HoverHint id="account-counter-clans" side="bottom">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-white/55 uppercase tracking-wide">Clans</span>
+            <span className="font-semibold tabular-nums text-white">{totalClans}</span>
+          </span>
+        </HoverHint>
+        <HoverHint id="account-counter-following" side="bottom">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-white/55 uppercase tracking-wide">Acompanhando</span>
+            <span className="font-semibold tabular-nums text-white">{followedProfilesCount}</span>
+          </span>
+        </HoverHint>
+        <HoverHint id="account-counter-unread" side="bottom">
+          <span className="inline-flex items-center gap-1">
+            <span className="text-white/55 uppercase tracking-wide">Não lidas</span>
+            <span
+              className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-amber-300" : "text-white"}`}
+            >
+              {unreadMessages}
+            </span>
+          </span>
+        </HoverHint>
       </RetractableProfileHeader>
       <main className="container mx-auto px-4 py-10 md:py-12">
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
@@ -1532,7 +1542,9 @@ export default function PerfilPage() {
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {manifestation?.active && (
-                  <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
+                  <HoverHint id="account-manifestation-tag" side="bottom">
+                    <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
+                  </HoverHint>
                 )}
                 {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
                   <span
@@ -1543,43 +1555,46 @@ export default function PerfilPage() {
                   </span>
                 ))}
                 {/* Botão Parental: sempre presente. Menor → pedir permissão; adulto → painel. */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      perfil.is_minor === true
-                        ? "/account/parental/request"
-                        : "/account/parental"
-                    )
-                  }
-                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
-                  title={
-                    perfil.is_minor === true
-                      ? "Pedir permissão ao responsável"
-                      : "Gerenciar contas supervisionadas (filhos)"
-                  }
+                <HoverHint
+                  id={perfil.is_minor === true ? "account-parental-supervised" : "account-parental"}
+                  side="bottom"
                 >
-                  <ShieldCheck className="h-3 w-3" />
-                  {perfil.is_minor === true ? "Supervisionada" : "Parental"}
-                </button>
-                {perfil.coupon_code ? (
-                  <button
-                    onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
-                    title={couponCopied ? "Copiado!" : "Clique para copiar"}
-                  >
-                    {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {perfil.coupon_code}
-                  </button>
-                ) : (
                   <button
                     type="button"
-                    onClick={handleGenerateCoupon}
-                    disabled={isGeneratingCoupon}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    onClick={() =>
+                      router.push(
+                        perfil.is_minor === true
+                          ? "/account/parental/request"
+                          : "/account/parental"
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
                   >
-                    {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                    <ShieldCheck className="h-3 w-3" />
+                    {perfil.is_minor === true ? "Supervisionada" : "Parental"}
                   </button>
+                </HoverHint>
+                {perfil.coupon_code ? (
+                  <HoverHint id="account-coupon" side="bottom">
+                    <button
+                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
+                    >
+                      {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {perfil.coupon_code}
+                    </button>
+                  </HoverHint>
+                ) : (
+                  <HoverHint id="account-coupon-generate" side="bottom">
+                    <button
+                      type="button"
+                      onClick={handleGenerateCoupon}
+                      disabled={isGeneratingCoupon}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    >
+                      {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                    </button>
+                  </HoverHint>
                 )}
               </div>
 

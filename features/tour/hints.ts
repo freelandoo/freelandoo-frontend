@@ -18,6 +18,25 @@ export type HintId =
   | "account-find-service"
   | "account-find-product"
   | "account-activate"
+  // ── /account — badges do headcard ──────────────────────────────────────
+  | "account-manifestation-tag"
+  | "account-parental"
+  | "account-parental-supervised"
+  | "account-coupon"
+  | "account-coupon-generate"
+  // ── /account — contadores do header retrátil ───────────────────────────
+  | "account-counter-profiles"
+  | "account-counter-visible"
+  | "account-counter-clans"
+  | "account-counter-following"
+  | "account-counter-unread"
+  // ── /account — abas do portfólio ───────────────────────────────────────
+  | "account-tab-feed"
+  | "account-tab-bees"
+  | "account-tab-courses"
+  | "account-tab-saved"
+  | "account-tab-profiles"
+  | "account-tab-clans"
   // ── Dropside (menu da conta) — Ações primárias ─────────────────────────
   | "dropside-edit"
   | "dropside-manifestation"
@@ -102,6 +121,76 @@ export const HINTS: Record<HintId, Hint> = {
   "account-activate": {
     title: "Ativar conta",
     text: "Paga a anuidade da plataforma e desbloqueia a publicação do seu perfil profissional.",
+  },
+
+  // ── /account — badges ──────────────────────────────────────────────────
+  "account-manifestation-tag": {
+    title: "Tag da Manifestação",
+    text: "Aparece quando você tem uma Manifestação ativa. Aplica banner + tag no headcard dos perfis escolhidos.",
+  },
+  "account-parental": {
+    title: "Controle parental",
+    text: "Gerencia contas supervisionadas (filhos): aprovar conteúdo, ver mensagens read-only e bloquear áreas.",
+  },
+  "account-parental-supervised": {
+    title: "Conta supervisionada",
+    text: "Sua conta é supervisionada por um responsável. Aqui você pede permissão pra liberar áreas restritas.",
+  },
+  "account-coupon": {
+    title: "Seu cupom",
+    text: "Compartilhe — quem usar seu cupom em assinatura ganha desconto e você recebe comissão de afiliado.",
+  },
+  "account-coupon-generate": {
+    title: "Gerar cupom",
+    text: "Cria seu cupom único de afiliado. Usado em links de compartilhamento pra gerar comissão.",
+  },
+
+  // ── /account — contadores ──────────────────────────────────────────────
+  "account-counter-profiles": {
+    title: "Total de perfis",
+    text: "Quantos subperfis profissionais você tem criados (visíveis ou não).",
+  },
+  "account-counter-visible": {
+    title: "Perfis publicados",
+    text: "Subperfis que estão publicados e aparecendo na vitrine para clientes.",
+  },
+  "account-counter-clans": {
+    title: "Seus clans",
+    text: "Comunidades coletivas que você criou ou participa como dono.",
+  },
+  "account-counter-following": {
+    title: "Acompanhando",
+    text: "Subperfis e clans que você segue — geram conteúdo no seu feed e stories.",
+  },
+  "account-counter-unread": {
+    title: "Mensagens não lidas",
+    text: "Conversas privadas ou de grupo com mensagens novas pra você ler.",
+  },
+
+  // ── /account — abas do portfólio ───────────────────────────────────────
+  "account-tab-feed": {
+    title: "Portfólio (Feed)",
+    text: "Seus posts de imagem 4:5 — aparecem no feed dos seguidores.",
+  },
+  "account-tab-bees": {
+    title: "Bees",
+    text: "Vídeos verticais 9:16 (até 100MB) — aparecem na vitrine Bees estilo TikTok.",
+  },
+  "account-tab-courses": {
+    title: "Cursos",
+    text: "Cursos que você criou pra vender conhecimento (módulos, aulas, certificado).",
+  },
+  "account-tab-saved": {
+    title: "Salvos",
+    text: "Posts e Bees que você marcou pra ver depois — bookmark privado.",
+  },
+  "account-tab-profiles": {
+    title: "Meus perfis",
+    text: "Lista dos seus subperfis profissionais. Clique pra abrir e editar cada um.",
+  },
+  "account-tab-clans": {
+    title: "Meus clans",
+    text: "Lista dos clans que você criou ou administra.",
   },
 
   // ── Dropside — primárias ───────────────────────────────────────────────

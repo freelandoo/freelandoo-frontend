@@ -21,6 +21,7 @@ import {
   Crop,
   Bookmark,
 } from "lucide-react"
+import { HoverHint } from "@/features/tour/HoverHint"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -545,59 +546,69 @@ export function UserPortfolio({
       {/* Tabs grudadas no headcard (sem mb pra colar visualmente) */}
       <div className="flex items-stretch justify-between border-b border-white/[0.07] bg-zinc-950/40">
         <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button
-            type="button"
-            onClick={() => setPortfolioTab("feed")}
-            aria-label="Portfólio"
-            title="Portfólio"
-            className={tabBtn(portfolioTab === "feed") + " w-10 px-0"}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPortfolioTab("bees")}
-            aria-label="Bees"
-            title="Bees"
-            className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
-          >
-            <Hexagon className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPortfolioTab("courses")}
-            className={tabBtn(portfolioTab === "courses")}
-          >
-            <GraduationCap className="h-3.5 w-3.5" />
-            Cursos
-          </button>
-          <button
-            type="button"
-            onClick={() => setPortfolioTab("saved")}
-            className={tabBtn(portfolioTab === "saved")}
-          >
-            <Bookmark className="h-3.5 w-3.5" />
-            Salvos
-          </button>
-          {myProfilesSlot !== undefined && (
+          <HoverHint id="account-tab-feed" side="bottom">
             <button
               type="button"
-              onClick={() => setPortfolioTab("profiles")}
-              className={tabBtn(portfolioTab === "profiles")}
+              onClick={() => setPortfolioTab("feed")}
+              aria-label="Portfólio"
+              className={tabBtn(portfolioTab === "feed") + " w-10 px-0"}
             >
-              <UserRound className="h-3.5 w-3.5" />
-              Perfis
+              <ImageIcon className="h-4 w-4" />
             </button>
+          </HoverHint>
+          <HoverHint id="account-tab-bees" side="bottom">
+            <button
+              type="button"
+              onClick={() => setPortfolioTab("bees")}
+              aria-label="Bees"
+              className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
+            >
+              <Hexagon className="h-4 w-4" />
+            </button>
+          </HoverHint>
+          <HoverHint id="account-tab-courses" side="bottom">
+            <button
+              type="button"
+              onClick={() => setPortfolioTab("courses")}
+              className={tabBtn(portfolioTab === "courses")}
+            >
+              <GraduationCap className="h-3.5 w-3.5" />
+              Cursos
+            </button>
+          </HoverHint>
+          <HoverHint id="account-tab-saved" side="bottom">
+            <button
+              type="button"
+              onClick={() => setPortfolioTab("saved")}
+              className={tabBtn(portfolioTab === "saved")}
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              Salvos
+            </button>
+          </HoverHint>
+          {myProfilesSlot !== undefined && (
+            <HoverHint id="account-tab-profiles" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("profiles")}
+                className={tabBtn(portfolioTab === "profiles")}
+              >
+                <UserRound className="h-3.5 w-3.5" />
+                Perfis
+              </button>
+            </HoverHint>
           )}
           {myClansSlot !== undefined && (
-            <button
-              type="button"
-              onClick={() => setPortfolioTab("clans")}
-              className={tabBtn(portfolioTab === "clans")}
-            >
-              <Users className="h-3.5 w-3.5" />
-              Clans
-            </button>
+            <HoverHint id="account-tab-clans" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("clans")}
+                className={tabBtn(portfolioTab === "clans")}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Clans
+              </button>
+            </HoverHint>
           )}
         </div>
       </div>
