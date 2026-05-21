@@ -27,7 +27,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquarePlus, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
+import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { ServiceRequestModal } from "./_components/service-request-modal"
@@ -1617,18 +1617,9 @@ export default function PerfilPage() {
                 </span>
               </div>
 
-              {/* Encontrar Serviço / Produto — atalho do headcard */}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <HoverHint id="account-find-service" side="bottom" className="block w-full">
-                  <button
-                    type="button"
-                    onClick={() => { setServiceRequestMode("service"); setIsServiceRequestOpen(true) }}
-                    className="group inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 text-[13px] font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
-                  >
-                    <MessageSquarePlus className="h-3.5 w-3.5 text-yellow-300" />
-                    Encontrar serviço
-                  </button>
-                </HoverHint>
+              {/* Encontrar Produto — atalho do headcard.
+                  Encontrar Serviço foi movido para a vitrine /search como "Abrir chamado" (broadcast pra todo o Enxame). */}
+              <div className="mt-3">
                 <HoverHint id="account-find-product" side="bottom" className="block w-full">
                   <button
                     type="button"
