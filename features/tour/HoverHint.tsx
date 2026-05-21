@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { HINTS, type HintId } from "./hints"
 import { useTour } from "./useTour"
+import { isHintSeen, markHintSeen } from "./seenHints"
 
 type Side = "top" | "right" | "bottom" | "left"
 
@@ -33,10 +34,12 @@ export function HoverHint({ id, side = "bottom", className, dataTour, children }
   const [open, setOpen] = useState(false)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [seen, setSeen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    setSeen(isHintSeen(id))
+  }, [id])
 
   const computePosition = useCallback(() => {
     const trigger = triggerRef.current
@@ -91,7 +94,8 @@ export function HoverHint({ id, side = "bottom", className, dataTour, children }
   }, [open, computePosition])
 
   if (!hint) return <>{children}</>
-  if (hideAllTours) {
+  // Hint já visto (uma vez por id) OU opt-out global → não desenha tooltip.
+  if (hideAllTours || seen) {
     if (!dataTour) return <>{children}</>
     return (
       <span data-tour={dataTour} className={cn("relative inline-flex", className)}>
@@ -100,15 +104,24 @@ export function HoverHint({ id, side = "bottom", className, dataTour, children }
     )
   }
 
+  const handleClose = () => {
+    setOpen(false)
+    // Marca como visto após a primeira exibição — no próximo hover não aparece mais.
+    if (!seen) {
+      markHintSeen(id)
+      setSeen(true)
+    }
+  }
+
   return (
     <span
       ref={triggerRef}
       data-tour={dataTour}
       className={cn("relative inline-flex", className)}
       onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseLeave={handleClose}
       onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
+      onBlur={handleClose}
     >
       {children}
       {mounted && open
