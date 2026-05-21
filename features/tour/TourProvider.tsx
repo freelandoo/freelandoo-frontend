@@ -85,6 +85,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     trackTourEvent("tour_skipped", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
   };
 
+  // Tours "Pulados" nesta sessão de navegação: não re-disparam até o usuário
+  // sair e voltar à página (ou recarregar). Reseta quando o pathname muda.
+  const dismissedThisVisitRef = useRef<Set<TourKey>>(new Set());
+
+  // "Pular" no botão do tour: fecha agora, reaparece na próxima visita.
+  // Não persiste como "skipped" — para isso existe "Não mostrar novamente".
+  const dismissTourForNow = (tourKey: TourKey) => {
+    dismissedThisVisitRef.current.add(tourKey);
+    setProgress((prev) => ({ ...prev, [tourKey]: { status: "not_started", current_step: 0, seen_version: 1 } }));
+    setActiveTour(null);
+    void resetTourProgress(tourKey);
+    trackTourEvent("tour_skipped", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
+  };
+
   const resetTour = (tourKey: TourKey) => {
     setProgress((prev) => ({ ...prev, [tourKey]: { status: "not_started", current_step: 0, seen_version: 1 } }));
     void resetTourProgress(tourKey);
@@ -124,12 +138,19 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     previousPathRef.current = pathname || null;
   }, [pathname]);
 
+  // Limpa o set de tours dismissados quando o usuário troca de página
+  // (sair e voltar reabre a possibilidade de auto-start).
+  useEffect(() => {
+    dismissedThisVisitRef.current = new Set();
+  }, [pathname]);
+
   useEffect(() => {
     if (hideAllTours) return;
     if (activeTour) return;
     if (!pathname) return;
     const candidate = eligibleTours.find((tour) => {
       if (!pathMatches(tour.pagePath, pathname)) return false;
+      if (dismissedThisVisitRef.current.has(tour.tourKey)) return false;
       const p = progress[tour.tourKey];
       // Nunca visto → dispara.
       if (!p || p.status === "not_started") return true;
@@ -170,7 +191,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         stepIndex={stepIndex}
         onStepChange={setStepIndex}
         onComplete={() => activeTour && completeTour(activeTour.tourKey)}
-        onSkip={() => activeTour && skipTour(activeTour.tourKey)}
+        // "Pular" / ESC: fecha agora e reaparece quando o usuário voltar à
+        // página. Apenas "Não mostrar novamente" e "Finalizar" persistem.
+        onSkip={() => activeTour && dismissTourForNow(activeTour.tourKey)}
         onDontShowAgain={() => {
           // Por-página: encerra apenas o tour atual (skipped). Os tours de
           // outras páginas seguem aparecendo. O opt-out global de todos os
