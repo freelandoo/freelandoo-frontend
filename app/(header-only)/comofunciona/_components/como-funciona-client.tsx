@@ -9,6 +9,7 @@ import {
   Briefcase, Camera, Calendar, MessageCircle, Share2,
   Gift, BarChart2, DollarSign, Eye, Heart, Clock, MapPin,
   ArrowRight, ChevronDown,
+  ShoppingBag, GraduationCap, Video, Sparkles, Crown, Coins,
 } from "lucide-react"
 
 // ─── Types & Data ─────────────────────────────────────────────────────────────
@@ -414,7 +415,7 @@ export function ComoFuncionaClient() {
           </div>
 
           <p ref={heroMicroRef} className="mt-5 text-sm" style={{ color: "#4b5563" }}>
-            Sem burocracia. Sem intermediação. Contato direto.
+            Vitrine, contato direto pelo WhatsApp e transações dentro da plataforma quando você quiser.
           </p>
         </div>
 
@@ -437,8 +438,10 @@ export function ComoFuncionaClient() {
             <div className="flex justify-center">
               <SectionSubtitle>
                 A Freelandoo conecta clientes, empresas, criadores e prestadores de serviço de
-                forma simples, direta e organizada. O contato, os combinados e as entregas
-                acontecem diretamente entre as partes — sem intermediação da plataforma.
+                forma simples, direta e organizada. Em contratações diretas entre as partes, o
+                contato, os combinados e as entregas acontecem entre elas. Em transações dentro
+                da plataforma — Loja, agendamentos pagos e cursos —, a Freelandoo processa o
+                pagamento e aplica o período de garantia.
               </SectionSubtitle>
             </div>
           </div>
@@ -835,6 +838,47 @@ export function ComoFuncionaClient() {
                 <CTAButton href="/cadastro">Anunciar meus serviços</CTAButton>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════════
+          SEÇÃO 10.5 — MAIS QUE VITRINE
+      ════════════════════════════════════════════════════════════ */}
+      <section className="px-4 py-14 md:py-20" style={sectionStyle}>
+        <div className="max-w-6xl mx-auto">
+          <div className="section-header text-center mb-10">
+            <SectionLabel>Mais que vitrine</SectionLabel>
+            <SectionTitle className="text-center">
+              Ferramentas que{" "}
+              <span style={{ color: yellow }}>crescem com você</span>
+            </SectionTitle>
+            <div className="flex justify-center">
+              <SectionSubtitle>
+                Além da conexão direta pelo WhatsApp, a Freelandoo oferece um conjunto
+                de ferramentas para profissionais venderem, ensinarem, criarem conteúdo
+                e se aproximarem do público.
+              </SectionSubtitle>
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: ShoppingBag, title: "Loja", text: "Venda de produtos com pagamento, frete e período de garantia antes do repasse." },
+              { icon: GraduationCap, title: "Cursos", text: "Conteúdo educacional disponível na plataforma, com aulas, módulos e quizzes." },
+              { icon: Calendar, title: "Agendamentos pagos", text: "Agenda integrada com pagamento e repasse seguro ao profissional." },
+              { icon: Video, title: "Feed, Bees e Stories", text: "Posts no feed, vídeos verticais 9:16 e stories de 24 horas dentro da rede." },
+              { icon: MessageCircle, title: "Mensagens e Chat", text: "Conversas privadas com áudio e salas de chat ao vivo entre profissionais." },
+              { icon: Sparkles, title: "Manifestação", text: "Banner e tag de identidade no headcard do perfil, com pagamento via Stripe ou Poléns." },
+              { icon: Crown, title: "Premium", text: "Destaque pago do perfil na vitrine, por período e cidade definidos." },
+              { icon: Coins, title: "Poléns", text: "Créditos virtuais para adquirir itens digitais dentro da plataforma." },
+            ].map((card) => (
+              <GlowCard key={card.title}>
+                <IconBadge icon={card.icon} />
+                <h3 className="font-bold text-white mb-2">{card.title}</h3>
+                <p className="text-sm leading-relaxed" style={dimText}>{card.text}</p>
+              </GlowCard>
+            ))}
           </div>
         </div>
       </section>

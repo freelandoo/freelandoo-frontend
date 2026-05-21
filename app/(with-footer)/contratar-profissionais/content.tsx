@@ -28,14 +28,15 @@ const doesDo = [
   "portfólios",
   "avaliações",
   "contato direto",
+  "intermediação de pagamento na Loja e em agendamentos pagos",
 ]
 
 const doesNotDo = [
-  "intermediação de pagamento entre cliente e profissional",
-  "garantia de entrega",
+  "intermediação nas contratações diretas (combinadas pelo WhatsApp ou fora da plataforma)",
+  "garantia de entrega ou de resultado",
   "contratação em nome das partes",
-  "definição de preço do serviço",
-  "gestão do acordo entre cliente e profissional",
+  "definição do preço do serviço",
+  "gestão do acordo nas contratações feitas diretamente entre cliente e profissional",
 ]
 
 const tips = [
@@ -142,7 +143,7 @@ export function ContratarProfissionaisContent() {
             {t("transparency.title", "Transparência desde o início")}
           </h2>
           <p className="text-muted-foreground mb-12 max-w-2xl leading-relaxed" data-reveal>
-            {t("transparency.description", "A Freelandoo é uma plataforma de divulgação e conexão. Ela ajuda você a encontrar profissionais, mas não intermedia a negociação, não define valores, não garante entregas e não recebe pagamentos dos serviços combinados entre cliente e profissional.")}
+            {t("transparency.description", "Em contratações feitas diretamente entre as partes (combinadas pelo WhatsApp ou fora da plataforma), a Freelandoo não intermedia a negociação, não define valores, não garante entregas nem recebe os pagamentos. Em transações realizadas dentro da plataforma — compras na Loja, agendamentos pagos e cursos —, a Freelandoo processa o pagamento e aplica o período de garantia previsto nos Termos do Marketplace.")}
           </p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-card border border-border rounded-xl p-6" data-reveal>

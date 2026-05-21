@@ -65,7 +65,7 @@ export function DicasDeSegurancaContent() {
             {t("hero.subtitle", "A Freelandoo conecta pessoas. A segurança começa com informação, clareza e cuidado nas negociações.")}
           </p>
           <p className="text-muted-foreground leading-relaxed" data-reveal>
-            {t("hero.description", "A plataforma ajuda clientes e profissionais a se encontrarem, mas os combinados, pagamentos e entregas são tratados diretamente entre as partes.")}
+            {t("hero.description", "A plataforma ajuda clientes e profissionais a se encontrarem. Em contratações diretas, os combinados, pagamentos e entregas são tratados entre as partes; em transações feitas dentro da plataforma — Loja, agendamentos pagos e cursos — valem as regras dos Termos do Marketplace.")}
           </p>
         </div>
       </section>
@@ -113,7 +113,7 @@ export function DicasDeSegurancaContent() {
             {t("role.title", "O que a Freelandoo faz")}
           </h2>
           <p className="text-muted-foreground mb-10 leading-relaxed" data-reveal>
-            {t("role.description", "A Freelandoo atua como plataforma de divulgação e conexão. Ela não intermedia diretamente pagamentos entre clientes e profissionais, não garante entrega de serviços e não participa da negociação feita entre as partes.")}
+            {t("role.description", "A Freelandoo atua como plataforma de divulgação, conexão e, em algumas funcionalidades, intermediação. Em contratações diretas, não participa da negociação, do pagamento nem da entrega. Em transações realizadas dentro da plataforma — Loja, agendamentos pagos e cursos —, processa o pagamento e aplica o período de garantia previsto nos Termos do Marketplace.")}
           </p>
           <div className="flex flex-wrap gap-3" data-stagger>
             {freelandooDoes.map((item, i) => (
