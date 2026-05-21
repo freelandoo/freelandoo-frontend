@@ -6,6 +6,36 @@
  */
 
 export type HintId =
+  // ── /search — filtros do header retrátil ───────────────────────────────
+  | "search-filter-machine"
+  | "search-filter-profession"
+  | "search-filter-city"
+  | "search-filter-level"
+  | "search-filter-premium"
+  | "search-clear-filters"
+  | "search-bell"
+  // ── /ranking — escopos ─────────────────────────────────────────────────
+  | "ranking-scope-general"
+  | "ranking-scope-machine"
+  | "ranking-scope-profession"
+  | "ranking-scope-city"
+  // ── /admin — cards ─────────────────────────────────────────────────────
+  | "admin-users"
+  | "admin-entries"
+  | "admin-stats"
+  | "admin-items"
+  | "admin-enxames"
+  | "admin-coupons"
+  | "admin-anuidade"
+  | "admin-booking-fees"
+  | "admin-affiliates"
+  | "admin-ranking"
+  | "admin-polens"
+  | "admin-manifestation"
+  | "admin-premium"
+  | "admin-chat-mod"
+  | "admin-blocked-terms"
+  | "admin-store-payouts"
   // ── Sidebar (esquerda no desktop / inferior no mobile) ─────────────────
   | "sidebar-profile"
   | "sidebar-feed"
@@ -295,6 +325,120 @@ export const HINTS: Record<HintId, Hint> = {
   "headcard-mural": {
     title: "Mural",
     text: "Mural da conta — avisos importantes e atalhos da comunidade.",
+  },
+
+  // ── /search — filtros e ações do header retrátil ──────────────────────
+  "search-filter-machine": {
+    title: "Filtrar por Enxame",
+    text: "Escolhe a área (Views, Limpeza, Construção, etc.). Define quais profissões aparecem em \"Profissão\".",
+  },
+  "search-filter-profession": {
+    title: "Filtrar por profissão",
+    text: "Profissão específica dentro do Enxame escolhido. Ative um Enxame primeiro.",
+  },
+  "search-filter-city": {
+    title: "Filtrar por cidade",
+    text: "Estado ou cidade do profissional. Combinável com Enxame, profissão e nível.",
+  },
+  "search-filter-level": {
+    title: "Filtrar por nível",
+    text: "Nível mínimo de XP do profissional. Quanto maior, mais ativo na plataforma.",
+  },
+  "search-filter-premium": {
+    title: "Só Premium",
+    text: "Mostra apenas perfis com destaque Premium ativo — pago pra subir na vitrine.",
+  },
+  "search-clear-filters": {
+    title: "Limpar filtros",
+    text: "Remove todos os filtros aplicados e mostra a vitrine inteira de novo.",
+  },
+  "search-bell": {
+    title: "Notificações",
+    text: "Abre o painel com likes, comentários, follows e mensagens novas.",
+  },
+
+  // ── /ranking — abas de escopo ──────────────────────────────────────────
+  "ranking-scope-general": {
+    title: "Ranking geral",
+    text: "Top 10 da plataforma inteira — todos os Enxames, profissões e cidades juntos.",
+  },
+  "ranking-scope-machine": {
+    title: "Ranking por Enxame",
+    text: "Top 10 dentro de uma área específica (Views, Construção, Saúde & Beleza, etc.).",
+  },
+  "ranking-scope-profession": {
+    title: "Ranking por profissão",
+    text: "Top 10 de uma profissão específica (editor de vídeo, faxineira, eletricista, etc.).",
+  },
+  "ranking-scope-city": {
+    title: "Ranking por cidade",
+    text: "Top 10 de uma cidade ou estado específicos.",
+  },
+
+  // ── /admin — cards principais ──────────────────────────────────────────
+  "admin-users": {
+    title: "Usuários / Perfis",
+    text: "Lista de usuários cadastrados com seus subperfis, premium e total recebido.",
+  },
+  "admin-entries": {
+    title: "Entradas",
+    text: "Histórico de ativações pagas (anuidade) e taxas de agendamento recebidas.",
+  },
+  "admin-stats": {
+    title: "Estatísticas",
+    text: "Métricas globais da plataforma: cadastros, receita, engajamento, conversão.",
+  },
+  "admin-items": {
+    title: "Itens",
+    text: "Catálogo de itens e preços usados em produtos e cursos.",
+  },
+  "admin-enxames": {
+    title: "Controle de Enxames",
+    text: "Ativa/desativa Enxames, define cores e gerencia as profissões dentro de cada um.",
+  },
+  "admin-coupons": {
+    title: "Cupons",
+    text: "Desconto e comissão de afiliado: regra geral e overrides por cupom específico.",
+  },
+  "admin-anuidade": {
+    title: "Ativação do perfil",
+    text: "Configura o valor da ativação anual (Stripe) e ativa/desativa a cobrança.",
+  },
+  "admin-booking-fees": {
+    title: "Agendamento (taxas)",
+    text: "Taxa da maquininha (%) e taxa de serviço fixa exibidas no modal de cadastro de serviço.",
+  },
+  "admin-affiliates": {
+    title: "Afiliados",
+    text: "Comissões acumuladas, alertas de prazo (holdback 8 dias) e confirmação de pagamento.",
+  },
+  "admin-ranking": {
+    title: "Ranking",
+    text: "Configura pesos do score (XP, ratings, likes, visitas) e visualiza posições.",
+  },
+  "admin-polens": {
+    title: "Poléns",
+    text: "Moeda interna: rewarded ads, preços dos pacotes e métricas de gasto/ganho.",
+  },
+  "admin-manifestation": {
+    title: "Manifestação",
+    text: "Cadastro de banners, tags, preços e dashboard de uso da loja de Manifestação.",
+  },
+  "admin-premium": {
+    title: "Premium",
+    text: "Destaque pago por perfil: preço, duração em dias e vagas por cidade.",
+  },
+  "admin-chat-mod": {
+    title: "Moderação do Chat",
+    text: "Fila de revisão de mensagens denunciadas, mute e ban de usuários do chat público.",
+  },
+  "admin-blocked-terms": {
+    title: "Termos bloqueados",
+    text: "Lista de palavras/expressões proibidas no chat — categoria, severity e ação automática.",
+  },
+  "admin-store-payouts": {
+    title: "Loja — Payouts",
+    text: "Saldo dos vendedores da Loja após holdback de 8 dias. Pagamento PIX manual.",
   },
 
   // ── Headcard — visitante ───────────────────────────────────────────────

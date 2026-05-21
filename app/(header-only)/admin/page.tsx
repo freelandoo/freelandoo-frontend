@@ -2,8 +2,38 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, type LucideIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { HoverHint } from "@/features/tour/HoverHint"
+import type { HintId } from "@/features/tour/hints"
+
+type AdminCard = {
+  hint: HintId
+  href: string
+  icon: LucideIcon
+  iconClass?: string
+  title: string
+  body: string
+}
+
+const ADMIN_CARDS: AdminCard[] = [
+  { hint: "admin-users", href: "/administracao", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus sub-perfis, premium e total recebido." },
+  { hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Histórico de ativações pagas e taxas de agendamento recebidas." },
+  { hint: "admin-stats", href: "/admin/stats", icon: BarChart2, title: "Estatísticas", body: "Visualizar métricas e dados da plataforma." },
+  { hint: "admin-items", href: "/admin/itens", icon: Package, title: "Itens", body: "Gerenciar itens e preços da plataforma." },
+  { hint: "admin-enxames", href: "/administracao/enxames", icon: Sparkles, title: "Controle de Enxames", body: "Ativar/desativar enxames, cores e profissões." },
+  { hint: "admin-coupons", href: "/administracao/cupons", icon: Ticket, title: "Cupons", body: "Desconto geral, comissão geral e regras específicas por cupom." },
+  { hint: "admin-anuidade", href: "/administracao/anuidade", icon: Wallet, title: "Ativação do perfil", body: "Configurar valor e status da ativação única cobrada via Stripe." },
+  { hint: "admin-booking-fees", href: "/administracao/taxas-agendamento", icon: Calendar, title: "Agendamento", body: "Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço." },
+  { hint: "admin-affiliates", href: "/admin/afiliados", icon: HandCoins, title: "Afiliados", body: "Comissões acumuladas, alertas de prazo e confirmação de pagamento." },
+  { hint: "admin-ranking", href: "/admin/ranking", icon: Trophy, title: "Ranking", body: "Configurar pesos, período e visualizar posições por enxame, cidade e geral." },
+  { hint: "admin-polens", href: "/admin/polens", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300", title: "Poléns", body: "Configurar moeda interna, rewarded ads, preços e métricas." },
+  { hint: "admin-manifestation", href: "/administracao/manifestacao", icon: Sparkles, title: "Manifestação", body: "Cadastro de banners, tags, preços e dashboard de uso." },
+  { hint: "admin-premium", href: "/admin/premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400", title: "Premium", body: "Destaque por perfil — preço, dias e vagas por cidade." },
+  { hint: "admin-chat-mod", href: "/administracao/chat-moderation", icon: ShieldAlert, title: "Moderação do Chat", body: "Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público." },
+  { hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
+  { hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
+]
 interface UserData {
   id_user: string
   nome: string
@@ -67,257 +97,27 @@ export default function AdminPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/administracao")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Usuários / Perfis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Usuários cadastrados, com seus sub-perfis, premium e total recebido.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/admin/entradas")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-primary" />
-                Entradas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Histórico de ativações pagas e taxas de agendamento recebidas.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/admin/stats")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BarChart2 className="h-5 w-5 text-primary" />
-                Estatísticas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Visualizar métricas e dados da plataforma.</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push("/admin/itens")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
-                Itens
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Gerenciar itens e preços da plataforma.</p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/enxames")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Controle de Enxames
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Ativar/desativar enxames, cores e profissões.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/cupons")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Ticket className="h-5 w-5 text-primary" />
-                Cupons
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Desconto geral, comissão geral e regras específicas por cupom.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/anuidade")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-primary" />
-                Ativação do perfil
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Configurar valor e status da ativação única cobrada via Stripe.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/taxas-agendamento")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Agendamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/admin/afiliados")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <HandCoins className="h-5 w-5 text-primary" />
-                Afiliados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Comissões acumuladas, alertas de prazo e confirmação de pagamento.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/admin/ranking")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Ranking
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Configurar pesos, período e visualizar posições por enxame, cidade e geral.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/admin/polens")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Hexagon className="h-5 w-5 fill-amber-300 text-amber-300" />
-                Poléns
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Configurar moeda interna, rewarded ads, preços e métricas.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/manifestacao")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Manifestação
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Cadastro de banners, tags, preços e dashboard de uso.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/admin/premium")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Crown className="h-5 w-5 fill-amber-300 text-amber-400" />
-                Premium
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Destaque por perfil — preço, dias e vagas por cidade.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/chat-moderation")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-primary" />
-                Moderação do Chat
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/blocked-terms")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ShieldX className="h-5 w-5 text-primary" />
-                Termos bloqueados
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Lista própria de palavras/expressões proibidas no chat (categoria, severity, action).
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push("/administracao/loja-payouts")}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Store className="h-5 w-5 text-primary" />
-                Loja — Payouts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Saldo dos vendedores da Loja após holdback (PIX manual).
-              </p>
-            </CardContent>
-          </Card>
+          {ADMIN_CARDS.map((card) => {
+            const Icon = card.icon
+            return (
+              <HoverHint key={card.hint} id={card.hint} side="top" className="block w-full">
+                <Card
+                  className="hover:shadow-md transition-shadow cursor-pointer w-full"
+                  onClick={() => router.push(card.href)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Icon className={`h-5 w-5 ${card.iconClass ?? "text-primary"}`} />
+                      {card.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{card.body}</p>
+                  </CardContent>
+                </Card>
+              </HoverHint>
+            )
+          })}
         </div>
       </main>
     </div>

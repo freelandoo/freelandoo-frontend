@@ -41,6 +41,8 @@ import {
 } from "@/components/home/machines/use-machines-catalog"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { cn } from "@/lib/utils"
+import { HoverHint } from "@/features/tour/HoverHint"
+import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
 
 type RankingScope = "general" | "machine" | "profession" | "city"
@@ -380,21 +382,30 @@ export function RankingPageClient() {
           <div className="flex flex-wrap gap-2">
             {scopeOptions.map(({ key, label, icon: Icon }) => {
               const active = scope === key
+              const hintId: HintId =
+                key === "general"
+                  ? "ranking-scope-general"
+                  : key === "machine"
+                    ? "ranking-scope-machine"
+                    : key === "profession"
+                      ? "ranking-scope-profession"
+                      : "ranking-scope-city"
               return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setScope(key)}
-                  className={cn(
-                    "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition",
-                    active
-                      ? "border-primary bg-primary text-primary-foreground shadow-[0_0_28px_-14px_rgba(230,184,0,0.85)]"
-                      : "border-white/10 bg-white/[0.03] text-white/[0.58] hover:border-white/[0.22] hover:text-white"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
+                <HoverHint key={key} id={hintId} side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setScope(key)}
+                    className={cn(
+                      "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground shadow-[0_0_28px_-14px_rgba(230,184,0,0.85)]"
+                        : "border-white/10 bg-white/[0.03] text-white/[0.58] hover:border-white/[0.22] hover:text-white"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                </HoverHint>
               )
             })}
           </div>
