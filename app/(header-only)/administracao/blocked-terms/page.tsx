@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { ChevronLeft, Loader2, Plus, Trash2, Save, ShieldX } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { ChevronLeft, Loader2, Plus, Trash2, Save, Undo2, ShieldX } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface BlockedTerm {
@@ -15,6 +15,18 @@ interface BlockedTerm {
   is_regex: boolean
   status: "active" | "paused"
   notes: string | null
+}
+
+interface PendingAdd {
+  _temp_id: string
+  term: string
+  category: string
+  severity: BlockedTerm["severity"]
+  action: BlockedTerm["action"]
+  language: string
+  is_regex: boolean
+  status: BlockedTerm["status"]
+  notes?: string | null
 }
 
 const CATEGORIES = [
@@ -41,6 +53,12 @@ export default function BlockedTermsPage() {
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Partial<BlockedTerm> | null>(null)
 
+  const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set())
+  const [pendingAdds, setPendingAdds] = useState<PendingAdd[]>([])
+  const [saving, setSaving] = useState(false)
+
+  const pendingCount = pendingDeletes.size + pendingAdds.length
+
   async function load() {
     const token = getToken()
     if (!token) { router.push("/login"); return }
@@ -66,46 +84,120 @@ export default function BlockedTermsPage() {
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, statusFilter])
 
-  async function save() {
+  function toggleDelete(id: number) {
+    setPendingDeletes((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function removePendingAdd(tempId: string) {
+    setPendingAdds((prev) => prev.filter((p) => p._temp_id !== tempId))
+  }
+
+  async function handleEditingSave() {
     if (!editing) return
     if (!editing.term || !editing.category) {
       setError("term e category são obrigatórios"); return
     }
-    const token = getToken()
-    const url = editing.id_blocked_term
-      ? `/api/admin/blocked-terms/${editing.id_blocked_term}`
-      : `/api/admin/blocked-terms`
-    const method = editing.id_blocked_term ? "PATCH" : "POST"
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(editing),
-      })
-      const d = await res.json()
-      if (!res.ok) { setError(d?.error || "Falha ao salvar"); return }
-      setEditing(null)
-      await load()
-    } catch { setError("Erro de conexão") }
+    if (editing.id_blocked_term) {
+      const token = getToken()
+      try {
+        const res = await fetch(`/api/admin/blocked-terms/${editing.id_blocked_term}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(editing),
+        })
+        const d = await res.json()
+        if (!res.ok) { setError(d?.error || "Falha ao salvar"); return }
+        setEditing(null)
+        await load()
+      } catch { setError("Erro de conexão") }
+      return
+    }
+    setPendingAdds((prev) => [
+      ...prev,
+      {
+        _temp_id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        term: editing.term!,
+        category: editing.category!,
+        severity: (editing.severity || "medium") as BlockedTerm["severity"],
+        action: (editing.action || "mask") as BlockedTerm["action"],
+        language: editing.language || "pt-BR",
+        is_regex: !!editing.is_regex,
+        status: (editing.status || "active") as BlockedTerm["status"],
+        notes: editing.notes ?? null,
+      },
+    ])
+    setEditing(null)
+    setError(null)
   }
 
-  async function remove(id: number) {
-    if (!confirm("Apagar este termo?")) return
+  async function commitChanges() {
+    if (pendingCount === 0) return
     const token = getToken()
+    if (!token) { router.push("/login"); return }
+    setSaving(true); setError(null)
     try {
-      const res = await fetch(`/api/admin/blocked-terms/${id}`, {
-        method: "DELETE", headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => null)
-        setError(d?.error || "Falha"); return
+      for (const id of pendingDeletes) {
+        const res = await fetch(`/api/admin/blocked-terms/${id}`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          const d = await res.json().catch(() => null)
+          throw new Error(d?.error || `Falha ao apagar termo #${id}`)
+        }
       }
+      for (const add of pendingAdds) {
+        const payload = {
+          term: add.term,
+          category: add.category,
+          severity: add.severity,
+          action: add.action,
+          language: add.language,
+          is_regex: add.is_regex,
+          status: add.status,
+          notes: add.notes ?? null,
+        }
+        const res = await fetch(`/api/admin/blocked-terms`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) {
+          const d = await res.json().catch(() => null)
+          throw new Error(d?.error || `Falha ao criar termo "${add.term}"`)
+        }
+      }
+      setPendingDeletes(new Set())
+      setPendingAdds([])
       await load()
-    } catch { setError("Erro de conexão") }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao aplicar alterações")
+    } finally {
+      setSaving(false)
+    }
   }
+
+  function discardChanges() {
+    setPendingDeletes(new Set())
+    setPendingAdds([])
+    setError(null)
+  }
+
+  const visiblePendingAdds = useMemo(() => {
+    return pendingAdds.filter((a) => {
+      if (q.trim() && !a.term.toLowerCase().includes(q.trim().toLowerCase())) return false
+      if (category && a.category !== category) return false
+      if (statusFilter && a.status !== statusFilter) return false
+      return true
+    })
+  }, [pendingAdds, q, category, statusFilter])
 
   return (
-    <main className="min-h-[100dvh] bg-background px-4 py-8">
+    <main className="min-h-[100dvh] bg-background px-4 py-8 pb-28">
       <div className="mx-auto max-w-6xl">
         <button
           type="button"
@@ -163,7 +255,7 @@ export default function BlockedTermsPage() {
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden />
           </div>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && visiblePendingAdds.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center text-sm text-muted-foreground">
             Nenhum termo encontrado.
           </div>
@@ -182,24 +274,74 @@ export default function BlockedTermsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/70">
-                {items.map((t) => (
-                  <tr key={t.id_blocked_term} className="text-sm">
-                    <td className="px-3 py-2 align-top font-mono">{t.term}{t.is_regex && <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] text-primary">regex</span>}</td>
-                    <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">{t.normalized_term}</td>
-                    <td className="px-3 py-2 align-top">{t.category}</td>
-                    <td className="px-3 py-2 align-top">{t.severity}</td>
-                    <td className="px-3 py-2 align-top">{t.action}</td>
+                {visiblePendingAdds.map((a) => (
+                  <tr key={a._temp_id} className="text-sm bg-emerald-500/5">
+                    <td className="px-3 py-2 align-top font-mono">
+                      {a.term}
+                      <span className="ml-2 rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-300">novo</span>
+                    </td>
+                    <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">—</td>
+                    <td className="px-3 py-2 align-top">{a.category}</td>
+                    <td className="px-3 py-2 align-top">{a.severity}</td>
+                    <td className="px-3 py-2 align-top">{a.action}</td>
                     <td className="px-3 py-2 align-top">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${t.status === "active" ? "border-emerald-700 bg-emerald-500/15 text-emerald-300" : "border-zinc-700 bg-zinc-500/15 text-zinc-300"}`}>
-                        {t.status}
+                      <span className="rounded-full border border-emerald-700 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-300">
+                        {a.status}
                       </span>
                     </td>
                     <td className="px-3 py-2 align-top text-right">
-                      <button onClick={() => setEditing(t)} className="text-xs text-primary hover:underline">Editar</button>
-                      <button onClick={() => remove(t.id_blocked_term)} className="ml-2 text-xs text-rose-400 hover:underline">Apagar</button>
+                      <button
+                        onClick={() => removePendingAdd(a._temp_id)}
+                        title="Remover desta lista pendente"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-rose-300 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      </button>
                     </td>
                   </tr>
                 ))}
+                {items.map((t) => {
+                  const isPendingDelete = pendingDeletes.has(t.id_blocked_term)
+                  return (
+                    <tr
+                      key={t.id_blocked_term}
+                      className={`text-sm ${isPendingDelete ? "bg-rose-500/5 line-through opacity-60" : ""}`}
+                    >
+                      <td className="px-3 py-2 align-top font-mono">
+                        {t.term}
+                        {t.is_regex && <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] text-primary">regex</span>}
+                        {isPendingDelete && <span className="ml-2 rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-rose-300 no-underline">remover</span>}
+                      </td>
+                      <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">{t.normalized_term}</td>
+                      <td className="px-3 py-2 align-top">{t.category}</td>
+                      <td className="px-3 py-2 align-top">{t.severity}</td>
+                      <td className="px-3 py-2 align-top">{t.action}</td>
+                      <td className="px-3 py-2 align-top">
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase no-underline ${t.status === "active" ? "border-emerald-700 bg-emerald-500/15 text-emerald-300" : "border-zinc-700 bg-zinc-500/15 text-zinc-300"}`}>
+                          {t.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 align-top text-right">
+                        <div className="inline-flex items-center gap-1">
+                          {!isPendingDelete && (
+                            <button onClick={() => setEditing(t)} className="text-xs text-primary hover:underline">
+                              Editar
+                            </button>
+                          )}
+                          <button
+                            onClick={() => toggleDelete(t.id_blocked_term)}
+                            title={isPendingDelete ? "Desfazer remoção" : "Marcar para remover"}
+                            className={`ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full ${isPendingDelete ? "text-emerald-300 hover:bg-emerald-500/10" : "text-rose-300 hover:bg-rose-500/10"}`}
+                          >
+                            {isPendingDelete
+                              ? <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                              : <Trash2 className="h-3.5 w-3.5" aria-hidden />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -210,6 +352,11 @@ export default function BlockedTermsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-xl">
             <h2 className="text-lg font-bold">{editing.id_blocked_term ? "Editar termo" : "Novo termo"}</h2>
+            {!editing.id_blocked_term && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                O termo será adicionado à lista pendente. Clique em <strong>Salvar alterações</strong> no rodapé para aplicar.
+              </p>
+            )}
 
             <div className="mt-4 space-y-3">
               <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Termo</label>
@@ -264,22 +411,44 @@ export default function BlockedTermsPage() {
               />
             </div>
 
-            <div className="mt-6 flex justify-between gap-2">
-              {editing.id_blocked_term && (
-                <button
-                  type="button"
-                  onClick={() => { remove(editing.id_blocked_term as number); setEditing(null) }}
-                  className="inline-flex items-center gap-1 rounded-full border border-rose-700 bg-rose-950/30 px-3 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-900/40"
-                >
-                  <Trash2 className="h-3 w-3" aria-hidden /> Apagar
-                </button>
-              )}
-              <div className="ml-auto flex gap-2">
-                <button type="button" onClick={() => setEditing(null)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted">Cancelar</button>
-                <button type="button" onClick={save} className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
-                  <Save className="h-3 w-3" aria-hidden /> Salvar
-                </button>
-              </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditing(null)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted">Cancelar</button>
+              <button type="button" onClick={handleEditingSave} className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                <Save className="h-3 w-3" aria-hidden />
+                {editing.id_blocked_term ? "Salvar" : "Adicionar à lista"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingCount > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-foreground">{pendingCount}</strong> alteração{pendingCount > 1 ? "ões" : ""} pendente{pendingCount > 1 ? "s" : ""}
+              {pendingDeletes.size > 0 && <> · <span className="text-rose-300">{pendingDeletes.size} a remover</span></>}
+              {pendingAdds.length > 0 && <> · <span className="text-emerald-300">{pendingAdds.length} a adicionar</span></>}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={discardChanges}
+                disabled={saving}
+                className="rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted disabled:opacity-50"
+              >
+                Descartar
+              </button>
+              <button
+                type="button"
+                onClick={commitChanges}
+                disabled={saving}
+                className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {saving
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> Aplicando…</>
+                  : <><Save className="h-3.5 w-3.5" aria-hidden /> Salvar alterações</>}
+              </button>
             </div>
           </div>
         </div>
