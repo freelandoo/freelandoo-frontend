@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { ContentAd } from "@/components/ads/content-ad"
 import { DicasDeSegurancaContent } from "./content"
 
 export const metadata: Metadata = {
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 }
 
 export default function DicasDeSegurancaPage() {
-  return <DicasDeSegurancaContent />
+  return (
+    <>
+      <DicasDeSegurancaContent />
+      <ContentAd />
+    </>
+  )
 }
