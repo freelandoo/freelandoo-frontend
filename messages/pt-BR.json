@@ -912,5 +912,32 @@
     "hero.mock.clanLabel": "Clan",
     "hero.mock.clanName": "Casa Áurea Studio",
     "hero.mock.clanDescription": "Edição & motion - 6 perfis"
+  },
+  "Tour": {
+    "label": "Tour da Colmeia",
+    "skip": "Pular",
+    "back": "Voltar",
+    "next": "Próximo",
+    "finish": "Finalizar",
+    "welcome-1.title": "Bem-vindo à Freelandoo",
+    "welcome-1.content": "Aqui você cria presença, vende serviços, divulga produtos, cursos e cresce na plataforma.",
+    "welcome-2.title": "Sua conta principal",
+    "welcome-2.content": "Sua conta controla tudo, mas não vende serviços diretamente.",
+    "welcome-3.title": "Crie subperfis para vender",
+    "welcome-3.content": "Para aparecer para clientes e vender, use subperfis profissionais.",
+    "welcome-4.title": "Entre no Enxame certo",
+    "welcome-4.content": "Os Enxames organizam profissionais por área.",
+    "welcome-5.title": "Use seus pólens",
+    "welcome-5.content": "Pólens desbloqueiam banners, vantagens e recursos.",
+    "welcome-6.title": "Movimente seu perfil",
+    "welcome-6.content": "Posts, interações e XP ajudam no ranking e na descoberta.",
+    "welcome-7.title": "Comece pelo seu primeiro subperfil",
+    "welcome-7.content": "Crie ou complete um subperfil para entrar no jogo.",
+    "account-1.title": "Sua conta-base",
+    "account-1.content": "Essa é sua conta principal na Freelandoo. Ela guarda dados, pólens, cupons e configurações.",
+    "account-2.title": "Segurança primeiro",
+    "account-2.content": "Mantenha e-mail verificado e dados atualizados para proteger sua conta.",
+    "account-3.title": "A conta não é vitrine",
+    "account-3.content": "Para aparecer para clientes, crie um subperfil."
   }
 }

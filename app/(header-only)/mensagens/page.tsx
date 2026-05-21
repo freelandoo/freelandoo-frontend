@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 export default function MensagensPage() {
   return (
-    <main className="bg-neutral-950 text-white">
+    <main data-tour="messages-root" className="bg-neutral-950 text-white">
       <Suspense fallback={null}>
         <MensagensClient />
       </Suspense>

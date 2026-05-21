@@ -9,6 +9,7 @@ import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { DevBannerModal } from "@/components/dev-banner-modal"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
+import { TourProvider } from "@/features/tour/TourProvider"
 import { getCountry, getLocale } from "@/lib/i18n/server"
 import { getMessages } from "@/lib/i18n/messages"
 import "./globals.css"
@@ -105,13 +106,15 @@ export default async function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         <I18nProvider locale={locale} country={country} messages={messages}>
-          {children}
-          <ProfileSidebar />
-          <DevBannerModal />
-          <BirthdateGate />
-          <CookieConsent />
-          <AnalyticsProvider />
-          <CouponCapture />
+          <TourProvider>
+            {children}
+            <ProfileSidebar />
+            <DevBannerModal />
+            <BirthdateGate />
+            <CookieConsent />
+            <AnalyticsProvider />
+            <CouponCapture />
+          </TourProvider>
         </I18nProvider>
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"

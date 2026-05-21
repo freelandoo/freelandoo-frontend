@@ -912,5 +912,12 @@
     "hero.mock.clanLabel": "Clan",
     "hero.mock.clanName": "Casa Áurea Studio",
     "hero.mock.clanDescription": "Edición & motion - 6 perfiles"
+  },
+  "Tour": {
+    "label": "Tour de la Colmena",
+    "skip": "Saltar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "finish": "Finalizar"
   }
 }
