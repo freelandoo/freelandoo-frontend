@@ -6,7 +6,7 @@ import { ServiceChatModal } from "@/components/profile/service-chat-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, MessageCircle, Clock, Megaphone, Package, X, Sparkles, MapPin } from "lucide-react"
+import { Loader2, MessageCircle, Clock, Megaphone, Package, X, Sparkles, MapPin, GraduationCap } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -38,6 +38,16 @@ interface ProductRequestMuralItem {
   id_product_category: number
   category_name: string
   buyer_username?: string
+  responses_count?: number
+}
+
+interface CourseRequestMuralItem {
+  id_course_request: string
+  description: string
+  machine_name?: string
+  category_name?: string
+  user_name?: string
+  created_at: string
   responses_count?: number
 }
 
@@ -78,12 +88,15 @@ function initials(name: string) {
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 export function MuralModal({ open, onOpenChange, profileId }: Props) {
-  const [tab, setTab] = useState<"services" | "products">("services")
+  const [tab, setTab] = useState<"services" | "products" | "courses">("services")
   const [muralItems, setMuralItems] = useState<MuralRequest[]>([])
   const [productItems, setProductItems] = useState<ProductRequestMuralItem[]>([])
+  const [courseItems, setCourseItems] = useState<CourseRequestMuralItem[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(false)
+  const [loadingCourses, setLoadingCourses] = useState(false)
   const [respondTo, setRespondTo] = useState<ProductRequestMuralItem | null>(null)
+  const [respondCourseTo, setRespondCourseTo] = useState<CourseRequestMuralItem | null>(null)
 
   // chat preview
   const [chatOpen, setChatOpen] = useState(false)
@@ -137,6 +150,29 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
     const timeout = window.setTimeout(() => { void fetchData() }, 0)
     return () => window.clearTimeout(timeout)
   }, [open, fetchData])
+
+  const fetchCourseMural = useCallback(async () => {
+    const token = getToken()
+    if (!token) return
+    setLoadingCourses(true)
+    try {
+      const res = await fetch(`/api/course-requests/mural?id_profile=${encodeURIComponent(profileId)}`, {
+        headers: headers(token),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setCourseItems(Array.isArray(data?.items) ? data.items : [])
+      } else {
+        setCourseItems([])
+      }
+    } catch { setCourseItems([]) }
+    setLoadingCourses(false)
+  }, [profileId])
+
+  useEffect(() => {
+    if (!open || tab !== "courses") return
+    void fetchCourseMural()
+  }, [open, tab, fetchCourseMural])
 
   const fetchProductMural = useCallback(async () => {
     const token = getToken()
@@ -212,6 +248,13 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 label="Produtos"
                 count={productItems.length || undefined}
               />
+              <SegmentButton
+                active={tab === "courses"}
+                onClick={() => setTab("courses")}
+                icon={<GraduationCap className="h-3.5 w-3.5" />}
+                label="Cursos"
+                count={courseItems.length || undefined}
+              />
             </div>
           </div>
 
@@ -283,6 +326,77 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                         </div>
                         <MessageCircle className="h-4 w-4 text-white/30 group-hover:text-yellow-300 transition-colors shrink-0 mt-1" />
                       </motion.button>
+                    ))
+                  )}
+                </motion.div>
+              )}
+
+              {tab === "courses" && (
+                <motion.div
+                  key="courses"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 26 }}
+                  className="space-y-2.5"
+                >
+                  {loadingCourses ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                    </div>
+                  ) : courseItems.length === 0 ? (
+                    <EmptyState
+                      icon={<GraduationCap className="h-8 w-8" />}
+                      title="Nenhum pedido de curso"
+                      hint="Pedidos chegam quando alguém busca aula na sua profissão — e você precisa ter ao menos um curso publicado."
+                    />
+                  ) : (
+                    courseItems.map((item) => (
+                      <motion.div
+                        key={item.id_course_request}
+                        whileHover={{ y: -1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/10">
+                            <GraduationCap className="h-5 w-5 text-yellow-300/80" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium text-white">{item.user_name || "Usuário"}</span>
+                              <span className="text-[10px] text-white/40">
+                                {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {item.machine_name && (
+                                <Badge className="border-white/15 bg-white/[0.05] text-[10px] text-white/80 h-5 py-0">
+                                  {item.machine_name}
+                                </Badge>
+                              )}
+                              {item.category_name && (
+                                <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                                  {item.category_name}
+                                </Badge>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{item.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setRespondCourseTo(item)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 transition-colors"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Responder
+                          </button>
+                        </div>
+                      </motion.div>
                     ))
                   )}
                 </motion.div>
@@ -369,6 +483,15 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
           profileId={profileId}
           onClose={() => setRespondTo(null)}
           onSent={() => { setRespondTo(null); void fetchProductMural() }}
+        />
+      )}
+
+      {respondCourseTo && (
+        <CourseRequestResponseModal
+          item={respondCourseTo}
+          profileId={profileId}
+          onClose={() => setRespondCourseTo(null)}
+          onSent={() => { setRespondCourseTo(null); void fetchCourseMural() }}
         />
       )}
 
@@ -604,6 +727,130 @@ function ProductRequestResponseModal({
             Enviar resposta
           </button>
         </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function CourseRequestResponseModal({
+  item,
+  profileId,
+  onClose,
+  onSent,
+}: {
+  item: CourseRequestMuralItem
+  profileId: string
+  onClose: () => void
+  onSent: () => void
+}) {
+  const [message, setMessage] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  async function submit() {
+    setError(null)
+    const trimmed = message.trim()
+    if (trimmed.length < 3) { setError("Mensagem obrigatória (mín. 3 caracteres)"); return }
+    const token = getToken()
+    if (!token) return
+    setSubmitting(true)
+    try {
+      const respRes = await fetch(`/api/course-requests/${item.id_course_request}/respond`, {
+        method: "POST",
+        headers: headers(token),
+        body: JSON.stringify({ id_profile: profileId, action: "accept" }),
+      })
+      const respData = await respRes.json()
+      if (!respRes.ok) { setError(respData?.error || "Erro ao responder"); return }
+      const idResponse = respData?.response?.id_response
+      if (idResponse) {
+        await fetch(`/api/course-requests/responses/${idResponse}/messages`, {
+          method: "POST",
+          headers: headers(token),
+          body: JSON.stringify({ content: trimmed }),
+        })
+      }
+      setDone(true)
+      window.setTimeout(onSent, 1400)
+    } catch {
+      setError("Erro de conexão")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose} role="presentation">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+      >
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold">Responder pedido de curso</h3>
+            <p className="text-xs text-white/45 line-clamp-1">{item.category_name || item.machine_name || "Curso"}</p>
+          </div>
+          <button onClick={onClose} className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white" aria-label="Fechar">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {done ? (
+          <div className="px-5 py-8 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-yellow-400/15 ring-1 ring-yellow-400/40">
+              <Sparkles className="h-5 w-5 text-yellow-300" />
+            </div>
+            <p className="mt-3 text-sm font-semibold">Resposta enviada!</p>
+            <p className="mt-1 text-xs text-white/55">
+              A conversa continua em Mensagens &rarr; O.S.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4 px-5 py-4">
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <p className="text-xs text-white/55 line-clamp-3">{item.description}</p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+                Mensagem ao aluno <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                maxLength={4000}
+                placeholder="Apresente seu curso, valor e como funciona…"
+                className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+              />
+            </div>
+            {error && (
+              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</p>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="rounded-xl px-3 py-1.5 text-xs text-white/65 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={submitting}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                Enviar resposta
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   )
