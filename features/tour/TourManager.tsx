@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import type { TourConfig, TourStepAction } from "./tourConfig";
 import { useTranslations } from "@/components/i18n/I18nProvider";
@@ -18,25 +19,59 @@ interface TourManagerProps {
 }
 
 type Pos = { top: number; left: number };
+type SpotlightBox = { top: number; left: number; width: number; height: number };
 
-function getStepPosition(target?: string): Pos {
-  if (!target) return { top: 24, left: 24 };
-  const el = document.querySelector(target);
-  if (!el) return { top: 24, left: 24 };
-  const rect = el.getBoundingClientRect();
+const MODAL_GAP = 12;
+const SAFE_MARGIN = 16;
+
+function clampPosition(target: Element | null, modalW: number, modalH: number): Pos {
+  const vw = typeof window === "undefined" ? 0 : window.innerWidth;
+  const vh = typeof window === "undefined" ? 0 : window.innerHeight;
+  const maxLeft = Math.max(SAFE_MARGIN, vw - modalW - SAFE_MARGIN);
+  const maxTop = Math.max(SAFE_MARGIN, vh - modalH - SAFE_MARGIN);
+
+  if (!target) {
+    // Sem alvo: centraliza horizontalmente, posiciona perto do topo.
+    return {
+      top: Math.min(SAFE_MARGIN * 4, maxTop),
+      left: Math.max(SAFE_MARGIN, Math.min((vw - modalW) / 2, maxLeft)),
+    };
+  }
+
+  const rect = target.getBoundingClientRect();
+  // Preferência: abaixo do alvo, alinhado à esquerda. Se não couber abaixo,
+  // tenta acima. Se ainda não couber, recolhe ao topo da viewport.
+  let top = rect.bottom + MODAL_GAP;
+  if (top + modalH > vh - SAFE_MARGIN) {
+    const above = rect.top - modalH - MODAL_GAP;
+    top = above >= SAFE_MARGIN ? above : SAFE_MARGIN;
+  }
+  let left = rect.left;
+  // Centraliza horizontalmente em viewports onde o alvo está colado na borda.
+  if (left + modalW > vw - SAFE_MARGIN) left = vw - modalW - SAFE_MARGIN;
+  if (left < SAFE_MARGIN) left = Math.max(SAFE_MARGIN, Math.min((vw - modalW) / 2, maxLeft));
+
   return {
-    top: Math.min(window.innerHeight - 220, Math.max(24, rect.bottom + 12)),
-    left: Math.min(window.innerWidth - 360, Math.max(24, rect.left)),
+    top: Math.max(SAFE_MARGIN, Math.min(top, maxTop)),
+    left: Math.max(SAFE_MARGIN, Math.min(left, maxLeft)),
   };
 }
 
 export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip, onDontShowAgain, onStepAction, onStepViewed, onCtaClick }: TourManagerProps) {
   const t = useTranslations("Tour");
-  const [pos, setPos] = useState<Pos>({ top: 24, left: 24 });
-  const [spotlight, setSpotlight] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const [pos, setPos] = useState<Pos>({ top: SAFE_MARGIN * 4, left: SAFE_MARGIN });
+  const [spotlight, setSpotlight] = useState<SpotlightBox | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
   const step = useMemo(() => (tour ? tour.steps[stepIndex] : null), [tour, stepIndex]);
   const prevStepRef = useRef<{ id: string; onLeave?: TourStepAction } | null>(null);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Recompute spotlight e posição quando step muda, com 2ª pass após onEnter
+  // mutar o DOM (ex.: abrir dropside).
   useEffect(() => {
     if (!step) {
       const prev = prevStepRef.current;
@@ -50,18 +85,21 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
     prevStepRef.current = { id: step.id, onLeave: step.onLeave };
 
     const recompute = () => {
-      setPos(getStepPosition(step.target || step.fallbackTarget));
-      const target = step.target || step.fallbackTarget;
-      if (!target) {
-        setSpotlight(null);
-        return;
-      }
-      const el = document.querySelector(target);
+      const selector = step.target || step.fallbackTarget;
+      const el = selector ? document.querySelector(selector) : null;
+      const modalW = sectionRef.current?.offsetWidth || 340;
+      const modalH = sectionRef.current?.offsetHeight || 200;
+      setPos(clampPosition(el, modalW, modalH));
       if (!el) {
         setSpotlight(null);
         return;
       }
       const rect = el.getBoundingClientRect();
+      // Se o alvo está com tamanho 0 (oculto), não desenha spotlight.
+      if (rect.width <= 1 || rect.height <= 1) {
+        setSpotlight(null);
+        return;
+      }
       setSpotlight({
         top: Math.max(6, rect.top - 6),
         left: Math.max(6, rect.left - 6),
@@ -70,10 +108,8 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
       });
     };
 
-    // Recompute on next frame to let `onEnter` mutate the DOM (e.g., open a dropside).
     const raf = requestAnimationFrame(() => {
       recompute();
-      // Second pass after open animations (~250ms).
       const timeout = window.setTimeout(recompute, 280);
       (recompute as unknown as { __timeout?: number }).__timeout = timeout;
     });
@@ -87,6 +123,39 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
     };
   }, [step, onStepViewed, onStepAction]);
 
+  // Reposiciona em scroll/resize enquanto o tour está visível.
+  useLayoutEffect(() => {
+    if (!step) return;
+    const onChange = () => {
+      const selector = step.target || step.fallbackTarget;
+      const el = selector ? document.querySelector(selector) : null;
+      const modalW = sectionRef.current?.offsetWidth || 340;
+      const modalH = sectionRef.current?.offsetHeight || 200;
+      setPos(clampPosition(el, modalW, modalH));
+      if (!el) {
+        setSpotlight(null);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 1 || rect.height <= 1) {
+        setSpotlight(null);
+        return;
+      }
+      setSpotlight({
+        top: Math.max(6, rect.top - 6),
+        left: Math.max(6, rect.left - 6),
+        width: rect.width + 12,
+        height: rect.height + 12,
+      });
+    };
+    window.addEventListener("resize", onChange);
+    window.addEventListener("scroll", onChange, true);
+    return () => {
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("scroll", onChange, true);
+    };
+  }, [step]);
+
   useEffect(() => {
     function onEsc(event: KeyboardEvent) {
       if (event.key === "Escape") onSkip();
@@ -95,23 +164,58 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
     return () => window.removeEventListener("keydown", onEsc);
   }, [onSkip]);
 
-  if (!tour || !step) return null;
+  if (!tour || !step || !mounted) return null;
   const isFirst = stepIndex === 0;
   const isLast = stepIndex >= tour.steps.length - 1;
 
-  return (
-    <>
-      <div className="fixed inset-0 z-[110] bg-zinc-950/55 pointer-events-none" />
+  // Renderiza via portal pra escapar de qualquer stacking context herdado.
+  // Overlay e spotlight com pointer-events:none em INLINE style — alguns
+  // navegadores ignoram a classe utilitária quando há especificidade maior
+  // em CSS global. Section com pointer-events:auto explícito.
+  return createPortal(
+    <div
+      // Container raiz: pointer-events none para NÃO bloquear clicks no
+      // resto da página por trás. Os filhos interativos (modal) ligam
+      // explicitamente pointer-events:auto.
+      style={{ pointerEvents: "none" }}
+    >
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9990,
+          background: "rgba(9, 9, 11, 0.55)",
+          pointerEvents: "none",
+        }}
+      />
       {spotlight ? (
         <div
-          className="fixed z-[111] rounded-xl border border-amber-300/65 shadow-[0_0_0_9999px_rgba(0,0,0,0.52)] pointer-events-none"
-          style={spotlight}
+          style={{
+            position: "fixed",
+            top: spotlight.top,
+            left: spotlight.left,
+            width: spotlight.width,
+            height: spotlight.height,
+            zIndex: 9991,
+            borderRadius: 12,
+            border: "1px solid rgba(252, 211, 77, 0.65)",
+            boxShadow: "0 0 0 9999px rgba(0,0,0,0.52)",
+            pointerEvents: "none",
+          }}
         />
       ) : null}
       <section
+        ref={sectionRef}
         aria-label={`Tour ${tour.title}`}
-        className="fixed z-[120] w-[min(92vw,340px)] rounded-2xl border border-amber-400/45 bg-zinc-900/95 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.5)]"
-        style={{ top: pos.top, left: pos.left }}
+        className="rounded-2xl border border-amber-400/45 bg-zinc-900/95 p-4 shadow-[0_18px_70px_rgba(0,0,0,0.5)]"
+        style={{
+          position: "fixed",
+          top: pos.top,
+          left: pos.left,
+          width: "min(92vw, 340px)",
+          zIndex: 9999,
+          pointerEvents: "auto",
+        }}
       >
         <p className="text-xs uppercase tracking-wide text-amber-300/90">{t("label", "Tour da Colmeia")}</p>
         <h3 className="mt-1 text-base font-semibold text-amber-50">{t(`${step.id}.title`, step.title)}</h3>
@@ -145,6 +249,7 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
           </button>
         ) : null}
       </section>
-    </>
+    </div>,
+    document.body,
   );
 }
