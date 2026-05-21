@@ -42,6 +42,8 @@ type Props = {
   redirectTo?: string
   theme?: "outline" | "filled_blue" | "filled_black"
   className?: string
+  /** Quando fornecido, é chamado em vez de redirecionar — útil pra inline-login dentro de modais. */
+  onComplete?: () => void
 }
 
 export function GoogleSignInButton({
@@ -49,6 +51,7 @@ export function GoogleSignInButton({
   redirectTo,
   theme = "filled_black",
   className,
+  onComplete,
 }: Props) {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -100,6 +103,13 @@ export function GoogleSignInButton({
 
         setSession(session.token, session.user)
 
+        if (onComplete) {
+          // Permanece na página corrente (modal de booking, etc).
+          didRedirect = true
+          onComplete()
+          return
+        }
+
         const target =
           redirectTo ||
           (session.emailVerified === false ? "/verify-email" : "/search")
@@ -144,7 +154,7 @@ export function GoogleSignInButton({
       width: 320,
       locale: "pt-BR",
     })
-  }, [scriptReady, clientId, redirectTo, theme, text, router])
+  }, [scriptReady, clientId, redirectTo, theme, text, router, onComplete])
 
   return (
     <div className={className}>
