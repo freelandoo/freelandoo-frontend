@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getStoredUser } from "@/lib/auth";
 import { TOUR_CONFIGS, type TourConfig, type TourKey } from "./tourConfig";
 import {
   completeTourProgress,
@@ -19,12 +18,6 @@ import { TourManager } from "./TourManager";
 import { trackTourEvent } from "./tourAnalytics";
 
 type ProgressMap = Record<string, { status: TourStatus; current_step: number }>;
-
-function getRoleIsAdmin() {
-  const user = getStoredUser();
-  if (!user) return false;
-  return !!user.is_admin || !!user.roles?.some((r) => r.desc_role === "Administrator");
-}
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -81,19 +74,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     void resetTourProgress(tourKey);
   };
 
-  useEffect(() => {
-    if (!pathname || activeTour || hideAllTours) return;
-    const isAdmin = getRoleIsAdmin();
-    const candidate = TOUR_CONFIGS.find((tour) => {
-      if (!tour.autoStart && !tour.pagePath?.length) return false;
-      if (tour.requiredRole === "admin" && !isAdmin) return false;
-      const onPage = (tour.pagePath || []).some((page) => pathname.startsWith(page));
-      if (!onPage) return false;
-      const state = progress[tour.tourKey];
-      return !state || state.status === "not_started";
-    });
-    if (candidate) startTour(candidate.tourKey);
-  }, [pathname, progress, activeTour, hideAllTours, startTour]);
+  // Auto-start do walkthrough desativado em 2026-05-21. A descoberta agora é via
+  // hover-hints (<HoverHint>) e o walkthrough completo só inicia manualmente
+  // pela Central de Ajuda — sem modal surpresa ao navegar.
 
   const value = {
     startTour,

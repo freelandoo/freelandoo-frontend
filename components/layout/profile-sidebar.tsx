@@ -7,6 +7,8 @@ import { Boxes, Crown, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } f
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { HoverHint } from "@/features/tour/HoverHint"
+import type { HintId } from "@/features/tour/hints"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
 import { UserDropside } from "./UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -215,6 +217,7 @@ interface ProfileTriggerButtonProps {
 
 function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTriggerButtonProps) {
   return (
+    <HoverHint id="sidebar-profile" side={compact ? "top" : "right"} className={compact ? undefined : "block w-full"}>
     <button
       data-tour="sidebar-profile"
       type="button"
@@ -252,6 +255,7 @@ function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTrigg
         <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
       )}
     </button>
+    </HoverHint>
   )
 }
 
@@ -272,20 +276,24 @@ interface ToolbarItemLinkProps {
 function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
   const Icon = item.icon
   const active = isItemActive(item, pathname)
-
-  return (
-    <Link
-      data-tour={
-        item.label === "Feed"
-          ? "sidebar-feed"
-          : item.label === "Enxames"
-            ? "sidebar-enxames"
-            : item.label === "Mensagens"
-              ? "sidebar-messages"
-              : item.label === "Ranking"
-                ? "sidebar-ranking"
+  const hintId: HintId | undefined =
+    item.label === "Feed"
+      ? "sidebar-feed"
+      : item.label === "Bees"
+        ? "sidebar-bees"
+        : item.label === "Enxames"
+          ? "sidebar-enxames"
+          : item.label === "Mensagens"
+            ? "sidebar-messages"
+            : item.label === "Ranking"
+              ? "sidebar-ranking"
+              : item.label === "Administração"
+                ? "sidebar-admin"
                 : undefined
-      }
+
+  const link = (
+    <Link
+      data-tour={hintId}
       href={item.href}
       aria-label={item.label}
       title={item.label}
@@ -316,4 +324,13 @@ function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
       </span>
     </Link>
   )
+
+  if (hintId) {
+    return (
+      <HoverHint id={hintId} side={compact ? "top" : "right"} className={compact ? undefined : "block w-full"}>
+        {link}
+      </HoverHint>
+    )
+  }
+  return link
 }
