@@ -152,6 +152,7 @@ export function ProfileSidebar() {
   return (
     <>
       <aside
+        data-tour="sidebar-root"
         aria-label="Toolbar do perfil"
         className={cn(
           "group/sidebar fixed left-3 top-1/2 z-40 hidden -translate-y-1/2 md:flex",
@@ -215,6 +216,7 @@ interface ProfileTriggerButtonProps {
 function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTriggerButtonProps) {
   return (
     <button
+      data-tour="sidebar-profile"
       type="button"
       onClick={onClick}
       aria-label={`Menu de ${bundle.displayName}`}
@@ -273,6 +275,17 @@ function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
 
   return (
     <Link
+      data-tour={
+        item.label === "Feed"
+          ? "sidebar-feed"
+          : item.label === "Enxames"
+            ? "sidebar-enxames"
+            : item.label === "Mensagens"
+              ? "sidebar-messages"
+              : item.label === "Ranking"
+                ? "sidebar-ranking"
+                : undefined
+      }
       href={item.href}
       aria-label={item.label}
       title={item.label}

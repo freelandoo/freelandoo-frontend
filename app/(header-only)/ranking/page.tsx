@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function RankingPage() {
-  return <RankingPageClient />
+  return <div data-tour="ranking-root"><RankingPageClient /></div>
 }

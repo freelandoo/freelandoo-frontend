@@ -912,5 +912,32 @@
     "hero.mock.clanLabel": "Clan",
     "hero.mock.clanName": "Casa Áurea Studio",
     "hero.mock.clanDescription": "Editing & motion - 6 profiles"
+  },
+  "Tour": {
+    "label": "Hive Tour",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "welcome-1.title": "Welcome to Freelandoo",
+    "welcome-1.content": "Build your presence, sell services, showcase products and courses, and grow on the platform.",
+    "welcome-2.title": "Your main account",
+    "welcome-2.content": "Your account controls everything but does not sell services directly.",
+    "welcome-3.title": "Create subprofiles to sell",
+    "welcome-3.content": "To be found by clients and sell, use professional subprofiles.",
+    "welcome-4.title": "Join the right Enxame",
+    "welcome-4.content": "Enxames organize professionals by area.",
+    "welcome-5.title": "Use your Pollens",
+    "welcome-5.content": "Pollens unlock banners, perks, and platform features.",
+    "welcome-6.title": "Keep your profile active",
+    "welcome-6.content": "Posts, interactions, and XP help ranking and discovery.",
+    "welcome-7.title": "Start with your first subprofile",
+    "welcome-7.content": "Create or complete a subprofile to enter the game.",
+    "account-1.title": "Your base account",
+    "account-1.content": "This is your main Freelandoo account. It stores data, pollens, coupons, and settings.",
+    "account-2.title": "Security first",
+    "account-2.content": "Keep your email verified and your data updated to protect your account.",
+    "account-3.title": "Account is not a showcase",
+    "account-3.content": "To appear to clients, create a subprofile."
   }
 }

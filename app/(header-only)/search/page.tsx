@@ -355,7 +355,7 @@ function SearchPageInner() {
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
+    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
       <SearchRetractableHeader
         machines={machines}
         categories={machineCategories}
