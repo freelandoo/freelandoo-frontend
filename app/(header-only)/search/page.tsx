@@ -14,6 +14,7 @@ import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
 import { StoryCreator } from "@/components/stories/story-creator"
 import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
+import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 /**
@@ -225,6 +226,22 @@ function SearchPageInner() {
   const [creatorOpen, setCreatorOpen] = useState(false)
   const [openChamadoOpen, setOpenChamadoOpen] = useState(false)
   const [storyBarKey, setStoryBarKey] = useState(0)
+  const [tab, setTab] = useState<SearchTab>("services")
+
+  // URL state sync: ?tab=
+  useEffect(() => {
+    const raw = searchParams.get("tab")
+    if (raw === "services" || raw === "products" || raw === "courses") setTab(raw)
+  }, [searchParams])
+
+  const handleTabChange = useCallback((next: SearchTab) => {
+    setTab(next)
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    if (next === "services") url.searchParams.delete("tab")
+    else url.searchParams.set("tab", next)
+    window.history.replaceState({}, "", url.toString())
+  }, [])
 
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
@@ -382,23 +399,28 @@ function SearchPageInner() {
         className="h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="h-[64px] sm:h-[68px]" aria-hidden />
-        <div className="border-y border-white/[0.06] bg-black/40 backdrop-blur-sm">
-          <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
-            <StoryBar
-              key={storyBarKey}
-              kind="trampo"
-              defaultAccent={accent}
-              showCreateSlot
-              onCreate={() => setCreatorOpen(true)}
-              onOpenProfile={(entry, all) => {
-                const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
-                setStoryOpen({ entries: all, index: Math.max(0, idx) })
-              }}
-            />
-          </div>
-        </div>
 
-        {loading ? (
+        <SearchTabsBar tab={tab} onTabChange={handleTabChange} accent={accent} />
+
+        {tab === "services" && (
+          <div className="border-b border-white/[0.06] bg-black/40 backdrop-blur-sm">
+            <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
+              <StoryBar
+                key={storyBarKey}
+                kind="trampo"
+                defaultAccent={accent}
+                showCreateSlot
+                onCreate={() => setCreatorOpen(true)}
+                onOpenProfile={(entry, all) => {
+                  const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
+                  setStoryOpen({ entries: all, index: Math.max(0, idx) })
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {tab === "services" && (loading ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
           </div>
@@ -425,6 +447,32 @@ function SearchPageInner() {
                 featured={isPremium(c)}
               />
             ))}
+          </div>
+        ))}
+
+        {tab === "products" && (
+          <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center px-6 py-20 text-center md:max-w-[760px] lg:max-w-[1080px]">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-10">
+              <p className="text-sm font-semibold tracking-tight text-white">Vitrine de produtos</p>
+              <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/55">
+                Em construção. Use o botão{" "}
+                <span className="font-semibold text-white">Abrir chamado</span> para pedir produtos por categoria + cidade
+                enquanto a vitrine não vem.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {tab === "courses" && (
+          <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center px-6 py-20 text-center md:max-w-[760px] lg:max-w-[1080px]">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-10">
+              <p className="text-sm font-semibold tracking-tight text-white">Vitrine de cursos</p>
+              <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/55">
+                Em construção. Use o botão{" "}
+                <span className="font-semibold text-white">Abrir chamado</span> para pedir um curso de uma profissão
+                específica.
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -462,7 +510,8 @@ function SearchPageInner() {
       <OpenChamadoModal
         open={openChamadoOpen}
         onOpenChange={setOpenChamadoOpen}
-        defaultMachineId={idMachine && idMachine > 0 ? idMachine : null}
+        mode={tab === "products" ? "product" : tab === "courses" ? "course" : "service"}
+        defaultMachineId={tab !== "products" && idMachine && idMachine > 0 ? idMachine : null}
       />
     </div>
   )
