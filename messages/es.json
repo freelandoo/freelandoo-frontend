@@ -915,7 +915,10 @@
   },
   "Tour": {
     "label": "Tour de la Colmena",
-    "skip": "Saltar",
+    "skip": "Ver luego",
+    "seeLater": "Ver luego",
+    "dontWant": "No quiero",
+    "dontShowAgain": "No quiero",
     "back": "Volver",
     "next": "Siguiente",
     "finish": "Finalizar"

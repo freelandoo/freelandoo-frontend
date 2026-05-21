@@ -915,7 +915,10 @@
   },
   "Tour": {
     "label": "Tour da Colmeia",
-    "skip": "Pular",
+    "skip": "Ver depois",
+    "seeLater": "Ver depois",
+    "dontWant": "Não quero",
+    "dontShowAgain": "Não quero",
     "back": "Voltar",
     "next": "Próximo",
     "finish": "Finalizar",

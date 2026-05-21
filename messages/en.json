@@ -915,7 +915,10 @@
   },
   "Tour": {
     "label": "Hive Tour",
-    "skip": "Skip",
+    "skip": "See later",
+    "seeLater": "See later",
+    "dontWant": "Don't want",
+    "dontShowAgain": "Don't want",
     "back": "Back",
     "next": "Next",
     "finish": "Finish",

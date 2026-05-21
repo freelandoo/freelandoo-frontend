@@ -17,6 +17,7 @@ import { TourContext, type TourActionName } from "./useTour";
 import { TourManager } from "./TourManager";
 import { trackTourEvent } from "./tourAnalytics";
 import { markPathVisited } from "./visitedPaths";
+import { isTourSnoozed, snoozeTour as persistSnooze } from "./snoozedTours";
 
 type ProgressMap = Record<string, { status: TourStatus; current_step: number; seen_version: number }>;
 
@@ -89,9 +90,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // sair e voltar à página (ou recarregar). Reseta quando o pathname muda.
   const dismissedThisVisitRef = useRef<Set<TourKey>>(new Set());
 
-  // "Pular" no botão do tour: fecha agora, reaparece na próxima visita.
-  // Não persiste como "skipped" — para isso existe "Não mostrar novamente".
-  const dismissTourForNow = (tourKey: TourKey) => {
+  // "Ver depois" no botão do tour: fecha agora, reaparece automaticamente
+  // após 24h (persistido em localStorage via snoozedTours). Não persiste
+  // como "skipped" — para skip permanente existe "Não quero".
+  const snoozeTour = (tourKey: TourKey) => {
+    persistSnooze(tourKey);
     dismissedThisVisitRef.current.add(tourKey);
     setProgress((prev) => ({ ...prev, [tourKey]: { status: "not_started", current_step: 0, seen_version: 1 } }));
     setActiveTour(null);
@@ -151,6 +154,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     const candidate = eligibleTours.find((tour) => {
       if (!pathMatches(tour.pagePath, pathname)) return false;
       if (dismissedThisVisitRef.current.has(tour.tourKey)) return false;
+      if (isTourSnoozed(tour.tourKey)) return false;
       const p = progress[tour.tourKey];
       // Nunca visto → dispara.
       if (!p || p.status === "not_started") return true;
@@ -172,6 +176,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     startTour,
     completeTour,
     skipTour,
+    snoozeTour,
     resetTour,
     hideAllTours,
     setHideAllTours: (value: boolean) => {
@@ -191,13 +196,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         stepIndex={stepIndex}
         onStepChange={setStepIndex}
         onComplete={() => activeTour && completeTour(activeTour.tourKey)}
-        // "Pular" / ESC: fecha agora e reaparece quando o usuário voltar à
-        // página. Apenas "Não mostrar novamente" e "Finalizar" persistem.
-        onSkip={() => activeTour && dismissTourForNow(activeTour.tourKey)}
+        // "Ver depois" / ESC: fecha agora e reaparece após 24h.
+        onSkip={() => activeTour && snoozeTour(activeTour.tourKey)}
+        // "Não quero" / "Não mostrar novamente": skip permanente.
         onDontShowAgain={() => {
-          // Por-página: encerra apenas o tour atual (skipped). Os tours de
-          // outras páginas seguem aparecendo. O opt-out global de todos os
-          // tours fica no toggle da Central de Ajuda (hide_all_tours).
           if (activeTour) skipTour(activeTour.tourKey);
         }}
         onStepAction={runAction}
