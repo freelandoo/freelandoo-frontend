@@ -91,7 +91,7 @@ export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCre
   if (!showCreateSlot && entries.length === 0 && !loading) return null
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" data-tour={kind === "rest" ? "feed-stories-rest" : "search-stories-trampo"}>
       <div className="flex gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {showCreateSlot && (
           <StoryTile

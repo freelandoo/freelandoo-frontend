@@ -531,6 +531,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 type="button"
                 aria-label={t("reportPostButton", "Denunciar publicação")}
                 onClick={() => setReportOpen(true)}
+                data-tour="bees-report"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white/75 shadow ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 hover:text-amber-300 active:scale-95"
               >
                 <Flag className="h-5 w-5" />
@@ -602,6 +603,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               type="button"
               aria-label={t("reportPostButton", "Denunciar publicação")}
               onClick={() => setReportOpen(true)}
+              data-tour="feed-report"
               className="rounded-full p-1.5 text-white/55 transition hover:bg-white/5 hover:text-amber-300 active:scale-90"
             >
               <Flag className="h-5 w-5" />
