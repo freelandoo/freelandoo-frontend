@@ -9,6 +9,8 @@ import {
   ProfileServiceEditModal,
   type ProfileServiceEditClanMember,
 } from "@/components/profile/profile-service-edit-modal"
+import { getToken } from "@/lib/auth"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 interface ProfilePublicServicesSectionProps {
   profileId: string
@@ -131,19 +133,21 @@ export function ProfilePublicServicesSection({
 
   const handleConfirmBooking = async (
     serviceId: number,
-    client: { name: string; email: string; whatsapp: string },
+    client: { whatsapp: string },
   ) => {
     if (!pickedSlot) return
+    const token = getToken()
+    if (!token) throw new Error("Faça login para agendar")
+    const sharedCoupon = getCapturedCoupon()
     const res = await fetch(`/api/public/profile/${profileId}/bookings`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        client_name: client.name,
-        client_email: client.email,
         client_whatsapp: client.whatsapp || null,
         booking_date: pickedSlot.dateISO,
         start_time: pickedSlot.startTime,
         id_profile_service: serviceId,
+        ...(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       }),
     })
     const d = await res.json()
