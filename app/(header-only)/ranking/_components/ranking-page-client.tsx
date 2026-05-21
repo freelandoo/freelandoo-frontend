@@ -391,7 +391,7 @@ export function RankingPageClient() {
                       ? "ranking-scope-profession"
                       : "ranking-scope-city"
               return (
-                <HoverHint key={key} id={hintId} side="bottom">
+                <HoverHint key={key} id={hintId} side="bottom" dataTour={hintId}>
                   <button
                     type="button"
                     onClick={() => setScope(key)}

@@ -249,7 +249,7 @@ function PodiumCard({
       </div>
 
       {/* LV · XP */}
-      <div className="mt-auto flex w-full items-center justify-center gap-2 border-t border-zinc-900/15 pt-2 text-[10px] font-bold">
+      <div data-tour="ranking-level" className="mt-auto flex w-full items-center justify-center gap-2 border-t border-zinc-900/15 pt-2 text-[10px] font-bold">
         <span className="uppercase tracking-[0.16em] text-zinc-900">
           LV. {Number.isFinite(level) ? level : 0}
         </span>
@@ -337,6 +337,7 @@ export function RankingPodium({ rows, rowHref, loading = false }: Props) {
     <div
       ref={containerRef}
       key={cardsKey}
+      data-tour="ranking-podium"
       className="grid grid-cols-3 items-end gap-2 sm:gap-3"
     >
       <style>{`

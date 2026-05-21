@@ -5,6 +5,7 @@ export type TourKey =
   | "subprofiles"
   | "enxames"
   | "feed"
+  | "bees_feed"
   | "messages_private"
   | "groups"
   | "global_chat_rooms"
@@ -98,6 +99,7 @@ export const TOUR_CONFIGS: TourConfig[] = [
     pagePath: ["/search", "/enxame"],
     steps: [
       { id: "search-1", title: "Vitrine de profissionais", content: "Aqui você descobre profissionais de todas as áreas — filtros refinam o que aparece.", placement: "center" },
+      { id: "search-stories", target: "[data-tour='search-stories-trampo']", title: "Trampos", content: "Stories tipo Trampo: profissionais mostram trabalhos curtos em vídeo (24h). Aparece quem você acompanha.", placement: "bottom" },
       { id: "search-2", target: "[data-tour='search-filter-machine']", title: "Filtrar por Enxame", content: "Escolhe a área (Views, Limpeza, Construção, etc.). Define quais profissões aparecem.", placement: "bottom" },
       { id: "search-3", target: "[data-tour='search-filter-profession']", title: "Profissão", content: "Profissão específica dentro do Enxame escolhido. Ative um Enxame primeiro.", placement: "bottom" },
       { id: "search-4", target: "[data-tour='search-filter-city']", title: "Cidade", content: "Estado ou cidade do profissional. Combinável com Enxame e profissão.", placement: "bottom" },
@@ -116,9 +118,24 @@ export const TOUR_CONFIGS: TourConfig[] = [
     pagePath: ["/feed"],
     steps: [
       { id: "feed-1", title: "Seu feed", content: "Aqui aparecem posts dos perfis que você acompanha — fotos, vídeos curtos e atualizações.", placement: "center" },
+      { id: "feed-stories", target: "[data-tour='feed-stories-rest']", title: "Rest stories", content: "Stories tipo Rest: postagens curtas (24h) de quem você acompanha — momentos do dia, bastidores, lazer.", placement: "bottom" },
       { id: "feed-2", target: "[data-tour='feed-filters']", title: "Filtros do feed", content: "Filtre por Enxame ou cidade para refinar o que aparece.", placement: "bottom" },
       { id: "feed-3", target: "[data-tour='feed-bell']", title: "Notificações", content: "Likes, comentários, follows e mensagens novas — tudo aqui.", placement: "left" },
+      { id: "feed-report", target: "[data-tour='feed-report']", title: "Denunciar publicação", content: "Conteúdo abusivo, spam ou off-topic? Use a bandeira pra denunciar — a moderação revisa.", placement: "left" },
       { id: "feed-done", title: "Boa rolagem!", content: "Curta, comente e siga perfis pra deixar o feed mais relevante.", placement: "center" },
+    ],
+  },
+  {
+    tourKey: "bees_feed",
+    title: "Bees",
+    description: "Feed vertical 9:16",
+    version: 1,
+    autoStart: true,
+    pagePath: ["/bees"],
+    steps: [
+      { id: "bees-1", title: "Bees", content: "Feed vertical estilo TikTok — vídeos curtos 9:16 dos perfis da plataforma. Role pra ver o próximo.", placement: "center" },
+      { id: "bees-report", target: "[data-tour='bees-report']", title: "Denunciar", content: "Use a bandeira pra denunciar conteúdo abusivo, spam ou off-topic.", placement: "left" },
+      { id: "bees-done", title: "Pronto!", content: "Curta, comente, salve e siga. Quanto mais você interage, mais o feed se ajusta ao seu gosto.", placement: "center" },
     ],
   },
   {
@@ -147,7 +164,24 @@ export const TOUR_CONFIGS: TourConfig[] = [
   { tourKey: "manifestations", title: "Manifestações", description: "Banners do perfil", version: 1, pagePath: ["/manifestacao"], steps: [{ id: "manifestations-1", title: "Escolha seu banner", content: "Compre com pólens e personalize seu headcard.", placement: "center" }] },
   { tourKey: "coupons", title: "Cupons", description: "Compartilhamento", version: 1, pagePath: ["/account/afiliado", "/oferta"], steps: [{ id: "coupons-1", title: "Seu cupom acompanha você", content: "Links com cupom podem aplicar vantagens automaticamente.", placement: "center" }] },
   { tourKey: "affiliates", title: "Afiliados", description: "Ganhos por indicação", version: 1, pagePath: ["/account/afiliado"], steps: [{ id: "affiliates-1", title: "Ganhe indicando", content: "Acompanhe cliques, conversões e comissões.", placement: "center" }] },
-  { tourKey: "ranking", title: "Ranking", description: "Destaque por atividade", version: 1, pagePath: ["/ranking"], steps: [{ id: "ranking-1", target: "[data-tour='sidebar-ranking']", title: "Ranking mostra quem está ativo", content: "Mais presença aumenta sua chance de destaque.", placement: "right" }] },
+  {
+    tourKey: "ranking",
+    title: "Ranking",
+    description: "Pódio, escopos e níveis de XP",
+    version: 1,
+    autoStart: true,
+    pagePath: ["/ranking"],
+    steps: [
+      { id: "ranking-1", title: "Os líderes do momento", content: "Quem está dominando a plataforma. Atualiza automaticamente a cada 2 horas.", placement: "center" },
+      { id: "ranking-podium", target: "[data-tour='ranking-podium']", title: "Pódio Top 3", content: "Os três líderes do escopo escolhido. Ouro, prata e bronze — quanto mais ativo, mais alto.", placement: "bottom" },
+      { id: "ranking-level", target: "[data-tour='ranking-level']", title: "Nível e XP", content: "A posição é definida pelo nível de XP do perfil — somando posts, interações, vendas e ativações. Suba de nível ganhando XP no dia-a-dia da plataforma.", placement: "top" },
+      { id: "ranking-scope-general", target: "[data-tour='ranking-scope-general']", title: "Ranking Geral", content: "Top 10 de toda a plataforma — todos os Enxames, profissões e cidades juntos.", placement: "bottom" },
+      { id: "ranking-scope-machine", target: "[data-tour='ranking-scope-machine']", title: "Por Enxame", content: "Top 10 dentro de uma área (Views, Construção, Saúde & Beleza, etc.).", placement: "bottom" },
+      { id: "ranking-scope-profession", target: "[data-tour='ranking-scope-profession']", title: "Por Profissão", content: "Top 10 de uma profissão específica (editor de vídeo, faxineira, eletricista, etc.).", placement: "bottom" },
+      { id: "ranking-scope-city", target: "[data-tour='ranking-scope-city']", title: "Por Cidade", content: "Top 10 de uma cidade ou estado específicos.", placement: "bottom" },
+      { id: "ranking-done", title: "Suba no ranking", content: "Para subir: poste, interaja, ative serviços, complete pedidos. Cada ação rende XP.", placement: "center" },
+    ],
+  },
   { tourKey: "xp_levels", title: "XP e níveis", description: "Gamificação", version: 1, pagePath: ["/account", "/ranking"], steps: [{ id: "xp-1", title: "Ganhe XP e suba de nível", content: "Atividade real vira evolução visível na plataforma.", placement: "center" }] },
   { tourKey: "premium_highlight", title: "Premium", description: "Mais visibilidade", version: 1, pagePath: ["/search", "/account"], steps: [{ id: "premium-1", title: "Destaque aumenta visibilidade", content: "Combine premium com bom perfil e portfólio.", placement: "center" }] },
   { tourKey: "booking", title: "Booking", description: "Agenda profissional", version: 1, pagePath: ["/account/profile", "/agendamento"], steps: [{ id: "booking-1", title: "Agende atendimentos", content: "Organize horários e evite conversa perdida.", placement: "center" }] },
