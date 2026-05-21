@@ -218,6 +218,8 @@ interface OsChatItem {
   unread_count: number
   request: OsChatRequest
   profile: OsChatProfile
+  /** Tipo de O.S.: serviço ou curso. Roteia para os endpoints corretos. */
+  kind?: "service" | "course"
 }
 
 interface OsChatsListResponse { chats: OsChatItem[] }
@@ -541,8 +543,18 @@ export default function MensagensClient() {
     setOsChatsLoading(true)
     setOsChatsError(null)
     try {
-      const data = await jsonFetch<OsChatsListResponse>(`/api/service-requests/me/chats`)
-      setOsChats(Array.isArray(data?.chats) ? data.chats : [])
+      const [svc, crs] = await Promise.all([
+        jsonFetch<OsChatsListResponse>(`/api/service-requests/me/chats`).catch(() => ({ chats: [] })),
+        jsonFetch<OsChatsListResponse>(`/api/course-requests/me/chats`).catch(() => ({ chats: [] })),
+      ])
+      const svcChats: OsChatItem[] = (Array.isArray(svc?.chats) ? svc.chats : []).map((c) => ({ ...c, kind: "service" as const }))
+      const crsChats: OsChatItem[] = (Array.isArray(crs?.chats) ? crs.chats : []).map((c) => ({ ...c, kind: "course" as const }))
+      const merged = [...svcChats, ...crsChats].sort((a, b) => {
+        const ta = new Date(a.last_message_at || a.response_created_at).getTime()
+        const tb = new Date(b.last_message_at || b.response_created_at).getTime()
+        return tb - ta
+      })
+      setOsChats(merged)
     } catch (err) {
       setOsChatsError((err as Error).message || t("loadOsError", "Erro ao carregar O.S."))
       setOsChats([])
@@ -550,6 +562,15 @@ export default function MensagensClient() {
       setOsChatsLoading(false)
     }
   }, [t])
+
+  // Resolve o prefixo de endpoint para o O.S. ativo (serviço vs curso).
+  const osEndpointBase = useCallback(
+    (idResponse: string) => {
+      const chat = osChats.find((c) => c.id_response === idResponse)
+      return chat?.kind === "course" ? "/api/course-requests" : "/api/service-requests"
+    },
+    [osChats],
+  )
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -584,14 +605,15 @@ export default function MensagensClient() {
         setOsMessagesError(null)
       }
       try {
+        const base = osEndpointBase(idResponse)
         const data = await jsonFetch<OsMessagesResponse>(
-          `/api/service-requests/responses/${encodeURIComponent(idResponse)}/messages`
+          `${base}/responses/${encodeURIComponent(idResponse)}/messages`
         )
         const items = Array.isArray(data?.messages) ? data.messages : []
         setOsMessages(items)
         if (data?.response?.status) setOsCurrentStatus(data.response.status)
         if (data?.side) setOsViewerSide(data.side)
-        jsonFetch(`/api/service-requests/responses/${encodeURIComponent(idResponse)}/read`, {
+        jsonFetch(`${base}/responses/${encodeURIComponent(idResponse)}/read`, {
           method: "POST",
         }).catch(() => {})
         // backend já marca read no GET — atualiza unread local
@@ -607,7 +629,7 @@ export default function MensagensClient() {
         if (!opts?.silent) setOsMessagesLoading(false)
       }
     },
-    [t]
+    [t, osEndpointBase]
   )
 
   useEffect(() => {
@@ -750,8 +772,9 @@ export default function MensagensClient() {
     if (!content || !activeOsResponseId || osSending) return
     setOsSending(true)
     try {
+      const base = osEndpointBase(activeOsResponseId)
       await jsonFetch(
-        `/api/service-requests/responses/${encodeURIComponent(activeOsResponseId)}/messages`,
+        `${base}/responses/${encodeURIComponent(activeOsResponseId)}/messages`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -766,7 +789,7 @@ export default function MensagensClient() {
     } finally {
       setOsSending(false)
     }
-  }, [osComposer, activeOsResponseId, osSending, loadOsThread, loadOsChats, t])
+  }, [osComposer, activeOsResponseId, osSending, loadOsThread, loadOsChats, osEndpointBase, t])
 
   const handleSelectActor = useCallback((id: string) => {
     setActorId(id)
