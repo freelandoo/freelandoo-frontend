@@ -124,7 +124,7 @@ export default function MyClansPage() {
           await Promise.all([
             fetch("/api/clans/me", { headers: auth }),
             fetch("/api/clans/eligibility", { headers: auth }),
-            fetch("/api/machines"),
+            fetch("/api/enxames"),
             fetch("/api/users/me", { headers: auth }),
             fetch("/api/clans/invites/me", { headers: auth }),
           ])
@@ -143,7 +143,7 @@ export default function MyClansPage() {
 
         setClans(clansData.clans || [])
         setEligibility(eligData)
-        setMachines(machinesData.machines || machinesData || [])
+        setMachines(machinesData.enxames || machinesData.machines || machinesData || [])
         setPendingInvites(invitesData.invites || [])
 
         const profiles: SubProfile[] = (meData?.profiles || meData?.user?.profiles || [])

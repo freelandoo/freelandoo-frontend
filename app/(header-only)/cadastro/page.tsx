@@ -217,9 +217,9 @@ export default function CadastroPage() {
   }
 
   useEffect(() => {
-    fetch("/api/machines")
+    fetch("/api/enxames")
       .then((r) => r.json())
-      .then((data) => setMachines(Array.isArray(data) ? data : data.machines || []))
+      .then((data) => setMachines(Array.isArray(data) ? data : data.enxames || data.machines || []))
       .catch(() => {})
   }, [])
 
