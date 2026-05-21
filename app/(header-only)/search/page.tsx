@@ -404,6 +404,7 @@ function SearchPageInner() {
         premiumOnly={premiumOnly}
         accent={accent}
         scrollRef={scrollRef}
+        tab={tab}
         onMachineChange={(id) => { setIdMachine(id); setIdCategory(null) }}
         onCategoryChange={setIdCategory}
         onLocationChange={({ state, city }) => { setSelectedEstado(state); setSelectedCity(city) }}
