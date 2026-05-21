@@ -27,6 +27,8 @@ import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { cn } from "@/lib/utils"
+import { HoverHint } from "@/features/tour/HoverHint"
+import type { HintId } from "@/features/tour/hints"
 
 type EntityType = "profile" | "clan"
 
@@ -912,20 +914,36 @@ function IconAction({
       )}
     </>
   )
-  if (href) {
-    return (
-      <Link
-        href={href}
-        onClick={onClick}
-        aria-label={label}
-        title={label}
-        className={baseClass}
-      >
-        {body}
-      </Link>
-    )
+  // Mapeia o label do botão para o id da dica de hover. Os ícones da toolbar
+  // do headcard são pequenos e sem texto visível — esse é o caso de mais valor
+  // para uma dica explicativa.
+  const hintMap: Record<string, HintId> = {
+    "Configurações": "headcard-settings",
+    Fechar: "headcard-settings",
+    "Editar perfil": "headcard-edit-profile",
+    "Editar clan": "headcard-edit-clan",
+    "Minhas mensagens": "headcard-messages",
+    "Enviar mensagem": "headcard-visit-message",
+    Clans: "headcard-clans",
+    Membros: "headcard-members",
+    "Ver membros": "headcard-view-members",
+    Gerenciar: "headcard-manage",
+    Engajamento: "headcard-engagement",
+    Ranking: "headcard-ranking",
+    Agenda: "headcard-agenda",
   }
-  return (
+  const hintId = hintMap[label]
+  const trigger = href ? (
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={baseClass}
+    >
+      {body}
+    </Link>
+  ) : (
     <button
       type="button"
       onClick={onClick}
@@ -937,6 +955,14 @@ function IconAction({
       {body}
     </button>
   )
+  if (hintId) {
+    return (
+      <HoverHint id={hintId} side="top">
+        {trigger}
+      </HoverHint>
+    )
+  }
+  return trigger
 }
 
 /**

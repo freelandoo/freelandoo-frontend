@@ -21,6 +21,8 @@ import { ManifestationBadge } from "@/components/manifestation/ManifestationBadg
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { HoverHint } from "@/features/tour/HoverHint"
+import type { HintId } from "@/features/tour/hints"
 
 type Props = {
   open: boolean
@@ -177,29 +179,52 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
           <ul className="space-y-1.5">
             {actions.map((a) => {
               const Icon = a.icon
-              return (
-                <li key={a.href}>
-                  <Link
-                    href={a.href}
-                    onClick={onClose}
+              const hintId: HintId | undefined =
+                a.href === "/manifestacao"
+                  ? "dropside-manifestation"
+                  : a.href === "/account/afiliado"
+                    ? "dropside-earnings"
+                    : a.href === "/pedir-servico"
+                      ? "dropside-request-service"
+                      : a.href === "/pedir-produto"
+                        ? "dropside-request-product"
+                        : a.href === "/loja-polens"
+                          ? "dropside-pollens"
+                          : a.href.startsWith("/account?edit")
+                            ? "dropside-edit"
+                            : undefined
+              const link = (
+                <Link
+                  href={a.href}
+                  onClick={onClose}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white",
+                    a.highlight && "text-amber-100 hover:bg-amber-300/10",
+                  )}
+                >
+                  <span
                     className={cn(
-                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white",
-                      a.highlight && "text-amber-100 hover:bg-amber-300/10",
+                      "inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70",
+                      a.highlight && "text-amber-300",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70",
-                        a.highlight && "text-amber-300",
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="min-w-0 flex flex-1 items-center gap-2">
-                      <span className="truncate font-semibold">{a.label}</span>
-                      {a.badge}
-                    </span>
-                  </Link>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex flex-1 items-center gap-2">
+                    <span className="truncate font-semibold">{a.label}</span>
+                    {a.badge}
+                  </span>
+                </Link>
+              )
+              return (
+                <li key={a.href}>
+                  {hintId ? (
+                    <HoverHint id={hintId} side="right" className="block w-full">
+                      {link}
+                    </HoverHint>
+                  ) : (
+                    link
+                  )}
                 </li>
               )
             })}
@@ -211,56 +236,66 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
           </p>
           <ul className="space-y-1">
             <li>
-              <Link
-                href="/account"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
-              >
-                <Briefcase className="h-4 w-4 text-white/45" />
-                {tNav("account", "Minha conta")}
-              </Link>
+              <HoverHint id="dropside-account" side="right" className="block w-full">
+                <Link
+                  href="/account"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                >
+                  <Briefcase className="h-4 w-4 text-white/45" />
+                  {tNav("account", "Minha conta")}
+                </Link>
+              </HoverHint>
             </li>
             <li>
-              <Link
-                href="/pagamentos"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
-              >
-                <CreditCard className="h-4 w-4 text-white/45" />
-                {tAcc("paymentsAndActivations", "Pagamentos & Ativações")}
-              </Link>
+              <HoverHint id="dropside-payments" side="right" className="block w-full">
+                <Link
+                  href="/pagamentos"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                >
+                  <CreditCard className="h-4 w-4 text-white/45" />
+                  {tAcc("paymentsAndActivations", "Pagamentos & Ativações")}
+                </Link>
+              </HoverHint>
             </li>
             <li>
-              <Link
-                href="/account/dados"
-                onClick={onClose}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
-              >
-                <Settings className="h-4 w-4 text-white/45" />
-                {tCommon("settings", "Configurações")}
-              </Link>
+              <HoverHint id="dropside-settings" side="right" className="block w-full">
+                <Link
+                  href="/account/dados"
+                  onClick={onClose}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                >
+                  <Settings className="h-4 w-4 text-white/45" />
+                  {tCommon("settings", "Configurações")}
+                </Link>
+              </HoverHint>
             </li>
             {isAdmin && (
               <li>
-                <button
-                  type="button"
-                  onClick={() => { onClose(); router.push("/admin") }}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
-                >
-                  <Shield className="h-4 w-4 text-white/45" />
-                  {tNav("admin", "Administração")}
-                </button>
+                <HoverHint id="dropside-admin" side="right" className="block w-full">
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); router.push("/admin") }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                  >
+                    <Shield className="h-4 w-4 text-white/45" />
+                    {tNav("admin", "Administração")}
+                  </button>
+                </HoverHint>
               </li>
             )}
             <li>
-              <button
-                type="button"
-                onClick={() => { onClose(); onLogout() }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
-              >
-                <LogOut className="h-4 w-4" />
-                {tNav("logout", "Sair")}
-              </button>
+              <HoverHint id="dropside-logout" side="top" className="block w-full">
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onLogout() }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {tNav("logout", "Sair")}
+                </button>
+              </HoverHint>
             </li>
           </ul>
 
@@ -269,8 +304,12 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             {tAcc("preferences", "Preferências")}
           </p>
           <div className="flex items-center gap-2 px-2 py-1">
-            <CountrySwitcher variant="full" />
-            <LanguageSwitcher variant="full" />
+            <HoverHint id="dropside-country" side="top">
+              <CountrySwitcher variant="full" />
+            </HoverHint>
+            <HoverHint id="dropside-language" side="top">
+              <LanguageSwitcher variant="full" />
+            </HoverHint>
           </div>
         </nav>
       </aside>
