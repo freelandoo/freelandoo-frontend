@@ -160,6 +160,7 @@ export function ProfileHeadCard({
   const menuRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const [avatarOverride, setAvatarOverride] = useState<string | null>(null)
+  const [bannerFailed, setBannerFailed] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -265,12 +266,13 @@ export function ProfileHeadCard({
         )}
       >
         <div className="relative h-28 bg-zinc-900 md:h-52">
-          {profile.manifestation?.banner_url && !isClan ? (
+          {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={profile.manifestation.banner_url}
                 alt=""
+                onError={() => setBannerFailed(true)}
                 className="h-full w-full object-cover"
               />
             </>
