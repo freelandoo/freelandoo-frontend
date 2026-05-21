@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { CheckCircle2, CreditCard, Hexagon, Loader2, Search, Sparkles, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 type Product = {
   id: string
@@ -126,9 +127,11 @@ function LojaPolensContent() {
     setBuyingId(product.id)
     setError("")
     try {
+      const sharedCoupon = getCapturedCoupon()
       const res = await fetch(`/api/polens/products/${product.id}/checkout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
       if (!res.ok || !data.checkout_url) throw new Error(data.error || "Não foi possível abrir o checkout")

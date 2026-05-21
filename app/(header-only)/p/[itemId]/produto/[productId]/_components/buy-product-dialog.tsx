@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Loader2, X } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 interface Product {
   id_profile_product: number
@@ -91,6 +92,7 @@ export function BuyProductDialog({
         setSubmitting(false)
         return
       }
+      const sharedCoupon = getCapturedCoupon()
       const res = await fetch(`/api/me/orders/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -110,6 +112,7 @@ export function BuyProductDialog({
             city: city.trim(),
             uf: uf.trim().toUpperCase(),
           },
+          ...(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
         }),
       })
       const data = await res.json()

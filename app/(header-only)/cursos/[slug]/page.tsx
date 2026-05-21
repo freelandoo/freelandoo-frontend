@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, GraduationCap, Loader2, ShoppingCart, Settings, Check } from "lucide-react"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 interface PublicCourse {
   id: string
@@ -96,10 +97,11 @@ export default function PublicCoursePage() {
     setBuying(true)
     setBuyError(null)
     try {
+      const sharedCoupon = getCapturedCoupon()
       const res = await fetch(`/api/me/courses/${course.id}/checkout`, {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
       if (!res.ok || !data?.checkout_url) {
