@@ -114,6 +114,12 @@ export default async function RootLayout({
             <CouponCapture />
           </TourProvider>
         </I18nProvider>
+        {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
+            tag do Google carregar (LGPD). O banner de cookies atualiza para
+            "granted" quando o usuário aceita. */}
+        <Script id="google-consent-default" strategy="beforeInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});`}
+        </Script>
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
           strategy="afterInteractive"
