@@ -10,6 +10,7 @@ export interface TourContextValue {
   startTour: (tourKey: TourKey) => void;
   completeTour: (tourKey: TourKey) => void;
   skipTour: (tourKey: TourKey) => void;
+  snoozeTour: (tourKey: TourKey) => void;
   resetTour: (tourKey: TourKey) => void;
   getStatus: (tourKey: TourKey) => TourStatus;
   hideAllTours: boolean;
@@ -27,6 +28,7 @@ export function useTour() {
       startTour: () => {},
       completeTour: () => {},
       skipTour: () => {},
+      snoozeTour: () => {},
       resetTour: () => {},
       getStatus: () => "not_started" as TourStatus,
       hideAllTours: false,

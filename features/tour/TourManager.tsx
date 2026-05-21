@@ -118,7 +118,7 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
         <p className="mt-2 text-sm leading-relaxed text-zinc-200">{t(`${step.id}.content`, step.content)}</p>
         <div className="mt-4 flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" className="text-zinc-200 hover:text-white" onClick={() => { onCtaClick?.(step.id); onSkip(); }}>
-            {t("skip", "Pular")}
+            {t("seeLater", "Ver depois")}
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => onStepChange(Math.max(0, stepIndex - 1))} disabled={isFirst}>
@@ -135,13 +135,13 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
             )}
           </div>
         </div>
-        {isLast && onDontShowAgain ? (
+        {onDontShowAgain ? (
           <button
             type="button"
             onClick={() => { onCtaClick?.(step.id); onDontShowAgain(); }}
             className="mt-3 block w-full text-center text-[11px] uppercase tracking-[0.14em] text-zinc-400 underline-offset-4 hover:text-amber-200 hover:underline"
           >
-            {t("dontShowAgain", "Não mostrar novamente")}
+            {t("dontWant", "Não quero")}
           </button>
         ) : null}
       </section>
