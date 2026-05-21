@@ -34,7 +34,7 @@ export function MachineFilterSheet({
         className="max-h-[60vh] w-[min(260px,calc(100vw-2rem))] overflow-y-auto border-white/10 bg-zinc-950 p-1 text-white"
       >
         <Option
-          label={t("allMachines", "Todos os enxames")}
+          label={t("allMachines", "Enxame")}
           selected={selectedId == null}
           onClick={() => onChange(null)}
         />
