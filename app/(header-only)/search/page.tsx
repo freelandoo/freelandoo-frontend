@@ -15,6 +15,9 @@ import { StoryPlayer } from "@/components/stories/story-player"
 import { StoryCreator } from "@/components/stories/story-creator"
 import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
+import { ProductsGrid } from "@/components/search/products-grid"
+import { CoursesGrid } from "@/components/search/courses-grid"
+import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 /**
@@ -227,6 +230,8 @@ function SearchPageInner() {
   const [openChamadoOpen, setOpenChamadoOpen] = useState(false)
   const [storyBarKey, setStoryBarKey] = useState(0)
   const [tab, setTab] = useState<SearchTab>("services")
+  const [productCategoryId, setProductCategoryId] = useState<number | null>(null)
+  const [productCategories, setProductCategories] = useState<{ id_product_category: number; name: string }[]>([])
 
   // URL state sync: ?tab=
   useEffect(() => {
@@ -242,6 +247,19 @@ function SearchPageInner() {
     else url.searchParams.set("tab", next)
     window.history.replaceState({}, "", url.toString())
   }, [])
+
+  // Carrega categorias de produto sob demanda
+  useEffect(() => {
+    if (tab !== "products") return
+    if (productCategories.length > 0) return
+    fetch("/api/product-categories")
+      .then((r) => r.json())
+      .then((d) => {
+        const list = Array.isArray(d) ? d : d.items ?? d.categories ?? []
+        setProductCategories(list)
+      })
+      .catch(() => setProductCategories([]))
+  }, [tab, productCategories.length])
 
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
@@ -451,29 +469,56 @@ function SearchPageInner() {
         ))}
 
         {tab === "products" && (
-          <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center px-6 py-20 text-center md:max-w-[760px] lg:max-w-[1080px]">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-10">
-              <p className="text-sm font-semibold tracking-tight text-white">Vitrine de produtos</p>
-              <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/55">
-                Em construção. Use o botão{" "}
-                <span className="font-semibold text-white">Abrir chamado</span> para pedir produtos por categoria + cidade
-                enquanto a vitrine não vem.
-              </p>
+          <>
+            {/* Barra de filtros de produto: categoria (estado/cidade reusam os do header retrátil) */}
+            <div className="border-b border-white/[0.06] bg-black/30 backdrop-blur-sm">
+              <div className="mx-auto flex w-full max-w-[640px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:max-w-[760px] lg:max-w-[1080px] [&::-webkit-scrollbar]:hidden">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">Categoria</span>
+                <button
+                  type="button"
+                  onClick={() => setProductCategoryId(null)}
+                  className={cn(
+                    "shrink-0 rounded-full border px-3 py-1 text-[11.5px] font-medium transition",
+                    productCategoryId == null
+                      ? "border-yellow-400/60 bg-yellow-400/10 text-yellow-200"
+                      : "border-white/10 bg-white/[0.02] text-white/65 hover:border-white/20 hover:text-white",
+                  )}
+                >
+                  Todas
+                </button>
+                {productCategories.map((cat) => {
+                  const active = cat.id_product_category === productCategoryId
+                  return (
+                    <button
+                      key={cat.id_product_category}
+                      type="button"
+                      onClick={() => setProductCategoryId(cat.id_product_category)}
+                      className={cn(
+                        "shrink-0 rounded-full border px-3 py-1 text-[11.5px] font-medium transition",
+                        active
+                          ? "border-yellow-400/60 bg-yellow-400/10 text-yellow-200"
+                          : "border-white/10 bg-white/[0.02] text-white/65 hover:border-white/20 hover:text-white",
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+            <ProductsGrid
+              categoryId={productCategoryId}
+              state={selectedEstado}
+              city={selectedCity}
+            />
+          </>
         )}
 
         {tab === "courses" && (
-          <div className="mx-auto flex w-full max-w-[640px] flex-col items-center justify-center px-6 py-20 text-center md:max-w-[760px] lg:max-w-[1080px]">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-10">
-              <p className="text-sm font-semibold tracking-tight text-white">Vitrine de cursos</p>
-              <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/55">
-                Em construção. Use o botão{" "}
-                <span className="font-semibold text-white">Abrir chamado</span> para pedir um curso de uma profissão
-                específica.
-              </p>
-            </div>
-          </div>
+          <CoursesGrid
+            machineId={idMachine}
+            categoryId={idCategory}
+          />
         )}
       </div>
 
