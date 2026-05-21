@@ -17,6 +17,7 @@ import {
   Send,
   Sparkles,
   Users,
+  X,
 } from "lucide-react"
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
@@ -209,6 +210,19 @@ interface OsChatProfile {
   is_clan: boolean
 }
 
+/** Detalhe read-only de uma solicitação de produto (produto não tem chat-thread). */
+interface ProductSolicitacaoInfo {
+  title: string
+  description: string
+  city: string | null
+  state: string | null
+  category_name: string | null
+  status: string
+  /** Mensagem/proposta do vendedor (lado vendedor) ou null. */
+  seller_message: string | null
+  proposed_price_cents: number | null
+}
+
 interface OsChatItem {
   id_response: string
   response_status: string
@@ -218,11 +232,44 @@ interface OsChatItem {
   unread_count: number
   request: OsChatRequest
   profile: OsChatProfile
-  /** Tipo de O.S.: serviço ou curso. Roteia para os endpoints corretos. */
-  kind?: "service" | "course"
+  /** Tipo da solicitação. Roteia endpoints / comportamento de clique. */
+  kind?: "service" | "course" | "product"
+  /** Lado: 'user' = eu pedi · 'pro' = eu respondi. */
+  side?: "user" | "pro"
+  /** Presente só quando kind === 'product' (item read-only). */
+  productInfo?: ProductSolicitacaoInfo
 }
 
 interface OsChatsListResponse { chats: OsChatItem[] }
+
+interface ProductBuyerRequest {
+  id_product_request: string
+  title: string
+  description: string
+  city: string | null
+  state: string | null
+  status: string
+  category_name: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+interface ProductSellerResponse {
+  id_response: string
+  id_product_request: string
+  message: string
+  proposed_price_cents: number | null
+  status: string
+  created_at: string
+  updated_at: string | null
+  request_title: string
+  request_description: string
+  request_city: string | null
+  request_state: string | null
+  request_status: string
+  category_name: string | null
+  buyer_username: string | null
+}
 
 interface OsMessageItem {
   id_message: string
@@ -313,6 +360,7 @@ export default function MensagensClient() {
   const [osViewerSide, setOsViewerSide] = useState<"USER" | "PRO">("USER")
   const [osComposer, setOsComposer] = useState("")
   const [osSending, setOsSending] = useState(false)
+  const [productDetail, setProductDetail] = useState<OsChatItem | null>(null)
   const osThreadEndRef = useRef<HTMLDivElement | null>(null)
 
   // ----- Chat ao vivo (Global / Enxames) -----
@@ -538,32 +586,97 @@ export default function MensagensClient() {
     threadEndRef.current?.scrollIntoView({ block: "end" })
   }, [messages.length])
 
-  // ----- O.S.: lista -----
+  // ----- Solicitações: lista (6 fontes) -----
   const loadOsChats = useCallback(async () => {
     setOsChatsLoading(true)
     setOsChatsError(null)
     try {
-      const [svc, crs] = await Promise.all([
+      const [svcU, svcP, crsU, crsP, prodU, prodP] = await Promise.all([
         jsonFetch<OsChatsListResponse>(`/api/service-requests/me/chats`).catch(() => ({ chats: [] })),
+        jsonFetch<OsChatsListResponse>(`/api/service-requests/me/pro-chats`).catch(() => ({ chats: [] })),
         jsonFetch<OsChatsListResponse>(`/api/course-requests/me/chats`).catch(() => ({ chats: [] })),
+        jsonFetch<OsChatsListResponse>(`/api/course-requests/me/pro-chats`).catch(() => ({ chats: [] })),
+        jsonFetch<{ requests?: ProductBuyerRequest[] }>(`/api/product-requests/me`).catch(() => ({ requests: [] })),
+        jsonFetch<{ responses?: ProductSellerResponse[] }>(`/api/product-requests/me/sent`).catch(() => ({ responses: [] })),
       ])
-      const svcChats: OsChatItem[] = (Array.isArray(svc?.chats) ? svc.chats : []).map((c) => ({ ...c, kind: "service" as const }))
-      const crsChats: OsChatItem[] = (Array.isArray(crs?.chats) ? crs.chats : []).map((c) => ({ ...c, kind: "course" as const }))
-      const merged = [...svcChats, ...crsChats].sort((a, b) => {
+
+      const tag = (chats: OsChatItem[] | undefined, kind: "service" | "course", side: "user" | "pro") =>
+        (Array.isArray(chats) ? chats : []).map((c) => ({ ...c, kind, side }))
+
+      const serviceUser = tag(svcU?.chats, "service", "user")
+      const servicePro = tag(svcP?.chats, "service", "pro")
+      const courseUser = tag(crsU?.chats, "course", "user")
+      const coursePro = tag(crsP?.chats, "course", "pro")
+
+      // Produto — lado comprador (1 item por pedido, read-only)
+      const productBuyer: OsChatItem[] = (Array.isArray(prodU?.requests) ? prodU.requests : []).map((r) => ({
+        id_response: `product-buyer:${r.id_product_request}`,
+        response_status: r.status,
+        response_created_at: r.created_at,
+        last_message: null,
+        last_message_at: r.updated_at || r.created_at,
+        unread_count: 0,
+        kind: "product" as const,
+        side: "user" as const,
+        request: {
+          id_request: r.id_product_request, status: r.status, description: r.description,
+          estado: r.state, municipio: r.city, id_machine: 0, id_category: 0,
+          machine_name: null, category_name: r.category_name, id_response_chosen: null,
+        },
+        profile: {
+          id_profile: "", display_name: r.title, avatar_url: null,
+          sub_profile_slug: null, username: null, is_clan: false,
+        },
+        productInfo: {
+          title: r.title, description: r.description, city: r.city, state: r.state,
+          category_name: r.category_name, status: r.status,
+          seller_message: null, proposed_price_cents: null,
+        },
+      }))
+
+      // Produto — lado vendedor (1 item por resposta enviada, read-only)
+      const productSeller: OsChatItem[] = (Array.isArray(prodP?.responses) ? prodP.responses : []).map((r) => ({
+        id_response: `product-seller:${r.id_response}`,
+        response_status: r.status,
+        response_created_at: r.created_at,
+        last_message: r.message,
+        last_message_at: r.updated_at || r.created_at,
+        unread_count: 0,
+        kind: "product" as const,
+        side: "pro" as const,
+        request: {
+          id_request: r.id_product_request, status: r.request_status, description: r.request_description,
+          estado: r.request_state, municipio: r.request_city, id_machine: 0, id_category: 0,
+          machine_name: null, category_name: r.category_name, id_response_chosen: null,
+        },
+        profile: {
+          id_profile: "", display_name: r.buyer_username || "Comprador", avatar_url: null,
+          sub_profile_slug: null, username: r.buyer_username || null, is_clan: false,
+        },
+        productInfo: {
+          title: r.request_title, description: r.request_description, city: r.request_city,
+          state: r.request_state, category_name: r.category_name, status: r.request_status,
+          seller_message: r.message, proposed_price_cents: r.proposed_price_cents,
+        },
+      }))
+
+      const merged = [
+        ...serviceUser, ...servicePro, ...courseUser, ...coursePro, ...productBuyer, ...productSeller,
+      ].sort((a, b) => {
         const ta = new Date(a.last_message_at || a.response_created_at).getTime()
         const tb = new Date(b.last_message_at || b.response_created_at).getTime()
         return tb - ta
       })
       setOsChats(merged)
     } catch (err) {
-      setOsChatsError((err as Error).message || t("loadOsError", "Erro ao carregar O.S."))
+      setOsChatsError((err as Error).message || t("loadOsError", "Erro ao carregar solicitações"))
       setOsChats([])
     } finally {
       setOsChatsLoading(false)
     }
   }, [t])
 
-  // Resolve o prefixo de endpoint para o O.S. ativo (serviço vs curso).
+  // Resolve o prefixo de endpoint para o chat ativo (serviço vs curso).
   const osEndpointBase = useCallback(
     (idResponse: string) => {
       const chat = osChats.find((c) => c.id_response === idResponse)
@@ -587,10 +700,9 @@ export default function MensagensClient() {
     return () => clearInterval(t)
   }, [status, tab, loadOsChats])
 
-  const visibleOsChats = useMemo(
-    () => actorId ? osChats.filter((c) => c.profile.id_profile === actorId) : osChats,
-    [osChats, actorId]
-  )
+  // Solicitações são do usuário inteiro (serviço/produto/curso, ambos os lados),
+  // não de um subperfil específico — por isso não filtra por actorId.
+  const visibleOsChats = osChats
 
   const activeOsChat = useMemo(
     () => visibleOsChats.find((c) => c.id_response === activeOsResponseId) || null,
@@ -948,8 +1060,8 @@ export default function MensagensClient() {
               active={tab === "os"}
               onClick={() => handleSelectTab("os")}
               icon={<ClipboardList className="h-3.5 w-3.5" />}
-              label={t("osTabLabel", "O.S.")}
-              shortLabel={t("osTabLabel", "O.S.")}
+              label={t("osTabLabel", "Solicitações")}
+              shortLabel={t("osTabShortLabel", "Solicit.")}
               dataTour="messages-tab-os"
             />
             {!isClanActor && (
@@ -1089,16 +1201,26 @@ export default function MensagensClient() {
             ) : (
               <ul className="divide-y divide-white/5">
                 {visibleOsChats.map((c) => {
-                  const profHref = entityHref({
+                  const isProduct = c.kind === "product"
+                  const kindLabel = c.kind === "course" ? "Curso" : c.kind === "product" ? "Produto" : "Serviço"
+                  const kindColor =
+                    c.kind === "course" ? "bg-sky-500/15 text-sky-300"
+                    : c.kind === "product" ? "bg-emerald-500/15 text-emerald-300"
+                    : "bg-amber-500/15 text-amber-300"
+                  const sideLabel = c.side === "pro" ? "Respondi" : "Pedi"
+                  const titleText = isProduct
+                    ? (c.productInfo?.title || "Pedido de produto")
+                    : (c.profile.display_name || t("professionalFallback", "Profissional"))
+                  const profHref = !isProduct ? entityHref({
                     type: "profile",
                     id: c.profile.id_profile,
                     username: c.profile.username,
                     sub_profile_slug: c.profile.sub_profile_slug,
-                  })
+                  }) : null
                   return (
                   <li key={c.id_response} className="relative">
                     <button
-                      onClick={() => handleSelectOsChat(c.id_response)}
+                      onClick={() => isProduct ? setProductDetail(c) : handleSelectOsChat(c.id_response)}
                       className={cn(
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5",
                         activeOsResponseId === c.id_response && "bg-white/5"
@@ -1107,21 +1229,31 @@ export default function MensagensClient() {
                       <Avatar className="h-10 w-10 shrink-0">
                         <AvatarImage src={c.profile.avatar_url || undefined} />
                         <AvatarFallback className="bg-neutral-800 text-xs text-white">
-                          {entityInitials(c.profile.display_name)}
+                          {entityInitials(titleText)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-white">
-                            {c.profile.display_name || t("professionalFallback", "Profissional")}
-                          </span>
+                          <span className="truncate text-sm font-medium text-white">{titleText}</span>
                           <span className="shrink-0 text-[10px] text-white/40">
                             {formatTime(c.last_message_at || c.response_created_at, locale)}
                           </span>
                         </div>
-                        <div className="mt-0.5 truncate text-[10px] text-white/50">
-                          {c.request.machine_name || t("machineFallback", "Enxame")}
-                          {c.request.category_name ? ` · ${c.request.category_name}` : ""}
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className={cn("rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide", kindColor)}>
+                            {kindLabel}
+                          </span>
+                          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white/55">
+                            {sideLabel}
+                          </span>
+                          {!isProduct && (
+                            <span className="truncate text-[10px] text-white/50">
+                              {c.request.category_name || c.request.machine_name || ""}
+                            </span>
+                          )}
+                          {isProduct && c.productInfo?.category_name && (
+                            <span className="truncate text-[10px] text-white/50">{c.productInfo.category_name}</span>
+                          )}
                         </div>
                         <div className="mt-0.5 flex items-center justify-between gap-2">
                           <span className={cn(
@@ -1677,6 +1809,69 @@ export default function MensagensClient() {
           void loadConversations()
         }}
       />
+
+      {productDetail?.productInfo && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setProductDetail(null)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+          >
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                  Produto
+                </span>
+                <h3 className="text-sm font-semibold tracking-tight">
+                  {productDetail.side === "pro" ? "Pedido que você respondeu" : "Seu pedido de produto"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setProductDetail(null)}
+                className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <div>
+                <p className="text-base font-semibold tracking-tight text-white">{productDetail.productInfo.title}</p>
+                <p className="mt-0.5 text-[11px] text-white/45">
+                  {productDetail.productInfo.category_name || "Sem categoria"}
+                  {productDetail.productInfo.city ? ` · ${productDetail.productInfo.city}` : ""}
+                  {productDetail.productInfo.state ? `/${productDetail.productInfo.state}` : ""}
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/40">Descrição</p>
+                <p className="mt-1 text-xs leading-relaxed text-white/70">{productDetail.productInfo.description}</p>
+              </div>
+              {productDetail.productInfo.seller_message && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-300/70">Sua resposta</p>
+                  <p className="mt-1 text-xs leading-relaxed text-white/80">{productDetail.productInfo.seller_message}</p>
+                  {productDetail.productInfo.proposed_price_cents != null && (
+                    <p className="mt-1.5 text-sm font-bold tracking-tight text-emerald-300">
+                      {(productDetail.productInfo.proposed_price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="text-[11px] text-white/45">
+                Status: <span className="font-medium text-white/70">{productDetail.productInfo.status}</span>
+              </p>
+              <p className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[11px] text-white/50">
+                Pedidos de produto não têm chat contínuo. A negociação acontece pelos contatos trocados na resposta.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
