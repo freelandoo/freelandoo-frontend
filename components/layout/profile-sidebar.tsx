@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Boxes, Crown, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
+import { useTour } from "@/features/tour/useTour"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
 import { UserDropside } from "./UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -113,6 +114,16 @@ export function ProfileSidebar() {
   const active = useActiveContext()
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const navCounts = useNavCounts()
+  const { registerAction } = useTour()
+
+  useEffect(() => {
+    const unregOpen = registerAction("openDropside", () => setDropsideOpen(true))
+    const unregClose = registerAction("closeDropside", () => setDropsideOpen(false))
+    return () => {
+      unregOpen()
+      unregClose()
+    }
+  }, [registerAction])
 
   // Em /account o avatar abre o dropside; em outras telas, navega pra /account.
   const isOnAccountHome = pathname === "/account"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { TOUR_CONFIGS, type TourConfig, type TourKey } from "./tourConfig";
 import {
@@ -13,11 +13,17 @@ import {
   startTourProgress,
   type TourStatus,
 } from "./tourService";
-import { TourContext } from "./useTour";
+import { TourContext, type TourActionName } from "./useTour";
 import { TourManager } from "./TourManager";
 import { trackTourEvent } from "./tourAnalytics";
+import { markPathVisited } from "./visitedPaths";
 
 type ProgressMap = Record<string, { status: TourStatus; current_step: number }>;
+
+function pathMatches(pagePaths: string[] | undefined, currentPath: string | null) {
+  if (!currentPath || !pagePaths || pagePaths.length === 0) return false;
+  return pagePaths.some((prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`));
+}
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -74,9 +80,56 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     void resetTourProgress(tourKey);
   };
 
-  // Auto-start do walkthrough desativado em 2026-05-21. A descoberta agora é via
-  // hover-hints (<HoverHint>) e o walkthrough completo só inicia manualmente
-  // pela Central de Ajuda — sem modal surpresa ao navegar.
+  const actionsRef = useRef<Map<TourActionName, Set<() => void>>>(new Map());
+
+  const registerAction = useCallback((name: TourActionName, fn: () => void) => {
+    const map = actionsRef.current;
+    if (!map.has(name)) map.set(name, new Set());
+    map.get(name)!.add(fn);
+    return () => {
+      map.get(name)?.delete(fn);
+    };
+  }, []);
+
+  const runAction = useCallback((name: TourActionName | undefined) => {
+    if (!name) return;
+    actionsRef.current.get(name)?.forEach((fn) => {
+      try {
+        fn();
+      } catch {
+        // ignore — ação registrada falhou; tour segue
+      }
+    });
+  }, []);
+
+  const eligibleTours = useMemo(
+    () => TOUR_CONFIGS.filter((tour) => tour.autoStart && tour.pagePath && tour.pagePath.length > 0),
+    [],
+  );
+
+  const previousPathRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = previousPathRef.current;
+    if (prev && prev !== pathname) markPathVisited(prev);
+    previousPathRef.current = pathname || null;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (hideAllTours) return;
+    if (activeTour) return;
+    if (!pathname) return;
+    const candidate = eligibleTours.find(
+      (tour) =>
+        pathMatches(tour.pagePath, pathname) &&
+        (progress[tour.tourKey]?.status || "not_started") === "not_started",
+    );
+    if (!candidate) return;
+    setActiveTour(candidate);
+    setStepIndex(0);
+    setProgress((prev) => ({ ...prev, [candidate.tourKey]: { status: "in_progress", current_step: 0 } }));
+    void startTourProgress(candidate.tourKey, 0);
+    trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
+  }, [pathname, hideAllTours, activeTour, eligibleTours, progress]);
 
   const value = {
     startTour,
@@ -89,6 +142,8 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       void persistHideAllTours(value);
     },
     getStatus: (tourKey: TourKey) => progress[tourKey]?.status || "not_started",
+    registerAction,
+    runAction,
   };
 
   return (
@@ -100,6 +155,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         onStepChange={setStepIndex}
         onComplete={() => activeTour && completeTour(activeTour.tourKey)}
         onSkip={() => activeTour && skipTour(activeTour.tourKey)}
+        onDontShowAgain={() => {
+          setHideAllToursState(true);
+          void persistHideAllTours(true);
+          if (activeTour) completeTour(activeTour.tourKey);
+        }}
+        onStepAction={runAction}
         onStepViewed={(stepId) =>
           trackTourEvent("tour_step_viewed", {
             tour_key: activeTour?.tourKey || "",

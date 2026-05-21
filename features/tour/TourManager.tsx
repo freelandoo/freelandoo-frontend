@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { TourConfig } from "./tourConfig";
+import type { TourConfig, TourStepAction } from "./tourConfig";
 import { useTranslations } from "@/components/i18n/I18nProvider";
 
 interface TourManagerProps {
@@ -11,6 +11,8 @@ interface TourManagerProps {
   onStepChange: (idx: number) => void;
   onComplete: () => void;
   onSkip: () => void;
+  onDontShowAgain?: () => void;
+  onStepAction?: (action: TourStepAction | undefined) => void;
   onStepViewed?: (stepId: string) => void;
   onCtaClick?: (stepId: string) => void;
 }
@@ -28,34 +30,62 @@ function getStepPosition(target?: string): Pos {
   };
 }
 
-export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip, onStepViewed, onCtaClick }: TourManagerProps) {
+export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip, onDontShowAgain, onStepAction, onStepViewed, onCtaClick }: TourManagerProps) {
   const t = useTranslations("Tour");
   const [pos, setPos] = useState<Pos>({ top: 24, left: 24 });
   const [spotlight, setSpotlight] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const step = useMemo(() => (tour ? tour.steps[stepIndex] : null), [tour, stepIndex]);
+  const prevStepRef = useRef<{ id: string; onLeave?: TourStepAction } | null>(null);
 
   useEffect(() => {
-    if (!step) return;
-    setPos(getStepPosition(step.target || step.fallbackTarget));
-    const target = step.target || step.fallbackTarget;
-    if (!target) {
-      setSpotlight(null);
-    } else {
+    if (!step) {
+      const prev = prevStepRef.current;
+      if (prev?.onLeave) onStepAction?.(prev.onLeave);
+      prevStepRef.current = null;
+      return;
+    }
+    const prev = prevStepRef.current;
+    if (prev && prev.id !== step.id && prev.onLeave) onStepAction?.(prev.onLeave);
+    if (step.onEnter) onStepAction?.(step.onEnter);
+    prevStepRef.current = { id: step.id, onLeave: step.onLeave };
+
+    const recompute = () => {
+      setPos(getStepPosition(step.target || step.fallbackTarget));
+      const target = step.target || step.fallbackTarget;
+      if (!target) {
+        setSpotlight(null);
+        return;
+      }
       const el = document.querySelector(target);
       if (!el) {
         setSpotlight(null);
-      } else {
-        const rect = el.getBoundingClientRect();
-        setSpotlight({
-          top: Math.max(6, rect.top - 6),
-          left: Math.max(6, rect.left - 6),
-          width: rect.width + 12,
-          height: rect.height + 12,
-        });
+        return;
       }
-    }
+      const rect = el.getBoundingClientRect();
+      setSpotlight({
+        top: Math.max(6, rect.top - 6),
+        left: Math.max(6, rect.left - 6),
+        width: rect.width + 12,
+        height: rect.height + 12,
+      });
+    };
+
+    // Recompute on next frame to let `onEnter` mutate the DOM (e.g., open a dropside).
+    const raf = requestAnimationFrame(() => {
+      recompute();
+      // Second pass after open animations (~250ms).
+      const timeout = window.setTimeout(recompute, 280);
+      (recompute as unknown as { __timeout?: number }).__timeout = timeout;
+    });
+
     onStepViewed?.(step.id);
-  }, [step, onStepViewed]);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      const timeout = (recompute as unknown as { __timeout?: number }).__timeout;
+      if (typeof timeout === "number") window.clearTimeout(timeout);
+    };
+  }, [step, onStepViewed, onStepAction]);
 
   useEffect(() => {
     function onEsc(event: KeyboardEvent) {
@@ -105,6 +135,15 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
             )}
           </div>
         </div>
+        {isLast && onDontShowAgain ? (
+          <button
+            type="button"
+            onClick={() => { onCtaClick?.(step.id); onDontShowAgain(); }}
+            className="mt-3 block w-full text-center text-[11px] uppercase tracking-[0.14em] text-zinc-400 underline-offset-4 hover:text-amber-200 hover:underline"
+          >
+            {t("dontShowAgain", "Não mostrar novamente")}
+          </button>
+        ) : null}
       </section>
     </>
   );

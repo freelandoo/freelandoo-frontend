@@ -28,6 +28,8 @@ export type TourKey =
   | "notifications"
   | "security";
 
+export type TourStepAction = "openDropside" | "closeDropside" | "openSidebar" | "closeSidebar";
+
 export interface TourStepConfig {
   id: string;
   target?: string;
@@ -35,6 +37,8 @@ export interface TourStepConfig {
   content: string;
   placement?: "top" | "bottom" | "left" | "right" | "center";
   fallbackTarget?: string;
+  onEnter?: TourStepAction;
+  onLeave?: TourStepAction;
 }
 
 export interface TourConfig {
@@ -64,6 +68,9 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "welcome-5", title: "Use seus pólens", content: "Pólens desbloqueiam banners, vantagens e recursos.", placement: "center" },
       { id: "welcome-6", target: "[data-tour='sidebar-feed']", title: "Movimente seu perfil", content: "Posts, interações e XP ajudam no ranking e na descoberta.", placement: "right" },
       { id: "welcome-7", target: "[data-tour='sidebar-profile']", title: "Comece pelo seu primeiro subperfil", content: "Crie ou complete um subperfil para entrar no jogo.", placement: "right" },
+      { id: "welcome-8", target: "[data-tour='dropside-account']", title: "Sua conta", content: "Aqui você acessa a visão geral da sua conta — perfis, clans, pólens e XP.", placement: "right", onEnter: "openDropside" },
+      { id: "welcome-9", target: "[data-tour='dropside-payments']", title: "Pagamentos e assinaturas", content: "Histórico de cobranças, assinaturas dos subperfis e reembolsos.", placement: "right" },
+      { id: "welcome-10", title: "Pronto!", content: "Você pode refazer este tour a qualquer momento pela Central de Ajuda em Configurações.", placement: "center", onLeave: "closeDropside" },
     ],
   },
   { tourKey: "account_auth", title: "Conta e Autenticação", description: "Segurança e conta-base", version: 1, pagePath: ["/account", "/login", "/cadastro"], steps: [
