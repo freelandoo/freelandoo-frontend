@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 type Quote = {
   profile?: {
@@ -84,9 +85,11 @@ export function PremiumProfileModal({
     setBuying(method)
     setError(null)
     try {
+      const sharedCoupon = method === "stripe" ? getCapturedCoupon() : null
       const res = await fetch(`/api/premium/checkout/${method}/${profileId}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${t}` },
+        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+        body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Erro ao processar compra")

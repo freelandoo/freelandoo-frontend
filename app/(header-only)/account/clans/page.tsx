@@ -398,7 +398,7 @@ export default function MyClansPage() {
             <DialogTitle>Criar novo clan</DialogTitle>
             <DialogDescription>
               O sub-perfil escolhido vira dono do clan e ocupa 1 das 6 vagas.
-              3 vagas grátis, mais 3 disponíveis a R$50 cada.
+              3 vagas grátis, mais 3 disponíveis a R$39 cada.
             </DialogDescription>
           </DialogHeader>
 

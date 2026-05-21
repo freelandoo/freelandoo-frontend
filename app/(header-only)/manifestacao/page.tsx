@@ -6,6 +6,7 @@ import { BadgeCheck, ChevronRight, CreditCard, Hexagon, Loader2, Search, Sparkle
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ShareIconButton } from "@/components/share/share-icon-button"
+import { getCapturedCoupon } from "@/lib/share-coupon"
 
 type Product = {
   id: string
@@ -101,10 +102,14 @@ export default function ManifestacaoPage() {
     }
     setBuying(`${method}:${product.id}`)
     try {
+      const sharedCoupon = method === "stripe" ? getCapturedCoupon() : null
       const res = await fetch(`/api/manifestations/checkout/${method}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: product.id }),
+        body: JSON.stringify({
+          product_id: product.id,
+          ...(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Compra nao concluida")
