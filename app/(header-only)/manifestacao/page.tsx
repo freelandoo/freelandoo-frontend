@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   CheckCircle2,
   Coins,
+  CreditCard,
   Loader2,
   Search,
   Sparkles,
@@ -13,8 +14,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ShareIconButton } from "@/components/share/share-icon-button"
-
-const PRICE_POLENS = 50
 
 type ManifestationType = "motivational" | "emotion" | null
 
@@ -27,6 +26,7 @@ type Product = {
   description: string | null
   banner_url: string
   price_polens: number
+  price_cents: number
 }
 
 type OwnedRow = { product_id: string; is_active: boolean }
@@ -49,6 +49,12 @@ function typeLabel(type: ManifestationType): string {
   if (type === "motivational") return "Motivacional"
   if (type === "emotion") return "Emoção"
   return "Manifestação"
+}
+
+function fmtBRL(cents: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    (cents || 0) / 100,
+  )
 }
 
 /** Imagem do banner com fallback — se o arquivo não existir, não quebra a UI. */
@@ -125,6 +131,21 @@ export default function ManifestacaoPage() {
     }
   }, [loadMine])
 
+  // Retorno do checkout Stripe: o webhook desbloqueia; recarrega "owned".
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("checkout") === "success") {
+      window.history.replaceState(null, "", "/manifestacao")
+      setFeedback({
+        ok: true,
+        title: "Pagamento confirmado",
+        message:
+          'Sua manifestação foi desbloqueada. Clique em "Usar no perfil" para aplicá-la.',
+      })
+      void loadMine()
+    }
+  }, [loadMine])
+
   const ownedIds = useMemo(
     () => new Set((mine?.owned || []).map((o) => o.product_id)),
     [mine],
@@ -175,6 +196,35 @@ export default function ManifestacaoPage() {
         message,
       })
     } finally {
+      setBusy(null)
+    }
+  }
+
+  async function buyStripe(product: Product) {
+    if (!token) {
+      window.location.href = "/login?next=/manifestacao"
+      return
+    }
+    setBusy(`stripe:${product.id}`)
+    try {
+      const res = await fetch("/api/manifestations/checkout/stripe", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: product.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Não foi possível iniciar o pagamento")
+      if (data?.checkout_url) {
+        window.location.href = data.checkout_url
+        return
+      }
+      throw new Error("Checkout indisponível")
+    } catch (err) {
+      setFeedback({
+        ok: false,
+        title: "Pagamento não iniciado",
+        message: err instanceof Error ? err.message : "Erro no checkout",
+      })
       setBusy(null)
     }
   }
@@ -234,10 +284,8 @@ export default function ManifestacaoPage() {
           Loja de Manifestações
         </h1>
         <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-zinc-600">
-          Desbloqueie banners de manifestação com Poléns e aplique um deles no headcard do seu
-          perfil. Cada manifestação custa{" "}
-          <strong className="font-semibold text-zinc-900">{PRICE_POLENS} Poléns</strong> e fica
-          desbloqueada para sempre.
+          Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no
+          headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre.
         </p>
       </section>
 
@@ -339,12 +387,19 @@ export default function ManifestacaoPage() {
                       <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{p.description}</p>
                     )}
 
-                    <div className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-amber-800">
-                      <Coins className="h-4 w-4" />
-                      {(p.price_polens || PRICE_POLENS).toLocaleString("pt-BR")} Poléns
+                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
+                      <span className="inline-flex items-center gap-1.5 text-amber-800">
+                        <Coins className="h-4 w-4" />
+                        {p.price_polens > 0
+                          ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                          : "Grátis"}
+                      </span>
+                      {p.price_cents > 0 && (
+                        <span className="text-zinc-700">{fmtBRL(p.price_cents)} no cartão</span>
+                      )}
                     </div>
 
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-2">
                       {isActive ? (
                         <Button
                           disabled
@@ -367,19 +422,37 @@ export default function ManifestacaoPage() {
                           Usar no perfil
                         </Button>
                       ) : (
-                        <Button
-                          onClick={() => buy(p)}
-                          disabled={busy != null}
-                          variant="outline"
-                          className="w-full rounded-full border-amber-600/30 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
-                        >
-                          {busy === `buy:${p.id}` ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Coins className="mr-2 h-4 w-4" />
+                        <>
+                          <Button
+                            onClick={() => buy(p)}
+                            disabled={busy != null}
+                            variant="outline"
+                            className="w-full rounded-full border-amber-600/30 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
+                          >
+                            {busy === `buy:${p.id}` ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Coins className="mr-2 h-4 w-4" />
+                            )}
+                            {p.price_polens > 0
+                              ? `Comprar · ${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                              : "Resgatar grátis"}
+                          </Button>
+                          {p.price_cents > 0 && (
+                            <Button
+                              onClick={() => buyStripe(p)}
+                              disabled={busy != null}
+                              className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                            >
+                              {busy === `stripe:${p.id}` ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <CreditCard className="mr-2 h-4 w-4" />
+                              )}
+                              Cartão · {fmtBRL(p.price_cents)}
+                            </Button>
                           )}
-                          Comprar · {PRICE_POLENS} Poléns
-                        </Button>
+                        </>
                       )}
                     </div>
                   </div>
