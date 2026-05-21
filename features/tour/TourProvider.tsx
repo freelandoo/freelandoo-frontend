@@ -156,9 +156,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         onComplete={() => activeTour && completeTour(activeTour.tourKey)}
         onSkip={() => activeTour && skipTour(activeTour.tourKey)}
         onDontShowAgain={() => {
-          setHideAllToursState(true);
-          void persistHideAllTours(true);
-          if (activeTour) completeTour(activeTour.tourKey);
+          // Por-página: encerra apenas o tour atual (skipped). Os tours de
+          // outras páginas seguem aparecendo. O opt-out global de todos os
+          // tours fica no toggle da Central de Ajuda (hide_all_tours).
+          if (activeTour) skipTour(activeTour.tourKey);
         }}
         onStepAction={runAction}
         onStepViewed={(stepId) =>
