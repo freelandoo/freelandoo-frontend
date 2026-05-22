@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GripVertical, ImagePlus, Loader2, Save, Trash2, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  AffiliateOptInField,
-  AFFILIATE_COMMISSION_DEFAULT,
-} from "@/components/affiliate/affiliate-opt-in-field"
+import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import type { ProfileService } from "@/components/calendar/types"
 import {
   clientTotalCentsFromFreelancerNet,
@@ -109,7 +106,6 @@ export function ProfileServiceEditModal({
     is_active: true,
     member_profile_ids: [] as string[],
     affiliates_allowed: false,
-    affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
   })
   const [saving, setSaving] = useState(false)
   const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
@@ -147,7 +143,6 @@ export function ProfileServiceEditModal({
       is_active: true,
       member_profile_ids: [],
       affiliates_allowed: false,
-      affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, service])
 
@@ -161,8 +156,6 @@ export function ProfileServiceEditModal({
       is_active: service.is_active !== false,
       member_profile_ids: service.member_profile_ids || [],
       affiliates_allowed: service.affiliates_allowed ?? false,
-      affiliate_commission_pct:
-        service.affiliate_commission_pct ?? AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, service])
 
@@ -416,7 +409,6 @@ export function ProfileServiceEditModal({
       price_amount,
       is_active: serviceForm.is_active,
       affiliates_allowed: serviceForm.affiliates_allowed,
-      affiliate_commission_pct: serviceForm.affiliate_commission_pct,
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
     try {
@@ -709,9 +701,7 @@ export function ProfileServiceEditModal({
 
           <AffiliateOptInField
             allowed={serviceForm.affiliates_allowed}
-            pct={serviceForm.affiliate_commission_pct}
             onAllowedChange={(v) => setServiceForm((f) => ({ ...f, affiliates_allowed: v }))}
-            onPctChange={(v) => setServiceForm((f) => ({ ...f, affiliate_commission_pct: v }))}
             disabled={saving}
           />
         </div>

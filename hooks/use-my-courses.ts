@@ -19,7 +19,6 @@ export interface MyCourse {
   status: CourseStatus
   feed_post_id: string | null
   affiliates_allowed: boolean
-  affiliate_commission_pct: number
   published_at: string | null
   created_at: string
   updated_at: string
@@ -37,7 +36,6 @@ export interface CourseCreateInput {
   price_cents?: number | null
   profile_id?: string | null
   affiliates_allowed?: boolean
-  affiliate_commission_pct?: number
 }
 
 export interface CourseUpdateInput extends Partial<CourseCreateInput> {

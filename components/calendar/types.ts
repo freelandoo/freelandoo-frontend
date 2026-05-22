@@ -36,7 +36,6 @@ export interface ProfileService {
   member_profile_ids?: string[]
   /** Opt-in de afiliados (migration 090). */
   affiliates_allowed?: boolean
-  affiliate_commission_pct?: number
 }
 
 export interface AvailableSlot {

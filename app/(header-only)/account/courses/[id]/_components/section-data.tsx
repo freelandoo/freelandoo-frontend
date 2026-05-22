@@ -14,10 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AffiliateOptInField,
-  AFFILIATE_COMMISSION_DEFAULT,
-} from "@/components/affiliate/affiliate-opt-in-field"
+import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import {
   COURSE_MIN_PUBLISH_PRICE_CENTS,
   centsToInputText,
@@ -45,7 +42,6 @@ interface FormState {
   profile_id: string
   status: CourseStatus
   affiliates_allowed: boolean
-  affiliate_commission_pct: number
 }
 
 function buildFormFromCourse(course: MyCourse): FormState {
@@ -58,8 +54,6 @@ function buildFormFromCourse(course: MyCourse): FormState {
     profile_id: course.profile_id || "",
     status: course.status,
     affiliates_allowed: course.affiliates_allowed ?? false,
-    affiliate_commission_pct:
-      course.affiliate_commission_pct ?? AFFILIATE_COMMISSION_DEFAULT,
   }
 }
 
@@ -91,8 +85,7 @@ export function CourseDataSection({
       base.price_text !== form.price_text ||
       base.profile_id !== form.profile_id ||
       base.status !== form.status ||
-      base.affiliates_allowed !== form.affiliates_allowed ||
-      base.affiliate_commission_pct !== form.affiliate_commission_pct
+      base.affiliates_allowed !== form.affiliates_allowed
     )
   }, [course, form])
 
@@ -121,7 +114,6 @@ export function CourseDataSection({
       profile_id: form.profile_id || null,
       status: form.status,
       affiliates_allowed: form.affiliates_allowed,
-      affiliate_commission_pct: form.affiliate_commission_pct,
     }
 
     const token = getToken()
@@ -302,9 +294,7 @@ export function CourseDataSection({
 
       <AffiliateOptInField
         allowed={form.affiliates_allowed}
-        pct={form.affiliate_commission_pct}
         onAllowedChange={(v) => setForm({ ...form, affiliates_allowed: v })}
-        onPctChange={(v) => setForm({ ...form, affiliate_commission_pct: v })}
         disabled={isSaving}
       />
 
