@@ -30,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
-import { ServiceRequestModal } from "./_components/service-request-modal"
 import { UserPortfolio } from "./_components/UserPortfolio"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
@@ -146,8 +145,6 @@ export default function PerfilPage() {
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null)
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
   const [premiumProfile, setPremiumProfile] = useState<{ id: string; name?: string } | null>(null)
-  const [isServiceRequestOpen, setIsServiceRequestOpen] = useState(false)
-  const [serviceRequestMode, setServiceRequestMode] = useState<"service" | "product">("service")
   const srBadge = { has_new: navCounts.serviceHasNew, unread_chats: navCounts.serviceUnread }
   const profileBadges = navCounts.conversationByActor
   const [manifestation, setManifestation] = useState<{
@@ -1616,21 +1613,6 @@ export default function PerfilPage() {
                   <span className="text-white/55">acompanhados</span>
                 </span>
               </div>
-
-              {/* Encontrar Produto — atalho do headcard.
-                  Encontrar Serviço foi movido para a vitrine /search como "Abrir chamado" (broadcast pra todo o Enxame). */}
-              <div className="mt-3">
-                <HoverHint id="account-find-product" side="bottom" className="block w-full">
-                  <button
-                    type="button"
-                    onClick={() => { setServiceRequestMode("product"); setIsServiceRequestOpen(true) }}
-                    className="group inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] px-3 text-[13px] font-medium text-white/85 transition-all hover:border-yellow-400/40 hover:from-yellow-400/[0.08] hover:to-yellow-400/[0.02] hover:text-white"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-                    Encontrar produto
-                  </button>
-                </HoverHint>
-              </div>
             </div>
           </article>
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
@@ -2646,13 +2628,6 @@ export default function PerfilPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Modal Pedir Serviço */}
-      <ServiceRequestModal
-        open={isServiceRequestOpen}
-        onOpenChange={setIsServiceRequestOpen}
-        initialMode={serviceRequestMode}
-      />
 
       {/* Modal Premium (comprar destaque pra um perfil) */}
       {premiumProfile && (
