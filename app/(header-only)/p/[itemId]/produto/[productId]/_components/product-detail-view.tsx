@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, Loader2, MapPin, Package, ShoppingCart, Truck } from "lucide-react"
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, MapPin, MessageCircle, Package, ShoppingCart, Store, Truck } from "lucide-react"
 import Link from "next/link"
 import { BuyProductDialog } from "./buy-product-dialog"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
@@ -29,6 +29,7 @@ interface Product {
   origin_zipcode_override: string | null
   is_active: boolean
   media: Media[]
+  delivery_mode?: "shipping" | "local_pickup"
 }
 
 interface ShippingOption {
@@ -42,7 +43,7 @@ interface ShippingOption {
 }
 
 interface ShippingResponse {
-  origin_zipcode: string
+  origin_zipcode: string | null
   destination_zipcode: string
   destination_address: {
     cep: string
@@ -52,6 +53,9 @@ interface ShippingResponse {
     uf: string
   } | null
   options: ShippingOption[]
+  mode?: "shipping" | "local_pickup"
+  exceeded_limits?: boolean
+  exceeded_reasons?: Array<"sum" | "side" | "weight">
 }
 
 function formatBRL(cents: number, locale: string) {
@@ -256,7 +260,30 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
             </div>
           )}
 
-          {/* Frete */}
+          {/* Modo de entrega: retirada no local vs envio por transportadora */}
+          {product.delivery_mode === "local_pickup" ? (
+            <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Store className="h-4 w-4" aria-hidden /> Retirada combinada com o vendedor
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Este produto não usa frete por transportadora. Combine a entrega ou retirada diretamente com o vendedor antes de pagar.
+              </p>
+            </div>
+          ) : shipping?.exceeded_limits ? (
+            <div className="mt-8 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-200">
+                <AlertTriangle className="h-4 w-4" aria-hidden /> Excedeu o limite das transportadoras
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {shipping.exceeded_reasons?.includes("weight")
+                  ? "Este produto pesa mais que o aceito por SEDEX/PAC/Jadlog (carga pesada). "
+                  : "As dimensões deste produto passam do limite aceito por SEDEX/PAC/Jadlog. "}
+                Combine retirada ou frete dedicado direto com o vendedor.
+              </p>
+            </div>
+          ) : (
+          /* Frete */
           <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Truck className="h-4 w-4" aria-hidden /> {t("calculateShippingTitle", "Calcular frete")}
@@ -332,7 +359,17 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
               </div>
             )}
           </div>
+          )}
 
+          {(product.delivery_mode === "local_pickup" || shipping?.exceeded_limits) ? (
+            <Link
+              href={`/freelancer/${profileId}`}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Falar com vendedor
+            </Link>
+          ) : (
           <button
             type="button"
             onClick={() => setBuyOpen(true)}
@@ -346,6 +383,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
                 ? t("buyWithTotal", "Comprar — {total}").replace("{total}", formatBRL(product.price_amount + selectedOption.price_cents, locale))
                 : t("selectShippingButton", "Selecione o frete")}
           </button>
+          )}
         </div>
       </div>
 
