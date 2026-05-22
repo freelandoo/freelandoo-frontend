@@ -2,8 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react"
 import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { armScrollReveal } from "@/lib/scroll-reveal"
+import { useScrollReveal } from "@/lib/scroll-reveal"
 import Link from "next/link"
 import {
   Search, Megaphone, Users, Zap, Star, TrendingUp, Award,
@@ -264,9 +263,16 @@ export function ComoFuncionaClient() {
   const section10Ref = useRef<HTMLElement>(null)
   const section11Ref = useRef<HTMLElement>(null)
 
-  useIsomorphicLayoutEffect(() => {
-    gsap.registerPlugin(ScrollTrigger)
+  // Reveal das seções no scroll — IntersectionObserver + CSS (à prova de trava).
+  useScrollReveal([
+    ".section-header",
+    ".reveal-card",
+    ".reveal-item",
+    ".machine-card",
+    ".flow-step",
+  ])
 
+  useIsomorphicLayoutEffect(() => {
     const ctx = gsap.context(() => {
       // ── Hero intro ──
       const heroTl = gsap.timeline({ defaults: { ease: "power3.out" } })
@@ -287,78 +293,9 @@ export function ComoFuncionaClient() {
         ease: "sine.inOut",
       })
 
-      // ── Generic section reveal factory ──
-      function revealSection(sectionEl: HTMLElement | null, delay = 0) {
-        if (!sectionEl) return
-        const header = sectionEl.querySelector(".section-header")
-        const cards = sectionEl.querySelectorAll(".reveal-card")
-        const items = sectionEl.querySelectorAll(".reveal-item")
-
-        if (header) {
-          gsap.from(header, {
-            scrollTrigger: { trigger: header, start: "top 85%", toggleActions: "play none none none" },
-            y: 40, opacity: 0, duration: 0.8, delay, ease: "power3.out",
-          })
-        }
-        if (cards.length) {
-          gsap.from(cards, {
-            scrollTrigger: { trigger: cards[0], start: "top 90%", toggleActions: "play none none none" },
-            y: 50, opacity: 0, duration: 0.6, stagger: 0.1, delay: delay + 0.15, ease: "power3.out",
-          })
-        }
-        if (items.length) {
-          gsap.from(items, {
-            scrollTrigger: { trigger: items[0], start: "top 88%", toggleActions: "play none none none" },
-            x: -30, opacity: 0, duration: 0.5, stagger: 0.08, delay: delay + 0.1, ease: "power2.out",
-          })
-        }
-      }
-
-      revealSection(section2Ref.current)
-      revealSection(section3Ref.current)
-      revealSection(section4Ref.current)
-      revealSection(section5Ref.current)
-      revealSection(section6Ref.current)
-      revealSection(section7Ref.current)
-      revealSection(section8Ref.current)
-      revealSection(section9Ref.current)
-      revealSection(section10Ref.current)
-      revealSection(section11Ref.current)
-
-      // Machine cards pop in with their own glow color
-      const machineCards = document.querySelectorAll(".machine-card")
-      if (machineCards.length) {
-        gsap.from(machineCards, {
-          scrollTrigger: { trigger: machineCards[0], start: "top 88%", toggleActions: "play none none none" },
-          y: 60, opacity: 0, scale: 0.95,
-          duration: 0.55, stagger: 0.07, ease: "back.out(1.4)",
-        })
-      }
-
-      // Flow steps count-in
-      const flowSteps = document.querySelectorAll(".flow-step")
-      if (flowSteps.length) {
-        gsap.from(flowSteps, {
-          scrollTrigger: { trigger: flowSteps[0], start: "top 88%", toggleActions: "play none none none" },
-          y: 30, opacity: 0, duration: 0.45, stagger: 0.09, ease: "power2.out",
-        })
-      }
     })
 
-    // Recalcula posições após fontes/layout assentarem e destrava qualquer
-    // seção que tenha ficado presa em opacity:0 dentro da viewport.
-    const disarm = armScrollReveal([
-      ".section-header",
-      ".reveal-card",
-      ".reveal-item",
-      ".machine-card",
-      ".flow-step",
-    ])
-
-    return () => {
-      disarm()
-      ctx.revert()
-    }
+    return () => ctx.revert()
   }, [])
 
   // ─── Base styles ───────────────────────────────────────────────────────────

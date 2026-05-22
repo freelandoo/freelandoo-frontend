@@ -295,3 +295,28 @@
 .card-glow[data-machine]:hover::after {
   opacity: 0.6;
 }
+
+/* ── Scroll reveal — IntersectionObserver (lib/scroll-reveal.ts) ─────────────
+   .sr-init: estado escondido aplicado pelo JS. .sr-in: estado revelado.
+   A transição vive no .sr-in para que aplicar .sr-init seja instantâneo. */
+.sr-init {
+  opacity: 0;
+  transform: translateY(28px);
+  will-change: opacity, transform;
+}
+.sr-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-init {
+    opacity: 1;
+    transform: none;
+  }
+  .sr-in {
+    transition: none;
+  }
+}
