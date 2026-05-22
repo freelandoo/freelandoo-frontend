@@ -36,20 +36,29 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const [hideAllTours, setHideAllToursState] = useState(false);
   const [activeTour, setActiveTour] = useState<TourConfig | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
+  // Auto-start só pode rodar depois que carregamos o progress do backend —
+  // senão uma resposta lenta sobrescreve um "skipped" recém-aplicado e o
+  // tour volta a disparar.
+  const [progressLoaded, setProgressLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     fetchTourProgress().then((items) => {
       if (!mounted) return;
-      const next: ProgressMap = {};
-      items.forEach((item) => {
-        next[item.tour_key] = {
-          status: item.status,
-          current_step: item.current_step,
-          seen_version: item.seen_version ?? 1,
-        };
+      // Merge: não apaga entradas que o usuário acabou de mudar localmente
+      // (ex.: clicou "Não quero" enquanto o GET ainda estava em voo).
+      setProgress((prev) => {
+        const next: ProgressMap = { ...prev };
+        items.forEach((item) => {
+          next[item.tour_key] = {
+            status: item.status,
+            current_step: item.current_step,
+            seen_version: item.seen_version ?? 1,
+          };
+        });
+        return next;
       });
-      setProgress(next);
+      setProgressLoaded(true);
     });
     fetchTourSettings().then((settings) => {
       if (!mounted) return;
@@ -80,6 +89,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const skipTour = (tourKey: TourKey) => {
     const version = tourVersion(tourKey);
+    // Trava na sessão também: se a persistência falhar, o ref ainda impede
+    // o auto-start de re-disparar antes do usuário sair e voltar.
+    dismissedThisVisitRef.current.add(tourKey);
     setProgress((prev) => ({ ...prev, [tourKey]: { status: "skipped", current_step: stepIndex, seen_version: version } }));
     setActiveTour(null);
     void skipTourProgress(tourKey, stepIndex, version);
@@ -148,6 +160,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
+    if (!progressLoaded) return;
     if (hideAllTours) return;
     if (activeTour) return;
     if (!pathname) return;
@@ -170,7 +183,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }));
     void startTourProgress(candidate.tourKey, 0, candidate.version);
     trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
-  }, [pathname, hideAllTours, activeTour, eligibleTours, progress]);
+  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded]);
 
   const value = {
     startTour,
