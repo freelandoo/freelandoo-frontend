@@ -10,6 +10,7 @@ import {
   Loader2,
   Search,
   Sparkles,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -88,6 +89,7 @@ export default function ManifestacaoPage() {
   const [filter, setFilter] = useState<Filter>("all")
   const [busy, setBusy] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<{ ok: boolean; title: string; message: string } | null>(null)
+  const [previewId, setPreviewId] = useState<string | null>(null)
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
@@ -152,6 +154,20 @@ export default function ManifestacaoPage() {
   )
   const activeId = mine?.active?.product_id ?? null
 
+  const previewProduct = useMemo(
+    () => products.find((p) => p.id === previewId) ?? null,
+    [products, previewId],
+  )
+
+  useEffect(() => {
+    if (!previewId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewId(null)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [previewId])
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     return products.filter((p) => {
@@ -183,6 +199,7 @@ export default function ManifestacaoPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Compra não concluída")
       await loadMine()
+      setPreviewId(null)
       setFeedback({
         ok: true,
         title: "Tudo certo!",
@@ -244,6 +261,7 @@ export default function ManifestacaoPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Não foi possível aplicar")
       await loadMine()
+      setPreviewId(null)
       setFeedback({
         ok: true,
         title: "Manifestação aplicada",
@@ -354,7 +372,16 @@ export default function ManifestacaoPage() {
               return (
                 <article
                   key={p.id}
-                  className="group relative aspect-[9/16] overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300"
+                  onClick={() => setPreviewId(p.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setPreviewId(p.id)
+                    }
+                  }}
+                  className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300 active:scale-[0.99]"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
@@ -364,7 +391,7 @@ export default function ManifestacaoPage() {
                   </div>
 
                   {/* Gradiente pra legibilidade do overlay inferior */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%] bg-gradient-to-t from-zinc-950/92 via-zinc-950/65 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-zinc-950/92 via-zinc-950/55 to-transparent" />
 
                   {isActive && (
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
@@ -384,85 +411,25 @@ export default function ManifestacaoPage() {
                     {typeLabel(p.type)}
                   </span>
 
-                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4 text-white">
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 text-white">
                     <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
                     {p.headline && (
                       <p className="line-clamp-1 text-xs font-medium text-white/85">{p.headline}</p>
                     )}
-                    {p.description && (
-                      <p className="line-clamp-2 text-[11px] text-white/65">{p.description}</p>
-                    )}
 
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold">
-                      <span className="inline-flex items-center gap-1 text-amber-300">
-                        <Coins className="h-3.5 w-3.5" />
-                        {p.price_polens > 0
-                          ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
-                          : "Grátis"}
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                        {p.price_cents > 0
+                          ? fmtBRL(p.price_cents)
+                          : p.price_polens > 0
+                            ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                            : "Grátis"}
                       </span>
-                      {p.price_cents > 0 && (
-                        <span className="text-white/70">· {fmtBRL(p.price_cents)} cartão</span>
-                      )}
-                    </div>
-
-                    <div className="mt-1 space-y-1.5">
-                      {isActive ? (
-                        <Button
-                          disabled
-                          size="sm"
-                          className="w-full rounded-full bg-emerald-500/90 text-white"
-                        >
-                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                          Aplicada
-                        </Button>
-                      ) : owned ? (
-                        <Button
-                          onClick={() => apply(p)}
-                          disabled={busy != null}
-                          size="sm"
-                          className="w-full rounded-full bg-white text-zinc-950 hover:bg-amber-100 active:scale-[0.98]"
-                        >
-                          {busy === `apply:${p.id}` ? (
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <BadgeCheck className="mr-1.5 h-3.5 w-3.5" />
-                          )}
-                          Usar no perfil
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            onClick={() => buy(p)}
-                            disabled={busy != null}
-                            size="sm"
-                            className="w-full rounded-full bg-amber-400 text-zinc-950 hover:bg-amber-300 active:scale-[0.98]"
-                          >
-                            {busy === `buy:${p.id}` ? (
-                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Coins className="mr-1.5 h-3.5 w-3.5" />
-                            )}
-                            {p.price_polens > 0
-                              ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
-                              : "Resgatar"}
-                          </Button>
-                          {p.price_cents > 0 && (
-                            <Button
-                              onClick={() => buyStripe(p)}
-                              disabled={busy != null}
-                              size="sm"
-                              variant="outline"
-                              className="w-full rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 active:scale-[0.98]"
-                            >
-                              {busy === `stripe:${p.id}` ? (
-                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <CreditCard className="mr-1.5 h-3.5 w-3.5" />
-                              )}
-                              {fmtBRL(p.price_cents)}
-                            </Button>
-                          )}
-                        </>
+                      {owned && !isActive && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur">
+                          <BadgeCheck className="h-3 w-3" />
+                          Comprado
+                        </span>
                       )}
                     </div>
                   </div>
@@ -472,6 +439,135 @@ export default function ManifestacaoPage() {
           </div>
         )}
       </section>
+
+      {/* Modal de preview + compra */}
+      {previewProduct && (() => {
+        const p = previewProduct
+        const owned = ownedIds.has(p.id)
+        const isActive = activeId === p.id
+        return (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6 backdrop-blur-sm"
+            onClick={() => setPreviewId(null)}
+            role="presentation"
+          >
+            <div
+              className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Preview de ${p.name}`}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewId(null)}
+                className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-zinc-950/55 text-white backdrop-blur transition hover:bg-zinc-950/75"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              {/* Preview do banner — proporção 16:5 (formato real do headcard) */}
+              <div className="group relative aspect-[16/5] w-full overflow-hidden bg-zinc-200">
+                <BannerImage src={p.banner_url} alt={p.name} />
+                <span
+                  className={cn(
+                    "absolute left-3 top-3 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur",
+                    p.type === "motivational"
+                      ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
+                      : "border-sky-300/40 bg-sky-50/90 text-sky-800",
+                  )}
+                >
+                  {typeLabel(p.type)}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3 p-5">
+                <div>
+                  <h3 className="text-xl font-semibold tracking-tight text-zinc-950">{p.name}</h3>
+                  {p.headline && (
+                    <p className="mt-1 text-sm font-medium text-zinc-700">{p.headline}</p>
+                  )}
+                  {p.description && (
+                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{p.description}</p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-zinc-100 pt-3">
+                  {p.price_cents > 0 && (
+                    <span className="text-2xl font-semibold tracking-tight text-zinc-950">
+                      {fmtBRL(p.price_cents)}
+                    </span>
+                  )}
+                  {p.price_polens > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+                      <Coins className="h-4 w-4" />
+                      ou {p.price_polens.toLocaleString("pt-BR")} Poléns
+                    </span>
+                  )}
+                  {p.price_cents === 0 && p.price_polens === 0 && (
+                    <span className="text-2xl font-semibold tracking-tight text-emerald-700">Grátis</span>
+                  )}
+                </div>
+
+                <div className="mt-1 space-y-2">
+                  {isActive ? (
+                    <Button disabled className="w-full rounded-full bg-emerald-600/90 text-white">
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Aplicada no seu perfil
+                    </Button>
+                  ) : owned ? (
+                    <Button
+                      onClick={() => apply(p)}
+                      disabled={busy != null}
+                      className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                    >
+                      {busy === `apply:${p.id}` ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <BadgeCheck className="mr-2 h-4 w-4" />
+                      )}
+                      Usar no perfil
+                    </Button>
+                  ) : (
+                    <>
+                      {p.price_cents > 0 && (
+                        <Button
+                          onClick={() => buyStripe(p)}
+                          disabled={busy != null}
+                          className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                        >
+                          {busy === `stripe:${p.id}` ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CreditCard className="mr-2 h-4 w-4" />
+                          )}
+                          Comprar · {fmtBRL(p.price_cents)}
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => buy(p)}
+                        disabled={busy != null}
+                        variant="outline"
+                        className="w-full rounded-full border-amber-600/30 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
+                      >
+                        {busy === `buy:${p.id}` ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Coins className="mr-2 h-4 w-4" />
+                        )}
+                        {p.price_polens > 0
+                          ? `Comprar · ${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                          : "Resgatar grátis"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Feedback de compra/aplicação */}
       {feedback && (
