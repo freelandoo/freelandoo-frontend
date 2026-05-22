@@ -526,12 +526,9 @@ export function ProfileProductEditModal({
   return (
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
-      role="presentation"
     >
       <div
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-product-edit-title"
