@@ -248,9 +248,9 @@ function LojaPolensContent() {
         </div>
 
         {loading ? (
-          <div className="grid gap-5 py-8 md:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-72 animate-pulse rounded-[1.5rem] bg-zinc-200/70" />
+          <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="aspect-[9/16] animate-pulse rounded-[1.5rem] bg-zinc-200/70" />
             ))}
           </div>
         ) : error ? (
@@ -267,7 +267,7 @@ function LojaPolensContent() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-5 py-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((p, index) => {
               const total = p.polens_amount + (p.bonus_polens || 0)
               const isSelected = selected?.id === p.id
@@ -276,49 +276,53 @@ function LojaPolensContent() {
                   key={p.id}
                   onClick={() => setSelected(p)}
                   className={cn(
-                    "group relative cursor-pointer overflow-hidden rounded-[1.5rem] border bg-white shadow-[0_18px_40px_-34px_rgba(0,0,0,0.35)] transition active:scale-[0.99]",
-                    isSelected ? "border-zinc-950 ring-2 ring-zinc-950/10" : "border-zinc-200 hover:border-zinc-400"
+                    "group relative cursor-pointer overflow-hidden rounded-[1.5rem] border bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition active:scale-[0.99]",
+                    "aspect-[9/16]",
+                    isSelected ? "border-zinc-950 ring-2 ring-zinc-950/15" : "border-zinc-200 hover:border-zinc-400"
                   )}
                   style={{ animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 55}ms` }}
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-zinc-100">
-                    {p.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.image_url}
-                        alt={p.name}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 to-zinc-100">
-                        <Hexagon className="h-14 w-14 fill-amber-300 text-amber-400" />
-                      </div>
-                    )}
-                    {p.bonus_polens > 0 && (
-                      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-50/95 px-2.5 py-1 text-xs font-medium text-amber-800 backdrop-blur">
-                        <Sparkles className="h-3 w-3" />
-                        +{fmtNumber(p.bonus_polens)} bônus
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5">
+                  {p.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.image_url}
+                      alt={p.name}
+                      className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-amber-50 to-zinc-100">
+                      <Hexagon className="h-20 w-20 fill-amber-300 text-amber-400" />
+                    </div>
+                  )}
+
+                  {/* Gradient pra legibilidade do overlay inferior */}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-zinc-950/85 via-zinc-950/55 to-transparent" />
+
+                  {p.bonus_polens > 0 && (
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-50/95 px-2.5 py-1 text-xs font-medium text-amber-800 shadow-sm backdrop-blur">
+                      <Sparkles className="h-3 w-3" />
+                      +{fmtNumber(p.bonus_polens)} bônus
+                    </span>
+                  )}
+
+                  <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="truncate text-xl font-semibold tracking-tight">{p.name}</h3>
-                        <p className="mt-1 line-clamp-2 text-sm text-zinc-500">
+                        <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
+                        <p className="mt-1 line-clamp-2 text-xs text-white/75">
                           {p.description || "Receba os Poléns direto na sua carteira."}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <div className="flex items-center gap-1 text-amber-700">
-                          <Hexagon className="h-4 w-4 fill-amber-400 text-amber-500" />
-                          <span className="text-lg font-semibold tabular-nums tracking-tight">{fmtNumber(total)}</span>
+                        <div className="flex items-center gap-1 text-amber-300">
+                          <Hexagon className="h-4 w-4 fill-amber-400 text-amber-300" />
+                          <span className="text-base font-semibold tabular-nums tracking-tight">{fmtNumber(total)}</span>
                         </div>
-                        <p className="mt-0.5 text-xs text-zinc-500">Poléns</p>
+                        <p className="mt-0.5 text-[10px] uppercase tracking-wide text-white/60">Poléns</p>
                       </div>
                     </div>
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <span className="text-base font-semibold tracking-tight">{fmtBRL(p.price_cents)}</span>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-base font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{fmtBRL(p.price_cents)}</span>
                       <Button
                         onClick={(e) => {
                           e.stopPropagation()
@@ -326,12 +330,13 @@ function LojaPolensContent() {
                           void buy(p)
                         }}
                         disabled={buyingId !== null}
-                        className="rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                        size="sm"
+                        className="rounded-full bg-white text-zinc-950 hover:bg-amber-100 active:scale-[0.98]"
                       >
                         {buyingId === p.id ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                         ) : (
-                          <CreditCard className="mr-2 h-4 w-4" />
+                          <CreditCard className="mr-1.5 h-4 w-4" />
                         )}
                         Comprar
                       </Button>
