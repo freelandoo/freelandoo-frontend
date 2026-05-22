@@ -321,9 +321,9 @@ export default function ManifestacaoPage() {
 
         {/* Estados */}
         {loading ? (
-          <div className="grid gap-5 py-8 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-80 animate-pulse rounded-[1.5rem] bg-zinc-200" />
+          <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div key={i} className="aspect-[9/16] animate-pulse rounded-[1.5rem] bg-zinc-200" />
             ))}
           </div>
         ) : error ? (
@@ -347,77 +347,85 @@ export default function ManifestacaoPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-5 py-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {visible.map((p, index) => {
               const owned = ownedIds.has(p.id)
               const isActive = activeId === p.id
               return (
                 <article
                   key={p.id}
-                  className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-white shadow-[0_18px_40px_-34px_rgba(0,0,0,0.35)] transition hover:border-zinc-300"
+                  className="group relative aspect-[9/16] overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-zinc-200">
+                  <div className="absolute inset-0">
                     <BannerImage src={p.banner_url} alt={p.name} />
-                    {isActive && (
-                      <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-950/80 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Ativo
-                      </span>
-                    )}
                   </div>
-                  <div className="flex flex-1 flex-col p-5">
-                    <span
-                      className={cn(
-                        "inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-                        p.type === "motivational"
-                          ? "border-amber-600/20 bg-amber-50 text-amber-700"
-                          : "border-sky-600/20 bg-sky-50 text-sky-700",
-                      )}
-                    >
-                      {typeLabel(p.type)}
+
+                  {/* Gradiente pra legibilidade do overlay inferior */}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%] bg-gradient-to-t from-zinc-950/92 via-zinc-950/65 to-transparent" />
+
+                  {isActive && (
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Ativo
                     </span>
-                    <h3 className="mt-3 text-xl font-semibold tracking-tight">{p.name}</h3>
+                  )}
+
+                  <span
+                    className={cn(
+                      "absolute left-3 top-3 inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur",
+                      p.type === "motivational"
+                        ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
+                        : "border-sky-300/40 bg-sky-50/90 text-sky-800",
+                    )}
+                  >
+                    {typeLabel(p.type)}
+                  </span>
+
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4 text-white">
+                    <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
                     {p.headline && (
-                      <p className="mt-1 text-sm font-medium text-zinc-700">{p.headline}</p>
+                      <p className="line-clamp-1 text-xs font-medium text-white/85">{p.headline}</p>
                     )}
                     {p.description && (
-                      <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{p.description}</p>
+                      <p className="line-clamp-2 text-[11px] text-white/65">{p.description}</p>
                     )}
 
-                    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
-                      <span className="inline-flex items-center gap-1.5 text-amber-800">
-                        <Coins className="h-4 w-4" />
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold">
+                      <span className="inline-flex items-center gap-1 text-amber-300">
+                        <Coins className="h-3.5 w-3.5" />
                         {p.price_polens > 0
                           ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
                           : "Grátis"}
                       </span>
                       {p.price_cents > 0 && (
-                        <span className="text-zinc-700">{fmtBRL(p.price_cents)} no cartão</span>
+                        <span className="text-white/70">· {fmtBRL(p.price_cents)} cartão</span>
                       )}
                     </div>
 
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-1 space-y-1.5">
                       {isActive ? (
                         <Button
                           disabled
-                          className="w-full rounded-full bg-emerald-600/90 text-white"
+                          size="sm"
+                          className="w-full rounded-full bg-emerald-500/90 text-white"
                         >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Aplicada no perfil
+                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                          Aplicada
                         </Button>
                       ) : owned ? (
                         <Button
                           onClick={() => apply(p)}
                           disabled={busy != null}
-                          className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                          size="sm"
+                          className="w-full rounded-full bg-white text-zinc-950 hover:bg-amber-100 active:scale-[0.98]"
                         >
                           {busy === `apply:${p.id}` ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <BadgeCheck className="mr-2 h-4 w-4" />
+                            <BadgeCheck className="mr-1.5 h-3.5 w-3.5" />
                           )}
                           Usar no perfil
                         </Button>
@@ -426,30 +434,32 @@ export default function ManifestacaoPage() {
                           <Button
                             onClick={() => buy(p)}
                             disabled={busy != null}
-                            variant="outline"
-                            className="w-full rounded-full border-amber-600/30 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
+                            size="sm"
+                            className="w-full rounded-full bg-amber-400 text-zinc-950 hover:bg-amber-300 active:scale-[0.98]"
                           >
                             {busy === `buy:${p.id}` ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                             ) : (
-                              <Coins className="mr-2 h-4 w-4" />
+                              <Coins className="mr-1.5 h-3.5 w-3.5" />
                             )}
                             {p.price_polens > 0
-                              ? `Comprar · ${p.price_polens.toLocaleString("pt-BR")} Poléns`
-                              : "Resgatar grátis"}
+                              ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                              : "Resgatar"}
                           </Button>
                           {p.price_cents > 0 && (
                             <Button
                               onClick={() => buyStripe(p)}
                               disabled={busy != null}
-                              className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                              size="sm"
+                              variant="outline"
+                              className="w-full rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 active:scale-[0.98]"
                             >
                               {busy === `stripe:${p.id}` ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <CreditCard className="mr-2 h-4 w-4" />
+                                <CreditCard className="mr-1.5 h-3.5 w-3.5" />
                               )}
-                              Cartão · {fmtBRL(p.price_cents)}
+                              {fmtBRL(p.price_cents)}
                             </Button>
                           )}
                         </>
