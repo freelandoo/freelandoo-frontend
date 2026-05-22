@@ -49,6 +49,7 @@ export interface ProfileProduct {
   is_active: boolean
   id_product_category: number | null
   affiliates_allowed?: boolean
+  delivery_mode?: "shipping" | "local_pickup"
   created_at?: string
   updated_at?: string
   media?: ProfileProductMedia[]
@@ -225,6 +226,7 @@ export function ProfileProductEditModal({
     is_active: true,
     id_product_category: "" as string,
     affiliates_allowed: false,
+    delivery_mode: "shipping" as "shipping" | "local_pickup",
   })
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<ProductCategoryOption[]>([])
@@ -273,6 +275,7 @@ export function ProfileProductEditModal({
       is_active: true,
       id_product_category: "",
       affiliates_allowed: false,
+      delivery_mode: "shipping",
     })
   }, [open, product])
 
@@ -293,6 +296,7 @@ export function ProfileProductEditModal({
       is_active: product.is_active !== false,
       id_product_category: product.id_product_category != null ? String(product.id_product_category) : "",
       affiliates_allowed: product.affiliates_allowed ?? false,
+      delivery_mode: product.delivery_mode === "local_pickup" ? "local_pickup" : "shipping",
     })
   }, [open, product])
 
@@ -521,6 +525,7 @@ export function ProfileProductEditModal({
       is_active: form.is_active,
       id_product_category: categoryId,
       affiliates_allowed: form.affiliates_allowed,
+      delivery_mode: form.delivery_mode,
     }
     try {
       const url = product
@@ -667,6 +672,44 @@ export function ProfileProductEditModal({
             </div>
           )}
 
+          {/* Modo de entrega — Envio (default) ou Retirada no local. */}
+          <div>
+            <p className="mb-2 text-xs font-medium text-zinc-400">Modo de entrega</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, delivery_mode: "shipping" }))}
+                className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
+                  form.delivery_mode === "shipping"
+                    ? "border-primary bg-primary/10 text-zinc-100"
+                    : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600"
+                }`}
+              >
+                <div className="font-medium">Envio por transportadora</div>
+                <div className="mt-0.5 text-[10px] text-zinc-400">Calcula via Melhor Envio</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))}
+                className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
+                  form.delivery_mode === "local_pickup"
+                    ? "border-primary bg-primary/10 text-zinc-100"
+                    : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600"
+                }`}
+              >
+                <div className="font-medium">Retirada no local</div>
+                <div className="mt-0.5 text-[10px] text-zinc-400">Comprador fala direto com você</div>
+              </button>
+            </div>
+          </div>
+
+          {form.delivery_mode === "local_pickup" ? (
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-3 text-xs text-zinc-400">
+              O frete não vai ser calculado. O comprador verá &quot;Retirada combinada com o vendedor&quot;
+              no produto e o botão de checkout vira &quot;Falar com vendedor&quot;, levando ao seu perfil.
+            </div>
+          ) : (
+          <>
           <div>
             <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (para frete)</p>
 
@@ -761,6 +804,8 @@ export function ProfileProductEditModal({
               Sobrescreve o CEP padrão do subperfil para este produto.
             </p>
           </div>
+          </>
+          )}
 
           {isEdit && (
             <div>
