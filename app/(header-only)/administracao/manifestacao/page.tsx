@@ -568,7 +568,7 @@ export default function AdminManifestationPage() {
                   {products.map((p) => (
                     <Card key={p.id} className="overflow-hidden border-white/10 bg-white/[0.02]">
                       <div
-                        className="h-40 bg-zinc-900 bg-cover bg-center"
+                        className="aspect-[16/9] bg-zinc-900 bg-cover bg-center"
                         style={{ backgroundImage: `url(${p.banner_url})` }}
                       />
                       <CardContent className="space-y-3 p-4">
