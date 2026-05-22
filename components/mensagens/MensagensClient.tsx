@@ -1961,20 +1961,18 @@ export default function MensagensClient() {
               </div>
 
               <div className="shrink-0 border-t border-white/[0.06] bg-gradient-to-t from-black/60 to-black/20 px-3 pt-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-xl sm:px-4">
-                {audioRecorderActive && canSendAudio ? (
-                  <AudioRecorder
-                    conversationId={activeConvId}
-                    actorId={actorId!}
-                    actorType={activeActor?.type === "clan" ? "clan" : "profile"}
-                    onActiveChange={setAudioRecorderActive}
-                    onSent={() => {
-                      setAudioRecorderActive(false)
-                      void loadThread(activeConvId)
-                      void loadConversations()
-                    }}
-                  />
-                ) : (
-                  <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+                {/* IMPORTANTE: o AudioRecorder fica SEMPRE montado quando
+                    canSendAudio=true. Antes havia 2 instâncias em ramos
+                    diferentes do ternário (composer compact vs expanded),
+                    o que fazia o React unmontar a primeira ao entrar em
+                    "recording" → a gravação morria junto. Agora ele se
+                    auto-expande visualmente conforme o state interno e o
+                    composer de texto some via display:none quando ativo. */}
+                <div className={cn(
+                  "flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]",
+                  audioRecorderActive && canSendAudio && "border-0 bg-transparent p-0 shadow-none focus-within:border-0 focus-within:bg-transparent",
+                )}>
+                  <div className={cn("flex flex-1 items-end gap-2", audioRecorderActive && canSendAudio && "hidden")}>
                     <EmojiPickerButton
                       onPick={(emoji) =>
                         setComposer((c) => (c + emoji).slice(0, 4000))
@@ -1993,19 +1991,6 @@ export default function MensagensClient() {
                       rows={1}
                       className="min-h-[40px] max-h-32 flex-1 resize-none border-0 bg-transparent text-sm text-white placeholder:text-white/35 focus-visible:ring-0"
                     />
-                    {canSendAudio && (
-                      <AudioRecorder
-                        conversationId={activeConvId}
-                        actorId={actorId!}
-                        actorType={activeActor?.type === "clan" ? "clan" : "profile"}
-                        onActiveChange={setAudioRecorderActive}
-                        onSent={() => {
-                          setAudioRecorderActive(false)
-                          void loadThread(activeConvId)
-                          void loadConversations()
-                        }}
-                      />
-                    )}
                     <motion.button
                       type="button"
                       onClick={handleSend}
@@ -2022,7 +2007,20 @@ export default function MensagensClient() {
                       )}
                     </motion.button>
                   </div>
-                )}
+                  {canSendAudio && (
+                    <AudioRecorder
+                      conversationId={activeConvId}
+                      actorId={actorId!}
+                      actorType={activeActor?.type === "clan" ? "clan" : "profile"}
+                      onActiveChange={setAudioRecorderActive}
+                      onSent={() => {
+                        setAudioRecorderActive(false)
+                        void loadThread(activeConvId)
+                        void loadConversations()
+                      }}
+                    />
+                  )}
+                </div>
               </div>
             </>
           )}
