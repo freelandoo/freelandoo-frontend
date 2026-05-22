@@ -418,7 +418,7 @@ export default function MensagensClient() {
     if (status !== "authenticated") return
     let cancelled = false
     setActorsLoading(true)
-    jsonFetch<ActorsResponse>("/api/entity-follows/actors")
+    jsonFetch<ActorsResponse>("/api/entity-follows/actors/messageable")
       .then((data) => {
         if (cancelled) return
         const list = Array.isArray(data?.actors) ? data.actors : []
@@ -1150,7 +1150,7 @@ export default function MensagensClient() {
                 <button
                   type="button"
                   onClick={() => setCreateGroupOpen(true)}
-                  disabled={!actorId || isClanActor}
+                  disabled={!actorId}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-black shadow-[0_8px_20px_-6px_rgba(250,204,21,0.5)] transition-transform hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                   title={t("createGroupButtonTooltip", "Criar grupo")}
                   aria-label={t("createGroupButtonTooltip", "Criar grupo")}
