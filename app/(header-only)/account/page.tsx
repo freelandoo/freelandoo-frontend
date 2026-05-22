@@ -31,6 +31,7 @@ import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, C
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { UserPortfolio } from "./_components/UserPortfolio"
+import { FollowingModal } from "@/components/profile/following-modal"
 import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -67,6 +68,7 @@ export default function PerfilPage() {
   const unreadMessages = navCounts.conversationUnread
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
+  const [followingModalOpen, setFollowingModalOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -1608,10 +1610,15 @@ export default function PerfilPage() {
                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-zinc-950" />
                   )}
                 </button>
-                <span className="tabular-nums">
+                <button
+                  type="button"
+                  onClick={() => setFollowingModalOpen(true)}
+                  className="tabular-nums rounded-md px-1 transition hover:bg-white/[0.06]"
+                  title="Ver quem você acompanha"
+                >
                   <span className="font-semibold text-white">{followedProfilesCount}</span>{" "}
                   <span className="text-white/55">acompanhados</span>
-                </span>
+                </button>
               </div>
             </div>
           </article>
@@ -2638,6 +2645,11 @@ export default function PerfilPage() {
           profileName={premiumProfile.name}
         />
       )}
+
+      <FollowingModal
+        open={followingModalOpen}
+        onClose={() => setFollowingModalOpen(false)}
+      />
     </div>
   )
 }
