@@ -672,78 +672,63 @@ export function ProfileProductEditModal({
             </div>
           )}
 
-          {/* Modo de entrega — Envio (default) ou Retirada no local. */}
+          {/* Entrega — 1 select unificado: Retirar comigo | 6 caixas padrão | Personalizada.
+              Local pickup → esconde tudo. Caixa padrão → auto-preenche e esconde campos.
+              Personalizada → mostra dimensões/peso/CEP pra digitar à mão. */}
           <div>
-            <p className="mb-2 text-xs font-medium text-zinc-400">Modo de entrega</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, delivery_mode: "shipping" }))}
-                className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
-                  form.delivery_mode === "shipping"
-                    ? "border-primary bg-primary/10 text-zinc-100"
-                    : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600"
-                }`}
-              >
-                <div className="font-medium">Envio por transportadora</div>
-                <div className="mt-0.5 text-[10px] text-zinc-400">Calcula via Melhor Envio</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))}
-                className={`rounded-lg border px-3 py-2.5 text-left text-sm transition ${
-                  form.delivery_mode === "local_pickup"
-                    ? "border-primary bg-primary/10 text-zinc-100"
-                    : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600"
-                }`}
-              >
-                <div className="font-medium">Retirada no local</div>
-                <div className="mt-0.5 text-[10px] text-zinc-400">Comprador fala direto com você</div>
-              </button>
-            </div>
-          </div>
-
-          {form.delivery_mode === "local_pickup" ? (
-            <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-3 text-xs text-zinc-400">
-              O frete não vai ser calculado. O comprador verá &quot;Retirada combinada com o vendedor&quot;
-              no produto e o botão de checkout vira &quot;Falar com vendedor&quot;, levando ao seu perfil.
-            </div>
-          ) : (
-          <>
-          <div>
-            <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (para frete)</p>
-
-            {/* Caixa padrão — preenche altura/largura/comprimento automaticamente. */}
-            <div className="mb-3">
-              <label className="mb-1 block text-xs text-zinc-500">Caixa padrão</label>
-              <select
-                value={detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm))}
-                onChange={(e) => {
-                  const id = e.target.value
-                  if (id === "custom") return
-                  const preset = BOX_PRESETS.find((p) => p.id === id)
-                  if (!preset) return
-                  setForm((f) => ({
-                    ...f,
-                    height_cm: String(preset.h).replace(".", ","),
-                    width_cm: String(preset.w).replace(".", ","),
-                    length_cm: String(preset.l).replace(".", ","),
-                  }))
-                }}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
-              >
-                <option value="custom">Personalizada (digitar abaixo)</option>
+            <p className="mb-2 text-xs font-medium text-zinc-400">Entrega</p>
+            <select
+              value={
+                form.delivery_mode === "local_pickup"
+                  ? "local_pickup"
+                  : detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm))
+              }
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === "local_pickup") {
+                  setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))
+                  return
+                }
+                if (v === "custom") {
+                  setForm((f) => ({ ...f, delivery_mode: "shipping" }))
+                  return
+                }
+                const preset = BOX_PRESETS.find((p) => p.id === v)
+                if (!preset) return
+                setForm((f) => ({
+                  ...f,
+                  delivery_mode: "shipping",
+                  height_cm: String(preset.h).replace(".", ","),
+                  width_cm: String(preset.w).replace(".", ","),
+                  length_cm: String(preset.l).replace(".", ","),
+                }))
+              }}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+            >
+              <option value="local_pickup">🤝 Retirar comigo (sem frete)</option>
+              <optgroup label="Caixas padrão (Correios / Melhor Envio)">
                 {BOX_PRESETS.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label}{p.hint ? ` — ${p.hint}` : ""}
                   </option>
                 ))}
-              </select>
-              <p className="mt-1 text-[10px] text-zinc-500">
-                Use a caixa em que você vai realmente embalar. Dimensões muito grandes fazem todas as transportadoras recusarem.
-              </p>
-            </div>
+              </optgroup>
+              <option value="custom">Personalizada (digitar dimensões à mão)</option>
+            </select>
+            <p className="mt-1 text-[10px] text-zinc-500">
+              Escolha a caixa em que vai embalar. Se nenhuma serve, use &quot;Personalizada&quot;.
+            </p>
+          </div>
 
+          {form.delivery_mode === "local_pickup" ? (
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-3 text-xs text-zinc-400">
+              Sem frete por transportadora. O comprador vai ver o botão &quot;Falar com vendedor&quot;
+              no produto, que abre uma conversa direta com você no Mensagens.
+            </div>
+          ) : detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm)) === "custom" ? (
+          <>
+          <div>
+            <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (personalizadas)</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-xs text-zinc-500">Peso (g)</label>
@@ -805,6 +790,22 @@ export function ProfileProductEditModal({
             </p>
           </div>
           </>
+          ) : (
+            <div>
+              {/* Caixa padrão escolhida — peso é o único campo que ainda precisa do vendedor. */}
+              <label className="mb-1 block text-xs text-zinc-500">Peso (g)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.weight_grams}
+                onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
+                placeholder="0"
+                className="w-full max-w-[200px] rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+              />
+              <p className="mt-1 text-[10px] text-zinc-500">
+                Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.
+              </p>
+            </div>
           )}
 
           {isEdit && (

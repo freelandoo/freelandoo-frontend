@@ -363,7 +363,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
 
           {(product.delivery_mode === "local_pickup" || shipping?.exceeded_limits) ? (
             <Link
-              href={`/freelancer/${profileId}`}
+              href={`/mensagens?with=${encodeURIComponent(profileId)}`}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               <MessageCircle className="h-4 w-4" aria-hidden />
