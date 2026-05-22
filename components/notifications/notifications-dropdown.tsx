@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
+import { onRealtime } from "@/lib/realtime"
 import { NotificationList, type NotificationItem } from "./notification-list"
 
 interface NotificationsDropdownProps {
@@ -62,6 +63,30 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
     document.addEventListener("mousedown", onClick)
     return () => document.removeEventListener("mousedown", onClick)
   }, [open, onClose, anchorRef])
+
+  // Realtime: notificação nova → re-puxa o feed enquanto o dropdown está aberto.
+  // Quando fechado, o sininho atualiza o contador via nav-counts:changed.
+  useEffect(() => {
+    if (!open) return
+    const off = onRealtime("notification:new", () => {
+      const token = getToken()
+      if (!token) return
+      fetch("/api/me/notifications?limit=15", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (!data) return
+          setItems(Array.isArray(data.items) ? data.items : [])
+          const n = typeof data.unread_count === "number" ? data.unread_count : 0
+          setUnread(n)
+          onUnreadCountChangeRef.current?.(n)
+        })
+        .catch(() => { /* silent */ })
+    })
+    return () => { off() }
+  }, [open])
 
   const markAll = async () => {
     const token = getToken()

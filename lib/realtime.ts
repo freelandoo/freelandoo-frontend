@@ -66,7 +66,12 @@ function ensureSocket(): Socket | null {
   })
 
   // Forward todos os eventos conhecidos para handlers locais.
-  const events = ["conversation:message", "notification:new", "nav-counts:changed"]
+  const events = [
+    "conversation:message",
+    "os:message",
+    "notification:new",
+    "nav-counts:changed",
+  ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))
   }

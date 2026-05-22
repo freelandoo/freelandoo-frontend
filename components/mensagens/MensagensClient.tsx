@@ -55,8 +55,11 @@ const ACTOR_STORAGE_KEY = "mensagens:active_actor"
 // Realtime (WS) cobre o caso comum: conversation:message empurra updates
 // na hora. Polling é só safety net pra detectar reconexão silenciosa.
 // Antes 45s/120s gerava ~300 calls/h/user logado em /mensagens.
-const POLL_THREAD_MS = 300_000   // 5 min
-const POLL_LIST_MS = 600_000     // 10 min
+// Realtime via WebSocket (socket.io em /realtime) cobre o tempo real.
+// Polling fica como fallback longo pro caso de socket desconectado/dormindo —
+// 20 e 30 min, intencionalmente esparso pra não gerar invocação no Vercel.
+const POLL_THREAD_MS = 1_200_000   // 20 min (fallback)
+const POLL_LIST_MS = 1_800_000     // 30 min (fallback)
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
 function authHeaders(): HeadersInit {
@@ -516,6 +519,22 @@ export default function MensagensClient() {
     return () => clearInterval(t)
   }, [actorId, loadConversations])
 
+  // Realtime: nova mensagem em qualquer conversa do user → re-puxa a lista
+  // pra refletir last_message, ordenação e unread_count.
+  useEffect(() => {
+    if (!actorId) return
+    const offMsg = onRealtime("conversation:message", () => {
+      loadConversations()
+    })
+    const offNav = onRealtime("nav-counts:changed", (raw) => {
+      const payload = raw as { reason?: string } | null
+      if (payload?.reason === "message_sent" || payload?.reason === "message_received") {
+        loadConversations()
+      }
+    })
+    return () => { offMsg(); offNav() }
+  }, [actorId, loadConversations])
+
   // Debounce do search inline. Mínimo 2 caracteres pra disparar.
   useEffect(() => {
     const q = convSearch.trim()
@@ -786,6 +805,17 @@ export default function MensagensClient() {
     return () => clearInterval(t)
   }, [status, tab, loadOsChats])
 
+  // Realtime: qualquer mensagem em qualquer O.S. do user → re-puxa a lista
+  // (atualiza last_message, ordenação e unread_count).
+  useEffect(() => {
+    if (status !== "authenticated") return
+    if (tab !== "os") return
+    const off = onRealtime("os:message", () => {
+      loadOsChats()
+    })
+    return () => { off() }
+  }, [status, tab, loadOsChats])
+
   // Solicitações são do usuário inteiro (serviço/produto/curso, ambos os lados),
   // não de um subperfil específico — por isso não filtra por actorId.
   const visibleOsChats = osChats
@@ -849,6 +879,18 @@ export default function MensagensClient() {
       if (!document.hidden) loadOsThread(activeOsResponseId, { silent: true })
     }, POLL_THREAD_MS)
     return () => clearInterval(t)
+  }, [activeOsResponseId, tab, loadOsThread])
+
+  // Realtime: empurra mensagens novas da thread O.S. sem polling.
+  useEffect(() => {
+    if (!activeOsResponseId) return
+    if (tab !== "os") return
+    const off = onRealtime("os:message", (raw) => {
+      const payload = raw as { id_response?: string } | null
+      if (!payload || payload.id_response !== activeOsResponseId) return
+      loadOsThread(activeOsResponseId, { silent: true })
+    })
+    return () => { off() }
   }, [activeOsResponseId, tab, loadOsThread])
 
   useEffect(() => {
