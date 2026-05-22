@@ -6,12 +6,16 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   ArrowLeft,
+  Briefcase,
   ChevronDown,
   ClipboardList,
+  GraduationCap,
   Lock,
   Loader2,
   MapPin,
   MessageCircle,
+  MessageSquarePlus,
+  Package,
   Plus,
   Radio,
   Search,
@@ -23,6 +27,7 @@ import {
 } from "lucide-react"
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
+import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
 import { OfferingPickerButton } from "@/components/mensagens/OfferingPickerButton"
 import { AudioMessage, AudioRecorder } from "@/components/mensagens/AudioRecorder"
@@ -399,6 +404,14 @@ export default function MensagensClient() {
 
   // ----- Criar grupo -----
   const [createGroupOpen, setCreateGroupOpen] = useState(false)
+
+  // ----- Abrir chamado (service / product / course) -----
+  const [chamadoOpen, setChamadoOpen] = useState(false)
+  const [chamadoMode, setChamadoMode] = useState<ChamadoMode>("service")
+  const openChamado = useCallback((mode: ChamadoMode) => {
+    setChamadoMode(mode)
+    setChamadoOpen(true)
+  }, [])
 
   const activeActor = useMemo(
     () => actors.find((a) => a.id === actorId) || null,
@@ -1218,6 +1231,36 @@ export default function MensagensClient() {
                   onSelect={handleSelectActor}
                 />
               </div>
+            ) : tab === "os" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 px-3 text-xs font-semibold text-black shadow-[0_8px_20px_-6px_rgba(250,204,21,0.5)] transition-transform hover:scale-105"
+                    title={t("openChamadoButtonTooltip", "Abrir chamado")}
+                    aria-label={t("openChamadoButtonTooltip", "Abrir chamado")}
+                  >
+                    <MessageSquarePlus className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{t("openChamadoButtonLabel", "Abrir chamado")}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>{t("openChamadoMenuTitle", "Que tipo de chamado?")}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => openChamado("service")} className="gap-2">
+                    <Briefcase className="h-4 w-4 text-amber-500" />
+                    {t("chamadoModeService", "Serviço")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openChamado("product")} className="gap-2">
+                    <Package className="h-4 w-4 text-emerald-500" />
+                    {t("chamadoModeProduct", "Produto")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openChamado("course")} className="gap-2">
+                    <GraduationCap className="h-4 w-4 text-sky-500" />
+                    {t("chamadoModeCourse", "Curso")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
           </div>
 
@@ -1445,7 +1488,7 @@ export default function MensagensClient() {
             ) : osChatsError ? (
               <div className="p-6 text-center text-sm text-red-400">{osChatsError}</div>
             ) : visibleOsChats.length === 0 ? (
-              <EmptyOsChats />
+              <EmptyOsChats onOpenChamado={openChamado} />
             ) : (
               <ul className="divide-y divide-white/5">
                 {visibleOsChats.map((c) => {
@@ -2082,6 +2125,12 @@ export default function MensagensClient() {
         }}
       />
 
+      <OpenChamadoModal
+        open={chamadoOpen}
+        onOpenChange={setChamadoOpen}
+        mode={chamadoMode}
+      />
+
       {productDetail?.productInfo && (
         <div
           className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
@@ -2240,15 +2289,42 @@ function EmptyThread() {
   )
 }
 
-function EmptyOsChats() {
+function EmptyOsChats({ onOpenChamado }: { onOpenChamado: (mode: ChamadoMode) => void }) {
   const t = useTranslations("Messages")
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
       <ClipboardList className="mb-3 h-10 w-10 text-white/30" />
-      <p className="text-sm font-medium text-white">{t("noOsMessage", "Nenhuma O.S. ativa")}</p>
+      <p className="text-sm font-medium text-white">{t("noOsMessage", "Nenhuma solicitação ativa")}</p>
       <p className="mt-1 text-xs text-white/50">
         {t("noOsHint", "Quando um profissional responder uma das suas solicitações, ela aparece aqui.")}
       </p>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => onOpenChamado("service")}
+          className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/25"
+        >
+          <Briefcase className="h-3.5 w-3.5" />
+          {t("chamadoModeService", "Serviço")}
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenChamado("product")}
+          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/25"
+        >
+          <Package className="h-3.5 w-3.5" />
+          {t("chamadoModeProduct", "Produto")}
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenChamado("course")}
+          className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/15 px-3 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-500/25"
+        >
+          <GraduationCap className="h-3.5 w-3.5" />
+          {t("chamadoModeCourse", "Curso")}
+        </button>
+      </div>
+      <p className="mt-3 text-[11px] text-white/40">{t("openChamadoCtaHint", "Abra um chamado e receba propostas aqui.")}</p>
     </div>
   )
 }
