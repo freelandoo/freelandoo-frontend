@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
-import { Eye, Heart, Star, Clock, Trophy, Globe, MapPin, Briefcase, X, RefreshCw } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Eye, Heart, Star, Clock, Trophy, Globe, X, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type EngagementData = {
@@ -16,6 +16,12 @@ type EngagementData = {
   position_city: number | null
   position_profession: number | null
   updated_at: string | null
+  // Temporada e pesos vêm juntos pra o painel mostrar números corretos.
+  season_number?: number | null
+  season_started_at?: string | null
+  period_days?: number | null
+  online_minute_xp?: number | null
+  max_online_minutes?: number | null
 }
 
 type Props = {
@@ -91,11 +97,19 @@ function RankBadge({ pos, label }: { pos: number | null; label: string }) {
   )
 }
 
+function seasonEndsAt(started: string | null | undefined, periodDays: number | null | undefined): string | null {
+  if (!started || !periodDays) return null
+  const t = new Date(started).getTime()
+  if (Number.isNaN(t)) return null
+  return new Date(t + periodDays * 86_400_000).toLocaleDateString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+  })
+}
+
 export function EngagementPanel({ profileId, onClose }: Props) {
   const [data, setData] = useState<EngagementData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchEngagement = async () => {
     setLoading(true)
@@ -114,28 +128,19 @@ export function EngagementPanel({ profileId, onClose }: Props) {
     }
   }
 
+  // O heartbeat agora roda no layout raiz (<OnlineHeartbeat />) — não precisa
+  // mais ser disparado daqui. O painel só lê os dados.
   useEffect(() => {
     fetchEngagement()
-
-    // Heartbeat a cada 5 min enquanto o painel está aberto E aba visível.
-    // Antes era 60 s sem hidden-check = bombardeio se user minimizasse
-    // a aba (1440 calls/dia/user).
-    const token = localStorage.getItem("token")
-    if (token) {
-      heartbeatRef.current = setInterval(() => {
-        if (document.hidden) return
-        fetch("/api/ranking/heartbeat", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => {})
-      }, 300_000)
-    }
-
-    return () => {
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId])
+
+  // Cálculos de tempo online baseados nos pesos reais (xp_settings).
+  const onlineMinXp = Number(data?.online_minute_xp ?? 0)
+  const maxOnline = Number(data?.max_online_minutes ?? 0)
+  const onlineMinutes = Number(data?.online_minutes ?? 0)
+  const onlinePointsToday = Math.min(onlineMinutes, maxOnline || onlineMinutes) * onlineMinXp
+  const endsAt = seasonEndsAt(data?.season_started_at ?? null, data?.period_days ?? null)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -143,10 +148,18 @@ export function EngagementPanel({ profileId, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-semibold">Engajamento do Perfil</h2>
+            <h2 className="text-base font-semibold">
+              Engajamento do Perfil
+              {data?.season_number != null && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary align-middle">
+                  Temporada {data.season_number}
+                </span>
+              )}
+            </h2>
             {data?.updated_at && (
               <p className="text-xs text-muted-foreground mt-0.5">
                 Atualizado: {new Date(data.updated_at).toLocaleDateString("pt-BR")}
+                {endsAt && <> · zera em {endsAt}</>}
               </p>
             )}
           </div>
@@ -197,13 +210,17 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 </div>
                 <Metric
                   icon={Clock}
-                  label="Pontos por logar hoje"
-                  value={Math.min(120, (data.online_minutes ?? 0) * 2)}
-                  sub={`${data.online_minutes ?? 0} min online (2 pts/min, cap 120/dia)`}
+                  label="XP por logar hoje"
+                  value={Math.round(onlinePointsToday)}
+                  sub={
+                    onlineMinXp > 0
+                      ? `${onlineMinutes} min online (${onlineMinXp} XP/min${maxOnline ? `, teto ${maxOnline} min/dia` : ""})`
+                      : `${onlineMinutes} min online`
+                  }
                 />
                 <Metric
                   icon={Trophy}
-                  label="Pontuação total"
+                  label={data.season_number != null ? `Pontuação — Temporada ${data.season_number}` : "Pontuação da temporada"}
                   value={Number(data.total_points).toFixed(0)}
                   highlight
                 />
@@ -222,14 +239,16 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 </div>
               </div>
 
-              {/* Legenda da fórmula */}
-              <div className="rounded-xl bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground mb-2">Como é calculada a pontuação?</p>
-                <div className="flex items-center gap-2"><Eye className="h-3 w-3 shrink-0" /><span>Visitas × 1 ponto</span></div>
-                <div className="flex items-center gap-2"><Heart className="h-3 w-3 shrink-0" /><span>Likes × 2 pontos</span></div>
-                <div className="flex items-center gap-2"><Star className="h-3 w-3 shrink-0" /><span>Média de avaliações × nº de avaliações × 5 pontos</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Tempo online: 2 pontos por minuto, máx. 120 pontos/dia</span></div>
-                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking recalculado conforme o período definido pelo admin</span></div>
+              {/* Legenda — uma só pontuação (XP = Ranking) */}
+              <div className="rounded-xl bg-muted/30 p-4 text-xs text-muted-foreground space-y-1.5">
+                <p className="font-medium text-foreground mb-1">Como é calculada a pontuação?</p>
+                <p>
+                  XP e ranking usam <strong className="text-foreground">a mesma pontuação</strong> — os pesos por ação
+                  estão no painel admin (XP/curtidas/visitas/avaliações/posts/tempo online etc.).
+                </p>
+                <div className="flex items-center gap-2"><Trophy className="h-3 w-3 shrink-0" /><span>XP/nível: acumula <strong className="text-foreground">para sempre</strong>.</span></div>
+                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking: soma só a temporada atual e zera ao virar.</span></div>
+                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Tempo online conta em qualquer página enquanto a aba estiver visível, até o teto diário.</span></div>
               </div>
             </>
           )}
