@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { armScrollReveal } from "@/lib/scroll-reveal"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const values = [
@@ -28,13 +29,25 @@ const platform = [
 function useReveal() {
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger)
-    gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
-      gsap.from(el, { y: 30, opacity: 0, duration: 0.7, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%" } })
+    const ctx = gsap.context(() => {
+      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
+        gsap.from(el, {
+          y: 30, opacity: 0, duration: 0.7, ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 92%", once: true },
+        })
+      })
+      gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((container) => {
+        gsap.from(container.querySelectorAll("[data-card]"), {
+          y: 25, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power2.out",
+          scrollTrigger: { trigger: container, start: "top 90%", once: true },
+        })
+      })
     })
-    gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((container) => {
-      gsap.from(container.querySelectorAll("[data-card]"), { y: 25, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power2.out", scrollTrigger: { trigger: container, start: "top 85%" } })
-    })
-    return () => ScrollTrigger.getAll().forEach((t) => t.kill())
+    const disarm = armScrollReveal(["[data-reveal]", "[data-card]"])
+    return () => {
+      disarm()
+      ctx.revert()
+    }
   }, [])
 }
 

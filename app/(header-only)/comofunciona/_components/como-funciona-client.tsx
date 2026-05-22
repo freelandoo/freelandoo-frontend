@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { armScrollReveal } from "@/lib/scroll-reveal"
 import Link from "next/link"
 import {
   Search, Megaphone, Users, Zap, Star, TrendingUp, Award,
@@ -344,7 +345,20 @@ export function ComoFuncionaClient() {
       }
     })
 
-    return () => ctx.revert()
+    // Recalcula posições após fontes/layout assentarem e destrava qualquer
+    // seção que tenha ficado presa em opacity:0 dentro da viewport.
+    const disarm = armScrollReveal([
+      ".section-header",
+      ".reveal-card",
+      ".reveal-item",
+      ".machine-card",
+      ".flow-step",
+    ])
+
+    return () => {
+      disarm()
+      ctx.revert()
+    }
   }, [])
 
   // ─── Base styles ───────────────────────────────────────────────────────────
