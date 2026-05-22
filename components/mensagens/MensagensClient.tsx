@@ -758,13 +758,18 @@ export default function MensagensClient() {
   }, [t])
 
   // Resolve o prefixo de endpoint para o chat ativo (serviço vs curso).
-  const osEndpointBase = useCallback(
-    (idResponse: string) => {
-      const chat = osChats.find((c) => c.id_response === idResponse)
-      return chat?.kind === "course" ? "/api/course-requests" : "/api/service-requests"
-    },
-    [osChats],
-  )
+  // Lê osChats via ref pra NÃO depender da prop (re-criar essa função a
+  // cada update de osChats causa loop: loadOsThread depende de
+  // osEndpointBase, e seu useEffect re-dispara → re-load → setOsChats
+  // (nova ref) → osEndpointBase muda → loop).
+  const osChatsRef = useRef(osChats)
+  useEffect(() => {
+    osChatsRef.current = osChats
+  }, [osChats])
+  const osEndpointBase = useCallback((idResponse: string) => {
+    const chat = osChatsRef.current.find((c) => c.id_response === idResponse)
+    return chat?.kind === "course" ? "/api/course-requests" : "/api/service-requests"
+  }, [])
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -809,10 +814,16 @@ export default function MensagensClient() {
         jsonFetch(`${base}/responses/${encodeURIComponent(idResponse)}/read`, {
           method: "POST",
         }).catch(() => {})
-        // backend já marca read no GET — atualiza unread local
-        setOsChats((prev) => prev.map((c) =>
-          c.id_response === idResponse ? { ...c, unread_count: 0 } : c
-        ))
+        // backend já marca read no GET — atualiza unread local SOMENTE
+        // se de fato havia unread (evita criar nova ref a cada poll e
+        // disparar re-renders em cascata).
+        setOsChats((prev) => {
+          const current = prev.find((c) => c.id_response === idResponse)
+          if (!current || (current.unread_count || 0) === 0) return prev
+          return prev.map((c) =>
+            c.id_response === idResponse ? { ...c, unread_count: 0 } : c,
+          )
+        })
         window.dispatchEvent(new Event("mensagens:unread-changed"))
       } catch (err) {
         if (!opts?.silent) {
