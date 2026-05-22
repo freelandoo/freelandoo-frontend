@@ -19,6 +19,15 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
   const [unread, setUnread] = useState(0)
   const panelRef = useRef<HTMLDivElement | null>(null)
 
+  // Mantém o callback num ref — pais costumam passar arrow inline (referência
+  // nova a cada render). Sem isso, depender de onUnreadCountChange no fetch
+  // useEffect causa loop: fetch → setState → parent re-render → callback ref
+  // novo → effect re-roda → fetch → repeat.
+  const onUnreadCountChangeRef = useRef(onUnreadCountChange)
+  useEffect(() => {
+    onUnreadCountChangeRef.current = onUnreadCountChange
+  }, [onUnreadCountChange])
+
   useEffect(() => {
     if (!open) return
     const token = getToken()
@@ -35,12 +44,12 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
         setItems(Array.isArray(data?.items) ? data.items : [])
         const n = typeof data?.unread_count === "number" ? data.unread_count : 0
         setUnread(n)
-        onUnreadCountChange?.(n)
+        onUnreadCountChangeRef.current?.(n)
       })
       .catch(() => { if (!cancelled) setItems([]) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [open, onUnreadCountChange])
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -64,7 +73,7 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
       })
       setItems((prev) => prev.map((it) => it.read_at ? it : { ...it, read_at: new Date().toISOString() }))
       setUnread(0)
-      onUnreadCountChange?.(0)
+      onUnreadCountChangeRef.current?.(0)
     } catch { /* silent */ }
   }
 
@@ -78,7 +87,7 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
       })
       setItems((prev) => prev.map((it) => it.id_notification === id ? { ...it, read_at: new Date().toISOString() } : it))
       setUnread((n) => Math.max(0, n - 1))
-      onUnreadCountChange?.(Math.max(0, unread - 1))
+      onUnreadCountChangeRef.current?.(Math.max(0, unread - 1))
     } catch { /* silent */ }
   }
 
