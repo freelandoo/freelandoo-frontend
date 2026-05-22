@@ -79,7 +79,7 @@ function TaxaPageInner() {
         return
       }
 
-      const response = await fetch("/api/stripe/subscription/create-session", {
+      const response = await fetch("/api/stripe/subscription/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +91,15 @@ function TaxaPageInner() {
         }),
       })
 
-      const data = await response.json()
+      // Backend pode devolver HTML (404 do proxy, etc.) em caso de rota errada;
+      // parse defensivo evita o "Unexpected token '<'" no usuário.
+      const text = await response.text()
+      let data: { url?: string; error?: string } = {}
+      try {
+        data = text ? JSON.parse(text) : {}
+      } catch {
+        data = { error: `Resposta inválida do servidor (${response.status})` }
+      }
       if (!response.ok) {
         throw new Error(data?.error || "Erro ao iniciar pagamento")
       }
