@@ -1,5 +1,6 @@
+import Link from "next/link"
 import { getBackendApiUrl } from "@/lib/backend"
-import { BookOpen, ImageIcon, Layers3, MapPin, Shield, Sparkles } from "lucide-react"
+import { BookOpen, ImageIcon, Layers3, MapPin, MessageCircle, Shield, Sparkles } from "lucide-react"
 import { UserAccountPortfolioTabs } from "./user-account-portfolio-tabs"
 
 type Media = {
@@ -168,6 +169,15 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
                   </span>
                 )}
               </div>
+
+              <Link
+                href={`/mensagens?with=${encodeURIComponent(profile.id_profile)}`}
+                aria-label={`Enviar mensagem para ${profile.display_name}`}
+                title="Enviar mensagem"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-primary/10 hover:text-primary"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Link>
             </div>
 
             {profile.bio && (

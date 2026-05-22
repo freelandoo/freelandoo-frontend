@@ -14,6 +14,7 @@ import {
   MessageCircle,
   Plus,
   Radio,
+  Search,
   Send,
   Sparkles,
   Trash2,
@@ -348,6 +349,20 @@ export default function MensagensClient() {
   const [sending, setSending] = useState(false)
   const [audioRecorderActive, setAudioRecorderActive] = useState(false)
 
+  // Search inline para encontrar perfis/clans pra começar nova conversa.
+  const [convSearch, setConvSearch] = useState("")
+  const [searchResults, setSearchResults] = useState<Array<{
+    id: string
+    type: "profile" | "clan"
+    display_name: string | null
+    avatar_url: string | null
+    sub_profile_slug: string | null
+    is_clan: boolean
+    is_user_account: boolean
+    username: string | null
+  }>>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+
   // ----- Aba O.S. -----
   const [tab, setTab] = useState<MainTab>(initialTab)
   const [osChats, setOsChats] = useState<OsChatItem[]>([])
@@ -499,6 +514,70 @@ export default function MensagensClient() {
     }, POLL_LIST_MS)
     return () => clearInterval(t)
   }, [actorId, loadConversations])
+
+  // Debounce do search inline. Mínimo 2 caracteres pra disparar.
+  useEffect(() => {
+    const q = convSearch.trim()
+    if (q.length < 2) {
+      setSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+    let cancelled = false
+    setSearchLoading(true)
+    const handle = setTimeout(async () => {
+      try {
+        const data = await jsonFetch<{ results: typeof searchResults }>(
+          `/api/conversations/search?q=${encodeURIComponent(q)}`,
+        )
+        if (cancelled) return
+        setSearchResults(Array.isArray(data?.results) ? data.results : [])
+      } catch {
+        if (!cancelled) setSearchResults([])
+      } finally {
+        if (!cancelled) setSearchLoading(false)
+      }
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+    // searchResults intencionalmente fora das deps — só re-roda quando o termo
+    // muda, e o tipo serve só como referência de shape.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convSearch])
+
+  const handleStartConvWith = useCallback(
+    async (targetId: string) => {
+      if (!actorId) return
+      try {
+        const data = await jsonFetch<OpenResponse>("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            actor_id: actorId,
+            actor_type: activeActor?.type || "profile",
+            target_id: targetId,
+          }),
+        })
+        const id = data?.conversation?.id_conversation
+        if (id) {
+          setConvSearch("")
+          setSearchResults([])
+          setActiveConvId(id)
+          await loadConversations()
+          const params = new URLSearchParams(searchParams.toString())
+          params.set("c", id)
+          params.delete("with")
+          params.delete("as")
+          router.replace(`/mensagens?${params.toString()}`)
+        }
+      } catch (err) {
+        alert((err as Error).message || t("openConversationError", "Erro ao abrir conversa"))
+      }
+    },
+    [actorId, activeActor?.type, loadConversations, router, searchParams, t],
+  )
 
   const loadThread = useCallback(
     async (convId: string, opts?: { silent?: boolean }) => {
@@ -1129,7 +1208,80 @@ export default function MensagensClient() {
           </div>
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
-            {convsLoading && conversations.length === 0 ? (
+            {/* Search inline pra encontrar perfis/clans pra começar nova conversa */}
+            <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-black/40 px-3 py-2 backdrop-blur">
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-yellow-400/40 focus-within:bg-white/[0.06]">
+                <Search className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                <input
+                  type="text"
+                  value={convSearch}
+                  onChange={(e) => setConvSearch(e.target.value)}
+                  placeholder={t("searchProfilesPlaceholder", "Buscar @usuário ou nome")}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
+                />
+                {convSearch ? (
+                  <button
+                    type="button"
+                    onClick={() => setConvSearch("")}
+                    className="text-white/40 hover:text-white"
+                    aria-label={t("clearSearchAria", "Limpar busca")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {convSearch.trim().length >= 2 ? (
+              searchLoading ? (
+                <div className="space-y-2 p-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="px-6 py-10 text-center text-sm text-white/45">
+                  {t("searchProfilesEmpty", "Nenhum perfil encontrado para essa busca.")}
+                </div>
+              ) : (
+                <ul className="divide-y divide-white/5">
+                  {searchResults.map((r) => (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleStartConvWith(r.id)}
+                        disabled={!actorId}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarImage src={r.avatar_url || undefined} />
+                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                            {entityInitials(r.display_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-white">
+                            {r.display_name || t("noNameLabel", "Sem nome")}
+                          </div>
+                          <div className="truncate text-[11px] text-white/45">
+                            {r.username ? `@${r.username}` : ""}
+                            {r.is_clan
+                              ? ` · ${t("clanLabel", "Clan")}`
+                              : r.is_user_account
+                              ? ` · ${t("userAccountLabel", "Conta")}`
+                              : ` · ${t("subprofileLabel", "Subperfil")}`}
+                          </div>
+                        </div>
+                        <MessageCircle className="h-4 w-4 text-white/40" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : convsLoading && conversations.length === 0 ? (
               <div className="space-y-2 p-3">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-3">
