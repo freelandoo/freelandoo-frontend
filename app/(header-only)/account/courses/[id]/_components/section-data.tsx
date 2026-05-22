@@ -15,6 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  AffiliateOptInField,
+  AFFILIATE_COMMISSION_DEFAULT,
+} from "@/components/affiliate/affiliate-opt-in-field"
+import {
   COURSE_MIN_PUBLISH_PRICE_CENTS,
   centsToInputText,
   parsePriceInput,
@@ -40,6 +44,8 @@ interface FormState {
   price_text: string
   profile_id: string
   status: CourseStatus
+  affiliates_allowed: boolean
+  affiliate_commission_pct: number
 }
 
 function buildFormFromCourse(course: MyCourse): FormState {
@@ -51,6 +57,9 @@ function buildFormFromCourse(course: MyCourse): FormState {
     price_text: centsToInputText(course.price_cents),
     profile_id: course.profile_id || "",
     status: course.status,
+    affiliates_allowed: course.affiliates_allowed ?? false,
+    affiliate_commission_pct:
+      course.affiliate_commission_pct ?? AFFILIATE_COMMISSION_DEFAULT,
   }
 }
 
@@ -81,7 +90,9 @@ export function CourseDataSection({
       base.cover_url !== form.cover_url ||
       base.price_text !== form.price_text ||
       base.profile_id !== form.profile_id ||
-      base.status !== form.status
+      base.status !== form.status ||
+      base.affiliates_allowed !== form.affiliates_allowed ||
+      base.affiliate_commission_pct !== form.affiliate_commission_pct
     )
   }, [course, form])
 
@@ -109,6 +120,8 @@ export function CourseDataSection({
       price_cents: priceCents,
       profile_id: form.profile_id || null,
       status: form.status,
+      affiliates_allowed: form.affiliates_allowed,
+      affiliate_commission_pct: form.affiliate_commission_pct,
     }
 
     const token = getToken()
@@ -286,6 +299,14 @@ export function CourseDataSection({
           </p>
         </div>
       )}
+
+      <AffiliateOptInField
+        allowed={form.affiliates_allowed}
+        pct={form.affiliate_commission_pct}
+        onAllowedChange={(v) => setForm({ ...form, affiliates_allowed: v })}
+        onPctChange={(v) => setForm({ ...form, affiliate_commission_pct: v })}
+        disabled={isSaving}
+      />
 
       {/* Sticky save bar */}
       <div className="sticky bottom-4 mt-6 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/[0.07] bg-zinc-950/85 px-4 py-3 backdrop-blur-md">

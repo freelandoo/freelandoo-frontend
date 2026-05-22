@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GripVertical, ImagePlus, Loader2, Save, Trash2, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  AffiliateOptInField,
+  AFFILIATE_COMMISSION_DEFAULT,
+} from "@/components/affiliate/affiliate-opt-in-field"
 import type { ProfileService } from "@/components/calendar/types"
 import {
   clientTotalCentsFromFreelancerNet,
@@ -104,6 +108,8 @@ export function ProfileServiceEditModal({
     price_reais: "0,00",
     is_active: true,
     member_profile_ids: [] as string[],
+    affiliates_allowed: false,
+    affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
   })
   const [saving, setSaving] = useState(false)
   const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
@@ -140,6 +146,8 @@ export function ProfileServiceEditModal({
       price_reais: "0,00",
       is_active: true,
       member_profile_ids: [],
+      affiliates_allowed: false,
+      affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, service])
 
@@ -152,6 +160,9 @@ export function ProfileServiceEditModal({
       price_reais: (service.price_amount / 100).toFixed(2).replace(".", ","),
       is_active: service.is_active !== false,
       member_profile_ids: service.member_profile_ids || [],
+      affiliates_allowed: service.affiliates_allowed ?? false,
+      affiliate_commission_pct:
+        service.affiliate_commission_pct ?? AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, service])
 
@@ -404,6 +415,8 @@ export function ProfileServiceEditModal({
       duration_minutes: serviceForm.duration_minutes,
       price_amount,
       is_active: serviceForm.is_active,
+      affiliates_allowed: serviceForm.affiliates_allowed,
+      affiliate_commission_pct: serviceForm.affiliate_commission_pct,
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
     try {
@@ -693,6 +706,14 @@ export function ProfileServiceEditModal({
             />
             <span className="text-sm text-zinc-200">Ativo (visível para clientes)</span>
           </label>
+
+          <AffiliateOptInField
+            allowed={serviceForm.affiliates_allowed}
+            pct={serviceForm.affiliate_commission_pct}
+            onAllowedChange={(v) => setServiceForm((f) => ({ ...f, affiliates_allowed: v }))}
+            onPctChange={(v) => setServiceForm((f) => ({ ...f, affiliate_commission_pct: v }))}
+            disabled={saving}
+          />
         </div>
         <div className="flex justify-end gap-2 border-t border-zinc-800 p-6">
           <button

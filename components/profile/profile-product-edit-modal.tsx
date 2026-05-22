@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
+import {
+  AffiliateOptInField,
+  AFFILIATE_COMMISSION_DEFAULT,
+} from "@/components/affiliate/affiliate-opt-in-field"
 import { compressImageToMaxSize } from "@/lib/media/image-processing"
 import {
   POST_IMAGE_MAX_SIZE_BYTES,
@@ -24,6 +28,8 @@ export interface ProfileProduct {
   origin_zipcode_override: string | null
   is_active: boolean
   id_product_category: number | null
+  affiliates_allowed?: boolean
+  affiliate_commission_pct?: number
   created_at?: string
   updated_at?: string
   media?: ProfileProductMedia[]
@@ -199,6 +205,8 @@ export function ProfileProductEditModal({
     origin_zipcode_override: "",
     is_active: true,
     id_product_category: "" as string,
+    affiliates_allowed: false,
+    affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
   })
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<ProductCategoryOption[]>([])
@@ -246,6 +254,8 @@ export function ProfileProductEditModal({
       origin_zipcode_override: "",
       is_active: true,
       id_product_category: "",
+      affiliates_allowed: false,
+      affiliate_commission_pct: AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, product])
 
@@ -265,6 +275,9 @@ export function ProfileProductEditModal({
         : "",
       is_active: product.is_active !== false,
       id_product_category: product.id_product_category != null ? String(product.id_product_category) : "",
+      affiliates_allowed: product.affiliates_allowed ?? false,
+      affiliate_commission_pct:
+        product.affiliate_commission_pct ?? AFFILIATE_COMMISSION_DEFAULT,
     })
   }, [open, product])
 
@@ -492,6 +505,8 @@ export function ProfileProductEditModal({
       origin_zipcode_override: zipDigits || null,
       is_active: form.is_active,
       id_product_category: categoryId,
+      affiliates_allowed: form.affiliates_allowed,
+      affiliate_commission_pct: form.affiliate_commission_pct,
     }
     try {
       const url = product
@@ -809,6 +824,14 @@ export function ProfileProductEditModal({
             />
             <span className="text-sm text-zinc-200">Ativo (visível na loja)</span>
           </label>
+
+          <AffiliateOptInField
+            allowed={form.affiliates_allowed}
+            pct={form.affiliate_commission_pct}
+            onAllowedChange={(v) => setForm((f) => ({ ...f, affiliates_allowed: v }))}
+            onPctChange={(v) => setForm((f) => ({ ...f, affiliate_commission_pct: v }))}
+            disabled={saving}
+          />
         </div>
         <div className="flex justify-end gap-2 border-t border-zinc-800 p-6">
           <button
