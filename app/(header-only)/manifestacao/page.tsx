@@ -28,6 +28,24 @@ type Product = {
   banner_url: string
   price_polens: number
   price_cents: number
+  tag_label?: string | null
+  tag_color?: string | null
+}
+
+// Pills da tag combinam com o gradiente escuro do overlay inferior.
+const TAG_COLOR_CLASSES: Record<string, string> = {
+  emerald: "border-emerald-300/40 bg-emerald-500/15 text-emerald-100",
+  amber:   "border-amber-300/40 bg-amber-500/15 text-amber-100",
+  rose:    "border-rose-300/40 bg-rose-500/15 text-rose-100",
+  sky:     "border-sky-300/40 bg-sky-500/15 text-sky-100",
+  violet:  "border-violet-300/40 bg-violet-500/15 text-violet-100",
+  primary: "border-amber-300/40 bg-amber-500/15 text-amber-100",
+  zinc:    "border-zinc-200/40 bg-zinc-500/15 text-zinc-100",
+  red:     "border-red-300/40 bg-red-500/15 text-red-100",
+  blue:    "border-blue-300/40 bg-blue-500/15 text-blue-100",
+  green:   "border-green-300/40 bg-green-500/15 text-green-100",
+  yellow:  "border-yellow-300/40 bg-yellow-500/15 text-yellow-100",
+  orange:  "border-orange-300/40 bg-orange-500/15 text-orange-100",
 }
 
 type OwnedRow = { product_id: string; is_active: boolean }
@@ -341,7 +359,7 @@ export default function ManifestacaoPage() {
         {loading ? (
           <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="aspect-[9/16] animate-pulse rounded-[1.5rem] bg-zinc-200" />
+              <div key={i} className="aspect-[16/9] animate-pulse rounded-[1.5rem] bg-zinc-200" />
             ))}
           </div>
         ) : error ? (
@@ -381,7 +399,7 @@ export default function ManifestacaoPage() {
                       setPreviewId(p.id)
                     }
                   }}
-                  className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300 active:scale-[0.99]"
+                  className="group relative aspect-[16/9] cursor-pointer overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300 active:scale-[0.99]"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
@@ -412,7 +430,20 @@ export default function ManifestacaoPage() {
                   </span>
 
                   <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 text-white">
-                    <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
+                    <div className="flex items-end justify-between gap-2">
+                      <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
+                      {p.tag_label && (
+                        <span
+                          className={cn(
+                            "shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold backdrop-blur",
+                            TAG_COLOR_CLASSES[p.tag_color || "emerald"] ?? TAG_COLOR_CLASSES.emerald,
+                          )}
+                        >
+                          <BadgeCheck className="h-2.5 w-2.5" />
+                          {p.tag_label}
+                        </span>
+                      )}
+                    </div>
                     {p.headline && (
                       <p className="line-clamp-1 text-xs font-medium text-white/85">{p.headline}</p>
                     )}
