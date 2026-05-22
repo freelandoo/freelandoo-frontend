@@ -2,6 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
+
+// Caixas padrão Correios/Melhor Envio — escolher uma preenche as dimensões.
+// Valores em cm. O peso fica separado porque varia por produto mesmo dentro
+// da mesma caixa. "Personalizada" deixa os 3 campos livres.
+type BoxPreset = { id: string; label: string; h: number; w: number; l: number; hint?: string }
+const BOX_PRESETS: BoxPreset[] = [
+  { id: "mini",   label: "Mini Envios (16 × 11 × 2 cm)",      h: 2,  w: 11, l: 16, hint: "envelope, acessórios pequenos" },
+  { id: "pp",     label: "Caixa PP (18 × 14 × 8 cm)",         h: 8,  w: 14, l: 18, hint: "joias, eletrônicos pequenos" },
+  { id: "p",      label: "Caixa P (27 × 18 × 9 cm)",          h: 9,  w: 18, l: 27, hint: "livros, camisetas dobradas" },
+  { id: "m",      label: "Caixa M (31 × 24 × 11 cm)",         h: 11, w: 24, l: 31, hint: "roupas, calçados" },
+  { id: "g",      label: "Caixa G (41 × 27 × 11 cm)",         h: 11, w: 27, l: 41, hint: "kits, produtos maiores" },
+  { id: "gg",     label: "Caixa GG (33 × 24 × 24 cm)",        h: 24, w: 24, l: 33, hint: "volumosos" },
+]
+
+function detectPreset(h: string, w: string, l: string): string {
+  const parse = (s: string) => {
+    const n = parseFloat(String(s).replace(",", "."))
+    return Number.isFinite(n) ? n : 0
+  }
+  const hN = parse(h), wN = parse(w), lN = parse(l)
+  const match = BOX_PRESETS.find(p => p.h === hN && p.w === wN && p.l === lN)
+  return match?.id || "custom"
+}
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import { compressImageToMaxSize } from "@/lib/media/image-processing"
 import {
@@ -646,6 +669,38 @@ export function ProfileProductEditModal({
 
           <div>
             <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (para frete)</p>
+
+            {/* Caixa padrão — preenche altura/largura/comprimento automaticamente. */}
+            <div className="mb-3">
+              <label className="mb-1 block text-xs text-zinc-500">Caixa padrão</label>
+              <select
+                value={detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm))}
+                onChange={(e) => {
+                  const id = e.target.value
+                  if (id === "custom") return
+                  const preset = BOX_PRESETS.find((p) => p.id === id)
+                  if (!preset) return
+                  setForm((f) => ({
+                    ...f,
+                    height_cm: String(preset.h).replace(".", ","),
+                    width_cm: String(preset.w).replace(".", ","),
+                    length_cm: String(preset.l).replace(".", ","),
+                  }))
+                }}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              >
+                <option value="custom">Personalizada (digitar abaixo)</option>
+                {BOX_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}{p.hint ? ` — ${p.hint}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10px] text-zinc-500">
+                Use a caixa em que você vai realmente embalar. Dimensões muito grandes fazem todas as transportadoras recusarem.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-xs text-zinc-500">Peso (g)</label>
