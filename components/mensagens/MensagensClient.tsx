@@ -24,6 +24,7 @@ import {
 import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
 import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
+import { OfferingPickerButton } from "@/components/mensagens/OfferingPickerButton"
 import { AudioMessage, AudioRecorder } from "@/components/mensagens/AudioRecorder"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { Button } from "@/components/ui/button"
@@ -1744,6 +1745,14 @@ export default function MensagensClient() {
                     </div>
                   ) : (
                     <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] focus-within:border-yellow-400/40 focus-within:bg-white/[0.05]">
+                      <OfferingPickerButton
+                        onPick={(md) =>
+                          setOsComposer((c) => {
+                            const sep = c && !c.endsWith("\n") ? "\n" : ""
+                            return (c + sep + md).slice(0, 4000)
+                          })
+                        }
+                      />
                       <EmojiPickerButton
                         onPick={(emoji) =>
                           setOsComposer((c) => (c + emoji).slice(0, 4000))
