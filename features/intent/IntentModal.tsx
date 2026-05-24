@@ -129,7 +129,8 @@ export function IntentModal() {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 36, opacity: 0, scale: 0.97 }}
               transition={SPRING}
-              className="relative w-full max-w-[1180px] overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-950 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              // max-h + flex-col garante footer sempre visível mesmo em mobile
+              className="relative flex max-h-[94dvh] w-full max-w-[1180px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.06)] md:rounded-[2.5rem]"
             >
               <MeshBackground />
 
@@ -137,16 +138,16 @@ export function IntentModal() {
                 type="button"
                 onClick={() => onDismiss("closed")}
                 disabled={working}
-                className="absolute right-5 top-5 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 backdrop-blur-xl transition hover:border-white/25 hover:bg-white/10 hover:text-white disabled:opacity-40 active:scale-[0.94]"
+                className="absolute right-4 top-4 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 backdrop-blur-xl transition hover:border-white/25 hover:bg-white/10 hover:text-white disabled:opacity-40 active:scale-[0.94] md:right-5 md:top-5 md:h-10 md:w-10"
                 aria-label="Fechar"
               >
                 <X className="h-4 w-4" />
               </button>
 
-              <div className="relative z-10">
+              <div className="relative z-10 flex min-h-0 flex-1 flex-col">
                 <Header reduced={!!reduced} />
 
-                <div className="px-5 pb-6 md:px-10 md:pb-10">
+                <div className="min-h-0 flex-1 overflow-hidden px-3 pb-4 md:px-10 md:pb-10">
                   {paths.length === 0 ? (
                     <EmptyState />
                   ) : (
@@ -212,21 +213,21 @@ function MeshBackground() {
 
 function Header({ reduced }: { reduced: boolean }) {
   return (
-    <div className="px-5 pb-4 pt-12 text-center md:px-12 md:pt-14">
+    <div className="shrink-0 px-5 pb-3 pt-7 text-center md:px-12 md:pb-4 md:pt-14">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...SPRING, delay: 0.1 }}
-        className="mx-auto mb-6 inline-flex items-center gap-2.5 rounded-full border border-amber-400/30 bg-amber-500/[0.08] px-4 py-1.5 backdrop-blur-sm"
+        className="mx-auto mb-3 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/[0.08] px-3 py-1 backdrop-blur-sm md:mb-6 md:gap-2.5 md:px-4 md:py-1.5"
       >
         <motion.span
           animate={reduced ? undefined : { scale: [1, 1.15, 1], opacity: [1, 0.8, 1] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           className="inline-flex"
         >
-          <Hexagon className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
+          <Hexagon className="h-3 w-3 fill-amber-300 text-amber-300 md:h-3.5 md:w-3.5" />
         </motion.span>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-100">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100 md:text-[11px] md:tracking-[0.24em]">
           Freelandoo · Pollens
         </span>
       </motion.div>
@@ -236,7 +237,7 @@ function Header({ reduced }: { reduced: boolean }) {
         initial={{ y: 14, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ ...SPRING, delay: 0.15 }}
-        className="text-3xl font-bold leading-[1.05] tracking-tight text-white md:text-[44px]"
+        className="text-xl font-bold leading-[1.1] tracking-tight text-white md:text-[44px] md:leading-[1.05]"
       >
         Como você quer{" "}
         <span className="relative inline-block">
@@ -258,7 +259,7 @@ function Header({ reduced }: { reduced: boolean }) {
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ ...SPRING, delay: 0.25 }}
-        className="mx-auto mt-4 max-w-[58ch] text-sm leading-relaxed text-zinc-400 md:text-[15px]"
+        className="mx-auto mt-2 hidden max-w-[58ch] text-sm leading-relaxed text-zinc-400 md:mt-4 md:block md:text-[15px]"
       >
         Escolha um caminho para começar. Vamos te mostrar o passo a passo ideal para você.
       </motion.p>
@@ -268,30 +269,28 @@ function Header({ reduced }: { reduced: boolean }) {
 
 function Footer({ working, onLater }: { working: boolean; onLater: () => void }) {
   return (
-    <div className="relative border-t border-white/[0.06] bg-zinc-950/40 px-5 py-4 backdrop-blur md:px-10 md:py-5">
-      <div className="flex flex-col items-start justify-between gap-3 text-[12.5px] md:flex-row md:items-center">
-        <span className="inline-flex items-center gap-2 text-zinc-500">
+    <div className="relative shrink-0 border-t border-white/[0.06] bg-zinc-950/40 px-4 py-3 backdrop-blur md:px-10 md:py-5">
+      <div className="flex items-center justify-between gap-3 text-[12.5px]">
+        <span className="hidden items-center gap-2 text-zinc-500 md:inline-flex">
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-zinc-700 text-[10px] font-bold text-zinc-500">i</span>
           Você poderá mudar essa escolha depois nas configurações.
         </span>
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-amber-200/85">
-            <Sparkles className="h-3.5 w-3.5" />
-            Ao escolher, você assiste a um vídeo rápido
-          </span>
-          <motion.button
-            type="button"
-            onClick={onLater}
-            disabled={working}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            transition={SPRING}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[12.5px] font-medium text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 disabled:opacity-50"
-          >
-            <Hexagon className="h-3 w-3" />
-            Agora não
-          </motion.button>
-        </div>
+        <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[11px] text-amber-200/85 md:text-[12.5px]">
+          <Sparkles className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Ao escolher, você assiste a um vídeo rápido</span>
+        </span>
+        <motion.button
+          type="button"
+          onClick={onLater}
+          disabled={working}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          transition={SPRING}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/85 backdrop-blur transition hover:border-white/25 hover:bg-white/10 disabled:opacity-50 md:gap-2 md:px-4 md:py-2 md:text-[12.5px]"
+        >
+          <Hexagon className="h-3 w-3" />
+          Agora não
+        </motion.button>
       </div>
     </div>
   )
@@ -326,7 +325,9 @@ function PathGrid({
       initial="hidden"
       animate="visible"
       variants={{ visible: { transition: { staggerChildren: 0.07, delayChildren: 0.3 } } }}
-      className="-mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2 pt-2 md:mx-0 md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:px-0 [scrollbar-width:thin]"
+      // Mobile: snap-start em vez de snap-center, e padding pra mostrar peek do próximo card.
+      // pl-3 + gap-3 + card 62vw → resto da viewport mostra ~38vw do 2º card.
+      className="-mx-3 flex h-full snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-2 pl-3 pr-12 pt-2 md:mx-0 md:grid md:h-auto md:grid-cols-5 md:gap-4 md:overflow-visible md:px-0 [scrollbar-width:thin]"
     >
       {paths.map((path, idx) => (
         <PathCard
@@ -438,7 +439,9 @@ function PathCard({
       transition={SPRING}
       whileHover={disabled || loading ? undefined : { y: -8, scale: 1.025 }}
       whileTap={disabled || loading ? undefined : { scale: 0.97 }}
-      className={`group relative flex aspect-[9/14] w-[78vw] shrink-0 snap-center cursor-pointer flex-col overflow-hidden rounded-[1.75rem] bg-zinc-900 text-left ring-1 transition-shadow duration-500 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
+      // Mobile: aspect mais curto (4/5) + width menor (62vw) → resto da viewport
+      // mostra peek do 2º card; snap-start ancora à esquerda.
+      className={`group relative flex aspect-[4/5] w-[62vw] shrink-0 snap-start cursor-pointer flex-col overflow-hidden rounded-[1.5rem] bg-zinc-900 text-left ring-1 transition-shadow duration-500 disabled:cursor-not-allowed disabled:opacity-60 md:aspect-[9/14] md:w-auto md:snap-center md:rounded-[1.75rem] ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
     >
       {/* IMAGEM FULL-BLEED — ocupa o card inteiro */}
       <Image
