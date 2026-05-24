@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { useScrollReveal } from "@/lib/scroll-reveal"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { TourHelpCenter } from "@/features/tour/TourHelpCenter"
 
 const categories = [
   "Conta e cadastro",
@@ -156,7 +155,6 @@ export function CentralDeAjudaContent() {
               {t("support.cta", "Falar com suporte")}
             </Link>
           </div>
-          <TourHelpCenter />
         </div>
       </section>
     </main>
