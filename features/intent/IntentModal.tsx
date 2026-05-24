@@ -439,9 +439,9 @@ function PathCard({
       transition={SPRING}
       whileHover={disabled || loading ? undefined : { y: -8, scale: 1.025 }}
       whileTap={disabled || loading ? undefined : { scale: 0.97 }}
-      // Mobile: aspect mais curto (4/5) + width menor (62vw) → resto da viewport
-      // mostra peek do 2º card; snap-start ancora à esquerda.
-      className={`group relative flex aspect-[4/5] w-[62vw] shrink-0 snap-start cursor-pointer flex-col overflow-hidden rounded-[1.5rem] bg-zinc-900 text-left ring-1 transition-shadow duration-500 disabled:cursor-not-allowed disabled:opacity-60 md:aspect-[9/14] md:w-auto md:snap-center md:rounded-[1.75rem] ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
+      // Mobile: 9:16 vertical, width 62vw → resto da viewport mostra ~38vw
+      // do 2º card (peek de scroll); snap-start ancora à esquerda.
+      className={`group relative flex aspect-[9/16] w-[62vw] shrink-0 snap-start cursor-pointer flex-col overflow-hidden rounded-[1.5rem] bg-zinc-900 text-left ring-1 transition-shadow duration-500 disabled:cursor-not-allowed disabled:opacity-60 md:aspect-[9/14] md:w-auto md:snap-center md:rounded-[1.75rem] ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
     >
       {/* IMAGEM FULL-BLEED — ocupa o card inteiro */}
       <Image
