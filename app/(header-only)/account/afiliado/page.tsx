@@ -258,7 +258,8 @@ export default function MeusFaturamentosPage() {
   ]), [totals])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-950 via-black to-neutral-950">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-950 via-black to-neutral-950" data-tour-path="affiliate-link">
+      <span data-tour-path="affiliate-coupon" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-32 h-0 w-0" />
       <main className="container mx-auto px-4 py-10">
         <div className="mx-auto max-w-5xl space-y-6">
           {/* Header */}

@@ -61,7 +61,7 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1 bg-zinc-950 text-white">
+      <main className="flex-1 bg-zinc-950 text-white" data-tour-path="explore-home">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
