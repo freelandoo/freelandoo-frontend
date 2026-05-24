@@ -10,6 +10,7 @@ import { CouponCapture } from "@/components/share/coupon-capture"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
+import { IntentModal } from "@/features/intent/IntentModal"
 import { getCountry, getLocale } from "@/lib/i18n/server"
 import { getMessages } from "@/lib/i18n/messages"
 import "./globals.css"
@@ -110,6 +111,7 @@ export default async function RootLayout({
             {children}
             <ProfileSidebar />
             <BirthdateGate />
+            <IntentModal />
             <CookieConsent />
             <AnalyticsProvider />
             <CouponCapture />
