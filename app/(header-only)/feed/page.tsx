@@ -189,7 +189,7 @@ function FeedPageInner() {
   }
 
   return (
-    <div data-tour="feed-root" data-tour-path="explore-feed" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
+    <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
       <FeedRetractableHeader
         machines={machines}
         selectedMachineId={idMachine}

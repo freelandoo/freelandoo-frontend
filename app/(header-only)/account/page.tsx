@@ -1368,8 +1368,7 @@ export default function PerfilPage() {
   const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
 
   return (
-    <div className="bg-page-shell-dark min-h-[100dvh]" data-tour-path="affiliate-dropside">
-      <span data-tour-path="services-subprofile" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-20 h-0 w-0" />
+    <div className="bg-page-shell-dark min-h-[100dvh]">
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={perfil.nome || perfil.username || ""}

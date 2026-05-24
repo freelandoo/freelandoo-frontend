@@ -392,8 +392,7 @@ function SearchPageInner() {
   }
 
   return (
-    <div data-tour="search-root" data-tour-path="services-vitrine" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
-      <span data-tour-path="explore-search" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-20 h-0 w-0" />
+    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
       <SearchRetractableHeader
         machines={machines}
         categories={machineCategories}
