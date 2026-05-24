@@ -25,7 +25,6 @@ import {
   ShieldAlert,
   Calendar,
   Flag,
-  Compass,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -311,13 +310,6 @@ export default function AdministracaoPage() {
           >
             <Flag className="h-4 w-4" />
             Posts denunciados
-          </button>
-          <button
-            onClick={() => router.push("/administracao/tours")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Compass className="h-4 w-4" />
-            Tours
           </button>
         </div>
 
