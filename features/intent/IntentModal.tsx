@@ -1,84 +1,74 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import Image from "next/image"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
-import {
-  ArrowRight, Briefcase, Compass, GraduationCap, Hexagon, Loader2, Package, Sparkles, Users, X,
-} from "lucide-react"
+import gsap from "gsap"
+import { ArrowRight, Hexagon, Loader2, Sparkles, X } from "lucide-react"
 import { useIntent } from "./useIntent"
 import { IntentVideoOverlay } from "./IntentVideoOverlay"
 import type { IntentPath } from "./types"
 
 const SPRING = { type: "spring" as const, stiffness: 100, damping: 20 }
 
-// ----- Accent: bg + glow + iconText (todos derivados da mesma matiz) -----
+// ----- Accent: usado no glow/cursor spotlight + botão --------------------
 
 interface AccentSet {
   ring: string
-  glow: string                 // tinted shadow no hover (taste: não é neon)
+  glow: string
   buttonBg: string
   buttonHover: string
   buttonText: string
   badgeBorder: string
   badgeText: string
-  illustrationFrom: string     // from-color para o gradient da ilustração
-  illustrationVia: string
-  iconText: string
-  hueOverlay: string           // overlay de cor no fundo da ilustração
+  spotlightRgb: string         // "251 191 36" para usar em rgb(...)
+  shimmerStop: string
 }
 
 const ACCENT: Record<string, AccentSet> = {
   amber: {
-    ring: "ring-amber-500/20 hover:ring-amber-400/50",
-    glow: "hover:shadow-[0_24px_70px_-22px_rgba(251,191,36,0.55)]",
+    ring: "ring-amber-500/20 group-hover:ring-amber-400/60",
+    glow: "group-hover:shadow-[0_28px_80px_-20px_rgba(251,191,36,0.55)]",
     buttonBg: "bg-amber-400",
     buttonHover: "hover:bg-amber-300",
     buttonText: "text-zinc-950",
-    badgeBorder: "border-amber-400/40 bg-amber-500/10",
-    badgeText: "text-amber-200",
-    illustrationFrom: "from-amber-500/35",
-    illustrationVia: "via-amber-700/15",
-    iconText: "text-amber-100",
-    hueOverlay: "rgba(251,191,36,0.18)",
+    badgeBorder: "border-amber-400/40 bg-amber-500/15",
+    badgeText: "text-amber-100",
+    spotlightRgb: "251 191 36",
+    shimmerStop: "rgba(255,255,255,0.55)",
   },
   violet: {
-    ring: "ring-violet-500/20 hover:ring-violet-400/50",
-    glow: "hover:shadow-[0_24px_70px_-22px_rgba(167,139,250,0.55)]",
+    ring: "ring-violet-500/20 group-hover:ring-violet-400/60",
+    glow: "group-hover:shadow-[0_28px_80px_-20px_rgba(167,139,250,0.55)]",
     buttonBg: "bg-violet-500",
     buttonHover: "hover:bg-violet-400",
     buttonText: "text-white",
-    badgeBorder: "border-violet-400/40 bg-violet-500/10",
-    badgeText: "text-violet-200",
-    illustrationFrom: "from-violet-500/35",
-    illustrationVia: "via-violet-700/15",
-    iconText: "text-violet-100",
-    hueOverlay: "rgba(167,139,250,0.18)",
+    badgeBorder: "border-violet-400/40 bg-violet-500/15",
+    badgeText: "text-violet-100",
+    spotlightRgb: "167 139 250",
+    shimmerStop: "rgba(255,255,255,0.55)",
   },
   emerald: {
-    ring: "ring-emerald-500/20 hover:ring-emerald-400/50",
-    glow: "hover:shadow-[0_24px_70px_-22px_rgba(52,211,153,0.55)]",
+    ring: "ring-emerald-500/20 group-hover:ring-emerald-400/60",
+    glow: "group-hover:shadow-[0_28px_80px_-20px_rgba(52,211,153,0.55)]",
     buttonBg: "bg-emerald-500",
     buttonHover: "hover:bg-emerald-400",
     buttonText: "text-zinc-950",
-    badgeBorder: "border-emerald-400/40 bg-emerald-500/10",
-    badgeText: "text-emerald-200",
-    illustrationFrom: "from-emerald-500/35",
-    illustrationVia: "via-emerald-700/15",
-    iconText: "text-emerald-100",
-    hueOverlay: "rgba(52,211,153,0.18)",
+    badgeBorder: "border-emerald-400/40 bg-emerald-500/15",
+    badgeText: "text-emerald-100",
+    spotlightRgb: "52 211 153",
+    shimmerStop: "rgba(255,255,255,0.55)",
   },
   sky: {
-    ring: "ring-sky-500/20 hover:ring-sky-400/50",
-    glow: "hover:shadow-[0_24px_70px_-22px_rgba(56,189,248,0.55)]",
+    ring: "ring-sky-500/20 group-hover:ring-sky-400/60",
+    glow: "group-hover:shadow-[0_28px_80px_-20px_rgba(56,189,248,0.55)]",
     buttonBg: "bg-sky-500",
     buttonHover: "hover:bg-sky-400",
     buttonText: "text-zinc-950",
-    badgeBorder: "border-sky-400/40 bg-sky-500/10",
-    badgeText: "text-sky-200",
-    illustrationFrom: "from-sky-500/35",
-    illustrationVia: "via-sky-700/15",
-    iconText: "text-sky-100",
-    hueOverlay: "rgba(56,189,248,0.18)",
+    badgeBorder: "border-sky-400/40 bg-sky-500/15",
+    badgeText: "text-sky-100",
+    spotlightRgb: "56 189 248",
+    shimmerStop: "rgba(255,255,255,0.55)",
   },
 }
 
@@ -86,17 +76,9 @@ function accentFor(color: string): AccentSet {
   return ACCENT[color] ?? ACCENT.amber
 }
 
-const PATH_ICON: Record<string, typeof Users> = {
-  affiliate: Users,
-  courses: GraduationCap,
-  products: Package,
-  services: Briefcase,
-  explore: Compass,
-}
-
-function PathIcon({ pathKey, className }: { pathKey: string; className?: string }) {
-  const Icon = PATH_ICON[pathKey] ?? Sparkles
-  return <Icon className={className} />
+// Cada path_key mapeia para o asset em /public/intent/<key>.png
+function imageFor(pathKey: string): string {
+  return `/intent/${pathKey}.png`
 }
 
 // ----- Componente principal ----------------------------------------------
@@ -189,7 +171,7 @@ export function IntentModal() {
   )
 }
 
-// ----- Mesh gradient animado de fundo (taste: layout/atmosphere) ---------
+// ----- Mesh gradient animado de fundo ------------------------------------
 
 function MeshBackground() {
   return (
@@ -214,7 +196,6 @@ function MeshBackground() {
           transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
-      {/* Grain leve pra quebrar bandas dos blurs */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.025] mix-blend-overlay"
@@ -227,7 +208,7 @@ function MeshBackground() {
   )
 }
 
-// ----- Header / Footer / Empty ------------------------------------------
+// ----- Header / Footer / Empty -------------------------------------------
 
 function Header({ reduced }: { reduced: boolean }) {
   return (
@@ -361,7 +342,7 @@ function PathGrid({
   )
 }
 
-// ----- Card: full-bleed estilo Polens com glow tintado ------------------
+// ----- Card: imagem full-bleed + GSAP cursor spotlight + botão animado ---
 
 function PathCard({
   path,
@@ -377,10 +358,76 @@ function PathCard({
   onPick: (path: IntentPath) => void | Promise<void>
 }) {
   const accent = accentFor(path.accent_color)
-  const reduced = useReducedMotion()
+  const cardRef = useRef<HTMLButtonElement | null>(null)
+  const spotlightRef = useRef<HTMLDivElement | null>(null)
+  const shimmerRef = useRef<HTMLSpanElement | null>(null)
+
+  // GSAP cursor spotlight — segue o mouse com quickTo (sem React state).
+  // Quando entra: opacity → 1 + scale → 1; quando sai: opacity → 0.
+  useEffect(() => {
+    const card = cardRef.current
+    const spot = spotlightRef.current
+    if (!card || !spot) return
+
+    gsap.set(spot, { opacity: 0, scale: 0.85 })
+
+    const moveX = gsap.quickTo(spot, "x", { duration: 0.35, ease: "power3.out" })
+    const moveY = gsap.quickTo(spot, "y", { duration: 0.35, ease: "power3.out" })
+
+    const onMove = (e: MouseEvent) => {
+      const rect = card.getBoundingClientRect()
+      moveX(e.clientX - rect.left - spot.offsetWidth / 2)
+      moveY(e.clientY - rect.top - spot.offsetHeight / 2)
+    }
+    const onEnter = () => {
+      gsap.to(spot, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" })
+    }
+    const onLeave = () => {
+      gsap.to(spot, { opacity: 0, scale: 0.85, duration: 0.5, ease: "power2.out" })
+    }
+
+    card.addEventListener("mousemove", onMove)
+    card.addEventListener("mouseenter", onEnter)
+    card.addEventListener("mouseleave", onLeave)
+    return () => {
+      card.removeEventListener("mousemove", onMove)
+      card.removeEventListener("mouseenter", onEnter)
+      card.removeEventListener("mouseleave", onLeave)
+      gsap.killTweensOf(spot)
+    }
+  }, [])
+
+  // Shimmer animado no botão quando hover no card (varre da esquerda pra direita).
+  useEffect(() => {
+    const card = cardRef.current
+    const sh = shimmerRef.current
+    if (!card || !sh) return
+    gsap.set(sh, { xPercent: -120 })
+    let tween: gsap.core.Tween | null = null
+
+    const onEnter = () => {
+      tween?.kill()
+      tween = gsap.fromTo(sh,
+        { xPercent: -120 },
+        { xPercent: 200, duration: 1.1, ease: "power2.inOut", repeat: -1, repeatDelay: 0.4 }
+      )
+    }
+    const onLeave = () => {
+      tween?.kill()
+      gsap.to(sh, { xPercent: -120, duration: 0.25, ease: "power2.out" })
+    }
+    card.addEventListener("mouseenter", onEnter)
+    card.addEventListener("mouseleave", onLeave)
+    return () => {
+      card.removeEventListener("mouseenter", onEnter)
+      card.removeEventListener("mouseleave", onLeave)
+      tween?.kill()
+    }
+  }, [])
 
   return (
     <motion.button
+      ref={cardRef}
       type="button"
       onClick={() => onPick(path)}
       disabled={disabled || loading}
@@ -389,23 +436,31 @@ function PathCard({
         visible: { y: 0, opacity: 1, scale: 1 },
       }}
       transition={SPRING}
-      whileHover={disabled || loading ? undefined : { y: -8, scale: 1.02 }}
+      whileHover={disabled || loading ? undefined : { y: -8, scale: 1.025 }}
       whileTap={disabled || loading ? undefined : { scale: 0.97 }}
-      // aspect ~9:14 para 5 cards em ~1100px
-      className={`group relative flex aspect-[9/14] w-[78vw] shrink-0 snap-center cursor-pointer flex-col overflow-hidden rounded-[1.75rem] bg-zinc-900 text-left ring-1 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
+      className={`group relative flex aspect-[9/14] w-[78vw] shrink-0 snap-center cursor-pointer flex-col overflow-hidden rounded-[1.75rem] bg-zinc-900 text-left ring-1 transition-shadow duration-500 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto ${accent.ring} ${accent.glow} shadow-[0_18px_40px_-30px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.07)]`}
     >
-      {/* Ilustração FULL BLEED — gradient rico com ícone integrado + camadas */}
-      {path.banner_image_url ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.04]"
-          style={{ backgroundImage: `url(${path.banner_image_url})` }}
-        />
-      ) : (
-        <Placeholder accent={accent} pathKey={path.path_key} reduced={!!reduced} />
-      )}
+      {/* IMAGEM FULL-BLEED — ocupa o card inteiro */}
+      <Image
+        src={imageFor(path.path_key)}
+        alt={path.title}
+        fill
+        priority={number <= 3}
+        sizes="(max-width: 768px) 78vw, 220px"
+        className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+      />
 
-      {/* Gradiente bottom pra legibilidade do texto (Polens style) */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%] bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-transparent" />
+      {/* GSAP spotlight que segue o cursor (radial gradient da cor accent) */}
+      <div
+        ref={spotlightRef}
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 h-[280px] w-[280px] rounded-full"
+        style={{
+          background: `radial-gradient(circle, rgba(${accent.spotlightRgb}/0.45) 0%, rgba(${accent.spotlightRgb}/0.15) 35%, transparent 65%)`,
+          mixBlendMode: "screen",
+          willChange: "transform, opacity",
+        }}
+      />
 
       {/* Liquid glass inner border (taste) */}
       <div
@@ -413,87 +468,41 @@ function PathCard({
         className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/5"
       />
 
-      {/* Numbered badge top-left (com pulse perpétuo) */}
-      <motion.span
-        animate={reduced ? undefined : { boxShadow: [
-          `0 0 0px ${accent.hueOverlay}`,
-          `0 0 18px ${accent.hueOverlay}`,
-          `0 0 0px ${accent.hueOverlay}`,
-        ] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      {/* Gradient inferior pra legibilidade do botão */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-gradient-to-t from-zinc-950/85 via-zinc-950/45 to-transparent" />
+
+      {/* Numbered badge */}
+      <span
         className={`absolute left-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border text-[13px] font-bold backdrop-blur-md ${accent.badgeBorder} ${accent.badgeText}`}
       >
         {number}
-      </motion.span>
+      </span>
 
-      {/* Conteúdo bottom */}
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2.5 p-4">
-        <h3 className="text-[17px] font-semibold leading-tight tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-          {path.title}
-        </h3>
-        <p className="line-clamp-3 text-[12px] leading-relaxed text-white/70">
-          {path.description}
-        </p>
+      {/* Botão na parte inferior — shimmer animado via GSAP, arrow pula */}
+      <div className="absolute inset-x-0 bottom-0 z-10 p-3.5">
         <span
-          className={`mt-1.5 inline-flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-[12.5px] font-semibold transition ${accent.buttonBg} ${accent.buttonHover} ${accent.buttonText}`}
+          className={`relative flex items-center justify-between gap-2 overflow-hidden rounded-xl px-3.5 py-2.5 text-[12.5px] font-semibold transition-colors ${accent.buttonBg} ${accent.buttonHover} ${accent.buttonText}`}
         >
-          <span className="truncate">{loading ? "Abrindo..." : (path.cta_label || "Escolher")}</span>
+          {/* Shimmer */}
+          <span
+            ref={shimmerRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${accent.shimmerStop} 50%, transparent 100%)`,
+              mixBlendMode: "overlay",
+            }}
+          />
+          <span className="relative z-10 truncate">
+            {loading ? "Abrindo..." : (path.cta_label || "Escolher")}
+          </span>
           {loading ? (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            <Loader2 className="relative z-10 h-3.5 w-3.5 shrink-0 animate-spin" />
           ) : (
-            <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="relative z-10 h-3.5 w-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
           )}
         </span>
       </div>
     </motion.button>
-  )
-}
-
-// Placeholder visual rico — substitui o gradient simples por:
-//   1. base gradient da cor accent
-//   2. radial highlight no canto superior esquerdo
-//   3. ícone GIGANTE com opacidade baixa empurrado pro fundo (não dominante)
-//   4. "scanlines" sutis pra textura
-function Placeholder({
-  accent,
-  pathKey,
-  reduced,
-}: {
-  accent: AccentSet
-  pathKey: string
-  reduced: boolean
-}) {
-  return (
-    <>
-      <div className={`absolute inset-0 bg-gradient-to-br ${accent.illustrationFrom} ${accent.illustrationVia} to-zinc-950`} />
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `radial-gradient(circle at 25% 18%, ${accent.hueOverlay}, transparent 55%), radial-gradient(circle at 80% 90%, ${accent.hueOverlay.replace("0.18", "0.10")}, transparent 60%)`,
-        }}
-      />
-      {/* Ícone gigante no fundo — flutua sutilmente */}
-      <motion.div
-        aria-hidden
-        animate={reduced ? undefined : { y: [0, -6, 0], scale: [1, 1.03, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute inset-0 flex items-start justify-center pt-10"
-      >
-        <PathIcon
-          pathKey={pathKey}
-          className={`h-32 w-32 ${accent.iconText} opacity-90 drop-shadow-[0_8px_30px_rgba(0,0,0,0.4)]`}
-          strokeWidth={1.2}
-        />
-      </motion.div>
-      {/* Scanlines verticais finas pra textura */}
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(255,255,255,0.5) 3px, rgba(255,255,255,0.5) 4px)",
-        }}
-      />
-    </>
   )
 }
