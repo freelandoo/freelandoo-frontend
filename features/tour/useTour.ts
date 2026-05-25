@@ -8,6 +8,11 @@ export type TourActionName = "openDropside" | "closeDropside" | "openSidebar" | 
 
 export interface TourContextValue {
   startTour: (tourKey: TourKey) => void;
+  // Inicia um tour após navegar para outra rota. Bloqueia auto-start de
+  // outros tours durante a transição (chainPending). Use sempre que o
+  // disparo do tour vier acompanhado de navegação — evita race entre o
+  // auto-start da rota destino e o startTour manual.
+  beginGuidedTour: (tourKey: TourKey, route?: string) => void;
   completeTour: (tourKey: TourKey) => void;
   skipTour: (tourKey: TourKey) => void;
   snoozeTour: (tourKey: TourKey) => void;
@@ -26,6 +31,7 @@ export function useTour() {
   if (!ctx) {
     return {
       startTour: () => {},
+      beginGuidedTour: () => {},
       completeTour: () => {},
       skipTour: () => {},
       snoozeTour: () => {},

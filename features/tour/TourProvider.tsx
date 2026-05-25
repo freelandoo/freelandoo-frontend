@@ -51,6 +51,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // (ex.: affiliate_path/explore_path_* do IntentModal) NÃO são gateados
   // por aqui — esses devem rodar imediatamente quando o usuário clica.
   const [onboardingResolved, setOnboardingResolved] = useState(false);
+  // Trava do auto-start enquanto uma transição de chain está em
+  // andamento (entre router.push de uma rota e startTour do mini-tour
+  // seguinte). Sem isso, o auto-start da rota destino dispara o tour
+  // "grande" daquela página (ex.: enxames na /search com 13 passos)
+  // milissegundos antes do mini-tour de Explorar tomar o lugar.
+  const [chainPending, setChainPending] = useState(false);
+  const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -119,6 +126,24 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     trackTourEvent("tour_started", { tour_key: tourKey, step_id: found.steps[0]?.id || "", page: pathname || "" });
   }, [pathname]);
 
+  // Inicia um tour acompanhado de navegação. Mantém chainPending=true
+  // durante a transição para que o auto-start de tours da rota destino
+  // (ex.: feed, bees_feed, enxames, ranking, welcome) não dispare entre
+  // o router.push e o startTour.
+  const beginGuidedTour = useCallback((tourKey: TourKey, route?: string) => {
+    if (chainTimerRef.current) {
+      clearTimeout(chainTimerRef.current);
+      chainTimerRef.current = null;
+    }
+    setChainPending(true);
+    if (route) router.push(route);
+    chainTimerRef.current = setTimeout(() => {
+      startTour(tourKey);
+      setChainPending(false);
+      chainTimerRef.current = null;
+    }, route ? 500 : 50);
+  }, [router, startTour]);
+
   const completeTour = (tourKey: TourKey) => {
     const version = tourVersion(tourKey);
     setProgress((prev) => ({ ...prev, [tourKey]: { status: "completed", current_step: stepIndex, seen_version: version } }));
@@ -126,13 +151,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     void completeTourProgress(tourKey, stepIndex, version);
     trackTourEvent("tour_completed", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
 
-    // Encadeamento dos mini-tours "Explorar": após completar o tour atual,
-    // navega para a próxima rota e dispara o próximo tour. O delay dá
-    // tempo do router.push trocar a página antes do balão reaparecer.
+    // Encadeamento dos mini-tours "Explorar": após completar o tour
+    // atual, beginGuidedTour cuida do router.push + chainPending + delay
+    // até disparar o próximo tour (impede o auto-start da rota destino
+    // de tomar o lugar).
     const chain = EXPLORE_CHAIN[tourKey];
     if (chain) {
-      router.push(chain.route);
-      window.setTimeout(() => startTour(chain.nextKey), 450);
+      beginGuidedTour(chain.nextKey, chain.route);
     }
   };
 
@@ -213,6 +238,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     // Gate: nenhum auto-start até o BirthdateGate e o IntentModal serem
     // resolvidos. Manual startTour() (via IntentModal) não passa por aqui.
     if (!onboardingResolved) return;
+    // Gate: durante o chain do Explorar, não deixa o auto-start da rota
+    // destino disparar antes do beginGuidedTour fixar o tour correto.
+    if (chainPending) return;
     if (hideAllTours) return;
     if (activeTour) return;
     if (!pathname) return;
@@ -235,10 +263,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }));
     void startTourProgress(candidate.tourKey, 0, candidate.version);
     trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
-  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded, onboardingResolved]);
+  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded, onboardingResolved, chainPending]);
 
   const value = {
     startTour,
+    beginGuidedTour,
     completeTour,
     skipTour,
     snoozeTour,

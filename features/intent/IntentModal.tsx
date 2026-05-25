@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import gsap from "gsap"
 import { ArrowRight, Hexagon, Loader2, Sparkles, X } from "lucide-react"
@@ -94,8 +93,7 @@ export function IntentModal() {
   const { shouldShow, status, working, chosen, onDismiss, onChoose, closeVideo } = useIntent()
   const [activePathKey, setActivePathKey] = useState<string | null>(null)
   const reduced = useReducedMotion()
-  const router = useRouter()
-  const { startTour } = useTour()
+  const { beginGuidedTour } = useTour()
 
   const paths = useMemo(() => {
     return (status?.paths ?? [])
@@ -115,21 +113,19 @@ export function IntentModal() {
   // Se o caminho escolhido for afiliado/explorar, dispara o tour
   // correspondente em vez de exibir o player de vídeo. closeVideo() limpa
   // o estado `chosen` em useIntent para o overlay não aparecer.
+  // beginGuidedTour mantém chainPending=true durante a transição para o
+  // auto-start da rota destino não disparar o tour grande daquela página
+  // (ex.: enxames com 13 passos sobre o /search).
   useEffect(() => {
     if (!chosen) return
     if (!TOUR_PATH_KEYS.has(chosen.path_key)) return
     closeVideo()
     if (chosen.path_key === "affiliate") {
-      // Já estamos numa rota não-pública (a /account renderiza este modal
-      // junto, mas o modal só dispara para usuários logados). Garante que
-      // o tour roda em /account onde os data-tour selectors existem.
-      router.push("/account")
-      window.setTimeout(() => startTour("affiliate_path"), 350)
+      beginGuidedTour("affiliate_path", "/account")
     } else if (chosen.path_key === "explore") {
-      router.push("/feed")
-      window.setTimeout(() => startTour("explore_path_feed"), 350)
+      beginGuidedTour("explore_path_feed", "/feed")
     }
-  }, [chosen, closeVideo, router, startTour])
+  }, [chosen, closeVideo, beginGuidedTour])
 
   const handleChoose = async (path: IntentPath) => {
     if (working) return

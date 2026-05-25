@@ -76,6 +76,14 @@ export function TourManager({ tour, stepIndex, onStepChange, onComplete, onSkip,
     if (!step) {
       const prev = prevStepRef.current;
       if (prev?.onLeave) onStepAction?.(prev.onLeave);
+      // Cleanup obrigatório ao sair de qualquer tour: fecha dropside e
+      // sidebar mesmo que o step de saída não declare onLeave. Sem isso,
+      // se o usuário pular o tour exatamente em um passo com
+      // onEnter=openDropside (ex.: welcome-dropside-open), o dropside
+      // fica aberto com backdrop fullscreen z-100 bloqueando todos os
+      // cliques da página.
+      onStepAction?.("closeDropside");
+      onStepAction?.("closeSidebar");
       prevStepRef.current = null;
       return;
     }
