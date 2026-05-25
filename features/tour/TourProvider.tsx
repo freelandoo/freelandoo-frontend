@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { TOUR_CONFIGS, type TourConfig, type TourKey } from "./tourConfig";
+import { usePathname, useRouter } from "next/navigation";
+import { EXPLORE_CHAIN, TOUR_CONFIGS, type TourConfig, type TourKey } from "./tourConfig";
 import {
   completeTourProgress,
   fetchTourProgress,
@@ -32,6 +32,7 @@ function tourVersion(tourKey: TourKey) {
 
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [progress, setProgress] = useState<ProgressMap>({});
   const [hideAllTours, setHideAllToursState] = useState(false);
   const [activeTour, setActiveTour] = useState<TourConfig | null>(null);
@@ -85,6 +86,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     setActiveTour(null);
     void completeTourProgress(tourKey, stepIndex, version);
     trackTourEvent("tour_completed", { tour_key: tourKey, step_id: String(stepIndex), page: pathname || "" });
+
+    // Encadeamento dos mini-tours "Explorar": após completar o tour atual,
+    // navega para a próxima rota e dispara o próximo tour. O delay dá
+    // tempo do router.push trocar a página antes do balão reaparecer.
+    const chain = EXPLORE_CHAIN[tourKey];
+    if (chain) {
+      router.push(chain.route);
+      window.setTimeout(() => startTour(chain.nextKey), 450);
+    }
   };
 
   const skipTour = (tourKey: TourKey) => {

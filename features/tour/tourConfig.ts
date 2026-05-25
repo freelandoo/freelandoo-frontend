@@ -27,7 +27,24 @@ export type TourKey =
   | "payments"
   | "internationalization"
   | "notifications"
-  | "security";
+  | "security"
+  | "affiliate_path"
+  | "explore_path_feed"
+  | "explore_path_bees"
+  | "explore_path_enxames"
+  | "explore_path_ranking"
+  | "explore_path_account";
+
+// Encadeamento dos mini-tours "Explorar": ao completar o tour atual, o
+// TourProvider faz router.push para a próxima rota e dispara o próximo tour.
+// Mantido aqui (e não no TourProvider) para ficar perto da definição dos
+// próprios tours — fica óbvio o que vai onde.
+export const EXPLORE_CHAIN: Partial<Record<TourKey, { route: string; nextKey: TourKey }>> = {
+  explore_path_feed: { route: "/bees", nextKey: "explore_path_bees" },
+  explore_path_bees: { route: "/search", nextKey: "explore_path_enxames" },
+  explore_path_enxames: { route: "/ranking", nextKey: "explore_path_ranking" },
+  explore_path_ranking: { route: "/account", nextKey: "explore_path_account" },
+};
 
 export type TourStepAction = "openDropside" | "closeDropside" | "openSidebar" | "closeSidebar";
 
@@ -196,4 +213,123 @@ export const TOUR_CONFIGS: TourConfig[] = [
   { tourKey: "internationalization", title: "Internacionalização", description: "Idioma e país", version: 1, pagePath: ["/feed", "/search"], steps: [{ id: "i18n-1", title: "Escolha idioma e país", content: "A navegação pode ser adaptada ao seu contexto.", placement: "center" }] },
   { tourKey: "notifications", title: "Notificações", description: "Avisos importantes", version: 1, pagePath: ["/notificacoes"], steps: [{ id: "notifications-1", title: "Fique por dentro", content: "Notificações mostram interações e oportunidades.", placement: "center" }] },
   { tourKey: "security", title: "Segurança", description: "Proteção da conta", version: 1, pagePath: ["/account", "/dicas-de-seguranca"], steps: [{ id: "security-1", title: "Segurança da conta", content: "Permissões, supervisão e denúncias protegem a comunidade.", placement: "center" }] },
+
+  // ---------------------------------------------------------------------
+  // Caminho "Afiliado" — disparado pelo IntentModal quando o usuário
+  // escolhe o card Afiliados. 2 passos, ambos em /account: cupom e link
+  // do painel dentro do dropside (abre automaticamente entre passos).
+  // ---------------------------------------------------------------------
+  {
+    tourKey: "affiliate_path",
+    title: "Caminho do Afiliado",
+    description: "Como começar a ganhar indicando pessoas",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/account"],
+    steps: [
+      {
+        id: "affiliate-path-coupon",
+        target: "[data-tour='account-coupon']",
+        title: "Esse é seu cupom",
+        content: "Copie e compartilhe. Quando alguém entrar pelo Freelandoo usando seu cupom, você ganha comissão. Se ainda não tem cupom, clique no botão para gerar.",
+        placement: "bottom",
+      },
+      {
+        id: "affiliate-path-panel",
+        target: "[data-tour='dropside-earnings']",
+        title: "Painel do Afiliado",
+        content: "Aqui no menu da conta você acompanha indicações, comissões pendentes e liberadas, e as regras de saque.",
+        placement: "right",
+        onEnter: "openDropside",
+        onLeave: "closeDropside",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------
+  // Caminho "Explorar" — 5 mini-tours encadeados. Cada um tem 1 passo
+  // centralizado (sem spotlight em elemento específico, pra evitar o
+  // problema do revert quando o elemento não existe). O encadeamento
+  // entre páginas é feito pelo TourProvider via EXPLORE_CHAIN.
+  // ---------------------------------------------------------------------
+  {
+    tourKey: "explore_path_feed",
+    title: "Explorar — Feed",
+    description: "Primeira parada da turnê pelas áreas da plataforma",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/feed"],
+    steps: [
+      {
+        id: "explore-path-feed-1",
+        title: "O Feed é o ponto de partida",
+        content: "Aqui aparecem posts e momentos curtos (Rest) de quem você acompanha. Se algo fugir do tom da comunidade, use a bandeira pra denunciar.",
+        placement: "center",
+      },
+    ],
+  },
+  {
+    tourKey: "explore_path_bees",
+    title: "Explorar — Bees",
+    description: "Segunda parada da turnê",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/bees"],
+    steps: [
+      {
+        id: "explore-path-bees-1",
+        title: "Bees: vídeos curtos, vertical",
+        content: "Feed estilo TikTok com vídeos da plataforma — incluindo os Trampos dos profissionais. Role pra descobrir gente nova.",
+        placement: "center",
+      },
+    ],
+  },
+  {
+    tourKey: "explore_path_enxames",
+    title: "Explorar — Enxames",
+    description: "Terceira parada da turnê",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/search"],
+    steps: [
+      {
+        id: "explore-path-enxames-1",
+        title: "Enxames: onde você acha quem precisa",
+        content: "Filtre por área, profissão e cidade. Não achou? Clique em 'Abrir chamado' e os profissionais compatíveis te respondem nas Mensagens.",
+        placement: "center",
+      },
+    ],
+  },
+  {
+    tourKey: "explore_path_ranking",
+    title: "Explorar — Ranking",
+    description: "Quarta parada da turnê",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/ranking"],
+    steps: [
+      {
+        id: "explore-path-ranking-1",
+        title: "Ranking: quem tá brilhando",
+        content: "Os perfis mais ativos da temporada. Sobe quem posta, interage, vende e completa pedidos — atualiza a cada 2 horas.",
+        placement: "center",
+      },
+    ],
+  },
+  {
+    tourKey: "explore_path_account",
+    title: "Explorar — Sua Conta",
+    description: "Última parada da turnê",
+    version: 1,
+    autoStart: false,
+    pagePath: ["/account"],
+    steps: [
+      {
+        id: "explore-path-account-1",
+        title: "Aqui é onde você decide como ganhar",
+        content: "Você pode indicar pessoas (Afiliados), vender cursos, oferecer serviços ou vender produtos. Cada caminho tem seu tour quando você quiser começar.",
+        placement: "center",
+      },
+    ],
+  },
 ];

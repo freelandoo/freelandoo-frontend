@@ -2,12 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import gsap from "gsap"
 import { ArrowRight, Hexagon, Loader2, Sparkles, X } from "lucide-react"
 import { useIntent } from "./useIntent"
 import { IntentVideoOverlay } from "./IntentVideoOverlay"
 import type { IntentPath } from "./types"
+import { useTour } from "@/features/tour/useTour"
+
+// path_keys que disparam um tour interativo em vez de abrir o player de
+// vídeo. Os outros (courses, products, services) seguem o fluxo padrão
+// do vídeo já implementado no IntentVideoOverlay.
+const TOUR_PATH_KEYS = new Set(["affiliate", "explore"])
 
 const SPRING = { type: "spring" as const, stiffness: 100, damping: 20 }
 
@@ -87,6 +94,8 @@ export function IntentModal() {
   const { shouldShow, status, working, chosen, onDismiss, onChoose, closeVideo } = useIntent()
   const [activePathKey, setActivePathKey] = useState<string | null>(null)
   const reduced = useReducedMotion()
+  const router = useRouter()
+  const { startTour } = useTour()
 
   const paths = useMemo(() => {
     return (status?.paths ?? [])
@@ -102,6 +111,25 @@ export function IntentModal() {
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
   }, [shouldShow, working, onDismiss])
+
+  // Se o caminho escolhido for afiliado/explorar, dispara o tour
+  // correspondente em vez de exibir o player de vídeo. closeVideo() limpa
+  // o estado `chosen` em useIntent para o overlay não aparecer.
+  useEffect(() => {
+    if (!chosen) return
+    if (!TOUR_PATH_KEYS.has(chosen.path_key)) return
+    closeVideo()
+    if (chosen.path_key === "affiliate") {
+      // Já estamos numa rota não-pública (a /account renderiza este modal
+      // junto, mas o modal só dispara para usuários logados). Garante que
+      // o tour roda em /account onde os data-tour selectors existem.
+      router.push("/account")
+      window.setTimeout(() => startTour("affiliate_path"), 350)
+    } else if (chosen.path_key === "explore") {
+      router.push("/feed")
+      window.setTimeout(() => startTour("explore_path_feed"), 350)
+    }
+  }, [chosen, closeVideo, router, startTour])
 
   const handleChoose = async (path: IntentPath) => {
     if (working) return
@@ -167,7 +195,9 @@ export function IntentModal() {
         )}
       </AnimatePresence>
 
-      {chosen && <IntentVideoOverlay chosen={chosen} onClose={closeVideo} />}
+      {chosen && !TOUR_PATH_KEYS.has(chosen.path_key) && (
+        <IntentVideoOverlay chosen={chosen} onClose={closeVideo} />
+      )}
     </>
   )
 }

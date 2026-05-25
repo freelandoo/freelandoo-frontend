@@ -1577,6 +1577,7 @@ export default function PerfilPage() {
                   <HoverHint id="account-coupon" side="bottom">
                     <button
                       onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                      data-tour="account-coupon"
                       className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
                     >
                       {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -1589,6 +1590,7 @@ export default function PerfilPage() {
                       type="button"
                       onClick={handleGenerateCoupon}
                       disabled={isGeneratingCoupon}
+                      data-tour="account-coupon"
                       className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
                     >
                       {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
