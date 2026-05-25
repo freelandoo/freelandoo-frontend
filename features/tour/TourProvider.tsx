@@ -18,6 +18,7 @@ import { TourManager } from "./TourManager";
 import { trackTourEvent } from "./tourAnalytics";
 import { markPathVisited } from "./visitedPaths";
 import { isTourSnoozed, snoozeTour as persistSnooze } from "./snoozedTours";
+import { fetchIntentStatus } from "@/features/intent/intentApi";
 
 type ProgressMap = Record<string, { status: TourStatus; current_step: number; seen_version: number }>;
 
@@ -41,6 +42,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // senão uma resposta lenta sobrescreve um "skipped" recém-aplicado e o
   // tour volta a disparar.
   const [progressLoaded, setProgressLoaded] = useState(false);
+  // Gate adicional: nenhum tour auto-start pode rodar antes do
+  // BirthdateGate e do IntentModal serem resolvidos. Resolvido =
+  // status do intent retornou com dismissed=true OU selected_path_key set
+  // (= usuário já passou pelo modal "ganhar dinheiro"). Se age ainda não
+  // foi preenchida, fetchIntentStatus retorna null/paths vazios →
+  // continuamos esperando. Tours disparados manualmente via startTour()
+  // (ex.: affiliate_path/explore_path_* do IntentModal) NÃO são gateados
+  // por aqui — esses devem rodar imediatamente quando o usuário clica.
+  const [onboardingResolved, setOnboardingResolved] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -67,6 +77,35 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     });
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  // Verifica resolução do onboarding (BirthdateGate + IntentModal). Refaz
+  // o fetch quando "auth:changed" (login/logout) ou "intent:resolved"
+  // (dispatched pelo IntentModal após escolher/dispensar) disparam.
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      const status = await fetchIntentStatus();
+      if (!mounted) return;
+      if (!status) {
+        // status null = age ainda não resolvida OU sem token. Não libera.
+        setOnboardingResolved(false);
+        return;
+      }
+      const resolved =
+        !!status.state.dismissed || !!status.state.selected_path_key;
+      setOnboardingResolved(resolved);
+    };
+    void check();
+    const onResolved = () => setOnboardingResolved(true);
+    const onAuth = () => void check();
+    window.addEventListener("intent:resolved", onResolved);
+    window.addEventListener("auth:changed", onAuth);
+    return () => {
+      mounted = false;
+      window.removeEventListener("intent:resolved", onResolved);
+      window.removeEventListener("auth:changed", onAuth);
     };
   }, []);
 
@@ -171,6 +210,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!progressLoaded) return;
+    // Gate: nenhum auto-start até o BirthdateGate e o IntentModal serem
+    // resolvidos. Manual startTour() (via IntentModal) não passa por aqui.
+    if (!onboardingResolved) return;
     if (hideAllTours) return;
     if (activeTour) return;
     if (!pathname) return;
@@ -193,7 +235,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }));
     void startTourProgress(candidate.tourKey, 0, candidate.version);
     trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
-  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded]);
+  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded, onboardingResolved]);
 
   const value = {
     startTour,

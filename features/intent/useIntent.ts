@@ -107,6 +107,9 @@ export function useIntent(): UseIntentResult {
         setStatus((prev) => prev
           ? { ...prev, state: { ...prev.state, dismissed: true } }
           : prev)
+        // Libera o TourProvider para auto-start de tours (welcome, feed,
+        // etc.) — antes do IntentModal resolver, eles ficam em hold.
+        window.dispatchEvent(new Event("intent:resolved"))
       }
     } finally {
       setWorking(false)
@@ -130,6 +133,11 @@ export function useIntent(): UseIntentResult {
             }
           : prev)
         setChosen(picked)
+        // Mesma lógica do onDismiss: libera auto-start de tours. Mesmo que
+        // o usuário escolha afiliado/explorar (que dispara tour manual via
+        // IntentModal), libera os auto-start futuros (ex.: welcome ao
+        // chegar em /account depois).
+        window.dispatchEvent(new Event("intent:resolved"))
       }
       return picked
     } finally {
