@@ -235,18 +235,16 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
         setError("Escolha uma categoria de produto.")
         return
       }
-      if (!estadoUf || !municipio) {
-        setError("Estado e cidade são obrigatórios para produto.")
-        return
-      }
       endpoint = "/api/product-requests"
       payload = {
         title,
         description: desc,
         id_product_category: selectedProductCategoryId,
-        state: estadoUf,
-        city: municipio,
       }
+      // Local opcional: quando informado, restringe o matching à cidade/UF;
+      // ausência = pedido nacional (qualquer vendedor elegível responde).
+      if (estadoUf) payload.state = estadoUf
+      if (municipio) payload.city = municipio
       if (minPrice) {
         const n = Math.round(Number(minPrice) * 100)
         if (Number.isFinite(n)) payload.min_price_cents = n
@@ -541,14 +539,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Estado {mode === "product" ? <span className="normal-case text-red-400">*</span> : <span className="normal-case text-white/30">(opcional)</span>}
+                    Estado <span className="normal-case text-white/30">(opcional)</span>
                   </label>
                   <select
                     value={estadoUf}
                     onChange={(e) => { setEstadoUf(e.target.value); setMunicipio("") }}
                     className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
-                    <option value="">{mode === "product" ? "Escolha" : "Todos"}</option>
+                    <option value="">Todos</option>
                     {ESTADOS_BRASIL.map((e) => (
                       <option key={e.uf} value={e.uf}>{e.nome} ({e.uf})</option>
                     ))}
@@ -556,7 +554,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 </div>
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Cidade {mode === "product" ? <span className="normal-case text-red-400">*</span> : <span className="normal-case text-white/30">(opcional)</span>}
+                    Cidade <span className="normal-case text-white/30">(opcional)</span>
                   </label>
                   <select
                     value={municipio}
@@ -564,7 +562,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     disabled={!estadoUf || loadingMunicipios}
                     className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none disabled:opacity-40 [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
-                    <option value="">{!estadoUf ? "Escolha estado" : loadingMunicipios ? "Carregando…" : (mode === "product" ? "Escolha" : "Todas")}</option>
+                    <option value="">{!estadoUf ? "Escolha estado" : loadingMunicipios ? "Carregando…" : "Todas"}</option>
                     {municipios.map((m) => (
                       <option key={m.id} value={m.nome}>{m.nome}</option>
                     ))}
