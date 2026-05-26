@@ -68,6 +68,7 @@ export interface ClanMember {
 }
 
 const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+const WEEKDAY_ABBR  = ["DOM",     "SEG",     "TER",   "QUA",    "QUI",    "SEX",   "SÁB"]
 
 function getToken() {
   if (typeof window === "undefined") return null
@@ -297,68 +298,116 @@ export default function AgendaPageClient({
         <main className="min-w-0">
           {/* ─── Disponibilidade ─── */}
           {activeTab === "rules" && (
-            <div className="space-y-4">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                <h2 className="text-lg font-semibold mb-1">Disponibilidade semanal</h2>
-                <p className="text-sm text-zinc-400 mb-6">Configure os dias e horários em que {isClan ? "o clan" : "você"} atende.</p>
-                <div className="space-y-3">
-                  {rules.map((rule, i) => (
-                    <div key={rule.weekday} className={`flex flex-wrap items-center gap-4 p-4 rounded-lg border transition-all ${
-                      rule.is_enabled ? "bg-zinc-800/50 border-zinc-700" : "bg-zinc-900/50 border-zinc-800/50 opacity-60"
-                    }`}>
-                      <label className="flex items-center gap-3 min-w-[140px] cursor-pointer">
-                        <input type="checkbox" checked={rule.is_enabled}
-                          onChange={e => { const next = [...rules]; next[i] = { ...rule, is_enabled: e.target.checked }; setRules(next) }}
-                          className="w-4 h-4 rounded border-zinc-600 text-yellow-400 focus:ring-yellow-400 bg-zinc-800" />
-                        <span className="text-sm font-medium">{WEEKDAY_NAMES[rule.weekday]}</span>
-                      </label>
-                      {rule.is_enabled && (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <input type="time" value={rule.start_time}
-                              onChange={e => { const next = [...rules]; next[i] = { ...rule, start_time: e.target.value }; setRules(next) }}
-                              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm" />
-                            <span className="text-zinc-500">—</span>
-                            <input type="time" value={rule.end_time}
-                              onChange={e => { const next = [...rules]; next[i] = { ...rule, end_time: e.target.value }; setRules(next) }}
-                              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <label className="text-xs text-zinc-400">Duração:</label>
-                            <select value={rule.slot_duration_minutes}
-                              onChange={e => { const next = [...rules]; next[i] = { ...rule, slot_duration_minutes: Number(e.target.value) }; setRules(next) }}
-                              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm">
-                              {[15, 30, 45, 60, 90, 120].map(m => <option key={m} value={m}>{m} min</option>)}
-                            </select>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <label className="text-xs text-zinc-400">Intervalo:</label>
-                            <select value={rule.buffer_minutes}
-                              onChange={e => { const next = [...rules]; next[i] = { ...rule, buffer_minutes: Number(e.target.value) }; setRules(next) }}
-                              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm">
-                              {[0, 5, 10, 15, 30].map(m => <option key={m} value={m}>{m} min</option>)}
-                            </select>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <button onClick={saveRules} disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
-                    <Save className="w-4 h-4" />{saving ? "Salvando..." : "Salvar disponibilidade"}
-                  </button>
-                  <button onClick={() => setExceptionsOpen(true)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm font-medium transition-colors">
-                    <Calendar className="w-4 h-4" />Exceções
-                    {overrides.length > 0 && (
-                      <span className="ml-1 inline-flex items-center justify-center text-xs px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300">
-                        {overrides.length}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+              <div className="px-4 pt-4 pb-3">
+                <h2 className="text-base font-semibold tracking-tight">Disponibilidade semanal</h2>
+                <p className="mt-0.5 text-[11px] text-zinc-500">
+                  Dias e horários em que {isClan ? "o clan" : "você"} atende.
+                </p>
+              </div>
+              <ul className="divide-y divide-zinc-800/70 border-t border-zinc-800/70">
+                {rules.map((rule, i) => (
+                  <li
+                    key={rule.weekday}
+                    className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2 transition-colors ${
+                      rule.is_enabled ? "bg-zinc-900" : "bg-zinc-950/30"
+                    }`}
+                  >
+                    <label
+                      className="flex items-center gap-2 w-[78px] shrink-0 cursor-pointer select-none"
+                      title={WEEKDAY_NAMES[rule.weekday]}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={rule.is_enabled}
+                        onChange={e => { const next = [...rules]; next[i] = { ...rule, is_enabled: e.target.checked }; setRules(next) }}
+                        className="w-3.5 h-3.5 rounded border-zinc-600 text-yellow-400 focus:ring-yellow-400 focus:ring-offset-0 bg-zinc-800"
+                      />
+                      <span
+                        className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${
+                          rule.is_enabled ? "text-zinc-100" : "text-zinc-500"
+                        }`}
+                      >
+                        {WEEKDAY_ABBR[rule.weekday]}
                       </span>
+                    </label>
+
+                    {rule.is_enabled ? (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="time"
+                            value={rule.start_time}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, start_time: e.target.value }; setRules(next) }}
+                            aria-label="Horário de início"
+                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-yellow-400/60 focus:outline-none"
+                          />
+                          <span className="text-zinc-600 text-xs">–</span>
+                          <input
+                            type="time"
+                            value={rule.end_time}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, end_time: e.target.value }; setRules(next) }}
+                            aria-label="Horário de término"
+                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-yellow-400/60 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1" title="Duração do slot">
+                          <Clock className="w-3 h-3 text-zinc-500" aria-hidden />
+                          <select
+                            value={rule.slot_duration_minutes}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, slot_duration_minutes: Number(e.target.value) }; setRules(next) }}
+                            aria-label="Duração do slot"
+                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-yellow-400/60 focus:outline-none"
+                          >
+                            {[15, 30, 45, 60, 90, 120].map(m => (
+                              <option key={m} value={m}>{m}m</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-1" title="Intervalo entre slots">
+                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Int</span>
+                          <select
+                            value={rule.buffer_minutes}
+                            onChange={e => { const next = [...rules]; next[i] = { ...rule, buffer_minutes: Number(e.target.value) }; setRules(next) }}
+                            aria-label="Intervalo entre slots"
+                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-yellow-400/60 focus:outline-none"
+                          >
+                            {[0, 5, 10, 15, 30].map(m => (
+                              <option key={m} value={m}>+{m}m</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] italic text-zinc-600">sem atendimento</span>
                     )}
-                  </button>
-                </div>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-zinc-800/70 px-3 py-2.5 bg-zinc-950/40">
+                <button
+                  onClick={saveRules}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-yellow-400 hover:bg-yellow-300 text-zinc-900 px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {saving ? "Salvando…" : "Salvar"}
+                </button>
+                <button
+                  onClick={() => setExceptionsOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700/70 bg-zinc-800/70 hover:bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Exceções
+                  {overrides.length > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-yellow-400/20 px-1.5 py-0 text-[10px] font-mono text-yellow-300">
+                      {overrides.length}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           )}
