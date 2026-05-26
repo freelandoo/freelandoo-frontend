@@ -161,7 +161,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
               className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
             >
               <Plus className="h-3.5 w-3.5" />
-              Novo produto
+              Produto
             </button>
           </div>
         </div>
@@ -222,7 +222,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
           className="flex items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
         >
           <Plus className="h-3.5 w-3.5" />
-          Novo produto
+          Produto
         </button>
       </div>
 

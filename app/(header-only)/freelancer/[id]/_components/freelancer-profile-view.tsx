@@ -128,6 +128,7 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
+  const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -386,7 +387,8 @@ export default function FreelancerProfileView({
         handleAddPortfolioItem()
       } else if (detail.kind === "servico") {
         setPortfolioTab("services")
-        // ProfilePublicServicesSection tem seu próprio + interno.
+        // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
+        setCreateServiceTrigger((n) => n + 1)
       } else if (detail.kind === "curso") {
         setPortfolioTab("courses")
         // Curso é criado em /account, então redireciona.
@@ -826,6 +828,7 @@ export default function FreelancerProfileView({
               clanMembers={
                 isClan ? (members as ProfileServiceEditClanMember[]) : []
               }
+              openCreateTrigger={createServiceTrigger}
             />
           )}
 

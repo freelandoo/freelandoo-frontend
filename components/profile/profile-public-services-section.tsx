@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { Briefcase, Clock, Cog, Loader2, Scissors } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Briefcase, Clock, Cog, Loader2, Plus, Scissors } from "lucide-react"
 import { ServiceSelectionModal } from "@/components/calendar/ServiceSelectionModal"
 import type { ProfileService } from "@/components/calendar/types"
 import { ScheduleBookingModal } from "@/components/profile/schedule-booking-modal"
@@ -20,6 +20,8 @@ interface ProfilePublicServicesSectionProps {
   showOwnerControls?: boolean
   isClan?: boolean
   clanMembers?: ProfileServiceEditClanMember[]
+  /** Contador externo: quando muda, abre o modal de criar serviço (dispatch do + no header). */
+  openCreateTrigger?: number
 }
 
 /** Partes do preço para exibir inteiros grandes e centavos menores (estilo mock). */
@@ -57,6 +59,7 @@ export function ProfilePublicServicesSection({
   showOwnerControls = false,
   isClan = false,
   clanMembers = [],
+  openCreateTrigger,
 }: ProfilePublicServicesSectionProps) {
   const [services, setServices] = useState<ProfileService[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
@@ -120,10 +123,21 @@ export function ProfilePublicServicesSection({
     setFeedbackError(null)
   }
 
-  const openCreateService = () => {
+  const openCreateService = useCallback(() => {
     setServiceSheet("create")
     setFeedbackError(null)
-  }
+  }, [])
+
+  // Trigger externo (do + no RetractableProfileHeader) abre o modal de criar serviço.
+  // Usa ref para não reabrir o modal em remounts (troca de aba e volta).
+  const lastSeenTriggerRef = useRef<number | undefined>(openCreateTrigger)
+  useEffect(() => {
+    if (!showOwnerControls) return
+    if (typeof openCreateTrigger !== "number") return
+    if (lastSeenTriggerRef.current === openCreateTrigger) return
+    lastSeenTriggerRef.current = openCreateTrigger
+    if (openCreateTrigger > 0) openCreateService()
+  }, [openCreateTrigger, showOwnerControls, openCreateService])
 
   const handleScheduleContinue = (dateISO: string, startTime: string) => {
     setPickedSlot({ dateISO, startTime })
@@ -186,6 +200,25 @@ export function ProfilePublicServicesSection({
 
   return (
     <section id="services-section" className="mb-20 scroll-mt-24">
+      {showOwnerControls && (
+        <div className="mb-4 flex items-center justify-between gap-3 px-4 md:px-0">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-100">Serviços</h2>
+            <p className="text-[11px] text-zinc-500">
+              Serviços públicos oferecidos por este subperfil.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openCreateService}
+            className="flex items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Serviço
+          </button>
+        </div>
+      )}
+
       {(!allowPublicBooking || feedbackError) && (
         <div className="mb-4 space-y-2 px-4 md:px-0">
           {!allowPublicBooking ? (
