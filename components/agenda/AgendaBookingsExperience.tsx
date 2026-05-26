@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { startOfWeek, addDays } from "date-fns"
-import { Briefcase, Calendar, Loader2 } from "lucide-react"
+import { Briefcase, Calendar, Loader2, Settings } from "lucide-react"
 import { AgendaMonthCalendar } from "@/components/agenda/AgendaMonthCalendar"
 import { AgendaBookingsPanel, type AgendaBookingRow } from "@/components/agenda/AgendaBookingsPanel"
 import {
@@ -29,12 +30,15 @@ interface AgendaBookingsExperienceProps {
    */
   controlledBookings?: AgendaBookingRow[]
   className?: string
+  /** Se passado, mostra um botão de engrenagem que linka para a página de configuração da agenda. */
+  settingsHref?: string
 }
 
 export function AgendaBookingsExperience({
   profileId,
   controlledBookings,
   className,
+  settingsHref,
 }: AgendaBookingsExperienceProps) {
   const standalone = controlledBookings === undefined
 
@@ -145,12 +149,22 @@ export function AgendaBookingsExperience({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="flex gap-2 lg:hidden">
+      <div className={cn("flex gap-2", !settingsHref && "lg:hidden")}>
+        {settingsHref ? (
+          <Link
+            href={settingsHref}
+            aria-label="Configurar agenda"
+            title="Configurar agenda"
+            className="flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-3 text-zinc-300 transition hover:border-yellow-500/35 hover:bg-yellow-400/10 hover:text-yellow-200"
+          >
+            <Settings className="size-4" aria-hidden />
+          </Link>
+        ) : null}
         <button
           type="button"
           onClick={() => setMobileAgendaTab("calendar")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
+            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition lg:hidden",
             mobileAgendaTab === "calendar"
               ? "border-yellow-500/35 bg-yellow-400/15 text-yellow-200"
               : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200",
@@ -163,7 +177,7 @@ export function AgendaBookingsExperience({
           type="button"
           onClick={() => setMobileAgendaTab("list")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
+            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition lg:hidden",
             mobileAgendaTab === "list"
               ? "border-yellow-500/35 bg-yellow-400/15 text-yellow-200"
               : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200",

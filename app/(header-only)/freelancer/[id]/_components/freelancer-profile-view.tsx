@@ -1081,7 +1081,14 @@ export default function FreelancerProfileView({
                 Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).
               </p>
             </div>
-            <AgendaBookingsExperience profileId={profileId} />
+            <AgendaBookingsExperience
+              profileId={profileId}
+              settingsHref={
+                isClan
+                  ? `/account/clans/${profileId}/agenda`
+                  : `/account/profile/${profileId}/agenda`
+              }
+            />
           </section>
         )}
       </main>
