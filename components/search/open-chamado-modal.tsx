@@ -546,7 +546,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                   <select
                     value={estadoUf}
                     onChange={(e) => { setEstadoUf(e.target.value); setMunicipio("") }}
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none"
+                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="">{mode === "product" ? "Escolha" : "Todos"}</option>
                     {ESTADOS_BRASIL.map((e) => (
@@ -562,7 +562,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     value={municipio}
                     onChange={(e) => setMunicipio(e.target.value)}
                     disabled={!estadoUf || loadingMunicipios}
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none disabled:opacity-40"
+                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none disabled:opacity-40 [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="">{!estadoUf ? "Escolha estado" : loadingMunicipios ? "Carregando…" : (mode === "product" ? "Escolha" : "Todas")}</option>
                     {municipios.map((m) => (
