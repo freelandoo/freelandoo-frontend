@@ -42,7 +42,7 @@ const MACHINES: MachineCard[] = [
     name: "Enxame de Transporte",
     description: "Motoristas, entregas, logística e mudanças para mover pessoas e cargas.",
     examples: ["Motoboy", "Caminhoneiro", "Entregador de Aplicativo", "Operador de Logística"],
-    colors: { from: "#d97706", to: "#f59e0b", glow: "rgba(245,158,11,0.5)", accent: "#fbbf24" },
+    colors: { from: "#d97706", to: "#f59e0b", glow: "rgba(245,158,11,0.5)", accent: "#F2B705" },
   },
   {
     id: "artistas",
@@ -140,7 +140,7 @@ const useIsomorphicLayoutEffect =
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-block mb-4 px-3 py-1 text-xs font-bold tracking-widest uppercase rounded-full"
-      style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" }}>
+      style={{ background: "rgba(242,183,5,0.12)", color: "#F2B705", border: "1px solid rgba(242,183,5,0.25)" }}>
       {children}
     </span>
   )
@@ -148,7 +148,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function SectionTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <h2 className={`text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl text-white ${className}`}>
+    <h2 className={`fl-display text-4xl tracking-tight md:text-5xl lg:text-6xl text-white ${className}`}>
       {children}
     </h2>
   )
@@ -156,7 +156,7 @@ function SectionTitle({ children, className = "" }: { children: React.ReactNode;
 
 function SectionSubtitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mt-4 text-lg leading-relaxed max-w-2xl" style={{ color: "#9ca3af" }}>
+    <p className="mt-4 text-lg leading-relaxed max-w-2xl" style={{ color: "#C9C2B6" }}>
       {children}
     </p>
   )
@@ -174,8 +174,8 @@ function GlowCard({ children, className = "", style = {} }: { children: React.Re
         ...style,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(251,191,36,0.3)"
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 30px rgba(251,191,36,0.08)"
+        (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(242,183,5,0.3)"
+        ;(e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 30px rgba(242,183,5,0.08)"
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(255,255,255,0.08)"
@@ -190,7 +190,7 @@ function GlowCard({ children, className = "", style = {} }: { children: React.Re
 function NumberBadge({ n }: { n: number }) {
   return (
     <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 mb-4"
-      style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.3)" }}>
+      style={{ background: "rgba(242,183,5,0.15)", color: "#F2B705", border: "1px solid rgba(242,183,5,0.3)" }}>
       {n}
     </div>
   )
@@ -199,7 +199,7 @@ function NumberBadge({ n }: { n: number }) {
 function IconBadge({ icon: Icon }: { icon: React.ElementType }) {
   return (
     <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-      style={{ background: "rgba(251,191,36,0.12)", color: "#fbbf24" }}>
+      style={{ background: "rgba(242,183,5,0.12)", color: "#F2B705" }}>
       <Icon size={18} />
     </div>
   )
@@ -214,23 +214,23 @@ function CTAButton({ href, children, primary = false }: { href: string; children
       className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200"
       style={
         primary
-          ? { background: "#fbbf24", color: "#0a0a0a", boxShadow: "0 0 20px rgba(251,191,36,0.3)" }
-          : { background: "transparent", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.4)" }
+          ? { background: "#F2B705", color: "#141009", boxShadow: "0 0 20px rgba(242,183,5,0.3)" }
+          : { background: "transparent", color: "#F2B705", border: "1px solid rgba(242,183,5,0.4)" }
       }
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLAnchorElement
         if (primary) {
-          el.style.boxShadow = "0 0 36px rgba(251,191,36,0.55)"
+          el.style.boxShadow = "0 0 36px rgba(242,183,5,0.55)"
           el.style.transform = "translateY(-1px)"
         } else {
-          el.style.background = "rgba(251,191,36,0.1)"
+          el.style.background = "rgba(242,183,5,0.1)"
           el.style.transform = "translateY(-1px)"
         }
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLAnchorElement
-        el.style.boxShadow = primary ? "0 0 20px rgba(251,191,36,0.3)" : "none"
-        el.style.background = primary ? "#fbbf24" : "transparent"
+        el.style.boxShadow = primary ? "0 0 20px rgba(242,183,5,0.3)" : "none"
+        el.style.background = primary ? "#F2B705" : "transparent"
         el.style.transform = "translateY(0)"
       }}
     >
@@ -299,10 +299,10 @@ export function ComoFuncionaClient() {
   }, [])
 
   // ─── Base styles ───────────────────────────────────────────────────────────
-  const pageBg = { background: "#0a0a0a" }
+  const pageBg = { background: "#141009" }
   const sectionStyle = { borderTop: "1px solid rgba(255,255,255,0.06)" }
-  const dimText = { color: "#9ca3af" }
-  const yellow = "#fbbf24"
+  const dimText = { color: "#C9C2B6" }
+  const yellow = "#F2B705"
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
@@ -317,25 +317,25 @@ export function ComoFuncionaClient() {
       >
         {/* Background grid */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: "linear-gradient(rgba(251,191,36,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(251,191,36,0.04) 1px, transparent 1px)",
+          backgroundImage: "linear-gradient(rgba(242,183,5,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(242,183,5,0.04) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }} />
         {/* Glow blob */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none" style={{
-          background: "radial-gradient(ellipse, rgba(251,191,36,0.07) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse, rgba(242,183,5,0.07) 0%, transparent 70%)",
         }} />
 
         <div className="relative z-10 max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full text-xs font-semibold tracking-widest uppercase"
-            style={{ background: "rgba(251,191,36,0.1)", color: yellow, border: "1px solid rgba(251,191,36,0.2)" }}>
+            style={{ background: "rgba(242,183,5,0.1)", color: yellow, border: "1px solid rgba(242,183,5,0.2)" }}>
             <Zap size={12} />
             Como funciona
           </div>
 
           <h1
             ref={heroTitleRef}
-            className="text-5xl font-black tracking-tight leading-none md:text-7xl lg:text-8xl text-white"
-            style={{ textShadow: "0 0 80px rgba(251,191,36,0.15)" }}
+            className="fl-display text-6xl tracking-tight leading-[0.86] md:text-8xl lg:text-9xl text-white"
+            style={{ textShadow: "0 0 80px rgba(242,183,5,0.15)" }}
           >
             Como funciona a{" "}
             <span style={{ color: yellow }}>Freelandoo</span>
@@ -353,7 +353,7 @@ export function ComoFuncionaClient() {
           <p
             ref={heroBodyRef}
             className="mt-4 text-base max-w-2xl mx-auto leading-relaxed"
-            style={{ color: "#6b7280" }}
+            style={{ color: "#9A938A" }}
           >
             Na Freelandoo, você não perde tempo navegando por categorias confusas. Você
             escolhe um enxame, encontra profissionais reais, analisa perfis, vê
@@ -365,14 +365,14 @@ export function ComoFuncionaClient() {
             <CTAButton href="/cadastro">Anunciar meus serviços</CTAButton>
           </div>
 
-          <p ref={heroMicroRef} className="mt-5 text-sm" style={{ color: "#4b5563" }}>
+          <p ref={heroMicroRef} className="mt-5 text-sm" style={{ color: "#8a8275" }}>
             Vitrine, contato direto pelo WhatsApp e transações dentro da plataforma quando você quiser.
           </p>
         </div>
 
         <div ref={scrollHintRef} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-          <span className="text-xs tracking-widest uppercase" style={{ color: "#4b5563" }}>scroll</span>
-          <ChevronDown size={16} style={{ color: "#4b5563" }} />
+          <span className="text-xs tracking-widest uppercase" style={{ color: "#8a8275" }}>scroll</span>
+          <ChevronDown size={16} style={{ color: "#8a8275" }} />
         </div>
       </section>
 
@@ -453,7 +453,7 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 4 — PARA QUEM ANUNCIA
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section4Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(251,191,36,0.02)" }}>
+      <section ref={section4Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(242,183,5,0.02)" }}>
         <div className="max-w-6xl mx-auto">
           <div className="section-header mb-10">
             <SectionLabel>Para quem anuncia</SectionLabel>
@@ -482,7 +482,7 @@ export function ComoFuncionaClient() {
             ))}
           </div>
 
-          <div className="mb-10 p-4 rounded-xl text-sm max-w-2xl" style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)", color: "#d1d5db" }}>
+          <div className="mb-10 p-4 rounded-xl text-sm max-w-2xl" style={{ background: "rgba(242,183,5,0.06)", border: "1px solid rgba(242,183,5,0.15)", color: "#C9C2B6" }}>
             <strong style={{ color: yellow }}>Importante:</strong> A ativação aumenta sua exposição dentro da plataforma,
             mas não garante contratação. A negociação acontece diretamente entre cliente e profissional.
           </div>
@@ -537,7 +537,7 @@ export function ComoFuncionaClient() {
                   <div className="w-3 h-3 rounded-full" style={{ background: m.colors.accent }} />
                 </div>
                 <h3 className="font-bold text-white text-sm mb-2">{m.name}</h3>
-                <p className="text-xs leading-relaxed mb-4" style={{ color: "#9ca3af" }}>{m.description}</p>
+                <p className="text-xs leading-relaxed mb-4" style={{ color: "#C9C2B6" }}>{m.description}</p>
                 <div className="flex flex-wrap gap-1">
                   {m.examples.map((ex) => (
                     <span key={ex} className="text-[10px] px-2 py-0.5 rounded-full"
@@ -628,7 +628,7 @@ export function ComoFuncionaClient() {
       {/* ════════════════════════════════════════════════════════════
           SEÇÃO 8 — AFILIADOS E CUPONS
       ════════════════════════════════════════════════════════════ */}
-      <section ref={section8Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(251,191,36,0.015)" }}>
+      <section ref={section8Ref} className="px-4 py-14 md:py-20" style={{ ...sectionStyle, background: "rgba(242,183,5,0.015)" }}>
         <div className="max-w-6xl mx-auto">
           <div className="section-header mb-10">
             <SectionLabel>Cupons e afiliados</SectionLabel>
@@ -658,7 +658,7 @@ export function ComoFuncionaClient() {
             ))}
           </div>
 
-          <p className="text-xs" style={{ color: "#6b7280" }}>
+          <p className="text-xs" style={{ color: "#9A938A" }}>
             * O programa de afiliados pode ser alterado, pausado ou ajustado conforme a necessidade da plataforma.
           </p>
         </div>
@@ -750,7 +750,7 @@ export function ComoFuncionaClient() {
                 ].map((step, i) => (
                   <div key={step} className="flow-step flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                      style={{ background: "rgba(251,191,36,0.15)", color: yellow }}>
+                      style={{ background: "rgba(242,183,5,0.15)", color: yellow }}>
                       {i + 1}
                     </div>
                     <span className="text-sm" style={dimText}>{step}</span>
@@ -778,7 +778,7 @@ export function ComoFuncionaClient() {
                 ].map((step, i) => (
                   <div key={step} className="flow-step flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                      style={{ background: "rgba(251,191,36,0.15)", color: yellow }}>
+                      style={{ background: "rgba(242,183,5,0.15)", color: yellow }}>
                       {i + 1}
                     </div>
                     <span className="text-sm" style={dimText}>{step}</span>
@@ -841,7 +841,7 @@ export function ComoFuncionaClient() {
         {/* Glow */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div className="w-[800px] h-[400px] rounded-full" style={{
-            background: "radial-gradient(ellipse, rgba(251,191,36,0.06) 0%, transparent 70%)",
+            background: "radial-gradient(ellipse, rgba(242,183,5,0.06) 0%, transparent 70%)",
           }} />
         </div>
 
@@ -863,7 +863,7 @@ export function ComoFuncionaClient() {
             <CTAButton href="/cadastro">Anunciar meus serviços</CTAButton>
           </div>
 
-          <p className="mt-6 text-sm" style={{ color: "#4b5563" }}>
+          <p className="mt-6 text-sm" style={{ color: "#8a8275" }}>
             Você escolhe o caminho. A Freelandoo organiza a conexão.
           </p>
         </div>
