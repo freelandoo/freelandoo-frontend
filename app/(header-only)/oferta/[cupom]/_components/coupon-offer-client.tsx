@@ -29,14 +29,14 @@ export function CouponOfferClient({ code }: { code: string }) {
       <button
         type="button"
         onClick={copy}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold transition hover:border-primary/40 hover:text-primary"
+        className="inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-transparent px-5 py-3 text-[12px] font-black uppercase tracking-[0.12em] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
       >
-        {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
         {copied ? "Copiado!" : "Copiar código"}
       </button>
       <Link
         href="/"
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+        className="inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-3 text-[12px] font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D]"
       >
         Explorar Freelandoo
         <ArrowRight className="h-4 w-4" />

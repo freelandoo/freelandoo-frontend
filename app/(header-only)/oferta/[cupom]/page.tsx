@@ -45,62 +45,69 @@ export default async function OfertaPage({ params }: { params: Promise<{ cupom: 
 
   if (!data || !data.valid) {
     return (
-      <main className="min-h-[100dvh] bg-background px-4 py-16">
-        <div className="mx-auto max-w-md text-center">
-          <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/15 text-rose-400">
-            <AlertCircle className="h-6 w-6" />
+      <main className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#141009] px-4 py-16">
+        <div className="w-full max-w-md">
+          <div className="fl-card fl-hard rounded-[6px] p-8 text-center sm:p-10">
+            <span className="mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[6px] border-2 border-[#0B0B0D] bg-rose-500/15 text-rose-600">
+              <AlertCircle className="h-7 w-7" />
+            </span>
+            <p className="fl-marker text-xl font-bold leading-none text-[#0B0B0D]/55">Cupom</p>
+            <h1 className="fl-display mt-1 text-4xl leading-[0.9] text-[#0B0B0D] sm:text-5xl">INDISPONÍVEL.</h1>
+            <p className="mx-auto mt-5 max-w-xs text-sm font-bold leading-relaxed text-[#5b554b]">
+              {data?.expired
+                ? `O cupom ${code} expirou.`
+                : `Não encontramos o cupom ${code} ou ele está inativo.`}
+            </p>
+            <Link
+              href="/"
+              className="mt-7 inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D]"
+            >
+              Explorar Freelandoo
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <h1 className="mb-2 text-2xl font-bold">Cupom não disponível</h1>
-          <p className="text-sm text-muted-foreground">
-            {data?.expired
-              ? `O cupom ${code} expirou.`
-              : `Não encontramos o cupom ${code} ou ele está inativo.`}
-          </p>
-          <Link
-            href="/"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-          >
-            Explorar Freelandoo
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-[100dvh] bg-background px-4 py-12">
-      <div className="mx-auto max-w-lg">
-        <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/15 via-background to-background p-8 text-center shadow-2xl">
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(ellipse_at_top,_black,_transparent_70%)]"
-            style={{ background: "radial-gradient(120% 90% at 50% 0%, rgba(242,196,9,0.25), transparent 60%)" }}
-          />
-          <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary">
+    <main className="fl-root relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#141009] px-4 py-12">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,_black,_transparent_70%)]"
+        style={{ background: "radial-gradient(120% 90% at 50% 0%, rgba(242,183,5,0.22), transparent 60%)" }}
+      />
+      <div className="relative w-full max-w-lg">
+        <div className="fl-card fl-hard rounded-[6px] p-8 text-center sm:p-10">
+          <span className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-[6px] border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]">
             <Sparkles className="h-6 w-6" />
+          </span>
+          <p className="fl-marker text-2xl font-bold leading-none text-[#0B0B0D]/55">Cupom da vez</p>
+
+          <div className="my-5 border-y-2 border-dashed border-[#0B0B0D]/30 py-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#0B0B0D]/50">Código</p>
+            <h1 className="fl-display mt-1 break-all text-6xl leading-[0.85] text-[#0B0B0D] sm:text-7xl">{data.code}</h1>
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Cupom da vez</p>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight">{data.code}</h1>
 
           {data.owner && (
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="text-sm font-bold text-[#5b554b]">
               Compartilhado por{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-black text-[#0B0B0D]">
                 {data.owner.display_name || data.owner.username || "um afiliado"}
               </span>
             </p>
           )}
 
           {data.expires_at && (
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8a8275]">
               Válido até {new Date(data.expires_at).toLocaleDateString("pt-BR")}
             </p>
           )}
 
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <BadgePercent className="h-4 w-4 text-primary" />
-            Será aplicado automaticamente no checkout
+          <div className="mt-6 inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.1em] text-[#0B0B0D]">
+            <BadgePercent className="h-4 w-4" />
+            Aplicado automaticamente no checkout
           </div>
 
           {/* CouponOfferClient salva o cupom no sessionStorage e redireciona pra home */}
