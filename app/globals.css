@@ -320,3 +320,114 @@
     transition: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FREELANDOO LANDING — design system (homepage editorial, tema light)
+   Namespace `.fl-` para isolar do resto do app (que roda em dark). A página
+   usa cores explícitas (off-white / quase-preto / amarelo quente) em vez de
+   tokens de tema, pois o <html> tem a classe .dark globalmente.
+   Paleta: paper #FAF7F0 · ink #14110B · gold #F2B705 / #E6A800 · grafite #6B6457
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Raiz da landing: força esquema light e a tipografia base */
+.fl-root {
+  --fl-paper: #faf7f0;
+  --fl-ink: #14110b;
+  --fl-gold: #f2b705;
+  --fl-gold-deep: #e6a800;
+  --fl-graphite: #6b6457;
+  color-scheme: light;
+  background-color: var(--fl-paper);
+  color: var(--fl-ink);
+}
+
+/* Textura de papel: grão fino + leve fibra, performática (sem imagem externa) */
+.fl-paper-texture {
+  background-color: var(--fl-paper);
+  background-image:
+    radial-gradient(rgba(20, 17, 11, 0.022) 1px, transparent 1px),
+    radial-gradient(rgba(20, 17, 11, 0.018) 1px, transparent 1px);
+  background-size: 7px 7px, 13px 13px;
+  background-position: 0 0, 3px 4px;
+}
+
+/* Grão sutil sobreposto (usar como camada absolute aria-hidden) */
+.fl-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+/* Card branco "papel" com sombra suave editorial */
+.fl-card {
+  background: #fff;
+  border: 1px solid rgba(20, 17, 11, 0.08);
+  box-shadow:
+    0 1px 2px rgba(20, 17, 11, 0.04),
+    0 12px 30px -18px rgba(20, 17, 11, 0.25);
+}
+
+/* Borda recortada/irregular — clip-path estilo papel rasgado (4 variações) */
+.fl-torn-1 { clip-path: polygon(0% 4%, 3% 0%, 22% 3%, 51% 0%, 78% 4%, 97% 1%, 100% 6%, 99% 94%, 100% 100%, 73% 97%, 49% 100%, 24% 97%, 4% 100%, 0% 95%); }
+.fl-torn-2 { clip-path: polygon(1% 2%, 26% 0%, 54% 3%, 81% 0%, 100% 3%, 98% 28%, 100% 62%, 99% 100%, 70% 98%, 42% 100%, 16% 98%, 0% 100%, 2% 64%, 0% 31%); }
+.fl-torn-soft { border-radius: 14px 22px 16px 24px / 22px 16px 24px 18px; }
+
+/* Grifo amarelo (marca-texto manual) atrás de um trecho inline */
+.fl-highlight {
+  background: linear-gradient(104deg, transparent 0.5%, var(--fl-gold) 1.5%, var(--fl-gold) 98%, transparent 99.5%);
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.05em 0.18em;
+}
+
+/* Botão amarelo + botão preto com feedback tátil */
+.fl-btn-gold {
+  background: var(--fl-gold);
+  color: #1a1505;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 22px -12px rgba(230, 168, 0, 0.9);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s, box-shadow 0.18s;
+}
+.fl-btn-gold:hover { background: #ffc81f; }
+.fl-btn-gold:active { transform: scale(0.975); }
+.fl-btn-ink {
+  background: var(--fl-ink);
+  color: #faf7f0;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s;
+}
+.fl-btn-ink:hover { background: #2a2418; }
+.fl-btn-ink:active { transform: scale(0.975); }
+
+/* Marquee horizontal (faixa de palavras) — pausa em reduced-motion */
+@keyframes fl-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.fl-marquee-track {
+  display: inline-flex;
+  animation: fl-marquee 38s linear infinite;
+  will-change: transform;
+}
+.fl-marquee:hover .fl-marquee-track { animation-play-state: paused; }
+
+/* Flutuar suave para UI cards do hero (independente de JS) */
+@keyframes fl-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+.fl-float { animation: fl-float 6s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+.fl-float-slow { animation: fl-float 8.5s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+
+/* Tracejado/condensada utilitária para headlines gigantes */
+.fl-display {
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fl-marquee-track,
+  .fl-float,
+  .fl-float-slow {
+    animation: none !important;
+  }
+}
