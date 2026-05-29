@@ -247,10 +247,10 @@ export function ProfileHeadCard({
   const statusBadge = useMemo(() => {
     if (!isOwnProfile) return null
     if (isPublished)
-      return { label: "ativo", className: "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" }
+      return { label: "ativo", className: "bg-[#16683f] text-[#ECFDF3]" }
     if (profile.is_paid && !profile.is_visible)
-      return { label: "rascunho", className: "border-white/15 bg-white/[0.04] text-white/60" }
-    return { label: "não publicado", className: "border-amber-400/25 bg-amber-400/10 text-amber-300" }
+      return { label: "rascunho", className: "bg-[#0B0B0D] text-[#F1EDE2]" }
+    return { label: "não publicado", className: "bg-[#F2B705] text-[#1A1505]" }
   }, [isOwnProfile, isPublished, profile.is_paid, profile.is_visible])
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
@@ -263,11 +263,12 @@ export function ProfileHeadCard({
     <>
       <article
         className={cn(
-          "overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+          "relative overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]",
           className
         )}
       >
-        <div className="relative h-28 bg-zinc-900 md:h-52">
+        {/* BANNER — imagem da manifestação ou gradiente warm */}
+        <div className="relative h-28 border-b-2 border-[#0B0B0D] bg-[#1d1810] md:h-52">
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -279,14 +280,13 @@ export function ProfileHeadCard({
               />
             </>
           ) : (
-            <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
+            <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.30),transparent_38%),linear-gradient(135deg,#2a2212,#141009)]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
           {statusBadge && (
-            <div className="absolute right-4 top-4">
+            <div className="absolute right-3 top-3">
               <span
                 className={cn(
-                  "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] backdrop-blur",
+                  "rounded-full border-2 border-[#0B0B0D] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] shadow-[2px_2px_0_0_#0B0B0D]",
                   statusBadge.className
                 )}
               >
@@ -295,7 +295,7 @@ export function ProfileHeadCard({
             </div>
           )}
           {profile.manifestation?.tag_label && !isClan && (
-            <div className="absolute left-4 top-4 inline-flex max-w-[calc(100%-2rem)] items-center gap-1.5 rounded-full border border-primary/35 bg-zinc-950/80 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
+            <div className="absolute left-3 top-3 inline-flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-1.5 text-xs font-bold text-[#F2B705] shadow-[2px_2px_0_0_rgba(242,183,5,0.5)]">
               <Sparkles className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{profile.manifestation.tag_label}</span>
             </div>
@@ -308,7 +308,7 @@ export function ProfileHeadCard({
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
           <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
             <div className="flex shrink-0 flex-col items-center">
-              <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-32">
+              <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[3px_3px_0_0_#0B0B0D] md:w-32">
                 {avatarSrc ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -317,7 +317,7 @@ export function ProfileHeadCard({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary">
+                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
                     {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
                   </div>
                 )}
@@ -328,7 +328,7 @@ export function ProfileHeadCard({
                     disabled={uploadingAvatar}
                     aria-label="Mudar foto"
                     title="Mudar foto"
-                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary disabled:opacity-60"
+                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#F2B705] disabled:opacity-60"
                   >
                     <Camera className="h-3.5 w-3.5" />
                   </button>
@@ -352,24 +352,24 @@ export function ProfileHeadCard({
             <div className="min-w-0 flex-1 pb-1 text-left">
               <div className="flex items-baseline gap-4">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-semibold tabular-nums text-white md:text-xl">
+                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
                     {portfolioCount}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
                     Posts
                   </span>
                 </div>
-                <span className="text-white/15">|</span>
+                <span className="text-[#0B0B0D]/20">|</span>
                 <button
                   type="button"
                   onClick={() => setOpenFollowers(true)}
-                  className="flex items-baseline gap-1.5 transition hover:opacity-80"
+                  className="flex items-baseline gap-1.5 transition hover:opacity-70"
                   aria-label="Ver quem acompanha"
                 >
-                  <span className="text-lg font-semibold tabular-nums text-white md:text-xl">
+                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
                     {counts.followers_count}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
                     Acomp.
                   </span>
                 </button>
@@ -398,8 +398,13 @@ export function ProfileHeadCard({
             </div>
           </div>
 
+          {/* Nome — display Anton */}
+          <h1 className="fl-display mt-4 break-words text-2xl leading-[0.95] text-[#0B0B0D] md:text-3xl">
+            {displayName}
+          </h1>
+
           {isOwnProfile && ownerActions?.onShowMural && (
-            <div className="mt-4">
+            <div className="mt-3">
               <MuralPill
                 onClick={ownerActions.onShowMural}
                 hasNew={
@@ -413,17 +418,17 @@ export function ProfileHeadCard({
           )}
 
           {profile.bio && (
-            <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-white/70 md:text-sm">
+            <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-[#2b2b2e] md:text-sm">
               {profile.bio}
             </MarkdownText>
           )}
 
-          {/* FOOTER — lápis amarelo: hover no container expande o menu; click no lápis vai pro editar. */}
+          {/* FOOTER — engrenagem: hover no container expande o menu; click vai pro editar. */}
           <div
             ref={menuRef}
             onMouseEnter={() => setMenuOpen(true)}
             onMouseLeave={() => setMenuOpen(false)}
-            className="mt-3 flex flex-wrap items-center gap-1.5"
+            className="mt-4 flex flex-wrap items-center gap-1.5"
           >
             {isOwnProfile && ownerActions ? (
               <>
@@ -527,300 +532,12 @@ export function ProfileHeadCard({
           {isOwnProfile && !profile.is_paid && (
             <Link
               href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
-              className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[11px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
-              style={{
-                boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
-              }}
+              className="fl-btn-gold mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full px-4 text-[12px] font-bold uppercase tracking-wider"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Ative sua conta
             </Link>
           )}
-        </div>
-      </article>
-
-      <article
-        className={cn(
-          "hidden",
-          "relative overflow-hidden rounded-[2rem] border border-white/[0.07]",
-          "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
-          "shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_0_0_1px_rgba(255,255,255,0.02)]",
-          "p-4 md:p-5",
-          className
-        )}
-      >
-        {profile.manifestation?.banner_url && !isClan && (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={profile.manifestation.banner_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-42"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-zinc-950/72 to-zinc-950/48" />
-          </>
-        )}
-        <div className="relative">
-        {statusBadge && (
-          <div className="mb-3 flex justify-end">
-            <span
-              className={cn(
-                "rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
-                statusBadge.className
-              )}
-            >
-              {statusBadge.label}
-            </span>
-          </div>
-        )}
-
-        {/* TOPO: foto + stats/info lado a lado */}
-        <div className="flex items-start gap-4 md:gap-5">
-          {/* Foto + estrelas embaixo */}
-          <div className="flex shrink-0 flex-col items-center">
-            <div
-              className="relative h-28 w-28 overflow-hidden rounded-2xl ring-1 ring-primary/25 sm:h-32 sm:w-32 md:h-36 md:w-36"
-              style={{
-                boxShadow:
-                  "0 0 0 1px rgba(242,196,9,0.05), 0 16px 32px -22px rgba(242,196,9,0.28)",
-              }}
-            >
-              {avatarSrc ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={avatarSrc}
-                  alt={displayName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(242,196,9,0.22), rgba(242,196,9,0.05))",
-                  }}
-                >
-                  {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                </div>
-              )}
-              {canUploadClanAvatar && (
-                <button
-                  type="button"
-                  onClick={handleClanAvatarSelect}
-                  disabled={uploadingAvatar}
-                  aria-label="Mudar foto"
-                  title="Mudar foto"
-                  className="absolute bottom-1.5 right-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary disabled:opacity-60"
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-            <AvatarRatingStar profileId={profileId} />
-          </div>
-
-          {/* Coluna direita: stats (Posts | Acompanham) + info com icones */}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <dl className="grid grid-cols-2 divide-x divide-white/[0.06]">
-              <div className="flex items-center justify-center gap-2 px-2 py-1">
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">
-                  Posts
-                </dt>
-                <dd className="text-xl font-semibold tabular-nums text-white">
-                  {portfolioCount}
-                </dd>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenFollowers(true)}
-                className="flex items-center justify-center gap-2 rounded-xl px-2 py-1 transition hover:bg-white/[0.04]"
-                aria-label="Ver quem acompanha"
-              >
-                <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/65">
-                  Acomp.
-                </dt>
-                <dd className="text-xl font-semibold tabular-nums text-white">
-                  {counts.followers_count}
-                </dd>
-              </button>
-            </dl>
-
-            {/* Info em linhas: enxame, profissao, cidade */}
-            {(profile.machine_name || profile.desc_category || location) && (
-              <ul className="mt-4 space-y-2.5">
-                {profile.machine_name && (
-                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
-                    <Megaphone className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="truncate">{profile.machine_name}</span>
-                  </li>
-                )}
-                {profile.desc_category && (
-                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
-                    {isClan ? (
-                      <Users className="h-4 w-4 shrink-0 text-primary" />
-                    ) : (
-                      <UserRound className="h-4 w-4 shrink-0 text-primary" />
-                    )}
-                    <span className="truncate">{profile.desc_category}</span>
-                  </li>
-                )}
-                {location && (
-                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
-                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="truncate">{location}</span>
-                  </li>
-                )}
-                {profile.manifestation?.tag_label && !isClan && (
-                  <li className="flex items-center gap-2.5">
-                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
-                      <Sparkles className="h-3 w-3 shrink-0 text-amber-300" />
-                      <span className="truncate">{profile.manifestation.tag_label}</span>
-                    </span>
-                  </li>
-                )}
-                {isClan && typeof profile.members_count === "number" && (
-                  <li className="flex items-center gap-2.5 text-[13px] text-white/85">
-                    <Users className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="truncate">
-                      {profile.members_count}{" "}
-                      {profile.members_count === 1 ? "perfil" : "perfis"}
-                    </span>
-                  </li>
-                )}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {isOwnProfile && ownerActions?.onShowMural && (
-          <div className="mt-5">
-            <MuralPill
-              onClick={ownerActions.onShowMural}
-              hasNew={
-                !!(
-                  ownerActions.muralBadge?.has_new ||
-                  (ownerActions.muralBadge?.chat_unread || 0) > 0
-                )
-              }
-            />
-          </div>
-        )}
-
-        {/* BIO — nome e XP migraram pro RetractableProfileHeader */}
-        {profile.bio && (
-          <MarkdownText className="mt-5 max-w-2xl break-words text-[13px] leading-relaxed text-white/70">
-            {profile.bio}
-          </MarkdownText>
-        )}
-
-        {/* FOOTER — todas as ações como ícones (substitui PRIMARY ACTIONS + SECONDARY TOOLBAR) */}
-        <div className="mt-4 flex flex-wrap items-center gap-1.5">
-          {isOwnProfile && ownerActions ? (
-            <>
-              <IconAction
-                href={ownerActions.editHref}
-                onClick={ownerActions.onEdit}
-                icon={Pencil}
-                label={isClan ? "Editar clan" : "Editar perfil"}
-                accent
-              />
-              <IconAction
-                href={"/mensagens"}
-                icon={MessageCircle}
-                label="Minhas mensagens"
-              />
-              {!isClan && ownerActions.clansHref && (
-                <IconAction
-                  href={ownerActions.clansHref}
-                  icon={Users}
-                  label="Clans"
-                />
-              )}
-              {isClan && ownerActions.onShowMembers && (
-                <IconAction
-                  onClick={ownerActions.onShowMembers}
-                  icon={Users}
-                  label="Membros"
-                />
-              )}
-              {isClan && ownerActions.manageHref && (
-                <IconAction
-                  href={ownerActions.manageHref}
-                  icon={Cog}
-                  label="Gerenciar"
-                />
-              )}
-              {ownerActions.onShowEngagement && (
-                <IconAction
-                  onClick={ownerActions.onShowEngagement}
-                  icon={BarChart2}
-                  label="Engajamento"
-                />
-              )}
-              {ownerActions.onShowRanking && (
-                <IconAction
-                  onClick={ownerActions.onShowRanking}
-                  icon={Trophy}
-                  label="Ranking"
-                />
-              )}
-              {ownerActions.agendaHref && (
-                <IconAction
-                  href={ownerActions.agendaHref}
-                  icon={CalendarDays}
-                  label="Agenda"
-                />
-              )}
-              <SocialIcons socials={socials} />
-            </>
-          ) : (
-            <>
-              <FollowButton
-                targetType={entityType}
-                targetId={profileId}
-                onChanged={onFollowChanged}
-                compact
-                className="!h-9 !w-9 !rounded-full !p-0"
-              />
-              <IconAction
-                href={`/mensagens?with=${encodeURIComponent(profileId)}`}
-                icon={MessageCircle}
-                label="Enviar mensagem"
-              />
-              {isClan && visitorActions?.onShowMembers && (
-                <IconAction
-                  onClick={visitorActions.onShowMembers}
-                  icon={Users}
-                  label="Ver membros"
-                />
-              )}
-              {visitorActions?.onShowRanking && (
-                <IconAction
-                  onClick={visitorActions.onShowRanking}
-                  icon={Trophy}
-                  label="Ranking"
-                />
-              )}
-              <SocialIcons socials={socials} />
-            </>
-          )}
-        </div>
-
-        {/* ACTIVATE ACCOUNT — só p/ próprio perfil ainda não pago */}
-        {isOwnProfile && !profile.is_paid && (
-          <Link
-            href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`}
-            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 text-[12px] font-bold uppercase tracking-wider text-white transition hover:bg-emerald-400 active:scale-[0.98]"
-            style={{
-              boxShadow:
-                "0 1px 0 rgba(255,255,255,0.22) inset, 0 10px 24px -16px rgba(16,185,129,0.6)",
-            }}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ative sua conta
-          </Link>
-        )}
         </div>
       </article>
 
@@ -835,39 +552,6 @@ export function ProfileHeadCard({
   )
 }
 
-function HeadStat({
-  label,
-  value,
-  compact,
-}: {
-  label: string
-  value: number | string
-  compact?: boolean
-}) {
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-1.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-white/65">
-          {label}
-        </span>
-        <span className="text-base font-semibold tabular-nums text-white md:text-lg">
-          {value}
-        </span>
-      </div>
-    )
-  }
-  return (
-    <div className="p-4">
-      <span className="block text-xs font-medium uppercase tracking-wide text-white/55">
-        {label}
-      </span>
-      <span className="mt-2 block text-2xl font-semibold tabular-nums text-white">
-        {value}
-      </span>
-    </div>
-  )
-}
-
 function HeadInfo({
   icon: Icon,
   value,
@@ -876,8 +560,8 @@ function HeadInfo({
   value: string
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-1.5 text-white/75">
-      <Icon className="h-3 w-3 shrink-0 text-primary/80" />
+    <div className="flex min-w-0 items-center gap-1.5 text-[#2b2b2e]">
+      <Icon className="h-3 w-3 shrink-0 text-[#E0A500]" />
       <span className="truncate text-[11px] font-medium md:text-xs">{value}</span>
     </div>
   )
@@ -901,16 +585,16 @@ function IconAction({
   ariaExpanded?: boolean
 }) {
   const baseClass = cn(
-    "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition",
+    "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] transition active:scale-[0.96]",
     accent
-      ? "border-primary/40 bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_10px_24px_-16px_rgba(242,196,9,0.5)] hover:bg-primary/90"
-      : "border-white/12 bg-white/[0.04] text-white/85 hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary",
+      ? "bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] hover:bg-[#ffc81f]"
+      : "bg-[#F1EDE2] text-[#0B0B0D] hover:bg-[#0B0B0D] hover:text-[#F1EDE2]",
   )
   const body = (
     <>
       <Icon className="h-3.5 w-3.5" />
       {badge && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-zinc-950" />
+        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
       )}
     </>
   )
@@ -966,7 +650,7 @@ function IconAction({
 }
 
 /**
- * Wrapper que retrai a fila de ícones a partir do botão amarelo do lápis.
+ * Wrapper que retrai a fila de ícones a partir do botão dourado da engrenagem.
  * Animado por max-width + opacity, sem reflow brusco do header.
  */
 function RetractableIcons({ open, children }: { open: boolean; children: React.ReactNode }) {
@@ -998,7 +682,7 @@ function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
           rel="noopener noreferrer"
           title={social.desc_social_media_type || "Rede social"}
           aria-label={social.desc_social_media_type || "Rede social"}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/85 transition hover:border-primary/30 hover:bg-primary/[0.08] hover:text-primary"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
         >
           {getSocialIcon(social.icon)}
         </a>
@@ -1012,13 +696,13 @@ function MuralPill({ onClick, hasNew }: { onClick: () => void; hasNew: boolean }
     <button
       type="button"
       onClick={onClick}
-      className="group relative inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-primary/40 hover:bg-primary/[0.08] hover:text-primary"
+      className="group relative inline-flex items-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
       aria-label="Abrir Mural"
     >
-      <Megaphone className="h-3.5 w-3.5 text-primary/85" />
+      <Megaphone className="h-3.5 w-3.5 text-[#E0A500] group-hover:text-[#F2B705]" />
       <span>Mural</span>
       {hasNew && (
-        <span className="ml-0.5 inline-flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_0_2px_rgba(9,9,11,0.85)]" />
+        <span className="ml-0.5 inline-flex h-2 w-2 rounded-full bg-[#F2B705] shadow-[0_0_0_2px_#F1EDE2]" />
       )}
     </button>
   )

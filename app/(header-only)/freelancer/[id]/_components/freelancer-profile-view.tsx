@@ -6,7 +6,6 @@ import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
 import { FreelancerProfileError, FreelancerProfileLoading } from "./freelancer-states"
 import type { PortfolioItem } from "@/lib/types/freelancer-profile"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   ArrowLeft,
@@ -32,6 +31,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion"
 import { useMyCourses } from "@/hooks/use-my-courses"
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
+import { EmptyState, GoldButton, LoadingState } from "@/components/tabloide"
 
 interface XpSummary {
   xp_level: number
@@ -46,8 +46,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
 import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
@@ -600,7 +598,7 @@ export default function FreelancerProfileView({
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="fl-root fl-paper-texture min-h-[100dvh] font-sans antialiased">
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={profile.display_name || ""}
@@ -612,12 +610,12 @@ export default function FreelancerProfileView({
                 <button
                   type="button"
                   aria-label="Criar"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_8px_18px_-12px_rgba(242,196,9,0.65)] transition active:scale-[0.96]"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] transition active:scale-[0.96]"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuContent align="start" className="w-44 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] [&_[role=menuitem]]:cursor-pointer [&_[role=menuitem]]:focus:bg-[#0B0B0D] [&_[role=menuitem]]:focus:text-[#F1EDE2]">
                 <DropdownMenuItem
                   onSelect={() =>
                     window.dispatchEvent(
@@ -675,14 +673,14 @@ export default function FreelancerProfileView({
         )}
       </RetractableProfileHeader>
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <Button
+        <button
+          type="button"
           onClick={() => router.back()}
-          variant="ghost"
-          className="mb-4 text-muted-foreground hover:text-foreground -ml-2"
+          className="mb-4 -ml-1 inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-bold text-[#C9C2B6] transition hover:text-[#F5F1E8]"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4" />
           Voltar
-        </Button>
+        </button>
 
         {/* HEADER CARD */}
         <section ref={headcardRef} className="mb-0">
@@ -744,17 +742,17 @@ export default function FreelancerProfileView({
 
         {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
         <section className="mb-16">
-          <div className="flex items-stretch justify-between border-y-2 border-white/[0.12] bg-zinc-950/40">
+          <div className="mt-4 flex items-stretch justify-between border-y-2 border-[#F5F1E8]/15">
             <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
                 onClick={() => setPortfolioTab("feed")}
                 aria-label="Portfólio"
                 title="Portfólio"
-                className={`inline-flex h-9 w-10 items-center justify-center border-b-2 transition ${
+                className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
                   portfolioTab === "feed"
-                    ? "border-primary bg-primary/[0.08] text-primary"
-                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                 }`}
               >
                 <ImageIcon className="h-4 w-4" />
@@ -764,10 +762,10 @@ export default function FreelancerProfileView({
                 onClick={() => setPortfolioTab("bees")}
                 aria-label="Bees"
                 title="Bees"
-                className={`inline-flex h-9 w-10 items-center justify-center border-b-2 transition ${
+                className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
                   portfolioTab === "bees"
-                    ? "border-primary bg-primary/[0.08] text-primary"
-                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                 }`}
               >
                 <Hexagon className="h-4 w-4" />
@@ -775,10 +773,10 @@ export default function FreelancerProfileView({
               <button
                 type="button"
                 onClick={() => setPortfolioTab("services")}
-                className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+                className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
                   portfolioTab === "services"
-                    ? "border-primary bg-primary/[0.08] text-primary"
-                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
@@ -787,10 +785,10 @@ export default function FreelancerProfileView({
               <button
                 type="button"
                 onClick={() => setPortfolioTab("courses")}
-                className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+                className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
                   portfolioTab === "courses"
-                    ? "border-primary bg-primary/[0.08] text-primary"
-                    : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                 }`}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
@@ -800,10 +798,10 @@ export default function FreelancerProfileView({
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("shop")}
-                  className={`inline-flex h-9 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
                     portfolioTab === "shop"
-                      ? "border-primary bg-primary/[0.08] text-primary"
-                      : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                   }`}
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
@@ -816,7 +814,7 @@ export default function FreelancerProfileView({
           <div className="mt-0">
 
           {portfolioError && (portfolioTab === "feed" || portfolioTab === "bees") && (
-            <p className="text-sm text-destructive mb-6 text-center">{portfolioError}</p>
+            <p className="mb-6 mt-4 rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-center text-sm font-medium text-[#fca5a5]">{portfolioError}</p>
           )}
 
           {portfolioTab === "services" && (
@@ -852,16 +850,16 @@ export default function FreelancerProfileView({
                 ? "Nenhum Bees ainda."
                 : "Nenhum item no portfólio ainda."
             return filteredItems.length > 0 ? (
-            <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
               {filteredItems.map((item) => {
                 const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
                 return (
-                  <div key={item.id_portfolio_item} className="group relative flex flex-col">
+                  <div key={item.id_portfolio_item} className="group relative flex flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]">
                     {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                     {firstMedia ? (
                       <div
-                        className={`relative ${aspectClass} bg-muted overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
+                        className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden border-b-2 border-[#0B0B0D] ${!isOwnProfile ? "cursor-pointer" : ""}`}
                         onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
                       >
                         {firstMedia.media_type === "video" ? (
@@ -888,7 +886,7 @@ export default function FreelancerProfileView({
                           </div>
                         )}
                         {isClan && item.is_clan_self === false && item.author_display_name && (
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 text-white text-xs">
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-[#0B0B0D]/70 backdrop-blur-sm rounded-full pl-1 pr-2.5 py-1 text-[#F1EDE2] text-xs">
                             {item.author_avatar_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -903,16 +901,16 @@ export default function FreelancerProfileView({
                           </div>
                         )}
                         {isClan && item.is_clan_self && (
-                          <div className="absolute top-3 left-3 bg-primary/90 text-primary-foreground rounded-full px-2.5 py-1 text-[10px] uppercase tracking-wide font-semibold">
+                          <div className="absolute top-3 left-3 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#1A1505]">
                             Clan
                           </div>
                         )}
-                        
+
                         {/* Owner Overlay Actions */}
                         {isOwnProfile && (
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                          <div className="absolute inset-0 bg-[#0B0B0D]/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                             <label
-                              className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm cursor-pointer transition-colors"
+                              className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full cursor-pointer transition-colors"
                               title="Adicionar mídia"
                             >
                               <input
@@ -936,7 +934,7 @@ export default function FreelancerProfileView({
                                 <button
                                   type="button"
                                   onClick={() => handleHideFromClan(item.id_portfolio_item)}
-                                  className="flex items-center gap-2 h-10 px-4 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors text-sm font-medium"
+                                  className="flex items-center gap-2 h-10 px-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full transition-colors text-sm font-bold"
                                   title="Ocultar do clan (não exclui do perfil do membro)"
                                 >
                                   <EyeOff className="h-4 w-4" />
@@ -947,7 +945,7 @@ export default function FreelancerProfileView({
                                   <button
                                     type="button"
                                     onClick={() => handleEditPortfolioItem(item)}
-                                    className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
+                                    className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full transition-colors"
                                     title="Editar item"
                                   >
                                     <Edit2 className="h-5 w-5" />
@@ -955,7 +953,7 @@ export default function FreelancerProfileView({
                                   <button
                                     type="button"
                                     onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
-                                    className="flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
+                                    className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-full transition-colors"
                                     title="Remover item"
                                   >
                                     <Trash2 className="h-5 w-5" />
@@ -967,12 +965,12 @@ export default function FreelancerProfileView({
                         )}
                       </div>
                     ) : (
-                      <div className={`relative ${aspectClass} bg-muted flex items-center justify-center`}>
-                        <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+                      <div className={`relative ${aspectClass} bg-[#e8e2d4] flex items-center justify-center border-b-2 border-[#0B0B0D]`}>
+                        <ImageIcon className="h-8 w-8 text-[#0B0B0D]/25" />
                         {isOwnProfile && (
-                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 bg-[#0B0B0D]/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                              <label
-                              className="flex items-center justify-center h-10 w-10 bg-background border shadow-sm hover:bg-accent text-foreground rounded-full cursor-pointer transition-colors"
+                              className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full cursor-pointer transition-colors"
                               title="Adicionar mídia"
                             >
                               <input
@@ -991,7 +989,7 @@ export default function FreelancerProfileView({
                             <button
                               type="button"
                               onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
-                              className="flex items-center justify-center h-10 w-10 bg-background border shadow-sm hover:bg-destructive hover:text-destructive-foreground text-foreground rounded-full transition-colors"
+                              className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#dc2626] hover:text-white text-[#0B0B0D] rounded-full transition-colors"
                               title="Remover item"
                             >
                               <Trash2 className="h-5 w-5" />
@@ -1002,14 +1000,14 @@ export default function FreelancerProfileView({
                     )}
 
                     {/* Content below image */}
-                    <div className="pt-3 px-2 md:px-0">
+                    <div className="flex-1 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-semibold text-sm line-clamp-1">{item.title || "Sem título"}</h3>
+                        <h3 className="font-bold text-sm line-clamp-1 text-[#0B0B0D]">{item.title || "Sem título"}</h3>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenPortfolioItemId(item.id_portfolio_item) }}
-                            className={`flex items-center gap-1 text-xs transition-colors ${item.liked_by_me ? "text-yellow-400" : "text-muted-foreground hover:text-yellow-400"}`}
+                            className={`flex items-center gap-1 text-xs font-bold transition-colors ${item.liked_by_me ? "text-[#E0A500]" : "text-[#0B0B0D]/55 hover:text-[#E0A500]"}`}
                             title={item.liked_by_me ? "Remover like" : "Curtir"}
                           >
                             <Heart className={`h-3.5 w-3.5 ${item.liked_by_me ? "fill-current" : ""}`} />
@@ -1018,14 +1016,14 @@ export default function FreelancerProfileView({
                         </div>
                       </div>
                       {item.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+                        <p className="text-xs text-[#5b554b] mt-1 line-clamp-2">{item.description}</p>
                       )}
-                      
+
                       {/* Secondary Media Thumbnails (Only visible to owner to manage them) */}
                       {isOwnProfile && activeMedias.length > 1 && (
                         <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 no-scrollbar">
                           {activeMedias.slice(1).map((media) => (
-                            <div key={media.id_portfolio_media} className="relative group/thumb shrink-0 w-10 h-10 rounded overflow-hidden border border-border">
+                            <div key={media.id_portfolio_media} className="relative group/thumb shrink-0 w-10 h-10 rounded overflow-hidden border-2 border-[#0B0B0D]">
                               {media.media_type === "video" ? (
                                 <video src={media.media_url} className="w-full h-full object-cover" muted playsInline />
                               ) : (
@@ -1050,16 +1048,24 @@ export default function FreelancerProfileView({
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
-              <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
-                <ImageIcon className="h-8 w-8 opacity-50" />
-              </div>
-              <p className="text-sm font-medium">{emptyLabel}</p>
-              {isOwnProfile && (
-                <Button variant="link" onClick={handleAddPortfolioItem} className="mt-2 text-primary">
-                  Adicionar o primeiro item
-                </Button>
-              )}
+            <div className="mt-8">
+              <EmptyState
+                icon={<ImageIcon className="h-7 w-7" />}
+                title={emptyLabel}
+                description={
+                  isOwnProfile
+                    ? "Publique seu primeiro trabalho para começar a montar seu portfólio."
+                    : "Este perfil ainda não publicou nada por aqui."
+                }
+                action={
+                  isOwnProfile ? (
+                    <GoldButton onClick={handleAddPortfolioItem} className="px-5 py-2.5 text-sm">
+                      <Plus className="h-4 w-4" />
+                      Adicionar o primeiro item
+                    </GoldButton>
+                  ) : undefined
+                }
+              />
             </div>
           )
           })()}
@@ -1076,8 +1082,8 @@ export default function FreelancerProfileView({
         {isOwnProfile && (
           <section id="agenda-section" className="mb-20 scroll-mt-24">
             <div className="mb-6">
-              <h2 className="text-lg font-semibold uppercase tracking-wide text-muted-foreground">Agenda</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Agenda</h2>
+              <p className="mt-1 text-sm text-[#9A938A]">
                 Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).
               </p>
             </div>
@@ -1095,28 +1101,22 @@ export default function FreelancerProfileView({
 
       {/* Modal de Novo Item de Portfólio */}
       <Dialog open={isPortfolioModalOpen} onOpenChange={(open) => { setIsPortfolioModalOpen(open); if (!open) { setEditingPortfolioItemId(null); clearPending() } }}>
-        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
+        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <div className="relative overflow-y-auto max-h-[92vh] [scrollbar-width:thin]">
-            <DialogHeader className="px-6 pt-6 pb-3 border-b border-white/[0.06]">
+            <DialogHeader className="px-6 pt-6 pb-3 border-b-2 border-[#0B0B0D]/15">
               <div className="flex items-center gap-3">
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                    portfolioTab === "bees"
-                      ? "bg-gradient-to-br from-amber-400/30 to-orange-500/20 text-amber-300"
-                      : "bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300"
-                  }`}
-                >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                   <Sparkles className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <DialogTitle className="text-base text-white">
+                  <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
                     {editingPortfolioItemId
                       ? "Editar item"
                       : portfolioTab === "bees"
                         ? "Novo Bees"
                         : "Novo post"}
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-white/50">
+                  <DialogDescription className="text-xs text-[#5b554b]">
                     {editingPortfolioItemId
                       ? "Atualize as informações."
                       : portfolioTab === "bees"
@@ -1131,10 +1131,10 @@ export default function FreelancerProfileView({
               {!editingPortfolioItemId && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[11px] uppercase tracking-wider text-white/50">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
                       {portfolioTab === "bees" ? "Vídeo" : "Imagem"}
                     </Label>
-                    <span className="text-[10px] uppercase tracking-wider text-white/30">
+                    <span className="text-[10px] uppercase tracking-wider text-[#0B0B0D]/40">
                       {portfolioTab === "bees" ? "9:16 · até 100MB" : "4:5 · até 3MB"}
                     </span>
                   </div>
@@ -1193,9 +1193,9 @@ export default function FreelancerProfileView({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ type: "spring", stiffness: 220, damping: 26 }}
-                        className={`group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.02] ${
+                        className={`group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.03] ${
                           portfolioTab === "bees" ? "aspect-[9/16] max-w-[260px]" : "aspect-[4/5]"
-                        } max-h-[460px] transition-all hover:border-yellow-400/40 hover:bg-yellow-400/[0.04]`}
+                        } max-h-[460px] transition-all hover:border-[#E0A500] hover:bg-[#F2B705]/10`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handlePendingFileDrop}
                       >
@@ -1210,7 +1210,7 @@ export default function FreelancerProfileView({
                           onChange={handlePendingFileSelect}
                           disabled={processingMedia}
                         />
-                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(250,204,21,0.06),transparent_70%)] opacity-0 transition-opacity group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(242,183,5,0.10),transparent_70%)] opacity-0 transition-opacity group-hover:opacity-100" />
                         <motion.div
                           animate={processingMedia ? { rotate: 360 } : { y: [0, -4, 0] }}
                           transition={
@@ -1218,24 +1218,24 @@ export default function FreelancerProfileView({
                               ? { repeat: Infinity, duration: 1, ease: "linear" }
                               : { repeat: Infinity, duration: 2.4, ease: "easeInOut" }
                           }
-                          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10"
+                          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#0B0B0D] bg-[#F2B705]"
                         >
                           {processingMedia ? (
-                            <Loader2 className="h-5 w-5 text-yellow-300" />
+                            <Loader2 className="h-5 w-5 text-[#1A1505]" />
                           ) : portfolioTab === "bees" ? (
-                            <Upload className="h-5 w-5 text-amber-300" />
+                            <Upload className="h-5 w-5 text-[#1A1505]" />
                           ) : (
-                            <ImageIcon className="h-5 w-5 text-yellow-300" />
+                            <ImageIcon className="h-5 w-5 text-[#1A1505]" />
                           )}
                         </motion.div>
-                        <span className="px-6 text-center text-sm font-medium text-white/85">
+                        <span className="px-6 text-center text-sm font-bold text-[#0B0B0D]">
                           {processingMedia
                             ? "Otimizando..."
                             : portfolioTab === "bees"
                               ? "Toque ou arraste seu vídeo 9:16"
                               : "Toque ou arraste sua imagem"}
                         </span>
-                        <span className="mt-1 px-6 text-center text-[11px] text-white/40">
+                        <span className="mt-1 px-6 text-center text-[11px] text-[#5b554b]">
                           {portfolioTab === "bees"
                             ? "MP4 ou WebM, vertical"
                             : "JPG, PNG ou WebP — recortamos pra 4:5"}
@@ -1248,40 +1248,40 @@ export default function FreelancerProfileView({
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="portfolio-title" className="text-[11px] uppercase tracking-wider text-white/50">
+                  <Label htmlFor="portfolio-title" className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
                     Título
                   </Label>
-                  <span className="text-[10px] tabular-nums text-white/30">
+                  <span className="text-[10px] tabular-nums text-[#0B0B0D]/40">
                     {portfolioForm.title.length}/120
                   </span>
                 </div>
-                <Input
+                <input
                   id="portfolio-title"
                   placeholder="Campanha de verão, ensaio fotográfico..."
                   value={portfolioForm.title}
                   onChange={(e) => setPortfolioForm((prev) => ({ ...prev, title: e.target.value }))}
                   maxLength={120}
-                  className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
+                  className="fl-input"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="portfolio-description" className="text-[11px] uppercase tracking-wider text-white/50">
+                  <Label htmlFor="portfolio-description" className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
                     Descrição
                   </Label>
-                  <span className="text-[10px] tabular-nums text-white/30">
+                  <span className="text-[10px] tabular-nums text-[#0B0B0D]/40">
                     {portfolioForm.description.length}/500
                   </span>
                 </div>
-                <Textarea
+                <textarea
                   id="portfolio-description"
                   placeholder="Conte o contexto: cliente, processo, resultado..."
                   value={portfolioForm.description}
                   onChange={(e) => setPortfolioForm((prev) => ({ ...prev, description: e.target.value }))}
                   maxLength={500}
                   rows={3}
-                  className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 resize-none focus-visible:ring-yellow-400/40"
+                  className="fl-input resize-none"
                   style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
                 />
               </div>
@@ -1293,7 +1293,7 @@ export default function FreelancerProfileView({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ type: "spring", stiffness: 200, damping: 24 }}
-                    className="rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-xs text-red-200"
+                    className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-xs font-medium text-[#b91c1c]"
                   >
                     {portfolioError}
                   </motion.div>
@@ -1301,19 +1301,20 @@ export default function FreelancerProfileView({
               </AnimatePresence>
             </div>
 
-            <DialogFooter className="px-6 py-4 border-t border-white/[0.06] bg-black/40 backdrop-blur-sm">
-              <Button
-                variant="outline"
+            <DialogFooter className="px-6 py-4 border-t-2 border-[#0B0B0D]/15 bg-[#e8e2d4]">
+              <button
+                type="button"
                 onClick={() => setIsPortfolioModalOpen(false)}
                 disabled={isAddingPortfolioItem}
-                className="h-10 rounded-xl border-white/10 bg-transparent text-white/70 hover:bg-white/[0.04] hover:text-white"
+                className="fl-btn-card rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider disabled:opacity-50"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleSubmitPortfolioItem}
                 disabled={isAddingPortfolioItem || processingMedia}
-                className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 font-medium text-black hover:from-yellow-300 hover:to-amber-400 shadow-[0_8px_24px_-8px_rgba(250,204,21,0.5)]"
+                className="fl-btn-gold inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50"
               >
                 {isAddingPortfolioItem ? (
                   <>
@@ -1328,7 +1329,7 @@ export default function FreelancerProfileView({
                     Publicar
                   </>
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </div>
         </DialogContent>
@@ -1392,10 +1393,10 @@ export default function FreelancerProfileView({
               if (!open) setMembersQuery("")
             }}
           >
-            <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
-              <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b-2 border-[#0B0B0D]/15">
                 <div className="flex items-center gap-3">
-                  <Avatar className="size-11 border border-border">
+                  <Avatar className="size-11 border-2 border-[#0B0B0D]">
                     {(profile.avatar_url || profile.user_avatar) && (
                       <AvatarImage
                         src={profile.avatar_url ?? profile.user_avatar!}
@@ -1403,32 +1404,32 @@ export default function FreelancerProfileView({
                         className="object-cover"
                       />
                     )}
-                    <AvatarFallback>{getInitials(profile.display_name)}</AvatarFallback>
+                    <AvatarFallback className="bg-[#F2B705]/20 text-[#0B0B0D]">{getInitials(profile.display_name)}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1 text-left">
-                    <DialogTitle className="text-base truncate">
+                    <DialogTitle className="fl-display text-xl text-[#0B0B0D] truncate">
                       Membros de {profile.display_name}
                     </DialogTitle>
-                    <DialogDescription className="text-xs">
+                    <DialogDescription className="text-xs text-[#5b554b]">
                       {members.length} {members.length === 1 ? "membro" : "membros"}
                     </DialogDescription>
                   </div>
                 </div>
                 {members.length > 4 && (
                   <div className="relative mt-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#0B0B0D]/40 z-10" />
+                    <input
                       value={membersQuery}
                       onChange={(e) => setMembersQuery(e.target.value)}
                       placeholder="Buscar por nome ou @username"
-                      className="pl-9 h-9"
+                      className="fl-input !pl-9"
                     />
                   </div>
                 )}
               </DialogHeader>
               <div className="px-4 pb-5 pt-3 max-h-[60vh] overflow-y-auto">
                 {filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-10 text-[#5b554b]">
                     <Users className="h-8 w-8 opacity-40 mb-2" />
                     <p className="text-sm">Nenhum membro encontrado.</p>
                   </div>
@@ -1438,17 +1439,17 @@ export default function FreelancerProfileView({
                       <Link
                         key={m.id_member_profile}
                         href={`/freelancer/${m.id_member_profile}`}
-                        className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/60 transition-colors"
+                        className="group flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#0B0B0D]/[0.05] transition-colors"
                         onClick={() => setShowMembers(false)}
                       >
                         <div className="relative">
-                          <Avatar className="size-16 border border-border">
+                          <Avatar className="size-16 border-2 border-[#0B0B0D]">
                             {m.avatar_url && <AvatarImage src={m.avatar_url} alt={m.display_name} className="object-cover" />}
-                            <AvatarFallback>{getInitials(m.display_name)}</AvatarFallback>
+                            <AvatarFallback className="bg-[#F2B705]/20 text-[#0B0B0D]">{getInitials(m.display_name)}</AvatarFallback>
                           </Avatar>
                           {m.role === "owner" && (
                             <span
-                              className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground border-2 border-background shadow-sm"
+                              className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-[#F2B705] text-[#1A1505] border-2 border-[#F1EDE2] shadow-sm"
                               title="Dono do clan"
                             >
                               <Crown className="h-3.5 w-3.5" />
@@ -1456,10 +1457,10 @@ export default function FreelancerProfileView({
                           )}
                         </div>
                         <div className="min-w-0 w-full text-center">
-                          <div className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+                          <div className="text-xs font-bold truncate text-[#0B0B0D] group-hover:text-[#E0A500] transition-colors">
                             {m.display_name}
                           </div>
-                          <div className="text-[10px] text-muted-foreground truncate">@{m.username}</div>
+                          <div className="text-[10px] text-[#5b554b] truncate">@{m.username}</div>
                         </div>
                       </Link>
                     ))}
@@ -1536,38 +1537,37 @@ function ProfileCoursesTab({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Carregando cursos…
+      <div className="mt-8">
+        <LoadingState label="Carregando cursos…" />
       </div>
     )
   }
 
   if (linked.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
-        <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
-          <GraduationCap className="h-8 w-8 opacity-50" />
-        </div>
-        <p className="text-sm font-medium">
-          {isOwnProfile
-            ? "Nenhum curso vinculado a este perfil."
-            : "Em breve."}
-        </p>
-        {isOwnProfile && (
-          <Link
-            href="/account?tab=courses"
-            className="mt-3 text-xs font-medium text-primary hover:underline"
-          >
-            Criar curso na sua conta
-          </Link>
-        )}
+      <div className="mt-8">
+        <EmptyState
+          icon={<GraduationCap className="h-7 w-7" />}
+          title={isOwnProfile ? "Nenhum curso vinculado" : "Em breve"}
+          description={
+            isOwnProfile
+              ? "Vincule um curso a este perfil para mostrá-lo aqui."
+              : "Este perfil ainda não publicou cursos."
+          }
+          action={
+            isOwnProfile ? (
+              <GoldButton href="/account?tab=courses" className="px-5 py-2.5 text-sm">
+                Criar curso na sua conta
+              </GoldButton>
+            ) : undefined
+          }
+        />
       </div>
     )
   }
 
   return (
-    <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+    <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
       {linked.map((c) => (
         <Link
           key={c.id}
@@ -1578,7 +1578,7 @@ function ProfileCoursesTab({
                 ? `/cursos/${c.slug}`
                 : `/account/courses/${c.id}`
           }
-          className="group relative block aspect-[4/5] overflow-hidden bg-muted"
+          className="group relative block aspect-[4/5] overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#1d1810] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
         >
           {c.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1589,14 +1589,14 @@ function ProfileCoursesTab({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <GraduationCap className="h-12 w-12 text-muted-foreground/30" />
+              <GraduationCap className="h-12 w-12 text-[#F2B705]/30" />
             </div>
           )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0B0B0D]/85 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-3">
-            <p className="text-xs font-semibold text-white line-clamp-2">{c.title}</p>
+            <p className="text-xs font-bold text-white line-clamp-2">{c.title}</p>
             {isOwnProfile && c.status !== "published" && (
-              <span className="mt-1 inline-block rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+              <span className="mt-1 inline-block rounded-full border border-[#F2B705]/50 bg-[#F2B705]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F2B705]">
                 {c.status === "draft" ? "Rascunho" : "Pausado"}
               </span>
             )}

@@ -72,22 +72,22 @@ export function RetractableProfileHeader({ name, children, progress, addMenu }: 
       )}
       aria-hidden={!show}
     >
-      <div className="pointer-events-auto border-b border-white/[0.06] bg-zinc-950/45 backdrop-blur-xl">
+      <div className="pointer-events-auto border-b-2 border-[#F5F1E8]/12 bg-[#141009]/85 backdrop-blur-xl">
         <div className="container mx-auto flex items-center gap-2 px-4 py-2.5 md:gap-3">
           {addMenu !== undefined && <div className="shrink-0">{addMenu}</div>}
-          <span className="truncate text-sm font-semibold text-white md:text-base">
+          <span className="truncate text-sm font-bold text-[#F5F1E8] md:text-base">
             {name}
           </span>
           {children !== undefined && (
-            <div className="ml-auto flex min-w-0 items-center gap-3 text-[11px] text-white/85">
+            <div className="ml-auto flex min-w-0 items-center gap-3 text-[11px] text-[#C9C2B6]">
               {children}
             </div>
           )}
         </div>
         {clampedProgress !== null && (
-          <div className="h-[3px] w-full bg-white/[0.06]">
+          <div className="h-[3px] w-full bg-[#F5F1E8]/10">
             <div
-              className="h-full bg-primary transition-[width] duration-700 ease-out"
+              className="h-full bg-[#F2B705] transition-[width] duration-700 ease-out"
               style={{ width: `${clampedProgress}%` }}
             />
           </div>
