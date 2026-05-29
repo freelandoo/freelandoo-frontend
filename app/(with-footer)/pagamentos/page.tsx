@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Drawer } from "vaul"
 import {
-  CreditCard,
   Calendar,
   CheckCircle2,
   Clock,
@@ -20,6 +19,7 @@ import {
   Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { TabloidPageIntro } from "@/components/tabloide"
 import { SellerBalanceSection } from "./_components/seller-balance-section"
 import { BookingPayoutsSection } from "./_components/booking-payouts-section"
 
@@ -65,8 +65,8 @@ const STATUS_CONFIG = {
     label: "Reembolsado",
     icon: RotateCcw,
     color: "text-rose-600",
-    bg: "bg-muted/60",
-    border: "border-border",
+    bg: "bg-[#2A2218]/60",
+    border: "border-[#2A2218]",
     dot: "bg-rose-400",
     ring: "ring-rose-500/20",
   },
@@ -110,8 +110,8 @@ const STATUS_CONFIG = {
     label: "Reembolsada",
     icon: RotateCcw,
     color: "text-rose-600",
-    bg: "bg-muted/60",
-    border: "border-border",
+    bg: "bg-[#2A2218]/60",
+    border: "border-[#2A2218]",
     dot: "bg-rose-400",
     ring: "ring-rose-500/20",
   },
@@ -168,12 +168,12 @@ function CopyableId({ label, value }: { label: string; value: string }) {
     } catch {}
   }
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#2A2218] bg-[#141009]/40 px-3 py-2">
       <div className="min-w-0">
-        <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-[#9A938A]">
           {label}
         </p>
-        <p className="text-xs font-mono text-foreground truncate select-all" style={{ filter: "none", opacity: 1 }}>
+        <p className="text-xs font-mono text-[#F5F1E8] truncate select-all" style={{ filter: "none", opacity: 1 }}>
           {value}
         </p>
       </div>
@@ -181,7 +181,7 @@ function CopyableId({ label, value }: { label: string; value: string }) {
         type="button"
         onClick={handleCopy}
         aria-label="Copiar"
-        className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="shrink-0 rounded-md p-1.5 text-[#9A938A] hover:text-[#F5F1E8] hover:bg-[#2A2218] transition-colors"
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
@@ -228,30 +228,30 @@ function RefundDrawer({
   return (
     <Drawer.Root open={open} onOpenChange={setOpen}>
       <Drawer.Trigger asChild>
-        <button className="text-xs text-muted-foreground hover:text-amber-500 transition-colors underline underline-offset-4 mt-1">
+        <button className="text-xs text-[#9A938A] hover:text-amber-500 transition-colors underline underline-offset-4 mt-1">
           Solicitar reembolso
         </button>
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-background border-t border-border max-h-[50vh] px-6 pt-5 pb-10">
-          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-[#141009] border-t border-[#2A2218] max-h-[50vh] px-6 pt-5 pb-10">
+          <div className="mx-auto w-12 h-1.5 rounded-full bg-[#2A2218] mb-6" />
           <div className="flex items-start gap-4 mb-6">
             <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/50">
               <RotateCcw className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <Drawer.Title className="font-semibold text-base text-foreground">
+              <Drawer.Title className="font-semibold text-base text-[#F5F1E8]">
                 Solicitar reembolso integral?
               </Drawer.Title>
-              <Drawer.Description className="text-sm text-muted-foreground mt-1">
+              <Drawer.Description className="text-sm text-[#9A938A] mt-1">
                 O valor de{" "}
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-[#F5F1E8]">
                   {formatarValor(sub.amount_cents, sub.currency)}
                 </span>{" "}
                 será devolvido ao seu método de pagamento. Seu perfil será desativado imediatamente.
               </Drawer.Description>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-[#9A938A] mt-2">
                 Disponível por 7 dias após o pagamento. Esta ação não pode ser desfeita.
               </p>
             </div>
@@ -282,7 +282,7 @@ function RefundDrawer({
 /* ── Skeleton loader ── */
 function Skeleton({ className }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-muted ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-[#2A2218] ${className}`} />
   )
 }
 
@@ -312,14 +312,14 @@ function EmptyState({ onActivate }: { onActivate: () => void }) {
       <motion.div
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="mb-6 p-5 rounded-2xl bg-muted"
+        className="mb-6 p-5 rounded-2xl bg-[#2A2218]"
       >
-        <Sparkles className="h-10 w-10 text-muted-foreground" />
+        <Sparkles className="h-10 w-10 text-[#9A938A]" />
       </motion.div>
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
+      <h2 className="text-2xl font-semibold tracking-tight text-[#F5F1E8] mb-2">
         Nenhuma ativação ativa
       </h2>
-      <p className="text-muted-foreground max-w-xs mb-8 text-sm leading-relaxed">
+      <p className="text-[#9A938A] max-w-xs mb-8 text-sm leading-relaxed">
         Ative seu perfil para aparecer nas buscas e receber propostas de trabalho.
       </p>
       <Button
@@ -361,15 +361,15 @@ function SubscriptionCard({
       {/* Topo */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-1">
             Ativação do perfil
           </p>
-          <p className="text-3xl font-bold tracking-tight text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-[#F5F1E8]">
             {formatarValor(sub.amount_cents, sub.currency)}
-            <span className="text-sm font-normal text-muted-foreground ml-1">único</span>
+            <span className="text-sm font-normal text-[#9A938A] ml-1">único</span>
           </p>
           {sub.profile_name && (
-            <p className="text-sm text-muted-foreground mt-0.5">{sub.profile_name}</p>
+            <p className="text-sm text-[#9A938A] mt-0.5">{sub.profile_name}</p>
           )}
         </div>
 
@@ -384,13 +384,13 @@ function SubscriptionCard({
 
       {/* Metadados */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-[#9A938A]">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
-          <span>Ativo desde: <span className="text-foreground font-medium">{formatarDataCurta(sub.paid_at || sub.created_at)}</span></span>
+          <span>Ativo desde: <span className="text-[#F5F1E8] font-medium">{formatarDataCurta(sub.paid_at || sub.created_at)}</span></span>
         </div>
 
         {sub.id_coupon && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-[#9A938A]">
             <TrendingUp className="h-3.5 w-3.5 shrink-0" />
             <span>Cupom aplicado: <span className="text-emerald-600 font-medium">Sim</span></span>
           </div>
@@ -405,7 +405,7 @@ function SubscriptionCard({
           {sub.stripe_charge_id && (
             <CopyableId label="Stripe Charge ID" value={sub.stripe_charge_id} />
           )}
-          <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+          <p className="text-[11px] text-[#9A938A] leading-relaxed pt-1">
             Use estes IDs em qualquer suporte com a Stripe para rastrear o reembolso.
             O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.
           </p>
@@ -425,9 +425,9 @@ function SubscriptionCard({
             )}
           </div>
           {sub.paid_at && isWithin7Days(sub.paid_at) && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#9A938A]">
               Reembolso disponível até{" "}
-              <span className="font-medium text-foreground">{refundDeadline(sub.paid_at)}</span>
+              <span className="font-medium text-[#F5F1E8]">{refundDeadline(sub.paid_at)}</span>
             </p>
           )}
         </div>
@@ -464,7 +464,7 @@ function HistoryTimeline({
 }) {
   if (entries.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-6 text-center">
+      <p className="text-sm text-[#9A938A] py-6 text-center">
         Nenhum pagamento confirmado ainda.
       </p>
     )
@@ -483,8 +483,8 @@ function HistoryTimeline({
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-            className={`w-full flex items-center gap-4 px-3 py-3 -mx-3 rounded-xl border-b border-border/50 last:border-0 text-left transition-colors ${
-              isSelected ? "bg-muted/60" : "hover:bg-muted/30"
+            className={`w-full flex items-center gap-4 px-3 py-3 -mx-3 rounded-xl border-b border-[#2A2218]/50 last:border-0 text-left transition-colors ${
+              isSelected ? "bg-[#2A2218]/60" : "hover:bg-[#2A2218]/30"
             } ${isRefunded ? "opacity-50" : ""}`}
           >
             <div className={`p-1.5 rounded-lg shrink-0 ${
@@ -499,20 +499,20 @@ function HistoryTimeline({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
+              <p className="text-sm font-medium text-[#F5F1E8] truncate">
                 {s.profile_name || "Ativação do perfil"}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-[#9A938A] mt-0.5">
                 {formatarData(s.paid_at || s.created_at)}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-semibold text-[#F5F1E8]">
                 {formatarValor(s.amount_cents, s.currency)}
               </span>
               <ChevronRight
                 className={`h-4 w-4 transition-transform ${
-                  isSelected ? "text-foreground rotate-90" : "text-muted-foreground"
+                  isSelected ? "text-[#F5F1E8] rotate-90" : "text-[#9A938A]"
                 }`}
               />
             </div>
@@ -627,25 +627,16 @@ export default function PagamentosPage() {
   if (!isAutenticado) return null
 
   return (
-    <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
-      <div className="max-w-xl mx-auto space-y-8">
+    <main className="fl-root relative flex-1 bg-[#141009] text-[#F5F1E8]">
+      <div className="mx-auto max-w-xl space-y-8 px-4 py-10 md:py-16">
 
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Ativação
-            </span>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tighter leading-none text-foreground">
-            Meus Pagamentos
-          </h1>
-        </motion.div>
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Ativação"
+          title="PAGAMENTOS."
+          subtitle="Assinaturas, ativações e saldo de vendas em um painel só."
+        />
 
         {/* Erro */}
         <AnimatePresence>
@@ -694,7 +685,7 @@ export default function PagamentosPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
-                <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-3">
                   Suas ativações
                 </p>
                 <HistoryTimeline
@@ -715,27 +706,27 @@ export default function PagamentosPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="rounded-2xl border border-border bg-card p-5"
+                className="rounded-2xl border border-[#2A2218] bg-[#1D1810] p-5"
               >
-                <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-3">
                   Manifestacao
                 </p>
-                <div className="divide-y divide-border/70">
+                <div className="divide-y divide-[#2A2218]/70">
                   {manifestationHistory.map((item) => (
                     <div key={item.id} className="flex items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="truncate text-sm font-medium text-[#F5F1E8]">{item.name}</p>
+                        <p className="mt-0.5 text-xs text-[#9A938A]">
                           {formatarDataCurta(item.acquired_at)} ate {formatarDataCurta(item.expires_at)}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className="text-sm font-semibold text-[#F5F1E8]">
                           {item.payment_method === "polens"
                             ? `${Math.abs(item.amount_polens || 0).toLocaleString("pt-BR")} Polens`
                             : formatarValor(item.amount_cents || 0)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{item.is_active ? "Ativa" : "Encerrada"}</p>
+                        <p className="text-xs text-[#9A938A]">{item.is_active ? "Ativa" : "Encerrada"}</p>
                       </div>
                     </div>
                   ))}

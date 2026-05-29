@@ -39,7 +39,7 @@ interface PayoutSummary {
 const STATUS = {
   aguardando: { label: "Aguardando (8d)", icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/30",     border: "border-amber-200 dark:border-amber-800" },
   aprovado:   { label: "Liberado",        icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
-  pago:       { label: "Pago",            icon: CheckCircle2,  color: "text-primary",     bg: "bg-primary/10",                        border: "border-primary/30" },
+  pago:       { label: "Pago",            icon: CheckCircle2,  color: "text-[#F2B705]",     bg: "bg-[#F2B705]/10",                        border: "border-[#F2B705]/30" },
   revertido:  { label: "Revertido",       icon: RotateCcw,     color: "text-rose-600",    bg: "bg-rose-50 dark:bg-rose-950/30",       border: "border-rose-200 dark:border-rose-800" },
 } as const
 
@@ -103,7 +103,7 @@ export function BookingPayoutsSection() {
   if (state === "loading") {
     return (
       <div className="flex h-24 items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+        <Loader2 className="h-5 w-5 animate-spin text-[#9A938A]" aria-hidden />
       </div>
     )
   }
@@ -114,11 +114,11 @@ export function BookingPayoutsSection() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-border bg-card p-5"
+      className="rounded-2xl border border-[#2A2218] bg-[#1D1810] p-5"
     >
       <header className="mb-4 flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-primary" aria-hidden />
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        <Calendar className="h-4 w-4 text-[#F2B705]" aria-hidden />
+        <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A]">
           Saldo de agendamentos
         </p>
       </header>
@@ -137,7 +137,7 @@ export function BookingPayoutsSection() {
         </div>
       )}
 
-      <ul className="divide-y divide-border/70">
+      <ul className="divide-y divide-[#2A2218]/70">
         {items.map((b) => {
           const cfg = STATUS[b.status] || STATUS.aguardando
           const Icon = cfg.icon
@@ -145,14 +145,14 @@ export function BookingPayoutsSection() {
             <li key={b.id_payout} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">
+                  <p className="truncate text-sm font-medium text-[#F5F1E8]">
                     {b.service_name || "Agendamento"} · {b.profile_display_name || "—"}
                   </p>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg.bg} ${cfg.border} ${cfg.color}`}>
                     <Icon className="h-3 w-3" aria-hidden /> {cfg.label}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-xs text-[#9A938A]">
                   Agend. #{b.id_booking}
                   {b.booking_date ? ` · ${formatBookingDate(b.booking_date)}` : ""}
                   {b.booking_start_time ? ` ${String(b.booking_start_time).slice(0, 5)}` : ""}
@@ -164,7 +164,7 @@ export function BookingPayoutsSection() {
                   </p>
                 )}
                 {b.status === "pago" && b.paid_out_at && (
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-[11px] text-[#9A938A]">
                     Pago em {formatDate(b.paid_out_at)}{b.paid_out_note ? ` · ${b.paid_out_note}` : ""}
                   </p>
                 )}
@@ -175,9 +175,9 @@ export function BookingPayoutsSection() {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold tabular-nums text-foreground">{formatBRL(b.net_cents)}</p>
-                <p className="text-[11px] text-muted-foreground">Cliente pagou {formatBRL(b.deposit_cents)}</p>
-                <p className="text-[10px] text-muted-foreground">(taxa {formatBRL(b.platform_fee_cents)})</p>
+                <p className="text-sm font-semibold tabular-nums text-[#F5F1E8]">{formatBRL(b.net_cents)}</p>
+                <p className="text-[11px] text-[#9A938A]">Cliente pagou {formatBRL(b.deposit_cents)}</p>
+                <p className="text-[10px] text-[#9A938A]">(taxa {formatBRL(b.platform_fee_cents)})</p>
               </div>
             </li>
           )
@@ -198,8 +198,8 @@ function SummaryTile({
   const toneClass = {
     amber:   "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-200",
     emerald: "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200",
-    primary: "border-primary/30 bg-primary/10 text-primary",
-    muted:   "border-border bg-muted/30 text-muted-foreground",
+    primary: "border-[#F2B705]/30 bg-[#F2B705]/10 text-[#F2B705]",
+    muted:   "border-[#2A2218] bg-[#2A2218]/30 text-[#9A938A]",
   }[tone]
   return (
     <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>

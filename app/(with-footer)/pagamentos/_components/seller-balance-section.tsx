@@ -44,7 +44,7 @@ interface BalanceSummary {
 const STATUS = {
   aguardando: { label: "Aguardando (8d)", icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/30",   border: "border-amber-200 dark:border-amber-800" },
   aprovado:   { label: "Liberado",        icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
-  pago:       { label: "Pago ao vendedor", icon: CheckCircle2, color: "text-primary",     bg: "bg-primary/10",                       border: "border-primary/30" },
+  pago:       { label: "Pago ao vendedor", icon: CheckCircle2, color: "text-[#F2B705]",     bg: "bg-[#F2B705]/10",                       border: "border-[#F2B705]/30" },
   revertido:  { label: "Revertido",       icon: RotateCcw,     color: "text-rose-600",    bg: "bg-rose-50 dark:bg-rose-950/30",     border: "border-rose-200 dark:border-rose-800" },
 } as const
 
@@ -125,7 +125,7 @@ export function SellerBalanceSection() {
   if (state === "loading") {
     return (
       <div className="flex h-24 items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+        <Loader2 className="h-5 w-5 animate-spin text-[#9A938A]" aria-hidden />
       </div>
     )
   }
@@ -136,11 +136,11 @@ export function SellerBalanceSection() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl border border-border bg-card p-5"
+      className="rounded-2xl border border-[#2A2218] bg-[#1D1810] p-5"
     >
       <header className="mb-4 flex items-center gap-2">
-        <Store className="h-4 w-4 text-primary" aria-hidden />
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        <Store className="h-4 w-4 text-[#F2B705]" aria-hidden />
+        <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A]">
           Vendas da Loja
         </p>
       </header>
@@ -154,7 +154,7 @@ export function SellerBalanceSection() {
         </div>
       )}
 
-      <ul className="divide-y divide-border/70">
+      <ul className="divide-y divide-[#2A2218]/70">
         {items.map((b) => {
           const cfg = STATUS[b.status] || STATUS.aguardando
           const Icon = cfg.icon
@@ -162,12 +162,12 @@ export function SellerBalanceSection() {
             <li key={b.id_balance} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{b.product_name}</p>
+                  <p className="truncate text-sm font-medium text-[#F5F1E8]">{b.product_name}</p>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg.bg} ${cfg.border} ${cfg.color}`}>
                     <Icon className="h-3 w-3" aria-hidden /> {cfg.label}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-xs text-[#9A938A]">
                   Pedido #{b.id_order} · {formatDate(b.order_created_at)}
                   {b.buyer_name ? ` · ${b.buyer_name}` : ""}
                 </p>
@@ -177,7 +177,7 @@ export function SellerBalanceSection() {
                   </p>
                 )}
                 {b.status === "pago" && b.paid_out_at && (
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-[11px] text-[#9A938A]">
                     Pago em {formatDate(b.paid_out_at)}{b.paid_out_note ? ` · ${b.paid_out_note}` : ""}
                   </p>
                 )}
@@ -196,7 +196,7 @@ export function SellerBalanceSection() {
                     type="button"
                     onClick={() => openLabel(b.id_order)}
                     disabled={labelBusy === b.id_order}
-                    className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-full border border-[#F2B705]/40 bg-[#F2B705]/10 px-3 py-1 text-[11px] font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
                   >
                     {labelBusy === b.id_order
                       ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
@@ -204,16 +204,16 @@ export function SellerBalanceSection() {
                     {b.label_purchased_at ? "Reimprimir etiqueta" : "Imprimir etiqueta"}
                   </button>
                   {b.shipping_carrier && (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[11px] text-[#9A938A]">
                       {b.shipping_carrier} · {b.shipping_service_name}
                     </span>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold tabular-nums text-foreground">{formatBRL(b.net_cents)}</p>
-                <p className="text-[11px] text-muted-foreground">Bruto {formatBRL(b.gross_cents)}</p>
-                <p className="text-[10px] text-muted-foreground">(frete {formatBRL(b.shipping_cents)} retido)</p>
+                <p className="text-sm font-semibold tabular-nums text-[#F5F1E8]">{formatBRL(b.net_cents)}</p>
+                <p className="text-[11px] text-[#9A938A]">Bruto {formatBRL(b.gross_cents)}</p>
+                <p className="text-[10px] text-[#9A938A]">(frete {formatBRL(b.shipping_cents)} retido)</p>
               </div>
             </li>
           )
@@ -234,8 +234,8 @@ function SummaryTile({
   const toneClass = {
     amber:   "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-200",
     emerald: "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-200",
-    primary: "border-primary/30 bg-primary/10 text-primary",
-    muted:   "border-border bg-muted/30 text-muted-foreground",
+    primary: "border-[#F2B705]/30 bg-[#F2B705]/10 text-[#F2B705]",
+    muted:   "border-[#2A2218] bg-[#2A2218]/30 text-[#9A938A]",
   }[tone]
   return (
     <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
