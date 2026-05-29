@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Trophy, MapPin, Briefcase, Globe, X, Loader2, Star, Eye, Heart } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { buildProfileUrl } from "@/lib/slug"
 
 type ProfileMeta = {
@@ -75,12 +74,12 @@ function TopList({ rows, loading, empty }: { rows: TopRow[]; loading: boolean; e
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-[#0B0B0D]/40" />
       </div>
     )
   }
   if (!rows.length) {
-    return <p className="py-8 text-center text-xs text-muted-foreground">{empty}</p>
+    return <p className="py-8 text-center text-xs text-[#5b554b]">{empty}</p>
   }
   return (
     <ul className="space-y-2">
@@ -97,17 +96,17 @@ function TopList({ rows, loading, empty }: { rows: TopRow[]; loading: boolean; e
           <li key={r.id_profile}>
             <Link
               href={rowHref(r)}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card/50 px-3 py-2.5 transition hover:border-primary/40 hover:bg-card"
+              className="flex items-center gap-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-3 py-2.5 transition hover:border-[#0B0B0D] hover:bg-[#0B0B0D]/[0.06]"
             >
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
                   rank === 1
-                    ? "bg-primary text-primary-foreground"
+                    ? "border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]"
                     : rank === 2
-                    ? "bg-muted-foreground/30 text-foreground"
+                    ? "bg-[#0B0B0D]/20 text-[#0B0B0D]"
                     : rank === 3
-                    ? "bg-orange-500/30 text-orange-200"
-                    : "bg-muted/40 text-muted-foreground"
+                    ? "bg-[#c2622a]/25 text-[#8a4012]"
+                    : "bg-[#0B0B0D]/[0.06] text-[#5b554b]"
                 }`}
               >
                 #{rank}
@@ -117,24 +116,24 @@ function TopList({ rows, loading, empty }: { rows: TopRow[]; loading: boolean; e
                 <img
                   src={r.avatar_url}
                   alt={r.display_name}
-                  className="h-9 w-9 rounded-full object-cover"
+                  className="h-9 w-9 rounded-full border-2 border-[#0B0B0D] object-cover"
                 />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted/40 text-xs font-semibold text-muted-foreground">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705]/20 text-xs font-bold text-[#0B0B0D]">
                   {initials || "?"}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{r.display_name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
+                <p className="truncate text-sm font-bold text-[#0B0B0D]">{r.display_name}</p>
+                <p className="truncate text-[11px] text-[#5b554b]">
                   {[r.specialty, r.municipio && r.estado ? `${r.municipio}, ${r.estado}` : null]
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
               </div>
-              <div className="hidden flex-col items-end text-[10px] text-muted-foreground sm:flex">
+              <div className="hidden flex-col items-end text-[10px] text-[#5b554b] sm:flex">
                 <span className="flex items-center gap-1">
-                  <Star className="h-3 w-3 text-yellow-400" />
+                  <Star className="h-3 w-3 text-[#E0A500]" />
                   {r.avg_rating && Number(r.avg_rating) > 0 ? Number(r.avg_rating).toFixed(1) : "—"}
                 </span>
                 <span className="flex items-center gap-2">
@@ -251,31 +250,36 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-background border border-border shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-[#F1EDE2] border-2 border-[#0B0B0D] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#0B0B0D]/15">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-semibold">Ranking — Top 10</h2>
+            <Trophy className="h-5 w-5 text-[#E0A500]" />
+            <h2 className="fl-display text-xl text-[#0B0B0D]">Ranking — Top 10</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
+          >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
 
         {metaLoading && (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#0B0B0D]/40" />
           </div>
         )}
 
         {metaError && !metaLoading && (
-          <p className="text-sm text-destructive text-center py-6">{metaError}</p>
+          <p className="text-sm font-medium text-[#b91c1c] text-center py-6">{metaError}</p>
         )}
 
         {meta && !metaLoading && (
           <>
             {/* Tabs */}
-            <div className="flex flex-wrap gap-1.5 border-b border-border px-4 py-3">
+            <div className="flex flex-wrap gap-1.5 border-b-2 border-[#0B0B0D]/15 px-4 py-3">
               {TABS.map(({ key, label, icon: Icon }) => {
                 const active = tab === key
                 const pos = myPosition[key]
@@ -283,10 +287,10 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
                   <button
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
                       active
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]"
+                        : "border-2 border-transparent bg-[#0B0B0D]/[0.05] text-[#5b554b] hover:bg-[#0B0B0D]/[0.1] hover:text-[#0B0B0D]"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -294,7 +298,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
                     {pos && (
                       <span
                         className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
-                          active ? "bg-primary-foreground/20" : "bg-foreground/10"
+                          active ? "bg-[#1A1505]/20" : "bg-[#0B0B0D]/10"
                         }`}
                       >
                         #{pos}
@@ -307,9 +311,9 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
 
             {/* Subtitle */}
             {tabSubtitle[tab] && (
-              <p className="px-6 pt-3 text-xs text-muted-foreground">
+              <p className="px-6 pt-3 text-xs text-[#5b554b]">
                 {TABS.find((t) => t.key === tab)?.label} ·{" "}
-                <span className="text-foreground/70">{tabSubtitle[tab]}</span>
+                <span className="text-[#0B0B0D]/70">{tabSubtitle[tab]}</span>
               </p>
             )}
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { Eye, Heart, Star, Clock, Trophy, Globe, X, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 type EngagementData = {
   total_points: number
@@ -41,8 +40,8 @@ function StarDisplay({ value }: { value: number }) {
             key={i}
             className="h-4 w-4"
             style={{
-              fill: full ? "#fbbf24" : half ? "#fbbf2488" : "transparent",
-              color: full || half ? "#fbbf24" : "currentColor",
+              fill: full ? "#E0A500" : half ? "#E0A50088" : "transparent",
+              color: full || half ? "#E0A500" : "rgba(11,11,13,0.25)",
             }}
           />
         )
@@ -67,32 +66,32 @@ function Metric({
   return (
     <div
       className={`flex flex-col gap-1 rounded-xl p-4 ${
-        highlight ? "bg-primary/10 ring-1 ring-primary/30" : "bg-muted/50"
+        highlight ? "bg-[#F2B705]/15 ring-2 ring-[#E0A500]/40" : "bg-[#0B0B0D]/[0.04] ring-1 ring-[#0B0B0D]/10"
       }`}
     >
-      <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
+      <div className="flex items-center gap-2 text-[#5b554b] text-xs font-bold">
         <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
-      <span className="text-2xl font-bold tabular-nums">
+      <span className="text-2xl font-bold tabular-nums text-[#0B0B0D]">
         {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
       </span>
-      {sub && <span className="text-[11px] text-muted-foreground">{sub}</span>}
+      {sub && <span className="text-[11px] text-[#5b554b]">{sub}</span>}
     </div>
   )
 }
 
 function RankBadge({ pos, label }: { pos: number | null; label: string }) {
   if (!pos) return (
-    <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/30 p-3 text-center">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold text-muted-foreground">—</span>
+    <div className="flex flex-col items-center gap-1 rounded-xl bg-[#0B0B0D]/[0.04] p-3 text-center">
+      <span className="text-xs text-[#5b554b]">{label}</span>
+      <span className="text-sm font-bold text-[#5b554b]">—</span>
     </div>
   )
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl bg-primary/10 ring-1 ring-primary/20 p-3 text-center">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-lg font-bold text-primary">#{pos}</span>
+    <div className="flex flex-col items-center gap-1 rounded-xl bg-[#F2B705]/15 ring-2 ring-[#E0A500]/30 p-3 text-center">
+      <span className="text-xs text-[#5b554b]">{label}</span>
+      <span className="text-lg font-bold text-[#E0A500]">#{pos}</span>
     </div>
   )
 }
@@ -144,45 +143,56 @@ export function EngagementPanel({ profileId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-background border border-border shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg rounded-2xl bg-[#F1EDE2] border-2 border-[#0B0B0D] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#0B0B0D]/15">
           <div>
-            <h2 className="text-base font-semibold">
+            <h2 className="fl-display text-xl text-[#0B0B0D]">
               Engajamento do Perfil
               {data?.season_number != null && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary align-middle">
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[11px] font-bold text-[#1A1505] align-middle">
                   Temporada {data.season_number}
                 </span>
               )}
             </h2>
             {data?.updated_at && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-[#5b554b] mt-0.5">
                 Atualizado: {new Date(data.updated_at).toLocaleDateString("pt-BR")}
                 {endsAt && <> · zera em {endsAt}</>}
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={fetchEngagement} disabled={loading} aria-label="Atualizar">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={fetchEngagement}
+              disabled={loading}
+              aria-label="Atualizar"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D] disabled:opacity-50"
+            >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar">
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fechar"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
+            >
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {error && (
-            <p className="text-sm text-destructive text-center py-4">{error}</p>
+            <p className="text-sm font-medium text-[#b91c1c] text-center py-4">{error}</p>
           )}
 
           {loading && !data && (
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-20 rounded-xl bg-muted/50 animate-pulse" />
+                <div key={i} className="h-20 rounded-xl bg-[#0B0B0D]/[0.06] animate-pulse" />
               ))}
             </div>
           )}
@@ -193,16 +203,16 @@ export function EngagementPanel({ profileId, onClose }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <Metric icon={Eye} label="Visitas ao perfil" value={data.visits_count} />
                 <Metric icon={Heart} label="Likes no portfólio" value={data.likes_count} />
-                <div className="col-span-2 flex flex-col gap-1 rounded-xl bg-muted/50 p-4">
+                <div className="col-span-2 flex flex-col gap-1 rounded-xl bg-[#0B0B0D]/[0.04] ring-1 ring-[#0B0B0D]/10 p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
+                    <div className="flex items-center gap-2 text-[#5b554b] text-xs font-bold">
                       <Star className="h-3.5 w-3.5" />
                       Avaliação média
                     </div>
-                    <span className="text-xs text-muted-foreground">{data.ratings_count} avaliações</span>
+                    <span className="text-xs text-[#5b554b]">{data.ratings_count} avaliações</span>
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-2xl font-bold">
+                    <span className="text-2xl font-bold text-[#0B0B0D]">
                       {data.avg_rating > 0 ? Number(data.avg_rating).toFixed(1) : "—"}
                     </span>
                     {data.avg_rating > 0 && <StarDisplay value={Number(data.avg_rating)} />}
@@ -228,7 +238,7 @@ export function EngagementPanel({ profileId, onClose }: Props) {
 
               {/* Posições no ranking */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#5b554b] mb-3">
                   Posições no ranking
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -240,13 +250,13 @@ export function EngagementPanel({ profileId, onClose }: Props) {
               </div>
 
               {/* Legenda — uma só pontuação (XP = Ranking) */}
-              <div className="rounded-xl bg-muted/30 p-4 text-xs text-muted-foreground space-y-1.5">
-                <p className="font-medium text-foreground mb-1">Como é calculada a pontuação?</p>
+              <div className="rounded-xl bg-[#0B0B0D]/[0.04] ring-1 ring-[#0B0B0D]/10 p-4 text-xs text-[#5b554b] space-y-1.5">
+                <p className="font-bold text-[#0B0B0D] mb-1">Como é calculada a pontuação?</p>
                 <p>
-                  XP e ranking usam <strong className="text-foreground">a mesma pontuação</strong> — os pesos por ação
+                  XP e ranking usam <strong className="text-[#0B0B0D]">a mesma pontuação</strong> — os pesos por ação
                   estão no painel admin (XP/curtidas/visitas/avaliações/posts/tempo online etc.).
                 </p>
-                <div className="flex items-center gap-2"><Trophy className="h-3 w-3 shrink-0" /><span>XP/nível: acumula <strong className="text-foreground">para sempre</strong>.</span></div>
+                <div className="flex items-center gap-2"><Trophy className="h-3 w-3 shrink-0" /><span>XP/nível: acumula <strong className="text-[#0B0B0D]">para sempre</strong>.</span></div>
                 <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking: soma só a temporada atual e zera ao virar.</span></div>
                 <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Tempo online conta em qualquer página enquanto a aba estiver visível, até o teto diário.</span></div>
               </div>
