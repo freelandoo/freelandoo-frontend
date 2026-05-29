@@ -1,24 +1,17 @@
 "use client"
 
 /**
- * LandingHeader — cabeçalho light da homepage editorial.
- * Sticky, fundo papel translúcido com blur. Mantém os links canônicos
- * (login/cadastro/explorar) intactos. Reage ao estado de auth.
+ * LandingHeader — cabeçalho dark da homepage poster.
+ * Logo + nav central + Entrar (outline) e Comece agora (gold). Menu mobile.
+ * Mantém os links canônicos. Reage ao estado de auth.
  */
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Menu, X, User } from "lucide-react"
+import { Menu, X, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
-import { LINKS } from "./tokens"
+import { LINKS, NAV } from "./tokens"
 import { GoldButton } from "./primitives"
-
-const NAV = [
-  { label: "Explorar", href: LINKS.explorar },
-  { label: "Cursos", href: LINKS.cursos },
-  { label: "Como funciona", href: LINKS.comoFunciona },
-  { label: "Afiliados", href: LINKS.afiliados },
-]
 
 export function LandingHeader() {
   const { user, status } = useAuth()
@@ -27,51 +20,34 @@ export function LandingHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="border-b border-[#14110B]/8 bg-[#FAF7F0]/85 backdrop-blur-md supports-[backdrop-filter]:bg-[#FAF7F0]/70">
-        <div className="mx-auto flex w-full max-w-[1200px] items-center gap-4 px-5 py-3 sm:px-8">
+      <div className="border-b border-[#F5F1E8]/8 bg-[#15120E]/85 backdrop-blur-md supports-[backdrop-filter]:bg-[#15120E]/65">
+        <div className="mx-auto flex w-full max-w-[1180px] items-center gap-4 px-5 py-3.5 sm:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Freelandoo, página inicial">
-            <Image
-              src="/freelandoo-logo.png"
-              alt="Freelandoo"
-              width={200}
-              height={56}
-              className="h-7 w-auto sm:h-8"
-              priority
-            />
-            <span className="text-lg font-black tracking-tight text-[#14110B]">Freelandoo</span>
+            <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto sm:h-8" priority />
+            <span className="text-lg font-black tracking-tight text-[#F5F1E8]">freelandoo</span>
           </Link>
 
-          <nav className="ml-6 hidden items-center gap-6 lg:flex">
+          <nav className="mx-auto hidden items-center gap-7 lg:flex">
             {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="text-sm font-semibold text-[#2A2418]/80 transition hover:text-[#14110B]"
-              >
+              <Link key={n.label} href={n.href} className="text-sm font-semibold text-[#F5F1E8]/75 transition hover:text-[#F5F1E8]">
                 {n.label}
               </Link>
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 lg:ml-0">
             {isLoggedIn ? (
-              <Link
-                href="/account"
-                className="inline-flex items-center gap-2 rounded-full border border-[#14110B]/15 bg-white px-4 py-2 text-sm font-bold text-[#14110B] transition hover:border-[#14110B]/35"
-              >
+              <Link href="/account" className="inline-flex items-center gap-2 rounded-full border border-[#F5F1E8]/20 px-4 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/40">
                 <User className="h-4 w-4" />
                 <span className="hidden max-w-[120px] truncate sm:inline">{user.nome}</span>
               </Link>
             ) : (
               <>
-                <Link
-                  href={LINKS.login}
-                  className="hidden rounded-full px-4 py-2 text-sm font-bold text-[#14110B] transition hover:bg-[#14110B]/5 sm:inline-flex"
-                >
+                <Link href={LINKS.login} className="hidden rounded-full border border-[#F5F1E8]/25 px-5 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/50 sm:inline-flex">
                   Entrar
                 </Link>
                 <GoldButton href={LINKS.cadastro} className="px-5 py-2.5 text-sm">
-                  Começar agora
+                  Comece agora <ArrowRight className="h-4 w-4" />
                 </GoldButton>
               </>
             )}
@@ -80,33 +56,23 @@ export function LandingHeader() {
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Fechar menu" : "Abrir menu"}
               aria-expanded={open}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#14110B]/15 text-[#14110B] lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F5F1E8]/20 text-[#F5F1E8] lg:hidden"
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Menu mobile */}
         {open && (
-          <div className="border-t border-[#14110B]/8 bg-[#FAF7F0] lg:hidden">
-            <nav className="mx-auto flex w-full max-w-[1200px] flex-col px-5 py-3 sm:px-8">
+          <div className="border-t border-[#F5F1E8]/8 bg-[#15120E] lg:hidden">
+            <nav className="mx-auto flex w-full max-w-[1180px] flex-col px-5 py-3 sm:px-8">
               {NAV.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  onClick={() => setOpen(false)}
-                  className="border-b border-[#14110B]/5 py-3 text-base font-semibold text-[#14110B] last:border-0"
-                >
+                <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="border-b border-[#F5F1E8]/8 py-3 text-base font-semibold text-[#F5F1E8] last:border-0">
                   {n.label}
                 </Link>
               ))}
               {!isLoggedIn && (
-                <Link
-                  href={LINKS.login}
-                  onClick={() => setOpen(false)}
-                  className="py-3 text-base font-semibold text-[#14110B]"
-                >
+                <Link href={LINKS.login} onClick={() => setOpen(false)} className="py-3 text-base font-semibold text-[#F5F1E8]">
                   Entrar
                 </Link>
               )}

@@ -1,87 +1,106 @@
 /**
- * LandingFooter — rodapé light da homepage editorial.
- * Mantém links de navegação importantes + páginas legais já existentes.
+ * LandingFooter — rodapé dark com colunas, redes sociais e "Baixe o app".
+ * Mantém links de navegação importantes + páginas legais existentes.
  */
 import Image from "next/image"
 import Link from "next/link"
+import { Instagram, Youtube, Facebook, Twitter, Linkedin, Smartphone } from "lucide-react"
 import { LINKS } from "./tokens"
 import { HiveDoodle } from "./primitives"
 
 const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   {
-    title: "Ganhe dinheiro",
+    title: "Navegue",
     links: [
-      { label: "Oferecer serviços", href: LINKS.cadastro },
-      { label: "Criar cursos", href: LINKS.cursos },
-      { label: "Vender produtos", href: LINKS.cadastro },
-      { label: "Ser afiliado", href: LINKS.afiliados },
-      { label: "Virar influenciador", href: LINKS.influenciadores },
-    ],
-  },
-  {
-    title: "Explorar",
-    links: [
-      { label: "Buscar profissionais", href: LINKS.explorar },
-      { label: "Feed", href: LINKS.feed },
       { label: "Como funciona", href: LINKS.comoFunciona },
-      { label: "Preços", href: "/precos" },
-      { label: "Central de ajuda", href: "/central-de-ajuda" },
+      { label: "Recursos", href: "#recursos" },
+      { label: "Preços", href: LINKS.precos },
+      { label: "Marketplace", href: LINKS.marketplace },
     ],
   },
   {
-    title: "Freelandoo",
+    title: "Suporte",
     links: [
-      { label: "Sobre nós", href: "/sobre-nos" },
+      { label: "Central de ajuda", href: "/central-de-ajuda" },
+      { label: "Contato", href: "/central-de-ajuda" },
+      { label: "Segurança", href: "/dicas-de-seguranca" },
+      { label: "Garantia", href: "/return-policy" },
+    ],
+  },
+  {
+    title: "Sobre",
+    links: [
+      { label: "Quem somos", href: "/sobre-nos" },
+      { label: "Blog", href: "/comunidade" },
       { label: "Carreiras", href: "/carreiras" },
-      { label: "Segurança de menores", href: "/minors-policy" },
-      { label: "Termos de uso", href: "/terms" },
-      { label: "Privacidade", href: "/privacy-policy" },
+      { label: "Imprensa", href: "/sobre-nos" },
     ],
   },
 ]
 
+const SOCIAL = [
+  { Icon: Instagram, label: "Instagram" },
+  { Icon: Youtube, label: "YouTube" },
+  { Icon: Facebook, label: "Facebook" },
+  { Icon: Twitter, label: "Twitter" },
+  { Icon: Linkedin, label: "LinkedIn" },
+]
+
 export function LandingFooter() {
   return (
-    <footer className="relative overflow-hidden border-t border-[#14110B]/8 bg-[#14110B] text-[#FAF7F0]">
-      <HiveDoodle className="absolute -right-10 -top-10 h-48 w-48 text-[#F2B705]/15" />
-      <div className="relative mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="relative overflow-hidden border-t border-[#F5F1E8]/8 bg-[#100E0A] text-[#F5F1E8]">
+      <HiveDoodle className="absolute -right-10 -top-10 h-44 w-44 text-[#F2B705]/10" />
+      <div className="relative mx-auto w-full max-w-[1180px] px-5 py-14 sm:px-8">
+        <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
           <div>
             <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/freelandoo-logo.png"
-                alt="Freelandoo"
-                width={200}
-                height={56}
-                className="h-8 w-auto"
-              />
-              <span className="text-xl font-black">Freelandoo</span>
+              <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-8 w-auto" />
+              <span className="text-xl font-black">freelandoo</span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#FAF7F0]/65">
-              A rede social de oportunidades comerciais. Venda serviços, cursos e produtos, e ganhe indicando.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#9A938A]">
+              A plataforma de negócios digitais completa para você vender, ensinar, aprender e ganhar mais todos os dias.
             </p>
           </div>
+
           {COLS.map((col) => (
             <div key={col.title}>
               <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{col.title}</h3>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l.href + l.label}>
-                    <Link href={l.href} className="text-sm text-[#FAF7F0]/70 transition hover:text-[#FAF7F0]">
-                      {l.label}
-                    </Link>
+                    <Link href={l.href} className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{l.label}</Link>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
+
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Siga a Freelandoo</h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {SOCIAL.map(({ Icon, label }) => (
+                <a
+                  key={label} href="#" aria-label={label}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+            <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Baixe o app</h3>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#F5F1E8]/15 px-3 py-2 text-sm text-[#C9C2B6]">
+              <Smartphone className="h-4 w-4 text-[#F2B705]" /> Disponível para iOS e Android
+            </div>
+          </div>
         </div>
-        <div className="mt-12 flex flex-col gap-3 border-t border-[#FAF7F0]/10 pt-6 text-xs text-[#FAF7F0]/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Freelandoo. Todos os direitos reservados.</p>
+
+        <div className="mt-12 flex flex-col gap-3 border-t border-[#F5F1E8]/10 pt-6 text-xs text-[#9A938A] sm:flex-row sm:items-center sm:justify-between">
+          <p>© Freelandoo {new Date().getFullYear()}. Todos os direitos reservados.</p>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/cookies-policy" className="hover:text-[#FAF7F0]">Cookies</Link>
-            <Link href="/community-guidelines" className="hover:text-[#FAF7F0]">Diretrizes</Link>
-            <Link href="/dicas-de-seguranca" className="hover:text-[#FAF7F0]">Segurança</Link>
+            <Link href="/terms" className="hover:text-[#F5F1E8]">Termos</Link>
+            <Link href="/privacy-policy" className="hover:text-[#F5F1E8]">Privacidade</Link>
+            <Link href="/cookies-policy" className="hover:text-[#F5F1E8]">Cookies</Link>
+            <Link href="/minors-policy" className="hover:text-[#F5F1E8]">Menores</Link>
           </div>
         </div>
       </div>

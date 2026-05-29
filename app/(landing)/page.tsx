@@ -4,31 +4,15 @@ import {
   LandingFooter,
   HeroSection,
   MoneyPathCards,
-  HorizontalFeatureDeck,
-  CourseShowcase,
-  MultiProfileShowcase,
-  ServiceShowcase,
-  ProductStoreShowcase,
-  LojinhaShowcase,
-  SearchShowcase,
-  RequestShowcase,
-  OpportunityShowcase,
-  AffiliateCouponCard,
-  VideoShowcase,
-  PostsShowcase,
-  StoriesShowcase,
-  WorkLifestyleShowcase,
-  InfluencerMarketplaceShowcase,
-  InfluencerLocalShowcase,
-  MoreThanSocialShowcase,
-  ParentalControlShowcase,
+  FeatureCarousel,
+  FeatureBento,
   FinalCTA,
 } from "@/components/home/landing"
 import { RevealMount } from "@/components/home/landing/RevealMount"
 
 const TITLE = "Freelandoo — Venda serviços, cursos e produtos, e ganhe como afiliado"
 const DESCRIPTION =
-  "A Freelandoo conecta quem quer ganhar dinheiro com quem precisa contratar, comprar, aprender ou divulgar. Ofereça serviços, crie cursos de graça, venda produtos, abra sua lojinha, divulgue como influenciador e ganhe indicando."
+  "A Freelandoo conecta quem quer ganhar dinheiro com quem precisa aprender, criar, comprar e empreender. Ofereça serviços, crie cursos de graça, venda produtos, abra sua lojinha, divulgue como influenciador e ganhe indicando."
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -79,47 +63,15 @@ export default function HomePage() {
 
       <LandingHeader />
       <main className="flex-1">
-        {/* 1 · Hero */}
+        {/* 1 · Hero principal */}
         <HeroSection />
-        {/* 2 · Caminhos de renda */}
+        {/* 2 · Escolha seu caminho (5 caminhos de renda) */}
         <MoneyPathCards />
-        {/* Motion · Deck horizontal (GSAP) */}
-        <HorizontalFeatureDeck />
-        {/* 3 · Cursos */}
-        <CourseShowcase />
-        {/* 4 · Vários perfis */}
-        <MultiProfileShowcase />
-        {/* 5 · Serviços */}
-        <ServiceShowcase />
-        {/* 6 · Produtos */}
-        <ProductStoreShowcase />
-        {/* 7 · Lojinha */}
-        <LojinhaShowcase />
-        {/* 8 · Busca */}
-        <SearchShowcase />
-        {/* 9 · Chamados */}
-        <RequestShowcase />
-        {/* 10 · Oportunidades */}
-        <OpportunityShowcase />
-        {/* 11 · Afiliados */}
-        <AffiliateCouponCard />
-        {/* 12 · Vídeos curtos */}
-        <VideoShowcase />
-        {/* 13 · Posts */}
-        <PostsShowcase />
-        {/* 14 · Stories */}
-        <StoriesShowcase />
-        {/* 15 · Trabalho + lifestyle */}
-        <WorkLifestyleShowcase />
-        {/* 16 · Influenciadores */}
-        <InfluencerMarketplaceShowcase />
-        {/* 17 · Influenciadores locais */}
-        <InfluencerLocalShowcase />
-        {/* 18 · Mais que rede social */}
-        <MoreThanSocialShowcase />
-        {/* 19 · Controle parental */}
-        <ParentalControlShowcase />
-        {/* 20 · CTA final */}
+        {/* 3 · Carrossel "tudo que você precisa para ganhar mais" */}
+        <FeatureCarousel />
+        {/* 4 · Grade numerada de recursos 01-13 */}
+        <FeatureBento />
+        {/* 5 · CTA final */}
         <FinalCTA />
       </main>
       <LandingFooter />

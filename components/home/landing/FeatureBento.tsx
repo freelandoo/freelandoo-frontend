@@ -1,0 +1,137 @@
+/**
+ * FeatureBento — grade numerada 01-13 de cards brancos sobre o canvas dark.
+ * Cada card: número dourado, título, descrição, CTA opcional e um visual
+ * conforme `kind` (foto, saque, faturamento, comissão, vídeo, stories,
+ * avatars, busca, métricas). Server component puro; entrada via data-stagger.
+ */
+import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
+import { BENTO, type BentoItem } from "./tokens"
+import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow } from "./primitives"
+
+const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6: "lg:col-span-6", 12: "lg:col-span-12" }
+
+function BentoVisual({ item }: { item: BentoItem }) {
+  switch (item.kind) {
+    case "photo":
+      return <PhotoFrame src="" alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="aspect-[16/10] w-full rounded-xl" />
+    case "saque":
+      return (
+        <div className="rounded-xl bg-[#FAF7F0] p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Saldo disponível</div>
+          <div className="mt-1 text-xl font-black text-[#14110B]">R$ 24.820,00</div>
+          <div className="text-[11px] font-bold text-emerald-600">+12% no mês</div>
+        </div>
+      )
+    case "faturamento":
+      return (
+        <div className="rounded-xl bg-[#FAF7F0] p-3">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Faturamento aprovado</div>
+          <div className="mt-1 flex items-center gap-1.5 text-2xl font-black text-[#14110B]">
+            784.321 <TrendingUp className="h-4 w-4 text-emerald-500" />
+          </div>
+          <div className="text-[11px] text-[#9a8f7a]">Em análise</div>
+        </div>
+      )
+    case "comissao":
+      return (
+        <div className="flex items-center justify-between rounded-xl bg-[#14110B] px-3 py-3 text-[#FAF7F0]">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-[#F2B705]">Seja um afiliado</div>
+            <div className="text-sm font-black">FREELANDOO!</div>
+          </div>
+          <span className="rounded-full bg-[#F2B705] px-2.5 py-1 text-[11px] font-black text-[#1A1505]">até 70%</span>
+        </div>
+      )
+    case "video":
+      return (
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#241f18] to-[#0EA5E9]/30">
+          <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90">
+            <Play className="h-5 w-5 translate-x-0.5 fill-[#14110B] text-[#14110B]" />
+          </span>
+          <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">0:45</span>
+        </div>
+      )
+    case "stories":
+      return (
+        <div className="flex gap-2">
+          {["#F2B705", "#EC4899", "#10B981"].map((c, i) => (
+            <div key={i} className="aspect-[9/16] flex-1 rounded-lg p-[2px]" style={{ background: `linear-gradient(135deg, ${c}, #E0A500)` }}>
+              <div className="h-full w-full rounded-md" style={{ background: "linear-gradient(160deg,#241f18,#15120e)" }} />
+            </div>
+          ))}
+        </div>
+      )
+    case "avatars":
+      return (
+        <div className="flex items-center gap-3 rounded-xl bg-[#FAF7F0] px-3 py-3">
+          <AvatarStack count={4} className="[&>*]:!border-[#FAF7F0]" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#14110B] text-[#FAF7F0]"><Plus className="h-4 w-4" /></span>
+          <span className="text-xs font-semibold text-[#6B6457]">+999 criadores</span>
+        </div>
+      )
+    case "search":
+      return (
+        <div className="rounded-xl bg-[#FAF7F0] p-3">
+          <div className="space-y-1.5">
+            {["Marketing", "Saúde, fitness", "Cripto, investimentos"].map((t) => (
+              <div key={t} className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#14110B]">
+                <Search className="h-3 w-3 text-[#9a8f7a]" /> {t}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-[11px] text-[#9a8f7a]">+999 resultados</span>
+            <AvatarStack count={3} className="[&>*]:!border-[#FAF7F0] [&>*]:!h-6 [&>*]:!w-6" />
+          </div>
+        </div>
+      )
+    case "metrics":
+    default:
+      return (
+        <div className="flex items-center gap-3 rounded-xl bg-[#FAF7F0] px-3 py-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2B705]/15 text-[#E0A500]">
+            <Icon name={item.icon ?? "star"} className="h-5 w-5" />
+          </span>
+          <Star className="h-4 w-4 text-[#F2B705]" />
+          <span className="text-xs font-semibold text-[#6B6457]">Pronto para usar</span>
+        </div>
+      )
+  }
+}
+
+export function FeatureBento() {
+  return (
+    <Section id="recursos">
+      <div className="relative mb-12 max-w-2xl">
+        <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">
+          Tudo para vender, ensinar, <YellowHighlight>aprender e ganhar.</YellowHighlight>
+        </h2>
+        <DoodleArrow dir="left" className="absolute -right-4 top-2 hidden h-10 w-20 text-[#F2B705] lg:block" />
+      </div>
+
+      <div data-stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+        {BENTO.map((item) => {
+          const isPhoto = item.kind === "photo"
+          return (
+            <article
+              key={item.n}
+              data-card
+              className={`flex flex-col rounded-2xl fl-card p-5 transition-transform duration-300 hover:-translate-y-1 ${SPAN[item.span] ?? "lg:col-span-4"}`}
+            >
+              {isPhoto && <div className="mb-4"><BentoVisual item={item} /></div>}
+              <div className="flex items-start gap-3">
+                <span className="fl-display shrink-0 text-3xl text-[#F2B705]">{String(item.n).padStart(2, "0")}</span>
+                <div>
+                  <h3 className="text-base font-black uppercase tracking-wide text-[#14110B]">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[#6B6457]">{item.desc}</p>
+                </div>
+              </div>
+              {!isPhoto && <div className="mt-4"><BentoVisual item={item} /></div>}
+              {item.cta && <CardButton href={item.href} className="mt-4 self-start">{item.cta}</CardButton>}
+            </article>
+          )
+        })}
+      </div>
+    </Section>
+  )
+}
