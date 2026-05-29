@@ -23,9 +23,6 @@ import {
 } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { CoursesSection, type ProfileOption } from "./courses-section"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -34,7 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
   BEES_VIDEO_ASPECT_RATIO_MAX,
@@ -537,14 +533,14 @@ export function UserPortfolio({
   const tabBtn = (active: boolean) =>
     `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
       active
-        ? "border-primary bg-primary/[0.08] text-primary"
-        : "border-transparent text-muted-foreground hover:bg-white/[0.03] hover:text-foreground"
+        ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+        : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
     }`
 
   return (
     <section className="-mt-px mb-4">
       {/* Tabs grudadas no headcard (sem mb pra colar visualmente) */}
-      <div className="flex items-stretch justify-between border-b border-white/[0.07] bg-zinc-950/40">
+      <div className="flex items-stretch justify-between border-b border-[#F5F1E8]/12 bg-[#1d1810]/50">
         <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <HoverHint id="account-tab-feed" side="bottom">
             <button
@@ -625,30 +621,30 @@ export function UserPortfolio({
       ) : (
         <>
       {listError && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#f87171]/40 bg-[#b91c1c]/15 px-3 py-2 text-xs text-[#f87171]">
           <AlertCircle className="h-4 w-4" />
           {listError}
         </div>
       )}
 
       {portfolioError && (
-        <p className="text-sm text-destructive mb-4 text-center">{portfolioError}</p>
+        <p className="mb-4 text-center text-sm text-[#f87171]">{portfolioError}</p>
       )}
 
       {loading && items.length === 0 ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#9A938A]">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando portfólio…
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-xl">
-          <div className="h-16 w-16 rounded-full border-2 flex items-center justify-center mb-4">
-            <ImageIcon className="h-8 w-8 opacity-50" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#F5F1E8]/15 py-20 text-[#9A938A]">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#F5F1E8]/20">
+            <ImageIcon className="h-8 w-8 opacity-60" />
           </div>
           <p className="text-sm font-medium">{emptyLabel}</p>
-          <Button variant="link" onClick={handleAddItem} className="mt-2 text-primary">
+          <button type="button" onClick={handleAddItem} className="mt-2 text-sm font-bold text-[#F2B705] hover:underline">
             Adicionar o primeiro item
-          </Button>
+          </button>
         </div>
       ) : (
         <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
@@ -660,7 +656,7 @@ export function UserPortfolio({
               <div key={item.id_portfolio_item} className="group relative flex flex-col">
                 {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                 {firstMedia ? (
-                  <div className={`relative ${aspectClass} bg-muted overflow-hidden`}>
+                  <div className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden`}>
                     {firstMedia.media_type === "video" ? (
                       <video
                         src={firstMedia.media_url}
@@ -737,12 +733,12 @@ export function UserPortfolio({
                   </div>
                 ) : (
                   <div
-                    className={`relative ${aspectClass} bg-muted flex items-center justify-center`}
+                    className={`relative ${aspectClass} bg-[#1d1810] flex items-center justify-center`}
                   >
-                    <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
-                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <ImageIcon className="h-8 w-8 text-[#F5F1E8]/25" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <label
-                        className="flex items-center justify-center h-10 w-10 bg-background border shadow-sm hover:bg-accent text-foreground rounded-full cursor-pointer transition-colors"
+                        className="flex items-center justify-center h-10 w-10 bg-[#F5F1E8]/15 border border-[#F5F1E8]/20 shadow-sm hover:bg-[#F5F1E8]/25 text-[#F5F1E8] rounded-full cursor-pointer transition-colors"
                         title="Adicionar mídia"
                       >
                         <input
@@ -767,7 +763,7 @@ export function UserPortfolio({
                       <button
                         type="button"
                         onClick={() => handleDeleteItem(item.id_portfolio_item)}
-                        className="flex items-center justify-center h-10 w-10 bg-background border shadow-sm hover:bg-destructive hover:text-destructive-foreground text-foreground rounded-full transition-colors"
+                        className="flex items-center justify-center h-10 w-10 bg-[#F5F1E8]/15 border border-[#F5F1E8]/20 shadow-sm hover:bg-[#b91c1c] hover:text-white text-[#F5F1E8] rounded-full transition-colors"
                         title="Remover item"
                       >
                         <Trash2 className="h-5 w-5" />
@@ -779,13 +775,13 @@ export function UserPortfolio({
                 {/* Content below image */}
                 <div className="pt-3 px-2 md:px-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-sm line-clamp-1">
+                    <h3 className="line-clamp-1 text-sm font-semibold text-[#F5F1E8]">
                       {item.title || "Sem título"}
                     </h3>
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={`flex items-center gap-1 text-xs ${
-                          item.liked_by_me ? "text-yellow-400" : "text-muted-foreground"
+                          item.liked_by_me ? "text-[#F2B705]" : "text-[#9A938A]"
                         }`}
                         title={`${item.likes_count ?? 0} curtidas`}
                       >
@@ -797,7 +793,7 @@ export function UserPortfolio({
                     </div>
                   </div>
                   {item.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <p className="mt-1 line-clamp-2 text-xs text-[#9A938A]">
                       {item.description}
                     </p>
                   )}
@@ -807,7 +803,7 @@ export function UserPortfolio({
                       {activeMedias.slice(1).map((media) => (
                         <div
                           key={media.id_portfolio_media}
-                          className="relative group/thumb shrink-0 w-10 h-10 rounded overflow-hidden border border-border"
+                          className="relative group/thumb shrink-0 w-10 h-10 rounded overflow-hidden border border-[#F5F1E8]/15"
                         >
                           {media.media_type === "video" ? (
                             <video
@@ -859,28 +855,22 @@ export function UserPortfolio({
           }
         }}
       >
-        <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
+        <DialogContent className="fl-root sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
           <div className="relative overflow-y-auto max-h-[92vh] [scrollbar-width:thin]">
-            <DialogHeader className="px-6 pt-6 pb-3 border-b border-white/[0.06]">
+            <DialogHeader className="px-6 pt-6 pb-3 border-b-2 border-[#0B0B0D]/15">
               <div className="flex items-center gap-3">
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                    portfolioTab === "bees"
-                      ? "bg-gradient-to-br from-amber-400/30 to-orange-500/20 text-amber-300"
-                      : "bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300"
-                  }`}
-                >
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]">
                   <Sparkles className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <DialogTitle className="text-base text-white">
+                  <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
                     {editingItemId
                       ? "Editar item"
                       : portfolioTab === "bees"
                         ? "Novo Bees"
                         : "Novo post"}
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-white/50">
+                  <DialogDescription className="text-xs text-[#5b554b]">
                     {editingItemId
                       ? "Atualize as informações."
                       : portfolioTab === "bees"
@@ -896,10 +886,10 @@ export function UserPortfolio({
               {!editingItemId && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[11px] uppercase tracking-wider text-white/50">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
                       {portfolioTab === "bees" ? "Vídeo" : "Imagem"}
-                    </Label>
-                    <span className="text-[10px] uppercase tracking-wider text-white/30">
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider text-[#8a8275]">
                       {portfolioTab === "bees" ? "9:16 · até 100MB" : "4:5 · até 3MB"}
                     </span>
                   </div>
@@ -964,9 +954,9 @@ export function UserPortfolio({
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ type: "spring", stiffness: 220, damping: 26 }}
-                        className={`group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.02] ${
+                        className={`group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.03] ${
                           portfolioTab === "bees" ? "aspect-[9/16] max-w-[260px]" : "aspect-[4/5]"
-                        } max-h-[460px] transition-all hover:border-yellow-400/40 hover:bg-yellow-400/[0.04]`}
+                        } max-h-[460px] transition-all hover:border-[#E0A500] hover:bg-[#F2B705]/[0.08]`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handlePendingFileDrop}
                       >
@@ -989,24 +979,24 @@ export function UserPortfolio({
                               ? { repeat: Infinity, duration: 1, ease: "linear" }
                               : { repeat: Infinity, duration: 2.4, ease: "easeInOut" }
                           }
-                          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10"
+                          className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#0B0B0D] bg-[#F2B705]/20"
                         >
                           {processingMedia ? (
-                            <Loader2 className="h-5 w-5 text-yellow-300" />
+                            <Loader2 className="h-5 w-5 text-[#8a6d00]" />
                           ) : portfolioTab === "bees" ? (
-                            <Upload className="h-5 w-5 text-amber-300" />
+                            <Upload className="h-5 w-5 text-[#8a6d00]" />
                           ) : (
-                            <ImageIcon className="h-5 w-5 text-yellow-300" />
+                            <ImageIcon className="h-5 w-5 text-[#8a6d00]" />
                           )}
                         </motion.div>
-                        <span className="px-6 text-center text-sm font-medium text-white/85">
+                        <span className="px-6 text-center text-sm font-bold text-[#0B0B0D]">
                           {processingMedia
                             ? "Otimizando..."
                             : portfolioTab === "bees"
                               ? "Toque ou arraste seu vídeo 9:16"
                               : "Toque ou arraste sua imagem"}
                         </span>
-                        <span className="mt-1 px-6 text-center text-[11px] text-white/40">
+                        <span className="mt-1 px-6 text-center text-[11px] text-[#5b554b]">
                           {portfolioTab === "bees"
                             ? "MP4 ou WebM, vertical"
                             : "JPG, PNG ou WebP — recortamos pra 4:5"}
@@ -1020,41 +1010,41 @@ export function UserPortfolio({
               {/* Título */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="up-title" className="text-[11px] uppercase tracking-wider text-white/50">
+                  <label htmlFor="up-title" className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
                     Título
-                  </Label>
-                  <span className="text-[10px] tabular-nums text-white/30">
+                  </label>
+                  <span className="text-[10px] tabular-nums text-[#8a8275]">
                     {form.title.length}/120
                   </span>
                 </div>
-                <Input
+                <input
                   id="up-title"
                   placeholder="Trabalho que fiz ontem..."
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   maxLength={120}
-                  className="h-11 rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
+                  className="fl-input"
                 />
               </div>
 
               {/* Descrição */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="up-desc" className="text-[11px] uppercase tracking-wider text-white/50">
+                  <label htmlFor="up-desc" className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
                     Descrição
-                  </Label>
-                  <span className="text-[10px] tabular-nums text-white/30">
+                  </label>
+                  <span className="text-[10px] tabular-nums text-[#8a8275]">
                     {form.description.length}/500
                   </span>
                 </div>
-                <Textarea
+                <textarea
                   id="up-desc"
                   placeholder="Conte o contexto: cliente, processo, resultado..."
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   maxLength={500}
                   rows={3}
-                  className="rounded-xl border-white/10 bg-white/[0.03] text-sm text-white placeholder:text-white/30 resize-none focus-visible:ring-yellow-400/40"
+                  className="fl-input resize-none"
                 />
               </div>
 
@@ -1065,7 +1055,7 @@ export function UserPortfolio({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ type: "spring", stiffness: 200, damping: 24 }}
-                    className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-xs text-red-200"
+                    className="flex items-start gap-2 rounded-xl border-2 border-[#b91c1c]/30 bg-[#b91c1c]/[0.08] px-3 py-2 text-xs text-[#b91c1c]"
                   >
                     <AlertCircle className="h-4 w-4 shrink-0 mt-px" />
                     <span>{portfolioError}</span>
@@ -1074,19 +1064,20 @@ export function UserPortfolio({
               </AnimatePresence>
             </div>
 
-            <DialogFooter className="px-6 py-4 border-t border-white/[0.06] bg-black/40 backdrop-blur-sm">
-              <Button
-                variant="outline"
+            <DialogFooter className="px-6 py-4 border-t-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.02]">
+              <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
                 disabled={isAddingItem}
-                className="h-10 rounded-xl border-white/10 bg-transparent text-white/70 hover:bg-white/[0.04] hover:text-white"
+                className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleSubmitItem}
                 disabled={isAddingItem}
-                className="h-10 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-5 font-medium text-black hover:from-yellow-300 hover:to-amber-400 shadow-[0_8px_24px_-8px_rgba(250,204,21,0.5)]"
+                className="fl-btn-gold inline-flex items-center rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50"
               >
                 {isAddingItem ? (
                   <>
@@ -1101,7 +1092,7 @@ export function UserPortfolio({
                     Publicar
                   </>
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </div>
         </DialogContent>
@@ -1192,8 +1183,8 @@ function SavedSection() {
           onClick={() => setSavedKind("feed")}
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
             savedKind === "feed"
-              ? "bg-primary/15 text-primary"
-              : "text-white/55 hover:text-white"
+              ? "bg-[#F2B705]/15 text-[#F2B705]"
+              : "text-[#9A938A] hover:text-[#F5F1E8]"
           }`}
         >
           <ImageIcon className="h-3.5 w-3.5" />
@@ -1204,8 +1195,8 @@ function SavedSection() {
           onClick={() => setSavedKind("bees")}
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
             savedKind === "bees"
-              ? "bg-primary/15 text-primary"
-              : "text-white/55 hover:text-white"
+              ? "bg-[#F2B705]/15 text-[#F2B705]"
+              : "text-[#9A938A] hover:text-[#F5F1E8]"
           }`}
         >
           <Hexagon className="h-3.5 w-3.5" />
@@ -1214,19 +1205,19 @@ function SavedSection() {
       </div>
 
       {error && (
-        <p className="mb-3 px-3 text-sm text-red-300">{error}</p>
+        <p className="mb-3 px-3 text-sm text-[#f87171]">{error}</p>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#9A938A]">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando salvos…
         </div>
       ) : items.length === 0 ? (
-        <div className="mx-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-white/10 py-16 text-center text-muted-foreground">
-          <Bookmark className="mb-3 h-7 w-7 opacity-50" />
-          <p className="text-sm font-medium">Você ainda não salvou nada por aqui</p>
-          <p className="mt-1 text-xs text-white/45">
+        <div className="mx-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-[#F5F1E8]/12 py-16 text-center text-[#9A938A]">
+          <Bookmark className="mb-3 h-7 w-7 opacity-60" />
+          <p className="text-sm font-medium text-[#F5F1E8]">Você ainda não salvou nada por aqui</p>
+          <p className="mt-1 text-xs text-[#9A938A]">
             Toque no marcador em qualquer post pra salvar pra depois.
           </p>
         </div>
@@ -1238,7 +1229,7 @@ function SavedSection() {
             return (
               <div
                 key={it.id_bookmark}
-                className={`group relative overflow-hidden bg-zinc-900 ${aspectClass}`}
+                className={`group relative overflow-hidden bg-[#1d1810] ${aspectClass}`}
               >
                 <Link
                   href={`/p/${it.post_id}`}

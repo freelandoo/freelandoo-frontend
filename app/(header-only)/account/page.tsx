@@ -24,10 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Mail, MapPin, Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Move, Phone, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { UserPortfolio } from "./_components/UserPortfolio"
@@ -1368,7 +1365,7 @@ export default function PerfilPage() {
   const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
 
   return (
-    <div className="bg-page-shell-dark min-h-[100dvh]">
+    <div className="fl-root fl-paper-texture min-h-[100dvh]">
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={perfil.nome || perfil.username || ""}
@@ -1436,33 +1433,33 @@ export default function PerfilPage() {
       >
         <HoverHint id="account-counter-profiles" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-white/55 uppercase tracking-wide">Perfis</span>
-            <span className="font-semibold tabular-nums text-white">{totalProfiles}</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">Perfis</span>
+            <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalProfiles}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-visible" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-white/55 uppercase tracking-wide">Visíveis</span>
-            <span className="font-semibold tabular-nums text-white">{visibleProfiles}</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">Visíveis</span>
+            <span className="font-semibold tabular-nums text-[#F5F1E8]">{visibleProfiles}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-clans" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-white/55 uppercase tracking-wide">Clans</span>
-            <span className="font-semibold tabular-nums text-white">{totalClans}</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">Clans</span>
+            <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalClans}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-following" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-white/55 uppercase tracking-wide">Acompanhando</span>
-            <span className="font-semibold tabular-nums text-white">{followedProfilesCount}</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">Acompanhando</span>
+            <span className="font-semibold tabular-nums text-[#F5F1E8]">{followedProfilesCount}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-unread" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-white/55 uppercase tracking-wide">Não lidas</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">Não lidas</span>
             <span
-              className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-amber-300" : "text-white"}`}
+              className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-[#F2B705]" : "text-[#F5F1E8]"}`}
             >
               {unreadMessages}
             </span>
@@ -1473,9 +1470,9 @@ export default function PerfilPage() {
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-950/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+            className="overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
           >
-            <div className="relative h-40 bg-zinc-900 md:h-52">
+            <div className="relative h-40 bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -1484,16 +1481,16 @@ export default function PerfilPage() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,196,9,0.20),transparent_32%),linear-gradient(135deg,rgba(39,39,42,0.95),rgba(9,9,11,0.98))]" />
+                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#F1EDE2] via-[#F1EDE2]/25 to-transparent" />
               <button
                 type="button"
                 onClick={() => setDropsideOpen(true)}
                 aria-label="Abrir menu da conta"
                 aria-haspopup="dialog"
                 aria-expanded={dropsideOpen}
-                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-zinc-950/70 text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_30px_-18px_rgba(0,0,0,0.9)] backdrop-blur transition hover:border-primary/45 hover:bg-primary/[0.12] hover:text-primary active:scale-[0.97]"
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
                 title="Abrir configurações"
               >
                 <Settings className="h-4 w-4" />
@@ -1502,7 +1499,7 @@ export default function PerfilPage() {
 
             <div className="px-5 pb-6 md:px-7">
               <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <div className="relative flex aspect-[4/5] w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-zinc-950 bg-primary/10 ring-1 ring-white/10 md:w-28">
+                <div className="relative flex aspect-[4/5] w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 ring-2 ring-[#0B0B0D] md:w-28">
                   <Avatar className="h-full w-full rounded-none">
                     {perfil.avatar && (
                       <AvatarImage
@@ -1511,7 +1508,7 @@ export default function PerfilPage() {
                         className="rounded-none object-cover"
                       />
                     )}
-                    <AvatarFallback className="rounded-none bg-primary/10 text-2xl font-semibold text-primary">
+                    <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
                       {getInitials(perfil.nome)}
                     </AvatarFallback>
                   </Avatar>
@@ -1519,7 +1516,7 @@ export default function PerfilPage() {
                     type="button"
                     onClick={() => setIsUploadModalOpen(true)}
                     aria-label="Trocar foto"
-                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-zinc-950 text-white/80 transition hover:border-primary/40 hover:text-primary"
+                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#F2B705]"
                   >
                     <Camera className="h-3.5 w-3.5" />
                   </button>
@@ -1528,13 +1525,13 @@ export default function PerfilPage() {
                 <div className="min-w-0 flex-1 pb-1">
                   {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
                   {perfil.username && (
-                    <p className="text-sm text-white/55">@{perfil.username}</p>
+                    <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
                   )}
                 </div>
               </div>
 
               {perfil.bio && (
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/65">
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#2b2b2e]">
                   {perfil.bio}
                 </p>
               )}
@@ -1548,7 +1545,7 @@ export default function PerfilPage() {
                 {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
                   <span
                     key={status.id_status}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70"
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e]"
                   >
                     {status.desc_status.replace(/_/g, " ")}
                   </span>
@@ -1567,7 +1564,7 @@ export default function PerfilPage() {
                           : "/account/parental"
                       )
                     }
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/[0.08] px-2.5 py-1 text-[11px] font-medium text-amber-300 transition hover:bg-amber-400/15"
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
                   >
                     <ShieldCheck className="h-3 w-3" />
                     {perfil.is_minor === true ? "Supervisionada" : "Parental"}
@@ -1578,7 +1575,7 @@ export default function PerfilPage() {
                     <button
                       onClick={() => handleCopyCoupon(perfil.coupon_code!)}
                       data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.08] px-2.5 py-1 font-mono text-[11px] font-semibold tracking-widest text-primary transition hover:bg-primary/15"
+                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-[#E0A500]/60 bg-[#F2B705]/12 px-2.5 py-1 font-mono text-[11px] font-bold tracking-widest text-[#8a6d00] transition hover:bg-[#F2B705]/25"
                     >
                       {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       {perfil.coupon_code}
@@ -1591,7 +1588,7 @@ export default function PerfilPage() {
                       onClick={handleGenerateCoupon}
                       disabled={isGeneratingCoupon}
                       data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/[0.08] px-2.5 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
                     >
                       {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
                     </button>
@@ -1599,27 +1596,27 @@ export default function PerfilPage() {
                 )}
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-white/70">
+              <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]">
                 <button
                   type="button"
                   onClick={() => router.push("/mensagens?tab=os")}
                   aria-label="Abrir mensagens"
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-white/80 transition hover:border-primary/40 hover:text-primary"
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
                   title="Mensagens"
                 >
                   <MessageCircle className="h-4 w-4" />
                   {unreadMessages > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-zinc-950" />
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
                   )}
                 </button>
                 <button
                   type="button"
                   onClick={() => setFollowingModalOpen(true)}
-                  className="tabular-nums rounded-md px-1 transition hover:bg-white/[0.06]"
+                  className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
                   title="Ver quem você acompanha"
                 >
-                  <span className="font-semibold text-white">{followedProfilesCount}</span>{" "}
-                  <span className="text-white/55">acompanhados</span>
+                  <span className="font-bold text-[#0B0B0D]">{followedProfilesCount}</span>{" "}
+                  <span className="text-[#5b554b]">acompanhados</span>
                 </button>
               </div>
             </div>
@@ -1650,7 +1647,7 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/account/profile/${profile.id_profile}`)}
-                          className={`relative block aspect-[4/5] w-full overflow-hidden bg-white/[0.02] transition cursor-pointer ${
+                          className={`relative block aspect-[4/5] w-full overflow-hidden border border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] transition cursor-pointer ${
                             hasNotification
                               ? "animate-pulse ring-2 ring-red-500"
                               : ""
@@ -1665,7 +1662,7 @@ export default function PerfilPage() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white/40">
+                            <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#F5F1E8]/40">
                               {getInitials(profile.display_name)}
                             </div>
                           )}
@@ -1770,7 +1767,7 @@ export default function PerfilPage() {
                           )}
                         </div>
 
-                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-white md:text-sm">
+                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-[#F5F1E8] md:text-sm">
                           <UserRound className="h-3 w-3 text-primary/80" />
                           <span className="truncate">{profile.display_name}</span>
                         </p>
@@ -1779,16 +1776,20 @@ export default function PerfilPage() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                    <User className="h-8 w-8 text-gray-400" />
+                <div className="rounded-2xl border-2 border-dashed border-[#F5F1E8]/15 bg-[#F5F1E8]/[0.02] py-12 text-center">
+                  <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F2B705]/15">
+                    <User className="h-8 w-8 text-[#F2B705]" />
                   </div>
-                  <p className="text-muted-foreground mb-2">Nenhum perfil criado</p>
-                  <p className="text-sm text-muted-foreground mb-4">Crie seu primeiro perfil para começar</p>
-                  <Button onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  <p className="fl-display text-xl text-[#F5F1E8]">Nenhum perfil criado</p>
+                  <p className="mt-1 mb-5 text-sm text-[#9A938A]">Crie seu primeiro perfil para começar</p>
+                  <button
+                    type="button"
+                    onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
+                    className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
+                  >
+                    <Plus className="h-4 w-4" />
                     Criar Perfil
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -1799,7 +1800,7 @@ export default function PerfilPage() {
                 <div className="flex justify-end">
                   <Link
                     href="/account/clans"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[13px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#F5F1E8]/25 px-4 py-2 text-[13px] font-bold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
                   >
                     Gerenciar clans
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -1818,7 +1819,7 @@ export default function PerfilPage() {
                         <button
                           type="button"
                           onClick={() => router.push(`/clans/${clan.id_profile}`)}
-                          className="relative block aspect-[4/5] w-full overflow-hidden bg-white/[0.02] transition"
+                          className="relative block aspect-[4/5] w-full overflow-hidden border border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] transition"
                           aria-label={`Abrir clan ${clan.display_name}`}
                         >
                           {imgSrc ? (
@@ -1830,10 +1831,10 @@ export default function PerfilPage() {
                             />
                           ) : (
                             <div
-                              className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white/60"
+                              className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#F5F1E8]/60"
                               style={{
                                 background:
-                                  "linear-gradient(135deg, rgba(242,196,9,0.18), rgba(217,70,239,0.12))",
+                                  "linear-gradient(135deg, rgba(242,183,5,0.22), rgba(20,16,9,0.6))",
                               }}
                             >
                               {getInitials(clan.display_name)}
@@ -1911,7 +1912,7 @@ export default function PerfilPage() {
                           )}
                         </div>
 
-                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-white md:text-sm">
+                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-[#F5F1E8] md:text-sm">
                           <Crown className="h-3 w-3 text-primary" />
                           <span className="truncate">{clan.display_name}</span>
                         </p>
@@ -1920,12 +1921,12 @@ export default function PerfilPage() {
                   })}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
-                  <Users className="mx-auto mb-2 h-8 w-8 text-white/40" />
-                  <p className="text-sm text-white/55">
+                <div className="rounded-2xl border-2 border-dashed border-[#F5F1E8]/15 bg-[#F5F1E8]/[0.02] p-8 text-center">
+                  <Users className="mx-auto mb-2 h-8 w-8 text-[#9A938A]" />
+                  <p className="text-sm text-[#9A938A]">
                     Você ainda não tem clans criados.
                   </p>
-                  <Link href="/account/clans" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+                  <Link href="/account/clans" className="mt-2 inline-block text-sm font-bold text-[#F2B705] hover:underline">
                     Criar ou entrar em um clan
                   </Link>
                 </div>
@@ -1948,125 +1949,114 @@ export default function PerfilPage() {
 
       {/* Modal de Novo Perfil */}
       <Dialog open={isNewProfileModalOpen} onOpenChange={(open) => { if (!open) setNewProfileError(null); setIsNewProfileModalOpen(open) }}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Criar novo perfil</DialogTitle>
-            <DialogDescription>
-              O perfil é criado como <strong>Aguardando ativação</strong>. Ele só
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Criar novo perfil</DialogTitle>
+            <DialogDescription className="text-[#5b554b]">
+              O perfil é criado como <strong className="text-[#0B0B0D]">Aguardando ativação</strong>. Ele só
               aparece nos classificados após você ativar esse perfil.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="np-display-name">Nome de exibição <span className="text-destructive">*</span></Label>
-              <Input
+            <div>
+              <label htmlFor="np-display-name" className="fl-label">Nome de exibição <span className="text-[#b91c1c]">*</span></label>
+              <input
                 id="np-display-name"
+                className="fl-input"
                 placeholder="Como você quer ser chamado..."
                 value={newProfileForm.display_name}
                 onChange={(e) => setNewProfileForm((prev) => ({ ...prev, display_name: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-machine">Enxame <span className="text-destructive">*</span></Label>
-              <Select
+            <div>
+              <label htmlFor="np-machine" className="fl-label">Enxame <span className="text-[#b91c1c]">*</span></label>
+              <select
+                id="np-machine"
+                className="fl-input"
                 value={newProfileForm.id_machine}
-                onValueChange={handleNewProfileMachineChange}
+                onChange={(e) => handleNewProfileMachineChange(e.target.value)}
                 disabled={loadingMachines}
               >
-                <SelectTrigger id="np-machine">
-                  <SelectValue placeholder={loadingMachines ? "Carregando..." : "Selecione um enxame"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {machines.map((m) => (
-                    <SelectItem key={m.id_machine} value={String(m.id_machine)}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>{loadingMachines ? "Carregando..." : "Selecione um enxame"}</option>
+                {machines.map((m) => (
+                  <option key={m.id_machine} value={String(m.id_machine)}>{m.name}</option>
+                ))}
+              </select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-profession">Profissão <span className="text-destructive">*</span></Label>
-              <Select
+            <div>
+              <label htmlFor="np-profession" className="fl-label">Profissão <span className="text-[#b91c1c]">*</span></label>
+              <select
+                id="np-profession"
+                className="fl-input"
                 value={newProfileForm.id_category}
-                onValueChange={(val) => setNewProfileForm((prev) => ({ ...prev, id_category: val }))}
+                onChange={(e) => setNewProfileForm((prev) => ({ ...prev, id_category: e.target.value }))}
                 disabled={!newProfileForm.id_machine || loadingProfessions}
               >
-                <SelectTrigger id="np-profession">
-                  <SelectValue placeholder={
-                    !newProfileForm.id_machine
-                      ? "Selecione um enxame primeiro"
-                      : loadingProfessions
-                        ? "Carregando..."
-                        : "Selecione uma profissão"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {professions.map((p) => (
-                    <SelectItem key={p.id_category} value={String(p.id_category)}>
-                      {p.desc_category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="" disabled>
+                  {!newProfileForm.id_machine
+                    ? "Selecione um enxame primeiro"
+                    : loadingProfessions
+                      ? "Carregando..."
+                      : "Selecione uma profissão"}
+                </option>
+                {professions.map((p) => (
+                  <option key={p.id_category} value={String(p.id_category)}>{p.desc_category}</option>
+                ))}
+              </select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-bio">Bio</Label>
+            <div>
+              <label htmlFor="np-bio" className="fl-label">Bio</label>
               <textarea
                 id="np-bio"
                 placeholder="Fale um pouco sobre você..."
                 value={newProfileForm.bio}
                 onChange={(e) => setNewProfileForm((prev) => ({ ...prev, bio: e.target.value }))}
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none overflow-y-auto max-h-36"
+                className="fl-input max-h-36 resize-none overflow-y-auto"
                 style={{ wordBreak: "break-all", overflowWrap: "break-word" }}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="np-estado">Estado</Label>
-                <Select
+              <div>
+                <label htmlFor="np-estado" className="fl-label">Estado</label>
+                <select
+                  id="np-estado"
+                  className="fl-input"
                   value={newProfileForm.estado}
-                  onValueChange={handleNewProfileEstadoChange}
+                  onChange={(e) => handleNewProfileEstadoChange(e.target.value)}
                 >
-                  <SelectTrigger id="np-estado">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estados.map((e) => (
-                      <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="" disabled>Selecione</option>
+                  {estados.map((e) => (
+                    <option key={e.uf} value={e.uf}>{e.nome}</option>
+                  ))}
+                </select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="np-municipio">Município</Label>
-                <Select
+              <div>
+                <label htmlFor="np-municipio" className="fl-label">Município</label>
+                <select
+                  id="np-municipio"
+                  className="fl-input"
                   value={newProfileForm.municipio}
-                  onValueChange={(val) => setNewProfileForm((prev) => ({ ...prev, municipio: val }))}
+                  onChange={(e) => setNewProfileForm((prev) => ({ ...prev, municipio: e.target.value }))}
                   disabled={!newProfileForm.estado || loadingNewProfileMunicipios}
                 >
-                  <SelectTrigger id="np-municipio">
-                    <SelectValue placeholder={loadingNewProfileMunicipios ? "Carregando..." : "Selecione"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {newProfileMunicipios.map((m) => (
-                      <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="" disabled>{loadingNewProfileMunicipios ? "Carregando..." : "Selecione"}</option>
+                  {newProfileMunicipios.map((m) => (
+                    <option key={m.id} value={m.nome}>{m.nome}</option>
+                  ))}
+                </select>
               </div>
             </div>
             {newProfileError && (
-              <p className="text-sm text-destructive">{newProfileError}</p>
+              <p className="text-sm font-medium text-[#b91c1c]">{newProfileError}</p>
             )}
-            <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" onClick={() => setIsNewProfileModalOpen(false)} disabled={isCreatingProfile}>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={() => setIsNewProfileModalOpen(false)} disabled={isCreatingProfile}>
                 Cancelar
-              </Button>
-              <Button onClick={handleCreateProfile} disabled={isCreatingProfile}>
+              </button>
+              <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleCreateProfile} disabled={isCreatingProfile}>
                 {isCreatingProfile ? "Criando..." : "Criar perfil"}
-              </Button>
+              </button>
             </div>
           </div>
         </DialogContent>
@@ -2080,80 +2070,83 @@ export default function PerfilPage() {
         }
         setIsModalOpen(open)
       }}>
-        <DialogContent>
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Editar Rede Social" : "Adicionar Rede Social"}</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{isEditing ? "Editar rede social" : "Adicionar rede social"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="platform">Plataforma</Label>
-              <Select value={novaRede.platform} onValueChange={(value) => setNovaRede({ ...novaRede, platform: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a plataforma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="tiktok">TikTok</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <label htmlFor="platform" className="fl-label">Plataforma</label>
+              <select
+                id="platform"
+                className="fl-input"
+                value={novaRede.platform}
+                onChange={(e) => setNovaRede({ ...novaRede, platform: e.target.value })}
+              >
+                <option value="" disabled>Selecione a plataforma</option>
+                <option value="instagram">Instagram</option>
+                <option value="youtube">YouTube</option>
+                <option value="tiktok">TikTok</option>
+              </select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="account">Usuário/Handle</Label>
-              <Input
+            <div>
+              <label htmlFor="account" className="fl-label">Usuário/Handle</label>
+              <input
                 id="account"
+                className="fl-input"
                 placeholder="@usuario"
                 value={novaRede.account}
                 onChange={(e) => setNovaRede({ ...novaRede, account: e.target.value })}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="followers">Seguidores</Label>
-              <Select value={novaRede.followers_range} onValueChange={(value) => setNovaRede({ ...novaRede, followers_range: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a faixa de seguidores" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0-10k">0 - 10k</SelectItem>
-                  <SelectItem value="10k-50k">10k - 50k</SelectItem>
-                  <SelectItem value="50k-200k">50k - 200k</SelectItem>
-                  <SelectItem value="200k-1M">200k - 1M</SelectItem>
-                  <SelectItem value="1M+">1M+</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <label htmlFor="followers" className="fl-label">Seguidores</label>
+              <select
+                id="followers"
+                className="fl-input"
+                value={novaRede.followers_range}
+                onChange={(e) => setNovaRede({ ...novaRede, followers_range: e.target.value })}
+              >
+                <option value="" disabled>Selecione a faixa de seguidores</option>
+                <option value="0-10k">0 - 10k</option>
+                <option value="10k-50k">10k - 50k</option>
+                <option value="50k-200k">50k - 200k</option>
+                <option value="200k-1M">200k - 1M</option>
+                <option value="1M+">1M+</option>
+              </select>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
+            <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold" onClick={() => {
               setNovaRede({ id: "", platform: "", account: "", followers_range: "" })
               setIsEditing(false)
               setIsModalOpen(false)
             }}>
               Cancelar
-            </Button>
-            <Button onClick={handleAdicionarRede}>
+            </button>
+            <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold" onClick={handleAdicionarRede}>
               {isEditing ? "Atualizar" : "Adicionar"}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Modal de Upload de Avatar */}
       <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Alterar Avatar</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Alterar avatar</DialogTitle>
           </DialogHeader>
 
           {!fotoTemp ? (
             <div className="space-y-6 py-4">
               {/* Avatar Atual ou Iniciais */}
               <div className="flex flex-col items-center gap-4">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden shadow-lg">
+                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-2 border-[#0B0B0D] bg-[radial-gradient(circle_at_30%_25%,rgba(242,183,5,0.35),transparent_60%),#1d1810] shadow-[4px_4px_0_0_#0B0B0D]">
                   {perfil?.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -2162,15 +2155,15 @@ export default function PerfilPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-5xl font-bold text-white">{getInitials(perfil?.nome || "")}</span>
+                    <span className="text-5xl font-bold text-[#F5F1E8]">{getInitials(perfil?.nome || "")}</span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground text-center">Avatar Atual</p>
+                <p className="text-center text-sm text-[#5b554b]">Avatar atual</p>
               </div>
 
               {/* Input de Arquivo */}
               <div className="space-y-3">
-                <Label htmlFor="avatar-input" className="text-base">Selecionar Nova Imagem</Label>
+                <label htmlFor="avatar-input" className="fl-label">Selecionar nova imagem</label>
                 <input
                   id="avatar-input"
                   type="file"
@@ -2183,16 +2176,16 @@ export default function PerfilPage() {
                     }
                   }}
                 />
-                <Button
-                  variant="outline"
-                  className="w-full justify-center bg-transparent"
+                <button
+                  type="button"
+                  className="fl-btn-card w-full rounded-full px-4 py-2.5 text-sm font-bold"
                   onClick={() => {
                     const input = document.getElementById("avatar-input") as HTMLInputElement
                     input?.click()
                   }}
                 >
-                  Escolher Arquivo
-                </Button>
+                  Escolher arquivo
+                </button>
               </div>
             </div>
           ) : (
@@ -2200,7 +2193,7 @@ export default function PerfilPage() {
               {/* Preview Circular */}
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="w-48 h-48 rounded-full border-4 border-border overflow-hidden bg-muted cursor-move relative shadow-lg flex-shrink-0"
+                  className="relative h-48 w-48 flex-shrink-0 cursor-move overflow-hidden rounded-full border-4 border-[#0B0B0D] bg-[#1d1810] shadow-[4px_4px_0_0_#0B0B0D]"
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
@@ -2220,13 +2213,13 @@ export default function PerfilPage() {
                     }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground text-center">Arraste para posicionar</p>
+                <p className="text-center text-xs text-[#5b554b]">Arraste para posicionar</p>
               </div>
 
               {/* Zoom Slider */}
               <div className="space-y-3">
-                <div className="flex gap-4 items-center px-2">
-                  <ZoomOut className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex items-center gap-4 px-2">
+                  <ZoomOut className="h-4 w-4 flex-shrink-0 text-[#5b554b]" />
                   <Slider
                     value={[zoom]}
                     onValueChange={(value) => setZoom(value[0])}
@@ -2235,7 +2228,7 @@ export default function PerfilPage() {
                     step={0.1}
                     className="flex-1"
                   />
-                  <ZoomIn className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <ZoomIn className="h-4 w-4 flex-shrink-0 text-[#5b554b]" />
                 </div>
               </div>
             </div>
@@ -2243,18 +2236,18 @@ export default function PerfilPage() {
 
           <DialogFooter className="flex gap-2 sm:gap-3">
             {fotoTemp && (
-              <Button variant="outline" onClick={handleCancelUpload}>
+              <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold" onClick={handleCancelUpload}>
                 Voltar
-              </Button>
+              </button>
             )}
             {fotoTemp ? (
-              <Button onClick={handleConfirmUpload} disabled={isUploadingAvatar} className="flex-1 sm:flex-none">
-                {isUploadingAvatar ? "Salvando..." : "Salvar Avatar"}
-              </Button>
+              <button type="button" className="fl-btn-gold flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={handleConfirmUpload} disabled={isUploadingAvatar}>
+                {isUploadingAvatar ? "Salvando..." : "Salvar avatar"}
+              </button>
             ) : (
-              <Button variant="outline" onClick={() => setIsUploadModalOpen(false)} className="flex-1 sm:flex-none">
+              <button type="button" className="fl-btn-card flex-1 rounded-full px-4 py-2 text-sm font-bold sm:flex-none" onClick={() => setIsUploadModalOpen(false)}>
                 Cancelar
-              </Button>
+              </button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -2277,87 +2270,88 @@ export default function PerfilPage() {
 
       {/* Modal de Edição de Perfil */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Editar Perfil</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar perfil</DialogTitle>
+            <DialogDescription className="text-[#5b554b]">
               Atualize seus dados pessoais e veja o status da sua conta.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             {/* Seção: Conta & Verificação (migrado do headcard) */}
-            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 space-y-3">
+            <div className="space-y-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
                   Conta & Verificação
                 </div>
                 {emailVerified ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-emerald-700/30 bg-emerald-600/10 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
                     <BadgeCheck className="h-3 w-3" />
                     Email verificado
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-medium text-amber-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/40 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00]">
                     <AlertCircle className="h-3 w-3" />
                     Não verificado
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email" className="text-xs text-white/55">Email</Label>
-                  <Input
+                <div>
+                  <label htmlFor="edit-email" className="fl-label">Email</label>
+                  <input
                     id="edit-email"
                     type="email"
                     value={perfil.email || ""}
                     readOnly
                     disabled
-                    className="bg-white/[0.03] text-white/70"
+                    className="fl-input"
                   />
                 </div>
                 {!emailVerified && (
                   <Link
                     href="/verificar-email"
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-amber-400/30 bg-amber-400/10 px-3 text-[12px] font-medium text-amber-200 transition hover:bg-amber-400/15"
+                    className="fl-btn-gold inline-flex h-11 items-center justify-center rounded-xl px-4 text-[12px] font-bold"
                   >
                     Verificar agora
                   </Link>
                 )}
               </div>
-              <p className="text-[11px] text-white/40">
+              <p className="text-[11px] text-[#8a8275]">
                 O email é usado para login e não pode ser alterado por aqui.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-nome">Nome</Label>
-                <Input
+              <div>
+                <label htmlFor="edit-nome" className="fl-label">Nome</label>
+                <input
                   id="edit-nome"
+                  className="fl-input"
                   placeholder="Seu nome completo"
                   value={editForm.nome}
                   onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-username">Nome de Usuário</Label>
-                <Input
+              <div>
+                <label htmlFor="edit-username" className="fl-label">Nome de usuário</label>
+                <input
                   id="edit-username"
                   placeholder="ex: joao.silva"
                   value={editForm.username}
                   onChange={(e) => handleEditUsernameChange(e.target.value)}
                   maxLength={30}
-                  className={editUsernameStatus === "taken" || editUsernameStatus === "invalid" ? "border-red-500 focus-visible:ring-red-500" : editUsernameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" : ""}
+                  className={`fl-input ${editUsernameStatus === "taken" || editUsernameStatus === "invalid" ? "fl-input-error" : editUsernameStatus === "available" ? "fl-input-ok" : ""}`}
                 />
                 {editUsernameMsg && (
-                  <p className={`text-xs mt-1 font-medium ${
+                  <p className={`mt-1 text-xs font-bold ${
                     editUsernameStatus === "taken" || editUsernameStatus === "invalid"
-                      ? "text-red-500"
+                      ? "text-[#b91c1c]"
                       : editUsernameStatus === "available"
-                      ? "text-green-500"
-                      : "text-muted-foreground"
+                      ? "text-emerald-700"
+                      : "text-[#5b554b]"
                   }`}>
                     {editUsernameStatus === "checking" ? "Verificando..." : editUsernameMsg}
                   </p>
@@ -2366,82 +2360,82 @@ export default function PerfilPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                <Input
+              <div>
+                <label htmlFor="data_nascimento" className="fl-label">Data de nascimento</label>
+                <input
                   id="data_nascimento"
                   type="date"
+                  className="fl-input"
                   value={editForm.idade}
                   onChange={(e) => setEditForm({ ...editForm, idade: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="sexo">Sexo</Label>
-                <Select value={editForm.sexo} onValueChange={(value) => setEditForm({ ...editForm, sexo: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="M">Masculino</SelectItem>
-                    <SelectItem value="F">Feminino</SelectItem>
-                    <SelectItem value="O">Outros</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div>
+                <label htmlFor="sexo" className="fl-label">Sexo</label>
+                <select
+                  id="sexo"
+                  className="fl-input"
+                  value={editForm.sexo}
+                  onChange={(e) => setEditForm({ ...editForm, sexo: e.target.value })}
+                >
+                  <option value="" disabled>Selecione</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Feminino</option>
+                  <option value="O">Outros</option>
+                </select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
+            <div>
+              <label htmlFor="telefone" className="fl-label">Telefone</label>
+              <input
                 id="telefone"
+                className="fl-input"
                 placeholder="Seu telefone"
                 value={editForm.telefone}
                 onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
               />
             </div>
 
-
-
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="estado">Estado</Label>
-                <Select value={editForm.estado} onValueChange={handleEstadoChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estados.map((estado) => (
-                      <SelectItem key={estado.uf} value={estado.uf}>
-                        {estado.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <label htmlFor="estado" className="fl-label">Estado</label>
+                <select
+                  id="estado"
+                  className="fl-input"
+                  value={editForm.estado}
+                  onChange={(e) => handleEstadoChange(e.target.value)}
+                >
+                  <option value="" disabled>Selecione</option>
+                  {estados.map((estado) => (
+                    <option key={estado.uf} value={estado.uf}>{estado.nome}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="municipio">Município</Label>
-                <Select value={editForm.municipio} onValueChange={(value) => setEditForm({ ...editForm, municipio: value })} disabled={loadingMunicipios}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {municipios.map((municipio) => (
-                      <SelectItem key={municipio.id} value={municipio.nome}>
-                        {municipio.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div>
+                <label htmlFor="municipio" className="fl-label">Município</label>
+                <select
+                  id="municipio"
+                  className="fl-input"
+                  value={editForm.municipio}
+                  onChange={(e) => setEditForm({ ...editForm, municipio: e.target.value })}
+                  disabled={loadingMunicipios}
+                >
+                  <option value="" disabled>Selecione</option>
+                  {municipios.map((municipio) => (
+                    <option key={municipio.id} value={municipio.nome}>{municipio.nome}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
+            <div>
+              <label htmlFor="bio" className="fl-label">Bio</label>
               <textarea
                 id="bio"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="fl-input min-h-[80px] resize-none"
                 placeholder="Fale sobre você..."
                 value={editForm.bio}
                 onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
@@ -2450,34 +2444,34 @@ export default function PerfilPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+            <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold" onClick={() => setIsEditModalOpen(false)}>
               Cancelar
-            </Button>
-            <Button onClick={handleSaveProfile} disabled={isSaving}>
+            </button>
+            <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleSaveProfile} disabled={isSaving}>
               {isSaving ? "Salvando..." : "Salvar"}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Modal de Upload de Portfólio */}
       <Dialog open={isPortfolioModalOpen} onOpenChange={setIsPortfolioModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Adicionar Mídia ao Portfólio</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Adicionar mídia ao portfólio</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {!uploadingMedia ? (
-              <div className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => document.getElementById("media-input")?.click()}>
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="font-medium">Clique para adicionar ou arraste uma imagem/vídeo</p>
-                <p className="text-sm text-muted-foreground">Máximo 100MB</p>
-                <Input id="media-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onChange={handleMediaSelect} className="hidden" />
+              <div className="cursor-pointer rounded-xl border-2 border-dashed border-[#0B0B0D]/30 p-8 text-center transition-colors hover:border-[#E0A500] hover:bg-[#F2B705]/[0.06]" onClick={() => document.getElementById("media-input")?.click()}>
+                <Upload className="mx-auto mb-2 h-8 w-8 text-[#8a6d00]" />
+                <p className="font-bold text-[#0B0B0D]">Clique para adicionar ou arraste uma imagem/vídeo</p>
+                <p className="text-sm text-[#5b554b]">Máximo 100MB</p>
+                <input id="media-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onChange={handleMediaSelect} className="hidden" />
               </div>
             ) : (
               <>
-                <div className={`relative bg-muted rounded-lg overflow-hidden ${selectedMediaType === "image" ? "aspect-[4/5]" : "aspect-video"}`}>
+                <div className={`relative overflow-hidden rounded-xl border-2 border-[#0B0B0D]/15 bg-[#1d1810] ${selectedMediaType === "image" ? "aspect-[4/5]" : "aspect-video"}`}>
                   {selectedMediaType === "image" ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2497,31 +2491,33 @@ export default function PerfilPage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="media-title">Título</Label>
-                  <Input
+                <div>
+                  <label htmlFor="media-title" className="fl-label">Título</label>
+                  <input
                     id="media-title"
+                    className="fl-input"
                     placeholder="Título do projeto"
                     value={portfolioForm.title}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, title: e.target.value })}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="media-description">Descrição</Label>
+                <div>
+                  <label htmlFor="media-description" className="fl-label">Descrição</label>
                   <textarea
                     id="media-description"
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="fl-input min-h-[80px] resize-none"
                     placeholder="Descreva seu projeto..."
                     value={portfolioForm.description}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="media-link">Link externo (opcional)</Label>
-                  <Input
+                <div>
+                  <label htmlFor="media-link" className="fl-label">Link externo (opcional)</label>
+                  <input
                     id="media-link"
+                    className="fl-input"
                     placeholder="https://exemplo.com"
                     value={portfolioForm.external_link}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, external_link: e.target.value })}
@@ -2532,8 +2528,9 @@ export default function PerfilPage() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
+            <button
+              type="button"
+              className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
               onClick={() => {
                 setUploadingMedia(null)
                 setPortfolioForm({ title: "", description: "", external_link: "" })
@@ -2542,13 +2539,13 @@ export default function PerfilPage() {
               disabled={mediaUploadProgress !== "idle"}
             >
               Cancelar
-            </Button>
+            </button>
             {!uploadingMedia ? (
-              <Button disabled>Próximo</Button>
+              <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold opacity-50" disabled>Próximo</button>
             ) : (
-              <Button onClick={handleUploadMedia} disabled={mediaUploadProgress !== "idle"}>
+              <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleUploadMedia} disabled={mediaUploadProgress !== "idle"}>
                 {mediaUploadProgress === "idle" ? "Enviar" : mediaUploadProgress === "uploading" ? "Enviando..." : "Processando..."}
-              </Button>
+              </button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -2571,15 +2568,15 @@ export default function PerfilPage() {
 
       {/* Modal de Edição de Mídia */}
       <Dialog open={isEditMediaModalOpen} onOpenChange={setIsEditMediaModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Editar Mídia</DialogTitle>
-            <DialogDescription>Edite as informações da sua mídia ou remova do portfólio</DialogDescription>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar mídia</DialogTitle>
+            <DialogDescription className="text-[#5b554b]">Edite as informações da sua mídia ou remova do portfólio.</DialogDescription>
           </DialogHeader>
 
           {editingMedia && (
             <div className="grid gap-4 py-4">
-              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+              <div className="relative aspect-video overflow-hidden rounded-xl border-2 border-[#0B0B0D]/15 bg-[#1d1810]">
                 {editingMedia.media_type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={editingMedia.media_url || "/placeholder.svg"} alt={editingMedia.title || "Preview"} className="w-full h-full object-cover" />
@@ -2588,31 +2585,33 @@ export default function PerfilPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-title">Título</Label>
-                <Input
+              <div>
+                <label htmlFor="edit-title" className="fl-label">Título</label>
+                <input
                   id="edit-title"
+                  className="fl-input"
                   placeholder="Título do projeto"
                   value={editMediaForm.title}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, title: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Descrição</Label>
+              <div>
+                <label htmlFor="edit-description" className="fl-label">Descrição</label>
                 <textarea
                   id="edit-description"
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="fl-input min-h-[80px] resize-none"
                   placeholder="Descreva seu projeto..."
                   value={editMediaForm.description}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, description: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-link">Link externo (opcional)</Label>
-                <Input
+              <div>
+                <label htmlFor="edit-link" className="fl-label">Link externo (opcional)</label>
+                <input
                   id="edit-link"
+                  className="fl-input"
                   placeholder="https://exemplo.com"
                   value={editMediaForm.external_link}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, external_link: e.target.value })}
@@ -2621,18 +2620,18 @@ export default function PerfilPage() {
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="destructive" onClick={handleDeleteMedia} disabled={isSavingMedia} className="w-full sm:w-auto">
-              <Trash2 className="h-4 w-4 mr-2" />
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={handleDeleteMedia} disabled={isSavingMedia} className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#b91c1c] bg-[#b91c1c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#a01818] disabled:opacity-50 sm:w-auto">
+              <Trash2 className="h-4 w-4" />
               Deletar
-            </Button>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" onClick={() => setIsEditMediaModalOpen(false)} disabled={isSavingMedia} className="flex-1 sm:flex-none">
+            </button>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <button type="button" className="fl-btn-card flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={() => setIsEditMediaModalOpen(false)} disabled={isSavingMedia}>
                 Cancelar
-              </Button>
-              <Button onClick={handleUpdateMedia} disabled={isSavingMedia} className="flex-1 sm:flex-none">
+              </button>
+              <button type="button" className="fl-btn-gold flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={handleUpdateMedia} disabled={isSavingMedia}>
                 {isSavingMedia ? "Salvando..." : "Salvar"}
-              </Button>
+              </button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -2652,124 +2651,6 @@ export default function PerfilPage() {
         open={followingModalOpen}
         onClose={() => setFollowingModalOpen(false)}
       />
-    </div>
-  )
-}
-
-function InfoCell({
-  icon: Icon,
-  label,
-  value,
-  truncate,
-}: {
-  icon: typeof Mail
-  label: string
-  value: string
-  truncate?: boolean
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary/[0.10] text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">
-          {label}
-        </p>
-        <p
-          className={
-            "mt-0.5 text-sm font-medium text-white" +
-            (truncate ? " truncate" : "")
-          }
-          title={truncate ? value : undefined}
-        >
-          {value}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function StatStripCell({
-  icon: Icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: typeof Mail
-  label: string
-  value: number
-  accent?: boolean
-}) {
-  return (
-    <div className="flex items-center gap-2 bg-zinc-950/40 px-3 py-2.5">
-      <span
-        className={
-          "grid h-7 w-7 shrink-0 place-items-center rounded-md border " +
-          (accent
-            ? "border-primary/45 bg-primary/[0.16] text-primary"
-            : "border-primary/20 bg-primary/[0.07] text-primary")
-        }
-      >
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0 leading-tight">
-        <span className="block text-sm font-semibold tabular-nums text-white">{value}</span>
-        <span className="block text-[10px] text-white/50">{label}</span>
-      </span>
-    </div>
-  )
-}
-
-function StatCell({
-  icon: Icon,
-  label,
-  value,
-  accent,
-  compact,
-}: {
-  icon: typeof Mail
-  label: string
-  value: number
-  accent?: boolean
-  compact?: boolean
-}) {
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
-        <div
-          className={
-            "grid h-7 w-7 shrink-0 place-items-center rounded-lg border " +
-            (accent
-              ? "border-primary/45 bg-primary/[0.16] text-primary"
-              : "border-primary/20 bg-primary/[0.07] text-primary")
-          }
-        >
-          <Icon className="h-3.5 w-3.5" />
-        </div>
-        <div className="min-w-0 flex-1 leading-tight">
-          <p className="text-sm font-semibold tabular-nums text-white">{value}</p>
-          <p className="text-[10px] text-white/50">{label}</p>
-        </div>
-      </div>
-    )
-  }
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-4">
-      <div
-        className={
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl border " +
-          (accent
-            ? "border-primary/40 bg-primary/[0.14] text-primary"
-            : "border-primary/25 bg-primary/[0.08] text-primary")
-        }
-      >
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xl font-semibold tabular-nums text-white">{value}</p>
-        <p className="mt-0.5 text-[11px] text-white/55">{label}</p>
-      </div>
     </div>
   )
 }
