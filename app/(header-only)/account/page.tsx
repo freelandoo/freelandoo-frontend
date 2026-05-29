@@ -1487,7 +1487,7 @@ export default function PerfilPage() {
 
               {/* Adesivo Casa Views — leva aos rankings (app externo studioviews.com.br) */}
               <a
-                href="https://studioviews.com.br/acasaviews/ranking-audiencia"
+                href="https://studioviews.com.br/acasaviews/rankings"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Ver os rankings da Casa Views"
