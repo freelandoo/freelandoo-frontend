@@ -159,11 +159,11 @@ export function PaperTexture({ className }: { className?: string }) {
 
 /* ── Foto: placeholder dourado elegante até as imagens reais entrarem ──────── */
 export function PhotoFrame({
-  src, alt, className, icon = "star", priority, torn, cut,
-}: { src?: string; alt: string; className?: string; icon?: string; priority?: boolean; torn?: boolean; cut?: boolean }) {
+  src, alt, className, icon = "star", priority, torn, cut, ready,
+}: { src?: string; alt: string; className?: string; icon?: string; priority?: boolean; torn?: boolean; cut?: boolean; ready?: boolean }) {
   return (
     <div className={cn("relative overflow-hidden bg-[#1D1810]", torn && "fl-torn-1", cut && "fl-cut", className)}>
-      {PHOTOS_READY && src ? (
+      {(PHOTOS_READY || ready) && src ? (
         <Image src={src} alt={alt} fill sizes="(max-width:768px) 90vw, 480px" className="object-cover" priority={priority} />
       ) : (
         <div aria-label={alt} role="img" className="absolute inset-0">

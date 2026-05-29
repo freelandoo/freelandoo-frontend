@@ -81,13 +81,14 @@ export function HeroSection() {
           <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr] sm:items-start">
             <motion.div variants={pop} className="relative">
               <PhotoFrame
-                src="/landing/hero.jpg"
+                src="/landing/hero.png"
                 alt="Pessoa feliz usando a Freelandoo no celular"
                 icon="star"
                 priority
+                ready
                 torn
                 cut
-                className="aspect-[5/4] w-full sm:aspect-[4/5]"
+                className="aspect-[4/5] w-full"
               />
               <WashiTape className="-left-2 top-6" rotate={-10} />
               <HiveDoodle className="absolute -left-3 -top-3 h-12 w-12 text-[#F2B705]" />
