@@ -57,25 +57,25 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
   const tag = row.specialty || row.machine_name || location || (row.is_clan ? "Clan" : "Perfil")
 
-  const order = rank === 1 ? "md:order-2" : rank === 2 ? "md:order-1" : "md:order-3"
-  const width = isFirst ? "md:w-[40%]" : "md:w-[30%]"
-  const pedestalH = isFirst ? "h-24 md:h-36" : rank === 2 ? "h-16 md:h-24" : "h-12 md:h-16"
+  const order = rank === 1 ? "order-2" : rank === 2 ? "order-1" : "order-3"
+  const width = isFirst ? "w-[40%]" : "w-[30%]"
+  const pedestalH = isFirst ? "h-14 md:h-36" : rank === 2 ? "h-10 md:h-24" : "h-8 md:h-16"
   const frame = isFirst ? "#F2B705" : "#0B0B0D"
 
   return (
-    <div className={cn("flex w-full max-w-[280px] flex-col items-center md:max-w-none", order, width)} data-podium-col data-rank={rank}>
+    <div className={cn("flex min-w-0 flex-col items-center", order, width)} data-podium-col data-rank={rank}>
       <div className="relative w-full">
         {isFirst && (
           <>
             <div className="absolute -inset-6 -z-10 rounded-full blur-3xl" style={{ background: "#F2B705", opacity: 0.25 }} />
-            <DoodleCrown className="absolute -top-11 left-1/2 z-20 h-11 w-16 -translate-x-1/2 text-[#F2B705]" />
+            <DoodleCrown className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 text-[#F2B705] md:-top-11 md:h-11 md:w-16" />
           </>
         )}
 
         {/* Selo de posição (canto) */}
         <span
           className={cn(
-            "absolute -left-2 -top-2 z-20 flex h-10 w-10 rotate-[-6deg] items-center justify-center fl-display text-2xl md:h-12 md:w-12 md:text-3xl",
+            "absolute -left-1.5 -top-1.5 z-20 flex h-6 w-6 rotate-[-6deg] items-center justify-center fl-display text-base md:h-12 md:w-12 md:text-3xl",
             isFirst ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]",
           )}
         >
@@ -99,25 +99,25 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
         </div>
 
         {/* Nome + score */}
-        <div className="fl-card relative mt-3 p-3 text-center">
+        <div className="fl-card relative mt-2 p-2 text-center md:mt-3 md:p-3">
           <span className={cn("inline-block -rotate-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em]", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
             {row.is_clan ? "Clan" : "Perfil"}
           </span>
           <Link href={rowHref(row)} className="block">
-            <h3 className={cn("fl-display mt-2 leading-none text-[#0B0B0D] hover:text-[#9a7400]", isFirst ? "text-2xl md:text-4xl" : "text-xl md:text-3xl")}>
+            <h3 className={cn("fl-display mt-1.5 leading-none text-[#0B0B0D] hover:text-[#9a7400] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
               {row.display_name}
             </h3>
           </Link>
-          <p className="truncate text-[11px] font-semibold text-[#6B6457]">{tag}</p>
+          <p className="truncate text-[9px] font-semibold text-[#6B6457] md:text-[11px]">{tag}</p>
 
-          <div className="mt-2 fl-display leading-none text-[#E0A500]">
-            <span className={isFirst ? "text-4xl md:text-5xl" : "text-3xl md:text-4xl"}>
+          <div className="mt-1.5 fl-display leading-none text-[#E0A500] md:mt-2">
+            <span className={isFirst ? "text-xl md:text-5xl" : "text-lg md:text-4xl"}>
               <AnimatedNumber value={points} compact={points >= 100000} />
             </span>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6B6457]">pontos</p>
+          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">pontos</p>
 
-          <div className="mt-3 flex items-center justify-center gap-3 border-t border-[#0B0B0D]/10 pt-2">
+          <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-[#0B0B0D]/10 pt-2 md:mt-3 md:gap-3">
             <Meta icon={<Star className="h-3 w-3 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
             <Meta icon={<Eye className="h-3 w-3 text-[#6B6457]" />} value={<AnimatedNumber value={row.visits_count ?? 0} compact />} />
             <Meta icon={<Heart className="h-3 w-3 text-[#6B6457]" />} value={<AnimatedNumber value={row.likes_count ?? 0} compact />} />
@@ -128,7 +128,7 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
       {/* Pedestal */}
       <div className={cn("relative mt-3 flex w-[78%] items-center justify-center md:w-full", pedestalH)}>
         <div className={cn("absolute inset-0", isFirst ? "bg-[#F2B705]" : "bg-[#0B0B0D]")} style={{ clipPath: "polygon(6% 0, 94% 0, 100% 100%, 0 100%)" }} />
-        <span className={cn("fl-display relative z-10 text-5xl md:text-7xl", isFirst ? "text-[#0B0B0D]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
+        <span className={cn("fl-display relative z-10 text-2xl md:text-7xl", isFirst ? "text-[#0B0B0D]/85" : "text-[#F1EDE2]/85")}>{rank}</span>
       </div>
     </div>
   )
@@ -136,7 +136,7 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
 
 function Meta({ icon, value }: { icon: React.ReactNode; value: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold tabular-nums text-[#0B0B0D]">
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold tabular-nums text-[#0B0B0D] md:gap-1 md:text-[11px]">
       {icon}
       {value}
     </span>
@@ -164,11 +164,11 @@ export function RankingPodium({ rows, rowHref, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center gap-6 md:flex-row md:items-end md:justify-center md:gap-5">
+      <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
         {[2, 1, 3].map((r) => (
-          <div key={r} className={cn("w-full max-w-[280px] md:max-w-none", r === 1 ? "md:w-[40%]" : "md:w-[30%]")}>
+          <div key={r} className={cn("min-w-0", r === 1 ? "w-[40%]" : "w-[30%]")}>
             <div className={cn("animate-pulse rounded-sm bg-[#1D1810]", r === 1 ? "aspect-[4/5]" : "aspect-square")} />
-            <div className="mt-3 h-28 animate-pulse bg-[#1D1810]" />
+            <div className="mt-3 h-20 animate-pulse bg-[#1D1810] md:h-28" />
           </div>
         ))}
       </div>
@@ -179,7 +179,7 @@ export function RankingPodium({ rows, rowHref, loading }: Props) {
 
   return (
     <div ref={root} className="mx-auto max-w-4xl">
-      <div className="flex flex-col items-center gap-8 md:flex-row md:items-end md:justify-center md:gap-5">
+      <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
         {top3.map((row, i) => (
           <PodiumColumn key={row.id_profile} row={row} rank={(i + 1) as 1 | 2 | 3} rowHref={rowHref} />
         ))}

@@ -38,10 +38,8 @@ import {
 } from "@/components/home/machines/use-machines-catalog"
 import {
   YellowHighlight,
-  DoodleArrow,
   Spark,
   Underline,
-  WashiTape,
   Halftone,
 } from "@/components/home/landing/primitives"
 import { buildProfileUrl, slugify } from "@/lib/slug"
@@ -249,8 +247,6 @@ export function RankingPageClient() {
     return "Cidade"
   }, [city, cityState, scope, selectedMachine, selectedProfession])
 
-  const totalVisits = useMemo(() => rows.reduce((s, r) => s + (r.visits_count ?? 0), 0), [rows])
-  const totalLikes = useMemo(() => rows.reduce((s, r) => s + (r.likes_count ?? 0), 0), [rows])
   const rest = rows.slice(3)
 
   useEffect(() => {
@@ -315,7 +311,7 @@ export function RankingPageClient() {
 
       {/* HERO */}
       <section className="relative mx-auto grid w-full max-w-6xl gap-8 px-5 pb-10 pt-10 md:grid-cols-12 md:px-8 md:pt-14">
-        <div className="md:col-span-7">
+        <div className="md:col-span-12">
           <div data-ranking-hero className="mb-4 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 bg-[#0B0B0D] px-3 py-1.5 text-[#F1EDE2]">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#F2B705]" />
@@ -341,35 +337,6 @@ export function RankingPageClient() {
           </p>
         </div>
 
-        {/* Painel de números */}
-        <div className="md:col-span-5">
-          <div data-ranking-hero className="fl-cut relative bg-[#0B0B0D] p-6 text-[#F1EDE2] md:p-8" style={{ transform: "rotate(-1.2deg)" }}>
-            <WashiTape className="-top-3 left-8" rotate={8} />
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#F1EDE2]/60">Top 10 ao vivo</span>
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F2B705]">{scopeLabel}</span>
-            </div>
-            <div className="mt-5">
-              <div className="fl-display text-6xl text-[#F2B705] md:text-7xl">
-                <AnimatedNumber value={totalVisits} compact />
-              </div>
-              <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-[#F1EDE2]/55">visitas no top 10</div>
-            </div>
-            <div className="mt-6 flex items-end justify-between border-t border-[#F1EDE2]/12 pt-5">
-              <div>
-                <div className="fl-display text-3xl text-[#F1EDE2]">
-                  <AnimatedNumber value={totalLikes} compact />
-                </div>
-                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#F1EDE2]/45">curtidas somadas</div>
-              </div>
-              <div className="fl-marker text-3xl leading-none text-[#F2B705]">+2h</div>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center justify-end gap-2 pr-2">
-            <DoodleArrow dir="down-right" className="h-9 w-16 text-[#F1EDE2]/70" />
-            <span className="fl-marker text-xl text-[#C9C2B6]">o jogo é aqui</span>
-          </div>
-        </div>
       </section>
 
       {/* FILTROS */}
