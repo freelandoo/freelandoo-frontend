@@ -297,7 +297,7 @@ export const CardButton = makeButton("fl-btn-card !px-4 !py-2 text-xs uppercase 
 /* ── Seção + heading ──────────────────────────────────────────────────────── */
 export function Section({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={cn("relative w-full px-5 py-20 sm:px-8 md:py-24", className)}>
+    <section id={id} className={cn("relative w-full px-5 py-12 sm:px-8 sm:py-16 md:py-24", className)}>
       <div className="mx-auto w-full max-w-[1180px]">{children}</div>
     </section>
   )

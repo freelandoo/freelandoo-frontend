@@ -44,15 +44,15 @@ export function FeatureCarousel() {
 
       {/* Card de slides — full-bleed no mobile (cancela o padding da Section),
           setas sobrepostas e transparentes por cima do carrossel. */}
-      <div className="relative -mx-5 sm:mx-0">
-        <div className="overflow-hidden sm:rounded-2xl" ref={emblaRef}>
+      <div className="relative -mx-2 sm:mx-0">
+        <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
           <div className="flex">
             {CAROUSEL_SLIDES.map((s) => (
               <div key={s.n} className="min-w-0 flex-[0_0_100%]">
                 <Link
                   href={s.href}
                   aria-label={s.alt}
-                  className="relative block aspect-[16/10] w-full overflow-hidden border-y-2 border-[#0B0B0D] bg-[#1D1810] sm:aspect-[18/7] sm:rounded-2xl sm:border-2 sm:shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)]"
+                  className="relative block aspect-[2/1] w-full overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)] sm:aspect-[18/7]"
                 >
                   <Image
                     src={s.img}
