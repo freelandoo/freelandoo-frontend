@@ -1165,7 +1165,7 @@ export default function MensagensClient() {
   if (status === "unauthenticated") {
     return (
       <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center px-4">
-        <div className="max-w-md rounded-xl border border-white/10 bg-neutral-900/60 p-8 text-center">
+        <div className="max-w-md rounded-xl border border-white/10 bg-[#1D1810]/60 p-8 text-center">
           <MessageCircle className="mx-auto mb-3 h-10 w-10 text-primary" />
           <h1 className="mb-2 text-xl font-semibold text-white">
             {t("loginPromptTitle", "Entre para ver suas mensagens")}
@@ -1183,7 +1183,7 @@ export default function MensagensClient() {
 
   return (
     <div className="container mx-auto min-h-[calc(100dvh-72px)] px-0 md:px-4 md:py-6">
-      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-neutral-950 via-neutral-950 to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-[#141009] via-[#141009] to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
         {/* Lista (Conversas ou O.S.) */}
         <aside
           className={cn(
@@ -1202,12 +1202,12 @@ export default function MensagensClient() {
               : "flex"
           )}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] px-4 py-3.5">
+          <div className="flex items-center justify-between gap-2 border-b-2 border-[#F1EDE2]/12 px-4 py-3.5">
             <div className="min-w-0">
-              <h2 className="text-base font-semibold tracking-tight text-white">
+              <h2 className="fl-display text-3xl leading-none text-[#F2B705]">
                 {t("messagesHeaderTitle", "Mensagens")}
               </h2>
-              <p className="text-[11px] text-white/40">
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#8a8275]">
                 {tab === "conv" ? t("conversationsSubtitle", "Suas conversas") : t("osSubtitle", "Suas ordens de serviço")}
               </p>
             </div>
@@ -1264,7 +1264,7 @@ export default function MensagensClient() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-stretch border-b border-white/[0.07]">
+          <div className="flex items-stretch border-b-2 border-[#F1EDE2]/12">
             <TabBtn
               active={tab === "conv"}
               onClick={() => handleSelectTab("conv")}
@@ -1305,9 +1305,9 @@ export default function MensagensClient() {
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
             {/* Search inline pra encontrar perfis/clans pra começar nova conversa */}
-            <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-black/40 px-3 py-2 backdrop-blur">
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-yellow-400/40 focus-within:bg-white/[0.06]">
-                <Search className="h-3.5 w-3.5 shrink-0 text-white/40" />
+            <div className="sticky top-0 z-10 border-b-2 border-[#F1EDE2]/10 bg-[#141009]/85 px-3 py-2.5 backdrop-blur">
+              <div className="flex items-center gap-2 rounded-[4px] border-2 border-[#F1EDE2]/15 bg-[#1D1810] px-3 py-2 transition-colors focus-within:border-[#F2B705]">
+                <Search className="h-3.5 w-3.5 shrink-0 text-[#8a8275]" />
                 <input
                   type="text"
                   value={convSearch}
@@ -1354,7 +1354,7 @@ export default function MensagensClient() {
                       >
                         <Avatar className="h-10 w-10 shrink-0">
                           <AvatarImage src={r.avatar_url || undefined} />
-                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                          <AvatarFallback className="bg-[#2A2218] text-xs text-white">
                             {entityInitials(r.display_name)}
                           </AvatarFallback>
                         </Avatar>
@@ -1394,61 +1394,69 @@ export default function MensagensClient() {
             ) : conversations.length === 0 ? (
               <EmptyConversations />
             ) : (
-              <ul className="divide-y divide-white/5">
+              <ul className="space-y-2.5 p-2.5">
                 {conversations.map((c) => {
                   const isGroup = c.kind === "group"
                   const otherHref = isGroup ? null : entityHref(c.other_entity)
                   const title = isGroup
                     ? (c.name || t("groupFallback", "Grupo"))
                     : (c.other_entity?.display_name || t("noNameLabel", "Sem nome"))
+                  const isActive = activeConvId === c.id_conversation
                   return (
                   <li key={c.id_conversation} className="relative">
                     <button
                       onClick={() => handleSelectConv(c.id_conversation)}
                       className={cn(
-                        "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5",
-                        activeConvId === c.id_conversation && "bg-white/5"
+                        "group flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:-rotate-[0.3deg]",
+                        isActive
+                          ? "-translate-y-0.5 shadow-[6px_6px_0_0_#F2B705]"
+                          : "shadow-[4px_4px_0_0_#0B0B0D] hover:shadow-[7px_7px_0_0_#F2B705]"
                       )}
                     >
-                      {isGroup ? (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/10 ring-1 ring-yellow-400/30">
-                          {c.cover_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={c.cover_url} alt={title} className="h-full w-full rounded-full object-cover" />
-                          ) : (
-                            <Users className="h-5 w-5 text-yellow-300" />
-                          )}
-                        </div>
-                      ) : (
-                        <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarImage src={c.other_entity?.avatar_url || undefined} />
-                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
-                            {entityInitials(c.other_entity?.display_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
+                      <div
+                        className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[#0B0B0D]"
+                        style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
+                      >
+                        {isGroup ? (
+                          <div className="flex h-11 w-11 items-center justify-center bg-[#1D1810]">
+                            {c.cover_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={c.cover_url} alt={title} className="h-full w-full object-cover" />
+                            ) : (
+                              <Users className="h-5 w-5 text-[#F2B705]" />
+                            )}
+                          </div>
+                        ) : (
+                          <Avatar className="h-11 w-11 rounded-none">
+                            <AvatarImage src={c.other_entity?.avatar_url || undefined} className="object-cover" />
+                            <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
+                              {entityInitials(c.other_entity?.display_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-white inline-flex items-center gap-1.5">
+                          <span className="fl-display inline-flex items-center gap-1.5 truncate text-lg leading-none text-[#0B0B0D]">
                             {title}
                             {isGroup && c.member_count != null && (
-                              <span className="text-[10px] text-yellow-300/80 tabular-nums">· {c.member_count}</span>
+                              <span className="text-[10px] font-bold tabular-nums text-[#9a7400]">· {c.member_count}</span>
                             )}
                           </span>
-                          <span className="shrink-0 text-[10px] text-white/40">
+                          <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.08em] text-[#8a8275]">
                             {formatTime(c.last_message_at || c.created_at, locale)}
                           </span>
                         </div>
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
+                        <div className="mt-1 flex items-center justify-between gap-2">
                           <span className={cn(
                             "truncate text-xs",
-                            c.unread_count > 0 ? "text-white" : "text-white/50"
+                            c.unread_count > 0 ? "font-bold text-[#0B0B0D]" : "font-semibold text-[#6B6457]"
                           )}>
                             {c.is_last_message_from_me ? t("sentByMePrefix", "Você: ") : ""}
                             {c.last_message_preview || t("noMessagesYet", "Sem mensagens ainda")}
                           </span>
                           {c.unread_count > 0 && (
-                            <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                            <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] px-1 text-[10px] font-black tabular-nums text-[#0B0B0D]">
                               {c.unread_count > 99 ? "99+" : c.unread_count}
                             </span>
                           )}
@@ -1460,7 +1468,7 @@ export default function MensagensClient() {
                         href={otherHref}
                         onClick={(e) => e.stopPropagation()}
                         aria-label={t("viewProfileOfAria", "Ver perfil de {name}").replace("{name}", c.other_entity?.display_name || t("contactFallback", "contato"))}
-                        className="absolute left-4 top-3 h-10 w-10 rounded-full"
+                        className="absolute left-3 top-3 h-11 w-11"
                       />
                     )}
                   </li>
@@ -1518,7 +1526,7 @@ export default function MensagensClient() {
                     >
                       <Avatar className="h-10 w-10 shrink-0">
                         <AvatarImage src={c.profile.avatar_url || undefined} />
-                        <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                        <AvatarFallback className="bg-[#2A2218] text-xs text-white">
                           {entityInitials(titleText)}
                         </AvatarFallback>
                       </Avatar>
@@ -1577,7 +1585,7 @@ export default function MensagensClient() {
 
           {/* Lista — Chat Global (info estática) */}
           <div className={cn("flex-1 overflow-y-auto px-4 py-6", tab !== "global" && "hidden")}>
-            <div className="rounded-xl border border-white/10 bg-neutral-900/60 p-4">
+            <div className="rounded-xl border border-white/10 bg-[#1D1810]/60 p-4">
               <div className="mb-2 flex items-center gap-2 text-white">
                 <Radio className="h-4 w-4 text-emerald-400" />
                 <span className="text-sm font-semibold">{t("globalChatTitle", "Chat global")}</span>
@@ -1688,7 +1696,7 @@ export default function MensagensClient() {
                       const av = (
                         <Avatar className="h-9 w-9">
                           <AvatarImage src={activeOsChat.profile.avatar_url || undefined} />
-                          <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                          <AvatarFallback className="bg-[#2A2218] text-xs text-white">
                             {entityInitials(activeOsChat.profile.display_name)}
                           </AvatarFallback>
                         </Avatar>
@@ -1731,10 +1739,10 @@ export default function MensagensClient() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-neutral-900/40 px-3 py-2">
+                  <div className="rounded-lg border border-white/10 bg-[#1D1810]/40 px-3 py-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {activeOsChat.request.machine_name ? (
-                        <span className="inline-flex items-center rounded-full border border-white/10 bg-neutral-800/60 px-2 py-0.5 text-[10px] text-white">
+                        <span className="inline-flex items-center rounded-full border border-white/10 bg-[#2A2218]/60 px-2 py-0.5 text-[10px] text-white">
                           {activeOsChat.request.machine_name}
                         </span>
                       ) : null}
@@ -1807,13 +1815,13 @@ export default function MensagensClient() {
                                     className={cn(
                                       "relative px-4 py-2.5 text-sm leading-relaxed break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                                       mine
-                                        ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                                        ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                                         : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                                     )}
                                   >
                                     <MarkdownText
                                       prose={!mine}
-                                      className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                                      className={mine ? "[&_a]:text-[#1D1810] [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
                                     >
                                       {m.content}
                                     </MarkdownText>
@@ -1873,7 +1881,7 @@ export default function MensagensClient() {
                         whileTap={{ scale: 0.94 }}
                         transition={SPRING}
                         aria-label={t("sendMessageAriaLabel", "Enviar")}
-                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                       >
                         {osSending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1912,7 +1920,7 @@ export default function MensagensClient() {
                   const av = (
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={activeDetail?.other_entity?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-neutral-800 text-xs text-white">
+                      <AvatarFallback className="bg-[#2A2218] text-xs text-white">
                         {entityInitials(activeDetail?.other_entity?.display_name)}
                       </AvatarFallback>
                     </Avatar>
@@ -2006,7 +2014,7 @@ export default function MensagensClient() {
                                     "relative text-sm leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                                     m.kind === "audio" ? "" : "px-4 py-2.5 break-words",
                                     mine
-                                      ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                                      ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                                       : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                                   )}
                                 >
@@ -2019,7 +2027,7 @@ export default function MensagensClient() {
                                   ) : (
                                     <MarkdownText
                                       prose={!mine}
-                                      className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                                      className={mine ? "[&_a]:text-[#1D1810] [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
                                     >
                                       {m.body || ""}
                                     </MarkdownText>
@@ -2082,7 +2090,7 @@ export default function MensagensClient() {
                       whileTap={{ scale: 0.94 }}
                       transition={SPRING}
                       aria-label={t("sendMessageAriaLabel", "Enviar")}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     >
                       {sending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -2137,7 +2145,7 @@ export default function MensagensClient() {
           role="presentation"
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#141009] to-black text-white"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
           >
@@ -2222,10 +2230,10 @@ function ActorSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-900 px-2 py-1 text-xs text-white hover:bg-neutral-800">
+        <button className="flex items-center gap-1.5 rounded-md border border-white/10 bg-[#1D1810] px-2 py-1 text-xs text-white hover:bg-[#2A2218]">
           <Avatar className="h-5 w-5">
             <AvatarImage src={active?.avatar_url || undefined} />
-            <AvatarFallback className="bg-neutral-800 text-[9px]">
+            <AvatarFallback className="bg-[#2A2218] text-[9px]">
               {entityInitials(active?.display_name)}
             </AvatarFallback>
           </Avatar>
@@ -2248,7 +2256,7 @@ function ActorSelector({
           >
             <Avatar className="mr-2 h-5 w-5">
               <AvatarImage src={a.avatar_url || undefined} />
-              <AvatarFallback className="bg-neutral-800 text-[9px]">
+              <AvatarFallback className="bg-[#2A2218] text-[9px]">
                 {entityInitials(a.display_name)}
               </AvatarFallback>
             </Avatar>
@@ -2269,9 +2277,11 @@ function EmptyConversations() {
   const t = useTranslations("Messages")
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-      <MessageCircle className="mb-3 h-10 w-10 text-white/30" />
-      <p className="text-sm font-medium text-white">{t("noConversationsMessage", "Nenhuma conversa")}</p>
-      <p className="mt-1 text-xs text-white/50">
+      <span className="mb-4 inline-flex h-14 w-14 items-center justify-center border-2 border-[#F1EDE2]/15 bg-[#1D1810] text-[#F2B705]">
+        <MessageCircle className="h-7 w-7" />
+      </span>
+      <p className="fl-display text-2xl leading-none text-[#F5F1E8]">{t("noConversationsMessage", "Nenhuma conversa")}</p>
+      <p className="mt-2 max-w-[220px] text-xs font-semibold text-[#8a8275]">
         {t("noConversationsHint", "Abra um perfil e clique em \"Enviar mensagem\" para começar.")}
       </p>
     </div>
@@ -2281,9 +2291,11 @@ function EmptyConversations() {
 function EmptyThread() {
   const t = useTranslations("Messages")
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center text-white/40">
-      <MessageCircle className="mb-3 h-12 w-12" />
-      <p className="text-sm">{t("selectConversationHint", "Selecione uma conversa para ler.")}</p>
+    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+      <span className="mb-4 inline-flex h-16 w-16 items-center justify-center border-2 border-[#F1EDE2]/15 bg-[#1D1810] text-[#F2B705]">
+        <MessageCircle className="h-8 w-8" />
+      </span>
+      <p className="fl-display max-w-md text-3xl leading-[0.95] text-[#F5F1E8]">{t("selectConversationHint", "Selecione uma conversa para ler.")}</p>
     </div>
   )
 }
@@ -2359,15 +2371,15 @@ function TabBtn({
       onClick={onClick}
       data-tour={dataTour}
       className={cn(
-        "flex flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-[11px] font-medium uppercase tracking-wider transition-colors",
+        "flex min-w-0 flex-1 items-center justify-center gap-1 px-1.5 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] transition-colors",
         active
-          ? "border-b-2 border-primary text-white"
-          : "border-b-2 border-transparent text-white/55 hover:text-white"
+          ? "-mb-[2px] border-b-[3px] border-[#F2B705] text-[#F2B705]"
+          : "border-b-[3px] border-transparent text-[#9A938A] hover:text-[#F5F1E8]"
       )}
     >
-      {icon}
-      <span className="hidden sm:inline">{label}</span>
-      <span className="sm:hidden">{shortLabel}</span>
+      <span className="shrink-0">{icon}</span>
+      <span className="hidden truncate lg:inline">{label}</span>
+      <span className="truncate lg:hidden">{shortLabel}</span>
     </button>
   )
 }

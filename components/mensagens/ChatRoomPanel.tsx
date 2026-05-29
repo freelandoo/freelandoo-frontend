@@ -508,7 +508,7 @@ export function ChatRoomPanel({
                           <Link href={`/p/${m.sender.username}/${m.profile.sub_profile_slug}`} className="block">
                             <Avatar className="h-8 w-8 ring-1 ring-white/10">
                               <AvatarImage src={m.profile?.avatar_url || undefined} />
-                              <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
+                              <AvatarFallback className="bg-[#2A2218] text-[10px] text-white">
                                 {entityInitials(m.profile?.display_name || m.sender.nome)}
                               </AvatarFallback>
                             </Avatar>
@@ -516,7 +516,7 @@ export function ChatRoomPanel({
                         ) : (
                           <Avatar className="h-8 w-8 ring-1 ring-white/10">
                             <AvatarImage src={m.profile?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-neutral-800 text-[10px] text-white">
+                            <AvatarFallback className="bg-[#2A2218] text-[10px] text-white">
                               {entityInitials(m.profile?.display_name || m.sender.nome)}
                             </AvatarFallback>
                           </Avatar>
@@ -556,13 +556,13 @@ export function ChatRoomPanel({
                           className={cn(
                             "relative px-4 py-2.5 text-sm leading-relaxed break-words shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
                             mine
-                              ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                              ? "rounded-3xl rounded-br-md bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_24px_-12px_rgba(250,204,21,0.5),inset_0_1px_0_rgba(255,255,255,0.35)]"
                               : "rounded-3xl rounded-bl-md bg-white/[0.06] text-white ring-1 ring-white/10 backdrop-blur-md"
                           )}
                         >
                           <MarkdownText
                             prose={!mine}
-                            className={mine ? "[&_a]:text-neutral-900 [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
+                            className={mine ? "[&_a]:text-[#1D1810] [&_a]:underline [&_code]:bg-black/15 [&_p]:my-1" : undefined}
                           >
                             {m.content}
                           </MarkdownText>
@@ -639,7 +639,7 @@ export function ChatRoomPanel({
             whileTap={{ scale: 0.94 }}
             transition={SPRING}
             aria-label={t("sendMessageAriaLabel", "Enviar")}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-neutral-950 shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 text-[#141009] shadow-[0_8px_20px_-8px_rgba(250,204,21,0.55)] transition disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </motion.button>
