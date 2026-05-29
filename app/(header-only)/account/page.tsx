@@ -1484,6 +1484,31 @@ export default function PerfilPage() {
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#F1EDE2] via-[#F1EDE2]/25 to-transparent" />
+
+              {/* Adesivo Casa Views — leva aos rankings (app externo studioviews.com.br) */}
+              <a
+                href="https://studioviews.com.br/acasaviews/ranking-audiencia"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Ver os rankings da Casa Views"
+                title="Rankings da Casa Views"
+                className="group absolute left-4 top-4 z-10 -rotate-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-0"
+              >
+                {/* fita washi colada no topo do adesivo */}
+                <span
+                  aria-hidden
+                  className="absolute -top-2 left-1/2 h-3.5 w-12 -translate-x-1/2 rotate-2 bg-[#F4D53B]/70 shadow-[1px_2px_3px_rgba(0,0,0,0.35)]"
+                />
+                <span className="relative flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0BC5E0] px-3 py-2 shadow-[3px_3px_0_0_#0B0B0D] transition-[box-shadow] group-hover:shadow-[5px_5px_0_0_#F2B705]">
+                  <Crown className="h-5 w-5 shrink-0 text-[#0B0B0D]" />
+                  <span className="fl-display text-left leading-[0.78]">
+                    <span className="block text-[12px] tracking-tight text-[#0B0B0D]">Casa</span>
+                    <span className="block text-[19px] tracking-tight text-[#E11D48] [-webkit-text-stroke:0.6px_#0B0B0D]">Views</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 -rotate-45 text-[#0B0B0D] transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </a>
+
               <button
                 type="button"
                 onClick={() => setDropsideOpen(true)}
