@@ -2,20 +2,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import type React from "react"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { machineDescription } from "@/lib/constants/machine-descriptions"
 import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge } from "@/lib/validation/signup"
 import { Check, X, ArrowLeft, User, Briefcase, Info, ShieldCheck } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { PageShell } from "@/components/tabloide"
 
 interface Category {
   id_category: number
@@ -290,527 +286,537 @@ export default function CadastroPage() {
     }
   }
 
+  const totalSteps = userType === "client" ? 2 : 3
+
   const PasswordRequirement = ({ ok, label }: { ok: boolean; label: string }) => (
-    <li className={`flex items-center gap-2 text-xs ${ok ? "text-green-600" : "text-muted-foreground"}`}>
+    <li className={`flex items-center gap-2 text-xs ${ok ? "text-[#15803d]" : "text-[#8a8378]"}`}>
       {ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5 opacity-50" />}
       <span>{label}</span>
     </li>
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-12">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-6 text-center">
-            <h1 className="mb-2 text-3xl font-bold">{t("title", "Criar conta")}</h1>
-            <p className="text-muted-foreground">
+    <PageShell>
+      {/* Barra superior leve (sem header global neste grupo) */}
+      <div className="border-b border-[#F5F1E8]/8">
+        <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between px-5 py-3.5 sm:px-8">
+          <Link href="/" className="flex items-center gap-2" aria-label="Freelandoo">
+            <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto" priority />
+            <span className="text-lg font-black text-[#F5F1E8]">freelandoo</span>
+          </Link>
+          <Link href="/login" className="text-sm font-bold text-[#F5F1E8]/80 transition hover:text-[#F5F1E8]">
+            {t("doLogin", "Faça login")}
+          </Link>
+        </div>
+      </div>
+
+      <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
+        <div className="mb-7 text-center">
+          <div className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
+            {t("eyebrow", "Comece grátis")}
+          </div>
+          <h1 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">{t("title", "Criar conta")}</h1>
+          {/* Step pills */}
+          <div className="mt-5 flex items-center justify-center gap-2">
+            {Array.from({ length: totalSteps }).map((_, i) => {
+              const n = i + 1
+              const active = n <= step
+              return (
+                <span
+                  key={n}
+                  className={`h-2 rounded-full transition-all ${active ? "w-8 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/20"}`}
+                />
+              )
+            })}
+            <span className="ml-3 text-sm text-[#9A938A]">
               {t("step", "Etapa {step} de {total}")
                 .replace("{step}", String(step))
-                .replace("{total}", String(userType === "client" ? 2 : 3))}
-            </p>
+                .replace("{total}", String(totalSteps))}
+            </span>
           </div>
-
-          {/* STEP 1 — DADOS DA CONTA */}
-          {step === 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("accountDataTitle", "Dados da conta")}</CardTitle>
-                <CardDescription>{t("accountDataDescription", "Crie suas credenciais para acessar a Freelandoo")}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {!isMinorBirth && (
-                  <>
-                    <GoogleSignInButton text="signup_with" />
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">{t("orWithEmail", "ou com email")}</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-                <form className="space-y-6" onSubmit={handleStep1Continue}>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="nome">{t("fullName", "Nome completo")}</Label>
-                      <Input
-                        id="nome"
-                        placeholder={t("fullNamePlaceholder", "Ex: João Silva")}
-                        value={formData.nome}
-                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="username">{tAuth("username", "Nome de usuário")}</Label>
-                      <Input
-                        id="username"
-                        placeholder={t("usernamePlaceholder", "ex: joao.silva")}
-                        value={formData.username}
-                        onChange={(e) => handleUsernameChange(e.target.value)}
-                        required
-                        maxLength={30}
-                        className={
-                          usernameStatus === "taken" || usernameStatus === "invalid"
-                            ? "border-red-500 focus-visible:ring-red-500"
-                            : usernameStatus === "available"
-                              ? "border-green-500 focus-visible:ring-green-500"
-                              : ""
-                        }
-                      />
-                      {usernameMsg && (
-                        <p
-                          className={`text-xs mt-1 font-medium ${
-                            usernameStatus === "taken" || usernameStatus === "invalid"
-                              ? "text-red-500"
-                              : usernameStatus === "available"
-                                ? "text-green-500"
-                                : "text-muted-foreground"
-                          }`}
-                        >
-                          {usernameStatus === "checking" ? t("usernameChecking", "Verificando...") : usernameMsg}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">{tAuth("email", "E-mail")}</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder={t("emailPlaceholder", "seu@email.com")}
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                        className={emailBlocked ? "border-red-500 focus-visible:ring-red-500" : ""}
-                      />
-                      {emailBlocked && (
-                        <p className="text-xs text-red-500">{t("invalidEmail", "Digite um email válido.")}</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="dataNascimento">{t("birthDate", "Data de nascimento")}</Label>
-                      <Input
-                        id="dataNascimento"
-                        type="date"
-                        value={formData.dataNascimento}
-                        onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bloco Conta Supervisionada — aparece apenas se idade < 18 */}
-                  {isMinorBirth && (
-                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
-                      <div className="flex items-start gap-2">
-                        <ShieldCheck className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                            {t("supervisedTitle", "Conta supervisionada")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("supervisedDescription", "Para criar uma conta menor de idade, informe o código do responsável. O código é gerado por um adulto na conta dele, em Conta › Parental, e vale por 24 horas.")}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="responsibleCode">{t("responsibleCode", "Código do responsável")}</Label>
-                        <Input
-                          id="responsibleCode"
-                          placeholder="PAR-XXXXXXXX"
-                          value={responsibleCode}
-                          onChange={(e) => handleResponsibleCodeChange(e.target.value)}
-                          maxLength={16}
-                          autoComplete="off"
-                          className={
-                            codeStatus === "invalid" && responsibleCode.length >= 6
-                              ? "border-red-500 focus-visible:ring-red-500"
-                              : codeStatus === "valid"
-                                ? "border-green-500 focus-visible:ring-green-500"
-                                : ""
-                          }
-                        />
-                        {codeMsg && (
-                          <p
-                            className={`text-xs font-medium ${
-                              codeStatus === "valid"
-                                ? "text-green-500"
-                                : codeStatus === "checking"
-                                  ? "text-muted-foreground"
-                                  : "text-red-500"
-                            }`}
-                          >
-                            {codeMsg}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sexo">{t("sex", "Sexo (opcional)")}</Label>
-                    <Select onValueChange={(value) => setFormData({ ...formData, sexo: value })} value={formData.sexo}>
-                      <SelectTrigger id="sexo">
-                        <SelectValue placeholder={t("selectPlaceholder", "Selecione")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="M">{t("male", "Masculino")}</SelectItem>
-                        <SelectItem value="F">{t("female", "Feminino")}</SelectItem>
-                        <SelectItem value="O">{t("other", "Outro")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="senha">{tAuth("password", "Senha")}</Label>
-                      <Input
-                        id="senha"
-                        type="password"
-                        placeholder={t("passwordPlaceholder", "Mínimo 8 caracteres")}
-                        value={formData.senha}
-                        onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                        required
-                      />
-                      <ul className="space-y-1 mt-2">
-                        <PasswordRequirement ok={passwordChecks.min_length} label={t("passwordMinLength", "Mínimo de 8 caracteres")} />
-                        <PasswordRequirement ok={passwordChecks.uppercase} label={t("passwordUppercase", "Pelo menos 1 letra maiúscula")} />
-                        <PasswordRequirement ok={passwordChecks.number} label={t("passwordNumber", "Pelo menos 1 número")} />
-                        <PasswordRequirement ok={passwordChecks.special_character} label={t("passwordSpecial", "Pelo menos 1 caractere especial")} />
-                      </ul>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmarSenha">{tAuth("confirmPassword", "Confirmar senha")}</Label>
-                      <Input
-                        id="confirmarSenha"
-                        type="password"
-                        placeholder={t("confirmPasswordPlaceholder", "Repita sua senha")}
-                        value={formData.confirmarSenha}
-                        onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
-                        required
-                        className={
-                          formData.confirmarSenha.length > 0 && !passwordsMatch
-                            ? "border-red-500 focus-visible:ring-red-500"
-                            : ""
-                        }
-                      />
-                      {formData.confirmarSenha.length > 0 && !passwordsMatch && (
-                        <p className="text-xs text-red-500">{t("passwordsDontMatch", "As senhas não coincidem.")}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
-                    <label className="flex items-start gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="mt-1"
-                      />
-                      <span className="text-muted-foreground">
-                        {t("acceptTermsPrefix", "Li e aceito os")}{" "}
-                        <button
-                          type="button"
-                          onClick={() => setOpenTermosModal(true)}
-                          className="font-medium text-blue-500 hover:underline"
-                        >
-                          {t("termsOfUse", "termos de uso")}
-                        </button>
-                        .
-                      </span>
-                    </label>
-                  </div>
-
-                  <Button type="submit" size="lg" className="w-full" disabled={!step1Valid}>
-                    {t("continue", "Continuar")}
-                  </Button>
-
-                  <p className="text-center text-sm text-muted-foreground">
-                    {t("alreadyHaveAccount", "Já tem uma conta?")}{" "}
-                    <Link href="/login" className="font-medium text-primary hover:underline">
-                      {t("doLogin", "Faça login")}
-                    </Link>
-                  </p>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* STEP 2 — TIPO DE USUÁRIO */}
-          {step === 2 && (
-            <Card>
-              <CardHeader>
-                <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(1)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("back", "Voltar")}
-                </Button>
-                <CardTitle>{t("userTypeTitle", "Como você pretende usar a Freelandoo?")}</CardTitle>
-                <CardDescription>{t("userTypeDescription", "Você pode mudar isso depois pela sua conta.")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserType("client")
-                      submitSignup(false)
-                    }}
-                    disabled={isSubmitting}
-                    className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
-                  >
-                    <User className="h-8 w-8 mb-3 text-primary" />
-                    <p className="font-semibold mb-1">{t("iAmClient", "Sou cliente")}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("iAmClientDesc", "Quero contratar profissionais. Finalizar cadastro agora.")}
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserType("freelancer")
-                      setProfileData((prev) => ({
-                        ...prev,
-                        display_name: prev.display_name || formData.nome,
-                      }))
-                      setStep(3)
-                    }}
-                    disabled={isSubmitting}
-                    className="text-left rounded-lg border-2 border-border hover:border-primary p-6 transition-colors disabled:opacity-50"
-                  >
-                    <Briefcase className="h-8 w-8 mb-3 text-primary" />
-                    <p className="font-semibold mb-1">{t("iAmFreelancer", "Sou freelancer")}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("iAmFreelancerDesc", "Quero criar perfil profissional para receber contatos.")}
-                    </p>
-                  </button>
-                </div>
-                {submitError && <p className="text-sm text-red-500 mt-4">{submitError}</p>}
-                {isSubmitting && (
-                  <p className="text-sm text-muted-foreground mt-4">{t("creatingAccount", "Criando conta...")}</p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* STEP 3 — PERFIL FREELANCER */}
-          {step === 3 && (
-            <Card>
-              <CardHeader>
-                <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setStep(2)}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("back", "Voltar")}
-                </Button>
-                <CardTitle>{t("profileTitle", "Perfil profissional")}</CardTitle>
-                <CardDescription>
-                  {t("profileDescription", "Seu perfil nasce aguardando ativação. Ele só aparece publicamente após você ativar o perfil.")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form
-                  className="space-y-6"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    submitSignup(true)
-                  }}
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="display_name">{t("displayName", "Nome de exibição")}</Label>
-                    <Input
-                      id="display_name"
-                      value={profileData.display_name}
-                      onChange={(e) => setProfileData({ ...profileData, display_name: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  {/* Machines */}
-                  {machines.length > 0 && (
-                    <div className="space-y-3">
-                      <Label>{t("chooseMachine", "Escolha seu enxame")}</Label>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {machines.map((m) => {
-                          const isSelected = selectedMachineId === m.id_machine
-                          return (
-                            <button
-                              key={m.id_machine}
-                              type="button"
-                              onClick={() => {
-                                setSelectedMachineId(m.id_machine)
-                                setSelectedCategoryId(null)
-                              }}
-                              onMouseEnter={() => setHoveredMachineId(m.id_machine)}
-                              onMouseLeave={() => setHoveredMachineId(null)}
-                              onFocus={() => setHoveredMachineId(m.id_machine)}
-                              onBlur={() => setHoveredMachineId(null)}
-                              title={machineDescription(m.slug)}
-                              style={
-                                isSelected
-                                  ? {
-                                      boxShadow: `0 0 18px ${m.color_glow}, 0 0 6px ${m.color_ring}`,
-                                      borderColor: m.color_ring,
-                                    }
-                                  : {}
-                              }
-                              className={`rounded-lg border-2 bg-black px-3 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 ${
-                                isSelected ? "" : "border-white/10 hover:border-white/30"
-                              }`}
-                            >
-                              {m.name}
-                            </button>
-                          )
-                        })}
-                      </div>
-                      {hoveredOrSelectedMachine && machineDescription(hoveredOrSelectedMachine.slug) && (
-                        <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-3 flex gap-2 items-start">
-                          <Info className="h-4 w-4 mt-0.5 text-blue-500 shrink-0" />
-                          <div className="text-sm">
-                            <p className="font-medium">{hoveredOrSelectedMachine.name}</p>
-                            <p className="text-muted-foreground">{machineDescription(hoveredOrSelectedMachine.slug)}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Profession */}
-                  {selectedMachine && (
-                    <div className="space-y-3">
-                      <Label>{t("chooseProfession", "Escolha sua profissão")}</Label>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {selectedMachine.categories
-                          .filter((c) => c.is_active)
-                          .map((c) => {
-                            const isSelected = selectedCategoryId === c.id_category
-                            return (
-                              <button
-                                key={c.id_category}
-                                type="button"
-                                onClick={() => setSelectedCategoryId(c.id_category)}
-                                style={
-                                  isSelected
-                                    ? {
-                                        boxShadow: `0 0 14px ${selectedMachine.color_glow}`,
-                                        borderColor: selectedMachine.color_ring,
-                                        color: selectedMachine.color_text,
-                                      }
-                                    : {}
-                                }
-                                className={`rounded-lg border-2 bg-black px-3 py-2 text-sm text-white transition-all duration-200 hover:brightness-110 ${
-                                  isSelected ? "" : "border-white/10 hover:border-white/30"
-                                }`}
-                              >
-                                {c.desc_category}
-                              </button>
-                            )
-                          })}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">{t("bioOptional", "Bio (opcional)")}</Label>
-                    <textarea
-                      id="bio"
-                      rows={3}
-                      value={profileData.bio}
-                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="avatar_url">{t("avatarUrlOptional", "URL do avatar (opcional)")}</Label>
-                    <Input
-                      id="avatar_url"
-                      type="url"
-                      placeholder="https://..."
-                      value={profileData.avatar_url}
-                      onChange={(e) => setProfileData({ ...profileData, avatar_url: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="estado">{t("stateLabel", "Estado")}</Label>
-                      <Select value={profileData.estado} onValueChange={handleEstadoChange}>
-                        <SelectTrigger id="estado">
-                          <SelectValue placeholder={t("selectPlaceholder", "Selecione")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {estados.map((e) => (
-                            <SelectItem key={e.uf} value={e.uf}>
-                              {e.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="municipio">{t("cityLabel", "Município")}</Label>
-                      <Select
-                        value={profileData.municipio}
-                        onValueChange={(val) => setProfileData((prev) => ({ ...prev, municipio: val }))}
-                        disabled={!profileData.estado || loadingMunicipios}
-                      >
-                        <SelectTrigger id="municipio">
-                          <SelectValue placeholder={loadingMunicipios ? t("loading", "Carregando...") : t("selectPlaceholder", "Selecione")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {municipios.map((m) => (
-                            <SelectItem key={m.id} value={m.nome}>
-                              {m.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {submitError && <p className="text-sm text-red-500">{submitError}</p>}
-
-                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? t("creatingAccount", "Criando conta...") : t("finishSignup", "Finalizar cadastro")}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          )}
         </div>
-      </main>
 
-      <Dialog open={openTermosModal} onOpenChange={setOpenTermosModal}>
-        <DialogContent className="max-h-[80vh] w-full max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("termsModalTitle", "Termos de Uso - Freelandoo")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <p>{t("termsP1", "Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda integralmente com os termos.")}</p>
-            <p>{t("termsP2", "A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações, não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são tratadas diretamente entre as partes.")}</p>
-            <p>{t("termsP3", "Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.")}</p>
+        {/* STEP 1 — DADOS DA CONTA */}
+        {step === 1 && (
+          <div className="fl-card rounded-3xl p-6 sm:p-8">
+            <div className="mb-6">
+              <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("accountDataTitle", "Dados da conta")}</h2>
+              <p className="mt-1 text-sm text-[#5b554b]">{t("accountDataDescription", "Crie suas credenciais para acessar a Freelandoo")}</p>
+            </div>
+
+            {!isMinorBirth && (
+              <div className="mb-6 space-y-4">
+                <GoogleSignInButton text="signup_with" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-[#0B0B0D]/12" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-[var(--fl-paper)] px-2 font-semibold text-[#5b554b]">{t("orWithEmail", "ou com email")}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleStep1Continue}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="nome" className="fl-label">{t("fullName", "Nome completo")}</label>
+                  <input
+                    id="nome"
+                    className="fl-input"
+                    placeholder={t("fullNamePlaceholder", "Ex: João Silva")}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="username" className="fl-label">{tAuth("username", "Nome de usuário")}</label>
+                  <input
+                    id="username"
+                    className={`fl-input ${
+                      usernameStatus === "taken" || usernameStatus === "invalid"
+                        ? "fl-input-error"
+                        : usernameStatus === "available"
+                          ? "fl-input-ok"
+                          : ""
+                    }`}
+                    placeholder={t("usernamePlaceholder", "ex: joao.silva")}
+                    value={formData.username}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    required
+                    maxLength={30}
+                  />
+                  {usernameMsg && (
+                    <p
+                      className={`mt-1 text-xs font-medium ${
+                        usernameStatus === "taken" || usernameStatus === "invalid"
+                          ? "text-[#dc2626]"
+                          : usernameStatus === "available"
+                            ? "text-[#15803d]"
+                            : "text-[#5b554b]"
+                      }`}
+                    >
+                      {usernameStatus === "checking" ? t("usernameChecking", "Verificando...") : usernameMsg}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="email" className="fl-label">{tAuth("email", "E-mail")}</label>
+                  <input
+                    id="email"
+                    type="email"
+                    className={`fl-input ${emailBlocked ? "fl-input-error" : ""}`}
+                    placeholder={t("emailPlaceholder", "seu@email.com")}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                  {emailBlocked && <p className="mt-1 text-xs text-[#dc2626]">{t("invalidEmail", "Digite um email válido.")}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="dataNascimento" className="fl-label">{t("birthDate", "Data de nascimento")}</label>
+                  <input
+                    id="dataNascimento"
+                    type="date"
+                    className="fl-input"
+                    value={formData.dataNascimento}
+                    onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Bloco Conta Supervisionada — aparece apenas se idade < 18 */}
+              {isMinorBirth && (
+                <div className="space-y-3 rounded-xl border-2 border-amber-500/40 bg-amber-500/8 p-4">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-amber-700">{t("supervisedTitle", "Conta supervisionada")}</p>
+                      <p className="text-xs text-[#5b554b]">
+                        {t("supervisedDescription", "Para criar uma conta menor de idade, informe o código do responsável. O código é gerado por um adulto na conta dele, em Conta › Parental, e vale por 24 horas.")}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="responsibleCode" className="fl-label">{t("responsibleCode", "Código do responsável")}</label>
+                    <input
+                      id="responsibleCode"
+                      className={`fl-input ${
+                        codeStatus === "invalid" && responsibleCode.length >= 6
+                          ? "fl-input-error"
+                          : codeStatus === "valid"
+                            ? "fl-input-ok"
+                            : ""
+                      }`}
+                      placeholder="PAR-XXXXXXXX"
+                      value={responsibleCode}
+                      onChange={(e) => handleResponsibleCodeChange(e.target.value)}
+                      maxLength={16}
+                      autoComplete="off"
+                    />
+                    {codeMsg && (
+                      <p
+                        className={`mt-1 text-xs font-medium ${
+                          codeStatus === "valid"
+                            ? "text-[#15803d]"
+                            : codeStatus === "checking"
+                              ? "text-[#5b554b]"
+                              : "text-[#dc2626]"
+                        }`}
+                      >
+                        {codeMsg}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="sexo" className="fl-label">{t("sex", "Sexo (opcional)")}</label>
+                <select
+                  id="sexo"
+                  className="fl-input"
+                  value={formData.sexo}
+                  onChange={(e) => setFormData({ ...formData, sexo: e.target.value })}
+                >
+                  <option value="">{t("selectPlaceholder", "Selecione")}</option>
+                  <option value="M">{t("male", "Masculino")}</option>
+                  <option value="F">{t("female", "Feminino")}</option>
+                  <option value="O">{t("other", "Outro")}</option>
+                </select>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="senha" className="fl-label">{tAuth("password", "Senha")}</label>
+                  <input
+                    id="senha"
+                    type="password"
+                    className="fl-input"
+                    placeholder={t("passwordPlaceholder", "Mínimo 8 caracteres")}
+                    value={formData.senha}
+                    onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                    required
+                  />
+                  <ul className="mt-2 space-y-1">
+                    <PasswordRequirement ok={passwordChecks.min_length} label={t("passwordMinLength", "Mínimo de 8 caracteres")} />
+                    <PasswordRequirement ok={passwordChecks.uppercase} label={t("passwordUppercase", "Pelo menos 1 letra maiúscula")} />
+                    <PasswordRequirement ok={passwordChecks.number} label={t("passwordNumber", "Pelo menos 1 número")} />
+                    <PasswordRequirement ok={passwordChecks.special_character} label={t("passwordSpecial", "Pelo menos 1 caractere especial")} />
+                  </ul>
+                </div>
+
+                <div>
+                  <label htmlFor="confirmarSenha" className="fl-label">{tAuth("confirmPassword", "Confirmar senha")}</label>
+                  <input
+                    id="confirmarSenha"
+                    type="password"
+                    className={`fl-input ${formData.confirmarSenha.length > 0 && !passwordsMatch ? "fl-input-error" : ""}`}
+                    placeholder={t("confirmPasswordPlaceholder", "Repita sua senha")}
+                    value={formData.confirmarSenha}
+                    onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
+                    required
+                  />
+                  {formData.confirmarSenha.length > 0 && !passwordsMatch && (
+                    <p className="mt-1 text-xs text-[#dc2626]">{t("passwordsDontMatch", "As senhas não coincidem.")}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-xl border-2 border-[#F2B705]/40 bg-[#F2B705]/8 p-4">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1 h-4 w-4 accent-[#F2B705]"
+                  />
+                  <span className="text-[#3a352d]">
+                    {t("acceptTermsPrefix", "Li e aceito os")}{" "}
+                    <button
+                      type="button"
+                      onClick={() => setOpenTermosModal(true)}
+                      className="font-bold text-[#0B0B0D] underline underline-offset-2"
+                    >
+                      {t("termsOfUse", "termos de uso")}
+                    </button>
+                    .
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!step1Valid}
+                className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold disabled:opacity-50"
+              >
+                {t("continue", "Continuar")}
+              </button>
+
+              <p className="text-center text-sm text-[#5b554b]">
+                {t("alreadyHaveAccount", "Já tem uma conta?")}{" "}
+                <Link href="/login" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+                  {t("doLogin", "Faça login")}
+                </Link>
+              </p>
+            </form>
           </div>
+        )}
 
-          <div className="flex justify-end gap-2 border-t pt-4">
-            <Button variant="outline" onClick={() => setOpenTermosModal(false)}>
-              {t("termsClose", "Fechar")}
-            </Button>
-            <Button
-              onClick={() => {
-                setAcceptedTerms(true)
-                setOpenTermosModal(false)
+        {/* STEP 2 — TIPO DE USUÁRIO */}
+        {step === 2 && (
+          <div className="fl-card rounded-3xl p-6 sm:p-8">
+            <button type="button" onClick={() => setStep(1)} className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#5b554b] transition hover:text-[#0B0B0D]">
+              <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+            </button>
+            <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("userTypeTitle", "Como você pretende usar a Freelandoo?")}</h2>
+            <p className="mt-1 text-sm text-[#5b554b]">{t("userTypeDescription", "Você pode mudar isso depois pela sua conta.")}</p>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setUserType("client")
+                  submitSignup(false)
+                }}
+                disabled={isSubmitting}
+                className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-white/50 p-6 text-left transition hover:border-[#0B0B0D] hover:shadow-[4px_4px_0_0_#0B0B0D] disabled:opacity-50"
+              >
+                <User className="mb-3 h-8 w-8 text-[#0B0B0D]" />
+                <p className="mb-1 font-bold text-[#0B0B0D]">{t("iAmClient", "Sou cliente")}</p>
+                <p className="text-sm text-[#5b554b]">{t("iAmClientDesc", "Quero contratar profissionais. Finalizar cadastro agora.")}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUserType("freelancer")
+                  setProfileData((prev) => ({ ...prev, display_name: prev.display_name || formData.nome }))
+                  setStep(3)
+                }}
+                disabled={isSubmitting}
+                className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-white/50 p-6 text-left transition hover:border-[#0B0B0D] hover:shadow-[4px_4px_0_0_#0B0B0D] disabled:opacity-50"
+              >
+                <Briefcase className="mb-3 h-8 w-8 text-[#0B0B0D]" />
+                <p className="mb-1 font-bold text-[#0B0B0D]">{t("iAmFreelancer", "Sou freelancer")}</p>
+                <p className="text-sm text-[#5b554b]">{t("iAmFreelancerDesc", "Quero criar perfil profissional para receber contatos.")}</p>
+              </button>
+            </div>
+            {submitError && <p className="mt-4 text-sm text-[#dc2626]">{submitError}</p>}
+            {isSubmitting && <p className="mt-4 text-sm text-[#5b554b]">{t("creatingAccount", "Criando conta...")}</p>}
+          </div>
+        )}
+
+        {/* STEP 3 — PERFIL FREELANCER */}
+        {step === 3 && (
+          <div className="fl-card rounded-3xl p-6 sm:p-8">
+            <button type="button" onClick={() => setStep(2)} className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#5b554b] transition hover:text-[#0B0B0D]">
+              <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+            </button>
+            <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("profileTitle", "Perfil profissional")}</h2>
+            <p className="mt-1 text-sm text-[#5b554b]">
+              {t("profileDescription", "Seu perfil nasce aguardando ativação. Ele só aparece publicamente após você ativar o perfil.")}
+            </p>
+
+            <form
+              className="mt-6 space-y-6"
+              onSubmit={(e) => {
+                e.preventDefault()
+                submitSignup(true)
               }}
             >
-              {t("termsAccept", "Li e aceito")}
-            </Button>
+              <div>
+                <label htmlFor="display_name" className="fl-label">{t("displayName", "Nome de exibição")}</label>
+                <input
+                  id="display_name"
+                  className="fl-input"
+                  value={profileData.display_name}
+                  onChange={(e) => setProfileData({ ...profileData, display_name: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Machines — chips com a cor do enxame (identidade preservada) */}
+              {machines.length > 0 && (
+                <div className="space-y-3">
+                  <label className="fl-label">{t("chooseMachine", "Escolha seu enxame")}</label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {machines.map((m) => {
+                      const isSelected = selectedMachineId === m.id_machine
+                      return (
+                        <button
+                          key={m.id_machine}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMachineId(m.id_machine)
+                            setSelectedCategoryId(null)
+                          }}
+                          onMouseEnter={() => setHoveredMachineId(m.id_machine)}
+                          onMouseLeave={() => setHoveredMachineId(null)}
+                          onFocus={() => setHoveredMachineId(m.id_machine)}
+                          onBlur={() => setHoveredMachineId(null)}
+                          title={machineDescription(m.slug)}
+                          style={
+                            isSelected
+                              ? { boxShadow: `0 0 18px ${m.color_glow}, 0 0 6px ${m.color_ring}`, borderColor: m.color_ring }
+                              : {}
+                          }
+                          className={`rounded-lg border-2 bg-[#15120E] px-3 py-3 text-sm font-medium text-white transition-all duration-200 hover:brightness-110 ${
+                            isSelected ? "" : "border-white/10 hover:border-white/30"
+                          }`}
+                        >
+                          {m.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {hoveredOrSelectedMachine && machineDescription(hoveredOrSelectedMachine.slug) && (
+                    <div className="flex items-start gap-2 rounded-md border-2 border-[#0B0B0D]/12 bg-white/50 p-3">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#0B0B0D]" />
+                      <div className="text-sm">
+                        <p className="font-bold text-[#0B0B0D]">{hoveredOrSelectedMachine.name}</p>
+                        <p className="text-[#5b554b]">{machineDescription(hoveredOrSelectedMachine.slug)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Profession */}
+              {selectedMachine && (
+                <div className="space-y-3">
+                  <label className="fl-label">{t("chooseProfession", "Escolha sua profissão")}</label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {selectedMachine.categories
+                      .filter((c) => c.is_active)
+                      .map((c) => {
+                        const isSelected = selectedCategoryId === c.id_category
+                        return (
+                          <button
+                            key={c.id_category}
+                            type="button"
+                            onClick={() => setSelectedCategoryId(c.id_category)}
+                            style={
+                              isSelected
+                                ? { boxShadow: `0 0 14px ${selectedMachine.color_glow}`, borderColor: selectedMachine.color_ring, color: selectedMachine.color_text }
+                                : {}
+                            }
+                            className={`rounded-lg border-2 bg-[#15120E] px-3 py-2 text-sm text-white transition-all duration-200 hover:brightness-110 ${
+                              isSelected ? "" : "border-white/10 hover:border-white/30"
+                            }`}
+                          >
+                            {c.desc_category}
+                          </button>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="bio" className="fl-label">{t("bioOptional", "Bio (opcional)")}</label>
+                <textarea
+                  id="bio"
+                  rows={3}
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                  className="fl-input resize-none"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="avatar_url" className="fl-label">{t("avatarUrlOptional", "URL do avatar (opcional)")}</label>
+                <input
+                  id="avatar_url"
+                  type="url"
+                  className="fl-input"
+                  placeholder="https://..."
+                  value={profileData.avatar_url}
+                  onChange={(e) => setProfileData({ ...profileData, avatar_url: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label htmlFor="estado" className="fl-label">{t("stateLabel", "Estado")}</label>
+                  <select id="estado" className="fl-input" value={profileData.estado} onChange={(e) => handleEstadoChange(e.target.value)}>
+                    <option value="">{t("selectPlaceholder", "Selecione")}</option>
+                    {estados.map((e) => (
+                      <option key={e.uf} value={e.uf}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="municipio" className="fl-label">{t("cityLabel", "Município")}</label>
+                  <select
+                    id="municipio"
+                    className="fl-input"
+                    value={profileData.municipio}
+                    onChange={(e) => setProfileData((prev) => ({ ...prev, municipio: e.target.value }))}
+                    disabled={!profileData.estado || loadingMunicipios}
+                  >
+                    <option value="">{loadingMunicipios ? t("loading", "Carregando...") : t("selectPlaceholder", "Selecione")}</option>
+                    {municipios.map((m) => (
+                      <option key={m.id} value={m.nome}>{m.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {submitError && <p className="text-sm text-[#dc2626]">{submitError}</p>}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold disabled:opacity-60"
+              >
+                {isSubmitting ? t("creatingAccount", "Criando conta...") : t("finishSignup", "Finalizar cadastro")}
+              </button>
+            </form>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        )}
+      </div>
+
+      {/* Modal de termos (tabloide leve) */}
+      {openTermosModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenTermosModal(false)} />
+          <div className="fl-card relative z-10 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-6">
+            <h3 className="fl-display text-2xl text-[var(--fl-ink)]">{t("termsModalTitle", "Termos de Uso - Freelandoo")}</h3>
+            <div className="mt-4 space-y-4 text-sm text-[#3a352d]">
+              <p>{t("termsP1", "Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda integralmente com os termos.")}</p>
+              <p>{t("termsP2", "A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações, não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são tratadas diretamente entre as partes.")}</p>
+              <p>{t("termsP3", "Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.")}</p>
+            </div>
+            <div className="mt-5 flex justify-end gap-2 border-t border-[#0B0B0D]/12 pt-4">
+              <button
+                type="button"
+                onClick={() => setOpenTermosModal(false)}
+                className="fl-btn-card inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider"
+              >
+                {t("termsClose", "Fechar")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAcceptedTerms(true)
+                  setOpenTermosModal(false)
+                }}
+                className="fl-btn-gold inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold"
+              >
+                {t("termsAccept", "Li e aceito")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </PageShell>
   )
 }
