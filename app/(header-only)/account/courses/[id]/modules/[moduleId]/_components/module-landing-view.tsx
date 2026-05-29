@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ImageDropZone } from "@/components/courses/image-drop-zone"
+import { PageShell } from "@/components/tabloide"
 import { useMyModule } from "@/hooks/use-my-module"
 import {
   useModuleLessons,
@@ -268,18 +269,21 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
 
   if (moduleLoading) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-10 text-white md:px-8">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-5xl">
           <div className="h-9 w-32 animate-pulse rounded-full bg-white/[0.04]" />
           <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-white/[0.05]" />
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   if (moduleError || !module) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-10 text-white md:px-8">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
           <p className="font-medium">Não foi possível carregar o módulo.</p>
@@ -293,12 +297,13 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
             Voltar ao curso
           </Link>
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 text-white">
+    <PageShell className="text-white md:pl-[80px]">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_30%_-10%,rgba(230,184,0,0.14),transparent_55%)]"
@@ -545,6 +550,6 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
           void refreshModule()
         }}
       />
-    </main>
+    </PageShell>
   )
 }

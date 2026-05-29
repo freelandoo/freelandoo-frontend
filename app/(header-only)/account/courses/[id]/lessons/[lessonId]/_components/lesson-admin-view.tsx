@@ -15,6 +15,7 @@ import { useCourseModules } from "@/hooks/use-course-modules"
 import { useModuleLessons } from "@/hooks/use-module-lessons"
 import { useCourseLesson } from "@/hooks/use-course-lesson"
 import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
+import { PageShell } from "@/components/tabloide"
 import { LessonModuleSidebar } from "./lesson-module-sidebar"
 import { LessonDataForm } from "./lesson-data-form"
 import { LessonVideoPlaceholder } from "./lesson-video-placeholder"
@@ -91,7 +92,8 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
   const isLoading = loadingLesson || loadingModules || loadingModuleLessons
 
   return (
-    <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 md:px-8 md:py-10">
+    <PageShell className="md:pl-[80px]">
+    <div className="relative z-10 px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -246,6 +248,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
           </>
         )}
       </div>
-    </main>
+    </div>
+    </PageShell>
   )
 }

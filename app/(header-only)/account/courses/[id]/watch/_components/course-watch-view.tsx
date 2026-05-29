@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
+import { PageShell } from "@/components/tabloide"
 import { useCoursePlayer, type PlayerLesson } from "@/hooks/use-course-player"
 
 interface Props {
@@ -120,7 +121,8 @@ export function CourseWatchView({ courseId }: Props) {
 
   if (isLoading) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-8 text-white">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-8 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="h-10 w-48 animate-pulse rounded-full bg-white/[0.05]" />
           <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -128,13 +130,15 @@ export function CourseWatchView({ courseId }: Props) {
             <div className="h-96 animate-pulse rounded-2xl bg-white/[0.04]" />
           </div>
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   if (error || !data) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-8 text-white">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
           <p className="font-medium">Não foi possível abrir o curso</p>
@@ -148,12 +152,14 @@ export function CourseWatchView({ courseId }: Props) {
             Voltar para meus cursos
           </Link>
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.08),transparent_30%),#09090b] px-4 py-6 text-white md:px-8 md:py-8">
+    <PageShell className="md:pl-[80px]">
+    <div className="relative z-10 px-4 py-6 text-white md:px-8 md:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <Link
@@ -378,6 +384,7 @@ export function CourseWatchView({ courseId }: Props) {
           </aside>
         </div>
       </div>
-    </main>
+    </div>
+    </PageShell>
   )
 }

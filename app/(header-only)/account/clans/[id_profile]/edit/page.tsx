@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { PageShell } from "@/components/tabloide"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
@@ -206,9 +207,11 @@ export default function EditClanPage({
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-12">
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
         <p className="text-muted-foreground">Carregando…</p>
-      </div>
+        </div>
+      </PageShell>
     )
   }
 
@@ -229,7 +232,8 @@ export default function EditClanPage({
   if (!clan) return null
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-10 space-y-6">
+    <PageShell className="md:pl-[80px]">
+    <main className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
       <Link
         href={`/clans/${id_profile}`}
         className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
@@ -237,7 +241,7 @@ export default function EditClanPage({
         <ArrowLeft className="size-4" /> Voltar para o clan
       </Link>
 
-      <Card>
+      <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         <CardHeader>
           <CardTitle>Editar perfil do clan</CardTitle>
         </CardHeader>
@@ -400,6 +404,7 @@ export default function EditClanPage({
           onConfirm={handleAvatarCropConfirm}
         />
       )}
-    </div>
+    </main>
+    </PageShell>
   )
 }

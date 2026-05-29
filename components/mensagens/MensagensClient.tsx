@@ -577,7 +577,6 @@ export default function MensagensClient() {
     }
     // searchResults intencionalmente fora das deps — só re-roda quando o termo
     // muda, e o tipo serve só como referência de shape.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [convSearch])
 
   const handleStartConvWith = useCallback(

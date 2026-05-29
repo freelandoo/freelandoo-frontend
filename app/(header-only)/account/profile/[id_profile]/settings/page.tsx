@@ -19,6 +19,7 @@ import { buildProfileUrl } from "@/lib/slug"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
+import { ErrorState, LoadingState, PageShell } from "@/components/tabloide"
 import {
   AVATAR_IMAGE_ASPECT_RATIO,
   AVATAR_IMAGE_MAX_SIZE_BYTES,
@@ -128,23 +129,28 @@ export default function ProfileSettingsPage() {
 
   if (isLoading) {
     return (
-      <main className="container mx-auto px-4 py-12 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </main>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando perfil..." />
+        </div>
+      </PageShell>
     )
   }
 
   if (error || !perfil) {
     return (
-      <main className="container mx-auto px-4 py-12">
-        <p className="text-destructive">{error || "Erro ao carregar perfil"}</p>
-      </main>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <ErrorState title="Perfil indisponível" description={error || "Erro ao carregar perfil"} />
+        </div>
+      </PageShell>
     )
   }
 
   if (!profile) {
     return (
-      <main className="container mx-auto px-4 py-12 space-y-4">
+      <PageShell className="md:pl-[80px]">
+      <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-4 px-4 py-12">
         <p className="text-muted-foreground">Este perfil não existe ou não pertence a você.</p>
         <Button asChild variant="outline">
           <Link href="/account">
@@ -153,6 +159,7 @@ export default function ProfileSettingsPage() {
           </Link>
         </Button>
       </main>
+      </PageShell>
     )
   }
 
@@ -495,7 +502,8 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 space-y-6 max-w-4xl">
+    <PageShell className="md:pl-[80px]">
+    <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <Button asChild variant="ghost" size="sm">
           <Link href={`/account/profile/${id_profile}`}>
@@ -956,7 +964,7 @@ export default function ProfileSettingsPage() {
 
       {/* Modal de Rede Social */}
       <Dialog open={isSocialMediaModalOpen} onOpenChange={setIsSocialMediaModalOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{editingSocial ? "Editar Rede Social" : "Adicionar Rede Social"}</DialogTitle>
           </DialogHeader>
@@ -1065,5 +1073,6 @@ export default function ProfileSettingsPage() {
         />
       )}
     </main>
+    </PageShell>
   )
 }

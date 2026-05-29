@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, MessageSquare, AlertCircle, ShieldCheck } from "lucide-react"
+import { PageShell } from "@/components/tabloide"
 
 interface MinorConversation {
   id_conversation: string
@@ -110,23 +110,29 @@ export default function MinorMessagesPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <main className="container mx-auto max-w-5xl px-4 py-8 md:py-10">
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/account/parental")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+    <PageShell className="md:pl-[80px]">
+      <main className="relative z-10 mx-auto max-w-5xl px-4 py-10">
+        <header className="mb-8">
+          <button
+            type="button"
+            onClick={() => router.push("/account/parental")}
+            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+          >
+            <ArrowLeft className="h-4 w-4" />
             Voltar
-          </Button>
+          </button>
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <ShieldCheck className="h-6 w-6 text-amber-500" />
+            <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
+                <ShieldCheck className="h-6 w-6" />
+              </span>
               Mensagens supervisionadas
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
               Visualização somente leitura das conversas do menor.
             </p>
           </div>
-        </div>
+        </header>
 
         {error && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
@@ -137,7 +143,7 @@ export default function MinorMessagesPage() {
 
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
           {/* Lista de conversas */}
-          <Card className="h-fit">
+          <Card className="fl-card-dark h-fit rounded-2xl border-[#F5F1E8]/20 bg-[#1D1810] text-[#F5F1E8]">
             <CardHeader>
               <CardTitle className="text-base">Conversas</CardTitle>
             </CardHeader>
@@ -187,7 +193,7 @@ export default function MinorMessagesPage() {
           </Card>
 
           {/* Mensagens da conversa */}
-          <Card>
+          <Card className="fl-card-dark rounded-2xl border-[#F5F1E8]/20 bg-[#1D1810] text-[#F5F1E8]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <MessageSquare className="h-4 w-4" />
@@ -236,6 +242,6 @@ export default function MinorMessagesPage() {
           </Card>
         </div>
       </main>
-    </div>
+    </PageShell>
   )
 }

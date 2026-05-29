@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import AgendaPageClient, { type ClanMember } from "@/components/agenda/AgendaPageClient"
+import { LoadingState, PageShell } from "@/components/tabloide"
 
 export default function AgendaPage() {
   const params = useParams()
@@ -35,9 +36,11 @@ export default function AgendaPage() {
 
   if (!resolved) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-zinc-600 border-t-yellow-400" />
-      </div>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando agenda..." />
+        </div>
+      </PageShell>
     )
   }
 

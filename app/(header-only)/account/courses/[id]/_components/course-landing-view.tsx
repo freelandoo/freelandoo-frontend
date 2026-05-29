@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ImageDropZone } from "@/components/courses/image-drop-zone"
+import { PageShell } from "@/components/tabloide"
 import { fetchWithLog } from "@/lib/fetch-with-log"
 import { useMyCourse } from "@/hooks/use-my-course"
 import { useCourseModules, type CourseModule } from "@/hooks/use-course-modules"
@@ -249,20 +250,23 @@ export function CourseLandingView({ courseId }: Props) {
 
   if (courseLoading) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-10 text-white md:px-8">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-5xl">
           <div className="h-9 w-32 animate-pulse rounded-full bg-white/[0.04]" />
           <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-white/[0.05]" />
           <div className="mt-6 h-9 w-2/3 animate-pulse rounded-full bg-white/[0.05]" />
           <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-white/[0.04]" />
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   if (courseError || !course) {
     return (
-      <main className="min-h-[100dvh] bg-zinc-950 px-4 py-10 text-white md:px-8">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
           <p className="font-medium">Não foi possível carregar o curso.</p>
@@ -276,12 +280,13 @@ export function CourseLandingView({ courseId }: Props) {
             Voltar para Meus Cursos
           </Link>
         </div>
-      </main>
+      </div>
+      </PageShell>
     )
   }
 
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 text-white">
+    <PageShell className="text-white md:pl-[80px]">
       {/* Background ambient */}
       <div
         aria-hidden
@@ -535,7 +540,7 @@ export function CourseLandingView({ courseId }: Props) {
           <CourseStudentsSection courseId={course.id} />
         </DialogContent>
       </Dialog>
-    </main>
+    </PageShell>
   )
 }
 

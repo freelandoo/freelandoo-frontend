@@ -38,6 +38,7 @@ import {
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { LoadingState, PageShell } from "@/components/tabloide"
 
 type Member = {
   id_member_profile: string
@@ -510,15 +511,18 @@ export default function ManageClanPage({
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-12">
-        <p className="text-muted-foreground">Carregando clan...</p>
-      </div>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando clan..." />
+        </div>
+      </PageShell>
     )
   }
 
   if (error || !clan) {
     return (
-      <div className="container mx-auto max-w-4xl px-4 py-12">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-12">
         <Card>
           <CardContent className="pt-6 flex items-center gap-2 text-red-600">
             <AlertCircle className="size-5" />
@@ -532,6 +536,7 @@ export default function ManageClanPage({
           <ArrowLeft className="size-4" /> Voltar
         </Link>
       </div>
+      </PageShell>
     )
   }
 
@@ -548,7 +553,8 @@ export default function ManageClanPage({
   const slotPrice = ((clan.settings?.slot_price_cents ?? 3900) / 100).toFixed(2)
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12 space-y-8">
+    <PageShell className="md:pl-[80px]">
+    <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <Link
           href={`/clans/${id_profile}`}
@@ -1092,6 +1098,7 @@ export default function ManageClanPage({
           onConfirm={handleClanPortfolioCropConfirm}
         />
       )}
-    </div>
+    </main>
+    </PageShell>
   )
 }
