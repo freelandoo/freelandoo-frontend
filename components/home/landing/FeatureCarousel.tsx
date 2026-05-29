@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react"
 import useEmblaCarousel from "embla-carousel-react"
 import { ChevronLeft, ChevronRight, TrendingUp, ArrowRight } from "lucide-react"
 import { CAROUSEL_SLIDES } from "./tokens"
-import { Section, YellowHighlight, PhotoFrame, DoodleArrow, GoldButton } from "./primitives"
+import { Section, YellowHighlight, PhotoFrame, DoodleArrow, GoldButton, StrokeNumber, WashiTape } from "./primitives"
 
 export function FeatureCarousel() {
   const [emblaRef, embla] = useEmblaCarousel({ loop: true, align: "center", containScroll: "trimSnaps" })
@@ -37,7 +37,7 @@ export function FeatureCarousel() {
         {/* Coluna do título (dark) */}
         <div data-reveal className="relative">
           <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">
-            Tudo que você precisa para <YellowHighlight>ganhar mais.</YellowHighlight>
+            Tudo que você precisa para <YellowHighlight mark>ganhar mais.</YellowHighlight>
           </h2>
           <p className="mt-5 max-w-sm text-lg leading-relaxed text-[#C9C2B6]">
             Feito para o lado de criação e vendas da Freelandoo: rápido e fácil.
@@ -68,10 +68,10 @@ export function FeatureCarousel() {
                     {/* Texto */}
                     <div className="flex-1">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="fl-display text-5xl text-[#F2B705]">{String(s.n).padStart(2, "0")}</span>
+                        <StrokeNumber tone="ink" className="text-6xl">{String(s.n).padStart(2, "0")}</StrokeNumber>
                         <span className="font-mono text-sm text-[#9a8f7a]">/ {String(total).padStart(2, "0")}</span>
                       </div>
-                      <h3 className="fl-display mt-3 text-3xl text-[#14110B] sm:text-4xl">{s.title}</h3>
+                      <h3 className="fl-display mt-3 text-3xl text-[#0B0B0D] sm:text-4xl">{s.title}</h3>
                       <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#6B6457]">{s.desc}</p>
                       <GoldButton href={s.href} className="mt-5 px-5 py-2.5 text-xs uppercase tracking-wider">
                         {s.cta} <ArrowRight className="h-4 w-4" />
@@ -80,7 +80,8 @@ export function FeatureCarousel() {
                     {/* Foto + métricas */}
                     <div className="relative flex-1">
                       <PhotoFrame src={s.photo} alt={s.title} className="aspect-[4/3] w-full rounded-2xl" />
-                      <div className="absolute -bottom-3 -right-2 w-40 rounded-2xl border border-black/5 bg-white p-3 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.5)]">
+                      <div className="absolute -bottom-3 -right-2 w-40 rounded-xl border-2 border-[#0B0B0D] bg-white p-3 shadow-[4px_4px_0_0_#0B0B0D]">
+                        <WashiTape className="-top-3 right-3" rotate={7} />
                         <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Métricas</div>
                         <ul className="mt-1.5 space-y-1">
                           {s.metrics.map((m) => (

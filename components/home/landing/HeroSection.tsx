@@ -11,7 +11,7 @@ import { ArrowRight } from "lucide-react"
 import { LINKS, HERO_STATS } from "./tokens"
 import {
   GoldButton, OutlineButton, YellowHighlight, DoodleArrow, Squiggle, HiveDoodle,
-  AvatarStack, PhotoFrame, Icon, HoneycombField,
+  AvatarStack, PhotoFrame, Icon, HoneycombField, Spark, StickerNote, WashiTape,
 } from "./primitives"
 
 const EASE = [0.16, 1, 0.3, 1] as const
@@ -19,16 +19,17 @@ const container: Variants = { hidden: {}, show: { transition: { staggerChildren:
 const item: Variants = { hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } } }
 const pop: Variants = { hidden: { opacity: 0, scale: 0.92, x: 18 }, show: { opacity: 1, scale: 1, x: 0, transition: { duration: 0.6, ease: EASE } } }
 
-function StatCard({ stat }: { stat: (typeof HERO_STATS)[number] }) {
+function StatCard({ stat, taped }: { stat: (typeof HERO_STATS)[number]; taped?: boolean }) {
   return (
-    <div className="fl-card flex items-center gap-3 rounded-2xl px-4 py-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F2B705]/15 text-[#E0A500]">
+    <div className="fl-card fl-hard relative flex items-center gap-3 rounded-xl px-4 py-3">
+      {taped && <WashiTape className="-top-3 right-4" rotate={6} />}
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
         <Icon name={stat.icon} className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-black text-[#14110B]">{stat.label}</span>
+        <span className="block text-sm font-black text-[#0B0B0D]">{stat.label}</span>
         <span className="block text-xs text-[#6B6457]">{stat.line}</span>
-        <span className="mt-0.5 block text-xs font-bold text-[#B98900]">{stat.value}</span>
+        <span className="mt-0.5 block text-xs font-bold text-[#9a7400]">{stat.value}</span>
       </span>
     </div>
   )
@@ -46,8 +47,9 @@ export function HeroSection() {
       <div className="mx-auto grid w-full max-w-[1180px] items-center gap-12 px-5 pb-16 pt-12 sm:px-8 md:grid-cols-[1.05fr_0.95fr] md:gap-6 md:pb-24 md:pt-16">
         {/* Texto */}
         <motion.div initial={reduce ? false : "hidden"} animate="show" variants={container}>
-          <motion.h1 variants={item} className="fl-display text-[2.9rem] text-[#F5F1E8] sm:text-6xl md:text-[4.4rem]">
-            Venda serviços, cursos, produtos e <YellowHighlight>ganhe</YellowHighlight> como afiliado.
+          <motion.h1 variants={item} className="fl-display relative text-[2.9rem] text-[#F5F1E8] sm:text-6xl md:text-[4.4rem]">
+            Venda serviços, cursos, produtos e <YellowHighlight mark>ganhe</YellowHighlight> como afiliado.
+            <Spark className="absolute -right-1 -top-5 hidden h-9 w-9 text-[#F2B705] md:block" />
           </motion.h1>
 
           <motion.p variants={item} className="mt-6 max-w-md text-lg leading-relaxed text-[#C9C2B6]">
@@ -61,11 +63,14 @@ export function HeroSection() {
             <OutlineButton href={LINKS.marketplace}>Conhecer o marketplace</OutlineButton>
           </motion.div>
 
-          <motion.div variants={item} className="mt-8 flex items-center gap-3">
-            <AvatarStack count={5} />
-            <span className="text-sm text-[#9A938A]">
-              <span className="font-bold text-[#F5F1E8]">+10 mil pessoas</span> já estão ganhando
-            </span>
+          <motion.div variants={item} className="mt-8 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3">
+              <AvatarStack count={5} />
+              <span className="text-sm text-[#9A938A]">
+                <span className="font-bold text-[#F5F1E8]">+10 mil pessoas</span> já estão ganhando
+              </span>
+            </div>
+            <StickerNote rotate={-4} className="hidden sm:inline-block">comece de graça</StickerNote>
           </motion.div>
         </motion.div>
 
@@ -78,15 +83,18 @@ export function HeroSection() {
                 alt="Pessoa feliz usando a Freelandoo no celular"
                 icon="star"
                 priority
-                className="h-full w-full rounded-3xl"
+                torn
+                cut
+                className="h-full w-full"
               />
+              <WashiTape className="-left-2 top-6" rotate={-10} />
               <HiveDoodle className="absolute -left-3 -top-3 h-12 w-12 text-[#F2B705]" />
             </motion.div>
 
             <div className="flex w-[44%] max-w-[250px] flex-col justify-center gap-3">
-              {HERO_STATS.map((s) => (
+              {HERO_STATS.map((s, i) => (
                 <motion.div key={s.id} variants={pop} className="fl-float-slow">
-                  <StatCard stat={s} />
+                  <StatCard stat={s} taped={i === 0} />
                 </motion.div>
               ))}
             </div>

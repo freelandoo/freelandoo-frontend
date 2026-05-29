@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import Script from "next/script"
-import { Geist, Geist_Mono, Anton } from "next/font/google"
+import { Geist, Geist_Mono, Anton, Archivo, Caveat } from "next/font/google"
 import { CookieConsent } from "@/components/cookie-consent"
 import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
@@ -19,6 +19,9 @@ const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 // Display condensado para as headlines em caixa-alta da landing (poster look).
 const anton = Anton({ subsets: ["latin"], weight: "400", variable: "--font-anton", display: "swap" })
+// Corpo/UI editorial e manuscrito (rabiscos/notas) da landing tabloide.
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", display: "swap" })
+const caveat = Caveat({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-caveat", display: "swap" })
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.freelandoo.com.br"),
@@ -101,7 +104,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`dark ${geistSans.variable} ${geistMono.variable} ${anton.variable}`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${anton.variable} ${archivo.variable} ${caveat.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">

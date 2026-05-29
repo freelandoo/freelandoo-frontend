@@ -322,125 +322,179 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   FREELANDOO LANDING — design system (homepage editorial, tema WARM-DARK)
-   Direção: "editorial poster" — canvas carvão quente, um único dourado de
-   destaque, headlines condensadas em caixa-alta (Anton), cards brancos
-   flutuando, doodles dourados desenhados à mão. Namespace `.fl-`.
-   Paleta: canvas #15120E · ink #F5F1E8 · gold #F2B705 / #E0A500 · muted #9A938A
+   FREELANDOO LANDING — design system "Tabloide Editorial Premium" (DARK)
+   Direção: capa de tabloide/carrossel virou interface de produto. Caos visual
+   controlado: cards de papel rasgado, fita adesiva, rabiscos à mão, halftone,
+   grão de papel, manchetes condensadas GIGANTES. Tema escuro Freelandoo com
+   off-white de papel para contraste e dourado como acento "de poder".
+   Paleta: canvas #141009 · paper #F1EDE2 · ink #0B0B0D · gold #F2B705
+   Tipografia: Anton (display) · Archivo (corpo) · Caveat (manuscrito)
+   Namespace `.fl-`.
    ══════════════════════════════════════════════════════════════════════════ */
 
 .fl-root {
-  --fl-canvas: #15120e;
-  --fl-canvas-2: #1d1914;
-  --fl-ink: #f5f1e8;
+  --fl-canvas: #141009;
+  --fl-canvas-2: #1d1810;
+  --fl-paper: #f1ede2;
+  --fl-paper-2: #e8e2d4;
+  --fl-ink: #0b0b0d;
+  --fl-ink-soft: #2b2b2e;
+  --fl-offwhite: #f1ede2;
   --fl-gold: #f2b705;
   --fl-gold-deep: #e0a500;
-  --fl-muted: #9a938a;
+  --fl-muted: #a89f8d;
+  --fl-line: rgba(241, 237, 226, 0.12);
   color-scheme: dark;
   background-color: var(--fl-canvas);
-  color: var(--fl-ink);
+  color: var(--fl-offwhite);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Textura do canvas escuro: grão fino quase imperceptível + vinheta quente */
+/* Fundo do canvas: cor base + vinheta dourada quente + grão de papel */
 .fl-paper-texture {
+  position: relative;
   background-color: var(--fl-canvas);
   background-image:
-    radial-gradient(1100px 600px at 78% -5%, rgba(242, 183, 5, 0.07), transparent 60%),
-    radial-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: auto, 6px 6px;
+    radial-gradient(1100px 620px at 82% -8%, rgba(242, 183, 5, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 0% 100%, rgba(242, 183, 5, 0.05), transparent 62%);
+}
+.fl-paper-texture::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Grão sutil sobreposto (camada absolute aria-hidden) */
+/* Grão reutilizável (camada absolute aria-hidden) */
 .fl-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
 }
 
-/* Card branco "papel" sobre o canvas escuro */
+/* Halftone de pontos — cantos decorativos */
+.fl-dots {
+  background-image: radial-gradient(var(--fl-gold) 1.3px, transparent 1.6px);
+  background-size: 11px 11px;
+}
+.fl-dots-ink {
+  background-image: radial-gradient(var(--fl-ink) 1.3px, transparent 1.6px);
+  background-size: 11px 11px;
+}
+
+/* Card de PAPEL off-white (contraste) com borda dura e sombra de recorte */
 .fl-card {
-  background: #fff;
-  color: #14110b;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    0 26px 50px -24px rgba(0, 0, 0, 0.6);
+  background: var(--fl-paper);
+  color: var(--fl-ink);
+  border: 2px solid var(--fl-ink);
+  box-shadow: 0 16px 34px -18px rgba(0, 0, 0, 0.85);
 }
-
-/* Card escuro alternativo (mesma família, fundo carvão) */
+/* Sombra dura deslocada (neo-brutalista) — pop no hover */
+.fl-hard {
+  box-shadow: 5px 5px 0 0 var(--fl-ink);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fl-hard:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 0 var(--fl-gold); }
+/* Card escuro de papel (bloco preto editorial) */
 .fl-card-dark {
   background: var(--fl-canvas-2);
-  color: var(--fl-ink);
-  border: 1px solid rgba(245, 241, 232, 0.08);
+  color: var(--fl-offwhite);
+  border: 2px solid var(--fl-offwhite);
 }
 
-/* Headline display condensada (Anton), caixa-alta */
-.fl-headline {
+/* Borda recortada/rasgada — clip-path serrilhado (base / topo+base) */
+.fl-torn-1 { clip-path: polygon(0% 3%, 4% 0, 26% 3%, 52% 0, 79% 3%, 97% 0, 100% 4%, 100% 90%, 96% 100%, 72% 96%, 49% 100%, 25% 96%, 5% 100%, 0 92%); }
+.fl-torn-2 { clip-path: polygon(0 0, 100% 0, 100% 88%, 95% 100%, 78% 95%, 60% 100%, 42% 95%, 24% 100%, 6% 96%, 0 100%); }
+.fl-torn-soft { border-radius: 4px 14px 6px 16px / 14px 6px 16px 8px; }
+
+/* Marca-texto à mão (atrás do trecho), levemente torto. Default = dourado. */
+.fl-mark { position: relative; isolation: isolate; white-space: nowrap; }
+.fl-mark::before {
+  content: "";
+  position: absolute;
+  inset: 0.08em -0.18em -0.06em -0.18em;
+  background: var(--fl-gold);
+  transform: rotate(-1.4deg);
+  z-index: -1;
+  border-radius: 2px;
+}
+.fl-mark > * { position: relative; }
+/* destaque inline simples em dourado (sem bloco) */
+.fl-highlight { color: var(--fl-gold); }
+
+/* Número/letra em contorno (text-stroke) */
+.fl-stroke {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--fl-offwhite);
+}
+.fl-stroke-gold { color: transparent; -webkit-text-stroke: 2px var(--fl-gold); }
+.fl-stroke-ink { color: transparent; -webkit-text-stroke: 2px var(--fl-ink); }
+
+/* Fita adesiva (washi tape) */
+.fl-tape {
+  position: absolute;
+  width: 86px;
+  height: 26px;
+  background: rgba(242, 183, 5, 0.55);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.28);
+}
+.fl-tape-off { background: rgba(241, 237, 226, 0.5); }
+
+/* Sombra de recorte de revista (foto rasgada) */
+.fl-cut { filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.45)); }
+
+/* Headline display gigante (Anton, caixa-alta) */
+.fl-display, .fl-headline {
   font-family: var(--font-anton), "Arial Narrow", system-ui, sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.005em;
-  line-height: 0.92;
   font-weight: 400;
+  letter-spacing: 0.004em;
+  line-height: 0.9;
+  text-wrap: balance;
 }
+/* Manuscrito (rabiscos/notas) */
+.fl-marker { font-family: var(--font-caveat), "Comic Sans MS", cursive; }
 
-/* Borda recortada/irregular — clip-path estilo papel rasgado (4 variações) */
-.fl-torn-1 { clip-path: polygon(0% 4%, 3% 0%, 22% 3%, 51% 0%, 78% 4%, 97% 1%, 100% 6%, 99% 94%, 100% 100%, 73% 97%, 49% 100%, 24% 97%, 4% 100%, 0% 95%); }
-.fl-torn-2 { clip-path: polygon(1% 2%, 26% 0%, 54% 3%, 81% 0%, 100% 3%, 98% 28%, 100% 62%, 99% 100%, 70% 98%, 42% 100%, 16% 98%, 0% 100%, 2% 64%, 0% 31%); }
-.fl-torn-soft { border-radius: 14px 22px 16px 24px / 22px 16px 24px 18px; }
-
-/* Palavra em dourado dentro da headline (sem marca-texto, como no mockup) */
-.fl-highlight {
-  color: var(--fl-gold);
-}
-
-/* Botão dourado (CTA primário) com feedback tátil */
+/* Botões */
 .fl-btn-gold {
   background: var(--fl-gold);
   color: #1a1505;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 26px -12px rgba(242, 183, 5, 0.7);
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s, box-shadow 0.18s;
+  border: 2px solid var(--fl-ink);
+  box-shadow: 4px 4px 0 0 var(--fl-ink);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s, background-color 0.18s;
 }
-.fl-btn-gold:hover { background: #ffc81f; }
-.fl-btn-gold:active { transform: scale(0.975); }
-/* Botão contornado branco (CTA secundário no canvas escuro) */
+.fl-btn-gold:hover { background: #ffc81f; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 0 var(--fl-ink); }
+.fl-btn-gold:active { transform: translate(0, 0); box-shadow: 2px 2px 0 0 var(--fl-ink); }
 .fl-btn-outline {
   background: transparent;
-  color: var(--fl-ink);
-  border: 1.5px solid rgba(245, 241, 232, 0.35);
+  color: var(--fl-offwhite);
+  border: 2px solid rgba(241, 237, 226, 0.4);
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s, background-color 0.18s;
 }
-.fl-btn-outline:hover { border-color: rgba(245, 241, 232, 0.7); background: rgba(245, 241, 232, 0.06); }
+.fl-btn-outline:hover { border-color: var(--fl-offwhite); background: rgba(241, 237, 226, 0.06); }
 .fl-btn-outline:active { transform: scale(0.975); }
-/* Botão escuro/ink para uso sobre cards brancos */
 .fl-btn-ink {
-  background: #14110b;
-  color: #faf7f0;
+  background: var(--fl-ink);
+  color: var(--fl-paper);
+  border: 2px solid var(--fl-ink);
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s;
 }
 .fl-btn-ink:hover { background: #2a2418; }
 .fl-btn-ink:active { transform: scale(0.975); }
-/* Pílula contornada escura para botões dentro de cards brancos (ex.: COMEÇAR) */
+/* Pílula para dentro de cards de papel (ex.: COMEÇAR) */
 .fl-btn-card {
   background: transparent;
-  color: #14110b;
-  border: 1.5px solid rgba(20, 17, 11, 0.22);
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s, background-color 0.18s;
+  color: var(--fl-ink);
+  border: 2px solid var(--fl-ink);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s, color 0.18s;
 }
-.fl-btn-card:hover { border-color: #14110b; background: #14110b; color: #fff; }
-.fl-btn-card:active { transform: scale(0.975); }
+.fl-btn-card:hover { background: var(--fl-ink); color: var(--fl-paper); }
+.fl-btn-card:active { transform: scale(0.97); }
 
-/* Marquee horizontal (faixa de palavras) — pausa em reduced-motion */
-@keyframes fl-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.fl-marquee-track {
-  display: inline-flex;
-  animation: fl-marquee 38s linear infinite;
-  will-change: transform;
-}
-.fl-marquee:hover .fl-marquee-track { animation-play-state: paused; }
-
-/* Flutuar suave para UI cards do hero (independente de JS) */
+/* Float suave (UI cards do hero) */
 @keyframes fl-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-9px); }
@@ -448,20 +502,7 @@
 .fl-float { animation: fl-float 6s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
 .fl-float-slow { animation: fl-float 8.5s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
 
-/* Headline display gigante (Anton, caixa-alta) */
-.fl-display {
-  font-family: var(--font-anton), "Arial Narrow", system-ui, sans-serif;
-  text-transform: uppercase;
-  font-weight: 400;
-  letter-spacing: 0.005em;
-  line-height: 0.92;
-  text-wrap: balance;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .fl-marquee-track,
-  .fl-float,
-  .fl-float-slow {
-    animation: none !important;
-  }
+  .fl-float, .fl-float-slow { animation: none !important; }
+  .fl-hard, .fl-btn-gold { transition: none !important; }
 }

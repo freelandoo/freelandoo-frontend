@@ -4,9 +4,9 @@
  */
 import Image from "next/image"
 import Link from "next/link"
-import { Instagram, Youtube, Facebook, Twitter, Linkedin, Smartphone } from "lucide-react"
+import { Instagram, Youtube, Facebook, Twitter, Linkedin, Smartphone, ArrowRight } from "lucide-react"
 import { LINKS } from "./tokens"
-import { HiveDoodle } from "./primitives"
+import { HiveDoodle, GoldButton, YellowHighlight, DoodleArrow } from "./primitives"
 
 const COLS: { title: string; links: { label: string; href: string }[] }[] = [
   {
@@ -51,6 +51,27 @@ export function LandingFooter() {
     <footer className="relative overflow-hidden border-t border-[#F5F1E8]/8 bg-[#100E0A] text-[#F5F1E8]">
       <HiveDoodle className="absolute -right-10 -top-10 h-44 w-44 text-[#F2B705]/10" />
       <div className="relative mx-auto w-full max-w-[1180px] px-5 py-14 sm:px-8">
+        {/* Band editorial estilo post */}
+        <div className="mb-12 border-b border-[#F5F1E8]/10 pb-12">
+          <div className="mb-2 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
+            <span>Venda</span><span className="text-[#F5F1E8]/30">•</span>
+            <span>Ensine</span><span className="text-[#F5F1E8]/30">•</span>
+            <span>Aprenda</span><span className="text-[#F5F1E8]/30">•</span>
+            <span>Ganhe</span>
+          </div>
+          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+            <div className="relative">
+              <h2 className="fl-display text-5xl text-[#F5F1E8] sm:text-6xl md:text-7xl">
+                Sua próxima <YellowHighlight mark>renda</YellowHighlight> começa aqui.
+              </h2>
+              <DoodleArrow dir="down-right" className="absolute -right-6 top-1 hidden h-10 w-20 text-[#F2B705] lg:block" />
+            </div>
+            <GoldButton href={LINKS.cadastro} className="group shrink-0">
+              Começar agora <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </GoldButton>
+          </div>
+        </div>
+
         <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
           <div>
             <Link href="/" className="flex items-center gap-2">

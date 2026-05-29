@@ -6,7 +6,7 @@
  */
 import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
 import { BENTO, type BentoItem } from "./tokens"
-import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow } from "./primitives"
+import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
 
 const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6: "lg:col-span-6", 12: "lg:col-span-12" }
 
@@ -103,8 +103,9 @@ export function FeatureBento() {
   return (
     <Section id="recursos">
       <div className="relative mb-12 max-w-2xl">
-        <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">
-          Tudo para vender, ensinar, <YellowHighlight>aprender e ganhar.</YellowHighlight>
+        <p className="fl-marker mb-1 text-2xl font-bold text-[#F2B705]">tudo num lugar só</p>
+        <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl md:text-6xl">
+          Vender, ensinar, <YellowHighlight mark>aprender e ganhar.</YellowHighlight>
         </h2>
         <DoodleArrow dir="left" className="absolute -right-4 top-2 hidden h-10 w-20 text-[#F2B705] lg:block" />
       </div>
@@ -116,18 +117,20 @@ export function FeatureBento() {
             <article
               key={item.n}
               data-card
-              className={`flex flex-col rounded-2xl fl-card p-5 transition-transform duration-300 hover:-translate-y-1 ${SPAN[item.span] ?? "lg:col-span-4"}`}
+              className={`relative flex flex-col overflow-hidden rounded-xl fl-card fl-hard p-5 ${SPAN[item.span] ?? "lg:col-span-4"}`}
             >
-              {isPhoto && <div className="mb-4"><BentoVisual item={item} /></div>}
-              <div className="flex items-start gap-3">
-                <span className="fl-display shrink-0 text-3xl text-[#F2B705]">{String(item.n).padStart(2, "0")}</span>
+              <Halftone className="absolute -bottom-2 -right-2 h-14 w-14 opacity-[0.14]" ink />
+              {item.n % 3 === 0 && <WashiTape className="-right-3 top-5" off rotate={12} />}
+              {isPhoto && <div className="relative mb-4"><BentoVisual item={item} /></div>}
+              <div className="relative flex items-start gap-3">
+                <span className="fl-display shrink-0 text-4xl text-[#F2B705]">{String(item.n).padStart(2, "0")}</span>
                 <div>
-                  <h3 className="text-base font-black uppercase tracking-wide text-[#14110B]">{item.title}</h3>
+                  <h3 className="text-base font-black uppercase tracking-wide text-[#0B0B0D]">{item.title}</h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-[#6B6457]">{item.desc}</p>
                 </div>
               </div>
-              {!isPhoto && <div className="mt-4"><BentoVisual item={item} /></div>}
-              {item.cta && <CardButton href={item.href} className="mt-4 self-start">{item.cta}</CardButton>}
+              {!isPhoto && <div className="relative mt-4"><BentoVisual item={item} /></div>}
+              {item.cta && <CardButton href={item.href} className="relative mt-4 self-start">{item.cta}</CardButton>}
             </article>
           )
         })}

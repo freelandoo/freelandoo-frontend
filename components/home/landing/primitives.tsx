@@ -7,7 +7,7 @@ import Image from "next/image"
 import type { ReactNode, CSSProperties, HTMLAttributes } from "react"
 import {
   Star, GraduationCap, ShoppingCart, Wallet, Percent, ShoppingBag, Briefcase,
-  Blocks, Search, Crown, ImageIcon, ArrowUpRight,
+  Blocks, Search, Crown, ArrowUpRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -25,9 +25,46 @@ export function Icon({ name, className }: { name?: string; className?: string })
   return <Cmp className={className} />
 }
 
-/* ── Palavra em dourado na headline ───────────────────────────────────────── */
-export function YellowHighlight({ children, className }: { children: ReactNode; className?: string }) {
+/* ── Palavra destacada na headline ────────────────────────────────────────
+   `mark` = marca-texto dourado à mão (bloco atrás). Sem mark = texto dourado. */
+export function YellowHighlight({
+  children, className, mark,
+}: { children: ReactNode; className?: string; mark?: boolean }) {
+  if (mark) {
+    return (
+      <span className={cn("fl-mark", className)}>
+        <span className="text-[#0B0B0D]">{children}</span>
+      </span>
+    )
+  }
   return <span className={cn("fl-highlight", className)}>{children}</span>
+}
+
+/* Marca-texto dourado genérico (para palavras no corpo) */
+export function MarkerText({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={cn("fl-mark font-bold", className)}>
+      <span className="text-[#0B0B0D]">{children}</span>
+    </span>
+  )
+}
+
+/* Número/letra gigante em contorno (text-stroke) */
+export function StrokeNumber({
+  children, className, tone = "offwhite",
+}: { children: ReactNode; className?: string; tone?: "offwhite" | "gold" | "ink" }) {
+  const cls = tone === "gold" ? "fl-stroke-gold" : tone === "ink" ? "fl-stroke-ink" : "fl-stroke"
+  return <span className={cn("fl-display", cls, className)}>{children}</span>
+}
+
+/* ── Halftone (cantos de pontos) ──────────────────────────────────────────── */
+export function Halftone({ className, ink, style }: { className?: string; ink?: boolean; style?: CSSProperties }) {
+  return <div aria-hidden className={cn("pointer-events-none", ink ? "fl-dots-ink" : "fl-dots", className)} style={style} />
+}
+
+/* ── Fita adesiva (washi tape) ────────────────────────────────────────────── */
+export function WashiTape({ className, off, rotate = -4, style }: { className?: string; off?: boolean; rotate?: number; style?: CSSProperties }) {
+  return <span aria-hidden className={cn("fl-tape", off && "fl-tape-off", className)} style={{ transform: `rotate(${rotate}deg)`, ...style }} />
 }
 
 /* ── Seta rabiscada dourada (doodle decorativo) ───────────────────────────── */
@@ -48,6 +85,43 @@ export function Squiggle({ className, style }: { className?: string; style?: CSS
   return (
     <svg aria-hidden viewBox="0 0 120 40" className={cn("pointer-events-none", className)} style={style} fill="none">
       <path d="M2 20 C 12 2, 24 2, 30 20 S 50 38, 58 20 S 78 2, 86 20 S 108 38, 118 18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/* Faísca/estrela desenhada (spark) */
+export function Spark({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg aria-hidden viewBox="0 0 40 40" className={cn("pointer-events-none", className)} style={style} fill="none">
+      <path d="M20 3 C 22 14, 26 18, 37 20 C 26 22, 22 26, 20 37 C 18 26, 14 22, 3 20 C 14 18, 18 14, 20 3 Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/* Coroa desenhada à mão (poder/topo) */
+export function DoodleCrown({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg aria-hidden viewBox="0 0 64 44" className={cn("pointer-events-none", className)} style={style} fill="none">
+      <path d="M6 38 L 10 12 L 22 28 L 32 8 L 42 28 L 54 12 L 58 38 Z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M8 38 L 56 38" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/* Círculo rabiscado à mão (envolve um número/elemento) */
+export function CircleScribble({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg aria-hidden viewBox="0 0 120 110" className={cn("pointer-events-none", className)} style={style} fill="none">
+      <path d="M70 10 C 30 6, 8 34, 14 64 C 20 96, 70 106, 98 88 C 120 73, 116 30, 84 14 C 60 2, 28 10, 18 38" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/* Sublinhado rabiscado */
+export function Underline({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg aria-hidden viewBox="0 0 200 16" className={cn("pointer-events-none", className)} style={style} fill="none" preserveAspectRatio="none">
+      <path d="M3 9 C 50 3, 95 13, 140 7 C 165 4, 185 9, 197 6" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
     </svg>
   )
 }
@@ -85,21 +159,37 @@ export function PaperTexture({ className }: { className?: string }) {
 
 /* ── Foto: placeholder dourado elegante até as imagens reais entrarem ──────── */
 export function PhotoFrame({
-  src, alt, className, icon = "star", priority,
-}: { src?: string; alt: string; className?: string; icon?: string; priority?: boolean }) {
+  src, alt, className, icon = "star", priority, torn, cut,
+}: { src?: string; alt: string; className?: string; icon?: string; priority?: boolean; torn?: boolean; cut?: boolean }) {
   return (
-    <div className={cn("relative overflow-hidden bg-[#1D1914]", className)}>
+    <div className={cn("relative overflow-hidden bg-[#1D1810]", torn && "fl-torn-1", cut && "fl-cut", className)}>
       {PHOTOS_READY && src ? (
         <Image src={src} alt={alt} fill sizes="(max-width:768px) 90vw, 480px" className="object-cover" priority={priority} />
       ) : (
         <div aria-label={alt} role="img" className="absolute inset-0">
-          <div className="absolute inset-0" style={{ background: "radial-gradient(120% 100% at 70% 10%, rgba(242,183,5,0.22), transparent 55%), linear-gradient(160deg,#241f18,#15120e)" }} />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(120% 100% at 70% 8%, rgba(242,183,5,0.28), transparent 52%), linear-gradient(160deg,#2a2212,#141009)" }} />
+          <div aria-hidden className="absolute inset-0 fl-dots opacity-[0.12]" />
           <div aria-hidden className="absolute inset-0 fl-grain opacity-10" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <ImageIcon className="h-10 w-10 text-[#F2B705]/40" />
+            <Icon name={icon} className="h-10 w-10 text-[#F2B705]/45" />
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* Bilhete manuscrito com fita adesiva (Caveat) */
+export function StickerNote({
+  children, className, rotate = -3, tape = true,
+}: { children: ReactNode; className?: string; rotate?: number; tape?: boolean }) {
+  return (
+    <div
+      className={cn("relative inline-block bg-[#FBF9F2] px-4 py-2.5 text-[#0B0B0D] shadow-[0_8px_18px_-8px_rgba(0,0,0,0.6)]", className)}
+      style={{ transform: `rotate(${rotate}deg)` }}
+    >
+      {tape && <WashiTape className="-top-3 left-1/2 -translate-x-1/2" rotate={-5} />}
+      <span className="fl-marker text-xl font-bold leading-tight">{children}</span>
     </div>
   )
 }
