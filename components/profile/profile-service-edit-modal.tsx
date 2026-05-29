@@ -442,20 +442,20 @@ export function ProfileServiceEditModal({
       role="presentation"
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-service-edit-title"
       >
-        <div className="flex items-center justify-between border-b border-zinc-800 p-6">
-          <h2 id="profile-service-edit-title" className="text-lg font-semibold text-zinc-100">
+        <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 p-6">
+          <h2 id="profile-service-edit-title" className="fl-display text-2xl text-[#0B0B0D]">
             {isEdit ? "Editar serviço" : "Novo serviço"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800"
+            className="rounded-lg p-2 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />
@@ -463,33 +463,33 @@ export function ProfileServiceEditModal({
         </div>
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Nome</label>
+            <label className="fl-label">Nome</label>
             <input
               type="text"
               value={serviceForm.name}
               onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Ex: Sessão de fotos"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Descrição (opcional)</label>
+            <label className="fl-label">Descrição (opcional)</label>
             <textarea
               value={serviceForm.description}
               onChange={(e) => setServiceForm((f) => ({ ...f, description: e.target.value }))}
               rows={2}
-              className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input resize-none"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">Duração</label>
+              <label className="fl-label">Duração</label>
               <select
                 value={serviceForm.duration_minutes}
                 onChange={(e) =>
                   setServiceForm((f) => ({ ...f, duration_minutes: Number(e.target.value) }))
                 }
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+                className="fl-input"
               >
                 {[15, 30, 45, 60, 90, 120, 180, 240].map((m) => (
                   <option key={m} value={m}>
@@ -499,13 +499,13 @@ export function ProfileServiceEditModal({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">Valor que você quer receber (R$)</label>
+              <label className="fl-label">Valor que você quer receber (R$)</label>
               <input
                 type="text"
                 value={serviceForm.price_reais}
                 onChange={(e) => setServiceForm((f) => ({ ...f, price_reais: e.target.value }))}
                 placeholder="0,00"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                className="fl-input font-mono"
               />
             </div>
           </div>
@@ -517,23 +517,23 @@ export function ProfileServiceEditModal({
             const serviceFee = bookingFees.service_fee_cents
             const clientTotal = baseCents + stripeFee + serviceFee
             return (
-              <div className="space-y-2 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 text-xs">
-                <p className="mb-3 font-medium text-zinc-400">Resumo do valor</p>
-                <div className="flex justify-between text-zinc-300">
+              <div className="space-y-2 rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4 text-xs">
+                <p className="mb-3 font-bold text-[#5b554b]">Resumo do valor</p>
+                <div className="flex justify-between text-[#2b2b2e]">
                   <span>Você recebe</span>
                   <span className="font-mono">{centsToReais(baseCents)}</span>
                 </div>
-                <div className="flex justify-between text-zinc-400">
+                <div className="flex justify-between text-[#5b554b]">
                   <span>Taxa da maquininha ({bookingFees.stripe_fee_percent}%)</span>
-                  <span className="font-mono text-yellow-500/80">+ {centsToReais(stripeFee)}</span>
+                  <span className="font-mono text-[#b8860b]">+ {centsToReais(stripeFee)}</span>
                 </div>
-                <div className="flex justify-between text-zinc-400">
+                <div className="flex justify-between text-[#5b554b]">
                   <span>Taxa de serviço (fixo)</span>
-                  <span className="font-mono text-yellow-500/80">+ {centsToReais(serviceFee)}</span>
+                  <span className="font-mono text-[#b8860b]">+ {centsToReais(serviceFee)}</span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-700 pt-2 text-sm font-semibold">
-                  <span className="text-zinc-200">Cliente pagará</span>
-                  <span className="font-mono text-yellow-400">{centsToReais(clientTotal)}</span>
+                <div className="flex justify-between border-t-2 border-[#0B0B0D]/15 pt-2 text-sm font-bold">
+                  <span className="text-[#0B0B0D]">Cliente pagará</span>
+                  <span className="font-mono text-[#E0A500]">{centsToReais(clientTotal)}</span>
                 </div>
               </div>
             )
@@ -542,11 +542,11 @@ export function ProfileServiceEditModal({
           {isClan && clanMembers.length > 0 && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="flex items-center gap-1 text-xs text-zinc-400">
+                <label className="flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
                   <Users className="h-3.5 w-3.5" />
                   Membros participantes
                 </label>
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-[#5b554b]">
                   {selectedCount === 0 ? "Todos" : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
                 </span>
               </div>
@@ -556,40 +556,40 @@ export function ProfileServiceEditModal({
                   return (
                     <label
                       key={m.id_member_profile}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2.5 transition-colors ${
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 p-2.5 transition-colors ${
                         checked
-                          ? "border-yellow-400/30 bg-yellow-400/10"
-                          : "border-zinc-700/50 bg-zinc-800/50 hover:bg-zinc-800"
+                          ? "border-[#0B0B0D] bg-[#F2B705]/15"
+                          : "border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] hover:bg-[#0B0B0D]/[0.06]"
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleMember(m.id_member_profile)}
-                        className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-yellow-400"
+                        className="h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
                       />
-                      <Avatar className="size-7 border border-zinc-600">
+                      <Avatar className="size-7 border-2 border-[#0B0B0D]">
                         {m.avatar_url && (
                           <AvatarImage src={m.avatar_url} alt={m.display_name} className="object-cover" />
                         )}
-                        <AvatarFallback className="text-xs">{getInitials(m.display_name)}</AvatarFallback>
+                        <AvatarFallback className="bg-[#F2B705]/20 text-xs text-[#0B0B0D]">{getInitials(m.display_name)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-zinc-100">{m.display_name}</div>
-                        <div className="text-xs text-zinc-500">@{m.username}</div>
+                        <div className="truncate text-sm font-bold text-[#0B0B0D]">{m.display_name}</div>
+                        <div className="text-xs text-[#5b554b]">@{m.username}</div>
                       </div>
                       {m.role === "owner" && (
-                        <span className="shrink-0 text-xs text-zinc-500">dono</span>
+                        <span className="shrink-0 text-xs text-[#5b554b]">dono</span>
                       )}
                     </label>
                   )
                 })}
               </div>
               {pricePerMember !== null && effectiveCount > 0 && (
-                <p className="mt-2 text-xs text-zinc-400">
+                <p className="mt-2 text-xs text-[#5b554b]">
                   {centsToReais(pricePerMember)}/membro
                   {selectedCount === 0 && (
-                    <span className="text-zinc-600">
+                    <span className="text-[#8a8275]">
                       {" "}
                       (dividido entre todos os {clanMembers.length} membros)
                     </span>
@@ -601,14 +601,14 @@ export function ProfileServiceEditModal({
 
           {isEdit && (
             <div>
-              <label className="mb-2 flex items-center gap-1 text-xs text-zinc-400">
+              <label className="mb-2 flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
                 <ImagePlus className="h-3.5 w-3.5" />
                 Fotos e arquivos do serviço
               </label>
 
               {mediaLoading ? (
                 <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+                  <Loader2 className="h-5 w-5 animate-spin text-[#0B0B0D]/40" />
                 </div>
               ) : (
                 <>
@@ -621,10 +621,10 @@ export function ProfileServiceEditModal({
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDrop={() => handleDrop(idx)}
                         onDragEnd={handleDragEnd}
-                        className={`group relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                        className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                           dragOverIdx === idx
-                            ? "border-yellow-400 ring-2 ring-yellow-400/30"
-                            : "border-zinc-700"
+                            ? "border-[#E0A500] ring-2 ring-[#E0A500]/30"
+                            : "border-[#0B0B0D]/20"
                         } ${dragIdx === idx ? "opacity-40" : ""}`}
                       >
                         {renderMediaThumb(media)}
@@ -658,7 +658,7 @@ export function ProfileServiceEditModal({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-zinc-600 text-zinc-500 transition-colors hover:border-yellow-400/50 hover:text-yellow-400 disabled:opacity-50"
+                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#0B0B0D]/30 text-[#5b554b] transition-colors hover:border-[#E0A500] hover:text-[#E0A500] disabled:opacity-50"
                       >
                         {uploading ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
@@ -680,7 +680,7 @@ export function ProfileServiceEditModal({
                     onChange={handleFileUpload}
                   />
 
-                  <p className="mt-1.5 text-[10px] text-zinc-600">
+                  <p className="mt-1.5 text-[10px] text-[#8a8275]">
                     JPG, PNG, WebP, MP4, WebM ou MOV · Fotos em 4:5 até 3MB após otimização · Até {MAX_SERVICE_MEDIA} arquivos.
                     {mediaList.length > 1 && " Arraste para reordenar."}
                   </p>
@@ -694,9 +694,9 @@ export function ProfileServiceEditModal({
               type="checkbox"
               checked={serviceForm.is_active}
               onChange={(e) => setServiceForm((f) => ({ ...f, is_active: e.target.checked }))}
-              className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-yellow-400"
+              className="h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
             />
-            <span className="text-sm text-zinc-200">Ativo (visível para clientes)</span>
+            <span className="text-sm font-medium text-[#0B0B0D]">Ativo (visível para clientes)</span>
           </label>
 
           <AffiliateOptInField
@@ -705,11 +705,11 @@ export function ProfileServiceEditModal({
             disabled={saving}
           />
         </div>
-        <div className="flex justify-end gap-2 border-t border-zinc-800 p-6">
+        <div className="flex justify-end gap-2 border-t-2 border-[#0B0B0D]/15 p-6">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
+            className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold"
           >
             Cancelar
           </button>
@@ -717,7 +717,7 @@ export function ProfileServiceEditModal({
             type="button"
             onClick={saveService}
             disabled={saving || !bookingFeesReady}
-            className="flex items-center gap-2 rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-yellow-300 disabled:opacity-50"
+            className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {saving ? "Salvando..." : "Salvar"}

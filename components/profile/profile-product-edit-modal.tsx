@@ -130,10 +130,10 @@ function ProductCardPreview({
   const displayName = name.trim() || "Nome do produto"
 
   return (
-    <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left">
-      <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+    <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-left">
+      <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
         {outOfStock && (
-          <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/85 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-100">
+          <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
             Esgotado
           </span>
         )}
@@ -145,28 +145,28 @@ function ProductCardPreview({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-            <Package className="h-11 w-11 text-zinc-600/90" aria-hidden />
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
+            <Package className="h-11 w-11 text-[#F2B705]/40" aria-hidden />
           </div>
         )}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col p-2">
-        <h3 className="truncate text-xs font-bold leading-snug text-white">{displayName}</h3>
+        <h3 className="truncate text-xs font-bold leading-snug text-[#0B0B0D]">{displayName}</h3>
         <div className="mt-1.5 min-h-0 flex-1">
           {desc ? (
-            <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300">
+            <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-[#5b554b]">
               {desc}
             </p>
           ) : null}
         </div>
         <div className="mt-auto shrink-0">
           <div className="mt-2 flex items-center justify-between gap-1.5">
-            <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums">
+            <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums">
               R$ {integer}
-              <span className="align-top text-[10px] font-semibold text-white/95">,{cents}</span>
+              <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75">,{cents}</span>
             </p>
-            <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary">
+            <span className="shrink-0 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-[#1A1505]">
               Ver
             </span>
           </div>
@@ -556,30 +556,30 @@ export function ProfileProductEditModal({
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-product-edit-title"
       >
-        <div className="flex items-center justify-between border-b border-zinc-800 p-6">
-          <h2 id="profile-product-edit-title" className="text-lg font-semibold text-zinc-100">
+        <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 p-6">
+          <h2 id="profile-product-edit-title" className="fl-display text-2xl text-[#0B0B0D]">
             {isEdit ? "Editar produto" : "Novo produto"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800"
+            className="rounded-lg p-2 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="border-b border-zinc-800 bg-zinc-950/50 px-6 py-4">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="border-b-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-6 py-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#5b554b]">
             Pré-visualização na vitrine
           </p>
-          <div className="mx-auto w-[180px] overflow-hidden rounded-lg ring-1 ring-zinc-800/80">
+          <div className="mx-auto w-[180px] overflow-hidden rounded-xl">
             <ProductCardPreview
               name={form.name}
               description={form.description}
@@ -592,32 +592,32 @@ export function ProfileProductEditModal({
 
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Nome</label>
+            <label className="fl-label">Nome</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               maxLength={160}
               placeholder="Ex: Camiseta oversized"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Descrição (opcional)</label>
+            <label className="fl-label">Descrição (opcional)</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={3}
-              className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input resize-none"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">Categoria</label>
+            <label className="fl-label">Categoria</label>
             <select
               value={form.id_product_category}
               onChange={(e) => setForm((f) => ({ ...f, id_product_category: e.target.value }))}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input"
             >
               <option value="">Selecione uma categoria…</option>
               {categories.map((c) => (
@@ -630,43 +630,43 @@ export function ProfileProductEditModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">Preço (R$) — você recebe</label>
+              <label className="fl-label">Preço (R$) — você recebe</label>
               <input
                 type="text"
                 value={form.price_reais}
                 onChange={(e) => setForm((f) => ({ ...f, price_reais: e.target.value }))}
                 placeholder="0,00"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                className="fl-input font-mono"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-zinc-400">Estoque (unidades)</label>
+              <label className="fl-label">Estoque (unidades)</label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={form.stock_quantity}
                 onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value.replace(/\D/g, "") }))}
                 placeholder="0"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                className="fl-input font-mono"
               />
             </div>
           </div>
 
           {pricingPreview && pricingPreview.display_price_cents > 0 && (
-            <div className="rounded-lg border border-amber-400/20 bg-amber-400/[0.04] px-3 py-2">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-amber-300/80">
+            <div className="rounded-lg border-2 border-[#E0A500]/40 bg-[#F2B705]/10 px-3 py-2">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#b8860b]">
                 Preço final ao comprador (com taxas)
               </p>
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-mono text-lg font-bold text-amber-200 tabular-nums">
+                <span className="font-mono text-lg font-bold text-[#0B0B0D] tabular-nums">
                   {(pricingPreview.display_price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </span>
-                <span className="text-[10px] text-zinc-400">
+                <span className="text-[10px] text-[#5b554b]">
                   Serviço {(pricingPreview.service_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   {" · "}Maquininha {(pricingPreview.processor_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </span>
               </div>
-              <p className="mt-1 text-[10px] text-zinc-500">
+              <p className="mt-1 text-[10px] text-[#8a8275]">
                 Frete (Melhor Envio) é somado em cima desse valor no checkout.
               </p>
             </div>
@@ -676,7 +676,7 @@ export function ProfileProductEditModal({
               Local pickup → esconde tudo. Caixa padrão → auto-preenche e esconde campos.
               Personalizada → mostra dimensões/peso/CEP pra digitar à mão. */}
           <div>
-            <p className="mb-2 text-xs font-medium text-zinc-400">Entrega</p>
+            <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Entrega</p>
             <select
               value={
                 form.delivery_mode === "local_pickup"
@@ -703,7 +703,7 @@ export function ProfileProductEditModal({
                   length_cm: String(preset.l).replace(".", ","),
                 }))
               }}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100"
+              className="fl-input"
             >
               <option value="local_pickup">🤝 Retirar comigo (sem frete)</option>
               <optgroup label="Caixas padrão (Correios / Melhor Envio)">
@@ -715,67 +715,67 @@ export function ProfileProductEditModal({
               </optgroup>
               <option value="custom">Personalizada (digitar dimensões à mão)</option>
             </select>
-            <p className="mt-1 text-[10px] text-zinc-500">
+            <p className="mt-1 text-[10px] text-[#8a8275]">
               Escolha a caixa em que vai embalar. Se nenhuma serve, use &quot;Personalizada&quot;.
             </p>
           </div>
 
           {form.delivery_mode === "local_pickup" ? (
-            <div className="rounded-lg border border-zinc-700 bg-zinc-800/40 p-3 text-xs text-zinc-400">
+            <div className="rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3 text-xs text-[#5b554b]">
               Sem frete por transportadora. O comprador vai ver o botão &quot;Falar com vendedor&quot;
               no produto, que abre uma conversa direta com você no Mensagens.
             </div>
           ) : detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm)) === "custom" ? (
           <>
           <div>
-            <p className="mb-2 text-xs font-medium text-zinc-400">Dimensões e peso (personalizadas)</p>
+            <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Dimensões e peso (personalizadas)</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Peso (g)</label>
+                <label className="fl-label">Peso (g)</label>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={form.weight_grams}
                   onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
                   placeholder="0"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                  className="fl-input font-mono"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Altura (cm)</label>
+                <label className="fl-label">Altura (cm)</label>
                 <input
                   type="text"
                   value={form.height_cm}
                   onChange={(e) => setForm((f) => ({ ...f, height_cm: e.target.value }))}
                   placeholder="0,00"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                  className="fl-input font-mono"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Largura (cm)</label>
+                <label className="fl-label">Largura (cm)</label>
                 <input
                   type="text"
                   value={form.width_cm}
                   onChange={(e) => setForm((f) => ({ ...f, width_cm: e.target.value }))}
                   placeholder="0,00"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                  className="fl-input font-mono"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-zinc-500">Comprimento (cm)</label>
+                <label className="fl-label">Comprimento (cm)</label>
                 <input
                   type="text"
                   value={form.length_cm}
                   onChange={(e) => setForm((f) => ({ ...f, length_cm: e.target.value }))}
                   placeholder="0,00"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                  className="fl-input font-mono"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-400">CEP de origem deste produto (opcional)</label>
+            <label className="fl-label">CEP de origem deste produto (opcional)</label>
             <input
               type="text"
               inputMode="numeric"
@@ -783,9 +783,9 @@ export function ProfileProductEditModal({
               value={form.origin_zipcode_override}
               onChange={(e) => setForm((f) => ({ ...f, origin_zipcode_override: formatZip(e.target.value) }))}
               placeholder="00000-000"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+              className="fl-input font-mono"
             />
-            <p className="mt-1 text-[10px] text-zinc-500">
+            <p className="mt-1 text-[10px] text-[#8a8275]">
               Sobrescreve o CEP padrão do subperfil para este produto.
             </p>
           </div>
@@ -793,16 +793,16 @@ export function ProfileProductEditModal({
           ) : (
             <div>
               {/* Caixa padrão escolhida — peso é o único campo que ainda precisa do vendedor. */}
-              <label className="mb-1 block text-xs text-zinc-500">Peso (g)</label>
+              <label className="fl-label">Peso (g)</label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={form.weight_grams}
                 onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
                 placeholder="0"
-                className="w-full max-w-[200px] rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 font-mono text-sm text-zinc-100"
+                className="fl-input max-w-[200px] font-mono"
               />
-              <p className="mt-1 text-[10px] text-zinc-500">
+              <p className="mt-1 text-[10px] text-[#8a8275]">
                 Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.
               </p>
             </div>
@@ -810,14 +810,14 @@ export function ProfileProductEditModal({
 
           {isEdit && (
             <div>
-              <label className="mb-2 flex items-center gap-1 text-xs text-zinc-400">
+              <label className="mb-2 flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
                 <ImagePlus className="h-3.5 w-3.5" />
                 Fotos e vídeos do produto
               </label>
 
               {mediaLoading ? (
                 <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+                  <Loader2 className="h-5 w-5 animate-spin text-[#0B0B0D]/40" />
                 </div>
               ) : (
                 <>
@@ -830,10 +830,10 @@ export function ProfileProductEditModal({
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDrop={() => handleDrop(idx)}
                         onDragEnd={handleDragEnd}
-                        className={`group relative aspect-square overflow-hidden rounded-lg border transition-all ${
+                        className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                           dragOverIdx === idx
-                            ? "border-yellow-400 ring-2 ring-yellow-400/30"
-                            : "border-zinc-700"
+                            ? "border-[#E0A500] ring-2 ring-[#E0A500]/30"
+                            : "border-[#0B0B0D]/20"
                         } ${dragIdx === idx ? "opacity-40" : ""}`}
                       >
                         {renderMediaThumb(media)}
@@ -867,7 +867,7 @@ export function ProfileProductEditModal({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-zinc-600 text-zinc-500 transition-colors hover:border-yellow-400/50 hover:text-yellow-400 disabled:opacity-50"
+                        className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#0B0B0D]/30 text-[#5b554b] transition-colors hover:border-[#E0A500] hover:text-[#E0A500] disabled:opacity-50"
                       >
                         {uploading ? (
                           <Loader2 className="h-5 w-5 animate-spin" />
@@ -889,7 +889,7 @@ export function ProfileProductEditModal({
                     onChange={handleFileUpload}
                   />
 
-                  <p className="mt-1.5 text-[10px] text-zinc-600">
+                  <p className="mt-1.5 text-[10px] text-[#8a8275]">
                     JPG, PNG, WebP, MP4, WebM ou MOV · Até {MAX_PRODUCT_MEDIA} arquivos.
                     {mediaList.length > 1 && " Arraste para reordenar."}
                   </p>
@@ -899,7 +899,7 @@ export function ProfileProductEditModal({
           )}
 
           {!isEdit && (
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-[#8a8275]">
               Após salvar, abra o produto novamente para enviar fotos e vídeos.
             </p>
           )}
@@ -909,9 +909,9 @@ export function ProfileProductEditModal({
               type="checkbox"
               checked={form.is_active}
               onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-              className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-yellow-400"
+              className="h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
             />
-            <span className="text-sm text-zinc-200">Ativo (visível na loja)</span>
+            <span className="text-sm font-medium text-[#0B0B0D]">Ativo (visível na loja)</span>
           </label>
 
           <AffiliateOptInField
@@ -920,11 +920,11 @@ export function ProfileProductEditModal({
             disabled={saving}
           />
         </div>
-        <div className="flex justify-end gap-2 border-t border-zinc-800 p-6">
+        <div className="flex justify-end gap-2 border-t-2 border-[#0B0B0D]/15 p-6">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-800"
+            className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold"
           >
             Cancelar
           </button>
@@ -932,7 +932,7 @@ export function ProfileProductEditModal({
             type="button"
             onClick={saveProduct}
             disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-yellow-300 disabled:opacity-50"
+            className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {saving ? "Salvando..." : "Salvar"}
