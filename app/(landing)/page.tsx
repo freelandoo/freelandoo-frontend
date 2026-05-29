@@ -62,7 +62,7 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSite) }} />
 
       <LandingHeader />
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-clip">
         {/* 1 · Hero principal */}
         <HeroSection />
         {/* 2 · Escolha seu caminho (5 caminhos de renda) */}

@@ -18,16 +18,16 @@ export function MoneyPathCards() {
         <DoodleArrow dir="down-right" className="absolute -right-2 top-0 hidden h-10 w-20 text-[#F2B705] lg:block" />
       </div>
 
-      <div data-stagger className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible lg:grid-cols-5">
+      <div data-stagger className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
         {MONEY_PATHS.map((p, i) => (
           <div
             key={p.id}
             data-card
-            className="group relative flex min-w-[68%] shrink-0 snap-center flex-col overflow-hidden rounded-xl fl-card fl-hard sm:min-w-[44%] md:min-w-0"
+            className="group relative flex flex-col overflow-hidden rounded-xl fl-card fl-hard"
             style={{ transform: `rotate(${i % 2 ? 0.6 : -0.6}deg)` }}
           >
             <div className="relative">
-              <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} className="aspect-[16/10] w-full sm:aspect-[5/4] lg:aspect-[4/5]" />
+              <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} className="aspect-[5/4] w-full lg:aspect-[4/5]" />
               <Halftone className="absolute right-2 top-2 h-10 w-10 opacity-30" />
               <span className="absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                 <Icon name={p.icon} className="h-6 w-6" />
