@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
 import { Loader2, Send, Lock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
 
 interface Message {
@@ -282,20 +280,25 @@ export function ServiceChatModal({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 flex flex-col max-h-[85vh] gap-0">
+      <DialogContent className="sm:max-w-[480px] p-0 flex flex-col max-h-[85vh] gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/30">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => onOpenChange(false)}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b-2 border-[#0B0B0D]/15 bg-[#e8e2d4]">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#0B0B0D]/70 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
+            aria-label="Voltar"
+          >
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Avatar className="h-9 w-9 shrink-0">
+          </button>
+          <Avatar className="h-9 w-9 shrink-0 border-2 border-[#0B0B0D]">
             {peerAvatar && <AvatarImage src={peerAvatar} alt={peerName} />}
-            <AvatarFallback className="text-xs">{initials(peerName)}</AvatarFallback>
+            <AvatarFallback className="bg-[#F2B705]/20 text-xs text-[#0B0B0D]">{initials(peerName)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate">{peerName}</p>
+            <p className="text-sm font-bold truncate text-[#0B0B0D]">{peerName}</p>
             {isTerminal && (
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <p className="text-[10px] text-[#5b554b] flex items-center gap-1">
                 <Lock className="h-3 w-3" /> Conversa encerrada
               </p>
             )}
@@ -306,37 +309,37 @@ export function ServiceChatModal({
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 min-h-[200px] max-h-[60vh]">
           {/* Card com detalhes da solicitação (mostrado quando vem do mural) */}
           {previewRequest && (
-            <div className="bg-muted/50 border rounded-lg p-3 space-y-2 mb-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="bg-[#0B0B0D]/[0.04] border-2 border-[#0B0B0D]/15 rounded-lg p-3 space-y-2 mb-3">
+              <p className="text-xs font-bold text-[#5b554b] uppercase tracking-wide">
                 Solicitação de serviço
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {previewRequest.machineName && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-background border">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] border-2 border-[#0B0B0D]/15 bg-[#F1EDE2]">
                     {previewRequest.machineName}
                   </span>
                 )}
                 {previewRequest.categoryName && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-secondary text-secondary-foreground">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                     {previewRequest.categoryName}
                   </span>
                 )}
                 {previewRequest.municipio && (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-[10px] text-[#5b554b]">
                     📍 {previewRequest.municipio}{previewRequest.estado ? `, ${previewRequest.estado}` : ""}
                   </span>
                 )}
               </div>
-              <p className="text-sm whitespace-pre-wrap">{previewRequest.description}</p>
+              <p className="text-sm whitespace-pre-wrap text-[#2b2b2e]">{previewRequest.description}</p>
             </div>
           )}
           {(loading || opening) && messages.length === 0 && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#0B0B0D]/40" />
             </div>
           )}
           {!loading && !opening && !lockedByOther && messages.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground text-xs">
+            <div className="text-center py-8 text-[#5b554b] text-xs">
               {viewerSide === "PRO"
                 ? "Mande uma mensagem para iniciar a negociação."
                 : "Nenhuma mensagem ainda."}
@@ -344,24 +347,24 @@ export function ServiceChatModal({
           )}
           {lockedByOther && (
             <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
-              <Lock className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm font-medium">Alguém já respondeu a essa solicitação</p>
-              <p className="text-xs text-muted-foreground max-w-xs">
+              <Lock className="h-8 w-8 text-[#5b554b]" />
+              <p className="text-sm font-bold text-[#0B0B0D]">Alguém já respondeu a essa solicitação</p>
+              <p className="text-xs text-[#5b554b] max-w-xs">
                 Aguarde — se o usuário rejeitar a outra resposta, a O.S. fica disponível para você.
               </p>
             </div>
           )}
           {openError && !lockedByOther && (
             <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
-              <Lock className="h-8 w-8 text-destructive" />
-              <p className="text-sm font-medium text-destructive">Não foi possível abrir o chat</p>
-              <p className="text-xs text-muted-foreground max-w-xs">{openError}</p>
+              <Lock className="h-8 w-8 text-[#b91c1c]" />
+              <p className="text-sm font-bold text-[#b91c1c]">Não foi possível abrir o chat</p>
+              <p className="text-xs text-[#5b554b] max-w-xs">{openError}</p>
             </div>
           )}
           {grouped.map(group => (
             <React.Fragment key={group.date}>
               <div className="flex justify-center my-3">
-                <span className="text-[10px] text-muted-foreground bg-muted px-3 py-0.5 rounded-full">{group.date}</span>
+                <span className="text-[10px] text-[#5b554b] bg-[#0B0B0D]/[0.06] px-3 py-0.5 rounded-full">{group.date}</span>
               </div>
               {group.msgs.map(msg => {
                 const isMine = msg.sender === viewerSide
@@ -370,12 +373,12 @@ export function ServiceChatModal({
                     <div
                       className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap ${
                         isMine
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted rounded-bl-md"
+                          ? "bg-[#0B0B0D] text-[#F1EDE2] rounded-br-md"
+                          : "bg-[#e3ddcc] text-[#0B0B0D] rounded-bl-md"
                       }`}
                     >
                       <p>{msg.content}</p>
-                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"} text-right`}>
+                      <p className={`text-[10px] mt-0.5 ${isMine ? "text-[#F1EDE2]/55" : "text-[#5b554b]"} text-right`}>
                         {formatTime(msg.created_at)}
                       </p>
                     </div>
@@ -388,64 +391,62 @@ export function ServiceChatModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-background">
+        <div className="border-t-2 border-[#0B0B0D]/15 bg-[#e8e2d4]">
           {/* Botões de decisão — só o USER decide (Aceitar/Rejeitar) */}
           {!isTerminal && !lockedByOther && viewerSide === "USER" && idRequest && (
-            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b">
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-xs gap-1"
+            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 border-b-2 border-[#0B0B0D]/10">
+              <button
+                type="button"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border-2 border-[#b91c1c]/40 px-3 py-1.5 text-xs font-bold text-[#b91c1c] transition hover:bg-[#dc2626]/10 disabled:opacity-50"
                 onClick={() => setConfirmType("reject")}
                 disabled={finalizing || rejecting}
               >
                 <XCircle className="h-3.5 w-3.5" />
                 Rejeitar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 text-xs gap-1"
+              </button>
+              <button
+                type="button"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border-2 border-[#16683f]/40 px-3 py-1.5 text-xs font-bold text-[#16683f] transition hover:bg-[#16683f]/10 disabled:opacity-50"
                 onClick={() => setConfirmType("finalize")}
                 disabled={finalizing || rejecting}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Aceitar
-              </Button>
+              </button>
             </div>
           )}
 
           {/* Input ou aviso de encerrada */}
           <div className="px-3 py-2.5">
             {isTerminal ? (
-              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-[#5b554b]">
                 <Lock className="h-4 w-4" />
                 Conversa encerrada
               </div>
             ) : lockedByOther ? (
-              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-[#5b554b]">
                 <Lock className="h-3.5 w-3.5" />
                 Aguarde a decisão do usuário
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   ref={inputRef}
                   value={text}
                   onChange={e => setText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Digite uma mensagem..."
-                  className="flex-1 h-9"
+                  className="fl-input flex-1"
                   disabled={sending || !effectiveIdResponse}
                 />
-                <Button
-                  size="sm"
-                  className="h-9 w-9 p-0 shrink-0"
+                <button
+                  type="button"
+                  className="fl-btn-gold flex h-10 w-10 shrink-0 items-center justify-center rounded-full p-0 disabled:opacity-50"
                   onClick={handleSend}
                   disabled={!text.trim() || sending || !effectiveIdResponse}
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -455,27 +456,33 @@ export function ServiceChatModal({
 
     {/* Modal de confirmação Aceitar / Rejeitar */}
     <Dialog open={!!confirmType} onOpenChange={(v) => { if (!v) setConfirmType(null) }}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px] border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
             {confirmType === "finalize" && "Aceitar este profissional?"}
             {confirmType === "reject" && "Rejeitar este profissional?"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-[#5b554b]">
             {confirmType === "finalize" && "Você está aceitando esse serviço. Você não receberá mais freelancers para essa O.S. e as outras conversas serão encerradas. Confirma?"}
             {confirmType === "reject" && "A conversa com este profissional será encerrada. Outros profissionais ainda podem responder à sua O.S."}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => setConfirmType(null)} disabled={finalizing || rejecting}>
+          <button
+            type="button"
+            className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
+            onClick={() => setConfirmType(null)}
+            disabled={finalizing || rejecting}
+          >
             Cancelar
-          </Button>
-          <Button
-            className={
+          </button>
+          <button
+            type="button"
+            className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-bold text-white transition disabled:opacity-50 ${
               confirmType === "finalize"
-                ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-red-600 hover:bg-red-700 text-white"
-            }
+                ? "bg-[#16683f] hover:bg-[#0f4d2e]"
+                : "bg-[#b91c1c] hover:bg-[#991616]"
+            }`}
             onClick={() => {
               if (confirmType === "finalize") handleFinalize()
               else if (confirmType === "reject") handleReject()
@@ -484,7 +491,7 @@ export function ServiceChatModal({
           >
             {(finalizing || rejecting) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Confirmar
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

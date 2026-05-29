@@ -216,16 +216,16 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[620px] max-h-[88vh] flex flex-col overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
+        <DialogContent className="sm:max-w-[620px] max-h-[88vh] flex flex-col overflow-hidden p-0 gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b-2 border-[#0B0B0D]/15">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                 <Megaphone className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <DialogTitle className="text-base text-white">Mural</DialogTitle>
-                <DialogDescription className="text-xs text-white/50">
-                  Solicitações compatíveis com seu perfil. As conversas ficam em <span className="text-yellow-300/80">Mensagens</span>.
+                <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Mural</DialogTitle>
+                <DialogDescription className="text-xs text-[#5b554b]">
+                  Solicitações compatíveis com seu perfil. As conversas ficam em <span className="font-bold text-[#E0A500]">Mensagens</span>.
                 </DialogDescription>
               </div>
             </div>
@@ -233,7 +233,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
 
           {/* Segmented tabs */}
           <div className="px-6 pt-4">
-            <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+            <div className="inline-flex rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-1">
               <SegmentButton
                 active={tab === "services"}
                 onClick={() => setTab("services")}
@@ -271,7 +271,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 >
                   {loading ? (
                     <div className="flex items-center justify-center py-16">
-                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" />
                     </div>
                   ) : muralItems.length === 0 ? (
                     <EmptyState
@@ -287,44 +287,44 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                         onClick={() => openPreviewChat(req)}
                         whileHover={{ y: -1 }}
                         transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                        className="group flex w-full items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 text-left transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                        className="group flex w-full items-start gap-3 rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3.5 text-left transition-all hover:border-[#0B0B0D] hover:bg-[#F2B705]/10"
                       >
-                        <Avatar className="h-10 w-10 shrink-0 ring-1 ring-white/10">
+                        <Avatar className="h-10 w-10 shrink-0 border-2 border-[#0B0B0D]">
                           {req.user_avatar && <AvatarImage src={req.user_avatar} alt={req.user_name || ""} />}
-                          <AvatarFallback className="text-xs bg-white/[0.06] text-white/70">
+                          <AvatarFallback className="text-xs bg-[#F2B705]/20 text-[#0B0B0D]">
                             {initials(req.user_name || "?")}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-white">{req.user_name || "Usuário"}</span>
-                            <span className="text-[10px] text-white/40">
+                            <span className="text-sm font-bold text-[#0B0B0D]">{req.user_name || "Usuário"}</span>
+                            <span className="text-[10px] text-[#8a8275]">
                               {new Date(req.created_at).toLocaleDateString("pt-BR")}
                             </span>
                           </div>
                           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                             {req.machine_name && (
-                              <Badge className="border-white/15 bg-white/[0.05] text-[10px] text-white/80 h-5 py-0">
+                              <Badge className="border-2 border-[#0B0B0D]/15 bg-[#F1EDE2] text-[10px] text-[#0B0B0D] h-5 py-0">
                                 {req.machine_name}
                               </Badge>
                             )}
                             {req.category_name && (
-                              <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                              <Badge className="border-2 border-[#0B0B0D] bg-[#F2B705] text-[10px] text-[#1A1505] h-5 py-0">
                                 {req.category_name}
                               </Badge>
                             )}
                             {req.municipio && (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] text-white/40">
+                              <span className="inline-flex items-center gap-0.5 text-[10px] text-[#8a8275]">
                                 <MapPin className="h-2.5 w-2.5" />
                                 {req.municipio}{req.estado ? `, ${req.estado}` : ""}
                               </span>
                             )}
                           </div>
                           {req.description && (
-                            <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{req.description}</p>
+                            <p className="mt-1.5 text-xs text-[#5b554b] line-clamp-2">{req.description}</p>
                           )}
                         </div>
-                        <MessageCircle className="h-4 w-4 text-white/30 group-hover:text-yellow-300 transition-colors shrink-0 mt-1" />
+                        <MessageCircle className="h-4 w-4 text-[#0B0B0D]/35 group-hover:text-[#E0A500] transition-colors shrink-0 mt-1" />
                       </motion.button>
                     ))
                   )}
@@ -342,7 +342,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 >
                   {loadingCourses ? (
                     <div className="flex items-center justify-center py-16">
-                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" />
                     </div>
                   ) : courseItems.length === 0 ? (
                     <EmptyState
@@ -356,33 +356,33 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                         key={item.id_course_request}
                         whileHover={{ y: -1 }}
                         transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                        className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3.5 transition-all hover:border-[#0B0B0D] hover:bg-[#F2B705]/10"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/10">
-                            <GraduationCap className="h-5 w-5 text-yellow-300/80" />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04]">
+                            <GraduationCap className="h-5 w-5 text-[#E0A500]" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-medium text-white">{item.user_name || "Usuário"}</span>
-                              <span className="text-[10px] text-white/40">
+                              <span className="text-sm font-bold text-[#0B0B0D]">{item.user_name || "Usuário"}</span>
+                              <span className="text-[10px] text-[#8a8275]">
                                 {new Date(item.created_at).toLocaleDateString("pt-BR")}
                               </span>
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {item.machine_name && (
-                                <Badge className="border-white/15 bg-white/[0.05] text-[10px] text-white/80 h-5 py-0">
+                                <Badge className="border-2 border-[#0B0B0D]/15 bg-[#F1EDE2] text-[10px] text-[#0B0B0D] h-5 py-0">
                                   {item.machine_name}
                                 </Badge>
                               )}
                               {item.category_name && (
-                                <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                                <Badge className="border-2 border-[#0B0B0D] bg-[#F2B705] text-[10px] text-[#1A1505] h-5 py-0">
                                   {item.category_name}
                                 </Badge>
                               )}
                             </div>
                             {item.description && (
-                              <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{item.description}</p>
+                              <p className="mt-1.5 text-xs text-[#5b554b] line-clamp-2">{item.description}</p>
                             )}
                           </div>
                         </div>
@@ -390,7 +390,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                           <button
                             type="button"
                             onClick={() => setRespondCourseTo(item)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 transition-colors"
+                            className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
                           >
                             <Sparkles className="h-3 w-3" />
                             Responder
@@ -413,7 +413,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 >
                   {loadingProducts ? (
                     <div className="flex items-center justify-center py-16">
-                      <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
+                      <Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" />
                     </div>
                   ) : productItems.length === 0 ? (
                     <EmptyState
@@ -427,41 +427,41 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                         key={item.id_product_request}
                         whileHover={{ y: -1 }}
                         transition={{ type: "spring", stiffness: 400, damping: 28 }}
-                        className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-all hover:border-yellow-400/30 hover:bg-yellow-400/[0.03]"
+                        className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3.5 transition-all hover:border-[#0B0B0D] hover:bg-[#F2B705]/10"
                       >
                         <div className="flex items-start gap-3">
                           {item.reference_image_url ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={item.reference_image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-white/10" />
+                            <img src={item.reference_image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-[#0B0B0D]/15" />
                           ) : (
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/10">
-                              <Package className="h-5 w-5 text-white/40" />
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04]">
+                              <Package className="h-5 w-5 text-[#0B0B0D]/40" />
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <h3 className="text-sm font-medium text-white">{item.title}</h3>
-                              <Badge className="border-yellow-400/20 bg-yellow-400/[0.08] text-[10px] text-yellow-200/90 h-5 py-0">
+                              <h3 className="text-sm font-bold text-[#0B0B0D]">{item.title}</h3>
+                              <Badge className="border-2 border-[#0B0B0D] bg-[#F2B705] text-[10px] text-[#1A1505] h-5 py-0">
                                 {item.category_name}
                               </Badge>
                             </div>
-                            <p className="mt-1 text-[11px] text-white/45">
+                            <p className="mt-1 text-[11px] text-[#5b554b]">
                               <MapPin className="h-2.5 w-2.5 inline mr-0.5" />
                               {item.city}/{item.state}
                               {(item.min_price_cents != null || item.max_price_cents != null) && (
-                                <> · <span className="tabular-nums text-white/70">{formatPrice(item.min_price_cents)} — {formatPrice(item.max_price_cents)}</span></>
+                                <> · <span className="tabular-nums font-bold text-[#0B0B0D]">{formatPrice(item.min_price_cents)} — {formatPrice(item.max_price_cents)}</span></>
                               )}
                               {" · "}
                               <Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString("pt-BR")}
                             </p>
-                            <p className="mt-1.5 text-xs text-white/55 line-clamp-2">{item.description}</p>
+                            <p className="mt-1.5 text-xs text-[#5b554b] line-clamp-2">{item.description}</p>
                           </div>
                         </div>
                         <div className="mt-3 flex justify-end">
                           <button
                             type="button"
                             onClick={() => setRespondTo(item)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 transition-colors"
+                            className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
                           >
                             <Sparkles className="h-3 w-3" />
                             Responder
@@ -534,16 +534,16 @@ function SegmentButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors ${
+      className={`relative inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors ${
         active
-          ? "bg-gradient-to-r from-yellow-400/20 to-amber-500/10 text-yellow-200"
-          : "text-white/55 hover:text-white/85"
+          ? "border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]"
+          : "border-2 border-transparent text-[#5b554b] hover:text-[#0B0B0D]"
       }`}
     >
       {icon}
       {label}
       {typeof count === "number" && count > 0 && (
-        <span className={`tabular-nums text-[10px] rounded-full px-1.5 ${active ? "bg-yellow-400/20 text-yellow-100" : "bg-white/[0.06] text-white/55"}`}>
+        <span className={`tabular-nums text-[10px] rounded-full px-1.5 ${active ? "bg-[#1A1505]/20 text-[#1A1505]" : "bg-[#0B0B0D]/[0.08] text-[#5b554b]"}`}>
           {count}
         </span>
       )}
@@ -557,12 +557,12 @@ function EmptyState({ icon, title, hint }: { icon: React.ReactNode; title: strin
       <motion.div
         animate={{ y: [0, -4, 0] }}
         transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-        className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04] text-white/40 ring-1 ring-white/10"
+        className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] text-[#E0A500]"
       >
         {icon}
       </motion.div>
-      <p className="text-sm font-medium text-white/80">{title}</p>
-      <p className="mt-1 max-w-xs text-xs text-white/40">{hint}</p>
+      <p className="text-sm font-bold text-[#0B0B0D]">{title}</p>
+      <p className="mt-1 max-w-xs text-xs text-[#5b554b]">{hint}</p>
     </div>
   )
 }
@@ -647,35 +647,35 @@ function ProductRequestResponseModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 220, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+        className="w-full max-w-md overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+        <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 px-5 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold">Responder pedido</h3>
-            <p className="text-xs text-white/45 line-clamp-1">{item.title}</p>
+            <p className="text-xs text-[#5b554b] line-clamp-1">{item.title}</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white" aria-label="Fechar">
+          <button onClick={onClose} className="rounded-full p-1.5 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]" aria-label="Fechar">
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="space-y-4 px-5 py-4">
           <div>
-            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
               Produto da sua loja (opcional)
             </label>
             {loadingProducts ? (
-              <div className="flex items-center gap-2 text-xs text-white/50">
+              <div className="flex items-center gap-2 text-xs text-[#5b554b]">
                 <Loader2 className="h-3 w-3 animate-spin" /> Carregando produtos…
               </div>
             ) : products.length === 0 ? (
-              <p className="text-xs text-white/40">Sem produtos ativos nesta categoria. Você pode enviar proposta livre.</p>
+              <p className="text-xs text-[#5b554b]">Sem produtos ativos nesta categoria. Você pode enviar proposta livre.</p>
             ) : (
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white focus:border-yellow-400/40 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
+                className="fl-input [&>option]:bg-[#F1EDE2] [&>option]:text-[#0B0B0D]"
               >
                 <option value="">— Proposta livre —</option>
                 {products.map((p) => (
@@ -687,8 +687,8 @@ function ProductRequestResponseModal({
             )}
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
-              Mensagem ao comprador <span className="text-red-400">*</span>
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
+              Mensagem ao comprador <span className="text-[#b91c1c]">*</span>
             </label>
             <textarea
               value={message}
@@ -696,11 +696,11 @@ function ProductRequestResponseModal({
               rows={4}
               maxLength={4000}
               placeholder="Tenho um produto que combina. Posso enviar mais fotos…"
-              className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+              className="fl-input resize-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
               Preço proposto (R$, opcional)
             </label>
             <input
@@ -708,24 +708,24 @@ function ProductRequestResponseModal({
               value={priceReais}
               onChange={(e) => setPriceReais(e.target.value)}
               placeholder="0,00"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 font-mono text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+              className="fl-input font-mono"
             />
           </div>
           {error && (
-            <p className="rounded-xl border border-red-500/30 bg-red-500/[0.08] px-3 py-2 text-xs text-red-200">{error}</p>
+            <p className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-xs font-medium text-[#b91c1c]">{error}</p>
           )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-white/[0.06] bg-black/40 px-5 py-3">
+        <div className="flex justify-end gap-2 border-t-2 border-[#0B0B0D]/15 bg-[#e8e2d4] px-5 py-3">
           <button
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/65 hover:bg-white/[0.04] hover:text-white"
+            className="fl-btn-card rounded-full px-3 py-1.5 text-xs font-bold"
           >
             Cancelar
           </button>
           <button
             onClick={submit}
             disabled={submitting}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:from-yellow-300 hover:to-amber-400 disabled:opacity-50"
+            className="fl-btn-gold flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-50"
           >
             {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
             Enviar resposta
@@ -794,37 +794,37 @@ function CourseRequestResponseModal({
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: "spring", stiffness: 220, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black text-white"
+        className="w-full max-w-md overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+        <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 px-5 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold">Responder pedido de curso</h3>
-            <p className="text-xs text-white/45 line-clamp-1">{item.category_name || item.machine_name || "Curso"}</p>
+            <p className="text-xs text-[#5b554b] line-clamp-1">{item.category_name || item.machine_name || "Curso"}</p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white" aria-label="Fechar">
+          <button onClick={onClose} className="rounded-full p-1.5 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]" aria-label="Fechar">
             <X className="h-4 w-4" />
           </button>
         </div>
         {done ? (
           <div className="px-5 py-8 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-yellow-400/15 ring-1 ring-yellow-400/40">
-              <Sparkles className="h-5 w-5 text-yellow-300" />
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705]">
+              <Sparkles className="h-5 w-5 text-[#1A1505]" />
             </div>
-            <p className="mt-3 text-sm font-semibold">Resposta enviada!</p>
-            <p className="mt-1 text-xs text-white/55">
+            <p className="mt-3 text-sm font-bold text-[#0B0B0D]">Resposta enviada!</p>
+            <p className="mt-1 text-xs text-[#5b554b]">
               A conversa continua em Mensagens &rarr; O.S.
             </p>
           </div>
         ) : (
           <div className="space-y-4 px-5 py-4">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-              <p className="text-xs text-white/55 line-clamp-3">{item.description}</p>
+            <div className="rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3">
+              <p className="text-xs text-[#5b554b] line-clamp-3">{item.description}</p>
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-white/50">
-                Mensagem ao aluno <span className="text-red-400">*</span>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
+                Mensagem ao aluno <span className="text-[#b91c1c]">*</span>
               </label>
               <textarea
                 value={message}
@@ -832,18 +832,18 @@ function CourseRequestResponseModal({
                 rows={4}
                 maxLength={4000}
                 placeholder="Apresente seu curso, valor e como funciona…"
-                className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+                className="fl-input resize-none"
               />
             </div>
             {error && (
-              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</p>
+              <p className="rounded-lg border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-xs font-medium text-[#b91c1c]">{error}</p>
             )}
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl px-3 py-1.5 text-xs text-white/65 hover:text-white"
+                className="rounded-full px-3 py-1.5 text-xs font-bold text-[#5b554b] transition hover:text-[#0B0B0D]"
               >
                 Cancelar
               </button>
@@ -851,7 +851,7 @@ function CourseRequestResponseModal({
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:from-yellow-300 hover:to-amber-400 disabled:opacity-60"
+                className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-60"
               >
                 {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                 Enviar resposta

@@ -564,17 +564,17 @@ export function ScheduleBookingModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="relative flex shrink-0 items-center justify-center border-b border-zinc-800 px-4 py-4">
-          <h2 id="schedule-booking-title" className="text-center text-base font-semibold text-zinc-100">
+        <header className="relative flex shrink-0 items-center justify-center border-b-2 border-[#0B0B0D]/15 px-4 py-4">
+          <h2 id="schedule-booking-title" className="fl-display text-center text-xl text-[#0B0B0D]">
             {monthTitle}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+            className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D]/70 transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
             aria-label="Fechar"
           >
             <X className="h-4 w-4" />
@@ -587,7 +587,7 @@ export function ScheduleBookingModal({
               type="button"
               onClick={shiftPrev}
               disabled={!canShiftPrev}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Datas anteriores"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -606,10 +606,10 @@ export function ScheduleBookingModal({
                       setSelectedDate(startOfDay(d))
                       setSelectedTime(null)
                     }}
-                    className={`flex flex-col items-center rounded-xl py-2 text-[11px] font-medium transition sm:py-2.5 sm:text-xs ${
+                    className={`flex flex-col items-center rounded-xl py-2 text-[11px] font-bold transition sm:py-2.5 sm:text-xs ${
                       active
-                        ? "bg-yellow-400 text-zinc-950 shadow-[0_0_0_1px_rgba(250,204,21,0.4)]"
-                        : "bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+                        ? "border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]"
+                        : "border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] hover:bg-[#0B0B0D]/[0.08]"
                     }`}
                   >
                     <span className="uppercase opacity-90">{dow}</span>
@@ -622,35 +622,35 @@ export function ScheduleBookingModal({
               type="button"
               onClick={shiftNext}
               disabled={!canShiftNext}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-700 text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Próximas datas"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="mt-6 flex items-start gap-2 border-b border-zinc-800/80 pb-4">
-            <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400" aria-hidden />
+          <div className="mt-6 flex items-start gap-2 border-b-2 border-[#0B0B0D]/15 pb-4">
+            <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-[#E0A500]" aria-hidden />
             <div>
-              <p className="text-sm font-semibold capitalize text-zinc-100">{selectedDateLong}</p>
-              <p className="text-xs text-zinc-500">Horários disponíveis</p>
+              <p className="text-sm font-bold capitalize text-[#0B0B0D]">{selectedDateLong}</p>
+              <p className="text-xs text-[#5b554b]">Horários disponíveis</p>
             </div>
           </div>
 
           <div className="mt-5">
-            <div className="mb-3 flex items-center gap-2 text-zinc-200">
-              <Clock className="h-4 w-4 text-zinc-400" aria-hidden />
-              <span className="text-sm font-medium">Escolha um horário</span>
+            <div className="mb-3 flex items-center gap-2 text-[#0B0B0D]">
+              <Clock className="h-4 w-4 text-[#5b554b]" aria-hidden />
+              <span className="text-sm font-bold">Escolha um horário</span>
             </div>
 
             {slotsLoading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" aria-hidden />
+                <Loader2 className="h-8 w-8 animate-spin text-[#0B0B0D]/40" aria-hidden />
               </div>
             ) : apiSlots.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-zinc-700 bg-zinc-900/40 px-4 py-10 text-center text-sm text-zinc-400">
+              <p className="rounded-xl border-2 border-dashed border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.03] px-4 py-10 text-center text-sm text-[#5b554b]">
                 Nenhum horário disponível nesta data (sem regra para esse dia da semana, dia bloqueado ou já ocupado).
-                Configure em <span className="text-zinc-300">Disponibilidade</span> na agenda do perfil ou escolha outra
+                Configure em <span className="text-[#0B0B0D] font-bold">Disponibilidade</span> na agenda do perfil ou escolha outra
                 data.
               </p>
             ) : (
@@ -673,22 +673,22 @@ export function ScheduleBookingModal({
                       type="button"
                       disabled={!selectable}
                       onClick={() => selectable && setSelectedTime(label)}
-                      className={`rounded-xl border px-2 py-3 text-center transition ${
+                      className={`rounded-xl border-2 px-2 py-3 text-center transition ${
                         !selectable
-                          ? "cursor-not-allowed border-zinc-800/80 bg-zinc-900/40 opacity-50"
+                          ? "cursor-not-allowed border-[#0B0B0D]/10 bg-[#0B0B0D]/[0.02] opacity-50"
                           : selected
-                            ? "border-yellow-400 bg-yellow-400/15 shadow-[inset_0_0_0_1px_rgba(250,204,21,0.35)]"
-                            : "border-zinc-700 bg-zinc-900/80 hover:border-zinc-500"
+                            ? "border-[#0B0B0D] bg-[#F2B705]/25"
+                            : "border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] hover:border-[#0B0B0D]"
                       }`}
                     >
-                      <span className="block text-lg font-semibold tabular-nums text-zinc-100">{label}</span>
+                      <span className="block text-lg font-bold tabular-nums text-[#0B0B0D]">{label}</span>
                       <span
-                        className={`mt-1 block text-[11px] font-medium ${
+                        className={`mt-1 block text-[11px] font-bold ${
                           status === "available"
-                            ? "text-emerald-400"
+                            ? "text-[#16683f]"
                             : status === "few"
-                              ? "text-amber-400"
-                              : "text-zinc-500"
+                              ? "text-[#b8860b]"
+                              : "text-[#8a8275]"
                         }`}
                       >
                         {statusLabel}
@@ -699,9 +699,9 @@ export function ScheduleBookingModal({
               </div>
             )}
 
-            <div className="mt-4 flex gap-2 rounded-xl border border-zinc-700/80 bg-zinc-900/40 px-3 py-2.5">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
-              <p className="text-xs leading-relaxed text-zinc-400">
+            <div className="mt-4 flex gap-2 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-3 py-2.5">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5b554b]" aria-hidden />
+              <p className="text-xs leading-relaxed text-[#5b554b]">
                 Os intervalos vêm das regras semanais da agenda (duração do slot no painel). O pagamento usa o preço do
                 serviço escolhido; o servidor valida sobreposição ao confirmar.
               </p>
@@ -709,17 +709,17 @@ export function ScheduleBookingModal({
           </div>
         </div>
 
-        <footer className="flex shrink-0 flex-col gap-3 border-t border-zinc-800 bg-zinc-950/95 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[#0B0B0D]/15 bg-[#e8e2d4] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900">
-              <Scissors className="h-5 w-5 text-yellow-400/90" aria-hidden />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2]">
+              <Scissors className="h-5 w-5 text-[#E0A500]" aria-hidden />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#5b554b]">
                 Serviço selecionado
               </p>
-              <p className="truncate font-semibold text-zinc-100">{service.name}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="truncate font-bold text-[#0B0B0D]">{service.name}</p>
+              <p className="text-xs text-[#5b554b]">
                 {service.duration_minutes} min • {formatBRL(service.price_amount)}
               </p>
             </div>
@@ -728,7 +728,7 @@ export function ScheduleBookingModal({
             type="button"
             disabled={!selectedTime}
             onClick={handleContinue}
-            className="h-11 shrink-0 rounded-full bg-yellow-400 px-8 text-sm font-bold text-zinc-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+            className="fl-btn-gold h-11 shrink-0 rounded-full px-8 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continuar
           </button>
