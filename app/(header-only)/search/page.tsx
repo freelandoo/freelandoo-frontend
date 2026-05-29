@@ -199,7 +199,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black text-white/60 md:left-[80px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#141009] text-white/60 md:left-[80px]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -392,7 +392,7 @@ function SearchPageInner() {
   }
 
   return (
-    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
+    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-[#141009] md:left-[80px]">
       <SearchRetractableHeader
         machines={machines}
         categories={machineCategories}
@@ -481,7 +481,7 @@ function SearchPageInner() {
                   className={cn(
                     "shrink-0 rounded-full border px-3 py-1 text-[11.5px] font-medium transition",
                     productCategoryId == null
-                      ? "border-yellow-400/60 bg-yellow-400/10 text-yellow-200"
+                      ? "border-[#F2B705]/60 bg-[#F2B705]/12 text-[#F2B705]"
                       : "border-white/10 bg-white/[0.02] text-white/65 hover:border-white/20 hover:text-white",
                   )}
                 >
@@ -546,7 +546,7 @@ function SearchPageInner() {
         type="button"
         data-tour="search-open-chamado"
         onClick={() => setOpenChamadoOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-3 text-sm font-semibold text-zinc-950 shadow-[0_12px_40px_-12px_rgba(250,204,21,0.6)] transition hover:bg-yellow-300 active:scale-95 sm:bottom-7 sm:right-7"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#F2B705] px-4 py-3 text-sm font-bold text-[#1A1505] shadow-[0_12px_40px_-12px_rgba(242,183,5,0.6)] transition hover:bg-[#ffc81f] active:scale-95 sm:bottom-7 sm:right-7"
         aria-label="Abrir chamado"
       >
         <MessageSquarePlus className="h-4 w-4" />
