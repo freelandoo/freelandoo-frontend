@@ -72,26 +72,19 @@ export const MONEY_PATHS: MoneyPath[] = [
 
 export type CarouselSlide = {
   n: number
-  title: string
-  desc: string
+  img: string
+  alt: string
   href: string
-  cta: string
-  metrics: string[]
-  photo: string
 }
 
-/** Carrossel "Tudo que você precisa para ganhar mais" (setas + dots). */
+/** Carrossel da 3ª seção — só banners (18:7), sem tipografia. Setas + dots.
+   Imagens em /public/landing (banner-3-1..5.png), proporção 2011x782 = 18:7. */
 export const CAROUSEL_SLIDES: CarouselSlide[] = [
-  { n: 1, title: "Crie cursos de graça", desc: "Tenha acesso gratuito às ferramentas da Freelandoo e publique seu curso em poucos passos.", href: LINKS.cursos, cta: "Saiba mais", metrics: ["Novos afiliados", "Aulas vistas", "Vendas", "Comissões"], photo: "/landing/car-cursos.jpg" },
-  { n: 2, title: "Abra vários perfis", desc: "Marceneiro, professor, vendedor e influenciador na mesma conta, sem complicação.", href: LINKS.cadastro, cta: "Criar conta", metrics: ["Perfis ativos", "Visitas", "Contatos", "Avaliações"], photo: "/landing/car-perfis.jpg" },
-  { n: 3, title: "Venda seus serviços", desc: "Sua vitrine aparece para quem procura por cidade, categoria e profissão.", href: LINKS.cadastro, cta: "Oferecer serviço", metrics: ["Visitas", "Contatos", "Orçamentos", "Avaliações"], photo: "/landing/car-servicos.jpg" },
-  { n: 4, title: "Monte sua lojinha", desc: "Cadastre produtos, organize a vitrine e acompanhe pedidos e faturamento.", href: LINKS.cadastro, cta: "Abrir loja", metrics: ["Vendas", "Pedidos", "Produtos", "Faturamento"], photo: "/landing/car-loja.jpg" },
-  { n: 5, title: "Ganhe como afiliado", desc: "Use cupom ou link para divulgar e receba comissões e recorrentes.", href: LINKS.afiliados, cta: "Ser afiliado", metrics: ["Indicações", "Conversões", "Comissão", "A sacar"], photo: "/landing/car-afiliado.jpg" },
-  { n: 6, title: "Receba oportunidades", desc: "Notificações chegam quando existe um chamado compatível com o que você oferece.", href: LINKS.cadastro, cta: "Ativar alertas", metrics: ["Chamados", "Compatíveis", "Respostas", "Fechados"], photo: "/landing/car-oportunidades.jpg" },
-  { n: 7, title: "Grave vídeos curtos", desc: "Mostre serviço, produto, bastidores e resultado em vídeos dentro da plataforma.", href: LINKS.feed, cta: "Explorar", metrics: ["Views", "Curtidas", "Salvos", "Contatos"], photo: "/landing/car-videos.jpg" },
-  { n: 8, title: "Poste e use stories", desc: "Divulgue agenda aberta, promoções e lançamentos para o seu público.", href: LINKS.feed, cta: "Ver ideias", metrics: ["Alcance", "Cliques", "Salvos", "Vendas"], photo: "/landing/car-posts.jpg" },
-  { n: 9, title: "Seja encontrado", desc: "Busca por serviço, curso, produto ou influenciador por nicho e cidade.", href: LINKS.explorar, cta: "Buscar", metrics: ["Buscas", "Cliques", "Perfis", "Contatos"], photo: "/landing/car-busca.jpg" },
-  { n: 10, title: "Segurança em primeiro lugar", desc: "Menor só entra com autorização e supervisão do responsável.", href: LINKS.comoFunciona, cta: "Saiba mais", metrics: ["Contas", "Autorizações", "Filtros", "Alertas"], photo: "/landing/car-parental.jpg" },
+  { n: 1, img: "/landing/banner-3-1.png", alt: "Crie e gerencie sua conta na Freelandoo", href: LINKS.cadastro },
+  { n: 2, img: "/landing/banner-3-2.png", alt: "Crie sua lojinha na Freelandoo", href: LINKS.cadastro },
+  { n: 3, img: "/landing/banner-3-3.png", alt: "Crie e venda cursos de graça na Freelandoo", href: LINKS.cursos },
+  { n: 4, img: "/landing/banner-3-4.png", alt: "Seja afiliado e compartilhe conteúdo na Freelandoo", href: LINKS.afiliados },
+  { n: 5, img: "/landing/banner-3-5.png", alt: "Poste vídeos e stories que vendem na Freelandoo", href: LINKS.feed },
 ]
 
 export type BentoKind = "photo" | "saque" | "faturamento" | "comissao" | "video" | "stories" | "avatars" | "search" | "metrics"
