@@ -12,9 +12,9 @@ import {
   Sparkles,
   X,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ShareIconButton } from "@/components/share/share-icon-button"
+import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
 
 type ManifestationType = "motivational" | "emotion" | null
 
@@ -283,7 +283,7 @@ export default function ManifestacaoPage() {
       setFeedback({
         ok: true,
         title: "Manifestação aplicada",
-        message: data?.message || "Pronto — ela já aparece no headcard do seu perfil.",
+        message: data?.message || "Pronto, ela já aparece no headcard do seu perfil.",
       })
     } catch (err) {
       setFeedback({
@@ -297,17 +297,17 @@ export default function ManifestacaoPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f8faf9] text-zinc-950">
+    <PageShell>
       {/* Hero */}
-      <section className="mx-auto max-w-7xl px-4 pt-8 md:px-8 md:pt-12">
+      <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8 md:pt-14">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
+            <Sparkles className="h-3.5 w-3.5" />
             Banners para o seu perfil
           </span>
           <ShareIconButton path="/manifestacao" title="Loja de Manifestações no Freelandoo" />
           {token && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-600/25 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F2B705]/30 bg-[#F2B705]/12 px-3 py-1 text-xs font-bold text-[#F2B705]">
               <Coins className="h-3.5 w-3.5" />
               {polens == null ? "—" : polens.toLocaleString("pt-BR")} Poléns
               <Link href="/loja-polens" className="ml-1 underline underline-offset-2">
@@ -316,10 +316,10 @@ export default function ManifestacaoPage() {
             </span>
           )}
         </div>
-        <h1 className="mt-6 max-w-[760px] text-4xl font-semibold leading-none tracking-tight md:text-6xl">
+        <h1 className="fl-display mt-5 max-w-[760px] text-5xl leading-[0.95] text-[#F5F1E8] md:text-7xl">
           Loja de Manifestações
         </h1>
-        <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-zinc-600">
+        <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-[#C9C2B6]">
           Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no
           headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre.
         </p>
@@ -327,14 +327,14 @@ export default function ManifestacaoPage() {
 
       {/* Filtros + busca */}
       <section className="mx-auto max-w-7xl px-4 pb-16 md:px-8">
-        <div className="mt-8 flex flex-col gap-3 border-y border-zinc-200 py-4 md:flex-row md:items-center md:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-y border-[#F5F1E8]/10 py-4 md:flex-row md:items-center md:justify-between">
           <div className="relative md:w-[340px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9A938A]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome ou estado"
-              className="h-11 w-full rounded-full border border-zinc-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-zinc-400"
+              className="h-11 w-full rounded-full border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -343,10 +343,10 @@ export default function ManifestacaoPage() {
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "h-10 shrink-0 rounded-full border px-4 text-sm transition active:scale-[0.98]",
+                  "h-10 shrink-0 rounded-full border-2 px-4 text-sm font-bold transition active:scale-[0.98]",
                   filter === f.id
-                    ? "border-zinc-950 bg-zinc-950 text-white"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400",
+                    ? "border-[#F2B705] bg-[#F2B705] text-[#1A1505]"
+                    : "border-[#F5F1E8]/12 bg-[#1D1810] text-[#C9C2B6] hover:border-[#F5F1E8]/30",
                 )}
               >
                 {f.label}
@@ -359,28 +359,24 @@ export default function ManifestacaoPage() {
         {loading ? (
           <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="aspect-[16/9] animate-pulse rounded-[1.5rem] bg-zinc-200" />
+              <div key={i} className="aspect-[16/9] animate-pulse rounded-[1.5rem] bg-[#F5F1E8]/8" />
             ))}
           </div>
         ) : error ? (
-          <div className="grid place-items-center gap-3 py-20 text-center">
-            <p className="text-sm text-red-700">{error}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-              className="rounded-full"
-            >
-              Tentar de novo
-            </Button>
+          <div className="py-16">
+            <ErrorState description={error} onRetry={() => window.location.reload()} />
           </div>
         ) : visible.length === 0 ? (
-          <div className="grid place-items-center gap-2 py-20 text-center">
-            <Sparkles className="h-8 w-8 text-zinc-300" />
-            <p className="text-sm text-zinc-500">
-              {products.length === 0
-                ? "Nenhuma manifestação disponível no momento."
-                : "Nenhuma manifestação encontrada para esse filtro."}
-            </p>
+          <div className="py-16">
+            <EmptyState
+              icon={<Sparkles className="h-6 w-6" />}
+              title={products.length === 0 ? "Sem manifestações" : "Nada encontrado"}
+              description={
+                products.length === 0
+                  ? "Nenhuma manifestação disponível no momento."
+                  : "Nenhuma manifestação encontrada para esse filtro."
+              }
+            />
           </div>
         ) : (
           <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -399,7 +395,7 @@ export default function ManifestacaoPage() {
                       setPreviewId(p.id)
                     }
                   }}
-                  className="group relative aspect-[16/9] cursor-pointer overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-zinc-900 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.45)] transition hover:border-zinc-300 active:scale-[0.99]"
+                  className="group relative aspect-[16/9] cursor-pointer overflow-hidden rounded-[1.5rem] border-2 border-[#F5F1E8]/10 bg-[#1D1810] transition hover:border-[#F5F1E8]/30 active:scale-[0.99]"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
@@ -409,7 +405,7 @@ export default function ManifestacaoPage() {
                   </div>
 
                   {/* Gradiente pra legibilidade do overlay inferior */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-zinc-950/92 via-zinc-950/55 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#141009]/92 via-[#141009]/55 to-transparent" />
 
                   {isActive && (
                     <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
@@ -449,7 +445,7 @@ export default function ManifestacaoPage() {
                     )}
 
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                      <span className="inline-flex items-center gap-1 text-sm font-black text-[#F2B705] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                         {p.price_cents > 0
                           ? fmtBRL(p.price_cents)
                           : p.price_polens > 0
@@ -478,12 +474,12 @@ export default function ManifestacaoPage() {
         const isActive = activeId === p.id
         return (
           <div
-            className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/70 px-4 py-6 backdrop-blur-sm"
+            className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4 py-6 backdrop-blur-sm"
             onClick={() => setPreviewId(null)}
             role="presentation"
           >
             <div
-              className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl"
+              className="fl-card relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -492,14 +488,14 @@ export default function ManifestacaoPage() {
               <button
                 type="button"
                 onClick={() => setPreviewId(null)}
-                className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-zinc-950/55 text-white backdrop-blur transition hover:bg-zinc-950/75"
+                className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-[#141009]/55 text-white backdrop-blur transition hover:bg-[#141009]/75"
                 aria-label="Fechar"
               >
                 <X className="h-4 w-4" />
               </button>
 
-              {/* Preview do banner — proporção 16:5 (formato real do headcard) */}
-              <div className="group relative aspect-[16/5] w-full overflow-hidden bg-zinc-200">
+              {/* Preview do banner — proporcao 16:5 (formato real do headcard) */}
+              <div className="group relative aspect-[16/5] w-full overflow-hidden bg-[#1D1810]">
                 <BannerImage src={p.banner_url} alt={p.name} />
                 <span
                   className={cn(
@@ -515,43 +511,44 @@ export default function ManifestacaoPage() {
 
               <div className="flex flex-col gap-3 p-5">
                 <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-zinc-950">{p.name}</h3>
+                  <h3 className="fl-display text-2xl text-[var(--fl-ink)]">{p.name}</h3>
                   {p.headline && (
-                    <p className="mt-1 text-sm font-medium text-zinc-700">{p.headline}</p>
+                    <p className="mt-1 text-sm font-bold text-[#3a352d]">{p.headline}</p>
                   )}
                   {p.description && (
-                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{p.description}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-[#5b554b]">{p.description}</p>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-zinc-100 pt-3">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-[#0B0B0D]/10 pt-3">
                   {p.price_cents > 0 && (
-                    <span className="text-2xl font-semibold tracking-tight text-zinc-950">
+                    <span className="text-2xl font-black tracking-tight text-[#0B0B0D]">
                       {fmtBRL(p.price_cents)}
                     </span>
                   )}
                   {p.price_polens > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#9c6e2a]">
                       <Coins className="h-4 w-4" />
                       ou {p.price_polens.toLocaleString("pt-BR")} Poléns
                     </span>
                   )}
                   {p.price_cents === 0 && p.price_polens === 0 && (
-                    <span className="text-2xl font-semibold tracking-tight text-emerald-700">Grátis</span>
+                    <span className="text-2xl font-black tracking-tight text-[#15803d]">Grátis</span>
                   )}
                 </div>
 
                 <div className="mt-1 space-y-2">
                   {isActive ? (
-                    <Button disabled className="w-full rounded-full bg-emerald-600/90 text-white">
+                    <button type="button" disabled className="inline-flex w-full items-center justify-center rounded-full bg-[#16a34a] py-3 text-sm font-bold text-white opacity-90">
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                       Aplicada no seu perfil
-                    </Button>
+                    </button>
                   ) : owned ? (
-                    <Button
+                    <button
+                      type="button"
                       onClick={() => apply(p)}
                       disabled={busy != null}
-                      className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                      className="fl-btn-ink inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold disabled:opacity-60"
                     >
                       {busy === `apply:${p.id}` ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -559,14 +556,15 @@ export default function ManifestacaoPage() {
                         <BadgeCheck className="mr-2 h-4 w-4" />
                       )}
                       Usar no perfil
-                    </Button>
+                    </button>
                   ) : (
                     <>
                       {p.price_cents > 0 && (
-                        <Button
+                        <button
+                          type="button"
                           onClick={() => buyStripe(p)}
                           disabled={busy != null}
-                          className="w-full rounded-full bg-zinc-950 text-white hover:bg-zinc-800 active:scale-[0.98]"
+                          className="fl-btn-gold inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold disabled:opacity-60"
                         >
                           {busy === `stripe:${p.id}` ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -574,13 +572,13 @@ export default function ManifestacaoPage() {
                             <CreditCard className="mr-2 h-4 w-4" />
                           )}
                           Comprar · {fmtBRL(p.price_cents)}
-                        </Button>
+                        </button>
                       )}
-                      <Button
+                      <button
+                        type="button"
                         onClick={() => buy(p)}
                         disabled={busy != null}
-                        variant="outline"
-                        className="w-full rounded-full border-amber-600/30 text-amber-800 hover:bg-amber-50 active:scale-[0.98]"
+                        className="fl-btn-card inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-60"
                       >
                         {busy === `buy:${p.id}` ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -590,7 +588,7 @@ export default function ManifestacaoPage() {
                         {p.price_polens > 0
                           ? `Comprar · ${p.price_polens.toLocaleString("pt-BR")} Poléns`
                           : "Resgatar grátis"}
-                      </Button>
+                      </button>
                     </>
                   )}
                 </div>
@@ -603,17 +601,17 @@ export default function ManifestacaoPage() {
       {/* Feedback de compra/aplicação */}
       {feedback && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/55 px-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4"
           onClick={() => setFeedback(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl"
+            className="fl-card w-full max-w-sm rounded-2xl p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className={cn(
-                "grid h-10 w-10 place-items-center rounded-full",
-                feedback.ok ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700",
+                "grid h-11 w-11 place-items-center rounded-full text-white",
+                feedback.ok ? "bg-[#16a34a]" : "bg-[#F2B705] !text-[#1A1505]",
               )}
             >
               {feedback.ok ? (
@@ -622,26 +620,28 @@ export default function ManifestacaoPage() {
                 <Coins className="h-5 w-5" />
               )}
             </div>
-            <h3 className="mt-4 text-lg font-semibold tracking-tight">{feedback.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600">{feedback.message}</p>
+            <h3 className="fl-display mt-4 text-2xl text-[var(--fl-ink)]">{feedback.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-[#5b554b]">{feedback.message}</p>
             <div className="mt-5 flex justify-end gap-2">
               {!feedback.ok && feedback.title === "Saldo insuficiente" && (
-                <Link href="/loja-polens">
-                  <Button variant="outline" className="rounded-full">
-                    Comprar Poléns
-                  </Button>
+                <Link
+                  href="/loja-polens"
+                  className="fl-btn-card inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider"
+                >
+                  Comprar Poléns
                 </Link>
               )}
-              <Button
+              <button
+                type="button"
                 onClick={() => setFeedback(null)}
-                className="rounded-full bg-zinc-950 text-white hover:bg-zinc-800"
+                className="fl-btn-gold inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold"
               >
                 Entendi
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </PageShell>
   )
 }
