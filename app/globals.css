@@ -575,7 +575,16 @@
 .fl-float { animation: fl-float 6s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
 .fl-float-slow { animation: fl-float 8.5s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
 
+/* Adesivo de fita washi que "cola" sobre o like ao curtir (portfolio-post-card) */
+@keyframes fl-like-tape-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-24deg); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.14) rotate(4deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+.fl-like-tape { animation: fl-like-tape-pop 0.42s cubic-bezier(0.16, 1, 0.3, 1); }
+
 @media (prefers-reduced-motion: reduce) {
   .fl-float, .fl-float-slow { animation: none !important; }
   .fl-hard, .fl-btn-gold { transition: none !important; }
+  .fl-like-tape { animation: none !important; }
 }

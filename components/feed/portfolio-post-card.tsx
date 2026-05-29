@@ -59,6 +59,27 @@ function initials(name: string | null | undefined) {
     .join("")
 }
 
+/** Adesivo de "fita washi" amarela translúcida com coração vermelho, colado
+ *  por cima do like depois de curtir. Decorativo (pointer-events-none). */
+function LikeTapeSticker() {
+  return (
+    <span
+      aria-hidden
+      className="fl-like-tape pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+    >
+      <span className="relative block h-[26px] w-[42px] -rotate-[7deg] bg-[#F4D53B]/55 shadow-[1.5px_2.5px_4px_rgba(0,0,0,0.4)]">
+        {/* brilho da fita */}
+        <span className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-black/15" />
+        {/* bordas "rasgadas"/coladas da fita */}
+        <span className="absolute inset-y-0 left-0 w-1.5 bg-white/25" />
+        <span className="absolute inset-y-0 right-0 w-1.5 bg-white/15" />
+        {/* coração vermelho */}
+        <Heart className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rotate-[6deg] fill-[#E11D48] text-[#E11D48] drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]" />
+      </span>
+    </span>
+  )
+}
+
 export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged }: PortfolioPostCardProps) {
   const t = useTranslations("Post")
   const router = useRouter()
@@ -468,7 +489,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 onClick={handleLike}
                 disabled={likePending}
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60",
+                  "relative flex h-12 w-12 items-center justify-center rounded-full bg-black/45 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/55 active:scale-95 disabled:opacity-60",
                   liked && "text-yellow-400 shadow-[0_0_0_1px_rgba(250,204,21,0.35)]"
                 )}
               >
@@ -478,6 +499,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                     liked ? "fill-current scale-110" : ""
                   )}
                 />
+                {liked && <LikeTapeSticker />}
               </button>
               <span className="text-[11px] font-semibold tabular-nums text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                 {likesCount.toLocaleString("pt-BR")}
@@ -555,7 +577,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               onClick={handleLike}
               disabled={likePending}
               className={cn(
-                "rounded-full p-1.5 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
+                "relative rounded-full p-1.5 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
                 liked ? "text-yellow-400" : "text-white"
               )}
             >
@@ -566,6 +588,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 )}
                 strokeWidth={2}
               />
+              {liked && <LikeTapeSticker />}
             </button>
             <button
               type="button"
