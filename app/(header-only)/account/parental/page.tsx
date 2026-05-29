@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PageShell } from "@/components/tabloide"
 import {
   ArrowLeft,
   ShieldCheck,
@@ -309,23 +310,29 @@ export default function ParentalPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <main className="container mx-auto max-w-3xl px-4 py-8 md:py-10">
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/account")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+    <PageShell className="md:pl-[80px]">
+      <main className="relative z-10 mx-auto max-w-3xl px-4 py-10">
+        <header className="mb-8">
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+          >
+            <ArrowLeft className="h-4 w-4" />
             Voltar
-          </Button>
+          </button>
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <ShieldCheck className="h-6 w-6 text-amber-500" />
+            <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
+                <ShieldCheck className="h-6 w-6" />
+              </span>
               Parental
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
               Contas supervisionadas vinculadas à sua conta.
             </p>
           </div>
-        </div>
+        </header>
 
         {error && (
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
@@ -335,10 +342,10 @@ export default function ParentalPage() {
         )}
 
         {/* Gerar código */}
-        <Card className="mb-6">
+        <Card className="fl-card mb-6 rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
             <CardTitle className="text-lg">Código do responsável</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[#5b554b]">
               Gere um código e envie ao menor. Ele usa o código no cadastro para vincular a conta a você.
               <br />
               <span className="text-xs">Cada código vale 24h e pode ser usado uma única vez.</span>
@@ -403,10 +410,10 @@ export default function ParentalPage() {
         </Card>
 
         {/* Lista de menores */}
-        <Card>
+        <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
             <CardTitle className="text-lg">Filhos vinculados</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[#5b554b]">
               {minors.length === 0
                 ? "Quando o menor usar o seu código no cadastro, ele aparecerá aqui."
                 : "Toque em um menor para abrir permissões e enxames liberados."}
@@ -582,6 +589,6 @@ export default function ParentalPage() {
           </CardContent>
         </Card>
       </main>
-    </div>
+    </PageShell>
   )
 }

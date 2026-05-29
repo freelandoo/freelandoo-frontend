@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Package, Truck, ShoppingBag } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, Package, ShoppingBag, Truck } from "lucide-react"
+import { EmptyState, ErrorState, LoadingState, PageShell } from "@/components/tabloide"
 
 interface Order {
   id_order: number
@@ -27,12 +29,12 @@ interface Order {
 }
 
 const STATUS_LABEL: Record<Order["status"], { label: string; classes: string }> = {
-  pending:   { label: "Aguardando pagamento", classes: "bg-zinc-700/30 text-zinc-300 border-zinc-700" },
-  paid:      { label: "Pago",                 classes: "bg-emerald-500/15 text-emerald-300 border-emerald-700" },
-  shipped:   { label: "Enviado",              classes: "bg-sky-500/15 text-sky-300 border-sky-700" },
-  delivered: { label: "Entregue",             classes: "bg-primary/15 text-primary border-primary/40" },
-  canceled:  { label: "Cancelado",            classes: "bg-zinc-700/30 text-zinc-400 border-zinc-700" },
-  refunded:  { label: "Reembolsado",          classes: "bg-rose-500/15 text-rose-300 border-rose-700" },
+  pending:   { label: "Aguardando pagamento", classes: "border-[#A16207] bg-[#FEF3C7] text-[#854D0E]" },
+  paid:      { label: "Pago",                 classes: "border-[#15803D] bg-[#DCFCE7] text-[#166534]" },
+  shipped:   { label: "Enviado",              classes: "border-[#0369A1] bg-[#E0F2FE] text-[#075985]" },
+  delivered: { label: "Entregue",             classes: "border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]" },
+  canceled:  { label: "Cancelado",            classes: "border-[#52525B] bg-[#E4E4E7] text-[#3F3F46]" },
+  refunded:  { label: "Reembolsado",          classes: "border-[#BE123C] bg-[#FFE4E6] text-[#9F1239]" },
 }
 
 function formatBRL(cents: number) {
@@ -40,8 +42,8 @@ function formatBRL(cents: number) {
 }
 
 function formatDate(s: string | null) {
-  if (!s) return "—"
-  try { return new Date(s).toLocaleDateString("pt-BR") } catch { return "—" }
+  if (!s) return "-"
+  try { return new Date(s).toLocaleDateString("pt-BR") } catch { return "-" }
 }
 
 function getToken() {
@@ -78,88 +80,108 @@ export default function ComprasPage() {
   }, [])
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 md:py-12">
-      <header className="mb-6 flex items-center gap-3">
-        <ShoppingBag className="h-6 w-6 text-primary" aria-hidden />
-        <div>
-          <h1 className="text-xl font-bold md:text-2xl">Minhas compras</h1>
-          <p className="text-xs text-muted-foreground">Pedidos da Loja de criadores Freelandoo.</p>
-        </div>
-      </header>
+    <PageShell className="md:pl-[80px]">
+      <main className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 md:py-12">
+        <header className="mb-8">
+          <Link
+            href="/account"
+            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <div className="flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
+              <ShoppingBag className="h-6 w-6" aria-hidden />
+            </span>
+            <div>
+              <h1 className="fl-display text-4xl text-[#F5F1E8]">Minhas compras</h1>
+              <p className="mt-1 text-sm text-[#C9C2B6]">Pedidos da Loja de criadores Freelandoo.</p>
+            </div>
+          </div>
+        </header>
 
-      {state === "loading" && (
-        <div className="flex min-h-[200px] items-center justify-center">
-          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" aria-hidden />
-        </div>
-      )}
+        {state === "loading" && (
+          <div className="py-10">
+            <LoadingState label="Carregando suas compras..." />
+          </div>
+        )}
 
-      {state === "unauth" && (
-        <p className="text-sm text-muted-foreground">Faça login para ver suas compras.</p>
-      )}
+        {state === "unauth" && (
+          <EmptyState
+            icon={<ShoppingBag className="h-6 w-6" />}
+            title="Entre para ver compras"
+            description="Faça login para acompanhar seus pedidos da Loja."
+            action={<Link href="/login" className="fl-btn-gold inline-flex rounded-full px-5 py-2.5 text-sm font-black">Entrar</Link>}
+          />
+        )}
 
-      {state === "error" && (
-        <p className="text-sm text-rose-400">Erro ao carregar pedidos.</p>
-      )}
+        {state === "error" && (
+          <ErrorState title="Pedidos indisponíveis" description="Não foi possível carregar suas compras agora." />
+        )}
 
-      {state === "loaded" && orders.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" aria-hidden />
-          <p className="text-sm text-muted-foreground">Você ainda não comprou nada na Loja.</p>
-        </div>
-      )}
+        {state === "loaded" && orders.length === 0 && (
+          <EmptyState
+            icon={<Package className="h-6 w-6" />}
+            title="Nada comprado ainda"
+            description="Quando você comprar produtos da Loja, os pedidos aparecem aqui."
+          />
+        )}
 
-      {state === "loaded" && orders.length > 0 && (
-        <ul className="space-y-3">
-          {orders.map((o) => {
-            const status = STATUS_LABEL[o.status] || STATUS_LABEL.pending
-            return (
-              <li
-                key={o.id_order}
-                className="flex flex-col gap-3 rounded-2xl border border-border bg-card/40 p-4 md:flex-row md:items-center"
-              >
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-900 md:h-24 md:w-24">
-                  {o.product_cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.product_cover_url} alt={o.product_name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Package className="h-8 w-8 text-zinc-600" aria-hidden />
-                    </div>
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="truncate text-sm font-semibold md:text-base">{o.product_name}</h2>
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${status.classes}`}>
-                      {status.label}
-                    </span>
+        {state === "loaded" && orders.length > 0 && (
+          <ul className="flex flex-col gap-4">
+            {orders.map((o) => {
+              const status = STATUS_LABEL[o.status] || STATUS_LABEL.pending
+              return (
+                <li
+                  key={o.id_order}
+                  className="fl-card fl-hard flex flex-col gap-4 rounded-2xl p-4 md:flex-row md:items-center"
+                >
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#1D1810] md:h-24 md:w-24">
+                    {o.product_cover_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={o.product_cover_url} alt={o.product_name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Package className="h-8 w-8 text-[#F2B705]" aria-hidden />
+                      </div>
+                    )}
                   </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    Vendedor: {o.seller_display_name || o.seller_username || "—"} · pedido #{o.id_order}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {o.shipping_carrier ? `${o.shipping_carrier} · ${o.shipping_service_name}` : "—"} · CEP {o.destination_zipcode}
-                  </p>
-                  {o.tracking_code && (
-                    <p className="mt-1 flex items-center gap-1 text-xs text-sky-300">
-                      <Truck className="h-3.5 w-3.5" aria-hidden /> Rastreio: <span className="font-mono">{o.tracking_code}</span>
-                    </p>
-                  )}
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    Realizado em {formatDate(o.created_at)}{o.paid_at ? ` · Pago em ${formatDate(o.paid_at)}` : ""}
-                  </p>
-                </div>
 
-                <div className="shrink-0 text-right">
-                  <p className="text-base font-bold tabular-nums md:text-lg">{formatBRL(o.total_cents)}</p>
-                  <p className="text-[11px] text-muted-foreground">{formatBRL(o.unit_price_cents)} + frete {formatBRL(o.shipping_cents)}</p>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </main>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-sm font-black text-[var(--fl-ink)] md:text-base">{o.product_name}</h2>
+                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${status.classes}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-[#5b554b]">
+                      Vendedor: {o.seller_display_name || o.seller_username || "-"} · pedido #{o.id_order}
+                    </p>
+                    <p className="mt-1 text-xs text-[#5b554b]">
+                      {o.shipping_carrier ? `${o.shipping_carrier} · ${o.shipping_service_name}` : "-"} · CEP {o.destination_zipcode}
+                    </p>
+                    {o.tracking_code && (
+                      <p className="mt-1 flex items-center gap-1 text-xs font-bold text-[#075985]">
+                        <Truck className="h-3.5 w-3.5" aria-hidden />
+                        Rastreio: <span className="font-mono">{o.tracking_code}</span>
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-[#756d5f]">
+                      Realizado em {formatDate(o.created_at)}{o.paid_at ? ` · Pago em ${formatDate(o.paid_at)}` : ""}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 text-left md:text-right">
+                    <p className="text-base font-black tabular-nums text-[var(--fl-ink)] md:text-lg">{formatBRL(o.total_cents)}</p>
+                    <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + frete {formatBRL(o.shipping_cents)}</p>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </main>
+    </PageShell>
   )
 }

@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, ShieldCheck, Send, Check, AlertCircle } from "lucide-react"
+import { AlertCircle, ArrowLeft, Check, Send, ShieldCheck } from "lucide-react"
+import { LoadingState, PageShell } from "@/components/tabloide"
 
 const REQUESTABLE: Array<{ key: string; label: string; hint?: string }> = [
   { key: "can_view_feed", label: "Ver o feed" },
@@ -81,103 +79,112 @@ export default function ParentalRequestPage() {
 
   if (isMinor === null) {
     return (
-      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Carregando...</p>
-      </div>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando..." />
+        </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <main className="container mx-auto max-w-2xl px-4 py-8 md:py-10">
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/account")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+    <PageShell className="md:pl-[80px]">
+      <main className="relative z-10 mx-auto max-w-2xl px-4 py-10">
+        <header className="mb-8">
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+          >
+            <ArrowLeft className="h-4 w-4" />
             Voltar
-          </Button>
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <ShieldCheck className="h-6 w-6 text-amber-500" />
-              Pedir permissão
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Envie um pedido ao responsável para liberar uma ação bloqueada.
-            </p>
-          </div>
-        </div>
+          </button>
+          <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
+              <ShieldCheck className="h-6 w-6" />
+            </span>
+            Pedir permissão
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
+            Envie um pedido ao responsável para liberar uma ação bloqueada.
+          </p>
+        </header>
 
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-red-500/35 bg-red-500/10 p-3 text-sm text-red-200">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Qual permissão você quer?</CardTitle>
-            <CardDescription>
+        <article className="fl-card rounded-2xl p-5 sm:p-6">
+          <div className="mb-5">
+            <h2 className="text-lg font-black text-[var(--fl-ink)]">Qual permissão você quer?</h2>
+            <p className="mt-1 text-sm leading-relaxed text-[#5b554b]">
               O responsável recebe a notificação e decide se libera. Você pode incluir um recado.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {REQUESTABLE.map((item) => {
-                const isSent = sent.has(item.key)
-                const isSelected = selected === item.key
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setSelected(item.key)}
-                    className={`flex items-start gap-2 rounded-md border p-3 text-left transition ${
-                      isSelected
-                        ? "border-amber-400 bg-amber-400/10"
-                        : "border-white/10 hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white/95">{item.label}</p>
-                      {item.hint && (
-                        <p className="text-xs text-muted-foreground">{item.hint}</p>
-                      )}
-                    </div>
-                    {isSent && <Check className="h-4 w-4 text-green-500 shrink-0" />}
-                  </button>
-                )
-              })}
-            </div>
+            </p>
+          </div>
 
-            <div className="space-y-2">
-              <label htmlFor="note" className="text-sm font-medium">
-                Recado para o responsável (opcional)
-              </label>
-              <Textarea
-                id="note"
-                rows={3}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Ex.: Quero publicar um curso de violão. Posso?"
-                maxLength={280}
-              />
-              <p className="text-[10px] text-muted-foreground">{note.length}/280</p>
-            </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {REQUESTABLE.map((item) => {
+              const isSent = sent.has(item.key)
+              const isSelected = selected === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSelected(item.key)}
+                  className={`flex items-start gap-2 rounded-xl border-2 p-3 text-left transition ${
+                    isSelected
+                      ? "border-[#0B0B0D] bg-[#F2B705]/20"
+                      : "border-[#0B0B0D]/12 bg-white hover:border-[#0B0B0D]/35"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-[var(--fl-ink)]">{item.label}</p>
+                    {item.hint && <p className="text-xs text-[#5b554b]">{item.hint}</p>}
+                  </div>
+                  {isSent && <Check className="h-4 w-4 shrink-0 text-green-700" />}
+                </button>
+              )
+            })}
+          </div>
 
-            <div className="flex justify-end">
-              <Button onClick={submit} disabled={sending || !selected}>
-                <Send className="mr-2 h-4 w-4" />
-                {sending ? "Enviando..." : "Enviar pedido"}
-              </Button>
-            </div>
+          <div className="mt-5">
+            <label htmlFor="note" className="fl-label">
+              Recado para o responsável (opcional)
+            </label>
+            <textarea
+              id="note"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex.: Quero publicar um curso de violão. Posso?"
+              maxLength={280}
+              className="fl-input resize-none"
+            />
+            <p className="mt-1 text-[10px] font-bold text-[#756d5f]">{note.length}/280</p>
+          </div>
 
-            {sent.size > 0 && (
-              <div className="rounded-md border border-green-500/30 bg-green-500/5 p-3 text-sm text-green-400">
-                Pedido enviado. O responsável vai receber uma notificação.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={submit}
+              disabled={sending || !selected}
+              className="fl-btn-gold inline-flex items-center rounded-full px-5 py-2.5 text-sm font-black disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {sending ? "Enviando..." : "Enviar pedido"}
+            </button>
+          </div>
+
+          {sent.size > 0 && (
+            <div className="mt-5 rounded-xl border-2 border-green-800/30 bg-green-100 p-3 text-sm font-bold text-green-800">
+              Pedido enviado. O responsável vai receber uma notificação.
+            </div>
+          )}
+        </article>
       </main>
-    </div>
+    </PageShell>
   )
 }

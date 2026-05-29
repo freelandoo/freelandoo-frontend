@@ -24,8 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Users, Plus, Lock, AlertCircle, Check, X, CalendarDays } from "lucide-react"
+import { ArrowLeft, Users, Plus, Lock, AlertCircle, Check, X, CalendarDays } from "lucide-react"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
+import { ErrorState, LoadingState, PageShell } from "@/components/tabloide"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -245,22 +246,21 @@ export default function MyClansPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-5xl px-4 py-12">
-        <p className="text-muted-foreground">Carregando seus clans...</p>
-      </div>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando seus clans..." />
+        </div>
+      </PageShell>
     )
   }
 
   if (error) {
     return (
-      <div className="container mx-auto max-w-5xl px-4 py-12">
-        <Card>
-          <CardContent className="pt-6 flex items-center gap-2 text-red-600">
-            <AlertCircle className="size-5" />
-            {error}
-          </CardContent>
-        </Card>
-      </div>
+      <PageShell className="md:pl-[80px]">
+        <div className="relative z-10 px-4 py-16">
+          <ErrorState title="Clans indisponíveis" description={error} />
+        </div>
+      </PageShell>
     )
   }
 
@@ -270,32 +270,46 @@ export default function MyClansPage() {
   const eligibleSubProfiles = subProfiles
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 space-y-8">
-      <header className="flex items-center justify-between gap-4 flex-wrap">
+    <PageShell className="md:pl-[80px]">
+    <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
+      <Link
+        href="/account"
+        className="inline-flex w-fit items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Link>
+
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="size-7" /> Meus Clans
+          <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8] sm:text-5xl">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
+              <Users className="h-6 w-6" />
+            </span>
+            Meus Clans
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#C9C2B6]">
             Crie ou participe de clans com até 6 sub-perfis. As métricas do clan
             somam likes, horas e engajamento de todos os membros.
           </p>
         </div>
-        <Button
+        <button
+          type="button"
           onClick={() => setIsCreateOpen(true)}
           disabled={!eligible}
           title={eligible ? "Criar um novo clan" : "Você precisa de 10h online para criar um clan"}
+          className="fl-btn-gold inline-flex items-center rounded-full px-5 py-3 text-sm font-black disabled:cursor-not-allowed disabled:opacity-55"
         >
-          {eligible ? <Plus className="size-4 mr-2" /> : <Lock className="size-4 mr-2" />}
+          {eligible ? <Plus className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
           Criar Clan
-        </Button>
+        </button>
       </header>
 
       {!eligible && eligibility && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="pt-6 text-amber-800">
+        <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
+          <CardContent className="pt-6">
             <p className="font-medium">Ainda não desbloqueou criação de clans</p>
-            <p className="text-sm mt-1">
+            <p className="mt-1 text-sm text-[#5b554b]">
               Você tem {currentH}h{currentM}m online. Faltam{" "}
               {Math.max(0, 10 - currentH)}h
               {Math.max(0, 10 - currentH) === 0 ? `${60 - currentM}m` : ""} para
@@ -306,7 +320,7 @@ export default function MyClansPage() {
       )}
 
       {pendingInvites.length > 0 && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
             <CardTitle className="text-base">
               Convites pendentes ({pendingInvites.length})
@@ -315,11 +329,11 @@ export default function MyClansPage() {
               Você foi convidado para os clans abaixo.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="flex flex-col gap-2">
             {pendingInvites.map((inv) => (
               <div
                 key={inv.id_clan_invite}
-                className="flex items-center gap-3 border rounded-md p-3 bg-background"
+                className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-white p-3"
               >
                 <div className="flex-1">
                   <div className="text-sm font-medium">{inv.clan_display_name}</div>
@@ -350,7 +364,7 @@ export default function MyClansPage() {
       )}
 
       {clans.length === 0 ? (
-        <Card>
+        <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardContent className="pt-6 text-center text-muted-foreground">
             Você ainda não participa de nenhum clan.
           </CardContent>
@@ -358,7 +372,7 @@ export default function MyClansPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {clans.map((c) => (
-            <Card key={c.id_profile}>
+            <Card key={c.id_profile} className="fl-card fl-hard rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
                   <span>{c.display_name}</span>
@@ -393,7 +407,7 @@ export default function MyClansPage() {
       )}
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Criar novo clan</DialogTitle>
             <DialogDescription>
@@ -537,6 +551,7 @@ export default function MyClansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
+    </PageShell>
   )
 }
