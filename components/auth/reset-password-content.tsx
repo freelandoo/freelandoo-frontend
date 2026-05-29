@@ -4,12 +4,9 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CheckCircle2, XCircle, Star, Eye, EyeOff } from "lucide-react"
+import { CheckCircle2, XCircle, KeyRound, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
+import { AuthShell, AuthCard } from "@/components/tabloide"
 
 export default function ResetPasswordContent() {
   const router = useRouter()
@@ -49,8 +46,6 @@ export default function ResetPasswordContent() {
     setStatus("idle")
 
     try {
-      console.log("[v0] Enviando nova senha com token:", token)
-
       const response = await fetch("/api/reset-password", {
         method: "POST",
         headers: {
@@ -63,7 +58,6 @@ export default function ResetPasswordContent() {
       })
 
       const data = await response.json()
-      console.log("[v0] Resposta do reset:", data)
 
       if (!response.ok) {
         setStatus("error")
@@ -79,173 +73,146 @@ export default function ResetPasswordContent() {
         router.push("/login")
       }, 3000)
     } catch (error) {
-      console.error("[v0] Erro ao redefinir senha:", error)
+      console.error("Erro ao redefinir senha:", error)
       setStatus("error")
       setMessage("Erro ao conectar com o servidor. Tente novamente mais tarde.")
       setIsLoading(false)
     }
   }
 
+  const aside = {
+    eyebrow: "Segurança da conta",
+    asideTitle: "Crie uma senha",
+    asideHighlight: "forte",
+    asideSubtitle: "Escolha uma senha que só você conhece. Em segundos sua conta volta a ficar protegida.",
+  }
+
   if (!token) {
     return (
-      <main className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-md">
-          <Card className="text-center">
-            <CardHeader className="space-y-4 pb-8 pt-12">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-500/20">
-                <XCircle className="h-10 w-10 text-red-500" />
-              </div>
-              <CardTitle className="text-3xl font-bold">Token não encontrado</CardTitle>
-              <CardDescription className="text-base">
-                Por favor, use o link enviado no seu e-mail para redefinir sua senha.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-12">
-              <Link href="/forgot-password">
-                <Button className="w-full" size="lg">
-                  Solicitar novo link
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+      <AuthShell {...aside}>
+        <AuthCard
+          icon={<XCircle className="h-7 w-7" />}
+          iconTone="red"
+          title="Token não encontrado"
+          subtitle="Por favor, use o link enviado no seu e-mail para redefinir sua senha."
+        >
+          <Link
+            href="/forgot-password"
+            className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold"
+          >
+            Solicitar novo link
+          </Link>
+        </AuthCard>
+      </AuthShell>
     )
   }
 
   if (status === "success") {
     return (
-      <main className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-md">
-          <Card className="text-center">
-            <CardHeader className="space-y-4 pb-8 pt-12">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
-              </div>
-              <CardTitle className="text-3xl font-bold">Senha redefinida!</CardTitle>
-              <CardDescription className="text-base">{message}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 pb-12">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-lg bg-green-500/10 p-4 text-left border border-green-500/20">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
-                  <div className="space-y-1">
-                    <p className="font-semibold">Próximos passos</p>
-                    <p className="text-sm text-muted-foreground">
-                      Você será redirecionado para a página de login em alguns segundos. Use sua nova senha para acessar
-                      sua conta!
-                    </p>
-                  </div>
-                </div>
-
-                <Link href="/login">
-                  <Button className="w-full" size="lg">
-                    Ir para o Login
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+      <AuthShell {...aside}>
+        <AuthCard
+          icon={<CheckCircle2 className="h-7 w-7" />}
+          iconTone="green"
+          title="Senha redefinida!"
+          subtitle={message}
+        >
+          <div className="rounded-xl border-2 border-[#16a34a]/30 bg-[#16a34a]/8 p-4 text-sm text-[#3a352d]">
+            <p className="font-bold text-[#0B0B0D]">Próximos passos</p>
+            <p className="mt-1">
+              Você será redirecionado para a página de login em alguns segundos. Use sua nova senha para acessar sua conta!
+            </p>
+          </div>
+          <Link
+            href="/login"
+            className="fl-btn-gold mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold"
+          >
+            Ir para o Login
+          </Link>
+        </AuthCard>
+      </AuthShell>
     )
   }
 
   return (
-    <main className="container mx-auto px-4 py-16">
-      <div className="mx-auto max-w-md">
-        <Card>
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex justify-center">
-              <div className="rounded-full bg-primary p-3">
-                <Star className="h-8 w-8 fill-black text-black" />
-              </div>
+    <AuthShell {...aside}>
+      <AuthCard
+        icon={<KeyRound className="h-7 w-7" />}
+        title="Criar nova senha"
+        subtitle="Digite sua nova senha abaixo"
+        footer={
+          <>
+            Lembrou sua senha?{" "}
+            <Link href="/login" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+              Faça login
+            </Link>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {status === "error" && (
+            <div className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/8 p-3 text-sm font-medium text-[#b91c1c]">
+              {message}
             </div>
-            <CardTitle className="text-2xl font-bold">Criar nova senha</CardTitle>
-            <CardDescription>Digite sua nova senha abaixo</CardDescription>
-          </CardHeader>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {status === "error" && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200 dark:bg-red-950/50 dark:border-red-900">
-                  {message}
-                </div>
-              )}
+          <div>
+            <label htmlFor="password" className="fl-label">Nova senha</label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                className="fl-input pr-11"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5b554b] transition hover:text-[#0B0B0D]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-[#5b554b]">A senha deve ter pelo menos 6 caracteres</p>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Nova senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">A senha deve ter pelo menos 6 caracteres</p>
-              </div>
+          <div>
+            <label htmlFor="confirmPassword" className="fl-label">Confirmar nova senha</label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                className="fl-input pr-11"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5b554b] transition hover:text-[#0B0B0D]"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? "Redefinindo..." : "Redefinir senha"}
-              </Button>
-
-              <div className="text-center text-sm text-muted-foreground">
-                Lembrou sua senha?{" "}
-                <Link href="/login" className="font-semibold text-primary hover:underline">
-                  Faça login
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </main>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold disabled:opacity-60"
+          >
+            {isLoading ? "Redefinindo..." : "Redefinir senha"}
+          </button>
+        </form>
+      </AuthCard>
+    </AuthShell>
   )
 }

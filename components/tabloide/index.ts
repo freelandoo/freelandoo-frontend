@@ -6,6 +6,7 @@
  * alcançar dentro de `components/home/landing`.
  */
 export { TabloidHeader } from "./TabloidHeader"
+export { AuthShell, AuthCard } from "./AuthShell"
 export {
   PageShell,
   PageHero,

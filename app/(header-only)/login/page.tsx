@@ -5,14 +5,9 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { AuthShell, AuthCard } from "@/components/tabloide"
 import { extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
 
@@ -91,87 +86,88 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-page-shell-dark">
-      <div className="container mx-auto flex items-center justify-center px-4 py-16">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex items-center justify-end">
-              <LanguageSwitcher variant="full" className="text-foreground/70 hover:bg-foreground/10 hover:text-foreground" />
+    <AuthShell
+      eyebrow={t("welcomeBack", "Bem-vindo de volta")}
+      asideTitle={t("asideLoginTitle", "Sua próxima")}
+      asideHighlight={t("asideLoginHighlight", "renda")}
+      asideSubtitle={t("asideLoginSubtitle", "Entre e continue de onde parou: vendas, cursos, clientes e comissões em um lugar só.")}
+      bullets={[
+        t("asideBullet1", "Vitrine pública e contato direto"),
+        t("asideBullet2", "Venda produtos, cursos e serviços"),
+        t("asideBullet3", "Comissões e saques transparentes"),
+      ]}
+    >
+      <AuthCard
+        title={t("login", "Entrar")}
+        subtitle={t("alreadyHaveAccount", "Faça login para acessar sua conta na Freelandoo")}
+        footer={
+          <>
+            {t("noAccount", "Não tem uma conta?")}{" "}
+            <Link href="/cadastro" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+              {t("register", "Cadastre-se")}
+            </Link>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <GoogleSignInButton text="signin_with" />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-[#0B0B0D]/12" />
             </div>
-            <div className="flex justify-center">
-              <div className="rounded-full bg-primary p-3">
-                <Star className="h-8 w-8 fill-black text-black" />
-              </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[var(--fl-paper)] px-2 font-semibold text-[#5b554b]">{tCommon("or", "ou")}</span>
             </div>
-            <CardTitle className="text-2xl font-bold">{t("login", "Entrar")}</CardTitle>
-            <CardDescription>{t("alreadyHaveAccount", "Faça login para acessar sua conta na Freelandoo")}</CardDescription>
-          </CardHeader>
+          </div>
+        </div>
 
-          <CardContent className="space-y-4 pt-0">
-            <GoogleSignInButton text="signin_with" />
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">{tCommon("or", "ou")}</span>
-              </div>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {error && (
+            <div className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/8 p-3 text-sm font-medium text-[#b91c1c]">
+              {error}
             </div>
-          </CardContent>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">{error}</div>
-              )}
+          <div>
+            <label htmlFor="email" className="fl-label">{t("email", "Email")}</label>
+            <input
+              id="email"
+              type="email"
+              className="fl-input"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("email", "Email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label htmlFor="password" className="fl-label mb-0">{t("password", "Senha")}</label>
+              <Link href="/forgot-password" className="text-sm font-semibold text-[#0B0B0D] underline-offset-2 hover:underline">
+                {t("forgotPassword", "Esqueceu a senha?")}
+              </Link>
+            </div>
+            <input
+              id="password"
+              type="password"
+              className="fl-input"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t("password", "Senha")}</Label>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    {t("forgotPassword", "Esqueceu a senha?")}
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="pt-2">
-                <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                  {isLoading ? t("loggingIn", "Entrando...") : t("login", "Entrar")}
-                </Button>
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 pt-4">
-              <div className="text-center text-sm text-muted-foreground">
-                {t("noAccount", "Não tem uma conta?")}{" "}
-                <Link href="/cadastro" className="font-semibold text-primary hover:underline">
-                  {t("register", "Cadastre-se")}
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold disabled:opacity-60"
+          >
+            {isLoading ? t("loggingIn", "Entrando...") : t("login", "Entrar")}
+          </button>
+        </form>
+      </AuthCard>
+    </AuthShell>
   )
 }

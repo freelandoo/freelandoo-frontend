@@ -494,6 +494,40 @@
 .fl-btn-card:hover { background: var(--fl-ink); color: var(--fl-paper); }
 .fl-btn-card:active { transform: scale(0.97); }
 
+/* ── Campos de formulário tabloide (dentro de cards de papel) ──────────────
+   Reusáveis em todo o redesign. Dependem dos tokens --fl-* → só funcionam
+   dentro de `.fl-root`. */
+.fl-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--fl-ink);
+  margin-bottom: 0.4rem;
+}
+.fl-input {
+  width: 100%;
+  background: #fff;
+  color: var(--fl-ink);
+  border: 2px solid rgba(11, 11, 13, 0.16);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fl-input::placeholder { color: rgba(11, 11, 13, 0.38); }
+.fl-input:focus {
+  outline: none;
+  border-color: var(--fl-ink);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.35);
+}
+.fl-input:disabled { opacity: 0.55; cursor: not-allowed; }
+.fl-input-error { border-color: #dc2626 !important; }
+.fl-input-error:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25); }
+.fl-input-ok { border-color: #16a34a !important; }
+.fl-input-ok:focus { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22); }
+
 /* Float suave (UI cards do hero) */
 @keyframes fl-float {
   0%, 100% { transform: translateY(0); }

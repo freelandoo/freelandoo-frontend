@@ -3,12 +3,9 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, CheckCircle } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { AuthShell, AuthCard } from "@/components/tabloide"
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("ForgotPassword")
@@ -54,106 +51,92 @@ export default function ForgotPasswordPage() {
     }
   }
 
+  const aside = {
+    eyebrow: t("asideEyebrow", "Recuperação de conta"),
+    asideTitle: t("asideTitle", "Acontece com"),
+    asideHighlight: t("asideHighlight", "todo mundo"),
+    asideSubtitle: t("asideSubtitle", "Em poucos segundos você recebe um link seguro para criar uma senha nova e voltar pra colmeia."),
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto flex items-center justify-center px-4 py-16">
-          <Card className="w-full max-w-md">
-            <CardHeader className="space-y-3 text-center">
-              <div className="flex justify-center">
-                <div className="rounded-full bg-green-500 p-3">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <CardTitle className="text-2xl font-bold">{t("successTitle", "Email enviado com sucesso!")}</CardTitle>
-              <CardDescription className="text-base">
-                {t("successDescription", "Enviamos um link de recuperação para")} <strong>{email}</strong>
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm">
-                <p className="mb-2">
-                  <strong>{t("nextStepsTitle", "Próximos passos:")}</strong>
-                </p>
-                <ol className="ml-4 list-decimal space-y-1 text-muted-foreground">
-                  <li>{t("step1", "Verifique sua caixa de entrada")}</li>
-                  <li>{t("step2", "Clique no link de recuperação")}</li>
-                  <li>{t("step3", "Crie uma nova senha")}</li>
-                </ol>
-              </div>
-
-              <p className="text-center text-sm text-muted-foreground">
-                {t("checkSpam", "Não recebeu o email? Verifique sua pasta de spam ou tente novamente em alguns minutos.")}
-              </p>
-            </CardContent>
-
-            <CardFooter>
-              <Link href="/login" className="w-full">
-                <Button className="w-full bg-transparent" variant="outline">
-                  {t("backToLogin", "Voltar para o login")}
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+      <AuthShell {...aside}>
+        <AuthCard
+          icon={<CheckCircle className="h-7 w-7" />}
+          iconTone="green"
+          title={t("successTitle", "Email enviado com sucesso!")}
+          subtitle={
+            <>
+              {t("successDescription", "Enviamos um link de recuperação para")} <strong className="text-[#0B0B0D]">{email}</strong>
+            </>
+          }
+          footer={
+            <Link href="/login" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+              {t("backToLogin", "Voltar para o login")}
+            </Link>
+          }
+        >
+          <div className="rounded-xl border-2 border-[#0B0B0D]/12 bg-white/60 p-4 text-sm text-[#3a352d]">
+            <p className="mb-2 font-bold text-[#0B0B0D]">{t("nextStepsTitle", "Próximos passos:")}</p>
+            <ol className="ml-4 list-decimal space-y-1">
+              <li>{t("step1", "Verifique sua caixa de entrada")}</li>
+              <li>{t("step2", "Clique no link de recuperação")}</li>
+              <li>{t("step3", "Crie uma nova senha")}</li>
+            </ol>
+          </div>
+          <p className="mt-4 text-center text-sm text-[#5b554b]">
+            {t("checkSpam", "Não recebeu o email? Verifique sua pasta de spam ou tente novamente em alguns minutos.")}
+          </p>
+        </AuthCard>
+      </AuthShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto flex items-center justify-center px-4 py-16">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex justify-center">
-              <div className="rounded-full bg-primary p-3">
-                <Mail className="h-8 w-8 text-primary-foreground" />
-              </div>
+    <AuthShell {...aside}>
+      <AuthCard
+        icon={<Mail className="h-7 w-7" />}
+        title={t("title", "Esqueceu sua senha?")}
+        subtitle={t("description", "Não se preocupe! Digite seu email e enviaremos um link para redefinir sua senha.")}
+        footer={
+          <>
+            {t("rememberedPassword", "Lembrou sua senha?")}{" "}
+            <Link href="/login" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+              {t("backToLogin", "Voltar para o login")}
+            </Link>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/8 p-3 text-sm font-medium text-[#b91c1c]">
+              {error}
             </div>
-            <CardTitle className="text-2xl font-bold">{t("title", "Esqueceu sua senha?")}</CardTitle>
-            <CardDescription>
-              {t("description", "Não se preocupe! Digite seu email e enviaremos um link para redefinir sua senha.")}
-            </CardDescription>
-          </CardHeader>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
+          <div>
+            <label htmlFor="email" className="fl-label">{t("emailLabel", "Email")}</label>
+            <input
+              id="email"
+              type="email"
+              className="fl-input"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("emailLabel", "Email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? t("sending", "Enviando...") : t("submit", "Enviar link de recuperação")}
-              </Button>
-
-              <div className="text-center text-sm text-muted-foreground">
-                {t("rememberedPassword", "Lembrou sua senha?")}{" "}
-                <Link href="/login" className="font-semibold text-primary hover:underline">
-                  {t("backToLogin", "Voltar para o login")}
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold disabled:opacity-60"
+          >
+            {isLoading ? t("sending", "Enviando...") : t("submit", "Enviar link de recuperação")}
+          </button>
+        </form>
+      </AuthCard>
+    </AuthShell>
   )
 }

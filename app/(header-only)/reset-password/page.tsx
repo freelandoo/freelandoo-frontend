@@ -3,16 +3,14 @@ import ResetPasswordContent from "@/components/auth/reset-password-content"
 
 export default function ResetPasswordPage() {
   return (
-    <div className="bg-page-shell-dark">
-      <Suspense
-        fallback={
-          <div className="flex min-h-[60vh] items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          </div>
-        }
-      >
-        <ResetPasswordContent />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="fl-root fl-paper-texture flex min-h-[100dvh] items-center justify-center">
+          <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#F5F1E8]/15 border-t-[#F2B705]" />
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
