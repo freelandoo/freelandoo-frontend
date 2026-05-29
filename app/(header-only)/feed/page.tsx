@@ -17,7 +17,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 
-const DEFAULT_ACCENT = "#fbbf24"
+const DEFAULT_ACCENT = "#F2B705"
 const PAGE_LIMIT = 12
 const PREFETCH_REMAINING_RATIO = 0.6
 
@@ -25,7 +25,7 @@ export default function FeedPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black text-white/60 md:left-[80px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#141009] text-white/60 md:left-[80px]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -189,7 +189,7 @@ function FeedPageInner() {
   }
 
   return (
-    <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-black md:left-[80px]">
+    <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-[#141009] md:left-[80px]">
       <FeedRetractableHeader
         machines={machines}
         selectedMachineId={idMachine}
@@ -280,7 +280,7 @@ function FeedPageInner() {
               </div>
             )}
             {!hasMore && items.length > 0 && (
-              <div className="py-8 text-center text-xs text-white/30">
+              <div className="py-8 text-center text-xs text-[#F5F1E8]/35">
                 {t("feedEndMessage", "Você chegou ao fim do feed.")}
               </div>
             )}
