@@ -3,10 +3,10 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, CheckCircle2, Loader2, Shield, Zap } from "lucide-react"
 import { usePricing, formatBRL } from "@/lib/pricing"
+import { TabloidPageIntro } from "@/components/tabloide"
 
 interface ProfileSummary {
   id_profile: string
@@ -115,12 +115,25 @@ function TaxaPageInner() {
   }
 
   return (
-    <main className="flex-1 container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <Button variant="ghost" className="mb-6" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
+    <main className="fl-root tabloid-account-page relative flex-1 bg-[#141009]">
+      <div className="mx-auto max-w-4xl px-4 py-8 md:py-10">
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Ativação de perfil"
+          title="TAXA."
+          subtitle="Pagamento único por perfil — sem renovação automática."
+          back={
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          }
+          className="mb-8"
+        />
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
@@ -206,15 +219,16 @@ function TaxaPageInner() {
                     />
                   </div>
 
-                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  {error && <p className="text-sm font-bold text-red-500">{error}</p>}
 
-                  <Button
-                    className="w-full"
+                  <button
+                    type="button"
+                    className="inline-flex w-full items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-3.5 text-sm font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_0_#0B0B0D] disabled:cursor-not-allowed disabled:opacity-55"
                     onClick={handleCheckout}
                     disabled={isLoading || !profile || !!profile?.is_published}
                   >
                     {isLoading ? "Redirecionando..." : "Pagar com Stripe"}
-                  </Button>
+                  </button>
 
                   <p className="text-xs text-center text-muted-foreground">
                     Ao continuar, você concorda com o{" "}
