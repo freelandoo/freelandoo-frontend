@@ -1,10 +1,10 @@
 /**
- * AuthShell — casca editorial das páginas de autenticação (login, cadastro,
- * recuperar/redefinir senha) no estilo tabloide.
+ * AuthShell — casca das páginas de autenticação (login, cadastro, recuperar/
+ * redefinir senha) no estilo tabloide.
  *
- * Split em telas grandes: painel de marca à esquerda (canvas escuro, headline,
- * provas sociais, doodles) + cartão de papel à direita com o formulário. Em
- * telas pequenas mostra só um logo compacto acima do cartão.
+ * Apresenta o formulário como um MODAL centrado sobre o canvas escuro: o cartão
+ * de papel fica sempre no centro do viewport (nunca empurrado para baixo), com
+ * logo + headline compacta acima e doodles ambientes ao fundo.
  *
  * Presentacional e sem hooks (server-safe). As páginas passam as strings já
  * traduzidas (i18n) por props.
@@ -12,119 +12,66 @@
 import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { PageShell } from "./kit"
 import {
   YellowHighlight,
   HiveDoodle,
   Halftone,
-  DoodleArrow,
-  AvatarStack,
+  HoneycombField,
 } from "@/components/home/landing/primitives"
-
-function BrandAside({
-  eyebrow,
-  title,
-  highlight,
-  subtitle,
-  bullets = [],
-  socialProof,
-}: {
-  eyebrow?: ReactNode
-  title: ReactNode
-  highlight?: ReactNode
-  subtitle?: ReactNode
-  bullets?: ReactNode[]
-  socialProof?: ReactNode
-}) {
-  return (
-    <aside className="relative hidden overflow-hidden bg-[#15120E] p-10 lg:flex lg:flex-col lg:justify-between xl:p-14">
-      <HiveDoodle className="absolute -right-8 -top-8 h-44 w-44 text-[#F2B705]/10" />
-      <Halftone className="absolute bottom-10 left-8 h-24 w-32 opacity-[0.14]" />
-
-      <Link href="/" className="relative flex items-center gap-2" aria-label="Freelandoo">
-        <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-8 w-auto" priority />
-        <span className="text-xl font-black text-[#F5F1E8]">freelandoo</span>
-      </Link>
-
-      <div className="relative max-w-md">
-        {eyebrow && (
-          <div className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">{eyebrow}</div>
-        )}
-        <h1 className="fl-display text-4xl leading-[0.95] text-[#F5F1E8] xl:text-5xl">
-          {title} {highlight && <YellowHighlight mark>{highlight}</YellowHighlight>}
-        </h1>
-        {subtitle && <p className="mt-5 max-w-sm text-base leading-relaxed text-[#C9C2B6]">{subtitle}</p>}
-        {bullets.length > 0 && (
-          <ul className="mt-7 space-y-3">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-[#E8E2D4]">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F2B705] text-[#1A1505]">
-                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                </span>
-                <span>{b}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <DoodleArrow dir="down-right" className="mt-6 hidden h-9 w-20 text-[#F2B705]/70 xl:block" />
-      </div>
-
-      <div className="relative flex items-center gap-3">
-        {socialProof ?? (
-          <>
-            <AvatarStack count={5} />
-            <span className="text-sm text-[#9A938A]">Milhares já estão na colmeia.</span>
-          </>
-        )}
-      </div>
-    </aside>
-  )
-}
 
 export function AuthShell({
   eyebrow,
   asideTitle,
   asideHighlight,
   asideSubtitle,
-  bullets,
-  socialProof,
   children,
 }: {
   eyebrow?: ReactNode
-  asideTitle: ReactNode
+  asideTitle?: ReactNode
   asideHighlight?: ReactNode
   asideSubtitle?: ReactNode
+  /** aceitos por compatibilidade; não usados no layout modal */
   bullets?: ReactNode[]
   socialProof?: ReactNode
   children: ReactNode
 }) {
   return (
-    <PageShell className="grid lg:grid-cols-[1.05fr_1fr]">
-      <BrandAside
-        eyebrow={eyebrow}
-        title={asideTitle}
-        highlight={asideHighlight}
-        subtitle={asideSubtitle}
-        bullets={bullets}
-        socialProof={socialProof}
-      />
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center px-5 py-10 sm:px-8 lg:min-h-0">
-        {/* Logo compacto (mobile/tablet — sem o painel de marca) */}
-        <Link href="/" className="mb-7 flex items-center gap-2 lg:hidden" aria-label="Freelandoo">
-          <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto" priority />
-          <span className="text-lg font-black text-[#F5F1E8]">freelandoo</span>
-        </Link>
-        {children}
-      </div>
-    </PageShell>
+    <div className="fl-root fl-paper-texture relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-5 py-10">
+      {/* Ambiente: colmeia + doodles ao fundo (decorativo) */}
+      <HoneycombField opacity={0.05} />
+      <HiveDoodle className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 text-[#F2B705]/10" />
+      <Halftone className="pointer-events-none absolute bottom-10 left-10 h-28 w-36 opacity-[0.10]" />
+
+      <Link href="/" className="relative mb-6 flex items-center gap-2" aria-label="Freelandoo">
+        <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-8 w-auto" priority />
+        <span className="text-xl font-black text-[#F5F1E8]">freelandoo</span>
+      </Link>
+
+      {(eyebrow || asideTitle) && (
+        <div className="relative mb-6 max-w-md text-center">
+          {eyebrow && (
+            <div className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">{eyebrow}</div>
+          )}
+          {asideTitle && (
+            <h1 className="fl-display text-3xl leading-[0.95] text-[#F5F1E8] sm:text-4xl">
+              {asideTitle} {asideHighlight && <YellowHighlight mark>{asideHighlight}</YellowHighlight>}
+            </h1>
+          )}
+          {asideSubtitle && (
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[#C9C2B6]">{asideSubtitle}</p>
+          )}
+        </div>
+      )}
+
+      {children}
+    </div>
   )
 }
 
 /* ── AuthCard ─────────────────────────────────────────────────────────────
-   Cartão de papel com cabeçalho (badge de ícone opcional + título + subtítulo)
-   onde mora o formulário. */
+   Cartão de papel (modal) com cabeçalho (badge de ícone opcional + título +
+   subtítulo) onde mora o formulário. */
 export function AuthCard({
   icon,
   iconTone = "gold",
@@ -149,7 +96,12 @@ export function AuthCard({
   }[iconTone]
 
   return (
-    <div className={cn("fl-card w-full max-w-md rounded-3xl p-7 sm:p-8", className)}>
+    <div
+      className={cn(
+        "fl-card relative z-10 w-full max-w-md rounded-3xl p-7 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8",
+        className,
+      )}
+    >
       <div className="mb-6 text-center">
         {icon && (
           <div className={cn("mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full", toneBg)}>
