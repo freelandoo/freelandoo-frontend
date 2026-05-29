@@ -76,7 +76,7 @@ export function CentralDeAjudaContent() {
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[300px] w-[700px] rounded-full bg-[#F2B705]/5 blur-[100px]" />
         <div className="container mx-auto px-4 relative text-center max-w-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold text-[#F5F1E8] mb-4" data-reveal>
+          <h1 className="fl-display text-5xl md:text-6xl text-[#F5F1E8] mb-4" data-reveal>
             {t("hero.title", "Central de ajuda")}
           </h1>
           <p className="text-xl text-[#9A938A] mb-10" data-reveal>

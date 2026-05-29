@@ -111,22 +111,22 @@ function parsePriceReais(input: string): number | null {
 const statusLabel: Record<string, { text: string; color: string }> = {
   OPEN: { text: "Aberta", color: "bg-emerald-500/20 text-emerald-300" },
   FULFILLED: { text: "Finalizada", color: "bg-sky-500/20 text-sky-300" },
-  CANCELED: { text: "Cancelada", color: "bg-zinc-500/20 text-zinc-400" },
+  CANCELED: { text: "Cancelada", color: "bg-[#8a8275]/20 text-[#9A938A]" },
 }
 const respLabel: Record<string, { text: string; color: string }> = {
   PRO_ACCEPTED: { text: "Aguardando", color: "bg-amber-500/20 text-amber-300" },
   PRO_REJECTED: { text: "Pro rejeitou", color: "bg-red-500/20 text-red-300" },
-  USER_REJECTED: { text: "Você rejeitou", color: "bg-zinc-500/20 text-zinc-400" },
+  USER_REJECTED: { text: "Você rejeitou", color: "bg-[#8a8275]/20 text-[#9A938A]" },
   FINALIZED: { text: "Aceito ✓", color: "bg-emerald-500/20 text-emerald-300" },
-  CLOSED_OTHER_WON: { text: "Encerrado", color: "bg-zinc-500/20 text-zinc-400" },
+  CLOSED_OTHER_WON: { text: "Encerrado", color: "bg-[#8a8275]/20 text-[#9A938A]" },
 }
 const PRODUCT_STATUS_LABEL: Record<ProductRequest["status"], { text: string; color: string }> = {
   open:        { text: "Aberto",       color: "bg-emerald-500/20 text-emerald-300" },
   answered:    { text: "Respondido",   color: "bg-sky-500/20 text-sky-300" },
   negotiating: { text: "Negociando",   color: "bg-amber-500/20 text-amber-300" },
-  closed:      { text: "Concluído",    color: "bg-zinc-500/20 text-zinc-300" },
-  canceled:    { text: "Cancelado",    color: "bg-zinc-600/20 text-zinc-400" },
-  expired:     { text: "Expirado",     color: "bg-zinc-600/20 text-zinc-400" },
+  closed:      { text: "Concluído",    color: "bg-[#8a8275]/20 text-[#C9C2B6]" },
+  canceled:    { text: "Cancelado",    color: "bg-[#6B6354]/20 text-[#9A938A]" },
+  expired:     { text: "Expirado",     color: "bg-[#6B6354]/20 text-[#9A938A]" },
 }
 
 /* ------------------------------------------------------------------ */
@@ -142,7 +142,7 @@ export function ServiceRequestModal({ open, onOpenChange, initialMode = "service
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] max-h-[92vh] flex flex-col overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-neutral-950 to-black">
+      <DialogContent className="sm:max-w-[640px] max-h-[92vh] flex flex-col overflow-hidden p-0 gap-0 border-white/10 bg-gradient-to-b from-[#141009] to-black">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300">
@@ -586,7 +586,7 @@ function ServiceList({ onNew, onCloseModal }: { onNew: () => void; onCloseModal:
   return (
     <div className="space-y-2.5">
       {requests.map(req => {
-        const st = statusLabel[req.status] || { text: req.status, color: "bg-zinc-500/20 text-zinc-300" }
+        const st = statusLabel[req.status] || { text: req.status, color: "bg-[#8a8275]/20 text-[#C9C2B6]" }
         const isExp = expanded === req.id_request
         const responses = req.responses || []
         return (
@@ -656,7 +656,7 @@ function ServiceList({ onNew, onCloseModal }: { onNew: () => void; onCloseModal:
                     <p className="px-3.5 py-5 text-center text-xs text-white/45">Nenhum profissional respondeu ainda.</p>
                   ) : (
                     responses.map(resp => {
-                      const rl = respLabel[resp.status] || { text: resp.status, color: "bg-zinc-500/20 text-zinc-300" }
+                      const rl = respLabel[resp.status] || { text: resp.status, color: "bg-[#8a8275]/20 text-[#C9C2B6]" }
                       const terminal = isTerminal(resp.status)
                       return (
                         <div key={resp.id_response} className={`flex items-center gap-3 border-b border-white/[0.04] px-3.5 py-2.5 last:border-b-0 ${terminal ? "opacity-50" : ""}`}>

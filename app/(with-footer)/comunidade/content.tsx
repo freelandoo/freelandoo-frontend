@@ -33,7 +33,7 @@ export function ComunidadeContent() {
           <div className="inline-flex items-center rounded-full border border-[#F2B705]/20 bg-[#F2B705]/5 px-4 py-1.5 text-sm text-[#F2B705] mb-6" data-reveal>
             {t("hero.badge", "Comunidade")}
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#F5F1E8] leading-tight mb-6" data-reveal>
+          <h1 className="fl-display text-5xl md:text-6xl lg:text-7xl text-[#F5F1E8] leading-tight mb-6" data-reveal>
             {t("hero.title", "Uma comunidade para quem faz acontecer")}
           </h1>
           <p className="text-xl text-[#9A938A] mb-4" data-reveal>
@@ -53,7 +53,7 @@ export function ComunidadeContent() {
       {/* O QUE É A COMUNIDADE */}
       <section className="py-16 md:py-24 bg-[#1D1810]/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4 max-w-2xl" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4 max-w-2xl" data-reveal>
             {t("connections.title", "Conexões que vão além do perfil")}
           </h2>
           <p className="text-[#9A938A] mb-12 max-w-2xl leading-relaxed" data-reveal>
@@ -76,7 +76,7 @@ export function ComunidadeContent() {
       {/* PARA QUEM É */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4" data-reveal>
             {t("audience.title", "Para freelancers, prestadores, creators e empresas")}
           </h2>
           <p className="text-[#9A938A] mb-10 max-w-2xl leading-relaxed" data-reveal>

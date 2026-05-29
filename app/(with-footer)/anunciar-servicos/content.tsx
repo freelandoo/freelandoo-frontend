@@ -55,7 +55,7 @@ export function AnunciarServicosContent() {
           <div className="inline-flex items-center rounded-full border border-[#F2B705]/20 bg-[#F2B705]/5 px-4 py-1.5 text-sm text-[#F2B705] mb-6" data-reveal>
             {t("hero.badge", "Para profissionais")}
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#F5F1E8] max-w-3xl leading-tight mb-6" data-reveal>
+          <h1 className="fl-display text-5xl md:text-6xl lg:text-7xl text-[#F5F1E8] max-w-3xl leading-tight mb-6" data-reveal>
             {t("hero.title", "Anuncie seus serviços e seja encontrado por quem precisa de você")}
           </h1>
           <p className="text-xl text-[#9A938A] max-w-2xl mb-4" data-reveal>
@@ -81,7 +81,7 @@ export function AnunciarServicosContent() {
       {/* POR QUE ANUNCIAR */}
       <section className="py-16 md:py-24 bg-[#1D1810]/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4 max-w-2xl" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4 max-w-2xl" data-reveal>
             {t("benefits.title", "Sua presença profissional em uma vitrine feita para gerar oportunidades")}
           </h2>
           <p className="text-[#9A938A] mb-12 max-w-2xl leading-relaxed" data-reveal>
@@ -104,7 +104,7 @@ export function AnunciarServicosContent() {
       {/* COMO FUNCIONA PARA O PROFISSIONAL */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-12 max-w-2xl" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-12 max-w-2xl" data-reveal>
             {t("steps.title", "Do cadastro à vitrine em poucos passos")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl" data-stagger>
@@ -126,7 +126,7 @@ export function AnunciarServicosContent() {
       {/* O QUE ESTÁ INCLUSO */}
       <section className="py-16 md:py-24 bg-[#1D1810]/20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-12" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-12" data-reveal>
             {t("included.title", "O que você recebe ao anunciar")}
           </h2>
           <div className="grid md:grid-cols-2 gap-3" data-stagger>
@@ -146,7 +146,7 @@ export function AnunciarServicosContent() {
       {/* ANUIDADE */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4" data-reveal>
             {t("activation.title", "Uma ativação única simples")}
           </h2>
           <p className="text-[#9A938A] mb-10 leading-relaxed" data-reveal>
@@ -176,7 +176,7 @@ export function AnunciarServicosContent() {
       {/* PARA QUEM É */}
       <section className="py-16 md:py-24 bg-[#1D1810]/20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4" data-reveal>
             {t("audience.title", "Feito para quem trabalha, cria, atende e resolve")}
           </h2>
           <p className="text-[#9A938A] mb-10" data-reveal>
@@ -196,7 +196,7 @@ export function AnunciarServicosContent() {
       <section className="py-20 md:py-28 relative overflow-hidden">
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[700px] rounded-full bg-[#F2B705]/5 blur-[100px]" />
         <div className="container mx-auto px-4 text-center relative">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F1E8] mb-4" data-reveal>
+          <h2 className="fl-display text-4xl md:text-5xl text-[#F5F1E8] mb-4" data-reveal>
             {t("final.title", "Seu trabalho precisa ser visto")}
           </h2>
           <p className="text-[#9A938A] mb-10 max-w-lg mx-auto leading-relaxed" data-reveal>

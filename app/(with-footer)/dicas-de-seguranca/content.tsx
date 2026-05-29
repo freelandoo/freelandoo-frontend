@@ -47,7 +47,7 @@ export function DicasDeSegurancaContent() {
           <div className="inline-flex items-center rounded-full border border-[#F2B705]/20 bg-[#F2B705]/5 px-4 py-1.5 text-sm text-[#F2B705] mb-6" data-reveal>
             {t("hero.badge", "Segurança")}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[#F5F1E8] leading-tight mb-6" data-reveal>
+          <h1 className="fl-display text-5xl md:text-6xl text-[#F5F1E8] leading-tight mb-6" data-reveal>
             {t("hero.title", "Dicas de segurança")}
           </h1>
           <p className="text-xl text-[#9A938A] mb-4" data-reveal>
