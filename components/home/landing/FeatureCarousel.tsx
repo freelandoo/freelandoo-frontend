@@ -42,29 +42,23 @@ export function FeatureCarousel() {
         <DoodleArrow dir="down" className="absolute -right-2 -top-4 hidden h-9 w-16 text-[#F2B705] lg:block" />
       </div>
 
-      {/* Card de slides + setas, uma de cada lado */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        <button
-          type="button" onClick={prev} aria-label="Banner anterior"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#F5F1E8]/30 bg-[#15120E]/70 text-[#F5F1E8] backdrop-blur transition hover:border-[#F2B705] hover:text-[#F2B705] sm:h-12 sm:w-12"
-        >
-          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-        </button>
-
-        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl" ref={emblaRef}>
+      {/* Card de slides — full-bleed no mobile (cancela o padding da Section),
+          setas sobrepostas e transparentes por cima do carrossel. */}
+      <div className="relative -mx-5 sm:mx-0">
+        <div className="overflow-hidden sm:rounded-2xl" ref={emblaRef}>
           <div className="flex">
             {CAROUSEL_SLIDES.map((s) => (
               <div key={s.n} className="min-w-0 flex-[0_0_100%]">
                 <Link
                   href={s.href}
                   aria-label={s.alt}
-                  className="relative block aspect-[18/7] w-full overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)]"
+                  className="relative block aspect-[16/10] w-full overflow-hidden border-y-2 border-[#0B0B0D] bg-[#1D1810] sm:aspect-[18/7] sm:rounded-2xl sm:border-2 sm:shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)]"
                 >
                   <Image
                     src={s.img}
                     alt={s.alt}
                     fill
-                    sizes="(max-width:1024px) 92vw, 1000px"
+                    sizes="(max-width:640px) 100vw, (max-width:1024px) 92vw, 1000px"
                     className="object-cover"
                     priority={s.n === 1}
                   />
@@ -75,8 +69,15 @@ export function FeatureCarousel() {
         </div>
 
         <button
+          type="button" onClick={prev} aria-label="Banner anterior"
+          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:left-4 sm:h-12 sm:w-12"
+        >
+          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+        </button>
+
+        <button
           type="button" onClick={next} aria-label="Próximo banner"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#F5F1E8]/30 bg-[#15120E]/70 text-[#F5F1E8] backdrop-blur transition hover:border-[#F2B705] hover:text-[#F2B705] sm:h-12 sm:w-12"
+          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:right-4 sm:h-12 sm:w-12"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
