@@ -154,6 +154,7 @@ export function TabloidPageIntro({
   back,
   actions,
   className,
+  size = "hero",
 }: {
   title: ReactNode
   eyebrow?: ReactNode
@@ -161,7 +162,10 @@ export function TabloidPageIntro({
   back?: ReactNode
   actions?: ReactNode
   className?: string
+  /** "hero" = manchete gigante (palavra curta). "compact" = título dinâmico/longo que quebra linha. */
+  size?: "hero" | "compact"
 }) {
+  const compact = size === "compact"
   return (
     <header className={cn("relative border-b-2 border-[#F1EDE2]/12 pb-8", className)}>
       <Halftone className="absolute right-0 top-3 hidden h-24 w-28 opacity-[0.1] md:block" />
@@ -171,15 +175,25 @@ export function TabloidPageIntro({
           {eyebrow}
         </p>
       )}
-      <h1 className="relative inline-block">
-        <span className="fl-display block text-[18vw] leading-[0.86] text-[#F2B705] sm:text-[6.8rem] md:text-[8.4rem]">
-          {title}
-        </span>
-        <Underline className="absolute -bottom-4 left-0 h-5 w-full text-[#F2B705]" />
-        <Spark className="absolute -left-4 -top-5 h-8 w-8 text-[#F2B705] md:-left-8" />
-      </h1>
+      {compact ? (
+        <div className="relative">
+          <Spark className="absolute -left-4 -top-5 hidden h-7 w-7 text-[#F2B705] sm:block md:-left-7" />
+          <h1 className="fl-display block max-w-3xl break-words text-4xl leading-[0.95] text-[#F2B705] sm:text-5xl md:text-[3.4rem]">
+            {title}
+          </h1>
+          <Underline className="mt-2 h-4 w-40 text-[#F2B705]" />
+        </div>
+      ) : (
+        <h1 className="relative inline-block">
+          <span className="fl-display block text-[18vw] leading-[0.86] text-[#F2B705] sm:text-[6.8rem] md:text-[8.4rem]">
+            {title}
+          </span>
+          <Underline className="absolute -bottom-4 left-0 h-5 w-full text-[#F2B705]" />
+          <Spark className="absolute -left-4 -top-5 h-8 w-8 text-[#F2B705] md:-left-8" />
+        </h1>
+      )}
       {subtitle && (
-        <p className="mt-8 max-w-2xl text-sm font-bold leading-relaxed text-[#C9C2B6] sm:text-base">
+        <p className={cn("max-w-2xl text-sm font-bold leading-relaxed text-[#C9C2B6] sm:text-base", compact ? "mt-6" : "mt-8")}>
           {subtitle}
         </p>
       )}

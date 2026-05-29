@@ -245,22 +245,25 @@ export default function AgendaPageClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-zinc-600 border-t-yellow-400" />
+      <div className="min-h-screen bg-[#141009] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#6B6354] border-t-[#F2B705]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-30">
+    <div className="min-h-screen bg-[#141009] text-[#F5F1E8]">
+      <header className="border-b border-[#2A2218] bg-[#141009]/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center gap-4">
-          <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-zinc-800 transition-colors">
+          <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-[#2A2218] transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold leading-tight tracking-tight">Agenda{isClan ? " do clan" : ""}</h1>
-            <p className="text-xs text-zinc-400">
+            <p className="fl-marker text-base font-bold leading-none text-[#F2B705]">{isClan ? "Agenda do clan" : "Agenda"}</p>
+            <h1 className="fl-display text-2xl leading-[0.9] text-[#F2B705] sm:text-3xl">
+              {isClan ? "OPERAÇÃO." : "AGENDA."}
+            </h1>
+            <p className="mt-0.5 text-xs font-bold text-[#9A938A]">
               Disponibilidade, serviços e visão clara dos seus compromissos.
             </p>
           </div>
@@ -279,7 +282,7 @@ export default function AgendaPageClient({
 
       <div className="max-w-[1600px] mx-auto grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[220px_1fr]">
         <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
-          <nav className="space-y-1 rounded-2xl border border-zinc-800 bg-zinc-900 p-2">
+          <nav className="space-y-1 rounded-2xl border border-[#2A2218] bg-[#1D1810] p-2">
             {([
               { key: "rules", label: "Disponibilidade", icon: Clock },
               { key: "services", label: "Serviços", icon: Briefcase },
@@ -287,7 +290,7 @@ export default function AgendaPageClient({
             ] as const).map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => setActiveTab(key)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === key ? "bg-yellow-400 text-zinc-900" : "text-zinc-300 hover:bg-zinc-800"
+                  activeTab === key ? "bg-[#F2B705] text-[#1D1810]" : "text-[#C9C2B6] hover:bg-[#2A2218]"
                 }`}>
                 <Icon className="w-4 h-4" />{label}
               </button>
@@ -298,19 +301,19 @@ export default function AgendaPageClient({
         <main className="min-w-0">
           {/* ─── Disponibilidade ─── */}
           {activeTab === "rules" && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="bg-[#1D1810] border border-[#2A2218] rounded-2xl overflow-hidden">
               <div className="px-4 pt-4 pb-3">
                 <h2 className="text-base font-semibold tracking-tight">Disponibilidade semanal</h2>
-                <p className="mt-0.5 text-[11px] text-zinc-500">
+                <p className="mt-0.5 text-[11px] text-[#8A8275]">
                   Dias e horários em que {isClan ? "o clan" : "você"} atende.
                 </p>
               </div>
-              <ul className="divide-y divide-zinc-800/70 border-t border-zinc-800/70">
+              <ul className="divide-y divide-[#2A2218]/70 border-t border-[#2A2218]/70">
                 {rules.map((rule, i) => (
                   <li
                     key={rule.weekday}
                     className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2 transition-colors ${
-                      rule.is_enabled ? "bg-zinc-900" : "bg-zinc-950/30"
+                      rule.is_enabled ? "bg-[#1D1810]" : "bg-[#141009]/30"
                     }`}
                   >
                     <label
@@ -321,11 +324,11 @@ export default function AgendaPageClient({
                         type="checkbox"
                         checked={rule.is_enabled}
                         onChange={e => { const next = [...rules]; next[i] = { ...rule, is_enabled: e.target.checked }; setRules(next) }}
-                        className="w-3.5 h-3.5 rounded border-zinc-600 text-yellow-400 focus:ring-yellow-400 focus:ring-offset-0 bg-zinc-800"
+                        className="w-3.5 h-3.5 rounded border-[#6B6354] text-[#F2B705] focus:ring-[#F2B705] focus:ring-offset-0 bg-[#2A2218]"
                       />
                       <span
                         className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${
-                          rule.is_enabled ? "text-zinc-100" : "text-zinc-500"
+                          rule.is_enabled ? "text-[#F5F1E8]" : "text-[#8A8275]"
                         }`}
                       >
                         {WEEKDAY_ABBR[rule.weekday]}
@@ -340,25 +343,25 @@ export default function AgendaPageClient({
                             value={rule.start_time}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, start_time: e.target.value }; setRules(next) }}
                             aria-label="Horário de início"
-                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-yellow-400/60 focus:outline-none"
+                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-[#F2B705]/60 focus:outline-none"
                           />
-                          <span className="text-zinc-600 text-xs">–</span>
+                          <span className="text-[#6B6354] text-xs">–</span>
                           <input
                             type="time"
                             value={rule.end_time}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, end_time: e.target.value }; setRules(next) }}
                             aria-label="Horário de término"
-                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-yellow-400/60 focus:outline-none"
+                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-[#F2B705]/60 focus:outline-none"
                           />
                         </div>
 
                         <div className="flex items-center gap-1" title="Duração do slot">
-                          <Clock className="w-3 h-3 text-zinc-500" aria-hidden />
+                          <Clock className="w-3 h-3 text-[#8A8275]" aria-hidden />
                           <select
                             value={rule.slot_duration_minutes}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, slot_duration_minutes: Number(e.target.value) }; setRules(next) }}
                             aria-label="Duração do slot"
-                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-yellow-400/60 focus:outline-none"
+                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-[#F2B705]/60 focus:outline-none"
                           >
                             {[15, 30, 45, 60, 90, 120].map(m => (
                               <option key={m} value={m}>{m}m</option>
@@ -367,12 +370,12 @@ export default function AgendaPageClient({
                         </div>
 
                         <div className="flex items-center gap-1" title="Intervalo entre slots">
-                          <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Int</span>
+                          <span className="text-[10px] font-semibold text-[#8A8275] uppercase tracking-wider">Int</span>
                           <select
                             value={rule.buffer_minutes}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, buffer_minutes: Number(e.target.value) }; setRules(next) }}
                             aria-label="Intervalo entre slots"
-                            className="bg-zinc-800/80 border border-zinc-700/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-yellow-400/60 focus:outline-none"
+                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-[#F2B705]/60 focus:outline-none"
                           >
                             {[0, 5, 10, 15, 30].map(m => (
                               <option key={m} value={m}>+{m}m</option>
@@ -381,29 +384,29 @@ export default function AgendaPageClient({
                         </div>
                       </div>
                     ) : (
-                      <span className="text-[11px] italic text-zinc-600">sem atendimento</span>
+                      <span className="text-[11px] italic text-[#6B6354]">sem atendimento</span>
                     )}
                   </li>
                 ))}
               </ul>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-zinc-800/70 px-3 py-2.5 bg-zinc-950/40">
+              <div className="flex flex-wrap items-center gap-2 border-t border-[#2A2218]/70 px-3 py-2.5 bg-[#141009]/40">
                 <button
                   onClick={saveRules}
                   disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-yellow-400 hover:bg-yellow-300 text-zinc-900 px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {saving ? "Salvando…" : "Salvar"}
                 </button>
                 <button
                   onClick={() => setExceptionsOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700/70 bg-zinc-800/70 hover:bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#3A3228]/70 bg-[#2A2218]/70 hover:bg-[#2A2218] px-3 py-1.5 text-xs font-medium text-[#E3DDCC] transition-colors"
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   Exceções
                   {overrides.length > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-yellow-400/20 px-1.5 py-0 text-[10px] font-mono text-yellow-300">
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-[#F2B705]/20 px-1.5 py-0 text-[10px] font-mono text-[#F2B705]">
                       {overrides.length}
                     </span>
                   )}
@@ -414,22 +417,22 @@ export default function AgendaPageClient({
 
           {/* ─── Serviços ─── */}
           {activeTab === "services" && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div className="bg-[#1D1810] border border-[#2A2218] rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-lg font-semibold">Serviços</h2>
-                  <p className="text-sm text-zinc-400">Cadastre os serviços que {isClan ? "o clan" : "você"} oferece. Apenas ativos aparecem para o cliente.</p>
+                  <p className="text-sm text-[#9A938A]">Cadastre os serviços que {isClan ? "o clan" : "você"} oferece. Apenas ativos aparecem para o cliente.</p>
                 </div>
                 <button onClick={openNewService}
-                  className="flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold transition-colors">
+                  className="flex items-center gap-2 px-4 py-2 bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] rounded-lg text-sm font-semibold transition-colors">
                   <Plus className="w-4 h-4" />Adicionar serviço
                 </button>
               </div>
               {services.length === 0 ? (
                 <div className="text-center py-12">
-                  <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                  <p className="text-zinc-400">Nenhum serviço cadastrado.</p>
-                  <p className="text-xs text-zinc-500 mt-1">Clique em &quot;Adicionar serviço&quot; para começar.</p>
+                  <Briefcase className="w-12 h-12 text-[#6B6354] mx-auto mb-3" />
+                  <p className="text-[#9A938A]">Nenhum serviço cadastrado.</p>
+                  <p className="text-xs text-[#8A8275] mt-1">Clique em &quot;Adicionar serviço&quot; para começar.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -442,33 +445,33 @@ export default function AgendaPageClient({
                     return (
                       <div key={s.id_profile_service}
                         className={`flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border ${
-                          s.is_active ? "bg-zinc-800/50 border-zinc-700" : "bg-zinc-900/50 border-zinc-800/50 opacity-60"
+                          s.is_active ? "bg-[#2A2218]/50 border-[#3A3228]" : "bg-[#1D1810]/50 border-[#2A2218]/50 opacity-60"
                         }`}>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-sm">{s.name}</p>
-                            {!s.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-300">Inativo</span>}
+                            {!s.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-[#3A3228] text-[#C9C2B6]">Inativo</span>}
                           </div>
-                          {s.description && <p className="text-xs text-zinc-400 mt-0.5">{s.description}</p>}
-                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-zinc-400">
+                          {s.description && <p className="text-xs text-[#9A938A] mt-0.5">{s.description}</p>}
+                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-[#9A938A]">
                             <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s.duration_minutes} min</span>
-                            <span className="text-yellow-400 font-medium">{centsToReais(s.price_amount)}</span>
+                            <span className="text-[#F2B705] font-medium">{centsToReais(s.price_amount)}</span>
                             {perMember !== null && (
-                              <span className="text-zinc-500">
+                              <span className="text-[#8A8275]">
                                 {centsToReais(perMember)}/membro
                               </span>
                             )}
                           </div>
                           {isClan && (
                             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              <Users className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                              <Users className="w-3.5 h-3.5 text-[#8A8275] shrink-0" />
                               {participantes.length === 0 ? (
-                                <span className="text-xs text-zinc-500">Sem membros configurados</span>
+                                <span className="text-xs text-[#8A8275]">Sem membros configurados</span>
                               ) : mids.length === 0 ? (
-                                <span className="text-xs text-zinc-500">Todos os membros</span>
+                                <span className="text-xs text-[#8A8275]">Todos os membros</span>
                               ) : (
                                 participantes.map(m => (
-                                  <Avatar key={m.id_member_profile} className="size-5 border border-zinc-600">
+                                  <Avatar key={m.id_member_profile} className="size-5 border border-[#6B6354]">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {m.avatar_url && <img src={m.avatar_url} alt={m.display_name} className="object-cover" />}
                                     <AvatarFallback className="text-[8px]">{getInitials(m.display_name)}</AvatarFallback>
@@ -480,15 +483,15 @@ export default function AgendaPageClient({
                         </div>
                         <div className="flex items-center gap-1">
                           <button onClick={() => toggleServiceActive(s)} title={s.is_active ? "Desativar" : "Ativar"}
-                            className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-yellow-400 transition-colors">
+                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-[#F2B705] transition-colors">
                             <Power className="w-4 h-4" />
                           </button>
                           <button onClick={() => openEditService(s)} title="Editar"
-                            className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-colors">
+                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-[#F5F1E8] transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button onClick={() => deleteService(s)} title="Remover"
-                            className="p-2 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-red-400 transition-colors">
+                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-red-400 transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -536,45 +539,45 @@ export default function AgendaPageClient({
       {/* Modal: Exceções */}
       {exceptionsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setExceptionsOpen(false)}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+          <div className="bg-[#1D1810] border border-[#2A2218] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-[#2A2218]">
               <div>
                 <h2 className="text-lg font-semibold">Exceções por data</h2>
-                <p className="text-xs text-zinc-400 mt-0.5">Bloqueie dias inteiros ou ajuste horários específicos.</p>
+                <p className="text-xs text-[#9A938A] mt-0.5">Bloqueie dias inteiros ou ajuste horários específicos.</p>
               </div>
-              <button onClick={() => setExceptionsOpen(false)} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400">
+              <button onClick={() => setExceptionsOpen(false)} className="p-2 rounded-lg hover:bg-[#2A2218] text-[#9A938A]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
-              <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
+              <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-[#2A2218]/50 rounded-lg border border-[#3A3228]">
                 <div>
-                  <label className="block text-xs text-zinc-400 mb-1">Data</label>
+                  <label className="block text-xs text-[#9A938A] mb-1">Data</label>
                   <input type="date" value={newOverrideDate} onChange={e => setNewOverrideDate(e.target.value)}
-                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm" />
+                    className="bg-[#2A2218] border border-[#3A3228] rounded-lg px-3 py-1.5 text-sm" />
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={newOverrideBlocked} onChange={e => setNewOverrideBlocked(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-600 text-red-500 focus:ring-red-500 bg-zinc-800" />
+                    className="w-4 h-4 rounded border-[#6B6354] text-red-500 focus:ring-red-500 bg-[#2A2218]" />
                   <span className="text-sm">Bloquear dia inteiro</span>
                 </label>
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs text-zinc-400 mb-1">Observação</label>
+                  <label className="block text-xs text-[#9A938A] mb-1">Observação</label>
                   <input type="text" value={newOverrideNote} onChange={e => setNewOverrideNote(e.target.value)}
                     placeholder="Ex: Feriado, viagem..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm" />
+                    className="w-full bg-[#2A2218] border border-[#3A3228] rounded-lg px-3 py-1.5 text-sm" />
                 </div>
                 <button onClick={saveOverride} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-zinc-900 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
                   <Plus className="w-4 h-4" />Adicionar
                 </button>
               </div>
               {overrides.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-8">Nenhuma exceção cadastrada.</p>
+                <p className="text-sm text-[#8A8275] text-center py-8">Nenhuma exceção cadastrada.</p>
               ) : (
                 <div className="space-y-2">
                   {overrides.map(ov => (
-                    <div key={ov.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
+                    <div key={ov.id} className="flex items-center justify-between p-3 bg-[#2A2218]/50 rounded-lg border border-[#3A3228]">
                       <div className="flex items-center gap-3">
                         {ov.is_day_blocked ? <Lock className="w-4 h-4 text-red-400" /> : <Unlock className="w-4 h-4 text-emerald-400" />}
                         <div>
@@ -582,11 +585,11 @@ export default function AgendaPageClient({
                           <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${ov.is_day_blocked ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"}`}>
                             {ov.is_day_blocked ? "Bloqueado" : "Personalizado"}
                           </span>
-                          {ov.note && <span className="ml-2 text-xs text-zinc-500">{ov.note}</span>}
+                          {ov.note && <span className="ml-2 text-xs text-[#8A8275]">{ov.note}</span>}
                         </div>
                       </div>
                       <button onClick={() => deleteOverride(ov.id)}
-                        className="p-1.5 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-red-400 transition-colors">
+                        className="p-1.5 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-red-400 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

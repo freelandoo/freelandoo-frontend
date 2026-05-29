@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, GraduationCap, Loader2, ShoppingCart, Settings, Check } from "lucide-react"
+import { ArrowLeft, GraduationCap, ShoppingCart, Settings, Check } from "lucide-react"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import {
+  PageShell,
+  LoadingState,
+  ErrorState,
+  TabloidPageIntro,
+} from "@/components/tabloide"
 
 interface PublicCourse {
   id: string
@@ -118,36 +124,51 @@ export default function PublicCoursePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/60" />
-      </div>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label={t("loadingLabel", "Carregando curso...")} />
+        </div>
+      </PageShell>
     )
   }
 
   if (error || !course) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center gap-4 px-4 py-12 text-center">
-        <GraduationCap className="h-12 w-12 text-white/30" />
-        <h1 className="text-2xl font-semibold text-white">{t("notFoundTitle", "Curso não encontrado")}</h1>
-        <p className="text-sm text-white/55">{error || t("notPublishedHint", "Este curso pode não estar publicado.")}</p>
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t("backButton", "Voltar")}
-        </Button>
-      </div>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 mx-auto max-w-2xl px-4 py-16">
+          <ErrorState
+            title={t("notFoundTitle", "Curso não encontrado")}
+            description={error || t("notPublishedHint", "Este curso pode não estar publicado.")}
+            onRetry={() => router.back()}
+            retryLabel={t("backButton", "Voltar")}
+          />
+        </div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <main className="container mx-auto max-w-3xl px-4 py-8 md:py-10">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          {t("backButton", "Voltar")}
-        </Button>
+    <PageShell className="tabloid-account-page">
+      <main className="relative z-10 mx-auto max-w-3xl px-4 py-8 md:py-10">
+        <TabloidPageIntro
+          size="compact"
+          eyebrow={t("eyebrow", "Curso")}
+          title={course.title}
+          subtitle={course.short_description || undefined}
+          back={
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("backButton", "Voltar")}
+            </button>
+          }
+        />
 
         {/* Cover */}
-        <div className="relative mb-6 aspect-[16/9] overflow-hidden rounded-2xl border border-white/[0.07] bg-zinc-900">
+        <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-[6px] border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[6px_6px_0_0_#0B0B0D]">
           {course.cover_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -157,51 +178,45 @@ export default function PublicCoursePage() {
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <GraduationCap className="h-16 w-16 text-white/20" />
+              <GraduationCap className="h-16 w-16 text-[#F2B705]/30" />
             </div>
           )}
         </div>
 
-        <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-          {course.title}
-        </h1>
-        {course.short_description && (
-          <p className="mt-2 text-base text-white/70">{course.short_description}</p>
-        )}
-
-        <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-white/55">
-          <span>
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-[11px] font-black uppercase tracking-[0.12em] text-[#C9C2B6]">
+          <span className="border-2 border-[#F1EDE2]/20 px-2.5 py-1">
             {t("modulesCount", "{n} módulos").replace("{n}", String(course.modules_count))}
           </span>
-          <span aria-hidden>·</span>
-          <span>
+          <span className="border-2 border-[#F1EDE2]/20 px-2.5 py-1">
             {t("lessonsCount", "{n} aulas").replace("{n}", String(course.lessons_count))}
           </span>
         </div>
 
         {course.description && (
-          <div className="mt-8 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/75">
-            {course.description}
-          </div>
+          <article className="fl-card fl-hard mt-8 rounded-[6px] p-5 sm:p-6">
+            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--fl-ink)]">
+              {course.description}
+            </div>
+          </article>
         )}
 
         {checkoutStatus === "success" && (
-          <div className="mt-6 flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/5 p-3 text-sm text-green-400">
+          <div className="mt-6 flex items-start gap-2 rounded-[6px] border-2 border-green-600/40 bg-green-600/10 p-3 text-sm font-bold text-green-300">
             <Check className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{t("paymentSuccessMessage", "Pagamento confirmado! O curso já está disponível na sua conta.")}</span>
           </div>
         )}
         {checkoutStatus === "cancel" && (
-          <div className="mt-6 rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-300">
+          <div className="mt-6 rounded-[6px] border-2 border-amber-400/40 bg-amber-400/10 p-3 text-sm font-bold text-amber-200">
             {t("paymentCancelMessage", "Compra cancelada. Você pode tentar novamente quando quiser.")}
           </div>
         )}
 
         {/* Preço + CTA */}
-        <div className="mt-10 flex flex-col items-start gap-4 rounded-2xl border border-primary/30 bg-primary/[0.04] p-6 md:flex-row md:items-center md:justify-between">
+        <div className="mt-10 flex flex-col items-start gap-4 rounded-[6px] border-2 border-[#0B0B0D] bg-[#F2B705] p-6 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D] md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-white/55">{t("priceLabel", "Valor")}</p>
-            <p className="text-3xl font-semibold text-primary">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#0B0B0D]/70">{t("priceLabel", "Valor")}</p>
+            <p className="fl-display text-4xl text-[#0B0B0D]">
               {formatPrice(course.price_cents, locale)}
             </p>
           </div>
@@ -209,6 +224,7 @@ export default function PublicCoursePage() {
             <Button
               size="lg"
               variant="outline"
+              className="border-2 border-[#0B0B0D] bg-transparent font-black uppercase tracking-[0.08em] text-[#0B0B0D] hover:bg-[#0B0B0D] hover:text-[#F2B705]"
               onClick={() => router.push(`/account/courses/${course.id}`)}
             >
               <Settings className="mr-2 h-4 w-4" />
@@ -221,17 +237,22 @@ export default function PublicCoursePage() {
                 title={course.title}
                 description={t("shareDescription", "Confira este curso no Freelandoo.")}
               />
-              <Button size="lg" onClick={handleBuy} disabled={buying}>
-                <ShoppingCart className="mr-2 h-4 w-4" />
+              <button
+                type="button"
+                onClick={handleBuy}
+                disabled={buying}
+                className="inline-flex items-center justify-center gap-2 border-2 border-[#F2B705] bg-[#0B0B0D] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.12em] text-[#F2B705] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <ShoppingCart className="h-4 w-4" />
                 {buying ? t("redirectingButton", "Redirecionando...") : t("buyCourseButton", "Comprar curso")}
-              </Button>
+              </button>
             </div>
           )}
         </div>
         {buyError && (
-          <p className="mt-2 text-xs text-red-400">{buyError}</p>
+          <p className="mt-2 text-xs font-bold text-red-400">{buyError}</p>
         )}
       </main>
-    </div>
+    </PageShell>
   )
 }
