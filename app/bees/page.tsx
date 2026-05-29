@@ -14,7 +14,7 @@ export default function BeesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[100dvh] w-full items-center justify-center bg-black text-white/60">
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#141009] text-white/60">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -91,7 +91,7 @@ function BeesPageInner() {
   }
 
   return (
-    <div className="fixed inset-0 z-30 bg-black md:left-[80px]">
+    <div className="fixed inset-0 z-30 bg-[#141009] md:left-[80px]">
       {loadingInitial ? (
         <LoadingState />
       ) : error && items.length === 0 ? (
@@ -224,7 +224,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function EmptyState() {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center text-white/75">
-      <Sparkles className="h-10 w-10 text-amber-300" />
+      <Sparkles className="h-10 w-10 text-[#F2B705]" />
       <p className="text-base font-semibold">Ainda não tem Bees por aqui</p>
       <p className="max-w-xs text-sm text-white/55">
         Bees é o feed vertical 9:16. Quando alguém publicar um vídeo nesse formato, ele aparece
