@@ -19,13 +19,10 @@ import {
   Heart,
   Loader2,
   MapPin,
-  RefreshCw,
-  Sparkles,
   Star,
   Trophy,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { CityFilterSheet } from "@/components/feed/city-filter-sheet"
 import {
   Select,
@@ -39,11 +36,20 @@ import {
   useMachinesCatalog,
   type CatalogMachine,
 } from "@/components/home/machines/use-machines-catalog"
+import {
+  YellowHighlight,
+  DoodleArrow,
+  Spark,
+  Underline,
+  WashiTape,
+  Halftone,
+} from "@/components/home/landing/primitives"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
+import { AnimatedNumber } from "./ranking-ui"
 
 type RankingScope = "general" | "machine" | "profession" | "city"
 
@@ -103,10 +109,6 @@ const scopeOptions: {
 ]
 
 const numberFormatter = new Intl.NumberFormat("pt-BR")
-const compactFormatter = new Intl.NumberFormat("pt-BR", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-})
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "?"
@@ -129,13 +131,6 @@ function rowHref(row: RankingRow) {
     })
   }
   return `/freelancer/${row.id_profile}`
-}
-
-function rankClass(rank: number) {
-  if (rank === 1) return "bg-primary text-primary-foreground shadow-[0_0_24px_-8px_rgba(230,184,0,0.75)]"
-  if (rank === 2) return "bg-zinc-200 text-zinc-950"
-  if (rank === 3) return "bg-amber-700 text-white"
-  return "bg-white/[0.07] text-white/[0.65]"
 }
 
 function activeMachineTheme(machine: CatalogMachine | null | undefined) {
@@ -239,7 +234,10 @@ export function RankingPageClient() {
   }, [city, cityState, scope, selectedMachine, selectedProfession])
 
   const requestKey = `${scope}:${rankingUrl ?? "none"}`
-  const rows = rankingState.key === requestKey ? rankingState.rows : []
+  const rows = useMemo(
+    () => (rankingState.key === requestKey ? rankingState.rows : []),
+    [rankingState, requestKey]
+  )
   const error = rankingState.key === requestKey ? rankingState.error : null
   const loading = !!rankingUrl && rankingState.key !== requestKey
 
@@ -251,26 +249,17 @@ export function RankingPageClient() {
     return "Cidade"
   }, [city, cityState, scope, selectedMachine, selectedProfession])
 
+  const totalVisits = useMemo(() => rows.reduce((s, r) => s + (r.visits_count ?? 0), 0), [rows])
+  const totalLikes = useMemo(() => rows.reduce((s, r) => s + (r.likes_count ?? 0), 0), [rows])
+  const rest = rows.slice(3)
+
   useEffect(() => {
     if (!rootRef.current) return
     const ctx = gsap.context(() => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
-      tl.from("[data-ranking-hero]", {
-        y: 26,
-        autoAlpha: 0,
-        duration: 0.8,
-        stagger: 0.08,
-      })
-        .from(
-          "[data-ranking-filter]",
-          { y: 18, autoAlpha: 0, duration: 0.55, stagger: 0.05 },
-          "-=0.35"
-        )
-        .from(
-          "[data-ranking-summary]",
-          { y: 18, autoAlpha: 0, duration: 0.55, stagger: 0.08 },
-          "-=0.25"
-        )
+      tl.from("[data-ranking-hero]", { y: 26, autoAlpha: 0, duration: 0.8, stagger: 0.08 })
+        .from("[data-ranking-filter]", { y: 18, autoAlpha: 0, duration: 0.55 }, "-=0.35")
     }, rootRef)
     return () => ctx.revert()
   }, [])
@@ -291,9 +280,7 @@ export function RankingPageClient() {
         return normalizeRows(data)
       })
       .then((nextRows) => {
-        if (!cancelled) {
-          setRankingState({ key: requestKey, rows: nextRows, error: null })
-        }
+        if (!cancelled) setRankingState({ key: requestKey, rows: nextRows, error: null })
       })
       .catch((err) => {
         if (!cancelled) {
@@ -312,73 +299,82 @@ export function RankingPageClient() {
   useEffect(() => {
     if (!listRef.current || loading || error) return
     const ctx = gsap.context(() => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
       gsap.fromTo(
         "[data-ranking-row]",
-        { y: 18, autoAlpha: 0 },
-        { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.045, ease: "power2.out" }
+        { x: -24, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.45, stagger: 0.07, ease: "power2.out" }
       )
     }, listRef)
     return () => ctx.revert()
   }, [error, loading, rankingState.key])
 
   return (
-    <main
-      ref={rootRef}
-      className="min-h-screen overflow-hidden bg-[#030406] pb-24 text-white"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.065]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.55) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[360px]"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(230,184,0,0.12), rgba(3,4,6,0))",
-        }}
-      />
+    <main ref={rootRef} className="fl-root fl-paper-texture relative min-h-screen overflow-x-clip pb-24">
+      <Halftone className="absolute left-4 top-32 h-28 w-28 opacity-[0.12]" />
 
-      <section className="relative mx-auto flex w-full max-w-5xl flex-col px-4 pt-12 md:px-6 md:pt-16">
-        <div className="max-w-2xl">
-          <p
-            data-ranking-hero
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.26em] text-primary/80"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Ranking Freelandoo
-          </p>
-          <h1
-            data-ranking-hero
-            className="mt-4 text-3xl font-semibold leading-tight text-white md:text-5xl"
-          >
-            Os líderes do momento.
+      {/* HERO */}
+      <section className="relative mx-auto grid w-full max-w-6xl gap-8 px-5 pb-10 pt-10 md:grid-cols-12 md:px-8 md:pt-14">
+        <div className="md:col-span-7">
+          <div data-ranking-hero className="mb-4 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 bg-[#0B0B0D] px-3 py-1.5 text-[#F1EDE2]">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#F2B705]" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">Ranking Freelandoo</span>
+            </span>
+            <span className="fl-marker text-2xl text-[#F2B705]">atualiza a cada 2h</span>
+          </div>
+
+          <h1 className="relative">
+            <span data-ranking-hero className="fl-display block text-[13vw] leading-[0.88] text-[#F1EDE2] sm:text-[9vw] lg:text-[5.5rem]">
+              Os líderes
+            </span>
+            <span data-ranking-hero className="fl-display relative z-10 block text-[13vw] leading-[0.88] text-[#F2B705] sm:text-[9vw] lg:text-[5.5rem]">
+              do momento.
+              <Underline className="absolute -bottom-3 left-0 h-5 w-[58%] text-[#F2B705]" />
+            </span>
+            <Spark className="absolute -left-1 -top-5 h-9 w-9 text-[#F2B705] md:-left-7" />
           </h1>
-          <p
-            data-ranking-hero
-            className="mt-3 max-w-xl text-sm leading-6 text-white/[0.58] md:text-base"
-          >
-            Confira quem está dominando o ranking e inspire-se para subir
-            ainda mais.
-          </p>
-          <p
-            data-ranking-hero
-            className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/[0.5]"
-          >
-            <RefreshCw className="h-3.5 w-3.5 text-primary/80" />
-            Atualização automática a cada 2 horas
+
+          <p data-ranking-hero className="mt-7 max-w-xl text-pretty text-base font-medium leading-relaxed text-[#C9C2B6] md:text-lg">
+            Na Freelandoo, <YellowHighlight mark>aparecer é subir.</YellowHighlight>{" "}
+            Pontos, avaliações e presença definem quem domina o ranking. Inspire-se e suba mais.
           </p>
         </div>
 
-        <div
-          data-ranking-filter
-          className="mt-8 flex flex-col gap-3 border-y border-white/10 py-4"
-        >
+        {/* Painel de números */}
+        <div className="md:col-span-5">
+          <div data-ranking-hero className="fl-cut relative bg-[#0B0B0D] p-6 text-[#F1EDE2] md:p-8" style={{ transform: "rotate(-1.2deg)" }}>
+            <WashiTape className="-top-3 left-8" rotate={8} />
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#F1EDE2]/60">Top 10 ao vivo</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F2B705]">{scopeLabel}</span>
+            </div>
+            <div className="mt-5">
+              <div className="fl-display text-6xl text-[#F2B705] md:text-7xl">
+                <AnimatedNumber value={totalVisits} compact />
+              </div>
+              <div className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-[#F1EDE2]/55">visitas no top 10</div>
+            </div>
+            <div className="mt-6 flex items-end justify-between border-t border-[#F1EDE2]/12 pt-5">
+              <div>
+                <div className="fl-display text-3xl text-[#F1EDE2]">
+                  <AnimatedNumber value={totalLikes} compact />
+                </div>
+                <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#F1EDE2]/45">curtidas somadas</div>
+              </div>
+              <div className="fl-marker text-3xl leading-none text-[#F2B705]">+2h</div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-2 pr-2">
+            <DoodleArrow dir="down-right" className="h-9 w-16 text-[#F1EDE2]/70" />
+            <span className="fl-marker text-xl text-[#C9C2B6]">o jogo é aqui</span>
+          </div>
+        </div>
+      </section>
+
+      {/* FILTROS */}
+      <section data-ranking-filter className="mx-auto w-full max-w-6xl px-5 md:px-8">
+        <div className="flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-5">
           <div className="flex flex-wrap gap-2">
             {scopeOptions.map(({ key, label, icon: Icon }) => {
               const active = scope === key
@@ -396,10 +392,10 @@ export function RankingPageClient() {
                     type="button"
                     onClick={() => setScope(key)}
                     className={cn(
-                      "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition",
+                      "inline-flex h-10 items-center gap-2 border-2 px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-transform hover:-translate-y-0.5",
                       active
-                        ? "border-primary bg-primary text-primary-foreground shadow-[0_0_28px_-14px_rgba(230,184,0,0.85)]"
-                        : "border-white/10 bg-white/[0.03] text-white/[0.58] hover:border-white/[0.22] hover:text-white"
+                        ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]"
+                        : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -414,21 +410,17 @@ export function RankingPageClient() {
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {rankedMachines.map((machine) => {
                 const active = selectedMachine?.slug === machine.slug
-                const machineTheme = activeMachineTheme(machine)
                 return (
                   <button
                     key={machine.id_machine}
                     type="button"
                     onClick={() => setMachineSlug(String(machine.slug))}
-                    className="h-9 shrink-0 rounded-full border px-3 text-xs font-semibold uppercase transition"
-                    style={{
-                      borderColor: active ? machineTheme.ring : "rgba(255,255,255,0.1)",
-                      backgroundColor: active ? `${machineTheme.accent}22` : "rgba(255,255,255,0.03)",
-                      color: active ? machineTheme.accent : "rgba(255,255,255,0.58)",
-                      boxShadow: active ? `0 0 26px -14px ${machineTheme.glow}` : "none",
-                    }}
+                    className={cn(
+                      "h-9 shrink-0 border-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.1em] transition",
+                      active ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#F1EDE2]/20 text-[#C9C2B6] hover:border-[#F1EDE2]/50"
+                    )}
                   >
-                    {machine.name.replace("Enxame de ", "").replace("Enxame de ", "")}
+                    {machine.name.replace("Enxame de ", "")}
                   </button>
                 )
               })}
@@ -437,15 +429,11 @@ export function RankingPageClient() {
 
           {scope === "profession" && (
             <div className="flex flex-col gap-2 sm:max-w-md">
-              <Select
-                value={selectedProfession?.slug}
-                onValueChange={setProfessionSlug}
-                disabled={!professions.length}
-              >
-                <SelectTrigger className="h-11 w-full border-white/10 bg-white/[0.04] text-white">
+              <Select value={selectedProfession?.slug} onValueChange={setProfessionSlug} disabled={!professions.length}>
+                <SelectTrigger className="h-11 w-full border-2 border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2]">
                   <SelectValue placeholder="Profissão" />
                 </SelectTrigger>
-                <SelectContent className="border-white/10 bg-zinc-950 text-white">
+                <SelectContent className="border-[#F1EDE2]/15 bg-[#1D1810] text-[#F1EDE2]">
                   {professions.map((profession) => (
                     <SelectItem key={profession.slug} value={profession.slug}>
                       {profession.label}
@@ -453,11 +441,7 @@ export function RankingPageClient() {
                   ))}
                 </SelectContent>
               </Select>
-              {selectedProfession && (
-                <span className="text-xs text-white/[0.45]">
-                  {selectedProfession.machineName}
-                </span>
-              )}
+              {selectedProfession && <span className="text-xs text-[#C9C2B6]/70">{selectedProfession.machineName}</span>}
             </div>
           )}
 
@@ -473,64 +457,51 @@ export function RankingPageClient() {
               trigger={
                 <button
                   type="button"
-                  className="inline-flex h-11 w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-white transition hover:border-white/[0.22]"
+                  className="inline-flex h-11 w-fit items-center gap-2 border-2 border-[#F1EDE2]/25 px-4 text-sm font-extrabold uppercase tracking-[0.1em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
                 >
-                  <MapPin className="h-4 w-4 text-primary" />
+                  <MapPin className="h-4 w-4 text-[#F2B705]" />
                   {city && cityState ? `${city}, ${cityState}` : "Cidade"}
                 </button>
               }
             />
           )}
         </div>
+      </section>
 
-        <div className="mt-10 px-1 md:px-4">
-          <RankingPodium
-            rows={rows}
-            rowHref={(row) => rowHref(row as RankingRow)}
-            loading={loading}
-          />
+      {/* PÓDIO */}
+      <section className="mx-auto w-full max-w-6xl px-5 pt-20 md:px-8 md:pt-24">
+        <div className="relative mb-4 flex items-end justify-between">
+          <div className="relative">
+            <p className="fl-marker text-2xl text-[#F2B705]">o topo da temporada</p>
+            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">O pódio.</h2>
+          </div>
+          <span className="hidden text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50 sm:block">Top 3 · {scopeLabel}</span>
+        </div>
+        <RankingPodium rows={rows} rowHref={(row) => rowHref(row as RankingRow)} loading={loading} />
+      </section>
+
+      {/* LISTA */}
+      <section ref={listRef} className="mx-auto w-full max-w-4xl px-5 py-14 md:px-8">
+        <div className="mb-7 flex items-end justify-between">
+          <div className="relative">
+            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">A lista inteira</h2>
+            <p className="mt-2 fl-marker text-2xl text-[#C9C2B6]/80">{scopeLabel}</p>
+            <Underline className="absolute -bottom-3 left-0 h-4 w-44 text-[#F2B705]" />
+          </div>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50">Top 10</span>
         </div>
 
-        <section className="mt-8">
-          <div
-            ref={listRef}
-            className="border border-white/10 bg-white/[0.025] p-2 shadow-[0_24px_70px_-46px_rgba(0,0,0,0.95)] backdrop-blur"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-3 py-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-white/[0.35]">
-                  Top 10
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-white">
-                  {scopeLabel}
-                </h2>
-              </div>
-              <span
-                className="rounded-full border px-3 py-1 text-xs font-semibold"
-                style={{
-                  borderColor: theme.ring,
-                  color: scope === "machine" ? theme.accent : "#e6b800",
-                }}
-              >
-                {scopeOptions.find((option) => option.key === scope)?.label}
-              </span>
-              <span className="text-xs text-white/[0.38]">
-                Atualização automática a cada 2 horas
-              </span>
-            </div>
-
-            <div className="min-h-[470px] p-2">
-              {loading && <RankingSkeleton />}
-              {!loading && error && <RankingError error={error} />}
-              {!loading && !error && rows.length === 0 && <RankingEmpty />}
-              {!loading &&
-                !error &&
-                rows.map((row, index) => (
-                  <RankingRowCard key={row.id_profile} row={row} rank={index + 1} />
-                ))}
-            </div>
-          </div>
-        </section>
+        <div className="flex min-h-[300px] flex-col gap-4">
+          {loading && <RankingSkeleton />}
+          {!loading && error && <RankingError error={error} />}
+          {!loading && !error && rows.length === 0 && <RankingEmpty />}
+          {!loading && !error && rest.map((row, index) => (
+            <RankingRowCard key={row.id_profile} row={row} rank={index + 4} />
+          ))}
+          {!loading && !error && rows.length > 0 && rest.length === 0 && (
+            <p className="text-center text-sm text-[#C9C2B6]/60">O pódio já mostra todos os colocados.</p>
+          )}
+        </div>
       </section>
     </main>
   )
@@ -538,114 +509,62 @@ export function RankingPageClient() {
 
 function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
   const initials = getInitials(row.display_name)
-  const location =
-    row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
+  const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
   const level = Number(row.level ?? row.xp_level ?? 0)
-  const xpTotal = Number(row.xp_total ?? 0)
-  const progress = Math.min(100, Math.max(0, Number(row.xp_progress_percent ?? 0)))
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
+  const meta = [row.specialty, row.machine_name, location].filter(Boolean).join(" · ") || "Perfil Freelandoo"
 
   return (
     <Link
       data-ranking-row
       href={rowHref(row)}
-      className="group mb-2 grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 border border-white/10 bg-black/20 px-3 py-3 opacity-0 transition hover:border-primary/[0.45] hover:bg-white/[0.045] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]"
+      className="group relative flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 shadow-[5px_5px_0_0_#0B0B0D] transition-transform duration-200 hover:-translate-y-1 hover:-rotate-[0.4deg] hover:shadow-[8px_8px_0_0_#F2B705] md:gap-5 md:px-5 md:py-4"
     >
-      <span
-        className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-full text-sm font-black",
-          rankClass(rank)
-        )}
-      >
-        #{rank}
-      </span>
-      <Avatar className="h-11 w-11 ring-1 ring-white/[0.12]">
-        {row.avatar_url && <AvatarImage src={row.avatar_url} alt={row.display_name} />}
-        <AvatarFallback className="bg-white/[0.06] text-xs font-semibold text-white/75">
-          {initials}
-        </AvatarFallback>
-      </Avatar>
-      <span className="min-w-0">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-semibold text-white md:text-base">
-            {row.display_name}
+      <div className="flex w-9 shrink-0 justify-center md:w-12">
+        <span className="fl-display text-3xl text-[#0B0B0D] md:text-4xl">{rank}</span>
+      </div>
+
+      <div className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[#0B0B0D]" style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}>
+        <Avatar className="h-12 w-12 rounded-none md:h-14 md:w-14">
+          {row.avatar_url && <AvatarImage src={row.avatar_url} alt={row.display_name} className="object-cover" />}
+          <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">{initials}</AvatarFallback>
+        </Avatar>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="fl-display truncate text-xl leading-none text-[#0B0B0D] md:text-2xl">{row.display_name}</h4>
+          <span className={cn("hidden -rotate-1 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
+            {row.is_clan ? "Clan" : "Perfil"}
           </span>
-          {row.is_clan && (
-            <span className="shrink-0 rounded-full border border-primary/25 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
-              Clan
+          {level > 0 && (
+            <span className="hidden border border-[#0B0B0D]/30 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.1em] text-[#9a7400] md:inline-block">
+              Lv. {level}
             </span>
           )}
-          {!row.is_clan && (
-            <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-white/[0.45]">
-              Perfil
-            </span>
-          )}
-        </span>
-        <span className="mt-1 block truncate text-xs text-white/[0.45]">
-          {[row.specialty, row.machine_name, location].filter(Boolean).join(" · ") ||
-            "Perfil Freelandoo"}
-        </span>
-        <span className="mt-2 flex flex-wrap items-center gap-2 sm:hidden">
-          <XpBadge level={level} xpTotal={xpTotal} progress={progress} />
-          <span className="text-xs font-semibold text-primary">
-            {numberFormatter.format(Math.round(points))} pts
-          </span>
-        </span>
-      </span>
-      <span className="hidden items-center gap-5 text-xs text-white/[0.55] sm:flex">
-        <span className="flex min-w-[138px] flex-col items-end gap-1">
-          <span className="font-semibold text-primary">
-            {numberFormatter.format(Math.round(points))} pts
-          </span>
-          <XpBadge level={level} xpTotal={xpTotal} progress={progress} align="end" />
-        </span>
-        <span className="hidden items-center gap-4 md:flex">
-        <Metric icon={<Star className="h-3.5 w-3.5 text-primary" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
-        <Metric icon={<Eye className="h-3.5 w-3.5" />} value={compactFormatter.format(row.visits_count ?? 0)} />
-        <Metric icon={<Heart className="h-3.5 w-3.5" />} value={compactFormatter.format(row.likes_count ?? 0)} />
-        </span>
-        <ArrowUpRight className="h-4 w-4 text-white/30 transition group-hover:text-primary" />
-      </span>
+        </div>
+        <p className="truncate text-[11px] font-semibold text-[#6B6457]">{meta}</p>
+        <div className="mt-1.5 hidden items-center gap-4 md:flex">
+          <Stat icon={<Star className="h-3.5 w-3.5 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
+          <Stat icon={<Eye className="h-3.5 w-3.5 text-[#6B6457]" />} value={<AnimatedNumber value={row.visits_count ?? 0} compact />} />
+          <Stat icon={<Heart className="h-3.5 w-3.5 text-[#6B6457]" />} value={<AnimatedNumber value={row.likes_count ?? 0} compact />} />
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end">
+        <div className="fl-display text-2xl leading-none text-[#E0A500] md:text-4xl">{numberFormatter.format(Math.round(points))}</div>
+        <div className="mt-1 flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.14em] text-[#6B6457]">
+          pontos
+          <ArrowUpRight className="h-3.5 w-3.5 text-[#0B0B0D]/40 transition group-hover:text-[#E0A500]" />
+        </div>
+      </div>
     </Link>
   )
 }
 
-function XpBadge({
-  level,
-  xpTotal,
-  progress,
-  align = "start",
-}: {
-  level: number
-  xpTotal: number
-  progress: number
-  align?: "start" | "end"
-}) {
+function Stat({ icon, value }: { icon: ReactNode; value: ReactNode }) {
   return (
-    <span className={cn("flex min-w-0 flex-col gap-1", align === "end" && "items-end")}>
-      <span className="inline-flex items-center gap-2">
-        <span className="rounded-full border border-primary/30 bg-primary/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-          Lv. {level}
-        </span>
-        <span className="text-[11px] font-medium text-white/[0.58]">
-          {numberFormatter.format(Math.round(xpTotal))} XP
-        </span>
-      </span>
-      {progress > 0 && (
-        <span className="h-1 w-24 overflow-hidden rounded-full bg-white/[0.08]">
-          <span
-            className="block h-full rounded-full bg-primary"
-            style={{ width: `${progress}%` }}
-          />
-        </span>
-      )}
-    </span>
-  )
-}
-
-function Metric({ icon, value }: { icon: ReactNode; value: string }) {
-  return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-baseline gap-1 text-xs font-extrabold tabular-nums text-[#0B0B0D]">
       {icon}
       {value}
     </span>
@@ -654,12 +573,9 @@ function Metric({ icon, value }: { icon: ReactNode; value: string }) {
 
 function RankingSkeleton() {
   return (
-    <div className="space-y-2">
-      {Array.from({ length: 10 }).map((_, index) => (
-        <div
-          key={index}
-          className="h-[70px] animate-pulse border border-white/[0.08] bg-white/[0.035]"
-        />
+    <div className="space-y-4">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <div key={index} className="h-[76px] animate-pulse border-2 border-[#F1EDE2]/10 bg-[#1D1810]" />
       ))}
     </div>
   )
@@ -667,30 +583,24 @@ function RankingSkeleton() {
 
 function RankingEmpty() {
   return (
-    <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/[0.06] text-primary">
+    <div className="flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-[#F1EDE2]/15 text-center">
+      <div className="flex h-12 w-12 items-center justify-center bg-[#F2B705] text-[#0B0B0D]">
         <Trophy className="h-6 w-6" />
       </div>
-      <p className="mt-4 text-sm font-semibold text-white">
-        Nenhum perfil no ranking ainda.
-      </p>
-      <p className="mt-1 max-w-sm text-xs leading-5 text-white/[0.45]">
-        Assim que houver dados suficientes, o top 10 aparece aqui.
-      </p>
+      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">Ninguém no ranking ainda.</p>
+      <p className="mt-1 max-w-sm text-xs leading-5 text-[#C9C2B6]/60">Assim que houver dados suficientes, o top 10 aparece aqui.</p>
     </div>
   )
 }
 
 function RankingError({ error }: { error: string }) {
   return (
-    <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/10 text-red-300">
+    <div className="flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-red-400/30 text-center">
+      <div className="flex h-12 w-12 items-center justify-center bg-red-500/15 text-red-300">
         <Loader2 className="h-5 w-5" />
       </div>
-      <p className="mt-4 text-sm font-semibold text-white">
-        Não foi possível carregar o ranking.
-      </p>
-      <p className="mt-1 max-w-sm text-xs leading-5 text-white/[0.45]">{error}</p>
+      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">Não deu pra carregar.</p>
+      <p className="mt-1 max-w-sm text-xs leading-5 text-[#C9C2B6]/60">{error}</p>
     </div>
   )
 }
