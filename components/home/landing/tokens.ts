@@ -97,21 +97,22 @@ export type BentoItem = {
   kind: BentoKind
   span: number // colunas em lg (grid de 12)
   icon?: string
+  photo?: string // imagem real para os visuais photo/video/stories
 }
 
 /** Grade numerada 01-13 (bento). `span` = col-span no grid de 12 (lg). */
 export const BENTO: BentoItem[] = [
-  { n: 1, title: "Vendas fáceis", desc: "Painel completo para acompanhar suas vendas, cliques e comissões em tempo real.", cta: "Saiba mais", href: LINKS.afiliados, kind: "photo", span: 3 },
-  { n: 2, title: "Tenha liberdade", desc: "Venda do seu jeito, com estratégia e autonomia para escalar resultados.", cta: "Comece agora", href: LINKS.cadastro, kind: "photo", span: 3 },
+  { n: 1, title: "Vendas fáceis", desc: "Painel completo para acompanhar suas vendas, cliques e comissões em tempo real.", cta: "Saiba mais", href: LINKS.afiliados, kind: "photo", span: 3, photo: "/landing/bento-1.png" },
+  { n: 2, title: "Tenha liberdade", desc: "Venda do seu jeito, com estratégia e autonomia para escalar resultados.", cta: "Comece agora", href: LINKS.cadastro, kind: "photo", span: 3, photo: "/landing/bento-2.png" },
   { n: 3, title: "Tenha serviços", desc: "Ofereça seus serviços e conecte-se com clientes que buscam o seu talento.", href: LINKS.cadastro, kind: "metrics", span: 3, icon: "briefcase" },
-  { n: 4, title: "Venda produtos", desc: "Venda produtos físicos, digitais e infoprodutos na plataforma.", cta: "Ver produtos", href: LINKS.cadastro, kind: "photo", span: 3 },
+  { n: 4, title: "Venda produtos", desc: "Venda produtos físicos, digitais e infoprodutos na plataforma.", cta: "Ver produtos", href: LINKS.cadastro, kind: "photo", span: 3, photo: "/landing/bento-4.png" },
   { n: 5, title: "Saque sua liberdade", desc: "Receba comissões com transparência e saque quando quiser, com total segurança.", cta: "Sacar", href: LINKS.afiliados, kind: "saque", span: 4 },
   { n: 6, title: "Construa o que precisar", desc: "Página de vendas, área de membros, cupons e mais. Tudo o que você precisa para vender.", cta: "Saiba mais", href: LINKS.cursos, kind: "metrics", span: 4, icon: "blocks" },
   { n: 7, title: "Seja um criador", desc: "Compartilhe seu conhecimento e transforme sua paixão em fonte de renda real.", href: LINKS.cursos, kind: "avatars", span: 4 },
   { n: 8, title: "Ganhe com o afiliado", desc: "Divulgue produtos e cursos e ganhe comissões e recorrentes.", cta: "Quero ser afiliado", href: LINKS.afiliados, kind: "comissao", span: 4 },
-  { n: 9, title: "Vídeos e cursos", desc: "Aprenda, ensine e venda seu conhecimento em vídeos e aulas online.", cta: "Explorar", href: LINKS.cursos, kind: "video", span: 4 },
-  { n: 10, title: "Posts & stories", desc: "Compartilhe nas redes e aumente seu alcance como afiliado.", cta: "Ver ideias", href: LINKS.feed, kind: "stories", span: 4 },
-  { n: 11, title: "Influenciadores premiados", desc: "Reconhecimento para os que mais vendem e inspiram.", cta: "Ver ranking", href: LINKS.ranking, kind: "photo", span: 4 },
+  { n: 9, title: "Vídeos e cursos", desc: "Aprenda, ensine e venda seu conhecimento em vídeos e aulas online.", cta: "Explorar", href: LINKS.cursos, kind: "video", span: 4, photo: "/landing/bento-9.png" },
+  { n: 10, title: "Posts & stories", desc: "Compartilhe nas redes e aumente seu alcance como afiliado.", cta: "Ver ideias", href: LINKS.feed, kind: "stories", span: 4, photo: "/landing/bento-10.png" },
+  { n: 11, title: "Influenciadores premiados", desc: "Reconhecimento para os que mais vendem e inspiram.", cta: "Ver ranking", href: LINKS.ranking, kind: "photo", span: 4, photo: "/landing/bento-11.png" },
   { n: 12, title: "Encontre influenciadores", desc: "Busque parceiros para divulgar seus produtos e cresça junto.", cta: "Buscar", href: LINKS.influenciadores, kind: "search", span: 4 },
   { n: 13, title: "Controle financeiro", desc: "Acompanhe tudo: suas vendas, saques e comissões.", cta: "Ver finanças", href: LINKS.afiliados, kind: "faturamento", span: 4 },
 ]

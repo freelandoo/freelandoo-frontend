@@ -4,6 +4,7 @@
  * conforme `kind` (foto, saque, faturamento, comissão, vídeo, stories,
  * avatars, busca, métricas). Server component puro; entrada via data-stagger.
  */
+import Image from "next/image"
 import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
 import { BENTO, type BentoItem } from "./tokens"
 import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
@@ -13,7 +14,7 @@ const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6
 function BentoVisual({ item }: { item: BentoItem }) {
   switch (item.kind) {
     case "photo":
-      return <PhotoFrame src="" alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="aspect-[16/10] w-full rounded-xl" />
+      return <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="aspect-[16/10] w-full rounded-xl" />
     case "saque":
       return (
         <div className="rounded-xl bg-[#FAF7F0] p-3">
@@ -45,6 +46,10 @@ function BentoVisual({ item }: { item: BentoItem }) {
     case "video":
       return (
         <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#241f18] to-[#0EA5E9]/30">
+          {item.photo && (
+            <Image src={item.photo} alt={item.title} fill sizes="(max-width:768px) 90vw, 360px" className="object-cover" />
+          )}
+          <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90">
             <Play className="h-5 w-5 translate-x-0.5 fill-[#14110B] text-[#14110B]" />
           </span>
@@ -52,6 +57,13 @@ function BentoVisual({ item }: { item: BentoItem }) {
         </div>
       )
     case "stories":
+      if (item.photo) {
+        return (
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#141009]">
+            <Image src={item.photo} alt={item.title} fill sizes="(max-width:768px) 90vw, 360px" className="object-cover" />
+          </div>
+        )
+      }
       return (
         <div className="flex gap-2">
           {["#F2B705", "#EC4899", "#10B981"].map((c, i) => (
