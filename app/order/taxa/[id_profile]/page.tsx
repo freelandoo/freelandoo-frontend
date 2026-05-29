@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PageShell, TabloidPageIntro } from "@/components/tabloide"
 
 interface CouponResult {
   valid: boolean
@@ -87,21 +88,25 @@ export default function OrderTaxaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-lg mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold">Pagamento de taxa</h1>
-            <p className="text-sm text-muted-foreground">Ative seu perfil realizando o pagamento da taxa</p>
-          </div>
-        </div>
+    <PageShell className="tabloid-account-page">
+      <main className="relative z-10 mx-auto max-w-lg px-4 py-8 md:py-10">
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Ativação de perfil"
+          title="TAXA."
+          subtitle="Ative seu perfil realizando o pagamento da taxa."
+          back={
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          }
+          className="mb-8"
+        />
 
         <div className="space-y-4">
           {/* Perfil que será ativado */}
@@ -219,19 +224,20 @@ export default function OrderTaxaPage() {
           </Card>
 
           {/* Botão de pagamento */}
-          <Button
-            className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+          <button
+            type="button"
+            className="inline-flex w-full items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_0_#0B0B0D] disabled:cursor-not-allowed disabled:opacity-55"
             onClick={handlePagar}
             disabled={isProcessing}
           >
             {isProcessing ? "Processando..." : `Pagar ${valorFinal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
-          </Button>
+          </button>
 
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-center text-xs font-bold text-[#9A938A]">
             Ao pagar, seu perfil será ativado e ficará visível na plataforma.
           </p>
         </div>
-      </div>
-    </div>
+      </main>
+    </PageShell>
   )
 }

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { fetchWithLog } from "@/lib/fetch-with-log"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { PageShell, LoadingState, ErrorState, TabloidPageIntro } from "@/components/tabloide"
 
 const ITEM_ID = "0fe91e60-12f0-4a1c-a297-262d73e5fce5"
 
@@ -264,27 +265,26 @@ function CheckoutContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">{t("loadingCheckout", "Carregando checkout...")}</p>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label={t("loadingCheckout", "Carregando checkout...")} />
         </div>
-      </main>
+      </PageShell>
     )
   }
 
   if (!checkoutData) {
     return (
-      <main className="min-h-screen bg-background">
-        <div className="container max-w-2xl py-12">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-destructive">{error || t("loadCheckoutError", "Erro ao carregar checkout")}</p>
-              <Button onClick={() => router.back()} className="mt-4">{t("backButton", "Voltar")}</Button>
-            </CardContent>
-          </Card>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 mx-auto max-w-2xl px-4 py-16">
+          <ErrorState
+            title={t("loadCheckoutError", "Erro ao carregar checkout")}
+            description={error || t("loadCheckoutTryAgain", "Erro ao carregar checkout. Tente novamente.")}
+            onRetry={() => router.back()}
+            retryLabel={t("backButton", "Voltar")}
+          />
         </div>
-      </main>
+      </PageShell>
     )
   }
 
@@ -294,15 +294,25 @@ function CheckoutContent() {
   const item = checkoutData.checkout.items[0]
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container max-w-2xl py-12">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("backButton", "Voltar")}
-        </button>
+    <PageShell className="tabloid-account-page">
+      <main className="relative z-10 mx-auto max-w-2xl px-4 py-10 md:py-12">
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Pagamento"
+          title="CHECKOUT."
+          subtitle={item?.current_item_name}
+          back={
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t("backButton", "Voltar")}
+            </button>
+          }
+          className="mb-8"
+        />
 
         <Card>
           <CardHeader>
@@ -378,21 +388,21 @@ function CheckoutContent() {
             )}
 
             <div className="space-y-3 pt-4">
-              <Button
+              <button
+                type="button"
                 onClick={handleCheckout}
                 disabled={isProcessing}
-                className="w-full bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
-                size="lg"
+                className="inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-3.5 text-sm font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_0_#0B0B0D] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     {t("processingButton", "Processando...")}
                   </>
                 ) : (
                   t("proceedPaymentButton", "Proceder com Pagamento")
                 )}
-              </Button>
+              </button>
 
               <Button
                 onClick={() => router.back()}
@@ -404,13 +414,13 @@ function CheckoutContent() {
               </Button>
             </div>
 
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-center text-xs font-bold text-[#9A938A]">
               {t("securePaymentRedirectNotice", "Você será redirecionado para a plataforma de pagamento segura após confirmar.")}
             </p>
           </CardContent>
         </Card>
-      </div>
-    </main>
+      </main>
+    </PageShell>
   )
 }
 
@@ -419,12 +429,11 @@ export default function CheckoutPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-background flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">{t("loadingCheckout", "Carregando checkout...")}</p>
+        <PageShell className="tabloid-account-page">
+          <div className="relative z-10 px-4 py-16">
+            <LoadingState label={t("loadingCheckout", "Carregando checkout...")} />
           </div>
-        </main>
+        </PageShell>
       }
     >
       <CheckoutContent />

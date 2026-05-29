@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, CheckCircle2, Clock, AlertCircle, Loader2 } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Clock, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { PageShell, LoadingState, ErrorState, TabloidPageIntro } from "@/components/tabloide"
 
 interface OrderData {
   order: {
@@ -104,27 +104,26 @@ export default function OrderPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando pedido...</p>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 px-4 py-16">
+          <LoadingState label="Carregando pedido..." />
         </div>
-      </main>
+      </PageShell>
     )
   }
 
   if (!orderData) {
     return (
-      <main className="min-h-screen bg-background">
-        <div className="container max-w-2xl py-12">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-destructive">{error || "Pedido não encontrado"}</p>
-              <Button onClick={() => router.push("/")} className="mt-4">Voltar ao início</Button>
-            </CardContent>
-          </Card>
+      <PageShell className="tabloid-account-page">
+        <div className="relative z-10 mx-auto max-w-2xl px-4 py-16">
+          <ErrorState
+            title="Pedido não encontrado"
+            description={error || "Não foi possível carregar este pedido."}
+            onRetry={() => router.push("/")}
+            retryLabel="Voltar ao início"
+          />
         </div>
-      </main>
+      </PageShell>
     )
   }
 
@@ -135,15 +134,25 @@ export default function OrderPage() {
   const total = order.total_cents
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container max-w-2xl py-12">
-        <button
-          onClick={() => router.push("/")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar ao início
-        </button>
+    <PageShell className="tabloid-account-page">
+      <main className="relative z-10 mx-auto max-w-2xl px-4 py-10 md:py-12">
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Compra"
+          title="PEDIDO."
+          subtitle={`Referência #${order.id_order.slice(0, 8).toUpperCase()}`}
+          back={
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao início
+            </button>
+          }
+          className="mb-8"
+        />
 
         <div className="space-y-4">
           {/* Status do pedido */}
@@ -221,7 +230,7 @@ export default function OrderPage() {
             </Card>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </PageShell>
   )
 }
