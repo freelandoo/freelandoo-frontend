@@ -9,6 +9,8 @@
  * Presentacional e sem hooks — usável em server e client components.
  */
 import type { ReactNode, CSSProperties } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   Section,
@@ -17,7 +19,21 @@ import {
   OutlineButton,
   Halftone,
   DoodleArrow,
+  Spark,
+  Underline,
 } from "@/components/home/landing/primitives"
+
+export const TABLOID_ACTION_CLASSES =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D] disabled:cursor-not-allowed disabled:opacity-55"
+
+export const TABLOID_OUTLINE_ACTION_CLASSES =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#F1EDE2]/30 bg-transparent px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#F1EDE2] transition hover:border-[#F1EDE2] hover:bg-[#F1EDE2]/6 disabled:cursor-not-allowed disabled:opacity-55"
+
+export const TABLOID_PAPER_CARD_CLASSES =
+  "fl-card fl-hard rounded-[6px] border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]"
+
+export const TABLOID_DARK_PANEL_CLASSES =
+  "rounded-[6px] border-2 border-[#F1EDE2]/14 bg-[#1D1810] text-[#F1EDE2]"
 
 /* ── PageShell ────────────────────────────────────────────────────────────
    Casca da página: estabelece o subtree `.fl-root` (resolve os tokens) + a
@@ -124,6 +140,74 @@ export function PageHero({
         )}
       </div>
     </Section>
+  )
+}
+
+/* ── TabloidPageIntro ─────────────────────────────────────────────────────
+   Intro padrão para páginas internas que precisam parecer a referência do
+   ranking: manchete amarela gigante, underline rabiscado, texto compacto e
+   divisória editorial. */
+export function TabloidPageIntro({
+  title,
+  eyebrow,
+  subtitle,
+  back,
+  actions,
+  className,
+}: {
+  title: ReactNode
+  eyebrow?: ReactNode
+  subtitle?: ReactNode
+  back?: ReactNode
+  actions?: ReactNode
+  className?: string
+}) {
+  return (
+    <header className={cn("relative border-b-2 border-[#F1EDE2]/12 pb-8", className)}>
+      <Halftone className="absolute right-0 top-3 hidden h-24 w-28 opacity-[0.1] md:block" />
+      {back && <div className="mb-5">{back}</div>}
+      {eyebrow && (
+        <p className="fl-marker mb-1 text-2xl font-bold leading-none text-[#F2B705] md:text-3xl">
+          {eyebrow}
+        </p>
+      )}
+      <h1 className="relative inline-block">
+        <span className="fl-display block text-[18vw] leading-[0.86] text-[#F2B705] sm:text-[6.8rem] md:text-[8.4rem]">
+          {title}
+        </span>
+        <Underline className="absolute -bottom-4 left-0 h-5 w-full text-[#F2B705]" />
+        <Spark className="absolute -left-4 -top-5 h-8 w-8 text-[#F2B705] md:-left-8" />
+      </h1>
+      {subtitle && (
+        <p className="mt-8 max-w-2xl text-sm font-bold leading-relaxed text-[#C9C2B6] sm:text-base">
+          {subtitle}
+        </p>
+      )}
+      {actions && <div className="mt-6 flex flex-wrap gap-2">{actions}</div>}
+    </header>
+  )
+}
+
+export function TabloidBackLink({
+  href,
+  children = "Voltar",
+  className,
+}: {
+  href: string
+  children?: ReactNode
+  className?: string
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]",
+        className,
+      )}
+    >
+      <ArrowLeft className="h-4 w-4" />
+      {children}
+    </Link>
   )
 }
 

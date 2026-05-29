@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Package, ShoppingBag, Truck } from "lucide-react"
-import { EmptyState, ErrorState, LoadingState, PageShell } from "@/components/tabloide"
+import { Package, ShoppingBag, Truck } from "lucide-react"
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageShell,
+  TabloidBackLink,
+  TabloidPageIntro,
+  TABLOID_ACTION_CLASSES,
+} from "@/components/tabloide"
 
 interface Order {
   id_order: number
@@ -80,26 +88,15 @@ export default function ComprasPage() {
   }, [])
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 md:py-12">
-        <header className="mb-8">
-          <Link
-            href="/account"
-            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-              <ShoppingBag className="h-6 w-6" aria-hidden />
-            </span>
-            <div>
-              <h1 className="fl-display text-4xl text-[#F5F1E8]">Minhas compras</h1>
-              <p className="mt-1 text-sm text-[#C9C2B6]">Pedidos da Loja de criadores Freelandoo.</p>
-            </div>
-          </div>
-        </header>
+        <TabloidPageIntro
+          eyebrow="Loja"
+          title="COMPRAS."
+          subtitle="Pedidos da Loja de criadores Freelandoo, com status, frete e rastreio em um bloco de papel editorial."
+          back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+          className="mb-8"
+        />
 
         {state === "loading" && (
           <div className="py-10">
@@ -112,7 +109,7 @@ export default function ComprasPage() {
             icon={<ShoppingBag className="h-6 w-6" />}
             title="Entre para ver compras"
             description="Faça login para acompanhar seus pedidos da Loja."
-            action={<Link href="/login" className="fl-btn-gold inline-flex rounded-full px-5 py-2.5 text-sm font-black">Entrar</Link>}
+            action={<Link href="/login" className={TABLOID_ACTION_CLASSES}>Entrar</Link>}
           />
         )}
 
@@ -135,9 +132,9 @@ export default function ComprasPage() {
               return (
                 <li
                   key={o.id_order}
-                  className="fl-card fl-hard flex flex-col gap-4 rounded-2xl p-4 md:flex-row md:items-center"
+                  className="fl-card fl-hard flex flex-col gap-4 rounded-[6px] p-4 md:flex-row md:items-center"
                 >
-                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#1D1810] md:h-24 md:w-24">
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[4px] border-2 border-[#0B0B0D] bg-[#1D1810] md:h-24 md:w-24">
                     {o.product_cover_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={o.product_cover_url} alt={o.product_name} className="h-full w-full object-cover" />
@@ -151,7 +148,7 @@ export default function ComprasPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="truncate text-sm font-black text-[var(--fl-ink)] md:text-base">{o.product_name}</h2>
-                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${status.classes}`}>
+                      <span className={`inline-flex rounded-[2px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${status.classes}`}>
                         {status.label}
                       </span>
                     </div>

@@ -1,10 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Download, Loader2, ShieldCheck, Trash2 } from "lucide-react"
-import { PageShell } from "@/components/tabloide"
+import { Download, Loader2, Trash2 } from "lucide-react"
+import {
+  PageShell,
+  TabloidBackLink,
+  TabloidPageIntro,
+  TABLOID_ACTION_CLASSES,
+  TABLOID_OUTLINE_ACTION_CLASSES,
+} from "@/components/tabloide"
 
 export default function DadosPage() {
   const router = useRouter()
@@ -60,35 +65,23 @@ export default function DadosPage() {
   }
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 px-4 py-10">
         <div className="mx-auto flex max-w-xl flex-col gap-6">
-          <header>
-            <Link
-              href="/account"
-              className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar para minha conta
-            </Link>
-            <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-                <ShieldCheck className="h-6 w-6" />
-              </span>
-              Meus Dados
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
-              Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados.
-            </p>
-          </header>
+          <TabloidPageIntro
+            eyebrow="LGPD"
+            title="MEUS DADOS."
+            subtitle="Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados."
+            back={<TabloidBackLink href="/account">Voltar para minha conta</TabloidBackLink>}
+          />
 
           {error && (
-            <div className="rounded-2xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div className="rounded-[6px] border-2 border-red-500/35 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
               {error}
             </div>
           )}
 
-          <article className="fl-card fl-hard rounded-2xl p-5 sm:p-6">
+          <article className="fl-card fl-hard rounded-[6px] p-5 sm:p-6">
             <div>
               <h2 className="flex items-center gap-2 text-base font-black text-[var(--fl-ink)]">
                 <Download className="h-4 w-4" />
@@ -102,13 +95,13 @@ export default function DadosPage() {
               type="button"
               onClick={handleExport}
               disabled={exporting}
-              className="fl-btn-card mt-5 inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-black disabled:cursor-not-allowed disabled:opacity-55"
+              className={`mt-5 ${TABLOID_ACTION_CLASSES}`}
             >
               {exporting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Exportando...</> : "Baixar meus dados"}
             </button>
           </article>
 
-          <article className="fl-card rounded-2xl border-red-900 p-5 sm:p-6">
+          <article className="fl-card rounded-[6px] border-red-900 p-5 sm:p-6">
             <div>
               <h2 className="flex items-center gap-2 text-base font-black text-red-700">
                 <Trash2 className="h-4 w-4" />
@@ -130,13 +123,13 @@ export default function DadosPage() {
                       type="button"
                       disabled={deleting}
                       onClick={handleDelete}
-                      className="inline-flex items-center justify-center rounded-full border-2 border-red-900 bg-red-700 px-4 py-2 text-xs font-black text-white shadow-[3px_3px_0_0_#7f1d1d] disabled:cursor-not-allowed disabled:opacity-55"
+                      className="inline-flex items-center justify-center border-2 border-red-900 bg-red-700 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white shadow-[3px_3px_0_0_#7f1d1d] disabled:cursor-not-allowed disabled:opacity-55"
                     >
                       {deleting ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Desativando...</> : "Sim, desativar minha conta"}
                     </button>
                     <button
                       type="button"
-                      className="fl-btn-card rounded-full px-4 py-2 text-xs font-black"
+                      className={`${TABLOID_OUTLINE_ACTION_CLASSES} !border-[#0B0B0D] !px-4 !py-2 !text-[#0B0B0D]`}
                       onClick={() => setConfirmDelete(false)}
                     >
                       Cancelar
@@ -147,7 +140,7 @@ export default function DadosPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
-                  className="inline-flex items-center justify-center rounded-full border-2 border-red-900 bg-red-700 px-5 py-2.5 text-sm font-black text-white shadow-[4px_4px_0_0_#7f1d1d] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#7f1d1d]"
+                  className="inline-flex items-center justify-center border-2 border-red-900 bg-red-700 px-5 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-white shadow-[4px_4px_0_0_#7f1d1d] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#7f1d1d]"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Desativar conta

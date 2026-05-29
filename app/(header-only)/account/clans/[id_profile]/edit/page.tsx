@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { PageShell } from "@/components/tabloide"
+import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
@@ -207,7 +207,7 @@ export default function EditClanPage({
 
   if (loading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
         <p className="text-muted-foreground">Carregando…</p>
         </div>
@@ -232,14 +232,14 @@ export default function EditClanPage({
   if (!clan) return null
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-      <Link
-        href={`/clans/${id_profile}`}
-        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-      >
-        <ArrowLeft className="size-4" /> Voltar para o clan
-      </Link>
+      <TabloidPageIntro
+        eyebrow="Clan"
+        title="EDITAR."
+        subtitle="Ajuste avatar, bio e localização do clan mantendo a vitrine com energia de manchete."
+        back={<TabloidBackLink href={`/clans/${id_profile}`}>Voltar para o clan</TabloidBackLink>}
+      />
 
       <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         <CardHeader>

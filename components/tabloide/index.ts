@@ -10,6 +10,12 @@ export { AuthShell, AuthCard } from "./AuthShell"
 export {
   PageShell,
   PageHero,
+  TabloidPageIntro,
+  TabloidBackLink,
+  TABLOID_ACTION_CLASSES,
+  TABLOID_OUTLINE_ACTION_CLASSES,
+  TABLOID_PAPER_CARD_CLASSES,
+  TABLOID_DARK_PANEL_CLASSES,
   EmptyState,
   LoadingState,
   ErrorState,

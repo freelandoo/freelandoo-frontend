@@ -1,10 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  ArrowLeft, CheckCircle2, CreditCard, Hourglass, Info, RotateCcw,
+  CheckCircle2, CreditCard, Hourglass, Info, RotateCcw,
   Sparkles, Ticket, Briefcase, Package, GraduationCap, Users,
   Wallet, TrendingUp, Loader2, ArrowDownRight, ShoppingBag,
 } from "lucide-react"
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PageShell } from "@/components/tabloide"
+import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 
 /* ──────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -259,32 +258,23 @@ export default function MeusFaturamentosPage() {
   ]), [totals])
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto px-4 py-10">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
-          {/* Header */}
-          <div>
-            <Link href="/account" className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Link>
-            <div className="mt-4 flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-                <Wallet className="h-6 w-6" />
-              </span>
-              <div className="min-w-0">
-                <h1 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">Meus Faturamentos</h1>
-                <p className="mt-2 text-sm leading-relaxed text-[#C9C2B6]">
-                  Vendas de cursos, serviços, loja e comissões — tudo em um só lugar.
-                </p>
-              </div>
-              {affiliate && (
-                <Badge variant={affiliate.status === "ACTIVE" ? "default" : "secondary"} className="ml-auto">
+          <TabloidPageIntro
+            eyebrow="Comissões"
+            title="FATURAMENTO."
+            subtitle="Vendas de cursos, serviços, loja e comissões em leitura compacta, com dinheiro em destaque e controles duros."
+            back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+            actions={
+              affiliate ? (
+                <span className="inline-flex items-center gap-2 border-2 border-[#F2B705] bg-[#F2B705]/12 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#F2B705]">
+                  <Wallet className="h-3.5 w-3.5" />
                   Afiliado · {affiliate.status}
-                </Badge>
-              )}
-            </div>
-          </div>
+                </span>
+              ) : null
+            }
+          />
 
           {/* KPIs */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -303,7 +293,7 @@ export default function MeusFaturamentosPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex flex-wrap gap-2 rounded-2xl border border-[#F5F1E8]/12 bg-[#1D1810] p-1.5">
+          <div className="flex flex-wrap gap-2 border-y-2 border-[#F1EDE2]/12 bg-[#1D1810]/70 py-3">
             <TabPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Tudo" active={tab === "all"} onClick={() => setTab("all")} />
             <TabPill icon={<GraduationCap className="h-3.5 w-3.5" />} label="Cursos" active={tab === "course"} onClick={() => setTab("course")} />
             <TabPill icon={<Briefcase className="h-3.5 w-3.5" />} label="Serviços" active={tab === "service"} onClick={() => setTab("service")} />
@@ -328,9 +318,9 @@ export default function MeusFaturamentosPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
                   </div>
                 ) : error ? (
-                  <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm text-red-200">{error}</div>
+                  <div className="rounded-[6px] border-2 border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm font-bold text-red-200">{error}</div>
                 ) : couponSales.length === 0 ? (
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-12 text-center">
+                  <div className="rounded-[6px] border-2 border-[#F1EDE2]/12 bg-[#1D1810] px-6 py-12 text-center">
                     <Ticket className="mx-auto mb-3 h-7 w-7 text-white/35" />
                     <p className="text-sm font-medium text-white/85">Nenhuma venda com seu cupom ainda</p>
                     <p className="mt-1 text-xs text-white/45">Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.</p>
@@ -396,7 +386,7 @@ export default function MeusFaturamentosPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-yellow-300/70" />
                   </div>
                 ) : error ? (
-                  <div className="rounded-2xl border border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm text-red-200">{error}</div>
+                  <div className="rounded-[6px] border-2 border-red-500/30 bg-red-500/[0.06] px-4 py-3 text-sm font-bold text-red-200">{error}</div>
                 ) : earnings.length === 0 ? (
                   <EmptyEarnings tab={tab} />
                 ) : (
@@ -421,10 +411,10 @@ function TabPill({ icon, label, active, onClick }: {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
+      className={`inline-flex items-center gap-1.5 border-2 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] transition-colors ${
         active
-          ? "bg-gradient-to-r from-yellow-400/20 to-amber-500/10 text-yellow-200"
-          : "text-white/55 hover:text-white/85"
+          ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+          : "border-[#F1EDE2]/20 text-white/55 hover:border-[#F1EDE2]/55 hover:text-white/85"
       }`}
     >
       {icon}
@@ -449,9 +439,9 @@ function EarningRow({ earning }: { earning: Earning }) {
     <motion.div
       whileHover={{ y: -1 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
-      className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-colors hover:border-white/15"
+      className="flex items-start gap-3 rounded-[6px] border-2 border-[#F1EDE2]/12 bg-[#1D1810] p-3.5 transition-colors hover:border-[#F1EDE2]/25"
     >
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${km.accent} ring-1 ring-white/10`}>
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-gradient-to-br ${km.accent} ring-1 ring-white/10`}>
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -500,9 +490,9 @@ function CouponSaleRow({ sale }: { sale: CouponSale }) {
     <motion.div
       whileHover={{ y: -1 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
-      className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3.5 transition-colors hover:border-white/15"
+      className="flex items-start gap-3 rounded-[6px] border-2 border-[#F1EDE2]/12 bg-[#1D1810] p-3.5 transition-colors hover:border-[#F1EDE2]/25"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300 ring-1 ring-white/10">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-gradient-to-br from-yellow-400/25 to-amber-500/15 text-yellow-300 ring-1 ring-white/10">
         <ShoppingBag className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">

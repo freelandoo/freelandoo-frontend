@@ -24,9 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ArrowLeft, Users, Plus, Lock, AlertCircle, Check, X, CalendarDays } from "lucide-react"
+import { Plus, Lock, AlertCircle, Check, X, CalendarDays } from "lucide-react"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
-import { ErrorState, LoadingState, PageShell } from "@/components/tabloide"
+import {
+  ErrorState,
+  LoadingState,
+  PageShell,
+  TabloidBackLink,
+  TabloidPageIntro,
+  TABLOID_ACTION_CLASSES,
+} from "@/components/tabloide"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -246,7 +253,7 @@ export default function MyClansPage() {
 
   if (loading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label="Carregando seus clans..." />
         </div>
@@ -256,7 +263,7 @@ export default function MyClansPage() {
 
   if (error) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <ErrorState title="Clans indisponíveis" description={error} />
         </div>
@@ -270,40 +277,26 @@ export default function MyClansPage() {
   const eligibleSubProfiles = subProfiles
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
-      <Link
-        href="/account"
-        className="inline-flex w-fit items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Voltar
-      </Link>
-
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8] sm:text-5xl">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-              <Users className="h-6 w-6" />
-            </span>
-            Meus Clans
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#C9C2B6]">
-            Crie ou participe de clans com até 6 sub-perfis. As métricas do clan
-            somam likes, horas e engajamento de todos os membros.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          disabled={!eligible}
-          title={eligible ? "Criar um novo clan" : "Você precisa de 10h online para criar um clan"}
-          className="fl-btn-gold inline-flex items-center rounded-full px-5 py-3 text-sm font-black disabled:cursor-not-allowed disabled:opacity-55"
-        >
-          {eligible ? <Plus className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
-          Criar Clan
-        </button>
-      </header>
+      <TabloidPageIntro
+        eyebrow="Equipes"
+        title="MEUS CLANS."
+        subtitle="Crie ou participe de clans com até 6 sub-perfis. As métricas do clan somam likes, horas e engajamento de todos os membros."
+        back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+        actions={
+          <button
+            type="button"
+            onClick={() => setIsCreateOpen(true)}
+            disabled={!eligible}
+            title={eligible ? "Criar um novo clan" : "Você precisa de 10h online para criar um clan"}
+            className={TABLOID_ACTION_CLASSES}
+          >
+            {eligible ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+            Criar Clan
+          </button>
+        }
+      />
 
       {!eligible && eligibility && (
         <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">

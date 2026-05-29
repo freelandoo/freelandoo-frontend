@@ -19,7 +19,7 @@ import { buildProfileUrl } from "@/lib/slug"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
-import { ErrorState, LoadingState, PageShell } from "@/components/tabloide"
+import { ErrorState, LoadingState, PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 import {
   AVATAR_IMAGE_ASPECT_RATIO,
   AVATAR_IMAGE_MAX_SIZE_BYTES,
@@ -129,7 +129,7 @@ export default function ProfileSettingsPage() {
 
   if (isLoading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label="Carregando perfil..." />
         </div>
@@ -139,7 +139,7 @@ export default function ProfileSettingsPage() {
 
   if (error || !perfil) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <ErrorState title="Perfil indisponível" description={error || "Erro ao carregar perfil"} />
         </div>
@@ -149,7 +149,7 @@ export default function ProfileSettingsPage() {
 
   if (!profile) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-4 px-4 py-12">
         <p className="text-muted-foreground">Este perfil não existe ou não pertence a você.</p>
         <Button asChild variant="outline">
@@ -502,17 +502,15 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <Button asChild variant="ghost" size="sm">
-          <Link href={`/account/profile/${id_profile}`}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para o Perfil
-          </Link>
-        </Button>
-        <div className="flex flex-wrap gap-2">
-          {!isPaid ? (
+      <TabloidPageIntro
+        eyebrow="Perfil"
+        title="AJUSTES."
+        subtitle="Configurações do subperfil, redes, ativação e visibilidade com a mesma pegada de ranking premium."
+        back={<TabloidBackLink href={`/account/profile/${id_profile}`}>Voltar para o Perfil</TabloidBackLink>}
+        actions={
+          !isPaid ? (
             <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
               Aguardando ativação
             </Badge>
@@ -522,9 +520,9 @@ export default function ProfileSettingsPage() {
             <Badge variant="secondary" className="bg-slate-500/15 text-slate-700 border border-slate-500/30">
               Invisível
             </Badge>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       <Card>
         <CardHeader>

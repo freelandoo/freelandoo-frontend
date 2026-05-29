@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, ArrowLeft, Check, Send, ShieldCheck } from "lucide-react"
-import { LoadingState, PageShell } from "@/components/tabloide"
+import { AlertCircle, ArrowLeft, Check, Send } from "lucide-react"
+import {
+  LoadingState,
+  PageShell,
+  TabloidPageIntro,
+  TABLOID_ACTION_CLASSES,
+} from "@/components/tabloide"
 
 const REQUESTABLE: Array<{ key: string; label: string; hint?: string }> = [
   { key: "can_view_feed", label: "Ver o feed" },
@@ -79,7 +84,7 @@ export default function ParentalRequestPage() {
 
   if (isMinor === null) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label="Carregando..." />
         </div>
@@ -88,36 +93,33 @@ export default function ParentalRequestPage() {
   }
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto max-w-2xl px-4 py-10">
-        <header className="mb-8">
-          <button
-            type="button"
-            onClick={() => router.push("/account")}
-            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </button>
-          <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-              <ShieldCheck className="h-6 w-6" />
-            </span>
-            Pedir permissão
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
-            Envie um pedido ao responsável para liberar uma ação bloqueada.
-          </p>
-        </header>
+        <TabloidPageIntro
+          eyebrow="Supervisão"
+          title="PEDIR PERMISSÃO."
+          subtitle="Envie um pedido ao responsável para liberar uma ação bloqueada."
+          back={
+            <button
+              type="button"
+              onClick={() => router.push("/account")}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          }
+          className="mb-8"
+        />
 
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-red-500/35 bg-red-500/10 p-3 text-sm text-red-200">
+          <div className="mb-4 flex items-start gap-2 rounded-[6px] border-2 border-red-500/35 bg-red-500/10 p-3 text-sm font-bold text-red-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <article className="fl-card rounded-2xl p-5 sm:p-6">
+        <article className="fl-card fl-hard rounded-[6px] p-5 sm:p-6">
           <div className="mb-5">
             <h2 className="text-lg font-black text-[var(--fl-ink)]">Qual permissão você quer?</h2>
             <p className="mt-1 text-sm leading-relaxed text-[#5b554b]">
@@ -134,7 +136,7 @@ export default function ParentalRequestPage() {
                   key={item.key}
                   type="button"
                   onClick={() => setSelected(item.key)}
-                  className={`flex items-start gap-2 rounded-xl border-2 p-3 text-left transition ${
+                  className={`flex items-start gap-2 rounded-[4px] border-2 p-3 text-left transition ${
                     isSelected
                       ? "border-[#0B0B0D] bg-[#F2B705]/20"
                       : "border-[#0B0B0D]/12 bg-white hover:border-[#0B0B0D]/35"
@@ -171,7 +173,7 @@ export default function ParentalRequestPage() {
               type="button"
               onClick={submit}
               disabled={sending || !selected}
-              className="fl-btn-gold inline-flex items-center rounded-full px-5 py-2.5 text-sm font-black disabled:cursor-not-allowed disabled:opacity-55"
+              className={TABLOID_ACTION_CLASSES}
             >
               <Send className="mr-2 h-4 w-4" />
               {sending ? "Enviando..." : "Enviar pedido"}

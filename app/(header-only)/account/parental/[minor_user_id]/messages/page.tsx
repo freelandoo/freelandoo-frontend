@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, MessageSquare, AlertCircle, ShieldCheck } from "lucide-react"
-import { PageShell } from "@/components/tabloide"
+import { ArrowLeft, MessageSquare, AlertCircle } from "lucide-react"
+import { PageShell, TabloidPageIntro } from "@/components/tabloide"
 
 interface MinorConversation {
   id_conversation: string
@@ -110,32 +110,27 @@ export default function MinorMessagesPage() {
   }
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10">
-        <header className="mb-8">
-          <button
-            type="button"
-            onClick={() => router.push("/account/parental")}
-            className="mb-4 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </button>
-          <div>
-            <h1 className="fl-display flex items-center gap-3 text-4xl text-[#F5F1E8]">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#F5F1E8]/20 bg-[#F2B705]/12 text-[#F2B705]">
-                <ShieldCheck className="h-6 w-6" />
-              </span>
-              Mensagens supervisionadas
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-[#C9C2B6]">
-              Visualização somente leitura das conversas do menor.
-            </p>
-          </div>
-        </header>
+        <TabloidPageIntro
+          eyebrow="Somente leitura"
+          title="MENSAGENS."
+          subtitle="Visualização supervisionada das conversas do menor, com lista e transcript no mesmo painel editorial."
+          back={
+            <button
+              type="button"
+              onClick={() => router.push("/account/parental")}
+              className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </button>
+          }
+          className="mb-8"
+        />
 
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
+          <div className="mb-4 flex items-start gap-2 rounded-[6px] border-2 border-red-500/30 bg-red-500/5 p-3 text-sm font-bold text-red-500">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>

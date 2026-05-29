@@ -38,7 +38,7 @@ import {
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { getCapturedCoupon } from "@/lib/share-coupon"
-import { LoadingState, PageShell } from "@/components/tabloide"
+import { LoadingState, PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 
 type Member = {
   id_member_profile: string
@@ -511,7 +511,7 @@ export default function ManageClanPage({
 
   if (loading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label="Carregando clan..." />
         </div>
@@ -521,7 +521,7 @@ export default function ManageClanPage({
 
   if (error || !clan) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell className="tabloid-account-page md:pl-[80px]">
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-12">
         <Card>
           <CardContent className="pt-6 flex items-center gap-2 text-red-600">
@@ -553,35 +553,35 @@ export default function ManageClanPage({
   const slotPrice = ((clan.settings?.slot_price_cents ?? 3900) / 100).toFixed(2)
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link
-          href={`/clans/${id_profile}`}
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-        >
-          <ArrowLeft className="size-4" /> Voltar para o clan
-        </Link>
-        <div className="flex items-center gap-2">
-          {isOwner && (
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/account/profile/${id_profile}/agenda`}>
-                <CalendarDays className="size-4 mr-1" /> Agenda
-              </Link>
-            </Button>
-          )}
-          {!isOwner && myMembership && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRemove(myMembership.id_member_profile, true)}
-              disabled={actionLoading}
-            >
-              <LogOut className="size-4 mr-1" /> Sair do clan
-            </Button>
-          )}
-        </div>
-      </div>
+      <TabloidPageIntro
+        eyebrow={isOwner ? "Dono do clan" : "Membro do clan"}
+        title="CLAN."
+        subtitle={`${clan.display_name} em modo operacional: membros, vagas, mural, convites e permissões em cards de papel.`}
+        back={<TabloidBackLink href={`/clans/${id_profile}`}>Voltar para o clan</TabloidBackLink>}
+        actions={
+          <>
+            {isOwner && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/account/profile/${id_profile}/agenda`}>
+                  <CalendarDays className="size-4 mr-1" /> Agenda
+                </Link>
+              </Button>
+            )}
+            {!isOwner && myMembership && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRemove(myMembership.id_member_profile, true)}
+                disabled={actionLoading}
+              >
+                <LogOut className="size-4 mr-1" /> Sair do clan
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>
