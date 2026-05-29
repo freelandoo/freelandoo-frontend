@@ -3,18 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Search, Users, MapPin, Star, Heart } from "lucide-react"
+import { PageShell, PageHero, EmptyState, LoadingState } from "@/components/tabloide"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -75,143 +65,134 @@ export default function ClansVitrinePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const inputCls =
+    "h-11 w-full rounded-xl border-2 border-[#F5F1E8]/12 bg-[#1D1810] px-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-10 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Users className="size-7" /> Clans Freelandoo
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Times de até 6 sub-perfis trabalhando juntos. Score combina todas as
-          métricas dos membros.
-        </p>
-      </header>
+    <PageShell>
+      <PageHero
+        kicker={<><Users className="h-3.5 w-3.5" /> Times Freelandoo</>}
+        title="Clans"
+        highlight="em jogo"
+        subtitle="Times de até 6 sub-perfis trabalhando juntos. O score combina todas as métricas dos membros."
+        doodle={false}
+      />
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-5">
-              <Input
-                placeholder="Buscar por nome ou bio..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && load()}
-              />
-            </div>
-            <div className="sm:col-span-3">
-              <Select value={filterMachine} onValueChange={setFilterMachine}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os enxames" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Todos os enxames</SelectItem>
-                  {machines.map((m) => (
-                    <SelectItem key={m.id_machine} value={m.slug}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="sm:col-span-3">
-              <Input
-                placeholder="Cidade"
-                value={filterCity}
-                onChange={(e) => setFilterCity(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && load()}
-              />
-            </div>
-            <div className="sm:col-span-1">
-              <Button className="w-full" onClick={load} disabled={loading}>
-                <Search className="size-4" />
-              </Button>
-            </div>
+      <div className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-8">
+        {/* Filtros */}
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#1D1810]/60 p-4 sm:grid-cols-12">
+          <div className="sm:col-span-5">
+            <input
+              className={inputCls}
+              placeholder="Buscar por nome ou bio..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && load()}
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <p className="text-muted-foreground text-center py-12">Carregando...</p>
-      ) : clans.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            Nenhum clan encontrado com esses filtros.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {clans.map((c) => (
-            <Link
-              key={c.id_profile}
-              href={`/clans/${c.id_profile}`}
-              className="block group"
+          <div className="sm:col-span-3">
+            <select className={inputCls} value={filterMachine} onChange={(e) => setFilterMachine(e.target.value)}>
+              <option value="__all__">Todos os enxames</option>
+              {machines.map((m) => (
+                <option key={m.id_machine} value={m.slug}>{m.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-3">
+            <input
+              className={inputCls}
+              placeholder="Cidade"
+              value={filterCity}
+              onChange={(e) => setFilterCity(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && load()}
+            />
+          </div>
+          <div className="sm:col-span-1">
+            <button
+              type="button"
+              onClick={load}
+              disabled={loading}
+              aria-label="Buscar"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-[#F2B705] text-[#1A1505] transition hover:bg-[#ffc81f] disabled:opacity-60"
             >
-              <Card className="h-full hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-3">
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-16"><LoadingState label="Carregando clans…" /></div>
+        ) : clans.length === 0 ? (
+          <div className="py-16">
+            <EmptyState
+              icon={<Users className="h-6 w-6" />}
+              title="Nenhum clan"
+              description="Nenhum clan encontrado com esses filtros. Tente ampliar a busca."
+            />
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {clans.map((c) => (
+              <Link key={c.id_profile} href={`/clans/${c.id_profile}`} className="group block">
+                <div className="fl-card fl-hard h-full rounded-2xl p-5">
                   <div className="flex items-start gap-3">
-                    <Avatar className="size-14">
+                    <Avatar className="size-14 ring-2 ring-[#0B0B0D]/10">
                       <AvatarImage src={c.avatar_url || undefined} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-[#2a2212] text-[#F5F1E8]">
                         {c.display_name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base group-hover:text-primary transition-colors truncate">
-                        {c.display_name}
-                      </CardTitle>
-                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap mt-1">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {c.machine_name || "—"}
-                        </Badge>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-base font-black text-[#0B0B0D]">{c.display_name}</h3>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#5b554b]">
+                        <span className="rounded-full bg-[#0B0B0D] px-2 py-0.5 text-[10px] font-bold text-[#F1EDE2]">
+                          {c.machine_name || "Sem enxame"}
+                        </span>
                         {(c.municipio || c.estado) && (
                           <span className="flex items-center gap-1">
                             <MapPin className="size-3" />
-                            {[c.municipio, c.estado].filter(Boolean).join(" — ")}
+                            {[c.municipio, c.estado].filter(Boolean).join(", ")}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-3">
-                  <div className="flex -space-x-2">
+
+                  <div className="mt-4 flex -space-x-2">
                     {c.members.slice(0, 6).map((m) => (
-                      <Avatar
-                        key={m.id_member_profile}
-                        className="size-8 border-2 border-background"
-                        title={m.display_name}
-                      >
+                      <Avatar key={m.id_member_profile} className="size-8 border-2 border-[#F1EDE2]" title={m.display_name}>
                         <AvatarImage src={m.avatar_url || undefined} />
-                        <AvatarFallback className="text-[10px]">
+                        <AvatarFallback className="bg-[#2a2212] text-[10px] text-[#F5F1E8]">
                           {m.display_name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     ))}
                     {c.members.length > 0 && (
-                      <span className="ml-3 text-xs text-muted-foreground self-center">
+                      <span className="ml-3 self-center text-xs text-[#5b554b]">
                         {c.members.length} {c.members.length === 1 ? "membro" : "membros"}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+
+                  <div className="mt-3 flex items-center gap-3 border-t border-[#0B0B0D]/10 pt-3 text-xs text-[#5b554b]">
                     <span className="flex items-center gap-1">
                       <Heart className="size-3" /> {c.likes_count}
                     </span>
                     {c.ratings_count > 0 && (
                       <span className="flex items-center gap-1">
-                        <Star className="size-3" /> {Number(c.avg_rating).toFixed(1)} ({c.ratings_count})
+                        <Star className="size-3 fill-[#F2B705] text-[#F2B705]" /> {Number(c.avg_rating).toFixed(1)} ({c.ratings_count})
                       </span>
                     )}
-                    <span className="ml-auto font-medium">
+                    <span className="ml-auto font-black text-[#0B0B0D]">
                       {Math.round(Number(c.total_points))} pts
                     </span>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-    </main>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageShell>
   )
 }
