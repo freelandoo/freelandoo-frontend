@@ -63,11 +63,11 @@ export type MoneyPath = {
 
 /** Seção "Escolha seu caminho" — 5 caminhos com foto + ícone dourado. */
 export const MONEY_PATHS: MoneyPath[] = [
-  { id: "afiliado", kicker: "Afiliado", desc: "Promova e ganhe com produtos, serviços e cursos que você acredita.", href: LINKS.afiliados, icon: "percent", photo: "/landing/path-afiliado.jpg" },
-  { id: "cursos", kicker: "Cursos", desc: "Crie e venda seus cursos online com todas as ferramentas que você precisa.", href: LINKS.cursos, icon: "cap", photo: "/landing/path-cursos.jpg" },
-  { id: "produtos", kicker: "Produtos", desc: "Venda produtos físicos, digitais e infoprodutos na plataforma.", href: LINKS.cadastro, icon: "bag", photo: "/landing/path-produtos.jpg" },
-  { id: "servicos", kicker: "Serviços", desc: "Divulgue seus serviços e conecte-se com clientes que buscam talento.", href: LINKS.cadastro, icon: "briefcase", photo: "/landing/path-servicos.jpg" },
-  { id: "influenciador", kicker: "Influenciador", desc: "Monetize sua audiência recomendando o que você acredita.", href: LINKS.influenciadores, icon: "star", photo: "/landing/path-influenciador.jpg" },
+  { id: "afiliado", kicker: "Afiliado", desc: "Promova e ganhe com produtos, serviços e cursos que você acredita.", href: LINKS.afiliados, icon: "percent", photo: "/landing/path-afiliado.png" },
+  { id: "cursos", kicker: "Cursos", desc: "Crie e venda seus cursos online com todas as ferramentas que você precisa.", href: LINKS.cursos, icon: "cap", photo: "/landing/path-cursos.png" },
+  { id: "produtos", kicker: "Produtos", desc: "Venda produtos físicos, digitais e infoprodutos na plataforma.", href: LINKS.cadastro, icon: "bag", photo: "/landing/path-produtos.png" },
+  { id: "servicos", kicker: "Serviços", desc: "Divulgue seus serviços e conecte-se com clientes que buscam talento.", href: LINKS.cadastro, icon: "briefcase", photo: "/landing/path-servicos.png" },
+  { id: "influenciador", kicker: "Influenciador", desc: "Monetize sua audiência recomendando o que você acredita.", href: LINKS.influenciadores, icon: "star", photo: "/landing/path-influenciador.png" },
 ]
 
 export type CarouselSlide = {

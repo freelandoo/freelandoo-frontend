@@ -27,7 +27,7 @@ export function MoneyPathCards() {
             style={{ transform: `rotate(${i % 2 ? 0.6 : -0.6}deg)` }}
           >
             <div className="relative">
-              <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} className="aspect-[5/4] w-full lg:aspect-[4/5]" />
+              <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} ready className="aspect-[3/4] w-full" />
               <Halftone className="absolute right-2 top-2 h-10 w-10 opacity-30" />
               <span className="absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                 <Icon name={p.icon} className="h-6 w-6" />
