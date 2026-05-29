@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, Bell } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { NotificationList, type NotificationItem } from "@/components/notifications/notification-list"
+import { PageShell, EmptyState, LoadingState } from "@/components/tabloide"
 
 export default function NotificationsPage() {
   const [items, setItems] = useState<NotificationItem[]>([])
@@ -85,22 +86,22 @@ export default function NotificationsPage() {
   const unread = items.filter((i) => !i.read_at).length
 
   return (
-    <div className="min-h-[100dvh] bg-black md:pl-[80px]">
-      <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/85 backdrop-blur">
+    <PageShell className="md:pl-[80px]">
+      <header className="sticky top-0 z-20 border-b border-[#F5F1E8]/8 bg-[#141009]/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <Link
             href="/account"
-            className="rounded-full p-1.5 text-white/75 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full p-1.5 text-[#C9C2B6] transition hover:bg-[#F5F1E8]/10 hover:text-[#F5F1E8]"
             aria-label="Voltar"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-base font-semibold text-white">Notificações</h1>
+          <h1 className="fl-display text-2xl text-[#F5F1E8]">Notificações</h1>
           {unread > 0 && (
             <button
               type="button"
               onClick={markAll}
-              className="ml-auto text-xs font-semibold text-amber-300 transition hover:text-amber-200"
+              className="ml-auto text-xs font-bold text-[#F2B705] transition hover:text-[#ffc81f]"
             >
               Marcar todas como lidas
             </button>
@@ -108,26 +109,34 @@ export default function NotificationsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl">
+      <div className="mx-auto w-full max-w-2xl">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-white/60">
-            <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="px-4 py-16">
+            <LoadingState label="Carregando notificações…" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="px-4 py-16">
+            <EmptyState
+              icon={<Bell className="h-6 w-6" />}
+              title="Tudo em dia"
+              description="Quando alguém curtir, comentar, seguir ou te mandar mensagem, aparece aqui."
+            />
           </div>
         ) : (
           <>
             <NotificationList items={items} onMarkRead={markOne} />
             {loadingMore && (
-              <div className="flex items-center justify-center py-6 text-white/60">
+              <div className="flex items-center justify-center py-6 text-[#9A938A]">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             )}
             {!hasMore && items.length > 0 && (
-              <p className="py-8 text-center text-xs text-white/40">Você chegou ao fim.</p>
+              <p className="py-8 text-center text-xs text-[#9A938A]">Você chegou ao fim.</p>
             )}
             <div ref={sentinelRef} className="h-px w-full" />
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </PageShell>
   )
 }

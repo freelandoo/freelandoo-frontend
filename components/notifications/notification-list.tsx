@@ -110,11 +110,11 @@ function initials(name: string | null | undefined) {
 export function NotificationList({ items, onMarkRead, emptyHint = "Sem notificações." }: NotificationListProps) {
   if (items.length === 0) {
     return (
-      <div className="px-4 py-10 text-center text-sm text-white/55">{emptyHint}</div>
+      <div className="px-4 py-10 text-center text-sm text-[#9A938A]">{emptyHint}</div>
     )
   }
   return (
-    <ul className="divide-y divide-white/[0.06]">
+    <ul className="divide-y divide-[#F5F1E8]/[0.08]">
       {items.map((item) => {
         const isUnread = !item.read_at
         const name = item.actor?.profile_display_name || item.actor?.username || "Alguém"
@@ -124,29 +124,29 @@ export function NotificationList({ items, onMarkRead, emptyHint = "Sem notifica�
               href={hrefFor(item)}
               onClick={() => isUnread && onMarkRead?.(item.id_notification)}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.03]",
-                isUnread && "bg-amber-400/[0.04]"
+                "flex items-center gap-3 px-4 py-3 transition hover:bg-[#F5F1E8]/[0.04]",
+                isUnread && "bg-[#F2B705]/[0.06]"
               )}
             >
               <div className="relative">
-                <Avatar className="h-10 w-10 ring-1 ring-white/15">
+                <Avatar className="h-10 w-10 ring-1 ring-[#F5F1E8]/15">
                   {item.actor?.profile_avatar_url && (
                     <AvatarImage src={item.actor.profile_avatar_url} alt={name} />
                   )}
-                  <AvatarFallback className="bg-zinc-800 text-xs font-semibold text-white/80">
+                  <AvatarFallback className="bg-[#2a2212] text-xs font-semibold text-[#F5F1E8]/80">
                     {initials(name)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-zinc-900 ring-2 ring-zinc-950">
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#F2B705] text-[#1A1505] ring-2 ring-[#15120E]">
                   {iconFor(item.type)}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm text-white/90">{labelFor(item)}</p>
-                <p className="mt-0.5 text-[11px] text-white/45">{relativeTime(item.created_at)}</p>
+                <p className="line-clamp-2 text-sm text-[#F5F1E8]/90">{labelFor(item)}</p>
+                <p className="mt-0.5 text-[11px] text-[#9A938A]">{relativeTime(item.created_at)}</p>
               </div>
               {isUnread && (
-                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden />
+                <span className="h-2 w-2 shrink-0 rounded-full bg-[#F2B705]" aria-hidden />
               )}
             </Link>
           </li>

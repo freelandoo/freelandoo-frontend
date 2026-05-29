@@ -121,17 +121,17 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
   return (
     <div
       ref={panelRef}
-      className="fixed right-4 top-[60px] z-[60] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-xl"
+      className="fixed right-4 top-[60px] z-[60] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#F5F1E8]/10 bg-[#15120E]/95 shadow-2xl backdrop-blur-xl"
       role="dialog"
       aria-label="Notificações"
     >
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
-        <h3 className="text-sm font-semibold text-white">Notificações</h3>
+      <div className="flex items-center justify-between border-b border-[#F5F1E8]/[0.08] px-4 py-2.5">
+        <h3 className="text-sm font-bold text-[#F5F1E8]">Notificações</h3>
         {unread > 0 && (
           <button
             type="button"
             onClick={markAll}
-            className="text-[11px] font-medium text-amber-300 transition hover:text-amber-200"
+            className="text-[11px] font-semibold text-[#F2B705] transition hover:text-[#ffc81f]"
           >
             Marcar todas
           </button>
@@ -139,18 +139,18 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
       </div>
       <div className="max-h-[60dvh] overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-white/60">
+          <div className="flex items-center justify-center py-10 text-[#9A938A]">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : (
           <NotificationList items={items} onMarkRead={markOne} />
         )}
       </div>
-      <div className="border-t border-white/[0.06] bg-black/40 px-4 py-2 text-center">
+      <div className="border-t border-[#F5F1E8]/[0.08] bg-black/30 px-4 py-2 text-center">
         <Link
           href="/notificacoes"
           onClick={onClose}
-          className="text-[11px] font-semibold text-white/75 transition hover:text-white"
+          className="text-[11px] font-semibold text-[#C9C2B6] transition hover:text-[#F5F1E8]"
         >
           Ver todas
         </Link>
