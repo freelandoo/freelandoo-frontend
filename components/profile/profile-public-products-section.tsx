@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Loader2, Package } from "lucide-react"
+import { Package } from "lucide-react"
 import type { ProfileProduct } from "@/components/profile/profile-product-edit-modal"
+import { EmptyState, LoadingState } from "@/components/tabloide"
 
 interface ProfilePublicProductsSectionProps {
   profileId: string
@@ -53,9 +54,7 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
   if (state === "loading") {
     return (
       <section id="public-products-section" className="mb-20 scroll-mt-24">
-        <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/40">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-        </div>
+        <LoadingState label="Carregando loja…" />
       </section>
     )
   }
@@ -63,11 +62,11 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
   if (state === "error") {
     return (
       <section id="public-products-section" className="mb-20 scroll-mt-24">
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <p className="text-sm text-muted-foreground">
-            Não foi possível carregar a loja agora.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Package className="h-7 w-7" />}
+          title="Loja indisponível"
+          description="Não foi possível carregar a loja agora."
+        />
       </section>
     )
   }
@@ -75,19 +74,18 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
   if (products.length === 0) {
     return (
       <section id="public-products-section" className="mb-20 scroll-mt-24">
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" aria-hidden />
-          <p className="text-sm text-muted-foreground">
-            Nenhum produto disponível na loja no momento.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Package className="h-7 w-7" />}
+          title="Loja vazia"
+          description="Nenhum produto disponível na loja no momento."
+        />
       </section>
     )
   }
 
   return (
     <section id="public-products-section" className="mb-20 scroll-mt-24">
-      <ul className="-mx-4 grid grid-cols-3 items-stretch gap-px md:mx-0">
+      <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
         {products.map((p) => {
           const img = getCoverUrl(p)
           const { integer, cents } = formatPriceParts(p.price_amount)
@@ -97,15 +95,15 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
           return (
             <li
               key={p.id_profile_product}
-              className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left"
+              className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-left shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
             >
               <Link
                 href={`/p/${profileId}/produto/${p.id_profile_product}`}
-                className="flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                className="flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2B705]"
               >
-                <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+                <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
                   {outOfStock && (
-                    <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/85 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-100">
+                    <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
                       Esgotado
                     </span>
                   )}
@@ -113,28 +111,28 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={img} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                      <Package className="h-11 w-11 text-zinc-600/90 sm:h-12 sm:w-12" aria-hidden />
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
+                      <Package className="h-11 w-11 text-[#F2B705]/40 sm:h-12 sm:w-12" aria-hidden />
                     </div>
                   )}
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
-                  <h3 className="truncate text-xs font-bold leading-snug text-white md:text-sm">{p.name}</h3>
+                  <h3 className="truncate text-xs font-bold leading-snug text-[#0B0B0D] md:text-sm">{p.name}</h3>
 
                   <div className="mt-1.5 min-h-0 flex-1">
                     {desc ? (
-                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
+                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-[#5b554b] md:text-[11px]">{desc}</p>
                     ) : null}
                   </div>
 
                   <div className="mt-auto shrink-0">
                     <div className="mt-2 flex items-center justify-between gap-1.5">
-                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
+                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums md:text-xl">
                         R$ {integer}
-                        <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
+                        <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
                       </p>
-                      <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-primary md:px-3 md:text-[10px]">
+                      <span className="shrink-0 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-[#1A1505] md:px-3 md:text-[10px]">
                         Ver
                       </span>
                     </div>

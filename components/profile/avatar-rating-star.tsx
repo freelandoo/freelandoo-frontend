@@ -33,14 +33,14 @@ export function AvatarRatingStar({ profileId }: Props) {
               key={i}
               className="h-4 w-4"
               style={{
-                fill: filled ? "#facc15" : "transparent",
-                color: filled ? "#facc15" : "#d4d4d8",
+                fill: filled ? "#E0A500" : "transparent",
+                color: filled ? "#E0A500" : "rgba(11,11,13,0.25)",
               }}
             />
           )
         })}
       </div>
-      <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+      <span className="text-[11px] font-bold text-[#5b554b] tabular-nums">
         {avg > 0 ? `${avg.toFixed(1)} (${count})` : "Sem avaliações"}
       </span>
     </div>

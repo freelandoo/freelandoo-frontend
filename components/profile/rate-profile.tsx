@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { Star, Loader2, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 
 type Props = {
   profileId: string
@@ -56,16 +54,16 @@ export function RateProfile({ profileId }: Props) {
   const display = hover || rating
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+    <div className="rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] space-y-3">
       <div>
-        <h3 className="text-sm font-semibold">Avalie este profissional</h3>
-        <p className="text-xs text-muted-foreground">
+        <h3 className="fl-display text-xl text-[#0B0B0D]">Avalie este profissional</h3>
+        <p className="text-xs text-[#5b554b]">
           Você tem um agendamento pago e pode deixar uma avaliação.
         </p>
       </div>
 
       {done ? (
-        <p className="flex items-center gap-2 text-sm text-green-600">
+        <p className="flex items-center gap-2 text-sm font-bold text-[#16683f]">
           <Check className="h-4 w-4" />
           Avaliação enviada. Obrigado!
         </p>
@@ -88,32 +86,37 @@ export function RateProfile({ profileId }: Props) {
                   <Star
                     className="h-7 w-7"
                     style={{
-                      fill: filled ? "#facc15" : "transparent",
-                      color: filled ? "#facc15" : "#9ca3af",
+                      fill: filled ? "#E0A500" : "transparent",
+                      color: filled ? "#E0A500" : "rgba(11,11,13,0.3)",
                     }}
                   />
                 </button>
               )
             })}
             {rating > 0 && (
-              <span className="ml-2 text-sm font-semibold tabular-nums">{rating}/5</span>
+              <span className="ml-2 text-sm font-bold tabular-nums text-[#0B0B0D]">{rating}/5</span>
             )}
           </div>
 
-          <Textarea
+          <textarea
             placeholder="Comentário (opcional)"
             rows={2}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className="resize-none"
+            className="fl-input resize-none"
           />
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-xs font-medium text-[#b91c1c]">{error}</p>}
 
-          <Button onClick={submit} disabled={submitting || !rating} className="w-full sm:w-auto">
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={submitting || !rating}
+            className="fl-btn-gold inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50 sm:w-auto"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Enviar avaliação
-          </Button>
+          </button>
         </>
       )}
     </div>

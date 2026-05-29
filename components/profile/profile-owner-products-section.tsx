@@ -8,6 +8,7 @@ import {
   type ProfileProduct,
   type ProfileProductMedia,
 } from "@/components/profile/profile-product-edit-modal"
+import { EmptyState, LoadingState } from "@/components/tabloide"
 
 interface ProfileOwnerProductsSectionProps {
   profileId: string
@@ -131,9 +132,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   if (state === "loading") {
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
-        <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/40">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-        </div>
+        <LoadingState label="Carregando produtos…" />
       </section>
     )
   }
@@ -141,16 +140,16 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   if (state === "error") {
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
-        <div className="mx-auto max-w-md space-y-4 rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 py-10 text-center">
-          <p className="text-sm text-zinc-300">Não foi possível carregar os produtos.</p>
+        <div className="mx-auto max-w-md space-y-4 rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] px-6 py-10 text-center text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
+          <p className="fl-display text-xl text-[#0B0B0D]">Não foi possível carregar os produtos.</p>
           {loadError && (
-            <p className="text-xs text-red-400 break-words">{loadError}</p>
+            <p className="text-xs text-[#b91c1c] break-words">{loadError}</p>
           )}
           <div className="flex justify-center gap-2">
             <button
               type="button"
               onClick={load}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+              className="fl-btn-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Tentar novamente
@@ -158,7 +157,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
+              className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
             >
               <Plus className="h-3.5 w-3.5" />
               Produto
@@ -190,15 +189,15 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   if (profileIsPaid === false) {
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
-        <div className="mx-auto max-w-md rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/40 px-6 py-12 text-center">
-          <Lock className="mx-auto mb-3 h-10 w-10 text-zinc-500" aria-hidden />
-          <h3 className="mb-1 text-base font-semibold text-zinc-100">Loja disponível apenas para subperfis pagos</h3>
-          <p className="mb-5 text-sm text-zinc-400">
+        <div className="mx-auto max-w-md rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] px-6 py-12 text-center text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
+          <Lock className="mx-auto mb-3 h-10 w-10 text-[#0B0B0D]/40" aria-hidden />
+          <h3 className="fl-display mb-1 text-xl text-[#0B0B0D]">Loja só para subperfis pagos</h3>
+          <p className="mb-5 text-sm text-[#5b554b]">
             Ative este subperfil para começar a vender produtos.
           </p>
           <Link
             href={`/payment/taxa?profile_id=${profileId}`}
-            className="inline-flex items-center justify-center rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-yellow-300"
+            className="fl-btn-gold inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-bold"
           >
             Ativar subperfil pago
           </Link>
@@ -209,17 +208,17 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
 
   return (
     <section id="products-section" className="mb-20 scroll-mt-24">
-      <div className="mb-4 flex items-center justify-between gap-3 px-4 md:px-0">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-100">Loja</h2>
-          <p className="text-[11px] text-zinc-500">
+          <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Loja</h2>
+          <p className="text-[11px] text-[#9A938A]">
             Produtos físicos vendidos por este subperfil.
           </p>
         </div>
         <button
           type="button"
           onClick={openCreate}
-          className="flex items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
+          className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
         >
           <Plus className="h-3.5 w-3.5" />
           Produto
@@ -227,20 +226,19 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       </div>
 
       {feedbackError && (
-        <p className="mb-3 px-4 text-center text-sm text-destructive md:px-0 md:text-left">
+        <p className="mb-3 rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-center text-sm font-medium text-[#fca5a5] md:text-left">
           {feedbackError}
         </p>
       )}
 
       {products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" aria-hidden />
-          <p className="text-sm text-muted-foreground">
-            Nenhum produto na loja ainda. Crie o primeiro para começar a vender.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Package className="h-7 w-7" />}
+          title="Loja vazia"
+          description="Nenhum produto na loja ainda. Crie o primeiro para começar a vender."
+        />
       ) : (
-        <ul className="-mx-4 grid grid-cols-3 items-stretch gap-px md:mx-0">
+        <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
           {products.map((p) => {
             const img = getCoverUrl(p)
             const { integer, cents } = formatPriceParts(p.price_amount)
@@ -250,12 +248,12 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
             return (
               <li
                 key={p.id_profile_product}
-                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left"
+                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-left shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
               >
-                <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+                <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
                   <button
                     type="button"
-                    className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-black/55 p-1.5 text-zinc-100 backdrop-blur-sm transition hover:bg-black/75 hover:text-white"
+                    className="absolute right-2 top-2 z-10 cursor-pointer rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#0B0B0D] transition hover:bg-[#F2B705]"
                     onClick={(e) => { e.stopPropagation(); openEdit(p) }}
                     aria-label={`Editar produto: ${p.name}`}
                   >
@@ -263,7 +261,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                   </button>
                   <button
                     type="button"
-                    className="absolute right-2 top-12 z-10 cursor-pointer rounded-full bg-black/55 p-1.5 text-red-300 backdrop-blur-sm transition hover:bg-black/75 hover:text-red-200 disabled:opacity-50"
+                    className="absolute right-2 top-12 z-10 cursor-pointer rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#b91c1c] transition hover:bg-[#dc2626] hover:text-white disabled:opacity-50"
                     onClick={(e) => { e.stopPropagation(); handleDelete(p) }}
                     disabled={deleting === p.id_profile_product}
                     aria-label={`Remover produto: ${p.name}`}
@@ -276,7 +274,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                   </button>
 
                   {!p.is_active && (
-                    <span className="absolute left-2 top-2 z-10 rounded-full bg-zinc-700/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-200">
+                    <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
                       Inativo
                     </span>
                   )}
@@ -285,36 +283,36 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={img} alt={p.name} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                      <Package className="h-11 w-11 text-zinc-600/90 sm:h-12 sm:w-12" aria-hidden />
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
+                      <Package className="h-11 w-11 text-[#F2B705]/40 sm:h-12 sm:w-12" aria-hidden />
                     </div>
                   )}
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-white md:text-sm">{p.name}</h3>
-                    <div className={`flex shrink-0 items-center gap-0.5 text-[10px] font-medium md:text-[11px] ${lowStock ? "text-red-400" : "text-yellow-500"}`}>
+                    <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-[#0B0B0D] md:text-sm">{p.name}</h3>
+                    <div className={`flex shrink-0 items-center gap-0.5 text-[10px] font-bold md:text-[11px] ${lowStock ? "text-[#b91c1c]" : "text-[#E0A500]"}`}>
                       <span className="tabular-nums">{p.stock_quantity} un</span>
                     </div>
                   </div>
 
                   <div className="mt-1.5 min-h-0 flex-1">
                     {desc ? (
-                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
+                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-[#5b554b] md:text-[11px]">{desc}</p>
                     ) : null}
                   </div>
 
                   <div className="mt-auto shrink-0">
                     <div className="mt-2 flex items-center justify-between gap-1.5">
-                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
+                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums md:text-xl">
                         R$ {integer}
-                        <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
+                        <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
                       </p>
                       <button
                         type="button"
                         onClick={() => openEdit(p)}
-                        className="shrink-0 rounded-full bg-yellow-400 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-black transition hover:bg-yellow-300 active:scale-[0.99] md:px-3 md:text-[10px]"
+                        className="fl-btn-gold shrink-0 rounded-full px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider md:px-3 md:text-[10px]"
                       >
                         Editar
                       </button>

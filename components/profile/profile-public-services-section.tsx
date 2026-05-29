@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Briefcase, Clock, Cog, Loader2, Plus, Scissors } from "lucide-react"
+import { Briefcase, Clock, Cog, Plus, Scissors } from "lucide-react"
 import { ServiceSelectionModal } from "@/components/calendar/ServiceSelectionModal"
 import type { ProfileService } from "@/components/calendar/types"
 import { ScheduleBookingModal } from "@/components/profile/schedule-booking-modal"
@@ -11,6 +11,7 @@ import {
 } from "@/components/profile/profile-service-edit-modal"
 import { getToken } from "@/lib/auth"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { EmptyState, LoadingState } from "@/components/tabloide"
 
 interface ProfilePublicServicesSectionProps {
   profileId: string
@@ -187,9 +188,11 @@ export function ProfilePublicServicesSection({
   if (state === "error") {
     return (
       <section id="services-section" className="mb-20 scroll-mt-24">
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <p className="text-sm text-muted-foreground">Não foi possível carregar os serviços agora. Tente novamente mais tarde.</p>
-        </div>
+        <EmptyState
+          icon={<Briefcase className="h-7 w-7" />}
+          title="Serviços indisponíveis"
+          description="Não foi possível carregar os serviços agora. Tente novamente mais tarde."
+        />
       </section>
     )
   }
@@ -201,17 +204,17 @@ export function ProfilePublicServicesSection({
   return (
     <section id="services-section" className="mb-20 scroll-mt-24">
       {showOwnerControls && (
-        <div className="mb-4 flex items-center justify-between gap-3 px-4 md:px-0">
+        <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-100">Serviços</h2>
-            <p className="text-[11px] text-zinc-500">
+            <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Serviços</h2>
+            <p className="text-[11px] text-[#9A938A]">
               Serviços públicos oferecidos por este subperfil.
             </p>
           </div>
           <button
             type="button"
             onClick={openCreateService}
-            className="flex items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-yellow-300"
+            className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
           >
             <Plus className="h-3.5 w-3.5" />
             Serviço
@@ -220,31 +223,30 @@ export function ProfilePublicServicesSection({
       )}
 
       {(!allowPublicBooking || feedbackError) && (
-        <div className="mb-4 space-y-2 px-4 md:px-0">
+        <div className="mb-4 space-y-2">
           {!allowPublicBooking ? (
-            <p className="text-center text-xs text-muted-foreground md:text-left">
+            <p className="text-center text-xs text-[#9A938A] md:text-left">
               Agendamento online está desativado para este perfil — use mensagens ou outro canal de contato.
             </p>
           ) : null}
           {feedbackError ? (
-            <p className="text-center text-sm text-destructive md:text-left">{feedbackError}</p>
+            <p className="rounded-xl border-2 border-[#dc2626]/40 bg-[#dc2626]/10 px-3 py-2 text-center text-sm font-medium text-[#fca5a5] md:text-left">{feedbackError}</p>
           ) : null}
         </div>
       )}
 
       {state === "loading" ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-border bg-card/40">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-        </div>
+        <LoadingState label="Carregando serviços…" />
       ) : visibleServices.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
-          <Briefcase className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" aria-hidden />
-          <p className="text-sm text-muted-foreground">Nenhum serviço público disponível no momento.</p>
-        </div>
+        <EmptyState
+          icon={<Briefcase className="h-7 w-7" />}
+          title="Nenhum serviço"
+          description="Nenhum serviço público disponível no momento."
+        />
       ) : (
         <>
-          {/* 2 colunas até xl; xl+: 3 colunas como o portfólio. Imagem 4:5. */}
-          <ul className="-mx-4 grid grid-cols-3 items-stretch gap-px md:mx-0">
+          {/* Cards de papel emoldurados, imagem 4:5. */}
+          <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
           {visibleServices.map((s) => {
             const img = getServiceCoverUrl(s)
             const { integer, cents } = formatPriceParts(s.price_amount)
@@ -253,13 +255,13 @@ export function ProfilePublicServicesSection({
             return (
               <li
                 key={s.id_profile_service}
-                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-[#121212] text-left"
+                className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-left shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
               >
-                <div className="relative aspect-[4/5] w-full shrink-0 bg-zinc-900">
+                <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
                   {showOwnerControls && (
                     <button
                       type="button"
-                      className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-black/55 p-1.5 text-zinc-100 backdrop-blur-sm transition hover:bg-black/75 hover:text-white"
+                      className="absolute right-2 top-2 z-10 cursor-pointer rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#0B0B0D] transition hover:bg-[#F2B705]"
                       onClick={(e) => {
                         e.stopPropagation()
                         openEdit(s)
@@ -273,16 +275,16 @@ export function ProfilePublicServicesSection({
                     // eslint-disable-next-line @next/next/no-img-element -- URL externa/dinâmica do serviço
                     <img src={img} alt={s.name} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                      <Scissors className="h-11 w-11 text-zinc-600/90 sm:h-12 sm:w-12" aria-hidden />
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
+                      <Scissors className="h-11 w-11 text-[#F2B705]/40 sm:h-12 sm:w-12" aria-hidden />
                     </div>
                   )}
                 </div>
 
                 <div className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-white md:text-sm">{s.name}</h3>
-                    <div className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-yellow-500 md:text-[11px]">
+                    <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-[#0B0B0D] md:text-sm">{s.name}</h3>
+                    <div className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-[#E0A500] md:text-[11px]">
                       <Clock className="h-3 w-3" aria-hidden />
                       <span className="tabular-nums">{s.duration_minutes} min</span>
                     </div>
@@ -290,21 +292,21 @@ export function ProfilePublicServicesSection({
 
                   <div className="mt-1.5 min-h-0 flex-1">
                     {desc ? (
-                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-zinc-300 md:text-[11px]">{desc}</p>
+                      <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-[#5b554b] md:text-[11px]">{desc}</p>
                     ) : null}
                   </div>
 
                   <div className="mt-auto shrink-0">
                     <div className="mt-2 flex items-center justify-between gap-1.5">
-                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-white tabular-nums md:text-xl">
+                      <p className="min-w-0 shrink text-sm font-bold leading-none tracking-tight text-[#0B0B0D] tabular-nums md:text-xl">
                         R$ {integer}
-                        <span className="align-top text-[10px] font-semibold text-white/95 md:text-xs">,{cents}</span>
+                        <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
                       </p>
 
                       {allowPublicBooking ? (
                         <button
                           type="button"
-                          className="shrink-0 rounded-full bg-yellow-400 px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-black transition hover:bg-yellow-300 active:scale-[0.99] md:px-3 md:text-[10px]"
+                          className="fl-btn-gold shrink-0 rounded-full px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider md:px-3 md:text-[10px]"
                           onClick={() => openSchedule(s)}
                           aria-label={`Agendar: ${s.name}`}
                         >
