@@ -74,10 +74,12 @@ export function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* Visual: foto + cards de estatística */}
+        {/* Visual: foto + cards de estatística.
+            Mobile = empilha (foto em cima, stats abaixo). sm+ = lado a lado.
+            `items-start` evita que a foto estique para a altura da coluna. */}
         <motion.div initial={reduce ? false : "hidden"} animate="show" variants={container} className="relative">
-          <div className="flex items-stretch gap-3">
-            <motion.div variants={pop} className="relative min-h-[360px] flex-1 sm:min-h-[460px]">
+          <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr] sm:items-start">
+            <motion.div variants={pop} className="relative">
               <PhotoFrame
                 src="/landing/hero.jpg"
                 alt="Pessoa feliz usando a Freelandoo no celular"
@@ -85,21 +87,21 @@ export function HeroSection() {
                 priority
                 torn
                 cut
-                className="h-full w-full"
+                className="aspect-[5/4] w-full sm:aspect-[4/5]"
               />
               <WashiTape className="-left-2 top-6" rotate={-10} />
               <HiveDoodle className="absolute -left-3 -top-3 h-12 w-12 text-[#F2B705]" />
             </motion.div>
 
-            <div className="flex w-[44%] max-w-[250px] flex-col justify-center gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
               {HERO_STATS.map((s, i) => (
-                <motion.div key={s.id} variants={pop} className="fl-float-slow">
+                <motion.div key={s.id} variants={pop} className="sm:fl-float-slow">
                   <StatCard stat={s} taped={i === 0} />
                 </motion.div>
               ))}
             </div>
           </div>
-          <DoodleArrow dir="down-right" className="absolute -left-7 bottom-8 hidden h-10 w-20 text-[#F2B705] md:block" />
+          <DoodleArrow dir="down-right" className="absolute -left-7 -bottom-2 hidden h-10 w-20 text-[#F2B705] md:block" />
         </motion.div>
       </div>
     </section>

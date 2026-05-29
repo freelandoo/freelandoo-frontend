@@ -78,9 +78,9 @@ export function FeatureCarousel() {
                       </GoldButton>
                     </div>
                     {/* Foto + métricas */}
-                    <div className="relative flex-1">
-                      <PhotoFrame src={s.photo} alt={s.title} className="aspect-[4/3] w-full rounded-2xl" />
-                      <div className="absolute -bottom-3 -right-2 w-40 rounded-xl border-2 border-[#0B0B0D] bg-white p-3 shadow-[4px_4px_0_0_#0B0B0D]">
+                    <div className="relative w-full md:flex-1">
+                      <PhotoFrame src={s.photo} alt={s.title} className="h-44 w-full rounded-2xl sm:h-56 md:h-auto md:aspect-[4/3]" />
+                      <div className="absolute -bottom-3 -right-1 hidden w-40 rounded-xl border-2 border-[#0B0B0D] bg-white p-3 shadow-[4px_4px_0_0_#0B0B0D] sm:block">
                         <WashiTape className="-top-3 right-3" rotate={7} />
                         <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Métricas</div>
                         <ul className="mt-1.5 space-y-1">
