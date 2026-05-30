@@ -39,31 +39,35 @@ export function drawMakeup(
   get: GetPx,
   faceWidth: number
 ) {
-  // ─── batom (sutil: multiply suave + blur p/ feather, como o blush) ────────
+  // ─── batom (cor/opacidade/blur controlados por régua) ──────────────────────
   if (makeup.lipstick > 0) {
     ctx.save()
-    // blur p/ suavizar a borda (suportado no Safari/Chrome modernos; sem efeito = sem dano)
-    ctx.filter = `blur(${Math.max(1, faceWidth * 0.014)}px)`
+    if (makeup.lipBlur > 0) {
+      ctx.filter = `blur(${makeup.lipBlur * faceWidth * 0.03}px)`
+    }
     ctx.beginPath()
     pathFrom(ctx, LIP_OUTER, get)
     pathFrom(ctx, LIP_INNER, get)
     ctx.globalCompositeOperation = "multiply"
-    ctx.globalAlpha = Math.min(0.5, 0.18 + makeup.lipstick * 0.32)
+    ctx.globalAlpha = Math.min(0.9, makeup.lipstick)
     ctx.fillStyle = makeup.lipColor
     ctx.fill("evenodd")
     ctx.restore()
   }
 
-  // ─── blush ─────────────────────────────────────────────────────────────────
+  // ─── blush (cor/opacidade/blur controlados por régua) ──────────────────────
   if (makeup.blush > 0) {
     const r = faceWidth * 0.2
-    const alpha = Math.min(0.6, makeup.blush * 0.6)
+    const alpha = Math.min(0.85, makeup.blush)
     for (const idx of [CHEEK_LEFT, CHEEK_RIGHT]) {
       const c = get(idx)
       const grad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r)
       grad.addColorStop(0, hexToRgba(makeup.blushColor, alpha))
       grad.addColorStop(1, hexToRgba(makeup.blushColor, 0))
       ctx.save()
+      if (makeup.blushBlur > 0) {
+        ctx.filter = `blur(${makeup.blushBlur * faceWidth * 0.04}px)`
+      }
       ctx.globalCompositeOperation = "multiply"
       ctx.fillStyle = grad
       ctx.beginPath()

@@ -29,21 +29,26 @@ export interface OverlayState {
   accessory: AccessoryType // acessório de rosto (face tracking)
 }
 
-/** Maquiagem básica (face tracking) — pele no shader, batom/blush no compositor. */
+/** Maquiagem básica (face tracking) — pele no shader, batom/blush no compositor.
+ *  Batom e blush são controlados por réguas: cor (hue), opacidade e blur. */
 export interface MakeupState {
   skinSmooth: number // 0..1 (suavização de pele)
-  lipstick: number // 0..1 (0 = desligado)
+  lipstick: number // opacidade 0..1 (0 = desligado)
   lipColor: string
-  blush: number // 0..1
+  lipBlur: number // 0..1
+  blush: number // opacidade 0..1 (0 = desligado)
   blushColor: string
+  blushBlur: number // 0..1
 }
 
 export const NEUTRAL_MAKEUP: MakeupState = {
   skinSmooth: 0,
   lipstick: 0,
   lipColor: "#c2185b",
+  lipBlur: 0.4,
   blush: 0,
   blushColor: "#f0708a",
+  blushBlur: 0.5,
 }
 
 export interface StickerInstance {

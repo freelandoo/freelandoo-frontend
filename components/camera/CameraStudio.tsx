@@ -39,9 +39,6 @@ const ACCESSORIES: { id: AccessoryType; label: string }[] = [
   { id: "crown", label: "👑 Coroa" },
   { id: "hat", label: "🎉 Chapéu" },
 ]
-const LIP_COLORS = ["#c2185b", "#e53935", "#ad1457", "#8e24aa", "#6d4c41"]
-const BLUSH_COLORS = ["#f0708a", "#f4978e", "#e9967a"]
-
 type PanelTab = null | "filtros" | "rostos" | "maquiagem" | "molduras"
 const TABS: { id: Exclude<PanelTab, null>; label: string }[] = [
   { id: "filtros", label: "Filtros" },
@@ -49,6 +46,33 @@ const TABS: { id: Exclude<PanelTab, null>; label: string }[] = [
   { id: "maquiagem", label: "Maquiagem" },
   { id: "molduras", label: "Molduras" },
 ]
+
+// Régua de cor (hue 0..360) ↔ hex, saturação/luminância fixas.
+function hueToHex(h: number): string {
+  const s = 0.7, l = 0.5
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))
+    return Math.round(255 * c).toString(16).padStart(2, "0")
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+function hexToHue(hex: string): number {
+  const s = hex.replace("#", "")
+  const r = parseInt(s.slice(0, 2), 16) / 255
+  const g = parseInt(s.slice(2, 4), 16) / 255
+  const b = parseInt(s.slice(4, 6), 16) / 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  const d = max - min
+  if (d === 0) return 0
+  let h = 0
+  if (max === r) h = ((g - b) / d) % 6
+  else if (max === g) h = (b - r) / d + 2
+  else h = (r - g) / d + 4
+  h = Math.round(h * 60)
+  return h < 0 ? h + 360 : h
+}
 
 type Phase = "permission" | "denied" | "unsupported" | "live" | "review" | "publishing"
 
@@ -251,14 +275,19 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     if (v > 0 && !(await ensureFaceLoaded())) return
     setMakeup((m) => ({ ...m, skinSmooth: v }))
   }
-  const setLip = async (color: string | null) => {
-    if (color && !(await ensureFaceLoaded())) return
-    setMakeup((m) => ({ ...m, lipstick: color ? 0.8 : 0, lipColor: color || m.lipColor }))
+  const setLipOpacity = async (v: number) => {
+    if (v > 0 && !(await ensureFaceLoaded())) return
+    setMakeup((m) => ({ ...m, lipstick: v }))
   }
-  const setBlushColor = async (color: string | null) => {
-    if (color && !(await ensureFaceLoaded())) return
-    setMakeup((m) => ({ ...m, blush: color ? 0.6 : 0, blushColor: color || m.blushColor }))
+  const setLipHue = (h: number) => setMakeup((m) => ({ ...m, lipColor: hueToHex(h) }))
+  const setLipBlur = (v: number) => setMakeup((m) => ({ ...m, lipBlur: v }))
+
+  const setBlushOpacity = async (v: number) => {
+    if (v > 0 && !(await ensureFaceLoaded())) return
+    setMakeup((m) => ({ ...m, blush: v }))
   }
+  const setBlushHue = (h: number) => setMakeup((m) => ({ ...m, blushColor: hueToHex(h) }))
+  const setBlushBlur = (v: number) => setMakeup((m) => ({ ...m, blushBlur: v }))
 
   const canvasPoint = (e: React.PointerEvent) => {
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect()
@@ -569,21 +598,19 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
                     )}
 
                     {panelTab === "maquiagem" && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="w-16 shrink-0 text-[11px] text-white/60">Batom</span>
-                          <button onClick={() => setLip(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.lipstick === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
-                          {LIP_COLORS.map((c) => (
-                            <button key={c} onClick={() => setLip(c)} aria-label={`Batom ${c}`} className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.lipstick > 0 && makeup.lipColor === c ? "ring-white" : "ring-transparent")} style={{ background: c }} />
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Batom</p>
+                          <HueSlider label="Cor" hue={hexToHue(makeup.lipColor)} color={makeup.lipColor} onChange={setLipHue} />
+                          <Slider label="Opacidade" value={makeup.lipstick} min={0} max={1} onChange={setLipOpacity} />
+                          <Slider label="Blur" value={makeup.lipBlur} min={0} max={1} onChange={setLipBlur} />
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="w-16 shrink-0 text-[11px] text-white/60">Blush</span>
-                          <button onClick={() => setBlushColor(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.blush === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
-                          {BLUSH_COLORS.map((c) => (
-                            <button key={c} onClick={() => setBlushColor(c)} aria-label={`Blush ${c}`} className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.blush > 0 && makeup.blushColor === c ? "ring-white" : "ring-transparent")} style={{ background: c }} />
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Blush</p>
+                          <HueSlider label="Cor" hue={hexToHue(makeup.blushColor)} color={makeup.blushColor} onChange={setBlushHue} />
+                          <Slider label="Opacidade" value={makeup.blush} min={0} max={1} onChange={setBlushOpacity} />
+                          <Slider label="Blur" value={makeup.blushBlur} min={0} max={1} onChange={setBlushBlur} />
                         </div>
                         {faceLoading && <p className="flex items-center gap-1.5 text-[11px] text-yellow-300"><Loader2 className="h-3.5 w-3.5 animate-spin" />Carregando detector de rosto…</p>}
                       </div>
@@ -670,6 +697,25 @@ function Slider({ label, value, min, max, onChange }: { label: string; value: nu
     <label className="flex items-center gap-3 text-[11px] text-white/60">
       <span className="w-20 shrink-0">{label}</span>
       <input type="range" min={min} max={max} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-1 flex-1 accent-yellow-400" />
+    </label>
+  )
+}
+
+function HueSlider({ label, hue, color, onChange }: { label: string; hue: number; color: string; onChange: (h: number) => void }) {
+  return (
+    <label className="flex items-center gap-3 text-[11px] text-white/60">
+      <span className="w-20 shrink-0">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={360}
+        step={1}
+        value={hue}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-transparent"
+        style={{ background: "linear-gradient(to right,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)" }}
+      />
+      <span className="h-5 w-5 shrink-0 rounded-full ring-1 ring-white/40" style={{ background: color }} />
     </label>
   )
 }
