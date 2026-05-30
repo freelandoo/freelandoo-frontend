@@ -36,6 +36,13 @@ type UserType = "client" | "freelancer"
 
 export default function CadastroPage() {
   const router = useRouter()
+  // Destino interno opcional (ex.: vindo da Casa Views via /cadastro?next=...).
+  const [nextParam, setNextParam] = useState<string | null>(null)
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("next")
+    if (raw && raw.startsWith("/") && !raw.startsWith("//")) setNextParam(raw)
+  }, [])
+  const loginHref = nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"
   const t = useTranslations("Signup")
   const tAuth = useTranslations("Auth")
   const [step, setStep] = useState<Step>(1)
@@ -304,7 +311,7 @@ export default function CadastroPage() {
             <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto" priority />
             <span className="text-lg font-black text-[#F5F1E8]">freelandoo</span>
           </Link>
-          <Link href="/login" className="text-sm font-bold text-[#F5F1E8]/80 transition hover:text-[#F5F1E8]">
+          <Link href={loginHref} className="text-sm font-bold text-[#F5F1E8]/80 transition hover:text-[#F5F1E8]">
             {t("doLogin", "Faça login")}
           </Link>
         </div>
@@ -346,7 +353,7 @@ export default function CadastroPage() {
 
             {!isMinorBirth && (
               <div className="mb-6 space-y-4">
-                <GoogleSignInButton text="signup_with" />
+                <GoogleSignInButton text="signup_with" redirectTo={nextParam ?? undefined} />
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-[#0B0B0D]/12" />
@@ -563,7 +570,7 @@ export default function CadastroPage() {
 
               <p className="text-center text-sm text-[#5b554b]">
                 {t("alreadyHaveAccount", "Já tem uma conta?")}{" "}
-                <Link href="/login" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+                <Link href={loginHref} className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
                   {t("doLogin", "Faça login")}
                 </Link>
               </p>

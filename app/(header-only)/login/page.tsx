@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
@@ -17,6 +17,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  // Destino pós-login: ?next=<rota interna> (ex.: vindo da Casa Views). Só
+  // aceita caminhos internos para evitar open-redirect.
+  const [nextParam, setNextParam] = useState<string | null>(null)
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("next")
+    if (raw && raw.startsWith("/") && !raw.startsWith("//")) setNextParam(raw)
+  }, [])
   const t = useTranslations("Auth")
   const tCommon = useTranslations("Common")
   const tErr = useTranslations("Errors")
@@ -59,7 +66,8 @@ export default function LoginPage() {
       }
 
       setSession(session.token, session.user)
-      const target = session.emailVerified === false ? "/verify-email" : "/search"
+      const target =
+        session.emailVerified === false ? "/verify-email" : nextParam ?? "/search"
       didRedirect = true
       // SPA primeiro (rápido, mantém socket), fallback duro depois.
       try {
@@ -103,14 +111,17 @@ export default function LoginPage() {
         footer={
           <>
             {t("noAccount", "Não tem uma conta?")}{" "}
-            <Link href="/cadastro" className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline">
+            <Link
+              href={nextParam ? `/cadastro?next=${encodeURIComponent(nextParam)}` : "/cadastro"}
+              className="font-bold text-[#0B0B0D] underline-offset-2 hover:underline"
+            >
               {t("register", "Cadastre-se")}
             </Link>
           </>
         }
       >
         <div className="space-y-4">
-          <GoogleSignInButton text="signin_with" />
+          <GoogleSignInButton text="signin_with" redirectTo={nextParam ?? undefined} />
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-[#0B0B0D]/12" />

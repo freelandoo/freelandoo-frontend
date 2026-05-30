@@ -44,6 +44,22 @@ export default function Navbar() {
           <Link href="/acasaviews/investidores" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             A Casa Views
           </Link>
+          <Link href="/acasaviews/rankings" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Rankings
+          </Link>
+          {/* Auth = Freelandoo. Entrar/Criar conta voltam pro ranking após login. */}
+          <Link
+            href="/login?next=/acasaviews/rankings"
+            className="rounded-full border border-white/25 px-4 py-1.5 text-sm font-semibold text-foreground transition-colors hover:border-white/60"
+          >
+            Entrar
+          </Link>
+          <Link
+            href="/cadastro?next=/acasaviews/rankings"
+            className="rounded-full bg-[var(--cyan,#16c8e8)] px-4 py-1.5 text-sm font-bold text-black transition-opacity hover:opacity-90"
+          >
+            Criar conta
+          </Link>
         </div>
 
         <button
@@ -93,6 +109,29 @@ export default function Navbar() {
             >
               A Casa Views
             </Link>
+            <Link
+              href="/acasaviews/rankings"
+              className="block text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Rankings
+            </Link>
+            <div className="flex gap-2 pt-2">
+              <Link
+                href="/login?next=/acasaviews/rankings"
+                className="flex-1 rounded-full border border-white/25 px-4 py-2 text-center text-sm font-semibold text-foreground"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/cadastro?next=/acasaviews/rankings"
+                className="flex-1 rounded-full bg-[var(--cyan,#16c8e8)] px-4 py-2 text-center text-sm font-bold text-black"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Criar conta
+              </Link>
+            </div>
           </div>
         </div>
       )}
