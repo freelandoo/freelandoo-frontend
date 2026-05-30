@@ -1,0 +1,105 @@
+// lib/camera/capabilities.ts
+// Detecção de capacidade em runtime (NUNCA por user-agent). Decide o caminho
+// de gravação: WebCodecs (GPU-local, ideal) → MediaRecorder MP4 → fallback file.
+
+export type RecordPath = "webcodecs" | "mediarecorder" | "none"
+
+export interface CameraCapabilities {
+  getUserMedia: boolean
+  webgl: boolean
+  webgl2: boolean
+  webcodecsVideo: boolean // VideoEncoder + VideoFrame
+  webcodecsAudio: boolean // AudioEncoder
+  mediaRecorder: boolean
+  mediaRecorderMp4: boolean
+  recordPath: RecordPath
+  canFilter: boolean
+}
+
+function hasWebGL(version: 1 | 2): boolean {
+  if (typeof document === "undefined") return false
+  try {
+    const c = document.createElement("canvas")
+    const ctx =
+      version === 2 ? c.getContext("webgl2") : c.getContext("webgl") || c.getContext("experimental-webgl")
+    return !!ctx
+  } catch {
+    return false
+  }
+}
+
+function mediaRecorderSupportsMp4(): boolean {
+  if (typeof MediaRecorder === "undefined") return false
+  try {
+    return (
+      MediaRecorder.isTypeSupported("video/mp4;codecs=avc1.42E01E,mp4a.40.2") ||
+      MediaRecorder.isTypeSupported("video/mp4;codecs=avc1") ||
+      MediaRecorder.isTypeSupported("video/mp4")
+    )
+  } catch {
+    return false
+  }
+}
+
+export function detectCapabilities(): CameraCapabilities {
+  const getUserMedia =
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === "function"
+
+  const webgl2 = hasWebGL(2)
+  const webgl = webgl2 || hasWebGL(1)
+
+  const webcodecsVideo =
+    typeof window !== "undefined" &&
+    typeof (window as unknown as { VideoEncoder?: unknown }).VideoEncoder !== "undefined" &&
+    typeof (window as unknown as { VideoFrame?: unknown }).VideoFrame !== "undefined"
+
+  const webcodecsAudio =
+    typeof window !== "undefined" &&
+    typeof (window as unknown as { AudioEncoder?: unknown }).AudioEncoder !== "undefined"
+
+  const mediaRecorder = typeof MediaRecorder !== "undefined"
+  const mediaRecorderMp4 = mediaRecorderSupportsMp4()
+
+  // WebCodecs só vale a pena com WebGL (precisamos renderizar frames filtrados).
+  let recordPath: RecordPath = "none"
+  if (webcodecsVideo && webgl) recordPath = "webcodecs"
+  else if (mediaRecorder && mediaRecorderMp4) recordPath = "mediarecorder"
+
+  return {
+    getUserMedia,
+    webgl,
+    webgl2,
+    webcodecsVideo,
+    webcodecsAudio,
+    mediaRecorder,
+    mediaRecorderMp4,
+    recordPath,
+    canFilter: webgl,
+  }
+}
+
+/**
+ * Checagem assíncrona fina do VideoEncoder (config H.264 realmente suportada).
+ * Chamar antes de gravar pelo caminho webcodecs; se falhar, cair p/ mediarecorder.
+ */
+export async function isH264EncodeSupported(width: number, height: number): Promise<boolean> {
+  const w = window as unknown as {
+    VideoEncoder?: { isConfigSupported?: (c: unknown) => Promise<{ supported?: boolean }> }
+  }
+  if (!w.VideoEncoder?.isConfigSupported) return false
+  try {
+    const even = (n: number) => (n % 2 === 0 ? n : n - 1)
+    const res = await w.VideoEncoder.isConfigSupported({
+      codec: "avc1.42E01E", // H.264 Baseline 3.0
+      width: even(width),
+      height: even(height),
+      bitrate: 4_000_000,
+      framerate: 30,
+    })
+    return !!res?.supported
+  } catch {
+    return false
+  }
+}

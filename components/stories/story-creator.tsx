@@ -17,6 +17,7 @@ import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
+import { CameraStudio } from "@/components/camera/CameraStudio"
 
 type StoryKind = "trampo" | "rest"
 
@@ -56,6 +57,7 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
   const [caption, setCaption] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => { setKind(initialKind) }, [initialKind])
@@ -315,6 +317,17 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
               </span>
             </div>
 
+            {!previewUrl && selectedProfileId && (
+              <button
+                type="button"
+                onClick={() => setCameraOpen(true)}
+                className="mb-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-yellow-400/30 bg-gradient-to-r from-yellow-400/10 to-amber-500/[0.06] px-4 py-2.5 text-sm font-semibold text-yellow-200 transition hover:border-yellow-400/50 hover:from-yellow-400/15"
+              >
+                <Video className="h-4 w-4" />
+                {t("recordWithCamera", "Gravar com a câmera (filtros)")}
+              </button>
+            )}
+
             <AnimatePresence mode="wait" initial={false}>
               {previewUrl ? (
                 <motion.div
@@ -446,6 +459,20 @@ export function StoryCreator({ open, initialKind = "rest", onClose, onPosted }: 
           </motion.button>
         </footer>
       </motion.div>
+
+      <CameraStudio
+        open={cameraOpen}
+        profileId={selectedProfileId}
+        kind={effectiveKind}
+        caption={caption.trim() || undefined}
+        onClose={() => setCameraOpen(false)}
+        onPosted={() => {
+          setCameraOpen(false)
+          onPosted?.()
+          onClose()
+          router.refresh()
+        }}
+      />
     </div>
   )
 }
