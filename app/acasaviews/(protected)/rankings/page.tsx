@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, Eye, Trophy } from "lucide-react"
+import { ArrowRight, Eye, Trophy } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 
 export const metadata: Metadata = {
@@ -44,14 +44,7 @@ export default function RankingsLandingPage() {
       <div className="casa-dots pointer-events-none absolute left-0 bottom-10 h-32 w-32 opacity-[0.06]" />
 
       {/* topo / marca */}
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-5 pt-8 md:px-10">
-        <Link
-          href="/acasaviews/investidores"
-          className="inline-flex items-center gap-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.22em] text-[var(--ink-soft)]/60 transition-colors hover:text-[var(--ink)]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          A Casa Views
-        </Link>
+      <header className="mx-auto flex max-w-5xl items-center justify-end px-5 pt-8 md:px-10">
         <span className="casa-tape inline-block -rotate-2 px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink)]">
           ao vivo
         </span>

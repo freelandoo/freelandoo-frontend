@@ -17,7 +17,7 @@ export function RankingHeader({
   category,
   pageCurrent,
   pageTotal,
-  backHref = "/acasaviews/investidores",
+  backHref = "/acasaviews/rankings",
   switchHref,
   switchLabel,
 }: RankingHeaderProps) {
