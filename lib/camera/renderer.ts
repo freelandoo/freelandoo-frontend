@@ -4,8 +4,10 @@
 // canvas 2D, então TUDO que aparece no preview entra no vídeo final.
 
 import { FilterState, OverlayState, BRAND_YELLOW } from "./types"
+import { MakeupState, NEUTRAL_MAKEUP } from "./types"
 import type { FaceLite, P } from "./face-tracker"
 import { drawAccessory, type FaceGeomPx } from "./face-accessories"
+import { drawMakeup } from "./face-makeup"
 
 const VERT = `
 attribute vec2 a_pos;
@@ -36,12 +38,43 @@ uniform float u_mono;
 uniform vec3 u_tint;
 uniform float u_tintStrength;
 uniform float u_time;
+uniform float u_skinSmooth;
+uniform vec2 u_faceCenter;
+uniform vec2 u_faceRadius;
+uniform float u_blurStep;
 
 float rand(vec2 c) { return fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453); }
+
+void accum(inout vec3 sum, inout float wsum, vec2 uv, vec2 off, vec3 center) {
+  vec3 s = texture2D(u_tex, uv + off * u_blurStep).rgb;
+  float diff = dot(s - center, s - center);
+  float w = exp(-diff * 32.0); // bilateral: preserva bordas
+  sum += s * w;
+  wsum += w;
+}
 
 void main() {
   vec2 uv = v_uv * u_uvScale + u_uvOffset;
   vec3 col = texture2D(u_tex, uv).rgb;
+
+  // suavização de pele (bilateral) mascarada na elipse do rosto
+  if (u_skinSmooth > 0.0) {
+    vec2 fd = (v_uv - u_faceCenter) / max(u_faceRadius, vec2(0.001));
+    float faceMask = 1.0 - smoothstep(0.7, 1.0, length(fd));
+    if (faceMask > 0.0) {
+      vec3 sum = col; float wsum = 1.0;
+      accum(sum, wsum, uv, vec2( 1.0, 0.0), col);
+      accum(sum, wsum, uv, vec2(-1.0, 0.0), col);
+      accum(sum, wsum, uv, vec2( 0.0, 1.0), col);
+      accum(sum, wsum, uv, vec2( 0.0,-1.0), col);
+      accum(sum, wsum, uv, vec2( 1.0, 1.0), col);
+      accum(sum, wsum, uv, vec2(-1.0, 1.0), col);
+      accum(sum, wsum, uv, vec2( 1.0,-1.0), col);
+      accum(sum, wsum, uv, vec2(-1.0,-1.0), col);
+      vec3 blurred = sum / wsum;
+      col = mix(col, blurred, faceMask * u_skinSmooth);
+    }
+  }
 
   // temperatura (desloca R/B)
   col.r += u_temperature * 0.12;
@@ -101,6 +134,7 @@ export class CameraRenderer {
   private flipX = false
   private startTime = performance.now()
   private face: FaceLite | null = null
+  private makeup: MakeupState = NEUTRAL_MAKEUP
   private cover = { sx: 1, sy: 1, ox: 0, oy: 0 }
 
   constructor(output: HTMLCanvasElement, filter: FilterState, overlay: OverlayState) {
@@ -152,6 +186,7 @@ export class CameraRenderer {
       "u_flipX", "u_uvScale", "u_uvOffset", "u_brightness", "u_contrast",
       "u_saturation", "u_temperature", "u_vignette", "u_grain", "u_mono",
       "u_tint", "u_tintStrength", "u_time", "u_tex",
+      "u_skinSmooth", "u_faceCenter", "u_faceRadius", "u_blurStep",
     ]) {
       this.uloc[name] = gl.getUniformLocation(program, name)
     }
@@ -173,6 +208,7 @@ export class CameraRenderer {
   setOverlay(o: OverlayState) { this.overlay = o }
   setFlipX(flip: boolean) { this.flipX = flip }
   setFace(f: FaceLite | null) { this.face = f }
+  setMakeup(m: MakeupState) { this.makeup = m }
 
   /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída,
    *  aplicando a MESMA transformação cover+flip do shader. */
@@ -224,6 +260,31 @@ export class CameraRenderer {
     gl.uniform3f(this.uloc.u_tint, f.tint[0], f.tint[1], f.tint[2])
     gl.uniform1f(this.uloc.u_tintStrength, f.tintStrength)
     gl.uniform1f(this.uloc.u_time, (performance.now() - this.startTime) / 1000)
+
+    // suavização de pele: elipse do rosto em screen-uv (0..1 do canvas de saída)
+    let skin = 0
+    if (this.makeup.skinSmooth > 0 && this.face) {
+      skin = this.makeup.skinSmooth
+      const toScreen = (p: P) => {
+        const m = this.mapPoint(p)
+        return { x: m.x / this.W, y: m.y / this.H }
+      }
+      const eyeMid = toScreen({
+        x: (this.face.leftEye.x + this.face.rightEye.x) / 2,
+        y: (this.face.leftEye.y + this.face.rightEye.y) / 2,
+      } as P)
+      const chin = toScreen(this.face.chin)
+      const lc = toScreen(this.face.leftCheek)
+      const rc = toScreen(this.face.rightCheek)
+      const cx = (lc.x + rc.x) / 2
+      const cy = (eyeMid.y + chin.y) / 2
+      const rx = Math.abs(rc.x - lc.x) * 0.62
+      const ry = Math.abs(chin.y - eyeMid.y) * 0.95
+      gl.uniform2f(this.uloc.u_faceCenter, cx, cy)
+      gl.uniform2f(this.uloc.u_faceRadius, Math.max(rx, 0.02), Math.max(ry, 0.02))
+      gl.uniform1f(this.uloc.u_blurStep, 0.0035)
+    }
+    gl.uniform1f(this.uloc.u_skinSmooth, skin)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
     // compositing 2D
@@ -274,6 +335,16 @@ export class CameraRenderer {
       ctx.fillStyle = BRAND_YELLOW
       ctx.fillText("freelandoo", pad, H - pad)
     }
+    // maquiagem (batom/blush) — colada na pele, abaixo de acessórios/stickers
+    if (this.face && (this.makeup.lipstick > 0 || this.makeup.blush > 0)) {
+      const f = this.face
+      const faceWidth = Math.hypot(
+        this.mapPoint(f.leftCheek).x - this.mapPoint(f.rightCheek).x,
+        this.mapPoint(f.leftCheek).y - this.mapPoint(f.rightCheek).y
+      )
+      drawMakeup(ctx, this.makeup, (i) => this.mapPoint(f.all[i]), faceWidth)
+    }
+
     // acessório de rosto (face tracking) — desenhado antes dos stickers
     if (o.accessory !== "none" && this.face) {
       const f = this.face

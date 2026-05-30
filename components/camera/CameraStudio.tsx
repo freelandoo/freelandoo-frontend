@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw,
-  SwitchCamera, Upload, X, Sliders, Sparkles,
+  SwitchCamera, Upload, X, Sliders, Sparkles, Palette,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
@@ -17,7 +17,7 @@ import { PRESETS, DEFAULT_PRESET_ID, getPreset } from "@/lib/camera/presets"
 import { FaceTracker } from "@/lib/camera/face-tracker"
 import {
   FilterState, OverlayState, FrameStyle, StickerInstance, FilterMeta,
-  NEUTRAL_OVERLAY, StoryKind, AccessoryType,
+  NEUTRAL_OVERLAY, StoryKind, AccessoryType, MakeupState, NEUTRAL_MAKEUP,
 } from "@/lib/camera/types"
 
 const MAX_DURATION = 60
@@ -38,6 +38,8 @@ const ACCESSORIES: { id: AccessoryType; label: string }[] = [
   { id: "crown", label: "👑 Coroa" },
   { id: "hat", label: "🎉 Chapéu" },
 ]
+const LIP_COLORS = ["#c2185b", "#e53935", "#ad1457", "#8e24aa", "#6d4c41"]
+const BLUSH_COLORS = ["#f0708a", "#f4978e", "#e9967a"]
 
 type Phase = "permission" | "denied" | "unsupported" | "live" | "review" | "publishing"
 
@@ -59,6 +61,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const rafRef = useRef<number | null>(null)
   const filterRef = useRef<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
   const overlayRef = useRef<OverlayState>(NEUTRAL_OVERLAY)
+  const makeupRef = useRef<MakeupState>(NEUTRAL_MAKEUP)
   const recStartRef = useRef<number>(0)
   const faceTrackerRef = useRef<FaceTracker | null>(null)
 
@@ -69,7 +72,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID)
   const [filter, setFilter] = useState<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
   const [overlay, setOverlay] = useState<OverlayState>(NEUTRAL_OVERLAY)
+  const [makeup, setMakeup] = useState<MakeupState>(NEUTRAL_MAKEUP)
   const [showAdjust, setShowAdjust] = useState(false)
+  const [showMakeup, setShowMakeup] = useState(false)
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<RecordResult | null>(null)
@@ -81,17 +86,23 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
 
   useEffect(() => { filterRef.current = filter }, [filter])
   useEffect(() => { overlayRef.current = overlay }, [overlay])
+  useEffect(() => { makeupRef.current = makeup }, [makeup])
 
   // ─── loop de render ──────────────────────────────────────────────────────
   const loop = useCallback(() => {
     const r = rendererRef.current
     const v = videoRef.current
     if (r && v && v.readyState >= 2) {
-      if (overlayRef.current.accessory !== "none" && faceTrackerRef.current) {
+      const mk = makeupRef.current
+      const faceActive =
+        overlayRef.current.accessory !== "none" ||
+        mk.skinSmooth > 0 || mk.lipstick > 0 || mk.blush > 0
+      if (faceActive && faceTrackerRef.current) {
         r.setFace(faceTrackerRef.current.detect(v, performance.now()))
       } else {
         r.setFace(null)
       }
+      r.setMakeup(mk)
       r.setFilter(filterRef.current)
       r.setOverlay(overlayRef.current)
       r.renderFrame(v)
@@ -201,26 +212,40 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   }
   const clearStickers = () => setOverlay((o) => ({ ...o, stickers: [] }))
 
-  // ─── acessórios de rosto (lazy-load do MediaPipe) ──────────────────────────
-  const selectAccessory = async (type: AccessoryType) => {
-    if (type === "none") {
-      setOverlay((o) => ({ ...o, accessory: "none" }))
-      return
-    }
-    if (!faceTrackerRef.current && !faceLoading) {
-      setFaceLoading(true)
-      setError(null)
-      try {
-        faceTrackerRef.current = await FaceTracker.create()
-      } catch {
-        setError("Não foi possível carregar o detector de rosto neste aparelho.")
-        setFaceLoading(false)
-        setOverlay((o) => ({ ...o, accessory: "none" }))
-        return
-      }
+  // ─── face tracking lazy (acessórios + maquiagem compartilham o detector) ───
+  const ensureFaceLoaded = async (): Promise<boolean> => {
+    if (faceTrackerRef.current) return true
+    if (faceLoading) return false
+    setFaceLoading(true)
+    setError(null)
+    try {
+      faceTrackerRef.current = await FaceTracker.create()
+    } catch {
+      setError("Não foi possível carregar o detector de rosto neste aparelho.")
       setFaceLoading(false)
+      return false
     }
+    setFaceLoading(false)
+    return true
+  }
+
+  const selectAccessory = async (type: AccessoryType) => {
+    if (type === "none") { setOverlay((o) => ({ ...o, accessory: "none" })); return }
+    if (!(await ensureFaceLoaded())) return
     setOverlay((o) => ({ ...o, accessory: type }))
+  }
+
+  const setSkin = async (v: number) => {
+    if (v > 0 && !(await ensureFaceLoaded())) return
+    setMakeup((m) => ({ ...m, skinSmooth: v }))
+  }
+  const setLip = async (color: string | null) => {
+    if (color && !(await ensureFaceLoaded())) return
+    setMakeup((m) => ({ ...m, lipstick: color ? 0.8 : 0, lipColor: color || m.lipColor }))
+  }
+  const setBlushColor = async (color: string | null) => {
+    if (color && !(await ensureFaceLoaded())) return
+    setMakeup((m) => ({ ...m, blush: color ? 0.6 : 0, blushColor: color || m.blushColor }))
   }
 
   const canvasPoint = (e: React.PointerEvent) => {
@@ -319,6 +344,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       preset: presetId,
       filter,
       overlay: { frame: overlay.frame, watermark: overlay.watermark, sticker_count: overlay.stickers.length, accessory: overlay.accessory },
+      makeup: { skin_smooth: makeup.skinSmooth, lipstick: makeup.lipstick, blush: makeup.blush },
       encoder: result.encoder,
     }
     try {
@@ -496,6 +522,39 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
               )}
             </AnimatePresence>
 
+            {/* maquiagem retrátil */}
+            <AnimatePresence>
+              {showMakeup && !recording && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden px-5"
+                >
+                  <div className="space-y-2.5 py-2">
+                    <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 shrink-0 text-[11px] text-white/60">Batom</span>
+                      <button onClick={() => setLip(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.lipstick === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
+                      {LIP_COLORS.map((c) => (
+                        <button key={c} onClick={() => setLip(c)} aria-label={`Batom ${c}`}
+                          className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.lipstick > 0 && makeup.lipColor === c ? "ring-white" : "ring-transparent")}
+                          style={{ background: c }} />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-20 shrink-0 text-[11px] text-white/60">Blush</span>
+                      <button onClick={() => setBlushColor(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.blush === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
+                      {BLUSH_COLORS.map((c) => (
+                        <button key={c} onClick={() => setBlushColor(c)} aria-label={`Blush ${c}`}
+                          className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.blush > 0 && makeup.blushColor === c ? "ring-white" : "ring-transparent")}
+                          style={{ background: c }} />
+                      ))}
+                    </div>
+                    {faceLoading && <p className="flex items-center gap-1.5 text-[11px] text-yellow-300"><Loader2 className="h-3.5 w-3.5 animate-spin" />Carregando detector de rosto…</p>}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* acessórios de rosto */}
             {!recording && (
               <div className="flex items-center gap-2 overflow-x-auto px-5 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -538,7 +597,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
 
             {/* barra de ação */}
             <div className="flex items-center justify-between px-8 py-3">
-              <button onClick={() => setShowAdjust((s) => !s)} className={cn("rounded-full p-3", showAdjust ? "bg-yellow-400/20 text-yellow-300" : "bg-white/10 text-white")} aria-label="Ajustes">
+              <button onClick={() => { setShowAdjust((s) => !s); setShowMakeup(false) }} className={cn("rounded-full p-3", showAdjust ? "bg-yellow-400/20 text-yellow-300" : "bg-white/10 text-white")} aria-label="Ajustes">
                 <Sliders className="h-5 w-5" />
               </button>
 
@@ -550,7 +609,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
                 <span className={cn("transition-all", recording ? "h-7 w-7 rounded-md bg-red-500" : "h-14 w-14 rounded-full bg-red-500 ring-4 ring-white/30")} />
               </button>
 
-              <div className="w-11" />
+              <button onClick={() => { setShowMakeup((s) => !s); setShowAdjust(false) }} className={cn("rounded-full p-3", showMakeup ? "bg-yellow-400/20 text-yellow-300" : "bg-white/10 text-white")} aria-label="Maquiagem">
+                <Palette className="h-5 w-5" />
+              </button>
             </div>
           </div>
         )}

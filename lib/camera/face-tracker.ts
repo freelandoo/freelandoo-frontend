@@ -15,7 +15,8 @@ export interface P {
   y: number
 }
 
-/** Poucos pontos do mesh (478) que os acessórios precisam. */
+/** Poucos pontos do mesh (478) que os acessórios precisam + o mesh completo
+ *  (a maquiagem usa o contorno dos lábios e bochechas). */
 export interface FaceLite {
   leftEye: P
   rightEye: P
@@ -24,6 +25,7 @@ export interface FaceLite {
   leftCheek: P
   rightCheek: P
   noseTip: P
+  all: P[]
 }
 
 // Índices canônicos do FaceMesh do MediaPipe.
@@ -87,6 +89,7 @@ export class FaceTracker {
       leftCheek: pt(IDX.leftCheek),
       rightCheek: pt(IDX.rightCheek),
       noseTip: pt(IDX.noseTip),
+      all: lm.map((p: { x: number; y: number }) => ({ x: p.x, y: p.y })),
     }
   }
 

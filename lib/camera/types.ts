@@ -29,6 +29,23 @@ export interface OverlayState {
   accessory: AccessoryType // acessório de rosto (face tracking)
 }
 
+/** Maquiagem básica (face tracking) — pele no shader, batom/blush no compositor. */
+export interface MakeupState {
+  skinSmooth: number // 0..1 (suavização de pele)
+  lipstick: number // 0..1 (0 = desligado)
+  lipColor: string
+  blush: number // 0..1
+  blushColor: string
+}
+
+export const NEUTRAL_MAKEUP: MakeupState = {
+  skinSmooth: 0,
+  lipstick: 0,
+  lipColor: "#c2185b",
+  blush: 0,
+  blushColor: "#f0708a",
+}
+
 export interface StickerInstance {
   id: string
   char: string // emoji / glifo
@@ -50,6 +67,7 @@ export interface FilterMeta {
   preset: string
   filter: FilterState
   overlay: { frame: FrameStyle; watermark: boolean; sticker_count: number; accessory: AccessoryType }
+  makeup: { skin_smooth: number; lipstick: number; blush: number }
   encoder: "webcodecs" | "mediarecorder"
 }
 
