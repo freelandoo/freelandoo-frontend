@@ -588,3 +588,7 @@
   .fl-hard, .fl-btn-gold { transition: none !important; }
   .fl-like-tape { animation: none !important; }
 }
+
+/* Câmera (CameraStudio): oculta a toolbar global enquanto a câmera está ativa */
+body.camera-active [data-app-toolbar] { display: none !important; }
+body.camera-active { overflow: hidden; }

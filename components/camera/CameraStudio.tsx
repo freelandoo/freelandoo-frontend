@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw,
-  SwitchCamera, Upload, X, Sliders, Sparkles, Palette,
+  SwitchCamera, Upload, X, Sparkles, Palette,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
@@ -41,6 +41,14 @@ const ACCESSORIES: { id: AccessoryType; label: string }[] = [
 const LIP_COLORS = ["#c2185b", "#e53935", "#ad1457", "#8e24aa", "#6d4c41"]
 const BLUSH_COLORS = ["#f0708a", "#f4978e", "#e9967a"]
 
+type PanelTab = null | "filtros" | "rostos" | "maquiagem" | "molduras"
+const TABS: { id: Exclude<PanelTab, null>; label: string }[] = [
+  { id: "filtros", label: "Filtros" },
+  { id: "rostos", label: "Rostos" },
+  { id: "maquiagem", label: "Maquiagem" },
+  { id: "molduras", label: "Molduras" },
+]
+
 type Phase = "permission" | "denied" | "unsupported" | "live" | "review" | "publishing"
 
 interface CameraStudioProps {
@@ -73,8 +81,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [filter, setFilter] = useState<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
   const [overlay, setOverlay] = useState<OverlayState>(NEUTRAL_OVERLAY)
   const [makeup, setMakeup] = useState<MakeupState>(NEUTRAL_MAKEUP)
-  const [showAdjust, setShowAdjust] = useState(false)
-  const [showMakeup, setShowMakeup] = useState(false)
+  const [panelTab, setPanelTab] = useState<PanelTab>(null)
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<RecordResult | null>(null)
@@ -152,15 +159,19 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   // init quando abre
   useEffect(() => {
     if (!open) return
+    document.body.classList.add("camera-active") // oculta a toolbar global
     const c = detectCapabilities()
     setCaps(c)
     if (!c.getUserMedia || c.recordPath === "none" || !c.canFilter) {
       setPhase("unsupported")
-      return
+      return () => { document.body.classList.remove("camera-active") }
     }
     setPhase("permission")
     // não auto-inicia: espera o gesto do usuário (botão "Permitir")
-    return () => { teardown() }
+    return () => {
+      teardown()
+      document.body.classList.remove("camera-active")
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -501,124 +512,132 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
           </AnimatePresence>
         </div>
 
-        {/* CONTROLES (live) */}
+        {/* CONTROLES (live) — mínimo sobre o vídeo + painel glass por aba */}
         {phase === "live" && (
-          <div className="relative z-20 shrink-0 bg-gradient-to-t from-black via-black/95 to-transparent pb-[max(env(safe-area-inset-bottom),1rem)] pt-2">
-            {/* ajustes retráteis */}
+          <>
+            {/* painel de opções (transparente, abre só ao tocar no botão de cores) */}
             <AnimatePresence>
-              {showAdjust && (
+              {panelTab && !recording && (
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden px-5"
+                  initial={{ y: 28, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 28, opacity: 0 }}
+                  transition={SPRING}
+                  className="absolute inset-x-3 bottom-[116px] z-20 overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
                 >
-                  <div className="space-y-2 py-2">
-                    <Slider label="Brilho" value={filter.brightness} min={-0.5} max={0.5} onChange={(v) => setAdj("brightness", v)} />
-                    <Slider label="Contraste" value={filter.contrast} min={-0.5} max={0.5} onChange={(v) => setAdj("contrast", v)} />
-                    <Slider label="Saturação" value={filter.saturation} min={-1} max={1} onChange={(v) => setAdj("saturation", v)} />
-                    <Slider label="Temperatura" value={filter.temperature} min={-0.5} max={0.5} onChange={(v) => setAdj("temperature", v)} />
-                    <Slider label="Vinheta" value={filter.vignette} min={0} max={1} onChange={(v) => setAdj("vignette", v)} />
+                  <div className="flex items-center gap-1 border-b border-white/10 p-1.5">
+                    {TABS.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setPanelTab(t.id)}
+                        className={cn(
+                          "flex-1 rounded-full px-2 py-1.5 text-[11px] font-semibold transition",
+                          panelTab === t.id ? "bg-yellow-400/20 text-yellow-300" : "text-white/55"
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="max-h-[40dvh] overflow-y-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {panelTab === "filtros" && (
+                      <div className="space-y-3">
+                        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                          {PRESETS.map((p) => (
+                            <button key={p.id} onClick={() => applyPreset(p.id)} className="flex shrink-0 flex-col items-center gap-1">
+                              <span className={cn("h-12 w-12 rounded-2xl ring-2 transition", presetId === p.id ? "ring-yellow-400" : "ring-white/15")} style={{ background: p.swatch }} />
+                              <span className={cn("text-[10px]", presetId === p.id ? "text-yellow-300" : "text-white/55")}>{p.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          <Slider label="Brilho" value={filter.brightness} min={-0.5} max={0.5} onChange={(v) => setAdj("brightness", v)} />
+                          <Slider label="Contraste" value={filter.contrast} min={-0.5} max={0.5} onChange={(v) => setAdj("contrast", v)} />
+                          <Slider label="Saturação" value={filter.saturation} min={-1} max={1} onChange={(v) => setAdj("saturation", v)} />
+                          <Slider label="Temperatura" value={filter.temperature} min={-0.5} max={0.5} onChange={(v) => setAdj("temperature", v)} />
+                          <Slider label="Vinheta" value={filter.vignette} min={0} max={1} onChange={(v) => setAdj("vignette", v)} />
+                        </div>
+                      </div>
+                    )}
+
+                    {panelTab === "rostos" && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {ACCESSORIES.map((a) => (
+                          <Chip key={a.id} active={overlay.accessory === a.id} onClick={() => selectAccessory(a.id)}>{a.label}</Chip>
+                        ))}
+                        {faceLoading && <Loader2 className="h-4 w-4 animate-spin text-yellow-300" />}
+                      </div>
+                    )}
+
+                    {panelTab === "maquiagem" && (
+                      <div className="space-y-3">
+                        <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="w-16 shrink-0 text-[11px] text-white/60">Batom</span>
+                          <button onClick={() => setLip(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.lipstick === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
+                          {LIP_COLORS.map((c) => (
+                            <button key={c} onClick={() => setLip(c)} aria-label={`Batom ${c}`} className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.lipstick > 0 && makeup.lipColor === c ? "ring-white" : "ring-transparent")} style={{ background: c }} />
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="w-16 shrink-0 text-[11px] text-white/60">Blush</span>
+                          <button onClick={() => setBlushColor(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.blush === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
+                          {BLUSH_COLORS.map((c) => (
+                            <button key={c} onClick={() => setBlushColor(c)} aria-label={`Blush ${c}`} className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.blush > 0 && makeup.blushColor === c ? "ring-white" : "ring-transparent")} style={{ background: c }} />
+                          ))}
+                        </div>
+                        {faceLoading && <p className="flex items-center gap-1.5 text-[11px] text-yellow-300"><Loader2 className="h-3.5 w-3.5 animate-spin" />Carregando detector de rosto…</p>}
+                      </div>
+                    )}
+
+                    {panelTab === "molduras" && (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {FRAMES.map((fr) => (
+                            <Chip key={fr.id} active={overlay.frame === fr.id} onClick={() => setOverlay((o) => ({ ...o, frame: fr.id }))}>{fr.label}</Chip>
+                          ))}
+                          <Chip active={overlay.watermark} onClick={() => setOverlay((o) => ({ ...o, watermark: !o.watermark }))}>Marca</Chip>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {STICKER_CHARS.map((c) => (
+                            <button key={c} onClick={() => addSticker(c)} className="rounded-lg px-1 text-2xl">{c}</button>
+                          ))}
+                          {overlay.stickers.length > 0 && (
+                            <button onClick={clearStickers} className="rounded-full bg-white/10 p-1.5 text-white/70"><RefreshCw className="h-3.5 w-3.5" /></button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* maquiagem retrátil */}
-            <AnimatePresence>
-              {showMakeup && !recording && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden px-5"
-                >
-                  <div className="space-y-2.5 py-2">
-                    <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
-                    <div className="flex items-center gap-2">
-                      <span className="w-20 shrink-0 text-[11px] text-white/60">Batom</span>
-                      <button onClick={() => setLip(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.lipstick === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
-                      {LIP_COLORS.map((c) => (
-                        <button key={c} onClick={() => setLip(c)} aria-label={`Batom ${c}`}
-                          className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.lipstick > 0 && makeup.lipColor === c ? "ring-white" : "ring-transparent")}
-                          style={{ background: c }} />
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-20 shrink-0 text-[11px] text-white/60">Blush</span>
-                      <button onClick={() => setBlushColor(null)} className={cn("h-6 rounded-full border px-2 text-[10px]", makeup.blush === 0 ? "border-yellow-400 text-yellow-300" : "border-white/20 text-white/60")}>Off</button>
-                      {BLUSH_COLORS.map((c) => (
-                        <button key={c} onClick={() => setBlushColor(c)} aria-label={`Blush ${c}`}
-                          className={cn("h-6 w-6 rounded-full ring-2 transition", makeup.blush > 0 && makeup.blushColor === c ? "ring-white" : "ring-transparent")}
-                          style={{ background: c }} />
-                      ))}
-                    </div>
-                    {faceLoading && <p className="flex items-center gap-1.5 text-[11px] text-yellow-300"><Loader2 className="h-3.5 w-3.5 animate-spin" />Carregando detector de rosto…</p>}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* acessórios de rosto */}
-            {!recording && (
-              <div className="flex items-center gap-2 overflow-x-auto px-5 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/30">Rostos</span>
-                {ACCESSORIES.map((a) => (
-                  <Chip key={a.id} active={overlay.accessory === a.id} onClick={() => selectAccessory(a.id)}>{a.label}</Chip>
-                ))}
-                {faceLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-yellow-300" />}
-              </div>
-            )}
-
-            {/* molduras + stickers + marca */}
-            {!recording && (
-              <div className="flex items-center gap-2 overflow-x-auto px-5 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {FRAMES.map((fr) => (
-                  <Chip key={fr.id} active={overlay.frame === fr.id} onClick={() => setOverlay((o) => ({ ...o, frame: fr.id }))}>{fr.label}</Chip>
-                ))}
-                <Chip active={overlay.watermark} onClick={() => setOverlay((o) => ({ ...o, watermark: !o.watermark }))}>Marca</Chip>
-                <span className="mx-1 h-5 w-px shrink-0 bg-white/15" />
-                {STICKER_CHARS.map((c) => (
-                  <button key={c} onClick={() => addSticker(c)} className="shrink-0 rounded-lg px-1.5 text-xl">{c}</button>
-                ))}
-                {overlay.stickers.length > 0 && (
-                  <button onClick={clearStickers} className="shrink-0 rounded-full bg-white/10 p-1.5 text-white/70"><RefreshCw className="h-3.5 w-3.5" /></button>
+            {/* barra de ação mínima sobre o vídeo */}
+            <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/55 to-transparent pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-10">
+              <div className="relative flex items-center justify-center">
+                <button onClick={() => (recording ? stopRecording() : startRecording())} className="relative flex h-[76px] w-[76px] items-center justify-center" aria-label={recording ? "Parar" : "Gravar"}>
+                  <svg className="absolute inset-0 -rotate-90" viewBox="0 0 76 76">
+                    <circle cx="38" cy="38" r="34" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
+                    {recording && <circle cx="38" cy="38" r="34" fill="none" stroke="#facc15" strokeWidth="4" strokeLinecap="round" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - progressPct / 100)} />}
+                  </svg>
+                  <span className={cn("transition-all", recording ? "h-7 w-7 rounded-md bg-red-500" : "h-14 w-14 rounded-full bg-red-500 ring-4 ring-white/30")} />
+                </button>
+                {!recording && (
+                  <button
+                    onClick={() => setPanelTab((t) => (t ? null : "filtros"))}
+                    className={cn("absolute right-7 top-1/2 -translate-y-1/2 rounded-full p-3.5 backdrop-blur-md transition", panelTab ? "bg-yellow-400/25 text-yellow-300" : "bg-white/15 text-white")}
+                    aria-label="Opções"
+                  >
+                    <Palette className="h-5 w-5" />
+                  </button>
                 )}
               </div>
-            )}
-
-            {/* presets */}
-            {!recording && (
-              <div className="flex items-center gap-2 overflow-x-auto px-5 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {PRESETS.map((p) => (
-                  <button key={p.id} onClick={() => applyPreset(p.id)} className="flex shrink-0 flex-col items-center gap-1">
-                    <span className={cn("h-11 w-11 rounded-xl ring-2 transition", presetId === p.id ? "ring-yellow-400" : "ring-white/15")} style={{ background: p.swatch }} />
-                    <span className={cn("text-[10px]", presetId === p.id ? "text-yellow-300" : "text-white/55")}>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* barra de ação */}
-            <div className="flex items-center justify-between px-8 py-3">
-              <button onClick={() => { setShowAdjust((s) => !s); setShowMakeup(false) }} className={cn("rounded-full p-3", showAdjust ? "bg-yellow-400/20 text-yellow-300" : "bg-white/10 text-white")} aria-label="Ajustes">
-                <Sliders className="h-5 w-5" />
-              </button>
-
-              <button onClick={() => (recording ? stopRecording() : startRecording())} className="relative flex h-[72px] w-[72px] items-center justify-center" aria-label={recording ? "Parar" : "Gravar"}>
-                <svg className="absolute inset-0 -rotate-90" viewBox="0 0 72 72">
-                  <circle cx="36" cy="36" r="33" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
-                  {recording && <circle cx="36" cy="36" r="33" fill="none" stroke="#facc15" strokeWidth="4" strokeLinecap="round" strokeDasharray={2 * Math.PI * 33} strokeDashoffset={2 * Math.PI * 33 * (1 - progressPct / 100)} />}
-                </svg>
-                <span className={cn("transition-all", recording ? "h-7 w-7 rounded-md bg-red-500" : "h-14 w-14 rounded-full bg-red-500 ring-4 ring-white/30")} />
-              </button>
-
-              <button onClick={() => { setShowMakeup((s) => !s); setShowAdjust(false) }} className={cn("rounded-full p-3", showMakeup ? "bg-yellow-400/20 text-yellow-300" : "bg-white/10 text-white")} aria-label="Maquiagem">
-                <Palette className="h-5 w-5" />
-              </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* CONTROLES (review) */}
+        {/* CONTROLES (review) — sobre o vídeo gravado */}
         {phase === "review" && result && (
-          <div className="relative z-20 shrink-0 bg-black pb-[max(env(safe-area-inset-bottom),1rem)] pt-3">
+          <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/70 to-transparent pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-10">
             {result.audioDropped && (
               <p className="px-6 pb-2 text-center text-[11px] text-amber-300/90">Seu navegador gravou sem áudio (limitação do iOS antigo). O vídeo será publicado sem som.</p>
             )}

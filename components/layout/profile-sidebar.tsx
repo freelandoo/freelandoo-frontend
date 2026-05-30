@@ -166,6 +166,7 @@ export function ProfileSidebar() {
     <>
       <aside
         data-tour="sidebar-root"
+        data-app-toolbar
         aria-label="Toolbar do perfil"
         className={cn(
           "group/sidebar fixed left-3 top-1/2 z-40 hidden -translate-y-1/2 md:flex",
@@ -193,6 +194,7 @@ export function ProfileSidebar() {
 
       <nav
         aria-label="Toolbar do perfil"
+        data-app-toolbar
         className="fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-transparent px-2 py-1.5 shadow-none md:hidden"
         style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
