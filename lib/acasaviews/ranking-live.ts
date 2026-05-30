@@ -1,3 +1,4 @@
+import { headers } from "next/headers"
 import type { AudienceEntry, ParticipantEntry } from "./ranking-data"
 
 /**
@@ -5,13 +6,19 @@ import type { AudienceEntry, ParticipantEntry } from "./ranking-data"
  * jogo da Casa Views. A API só expõe login, pontuação, posição e tipo —
  * métricas finas (views/likes/comentários/trend) não existem ainda, então
  * ficam zeradas/neutras e as páginas escondem esses chips.
+ *
+ * Usado só em server components (páginas force-dynamic). Busca o proxy
+ * same-origin /api/acasaviews/rankings, que lê RANKING_API_URL no servidor —
+ * assim a URL do backend nunca chega ao browser.
  */
 
-// URL do backend de ranking (Railway). Configurável por env pra trocar de
-// serviço sem mexer no código — basta setar RANKING_API_URL no Vercel.
-const RANKING_API = `${
-  process.env.RANKING_API_URL ?? "https://casa-views-ranking-production.up.railway.app"
-}/users`
+async function originBaseUrl(): Promise<string> {
+  const h = await headers()
+  const host = h.get("x-forwarded-host") ?? h.get("host")
+  if (!host) return ""
+  const proto = h.get("x-forwarded-proto") ?? "https"
+  return `${proto}://${host}`
+}
 
 interface RawUser {
   id_user: string
@@ -24,7 +31,8 @@ interface RawUser {
 
 async function fetchUsers(): Promise<RawUser[]> {
   try {
-    const res = await fetch(RANKING_API, {
+    const base = await originBaseUrl()
+    const res = await fetch(`${base}/api/acasaviews/rankings`, {
       headers: { Accept: "application/json" },
       cache: "no-store",
     })
