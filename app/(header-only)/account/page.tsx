@@ -1485,11 +1485,9 @@ export default function PerfilPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#F1EDE2] via-[#F1EDE2]/25 to-transparent" />
 
-              {/* Adesivo Casa Views — leva aos rankings (app externo studioviews.com.br) */}
-              <a
-                href="https://acasaviews.freelandoo.com.br/rankings"
-                target="_blank"
-                rel="noopener noreferrer"
+              {/* Adesivo Casa Views — leva aos rankings (agora interno: /acasaviews) */}
+              <Link
+                href="/acasaviews/rankings"
                 aria-label="Ver os rankings da Casa Views"
                 title="Rankings da Casa Views"
                 className="group absolute left-4 top-4 z-10 -rotate-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-0"
@@ -1507,7 +1505,7 @@ export default function PerfilPage() {
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0 -rotate-45 text-[#0B0B0D] transition-transform group-hover:translate-x-0.5" />
                 </span>
-              </a>
+              </Link>
 
               <button
                 type="button"
