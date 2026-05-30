@@ -1,0 +1,226 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   CASA VIEWS — tema isolado dentro do Freelandoo (rota /acasaviews)
+   --------------------------------------------------------------------------
+   Esta folha NÃO importa `tailwindcss` (já está no globals.css do FL). Ela só:
+   1. Redeclara, dentro de `.casa-app`, os tokens escuros/roxos do CASA — assim
+      as utilities do Tailwind (bg-background, text-foreground, bg-primary, …)
+      usadas pelos componentes do CASA resolvem para a paleta CASA apenas
+      dentro do subárvore /acasaviews, sem vazar para o resto do Freelandoo.
+   2. Traz o bloco `.casa-rank` (tema tabloide claro do ranking) + helpers
+      `.casa-*` + keyframes/animações que os componentes do CASA usam.
+   As fontes Anton/Archivo/Caveat já são carregadas no <html> do FL (layout
+   raiz), então aqui só referenciamos var(--font-anton/archivo/caveat).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Escopo dark do CASA (home, investidor, debates, mafia, robot) ────────
+   Sobrescreve os tokens base do design system dentro de `.casa-app`. Os
+   mapeamentos --color-* → var(--*) vivem no @theme inline do globals.css do
+   FL (mesmos nomes), então basta redeclarar os --* aqui. */
+.casa-app {
+  --background: oklch(0.11 0 0);
+  --foreground: oklch(0.95 0.01 0);
+  --card: oklch(0.15 0 0);
+  --card-foreground: oklch(0.95 0.01 0);
+  --popover: oklch(0.15 0 0);
+  --popover-foreground: oklch(0.95 0.01 0);
+  --primary: oklch(0.55 0.25 280);
+  --primary-foreground: oklch(0.95 0.01 0);
+  --secondary: oklch(0.5 0.2 200);
+  --secondary-foreground: oklch(0.95 0.01 0);
+  --muted: oklch(0.35 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.55 0.25 280);
+  --accent-foreground: oklch(0.95 0.01 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.95 0.01 0);
+  --border: oklch(0.25 0.05 280);
+  --input: oklch(0.18 0 0);
+  --ring: oklch(0.55 0.25 280);
+  --radius: 0.625rem;
+
+  color-scheme: dark;
+  min-height: 100dvh;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* ── 2. Animações usadas pela home/investidor do CASA ───────────────────── */
+@keyframes casa-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+.casa-app .animate-blob {
+  animation: casa-blob 7s infinite;
+}
+.casa-app .animation-delay-2000 {
+  animation-delay: 2s;
+}
+.casa-app .animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+@keyframes casa-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.casa-app .animate-fade-in {
+  animation: casa-fade-in-up 1s ease-out;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CASA VIEWS — RANKING THEME (escopo isolado: .casa-rank)
+   Estética street-news / tabloide editorial premium (tema CLARO de papel).
+   ════════════════════════════════════════════════════════════════════════ */
+.casa-rank {
+  --paper: #f1ede2;
+  --paper-2: #e8e2d4;
+  --ink: #0b0b0d;
+  --ink-soft: #2b2b2e;
+  --magenta: #ff1f8e;
+  --magenta-deep: #d4126f;
+  --cyan: #16c8e8;
+  --gold: #f4c430;
+  --line: rgba(11, 11, 13, 0.1);
+
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background-color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tipografia */
+.casa-display {
+  font-family: var(--font-anton), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+.casa-body {
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+}
+.casa-marker {
+  font-family: var(--font-caveat), ui-serif, cursive;
+}
+
+/* Fundo de papel: cor base + grão sutil + halftone leve */
+.casa-paper {
+  position: relative;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(22, 200, 232, 0.05), transparent 38%),
+    radial-gradient(circle at 88% 8%, rgba(255, 31, 142, 0.05), transparent 40%);
+}
+.casa-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+/* Halftone de pontos (cantos/decoração) */
+.casa-dots {
+  background-image: radial-gradient(var(--ink) 1.3px, transparent 1.6px);
+  background-size: 11px 11px;
+}
+
+/* Marca-texto (highlight) atrás de palavras */
+.casa-hl {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.12em;
+}
+.casa-hl::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12%;
+  bottom: 8%;
+  z-index: -1;
+  transform: rotate(-1.2deg);
+  background: var(--cyan);
+}
+.casa-hl-magenta::before {
+  background: var(--magenta);
+}
+.casa-hl-gold::before {
+  background: var(--gold);
+}
+
+/* Contorno (outline) para números gigantes do pódio */
+.casa-stroke {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--ink);
+}
+.casa-stroke-magenta {
+  -webkit-text-stroke: 2px var(--magenta);
+}
+.casa-stroke-cyan {
+  -webkit-text-stroke: 2px var(--cyan);
+}
+
+/* Bordas rasgadas (torn paper) */
+.casa-torn-b {
+  clip-path: polygon(
+    0 0, 100% 0, 100% 94%, 96% 98%, 92% 93%, 88% 98%, 84% 94%, 80% 99%,
+    76% 94%, 72% 98%, 68% 93%, 64% 98%, 60% 94%, 56% 99%, 52% 94%, 48% 98%,
+    44% 93%, 40% 98%, 36% 94%, 32% 99%, 28% 94%, 24% 98%, 20% 93%, 16% 98%,
+    12% 94%, 8% 99%, 4% 94%, 0 98%
+  );
+}
+.casa-torn-tb {
+  clip-path: polygon(
+    0 3%, 5% 0.5%, 10% 3%, 15% 0.5%, 20% 3%, 25% 1%, 30% 3%, 35% 0.5%,
+    40% 3%, 45% 1%, 50% 3%, 55% 0.5%, 60% 3%, 65% 1%, 70% 3%, 75% 0.5%,
+    80% 3%, 85% 1%, 90% 3%, 95% 0.5%, 100% 3%,
+    100% 97%, 95% 99.5%, 90% 97%, 85% 99%, 80% 97%, 75% 99.5%, 70% 97%,
+    65% 99%, 60% 97%, 55% 99.5%, 50% 97%, 45% 99%, 40% 97%, 35% 99.5%,
+    30% 97%, 25% 99%, 20% 97%, 15% 99.5%, 10% 97%, 5% 99%, 0 97%
+  );
+}
+
+/* Fita adesiva (washi tape) */
+.casa-tape {
+  position: absolute;
+  width: 84px;
+  height: 26px;
+  background: rgba(22, 200, 232, 0.45);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+.casa-tape-magenta {
+  background: rgba(255, 31, 142, 0.4);
+}
+
+/* Sombra "recorte de revista" */
+.casa-cut {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.28));
+}
+
+/* Estado inicial para reveals GSAP (evita flash antes de animar) */
+.casa-rank [data-reveal] {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .casa-rank [data-reveal] {
+    opacity: 1;
+  }
+}
