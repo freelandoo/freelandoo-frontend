@@ -39,14 +39,16 @@ export function drawMakeup(
   get: GetPx,
   faceWidth: number
 ) {
-  // ─── batom ───────────────────────────────────────────────────────────────
+  // ─── batom (sutil: multiply suave + blur p/ feather, como o blush) ────────
   if (makeup.lipstick > 0) {
     ctx.save()
+    // blur p/ suavizar a borda (suportado no Safari/Chrome modernos; sem efeito = sem dano)
+    ctx.filter = `blur(${Math.max(1, faceWidth * 0.014)}px)`
     ctx.beginPath()
     pathFrom(ctx, LIP_OUTER, get)
     pathFrom(ctx, LIP_INNER, get)
     ctx.globalCompositeOperation = "multiply"
-    ctx.globalAlpha = Math.min(0.85, 0.35 + makeup.lipstick * 0.5)
+    ctx.globalAlpha = Math.min(0.5, 0.18 + makeup.lipstick * 0.32)
     ctx.fillStyle = makeup.lipColor
     ctx.fill("evenodd")
     ctx.restore()

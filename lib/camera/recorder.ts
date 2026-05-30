@@ -40,6 +40,7 @@ export class StoryRecorder {
   private recording = false
   private startMs = 0
   private frameCount = 0
+  private lastEncodeMs = 0
 
   // WebCodecs
   private muxer: Muxer<ArrayBufferTarget> | null = null
@@ -62,10 +63,12 @@ export class StoryRecorder {
   }
 
   get isRecording() { return this.recording }
+  private get frameIntervalMs() { return 1000 / this.opts.fps }
 
   async start(): Promise<void> {
     if (this.recording) return
     this.frameCount = 0
+    this.lastEncodeMs = 0
     this.audioSamples = 0
     this.audioDropped = false
     this.encodeError = null
@@ -112,6 +115,7 @@ export class StoryRecorder {
       bitrate: videoBitrate,
       framerate: fps,
       avc: { format: "avc" },
+      latencyMode: "realtime", // crucial p/ Safari/iOS (evita "Encoding task failed")
     })
 
     if (hasAudioEncoder && audioTrack) {
@@ -179,10 +183,18 @@ export class StoryRecorder {
   captureVideoFrame(): void {
     if (!this.recording || this.opts.path !== "webcodecs" || !this.vEncoder) return
     if (this.encodeError) return
-    const ts = Math.round((performance.now() - this.startMs) * 1000) // micros
+    const now = performance.now()
+    // throttle ~fps (o rAF roda ~60fps; encodar tudo sobrecarrega o Safari)
+    if (now - this.lastEncodeMs < this.frameIntervalMs - 2) return
+    // não enfileira além da conta — fila cheia no iOS gera "Encoding task failed"
+    if (this.vEncoder.encodeQueueSize > 2) return
+    this.lastEncodeMs = now
+    const ts = Math.round((now - this.startMs) * 1000) // micros
     const frame = new window.VideoFrame(this.opts.getCanvas(), { timestamp: ts })
     try {
       this.vEncoder.encode(frame, { keyFrame: this.frameCount % 60 === 0 })
+    } catch (e) {
+      this.encodeError = e as Error
     } finally {
       frame.close()
     }
@@ -218,7 +230,9 @@ export class StoryRecorder {
     const { width, height } = this.opts
 
     if (this.opts.path === "webcodecs") {
-      if (this.encodeError) throw this.encodeError
+      if (this.encodeError) {
+        throw new Error("Não foi possível codificar o vídeo neste navegador. Tente um trecho mais curto.")
+      }
       await this.vEncoder?.flush()
       if (this.aEncoder) {
         try { await this.aEncoder.flush() } catch { this.audioDropped = true }

@@ -19,9 +19,13 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
 
 export function drawAccessory(ctx: CanvasRenderingContext2D, type: AccessoryType, g: FaceGeomPx) {
   if (type === "none") return
-  const eyeMid = { x: (g.leftEye.x + g.rightEye.x) / 2, y: (g.leftEye.y + g.rightEye.y) / 2 }
-  const roll = Math.atan2(g.rightEye.y - g.leftEye.y, g.rightEye.x - g.leftEye.x)
-  const eyeDist = dist(g.leftEye, g.rightEye)
+  // Ordena os olhos por X p/ o ângulo ficar correto MESMO com câmera frontal
+  // espelhada (senão dx fica negativo, roll ~180° e o acessório vira de cabeça p/ baixo).
+  const eL = g.leftEye.x <= g.rightEye.x ? g.leftEye : g.rightEye
+  const eR = g.leftEye.x <= g.rightEye.x ? g.rightEye : g.leftEye
+  const eyeMid = { x: (eL.x + eR.x) / 2, y: (eL.y + eR.y) / 2 }
+  const roll = Math.atan2(eR.y - eL.y, eR.x - eL.x)
+  const eyeDist = dist(eL, eR)
   const faceWidth = dist(g.leftCheek, g.rightCheek)
   if (!eyeDist || !faceWidth) return
 
