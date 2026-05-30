@@ -87,21 +87,33 @@ export class StoryRecorder {
   // ─── WebCodecs ─────────────────────────────────────────────────────────────
   private async startWebCodecs() {
     const { width, height, videoBitrate, fps, audioTrack } = this.opts
-    const hasAudioEncoder = typeof window.AudioEncoder !== "undefined" && !!audioTrack
+    const wantAudio = typeof window.AudioEncoder !== "undefined" && !!audioTrack
 
-    let sampleRate = 48000
-    let channels = 1
-    if (hasAudioEncoder && audioTrack) {
-      const settings = audioTrack.getSettings()
-      sampleRate = settings.sampleRate || 48000
-      channels = settings.channelCount || 1
+    // Áudio: cria o AudioContext PRIMEIRO e dá resume() (no iOS ele nasce
+    // suspenso — sem isso o onaudioprocess nunca dispara e o vídeo sai mudo).
+    // Usa o sampleRate REAL do contexto (Safari coage o valor pedido).
+    let audioCfg: { sampleRate: number; channels: number } | null = null
+    if (wantAudio && audioTrack) {
+      try {
+        const Ac =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        this.audioCtx = new Ac()
+        await this.audioCtx.resume().catch(() => {})
+        audioCfg = { sampleRate: Math.round(this.audioCtx.sampleRate), channels: 1 }
+      } catch {
+        this.audioCtx = null
+        audioCfg = null
+      }
     }
 
     this.muxer = new Muxer({
       target: new ArrayBufferTarget(),
       fastStart: "in-memory",
       video: { codec: "avc", width, height },
-      ...(hasAudioEncoder ? { audio: { codec: "aac", sampleRate, numberOfChannels: channels } } : {}),
+      ...(audioCfg
+        ? { audio: { codec: "aac", sampleRate: audioCfg.sampleRate, numberOfChannels: audioCfg.channels } }
+        : {}),
     })
 
     this.vEncoder = new window.VideoEncoder({
@@ -118,18 +130,23 @@ export class StoryRecorder {
       latencyMode: "realtime", // crucial p/ Safari/iOS (evita "Encoding task failed")
     })
 
-    if (hasAudioEncoder && audioTrack) {
+    if (audioCfg && audioTrack && this.audioCtx) {
       try {
-        await this.startAudio(audioTrack, sampleRate, channels)
+        this.startAudioGraph(audioTrack, audioCfg.sampleRate, audioCfg.channels)
       } catch {
         this.audioDropped = true
+        this.teardownAudio()
       }
     } else {
-      this.audioDropped = !!audioTrack // tinha mic mas não dá pra encodar áudio
+      // tinha mic mas o navegador não tem AudioEncoder (ex.: iOS < 26)
+      this.audioDropped = !!audioTrack
     }
   }
 
-  private async startAudio(track: MediaStreamTrack, sampleRate: number, channels: number) {
+  private startAudioGraph(track: MediaStreamTrack, sampleRate: number, channels: number) {
+    const ctx = this.audioCtx
+    if (!ctx) throw new Error("AudioContext indisponível")
+
     this.aEncoder = new window.AudioEncoder({
       output: (chunk, meta) => this.muxer?.addAudioChunk(chunk, meta),
       error: () => { this.audioDropped = true },
@@ -141,11 +158,9 @@ export class StoryRecorder {
       bitrate: 128_000,
     })
 
-    const Ac = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
-    this.audioCtx = new Ac({ sampleRate })
     const stream = new MediaStream([track])
-    this.audioSource = this.audioCtx.createMediaStreamSource(stream)
-    this.audioNode = this.audioCtx.createScriptProcessor(4096, channels, channels)
+    this.audioSource = ctx.createMediaStreamSource(stream)
+    this.audioNode = ctx.createScriptProcessor(4096, channels, channels)
 
     this.audioNode.onaudioprocess = (ev) => {
       if (!this.recording || !this.aEncoder) return
@@ -172,11 +187,11 @@ export class StoryRecorder {
       }
     }
     this.audioSource.connect(this.audioNode)
-    // ScriptProcessor precisa estar no grafo p/ disparar; liga num gain mudo.
-    const sink = this.audioCtx.createGain()
+    // ScriptProcessor só dispara se estiver no grafo; liga num gain mudo.
+    const sink = ctx.createGain()
     sink.gain.value = 0
     this.audioNode.connect(sink)
-    sink.connect(this.audioCtx.destination)
+    sink.connect(ctx.destination)
   }
 
   /** Chamado a cada frame renderizado enquanto grava (caminho webcodecs). */

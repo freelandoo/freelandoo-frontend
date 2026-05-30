@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw,
@@ -616,10 +617,18 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
               <div className="relative flex items-center justify-center">
                 <button onClick={() => (recording ? stopRecording() : startRecording())} className="relative flex h-[76px] w-[76px] items-center justify-center" aria-label={recording ? "Parar" : "Gravar"}>
                   <svg className="absolute inset-0 -rotate-90" viewBox="0 0 76 76">
-                    <circle cx="38" cy="38" r="34" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
+                    <circle cx="38" cy="38" r="34" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="4" />
                     {recording && <circle cx="38" cy="38" r="34" fill="none" stroke="#facc15" strokeWidth="4" strokeLinecap="round" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - progressPct / 100)} />}
                   </svg>
-                  <span className={cn("transition-all", recording ? "h-7 w-7 rounded-md bg-red-500" : "h-14 w-14 rounded-full bg-red-500 ring-4 ring-white/30")} />
+                  {recording ? (
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-400 ring-4 ring-white/30">
+                      <span className="h-6 w-6 rounded-[6px] bg-black" />
+                    </span>
+                  ) : (
+                    <span className="relative h-14 w-14 overflow-hidden rounded-full bg-yellow-400 ring-4 ring-white/30">
+                      <Image src="/freelandoo-logo.png" alt="Gravar" fill sizes="56px" className="object-cover" />
+                    </span>
+                  )}
                 </button>
                 {!recording && (
                   <button
