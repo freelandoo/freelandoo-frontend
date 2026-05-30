@@ -39,7 +39,7 @@ const LINKS: RankingLink[] = [
 
 export default function RankingsLandingPage() {
   return (
-    <div className={`${casaFontVars} casa-paper relative min-h-screen overflow-hidden`}>
+    <div className={`${casaFontVars} casa-rank casa-paper relative min-h-screen overflow-hidden`}>
       <div className="casa-dots pointer-events-none absolute right-0 top-20 h-40 w-40 opacity-[0.07]" />
       <div className="casa-dots pointer-events-none absolute left-0 bottom-10 h-32 w-32 opacity-[0.06]" />
 
