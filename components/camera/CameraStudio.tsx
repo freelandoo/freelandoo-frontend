@@ -14,9 +14,10 @@ import { CameraRenderer } from "@/lib/camera/renderer"
 import { StoryRecorder, canvasToPoster, type RecordResult } from "@/lib/camera/recorder"
 import { uploadStory } from "@/lib/camera/upload"
 import { PRESETS, DEFAULT_PRESET_ID, getPreset } from "@/lib/camera/presets"
+import { FaceTracker } from "@/lib/camera/face-tracker"
 import {
   FilterState, OverlayState, FrameStyle, StickerInstance, FilterMeta,
-  NEUTRAL_OVERLAY, StoryKind,
+  NEUTRAL_OVERLAY, StoryKind, AccessoryType,
 } from "@/lib/camera/types"
 
 const MAX_DURATION = 60
@@ -29,6 +30,13 @@ const FRAMES: { id: FrameStyle; label: string }[] = [
   { id: "classic", label: "Clássica" },
   { id: "tabloide", label: "Tabloide" },
   { id: "polaroid", label: "Polaroid" },
+]
+const ACCESSORIES: { id: AccessoryType; label: string }[] = [
+  { id: "none", label: "Nenhum" },
+  { id: "glasses", label: "👓 Óculos" },
+  { id: "sunglasses", label: "🕶 Escuros" },
+  { id: "crown", label: "👑 Coroa" },
+  { id: "hat", label: "🎉 Chapéu" },
 ]
 
 type Phase = "permission" | "denied" | "unsupported" | "live" | "review" | "publishing"
@@ -52,6 +60,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const filterRef = useRef<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
   const overlayRef = useRef<OverlayState>(NEUTRAL_OVERLAY)
   const recStartRef = useRef<number>(0)
+  const faceTrackerRef = useRef<FaceTracker | null>(null)
 
   const [caps, setCaps] = useState<CameraCapabilities | null>(null)
   const [phase, setPhase] = useState<Phase>("permission")
@@ -67,6 +76,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [reviewUrl, setReviewUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [faceLoading, setFaceLoading] = useState(false)
   const dragRef = useRef<{ id: string } | null>(null)
 
   useEffect(() => { filterRef.current = filter }, [filter])
@@ -77,6 +87,11 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     const r = rendererRef.current
     const v = videoRef.current
     if (r && v && v.readyState >= 2) {
+      if (overlayRef.current.accessory !== "none" && faceTrackerRef.current) {
+        r.setFace(faceTrackerRef.current.detect(v, performance.now()))
+      } else {
+        r.setFace(null)
+      }
       r.setFilter(filterRef.current)
       r.setOverlay(overlayRef.current)
       r.renderFrame(v)
@@ -153,6 +168,8 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     recorderRef.current = null
     try { rendererRef.current?.dispose() } catch { /* noop */ }
     rendererRef.current = null
+    try { faceTrackerRef.current?.close() } catch { /* noop */ }
+    faceTrackerRef.current = null
     stopStream(handleRef.current?.stream)
     handleRef.current = null
     if (videoRef.current) videoRef.current.srcObject = null
@@ -183,6 +200,28 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     setOverlay((o) => ({ ...o, stickers: [...o.stickers, s] }))
   }
   const clearStickers = () => setOverlay((o) => ({ ...o, stickers: [] }))
+
+  // ─── acessórios de rosto (lazy-load do MediaPipe) ──────────────────────────
+  const selectAccessory = async (type: AccessoryType) => {
+    if (type === "none") {
+      setOverlay((o) => ({ ...o, accessory: "none" }))
+      return
+    }
+    if (!faceTrackerRef.current && !faceLoading) {
+      setFaceLoading(true)
+      setError(null)
+      try {
+        faceTrackerRef.current = await FaceTracker.create()
+      } catch {
+        setError("Não foi possível carregar o detector de rosto neste aparelho.")
+        setFaceLoading(false)
+        setOverlay((o) => ({ ...o, accessory: "none" }))
+        return
+      }
+      setFaceLoading(false)
+    }
+    setOverlay((o) => ({ ...o, accessory: type }))
+  }
 
   const canvasPoint = (e: React.PointerEvent) => {
     const rect = (e.target as HTMLCanvasElement).getBoundingClientRect()
@@ -279,7 +318,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     const filterMeta: FilterMeta = {
       preset: presetId,
       filter,
-      overlay: { frame: overlay.frame, watermark: overlay.watermark, sticker_count: overlay.stickers.length },
+      overlay: { frame: overlay.frame, watermark: overlay.watermark, sticker_count: overlay.stickers.length, accessory: overlay.accessory },
       encoder: result.encoder,
     }
     try {
@@ -456,6 +495,17 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* acessórios de rosto */}
+            {!recording && (
+              <div className="flex items-center gap-2 overflow-x-auto px-5 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/30">Rostos</span>
+                {ACCESSORIES.map((a) => (
+                  <Chip key={a.id} active={overlay.accessory === a.id} onClick={() => selectAccessory(a.id)}>{a.label}</Chip>
+                ))}
+                {faceLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-yellow-300" />}
+              </div>
+            )}
 
             {/* molduras + stickers + marca */}
             {!recording && (

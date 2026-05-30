@@ -4,6 +4,8 @@
 // canvas 2D, então TUDO que aparece no preview entra no vídeo final.
 
 import { FilterState, OverlayState, BRAND_YELLOW } from "./types"
+import type { FaceLite, P } from "./face-tracker"
+import { drawAccessory, type FaceGeomPx } from "./face-accessories"
 
 const VERT = `
 attribute vec2 a_pos;
@@ -98,6 +100,8 @@ export class CameraRenderer {
   private overlay: OverlayState
   private flipX = false
   private startTime = performance.now()
+  private face: FaceLite | null = null
+  private cover = { sx: 1, sy: 1, ox: 0, oy: 0 }
 
   constructor(output: HTMLCanvasElement, filter: FilterState, overlay: OverlayState) {
     this.out = output
@@ -168,6 +172,17 @@ export class CameraRenderer {
   setFilter(f: FilterState) { this.filter = f }
   setOverlay(o: OverlayState) { this.overlay = o }
   setFlipX(flip: boolean) { this.flipX = flip }
+  setFace(f: FaceLite | null) { this.face = f }
+
+  /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída,
+   *  aplicando a MESMA transformação cover+flip do shader. */
+  private mapPoint(p: P): { x: number; y: number } {
+    const { sx, sy, ox, oy } = this.cover
+    const t = (p.x - ox) / sx
+    const screenX = this.flipX ? 1 - t : t
+    const screenY = (p.y - oy) / sy
+    return { x: screenX * this.W, y: screenY * this.H }
+  }
   get size() { return { width: this.W, height: this.H } }
   get outputCanvas() { return this.out }
 
@@ -186,6 +201,7 @@ export class CameraRenderer {
     else sy = va / ta
     const ox = (1 - sx) / 2
     const oy = (1 - sy) / 2
+    this.cover = { sx, sy, ox, oy }
 
     gl.bindTexture(gl.TEXTURE_2D, this.tex)
     try {
@@ -258,6 +274,21 @@ export class CameraRenderer {
       ctx.fillStyle = BRAND_YELLOW
       ctx.fillText("freelandoo", pad, H - pad)
     }
+    // acessório de rosto (face tracking) — desenhado antes dos stickers
+    if (o.accessory !== "none" && this.face) {
+      const f = this.face
+      const geom: FaceGeomPx = {
+        leftEye: this.mapPoint(f.leftEye),
+        rightEye: this.mapPoint(f.rightEye),
+        forehead: this.mapPoint(f.forehead),
+        chin: this.mapPoint(f.chin),
+        leftCheek: this.mapPoint(f.leftCheek),
+        rightCheek: this.mapPoint(f.rightCheek),
+        noseTip: this.mapPoint(f.noseTip),
+      }
+      drawAccessory(ctx, o.accessory, geom)
+    }
+
     // stickers
     if (o.stickers.length) {
       ctx.textAlign = "center"

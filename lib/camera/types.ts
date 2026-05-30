@@ -5,6 +5,9 @@ export type StoryKind = "trampo" | "rest"
 
 export type FrameStyle = "none" | "classic" | "tabloide" | "polaroid"
 
+/** Acessórios de rosto (face tracking) — desenhados proceduralmente. */
+export type AccessoryType = "none" | "glasses" | "sunglasses" | "crown" | "hat"
+
 /** Estado dos filtros de cor — vira uniforms do shader WebGL. */
 export interface FilterState {
   brightness: number // -1..1 (0 neutro)
@@ -23,6 +26,7 @@ export interface OverlayState {
   frame: FrameStyle
   watermark: boolean // marca d'água Freelandoo
   stickers: StickerInstance[]
+  accessory: AccessoryType // acessório de rosto (face tracking)
 }
 
 export interface StickerInstance {
@@ -45,7 +49,7 @@ export interface Preset {
 export interface FilterMeta {
   preset: string
   filter: FilterState
-  overlay: { frame: FrameStyle; watermark: boolean; sticker_count: number }
+  overlay: { frame: FrameStyle; watermark: boolean; sticker_count: number; accessory: AccessoryType }
   encoder: "webcodecs" | "mediarecorder"
 }
 
@@ -65,6 +69,7 @@ export const NEUTRAL_OVERLAY: OverlayState = {
   frame: "none",
   watermark: false,
   stickers: [],
+  accessory: "none",
 }
 
 /** Cor da marca (amarelo Freelandoo). */
