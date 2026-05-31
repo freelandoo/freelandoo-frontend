@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 import { fetchParticipantBySlug } from "@/lib/acasaviews/participants-live"
+import { ConvenienceStore } from "@/features/acasaviews/components/acasaviews/participants/convenience-store"
 
 export const dynamic = "force-dynamic"
 
@@ -22,8 +23,15 @@ function compact(n: number) {
   return String(n)
 }
 
-export default async function ParticipantPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ParticipantPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ compra?: string }>
+}) {
   const { slug } = await params
+  const { compra } = await searchParams
   const p = await fetchParticipantBySlug(slug)
   if (!p) notFound()
   const accent = accentVar(p.accent_color)
@@ -199,34 +207,17 @@ export default async function ParticipantPage({ params }: { params: Promise<{ sl
           <ShoppingBag className="h-6 w-6" style={{ color: accent }} />
           <h2 className="casa-display text-3xl leading-none text-[var(--ink)] md:text-4xl">CONVENIÊNCIA VIEWS</h2>
         </div>
-        {p.products.length === 0 ? (
-          <p className="border-2 border-dashed border-[var(--ink)]/25 bg-white/50 px-5 py-10 text-center casa-body text-sm font-semibold text-[var(--ink-soft)]/55">
-            Nenhum produto deste participante por enquanto.
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {p.products.map((prod) => (
-              <div key={prod.id} className="flex flex-col overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[5px_5px_0_0_var(--ink)]">
-                <div className="aspect-square overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--paper-2)]">
-                  {prod.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={prod.image_url} alt={prod.name} className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col p-3">
-                  <h3 className="casa-display text-xl leading-tight text-[var(--ink)]">{prod.name}</h3>
-                  {prod.description && <p className="mt-1 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{prod.description}</p>}
-                  <div className="mt-auto flex items-center justify-between pt-3">
-                    <span className="casa-display text-2xl" style={{ color: accent }}>{brl(prod.price_cents)}</span>
-                    <span className="casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/45">
-                      {prod.stock === null ? "disponível" : prod.stock > 0 ? `${prod.stock} un` : "esgotado"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {compra === "success" && (
+          <div className="mb-5 border-2 border-emerald-600 bg-emerald-50 px-4 py-3 casa-body text-sm font-bold text-emerald-700">
+            ✓ Compra confirmada! Obrigado por apoiar {p.display_name}.
           </div>
         )}
+        {compra === "cancel" && (
+          <div className="mb-5 border-2 border-[var(--ink)]/40 bg-white px-4 py-3 casa-body text-sm font-bold text-[var(--ink-soft)]/70">
+            Compra cancelada. Você pode tentar de novo quando quiser.
+          </div>
+        )}
+        <ConvenienceStore products={p.products} accent={accent} slug={p.slug} />
       </section>
     </div>
   )
