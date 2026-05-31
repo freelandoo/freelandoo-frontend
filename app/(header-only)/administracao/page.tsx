@@ -26,6 +26,7 @@ import {
   Calendar,
   Flag,
   Clapperboard,
+  ShoppingBag,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -276,6 +277,13 @@ export default function AdministracaoPage() {
           >
             <Clapperboard className="h-4 w-4" />
             Casa Views
+          </button>
+          <button
+            onClick={() => router.push("/administracao/casa-loja")}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Conveniência Views
           </button>
           <button
             onClick={() => router.push("/admin/polens")}

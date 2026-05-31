@@ -36,9 +36,8 @@ type Participant = {
 type Journey = { id: string; label: string | null; title: string; description: string | null; happened_on: string | null; sentiment: string; sort_order: number }
 type Secret = { id: string; content: string; author_label: string; revealed: boolean; sort_order: number }
 type Theory = { id: string; content: string; author_label: string; votes: number; sort_order: number }
-type Product = { id: string; name: string; description: string | null; image_url: string | null; price_cents: number; stock: number | null; is_active: boolean; sort_order: number }
 
-type Detail = { participant: Participant; journey: Journey[]; secrets: Secret[]; theories: Theory[]; products: Product[] }
+type Detail = { participant: Participant; journey: Journey[]; secrets: Secret[]; theories: Theory[] }
 
 const ACCENTS = ["magenta", "cyan", "gold"]
 const STATUSES = ["active", "eliminated", "finalist", "winner"]
@@ -370,7 +369,10 @@ function DetailEditor({ detail, authHeaders, reload }: {
         authHeaders={authHeaders} reload={reload}
       />
 
-      <ProductSection participantId={pid} products={detail.products} authHeaders={authHeaders} reload={reload} />
+      <p className="rounded-md border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
+        Os produtos da <b>Conveniência Views</b> são uma loja única (espelhada em todas as páginas de participante).
+        Gerencie em <a href="/administracao/casa-loja" className="text-primary underline">Conveniência Views</a>.
+      </p>
     </div>
   )
 }
@@ -430,58 +432,3 @@ function ListSection<T extends { id: string }>({ title, items, columns, createUr
   )
 }
 
-function ProductSection({ participantId, products, authHeaders, reload }: {
-  participantId: string; products: Product[]; authHeaders: (json?: boolean) => Record<string, string>; reload: () => void
-}) {
-  const [draft, setDraft] = useState<{ name: string; description: string; price_reais: string; stock: string }>({ name: "", description: "", price_reais: "", stock: "" })
-  const [image, setImage] = useState<File | null>(null)
-  const [busy, setBusy] = useState(false)
-  const token = authHeaders().Authorization
-
-  async function add() {
-    if (!draft.name || busy) return
-    setBusy(true)
-    try {
-      const fd = new FormData()
-      fd.append("name", draft.name)
-      fd.append("description", draft.description)
-      fd.append("price_cents", String(Math.round((Number(draft.price_reais) || 0) * 100)))
-      if (draft.stock !== "") fd.append("stock", draft.stock)
-      if (image) fd.append("file", image)
-      await fetch(`/api/admin/casa/participants/${participantId}/products`, { method: "POST", headers: { Authorization: token }, body: fd })
-      setDraft({ name: "", description: "", price_reais: "", stock: "" }); setImage(null)
-      reload()
-    } finally { setBusy(false) }
-  }
-  async function del(id: string) {
-    await fetch(`/api/admin/casa/products/${id}`, { method: "DELETE", headers: authHeaders() })
-    reload()
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-3"><CardTitle className="text-base">Conveniência Views (produtos) <span className="text-xs font-normal text-muted-foreground">({products.length})</span></CardTitle></CardHeader>
-      <CardContent className="space-y-3">
-        {products.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.image_url || "/placeholder.svg"} alt="" className="h-12 w-12 rounded object-cover bg-muted" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2"><span className="truncate font-medium">{p.name}</span>{!p.is_active && <Badge variant="outline">inativo</Badge>}</div>
-              <div className="text-xs text-muted-foreground">{brl(p.price_cents)} · {p.stock === null ? "estoque ∞" : `${p.stock} un`}</div>
-            </div>
-            <Button size="icon" variant="ghost" onClick={() => del(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-          </div>
-        ))}
-        <div className="grid items-end gap-2 rounded-md border border-dashed p-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Nome*</Label><Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></div>
-          <div className="space-y-1"><Label className="text-xs">Preço (R$)</Label><Input type="number" value={draft.price_reais} onChange={(e) => setDraft({ ...draft, price_reais: e.target.value })} /></div>
-          <div className="space-y-1"><Label className="text-xs">Estoque (vazio=∞)</Label><Input type="number" value={draft.stock} onChange={(e) => setDraft({ ...draft, stock: e.target.value })} /></div>
-          <div className="space-y-1 sm:col-span-2 lg:col-span-3"><Label className="text-xs">Descrição</Label><Textarea rows={2} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></div>
-          <div className="space-y-1"><Label className="text-xs">Imagem</Label><label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border px-2 text-sm text-muted-foreground"><Upload className="h-4 w-4" />{image?.name ? "ok" : "…"}<input type="file" accept="image/*" className="hidden" onChange={(e) => setImage(e.target.files?.[0] ?? null)} /></label></div>
-          <Button onClick={add} disabled={busy} className="lg:col-span-4"><Plus className="mr-1 h-4 w-4" />Adicionar produto</Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}

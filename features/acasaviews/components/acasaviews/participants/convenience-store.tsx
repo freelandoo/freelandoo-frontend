@@ -33,7 +33,8 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
       const res = await fetch("/api/casa/checkout", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: product.id }),
+        // participant_slug = atribuição: registra qual participante recebeu a venda
+        body: JSON.stringify({ product_id: product.id, participant_slug: slug }),
       })
       const data = await res.json()
       if (!res.ok || !data?.checkout_url) throw new Error(data?.error || "Não foi possível iniciar a compra.")
