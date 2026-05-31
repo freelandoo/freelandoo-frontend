@@ -143,7 +143,10 @@ export class CameraRenderer {
   private startTime = performance.now()
   private face: FaceLite | null = null
   private makeup: MakeupState = NEUTRAL_MAKEUP
-  private videoRect = { x: 0, y: 0, w: 720, h: 1280 }
+  private fgAspect = 4 / 5 // proporção do cartão da frente (largura:altura)
+  private fgFill = 1 // fração da largura do canvas (1 = largura cheia → só margem vertical)
+  private fgBox = { x: 0, y: 0, w: 720, h: 1280 } // onde o foreground é desenhado (px)
+  private crop = { x: 0, y: 0, w: 1, h: 1 } // recorte central do frame (normalizado)
 
   constructor(output: HTMLCanvasElement, filter: FilterState, overlay: OverlayState) {
     this.out = output
@@ -232,12 +235,16 @@ export class CameraRenderer {
     }
   }
 
-  /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída,
-   *  aplicando a MESMA transformação contain+flip+rotação do preview. */
+  /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída, aplicando
+   *  flip+rotação e o MESMO recorte 4:5 + caixa do foreground (acessórios
+   *  acompanham o zoom do cartão). */
   private mapPoint(p: P): { x: number; y: number } {
-    const r = this.videoRect
     const o = this.toOutputNorm(p.x, p.y)
-    return { x: r.x + o.x * r.w, y: r.y + o.y * r.h }
+    const c = this.crop
+    const cu = (o.x - c.x) / c.w
+    const cv = (o.y - c.y) / c.h
+    const b = this.fgBox
+    return { x: b.x + cu * b.w, y: b.y + cv * b.h }
   }
   get size() { return { width: this.W, height: this.H } }
   get outputCanvas() { return this.out }
@@ -259,17 +266,18 @@ export class CameraRenderer {
     const odd = rot === 1 || rot === 3
     const efw = odd ? vh : vw
     const efh = odd ? vw : vh
-    const fitScale = Math.min(this.W / efw, this.H / efh)
-    const fw = Math.max(2, Math.round(efw * fitScale))
-    const fh = Math.max(2, Math.round(efh * fitScale))
-    const fx = Math.round((this.W - fw) / 2)
-    const fy = Math.round((this.H - fh) / 2)
-    this.videoRect = { x: fx, y: fy, w: fw, h: fh }
-    if (this.glCanvas.width !== fw || this.glCanvas.height !== fh) {
-      this.glCanvas.width = fw
-      this.glCanvas.height = fh
+
+    // glCanvas na resolução do frame (cap em 1280 no maior lado) — preserva
+    // nitidez ao recortar/ampliar o foreground.
+    const cap = 1280
+    const dn = Math.min(1, cap / Math.max(efw, efh))
+    const glw = Math.max(2, Math.round(efw * dn))
+    const glh = Math.max(2, Math.round(efh * dn))
+    if (this.glCanvas.width !== glw || this.glCanvas.height !== glh) {
+      this.glCanvas.width = glw
+      this.glCanvas.height = glh
     }
-    gl.viewport(0, 0, fw, fh)
+    gl.viewport(0, 0, glw, glh)
 
     gl.bindTexture(gl.TEXTURE_2D, this.tex)
     try {
@@ -317,14 +325,13 @@ export class CameraRenderer {
     gl.uniform1f(this.uloc.u_skinSmooth, skin)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-    // compositing 2D — fundo desfocado (preenche a tela) + frame inteiro por cima
+    // compositing 2D — fundo desfocado + cartão 4:5 (com zoom) por cima
     const ctx = this.ctx
     ctx.clearRect(0, 0, this.W, this.H)
     ctx.fillStyle = "#000"
     ctx.fillRect(0, 0, this.W, this.H)
 
     // fundo: a mesma imagem ampliada p/ cobrir a tela, desfocada e escurecida.
-    // Some as barras pretas sem aplicar zoom no que importa (o foreground).
     const coverScale = Math.max(this.W / efw, this.H / efh)
     const bw = Math.round(efw * coverScale)
     const bh = Math.round(efh * coverScale)
@@ -337,8 +344,25 @@ export class CameraRenderer {
     ctx.fillStyle = "rgba(0,0,0,0.4)"
     ctx.fillRect(0, 0, this.W, this.H)
 
-    // foreground: frame INTEIRO da câmera, sem zoom
-    ctx.drawImage(this.glCanvas, fx, fy, fw, fh)
+    // foreground: cartão ~4:5 (não pega a tela toda), com recorte central + zoom
+    const boxW = Math.round(this.W * this.fgFill)
+    const boxH = Math.round(boxW / this.fgAspect)
+    const boxX = Math.round((this.W - boxW) / 2)
+    const boxY = Math.round((this.H - boxH) / 2)
+    this.fgBox = { x: boxX, y: boxY, w: boxW, h: boxH }
+
+    // recorte central do frame no aspecto do cartão (gera o zoom da frente)
+    const efAspect = efw / efh
+    let cfx: number, cfy: number
+    if (efAspect > this.fgAspect) { cfx = this.fgAspect / efAspect; cfy = 1 }
+    else { cfx = 1; cfy = efAspect / this.fgAspect }
+    this.crop = { x: (1 - cfx) / 2, y: (1 - cfy) / 2, w: cfx, h: cfy }
+
+    ctx.drawImage(
+      this.glCanvas,
+      this.crop.x * glw, this.crop.y * glh, this.crop.w * glw, this.crop.h * glh,
+      boxX, boxY, boxW, boxH
+    )
     this.drawOverlays()
   }
 
