@@ -17,6 +17,19 @@ export interface FaceGeomPx {
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
   Math.hypot(a.x - b.x, a.y - b.y)
 
+const RED_GLASSES_SRC = "/camera/accessories/red-realistic-glasses.png"
+let redGlassesImg: HTMLImageElement | null = null
+
+function getRedGlassesImage(): HTMLImageElement | null {
+  if (typeof window === "undefined") return null
+  if (!redGlassesImg) {
+    redGlassesImg = new Image()
+    redGlassesImg.decoding = "async"
+    redGlassesImg.src = RED_GLASSES_SRC
+  }
+  return redGlassesImg.complete && redGlassesImg.naturalWidth > 0 ? redGlassesImg : null
+}
+
 export function drawAccessory(ctx: CanvasRenderingContext2D, type: AccessoryType, g: FaceGeomPx) {
   if (type === "none") return
   // Ordena os olhos por X p/ o ângulo ficar correto MESMO com câmera frontal
@@ -33,6 +46,9 @@ export function drawAccessory(ctx: CanvasRenderingContext2D, type: AccessoryType
     case "glasses":
       drawGlasses(ctx, eyeMid, roll, eyeDist, false)
       break
+    case "red-glasses":
+      drawImageGlasses(ctx, eyeMid, roll, eyeDist)
+      break
     case "sunglasses":
       drawGlasses(ctx, eyeMid, roll, eyeDist, true)
       break
@@ -43,6 +59,26 @@ export function drawAccessory(ctx: CanvasRenderingContext2D, type: AccessoryType
       drawHat(ctx, g.forehead, roll, faceWidth)
       break
   }
+}
+
+function drawImageGlasses(
+  ctx: CanvasRenderingContext2D,
+  center: { x: number; y: number },
+  roll: number,
+  eyeDist: number
+) {
+  const img = getRedGlassesImage()
+  if (!img) {
+    drawGlasses(ctx, center, roll, eyeDist, false)
+    return
+  }
+  const w = eyeDist * 3.05
+  const h = w * (img.naturalHeight / img.naturalWidth)
+  ctx.save()
+  ctx.translate(center.x, center.y + eyeDist * 0.06)
+  ctx.rotate(roll)
+  ctx.drawImage(img, -w / 2, -h / 2, w, h)
+  ctx.restore()
 }
 
 function drawGlasses(

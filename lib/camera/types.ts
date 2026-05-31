@@ -6,7 +6,7 @@ export type StoryKind = "trampo" | "rest"
 export type FrameStyle = "none" | "classic" | "tabloide" | "polaroid"
 
 /** Acessórios de rosto (face tracking) — desenhados proceduralmente. */
-export type AccessoryType = "none" | "glasses" | "sunglasses" | "crown" | "hat"
+export type AccessoryType = "none" | "glasses" | "red-glasses" | "sunglasses" | "crown" | "hat"
 
 /** Estado dos filtros de cor — vira uniforms do shader WebGL. */
 export interface FilterState {

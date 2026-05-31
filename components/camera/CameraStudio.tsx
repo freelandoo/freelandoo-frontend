@@ -35,6 +35,7 @@ const FRAMES: { id: FrameStyle; label: string }[] = [
 const ACCESSORIES: { id: AccessoryType; label: string }[] = [
   { id: "none", label: "Nenhum" },
   { id: "glasses", label: "👓 Óculos" },
+  { id: "red-glasses", label: "🔴 Vermelhos" },
   { id: "sunglasses", label: "🕶 Escuros" },
   { id: "crown", label: "👑 Coroa" },
   { id: "hat", label: "🎉 Chapéu" },
