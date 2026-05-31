@@ -75,6 +75,17 @@ export interface TextLayer {
   size: number // fração da menor dimensão (altura da fonte)
 }
 
+/** Sobreposição PiP (imagem ou vídeo colado por cima da mídia principal).
+ *  Queimada no export. v1: 1 overlay por vez. */
+export interface OverlayLayer {
+  id: string
+  kind: MediaKind
+  url: string // object URL
+  x: number // centro 0..1
+  y: number // centro 0..1
+  scale: number // largura do overlay como fração da largura do canvas
+}
+
 /** Música anexada (metadado — não é queimada). Preenchido no slice 5. */
 export interface AudioPick {
   trackId: string

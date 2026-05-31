@@ -24,7 +24,7 @@ import { drawTextLayers, layerBox } from "@/lib/composer/text-layer"
 import {
   ASPECTS, NEUTRAL_CROP, TEXT_COLORS, TEXT_FONTS,
   type ComposerProps, type CropState, type MediaDraft, type MediaKind,
-  type TextLayer, type TextFontId, type TextBoxStyle,
+  type TextLayer, type TextFontId, type TextBoxStyle, type OverlayLayer,
 } from "@/lib/composer/types"
 import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
 
@@ -53,6 +53,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const [filter, setFilter] = useState<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
   const [textLayers, setTextLayers] = useState<TextLayer[]>([])
   const [activeTextId, setActiveTextId] = useState<string | null>(null)
+  const [overlay, setOverlay] = useState<OverlayLayer | null>(null)
 
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(false)
@@ -68,6 +69,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const [cameraOpen, setCameraOpen] = useState(false)
 
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const overlayInputRef = useRef<HTMLInputElement | null>(null)
+  const overlayElRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null)
+  const overlayRef = useRef<OverlayLayer | null>(overlay)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rendererRef = useRef<ComposerRenderer | null>(null)
   const sourceRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null)
@@ -78,6 +82,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   useEffect(() => { filterRef.current = filter }, [filter])
   useEffect(() => { cropRef.current = crop }, [crop])
   useEffect(() => { textRef.current = textLayers }, [textLayers])
+  useEffect(() => { overlayRef.current = overlay }, [overlay])
 
   const allowedAspects = aspectsFor(mode)
   const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
@@ -89,9 +94,14 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     setStep("pick"); setEditTab("filtro"); setDraft(null); setCrop(NEUTRAL_CROP)
     setPresetId(DEFAULT_PRESET_ID); setFilter(getPreset(DEFAULT_PRESET_ID).filter)
     setTextLayers([]); setActiveTextId(null)
+    if (overlay?.url) URL.revokeObjectURL(overlay.url)
+    const el = overlayElRef.current
+    if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
+    overlayElRef.current = null
+    setOverlay(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null)
     setCameraOpen(false)
-  }, [draft?.url])
+  }, [draft?.url, overlay?.url])
 
   useEffect(() => {
     if (!open) hardReset()
@@ -187,7 +197,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
       const baseW = 720
       r.setSize(baseW, Math.round(baseW / cropRef.current.aspect))
       // texto sobreposto desenhado por cima da cor (mesmo no preview e no export)
-      r.afterCompose = (ctx, w, h) => drawTextLayers(ctx, w, h, textRef.current)
+      r.afterCompose = (ctx, w, h) => { drawOverlayLayer(ctx, w, h); drawTextLayers(ctx, w, h, textRef.current) }
       rendererRef.current = r
 
       const loop = () => {
@@ -217,11 +227,11 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   }, [step, draft?.url])
 
   // ── arraste no preview: pan (crop) ou mover texto (edit) ─────────────────────
-  const dragRef = useRef<{ x: number; y: number; textId?: string } | null>(null)
+  const dragRef = useRef<{ x: number; y: number; textId?: string; overlay?: boolean } | null>(null)
   const onPointerDown = (e: React.PointerEvent) => {
     const canvas = canvasRef.current
     if (step === "edit" && canvas) {
-      // hit-test em camadas de texto (de cima p/ baixo)
+      // hit-test em camadas de texto (de cima p/ baixo) → texto tem prioridade
       const rect = canvas.getBoundingClientRect()
       const px = ((e.clientX - rect.left) / rect.width) * canvas.width
       const py = ((e.clientY - rect.top) / rect.height) * canvas.height
@@ -237,6 +247,22 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
           }
         }
       }
+      // hit-test no overlay PiP
+      const ov = overlayRef.current
+      const el = overlayElRef.current
+      if (ov && el) {
+        const natW = el instanceof HTMLVideoElement ? el.videoWidth : (el as HTMLImageElement).naturalWidth
+        const natH = el instanceof HTMLVideoElement ? el.videoHeight : (el as HTMLImageElement).naturalHeight
+        const w = ov.scale * canvas.width
+        const h = w * (natH / Math.max(1, natW))
+        const x = ov.x * canvas.width - w / 2
+        const y = ov.y * canvas.height - h / 2
+        if (px >= x && px <= x + w && py >= y && py <= y + h) {
+          dragRef.current = { x: e.clientX, y: e.clientY, overlay: true }
+          ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+          return
+        }
+      }
       return
     }
     if (step !== "crop") return
@@ -246,6 +272,14 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return
     const canvas = canvasRef.current
+    if (dragRef.current.overlay && canvas) {
+      const rect = canvas.getBoundingClientRect()
+      const dx = (e.clientX - dragRef.current.x) / rect.width
+      const dy = (e.clientY - dragRef.current.y) / rect.height
+      dragRef.current = { ...dragRef.current, x: e.clientX, y: e.clientY }
+      setOverlay((o) => o ? { ...o, x: Math.max(0, Math.min(1, o.x + dx)), y: Math.max(0, Math.min(1, o.y + dy)) } : o)
+      return
+    }
     if (dragRef.current.textId && canvas) {
       const rect = canvas.getBoundingClientRect()
       const dx = (e.clientX - dragRef.current.x) / rect.width
@@ -263,6 +297,62 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     setCrop((c) => ({ ...c, panX: Math.max(-1, Math.min(1, c.panX - dx)), panY: Math.max(-1, Math.min(1, c.panY - dy)) }))
   }
   const onPointerUp = () => { dragRef.current = null }
+
+  // ── overlay PiP (imagem/vídeo) ───────────────────────────────────────────────
+  const drawOverlayLayer = useCallback((ctx: CanvasRenderingContext2D, W: number, H: number) => {
+    const ov = overlayRef.current
+    const el = overlayElRef.current
+    if (!ov || !el) return
+    const natW = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth
+    const natH = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight
+    if (!natW || !natH) return
+    const w = ov.scale * W
+    const h = w * (natH / natW)
+    const x = ov.x * W - w / 2
+    const y = ov.y * H - h / 2
+    try {
+      ctx.save()
+      ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = w * 0.06; ctx.shadowOffsetY = w * 0.03
+      ctx.drawImage(el, x, y, w, h)
+      ctx.restore()
+      ctx.lineWidth = Math.max(2, w * 0.02)
+      ctx.strokeStyle = "#F2B705"
+      ctx.strokeRect(x, y, w, h)
+    } catch { /* frame não decodável ainda */ }
+  }, [])
+
+  const handleOverlayFile = (f: File | null) => {
+    if (!f) return
+    const isImg = f.type.startsWith("image/")
+    const isVid = f.type.startsWith("video/")
+    if (!isImg && !isVid) { setError("Sobreposição deve ser imagem ou vídeo."); return }
+    if (f.size > MAX_BYTES) { setError("Sobreposição acima de 80MB."); return }
+    // limpa anterior
+    if (overlay?.url) URL.revokeObjectURL(overlay.url)
+    const prev = overlayElRef.current
+    if (prev instanceof HTMLVideoElement) { prev.pause(); prev.src = "" }
+    const url = URL.createObjectURL(f)
+    const kind: MediaKind = isImg ? "image" : "video"
+    const layer: OverlayLayer = { id: crypto.randomUUID(), kind, url, x: 0.7, y: 0.7, scale: 0.32 }
+    if (kind === "image") {
+      const img = new Image(); img.crossOrigin = "anonymous"
+      img.onload = () => { overlayElRef.current = img; setOverlay(layer) }
+      img.onerror = () => setError("Não consegui ler a imagem de sobreposição.")
+      img.src = url
+    } else {
+      const v = document.createElement("video")
+      v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
+      v.onloadeddata = () => { v.play().catch(() => {}); overlayElRef.current = v; setOverlay(layer) }
+      v.onerror = () => setError("Não consegui ler o vídeo de sobreposição.")
+    }
+  }
+  const removeOverlay = () => {
+    if (overlay?.url) URL.revokeObjectURL(overlay.url)
+    const el = overlayElRef.current
+    if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
+    overlayElRef.current = null
+    setOverlay(null)
+  }
 
   // ── helpers de texto ─────────────────────────────────────────────────────────
   const addText = () => {
@@ -297,7 +387,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
       const layers = textLayers
       const result = await compose({
         draft, filter, crop,
-        afterCompose: (ctx, w, h) => drawTextLayers(ctx, w, h, layers),
+        afterCompose: (ctx, w, h) => { drawOverlayLayer(ctx, w, h); drawTextLayers(ctx, w, h, layers) },
         onProgress: (f) => setProgress(f * 0.5),
       })
       if (mode === "story") {
@@ -345,6 +435,10 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
       <input
         ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0] || null)}
+      />
+      <input
+        ref={overlayInputRef} type="file" accept="image/*,video/*" className="hidden"
+        onChange={(e) => { handleOverlayFile(e.target.files?.[0] || null); e.target.value = "" }}
       />
       <div className="relative flex h-full w-full max-w-[560px] flex-col overflow-hidden border-x-2 border-[#0B0B0D] bg-[#141009]">
         {/* App bar tabloide */}
@@ -435,6 +529,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
                   filter={filter} onAdj={setAdj}
                   textLayers={textLayers} activeTextId={activeTextId} setActiveTextId={setActiveTextId}
                   onAddText={addText} onUpdateText={updateText} onRemoveText={removeText}
+                  overlay={overlay} onPickOverlay={() => overlayInputRef.current?.click()}
+                  onOverlayScale={(s) => setOverlay((o) => (o ? { ...o, scale: s } : o))}
+                  onRemoveOverlay={removeOverlay}
                 />
               )}
             </div>
@@ -538,12 +635,14 @@ function PickStep({ onPick, onCamera, error }: { onPick: () => void; onCamera?: 
 function EditPanel({
   tab, onTab, presetId, onPreset, filter, onAdj,
   textLayers, activeTextId, setActiveTextId, onAddText, onUpdateText, onRemoveText,
+  overlay, onPickOverlay, onOverlayScale, onRemoveOverlay,
 }: {
   tab: EditTab; onTab: (t: EditTab) => void
   presetId: string; onPreset: (id: string) => void
   filter: FilterState; onAdj: (k: keyof FilterState, v: number) => void
   textLayers: TextLayer[]; activeTextId: string | null; setActiveTextId: (id: string | null) => void
   onAddText: () => void; onUpdateText: (id: string, patch: Partial<TextLayer>) => void; onRemoveText: (id: string) => void
+  overlay: OverlayLayer | null; onPickOverlay: () => void; onOverlayScale: (s: number) => void; onRemoveOverlay: () => void
 }) {
   const tabs: { id: EditTab; label: string; icon: React.ReactNode }[] = [
     { id: "filtro", label: "Filtro", icon: <SlidersHorizontal className="h-4 w-4" /> },
@@ -580,14 +679,13 @@ function EditPanel({
             layers={textLayers} activeId={activeTextId} setActiveId={setActiveTextId}
             onAdd={onAddText} onUpdate={onUpdateText} onRemove={onRemoveText}
           />
+        ) : tab === "sobreposicao" ? (
+          <OverlayEditor overlay={overlay} onPick={onPickOverlay} onScale={onOverlayScale} onRemove={onRemoveOverlay} />
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
             <Sparkles className="h-6 w-6 text-[#F2B705]" />
             <p className="font-[family-name:var(--font-anton)] text-lg uppercase text-[#F1EDE2]">Em breve</p>
-            <p className="max-w-[220px] text-xs text-[#a89f8d]">
-              {tab === "sobreposicao" && "Sobreposição de imagem/vídeo chega em breve."}
-              {tab === "musica" && "Biblioteca de música chega em breve."}
-            </p>
+            <p className="max-w-[220px] text-xs text-[#a89f8d]">Biblioteca de música chega em breve.</p>
           </div>
         )}
       </div>
@@ -717,6 +815,45 @@ function TextEditor({
         >
           <X className="h-4 w-4" />
         </button>
+      </div>
+    </div>
+  )
+}
+
+function OverlayEditor({
+  overlay, onPick, onScale, onRemove,
+}: {
+  overlay: OverlayLayer | null; onPick: () => void; onScale: (s: number) => void; onRemove: () => void
+}) {
+  if (!overlay) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <button
+          type="button" onClick={onPick}
+          className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+        >
+          <Layers className="h-4 w-4" /> Adicionar imagem/vídeo
+        </button>
+        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">Cole uma foto ou vídeo por cima — arraste no preview para posicionar</p>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-3 py-1">
+      <div className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-[11px] font-black uppercase tracking-[0.06em] text-[#0B0B0D]">
+        <Layers className="h-4 w-4" /> Sobreposição de {overlay.kind === "video" ? "vídeo" : "imagem"}
+      </div>
+      <div>
+        <Label>Tamanho</Label>
+        <input
+          type="range" min={0.15} max={0.7} step={0.01} value={overlay.scale}
+          onChange={(e) => onScale(Number(e.target.value))}
+          className="mt-1.5 w-full accent-[#F2B705]"
+        />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={onPick} className="flex-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] py-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]">Trocar</button>
+        <button type="button" onClick={onRemove} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F2B705]" aria-label="Remover sobreposição"><X className="h-4 w-4" /></button>
       </div>
     </div>
   )
