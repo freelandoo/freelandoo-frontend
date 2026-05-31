@@ -58,6 +58,9 @@ export class FaceTracker {
         baseOptions: { modelAssetPath: MODEL_URL, delegate },
         runningMode: "VIDEO",
         numFaces: 1,
+        minFaceDetectionConfidence: 0.35,
+        minFacePresenceConfidence: 0.35,
+        minTrackingConfidence: 0.35,
       })
     try {
       return new FaceTracker(await build("GPU"))

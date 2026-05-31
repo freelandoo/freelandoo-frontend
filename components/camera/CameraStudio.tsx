@@ -161,6 +161,11 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       const video = videoRef.current!
       video.srcObject = handle.stream
       video.muted = true
+      await new Promise<void>((resolve) => {
+        if (video.videoWidth && video.videoHeight) { resolve(); return }
+        const timer = window.setTimeout(resolve, 1500)
+        video.onloadedmetadata = () => { window.clearTimeout(timer); resolve() }
+      })
       await video.play().catch(() => {})
       if (!rendererRef.current && canvasRef.current) {
         const rnd = new CameraRenderer(canvasRef.current, filterRef.current, overlayRef.current)
@@ -419,7 +424,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black">
       <div className="relative flex h-full w-full max-w-[560px] flex-col overflow-hidden bg-black">
         {/* vídeo cru escondido — fonte do render */}
-        <video ref={videoRef} className="hidden" playsInline muted />
+        <video ref={videoRef} className="pointer-events-none absolute h-px w-px opacity-0" playsInline muted />
 
         {/* ÁREA DE PREVIEW */}
         <div className="relative flex-1 overflow-hidden">
@@ -430,7 +435,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               className={cn(
-                "absolute inset-0 h-full w-full object-cover touch-none",
+                "absolute inset-0 h-full w-full object-contain touch-none",
                 phase !== "live" && "opacity-0 pointer-events-none"
               )}
             />
@@ -440,7 +445,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
           {phase !== "live" && reviewUrl && (
             <video
               src={reviewUrl}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
               autoPlay loop playsInline controls={false}
             />
           )}

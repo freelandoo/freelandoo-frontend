@@ -135,7 +135,7 @@ export class CameraRenderer {
   private startTime = performance.now()
   private face: FaceLite | null = null
   private makeup: MakeupState = NEUTRAL_MAKEUP
-  private cover = { sx: 1, sy: 1, ox: 0, oy: 0 }
+  private videoRect = { x: 0, y: 0, w: 720, h: 1280 }
 
   constructor(output: HTMLCanvasElement, filter: FilterState, overlay: OverlayState) {
     this.out = output
@@ -211,13 +211,11 @@ export class CameraRenderer {
   setMakeup(m: MakeupState) { this.makeup = m }
 
   /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída,
-   *  aplicando a MESMA transformação cover+flip do shader. */
+   *  aplicando a MESMA transformação contain+flip do preview. */
   private mapPoint(p: P): { x: number; y: number } {
-    const { sx, sy, ox, oy } = this.cover
-    const t = (p.x - ox) / sx
-    const screenX = this.flipX ? 1 - t : t
-    const screenY = (p.y - oy) / sy
-    return { x: screenX * this.W, y: screenY * this.H }
+    const r = this.videoRect
+    const screenX = this.flipX ? 1 - p.x : p.x
+    return { x: r.x + screenX * r.w, y: r.y + p.y * r.h }
   }
   get size() { return { width: this.W, height: this.H } }
   get outputCanvas() { return this.out }
@@ -229,15 +227,18 @@ export class CameraRenderer {
     const vh = video.videoHeight
     if (!vw || !vh) return
 
-    // cover fit (9:16): escala/recorta o vídeo p/ preencher o frame.
-    const va = vw / vh
-    const ta = this.W / this.H
-    let sx = 1, sy = 1
-    if (va > ta) sx = ta / va
-    else sy = va / ta
-    const ox = (1 - sx) / 2
-    const oy = (1 - sy) / 2
-    this.cover = { sx, sy, ox, oy }
+    // contain fit: preserva o enquadramento real da câmera sem "zoomar".
+    const scale = Math.min(this.W / vw, this.H / vh)
+    const rw = Math.max(2, Math.round(vw * scale))
+    const rh = Math.max(2, Math.round(vh * scale))
+    const rx = Math.round((this.W - rw) / 2)
+    const ry = Math.round((this.H - rh) / 2)
+    this.videoRect = { x: rx, y: ry, w: rw, h: rh }
+    if (this.glCanvas.width !== rw || this.glCanvas.height !== rh) {
+      this.glCanvas.width = rw
+      this.glCanvas.height = rh
+    }
+    gl.viewport(0, 0, rw, rh)
 
     gl.bindTexture(gl.TEXTURE_2D, this.tex)
     try {
@@ -248,8 +249,8 @@ export class CameraRenderer {
 
     const f = this.filter
     gl.uniform1f(this.uloc.u_flipX, this.flipX ? 1 : 0)
-    gl.uniform2f(this.uloc.u_uvScale, sx, sy)
-    gl.uniform2f(this.uloc.u_uvOffset, ox, oy)
+    gl.uniform2f(this.uloc.u_uvScale, 1, 1)
+    gl.uniform2f(this.uloc.u_uvOffset, 0, 0)
     gl.uniform1f(this.uloc.u_brightness, f.brightness)
     gl.uniform1f(this.uloc.u_contrast, f.contrast)
     gl.uniform1f(this.uloc.u_saturation, f.saturation)
@@ -261,21 +262,18 @@ export class CameraRenderer {
     gl.uniform1f(this.uloc.u_tintStrength, f.tintStrength)
     gl.uniform1f(this.uloc.u_time, (performance.now() - this.startTime) / 1000)
 
-    // suavização de pele: elipse do rosto em screen-uv (0..1 do canvas de saída)
+    // suavização de pele: elipse do rosto no espaço do vídeo renderizado.
     let skin = 0
     if (this.makeup.skinSmooth > 0 && this.face) {
       skin = this.makeup.skinSmooth
-      const toScreen = (p: P) => {
-        const m = this.mapPoint(p)
-        return { x: m.x / this.W, y: m.y / this.H }
-      }
-      const eyeMid = toScreen({
+      const toVideo = (p: P) => ({ x: this.flipX ? 1 - p.x : p.x, y: p.y })
+      const eyeMid = toVideo({
         x: (this.face.leftEye.x + this.face.rightEye.x) / 2,
         y: (this.face.leftEye.y + this.face.rightEye.y) / 2,
       } as P)
-      const chin = toScreen(this.face.chin)
-      const lc = toScreen(this.face.leftCheek)
-      const rc = toScreen(this.face.rightCheek)
+      const chin = toVideo(this.face.chin)
+      const lc = toVideo(this.face.leftCheek)
+      const rc = toVideo(this.face.rightCheek)
       const cx = (lc.x + rc.x) / 2
       const cy = (eyeMid.y + chin.y) / 2
       const rx = Math.abs(rc.x - lc.x) * 0.62
@@ -289,7 +287,9 @@ export class CameraRenderer {
 
     // compositing 2D
     this.ctx.clearRect(0, 0, this.W, this.H)
-    this.ctx.drawImage(this.glCanvas, 0, 0, this.W, this.H)
+    this.ctx.fillStyle = "#000"
+    this.ctx.fillRect(0, 0, this.W, this.H)
+    this.ctx.drawImage(this.glCanvas, rx, ry, rw, rh)
     this.drawOverlays()
   }
 
