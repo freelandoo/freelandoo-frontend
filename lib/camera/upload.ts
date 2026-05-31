@@ -61,6 +61,9 @@ export interface UploadStoryParams {
   height: number
   caption?: string
   filterMeta: FilterMeta
+  /** Música anexada (metadado — não queimada). Opcional. */
+  audioTrackId?: string | null
+  audioStartMs?: number
   onProgress?: (frac: number) => void
 }
 
@@ -101,6 +104,8 @@ export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory>
     height: p.height,
     caption: p.caption || undefined,
     filter_meta: p.filterMeta,
+    audio_track_id: p.audioTrackId || undefined,
+    audio_start_ms: p.audioTrackId ? (p.audioStartMs ?? 0) : undefined,
     storage_key: urls.video.key,
     thumbnail_key: thumbnailKey,
   })

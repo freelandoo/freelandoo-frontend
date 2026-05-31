@@ -6,6 +6,17 @@ export interface FeedMedia {
   thumbnail_url: string | null
 }
 
+/** Música anexada a um post/bee/story (metadado — tocada pelo player, não queimada). */
+export interface FeedAudio {
+  id_audio_track: string
+  start_ms: number
+  title: string | null
+  artist: string | null
+  audio_url: string | null
+  cover_url: string | null
+  duration_ms: number
+}
+
 export interface FeedSocialLink {
   social_id: string
   type: string
@@ -48,6 +59,7 @@ export interface FeedPost {
   source_type: "portfolio" | "course"
   source_course_id: string | null
   media: FeedMedia[]
+  audio?: FeedAudio | null
   likes_count: number
   shares_count: number
   impressions_count: number

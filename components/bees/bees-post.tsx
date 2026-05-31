@@ -12,6 +12,7 @@ import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { BeesVideo } from "./bees-video"
+import { TrackAudio } from "@/components/media/track-audio"
 
 interface BeesPostProps {
   post: FeedPost
@@ -192,6 +193,7 @@ export function BeesPost({
 
   const video = post.media.find((m) => m.type === "video") || post.media[0]
   const hasVideo = !!video && video.type === "video"
+  const hasMusic = !!post.audio?.audio_url
 
   return (
     <section
@@ -209,13 +211,24 @@ export function BeesPost({
               url={video.url}
               poster={video.thumbnail_url}
               isActive={isActive}
-              muted={muted}
+              muted={muted || hasMusic}
               onToggleMute={onToggleMute}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-zinc-900 text-sm text-white/40">
               Sem vídeo disponível
             </div>
+          )}
+
+          {/* Música anexada (metadado) — segue o mute do bee. */}
+          {hasMusic && (
+            <TrackAudio
+              src={post.audio!.audio_url}
+              startMs={post.audio!.start_ms}
+              active={isActive}
+              paused={!isActive}
+              muted={muted}
+            />
           )}
 
           {/* Gradientes (relativos ao vídeo) */}

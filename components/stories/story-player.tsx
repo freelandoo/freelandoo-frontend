@@ -1,12 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight, X, Pause, Play, Music } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 import type { StoryBarEntry } from "./story-bar"
+import type { FeedAudio } from "@/lib/types/portfolio-feed"
+import { TrackAudio } from "@/components/media/track-audio"
 
 export interface StoryItem {
   id_story: string
@@ -21,6 +23,7 @@ export interface StoryItem {
   caption: string | null
   created_at: string
   expires_at: string
+  audio?: FeedAudio | null
   profile?: {
     id_profile: string
     display_name: string
@@ -258,8 +261,20 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
             poster={activeStory.thumbnail_url || undefined}
             autoPlay
             playsInline
+            muted={!!activeStory.audio?.audio_url}
             className="absolute inset-0 h-full w-full object-cover"
             onClick={() => setPaused((p) => !p)}
+          />
+        )}
+
+        {/* Música anexada (metadado) — toca por cima do vídeo mudo. */}
+        {activeStory?.audio?.audio_url && (
+          <TrackAudio
+            key={`audio-${activeStory.id_story}`}
+            src={activeStory.audio.audio_url}
+            startMs={activeStory.audio.start_ms}
+            active={!loading}
+            paused={paused}
           />
         )}
 
@@ -328,6 +343,18 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
             <p className="text-balance text-sm leading-relaxed text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.85)]">
               {activeStory.caption}
             </p>
+          </div>
+        )}
+
+        {activeStory?.audio?.audio_url && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-20 z-20 flex justify-center px-4">
+            <div className="flex max-w-[80%] items-center gap-2 rounded-full bg-black/50 px-3 py-1.5 text-white/90 ring-1 ring-white/15 backdrop-blur-md">
+              <Music className="h-3.5 w-3.5 shrink-0 animate-pulse text-amber-300" />
+              <span className="truncate text-[11px] font-medium">
+                {activeStory.audio.title || t("musicLabel", "Música")}
+                {activeStory.audio.artist ? ` · ${activeStory.audio.artist}` : ""}
+              </span>
+            </div>
           </div>
         )}
 

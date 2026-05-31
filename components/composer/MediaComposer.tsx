@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertCircle, ArrowLeft, ArrowRight, ImagePlus, Loader2, Music,
-  SlidersHorizontal, Sparkles, Type, Layers, Video, X,
+  SlidersHorizontal, Type, Layers, Video, X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
@@ -25,8 +25,10 @@ import {
   ASPECTS, NEUTRAL_CROP, TEXT_COLORS, TEXT_FONTS,
   type ComposerProps, type CropState, type MediaDraft, type MediaKind,
   type TextLayer, type TextFontId, type TextBoxStyle, type OverlayLayer,
+  type AudioPick,
 } from "@/lib/composer/types"
 import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
+import { AudioPicker } from "./AudioPicker"
 
 type Step = "pick" | "crop" | "edit" | "details" | "publish"
 type EditTab = "filtro" | "texto" | "sobreposicao" | "musica"
@@ -54,6 +56,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const [textLayers, setTextLayers] = useState<TextLayer[]>([])
   const [activeTextId, setActiveTextId] = useState<string | null>(null)
   const [overlay, setOverlay] = useState<OverlayLayer | null>(null)
+  const [audioPick, setAudioPick] = useState<AudioPick | null>(null)
 
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(false)
@@ -99,6 +102,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
     overlayElRef.current = null
     setOverlay(null)
+    setAudioPick(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null)
     setCameraOpen(false)
   }, [draft?.url, overlay?.url])
@@ -408,6 +412,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
           videoBlob: result.blob, posterBlob: result.posterBlob,
           durationSeconds: result.durationSec, width: result.width, height: result.height,
           caption: caption.trim() || undefined, filterMeta,
+          audioTrackId: audioPick?.trackId || null, audioStartMs: audioPick?.startMs ?? 0,
           onProgress: (f) => setProgress(0.5 + f * 0.5),
         })
       } else {
@@ -532,6 +537,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
                   overlay={overlay} onPickOverlay={() => overlayInputRef.current?.click()}
                   onOverlayScale={(s) => setOverlay((o) => (o ? { ...o, scale: s } : o))}
                   onRemoveOverlay={removeOverlay}
+                  audioPick={audioPick} onAudioChange={setAudioPick}
                 />
               )}
             </div>
@@ -636,6 +642,7 @@ function EditPanel({
   tab, onTab, presetId, onPreset, filter, onAdj,
   textLayers, activeTextId, setActiveTextId, onAddText, onUpdateText, onRemoveText,
   overlay, onPickOverlay, onOverlayScale, onRemoveOverlay,
+  audioPick, onAudioChange,
 }: {
   tab: EditTab; onTab: (t: EditTab) => void
   presetId: string; onPreset: (id: string) => void
@@ -643,6 +650,7 @@ function EditPanel({
   textLayers: TextLayer[]; activeTextId: string | null; setActiveTextId: (id: string | null) => void
   onAddText: () => void; onUpdateText: (id: string, patch: Partial<TextLayer>) => void; onRemoveText: (id: string) => void
   overlay: OverlayLayer | null; onPickOverlay: () => void; onOverlayScale: (s: number) => void; onRemoveOverlay: () => void
+  audioPick: AudioPick | null; onAudioChange: (a: AudioPick | null) => void
 }) {
   const tabs: { id: EditTab; label: string; icon: React.ReactNode }[] = [
     { id: "filtro", label: "Filtro", icon: <SlidersHorizontal className="h-4 w-4" /> },
@@ -682,11 +690,7 @@ function EditPanel({
         ) : tab === "sobreposicao" ? (
           <OverlayEditor overlay={overlay} onPick={onPickOverlay} onScale={onOverlayScale} onRemove={onRemoveOverlay} />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-            <Sparkles className="h-6 w-6 text-[#F2B705]" />
-            <p className="font-[family-name:var(--font-anton)] text-lg uppercase text-[#F1EDE2]">Em breve</p>
-            <p className="max-w-[220px] text-xs text-[#a89f8d]">Biblioteca de música chega em breve.</p>
-          </div>
+          <AudioPicker value={audioPick} onChange={onAudioChange} />
         )}
       </div>
       <div className="flex items-stretch border-t-2 border-[#0B0B0D]">

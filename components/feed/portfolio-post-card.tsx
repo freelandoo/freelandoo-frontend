@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag } from "lucide-react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
+import { TrackAudio } from "@/components/media/track-audio"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { PostMedia } from "./post-media"
@@ -94,6 +95,9 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [bookmarkPending, setBookmarkPending] = useState(false)
   const [copied, setCopied] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [audioInView, setAudioInView] = useState(false)
+  const [audioMuted, setAudioMuted] = useState(true)
+  const hasMusic = !!post.audio?.audio_url
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     const token = getToken()
@@ -169,6 +173,19 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       flush()
     }
   }, [filters, impressionRef, post.post_id])
+
+  // Música anexada: só toca quando o card está realmente em cena (>=60% visível).
+  useEffect(() => {
+    if (!hasMusic) return
+    const node = impressionRef.current
+    if (!node || typeof IntersectionObserver === "undefined") return
+    const obs = new IntersectionObserver(
+      ([entry]) => setAudioInView(!!entry?.isIntersecting && entry.intersectionRatio >= 0.6),
+      { threshold: [0, 0.6, 1] }
+    )
+    obs.observe(node)
+    return () => obs.disconnect()
+  }, [hasMusic, impressionRef])
 
   const handleLike = async () => {
     const token = getToken()
@@ -315,6 +332,22 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     }
   }
 
+  const musicPill = hasMusic ? (
+    <button
+      type="button"
+      onClick={() => setAudioMuted((m) => !m)}
+      aria-label={audioMuted ? t("unmuteMusic", "Ativar música") : t("muteMusic", "Silenciar música")}
+      className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-medium text-white/90 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/60"
+    >
+      <Music className="h-3 w-3 shrink-0 text-amber-300" />
+      <span className="truncate">
+        {post.audio?.title || t("musicLabel", "Música")}
+        {post.audio?.artist ? ` · ${post.audio.artist}` : ""}
+      </span>
+      {audioMuted ? <VolumeX className="h-3 w-3 shrink-0" /> : <Volume2 className="h-3 w-3 shrink-0 text-amber-300" />}
+    </button>
+  ) : null
+
   // Edge-to-edge Instagram-style quando não é paged (bees vertical).
   return (
     <article
@@ -327,6 +360,15 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       )}
       data-post-id={post.post_id}
     >
+      {hasMusic && (
+        <TrackAudio
+          src={post.audio!.audio_url}
+          startMs={post.audio!.start_ms}
+          active={audioInView}
+          muted={audioMuted}
+        />
+      )}
+
       {/* Header */}
       <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3", paged ? "px-4 py-2" : "px-3 py-2.5")}>
         <Link
@@ -445,6 +487,8 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
                 )}
               </div>
             )}
+
+            {musicPill && <div className="pointer-events-auto mt-3">{musicPill}</div>}
 
             {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
               <div className="pointer-events-auto mt-3 flex flex-wrap gap-2">
@@ -697,6 +741,8 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               )}
             </div>
           )}
+
+          {musicPill && <div className="px-3 pt-2">{musicPill}</div>}
 
           {/* Ver comentários */}
           {!!(commentsCount && commentsCount > 0) && (
