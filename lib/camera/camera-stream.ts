@@ -65,6 +65,7 @@ export async function openCamera(opts: OpenCameraOptions): Promise<CameraHandle>
     facingMode: { ideal: opts.facing },
     width: { ideal: opts.width ?? 720 },
     height: { ideal: opts.height ?? 1280 },
+    aspectRatio: { ideal: (opts.width ?? 720) / (opts.height ?? 1280) }, // dica de retrato
     frameRate: { ideal: 30, max: 30 },
   }
 

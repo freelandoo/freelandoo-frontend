@@ -227,11 +227,15 @@ export class CameraRenderer {
     const vh = video.videoHeight
     if (!vw || !vh) return
 
-    // contain fit: preserva o enquadramento real da câmera sem "zoomar".
-    const scale = Math.min(this.W / vw, this.H / vh)
+    // cover fit: preenche o quadro retrato cortando as sobras (estilo Stories).
+    // Muitos navegadores in-app entregam o stream em paisagem mesmo pedindo
+    // retrato; com "contain" isso virava uma faixa deitada no meio da tela
+    // (parecia que o giroscópio estava errado). Com "cover" a cena sobe e
+    // preenche, mantendo o rosto em pé.
+    const scale = Math.max(this.W / vw, this.H / vh)
     const rw = Math.max(2, Math.round(vw * scale))
     const rh = Math.max(2, Math.round(vh * scale))
-    const rx = Math.round((this.W - rw) / 2)
+    const rx = Math.round((this.W - rw) / 2) // negativo no cover: corta as bordas
     const ry = Math.round((this.H - rh) / 2)
     this.videoRect = { x: rx, y: ry, w: rw, h: rh }
     if (this.glCanvas.width !== rw || this.glCanvas.height !== rh) {

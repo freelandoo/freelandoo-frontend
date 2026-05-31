@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw,
   SwitchCamera, Upload, X, Sparkles, Palette,
+  SlidersHorizontal, Glasses, Brush, Frame,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
@@ -32,20 +33,27 @@ const FRAMES: { id: FrameStyle; label: string }[] = [
   { id: "tabloide", label: "Tabloide" },
   { id: "polaroid", label: "Polaroid" },
 ]
-const ACCESSORIES: { id: AccessoryType; label: string }[] = [
-  { id: "none", label: "Nenhum" },
-  { id: "glasses", label: "👓 Óculos" },
-  { id: "red-glasses", label: "🔴 Vermelhos" },
-  { id: "sunglasses", label: "🕶 Escuros" },
-  { id: "crown", label: "👑 Coroa" },
-  { id: "hat", label: "🎉 Chapéu" },
+// Quadradinhos sem nome (só ícone/imagem) — rolagem horizontal por categoria.
+const ACCESSORY_TILES: { id: AccessoryType; emoji: string }[] = [
+  { id: "none", emoji: "" },
+  { id: "glasses", emoji: "👓" },
+  { id: "red-glasses", emoji: "🔴" },
+  { id: "sunglasses", emoji: "🕶" },
+  { id: "crown", emoji: "👑" },
+  { id: "hat", emoji: "🎉" },
+]
+type MakeupItem = "pele" | "batom" | "blush"
+const MAKEUP_TILES: { id: MakeupItem; emoji: string }[] = [
+  { id: "pele", emoji: "✨" },
+  { id: "batom", emoji: "💄" },
+  { id: "blush", emoji: "🌸" },
 ]
 type PanelTab = null | "filtros" | "rostos" | "maquiagem" | "molduras"
-const TABS: { id: Exclude<PanelTab, null>; label: string }[] = [
-  { id: "filtros", label: "Filtros" },
-  { id: "rostos", label: "Rostos" },
-  { id: "maquiagem", label: "Maquiagem" },
-  { id: "molduras", label: "Molduras" },
+const CATS: { id: Exclude<PanelTab, null>; Icon: typeof Palette }[] = [
+  { id: "filtros", Icon: SlidersHorizontal },
+  { id: "rostos", Icon: Glasses },
+  { id: "maquiagem", Icon: Brush },
+  { id: "molduras", Icon: Frame },
 ]
 
 // Régua de cor (hue 0..360) ↔ hex, saturação/luminância fixas.
@@ -108,6 +116,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [overlay, setOverlay] = useState<OverlayState>(NEUTRAL_OVERLAY)
   const [makeup, setMakeup] = useState<MakeupState>(NEUTRAL_MAKEUP)
   const [panelTab, setPanelTab] = useState<PanelTab>(null)
+  const [makeupItem, setMakeupItem] = useState<MakeupItem>("pele")
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<RecordResult | null>(null)
@@ -167,13 +176,11 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
         video.onloadedmetadata = () => { window.clearTimeout(timer); resolve() }
       })
       await video.play().catch(() => {})
-      if (!rendererRef.current && canvasRef.current) {
-        const rnd = new CameraRenderer(canvasRef.current, filterRef.current, overlayRef.current)
-        rnd.setSize(TARGET_W, TARGET_H)
-        rendererRef.current = rnd
-      }
-      rendererRef.current?.setFlipX(handle.facing === "user")
       setPhase("live")
+      // O renderer é criado no efeito abaixo, quando o <canvas> já está montado.
+      // Na 1ª abertura o canvas só existe DEPOIS de phase virar "live"; criar o
+      // renderer aqui pegava canvasRef.current === null → preview preto até a
+      // pessoa apertar "trocar câmera" (que rebootava com o canvas já no DOM).
       if (rafRef.current == null) rafRef.current = requestAnimationFrame(loop)
     } catch (err) {
       if (err instanceof CameraPermissionError) {
@@ -186,6 +193,20 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       }
     }
   }, [loop])
+
+  // cria o renderer assim que o <canvas> existe (phase "live") e sincroniza o
+  // espelhamento. Resolve a tela preta na 1ª abertura (canvas montado tarde).
+  useEffect(() => {
+    if (phase !== "live" || !canvasRef.current) return
+    let rnd = rendererRef.current
+    if (!rnd) {
+      rnd = new CameraRenderer(canvasRef.current, filterRef.current, overlayRef.current)
+      rnd.setSize(TARGET_W, TARGET_H)
+      rendererRef.current = rnd
+    }
+    rnd.setFlipX(facing === "user")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, facing])
 
   // init quando abre
   useEffect(() => {
@@ -548,98 +569,112 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
           </AnimatePresence>
         </div>
 
-        {/* CONTROLES (live) — mínimo sobre o vídeo + painel glass por aba */}
+        {/* CONTROLES (live) — sem caixa: tira de quadradinhos + réguas transparentes */}
         {phase === "live" && (
           <>
-            {/* painel de opções (transparente, abre só ao tocar no botão de cores) */}
             <AnimatePresence>
               {panelTab && !recording && (
                 <motion.div
-                  initial={{ y: 28, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 28, opacity: 0 }}
+                  key="fx"
+                  initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
                   transition={SPRING}
-                  className="absolute inset-x-3 bottom-[116px] z-20 overflow-hidden rounded-3xl border border-white/10 bg-black/35 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+                  className="absolute inset-x-0 bottom-[108px] z-20 flex flex-col gap-3"
                 >
-                  <div className="flex items-center gap-1 border-b border-white/10 p-1.5">
-                    {TABS.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setPanelTab(t.id)}
-                        className={cn(
-                          "flex-1 rounded-full px-2 py-1.5 text-[11px] font-semibold transition",
-                          panelTab === t.id ? "bg-yellow-400/20 text-yellow-300" : "text-white/55"
-                        )}
-                      >
-                        {t.label}
-                      </button>
+                  {/* RÉGUAS transparentes (sobre o vídeo) — só quando o item tem parâmetros */}
+                  {panelTab === "filtros" && (
+                    <GhostSliders>
+                      <Slider label="Brilho" value={filter.brightness} min={-0.5} max={0.5} onChange={(v) => setAdj("brightness", v)} />
+                      <Slider label="Contraste" value={filter.contrast} min={-0.5} max={0.5} onChange={(v) => setAdj("contrast", v)} />
+                      <Slider label="Saturação" value={filter.saturation} min={-1} max={1} onChange={(v) => setAdj("saturation", v)} />
+                      <Slider label="Temperatura" value={filter.temperature} min={-0.5} max={0.5} onChange={(v) => setAdj("temperature", v)} />
+                      <Slider label="Vinheta" value={filter.vignette} min={0} max={1} onChange={(v) => setAdj("vignette", v)} />
+                    </GhostSliders>
+                  )}
+                  {panelTab === "maquiagem" && makeupItem === "pele" && (
+                    <GhostSliders>
+                      <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
+                    </GhostSliders>
+                  )}
+                  {panelTab === "maquiagem" && makeupItem === "batom" && (
+                    <GhostSliders>
+                      <HueSlider label="Cor" hue={hexToHue(makeup.lipColor)} color={makeup.lipColor} onChange={setLipHue} />
+                      <Slider label="Opacidade" value={makeup.lipstick} min={0} max={1} onChange={setLipOpacity} />
+                      <Slider label="Blur" value={makeup.lipBlur} min={0} max={1} onChange={setLipBlur} />
+                    </GhostSliders>
+                  )}
+                  {panelTab === "maquiagem" && makeupItem === "blush" && (
+                    <GhostSliders>
+                      <HueSlider label="Cor" hue={hexToHue(makeup.blushColor)} color={makeup.blushColor} onChange={setBlushHue} />
+                      <Slider label="Opacidade" value={makeup.blush} min={0} max={1} onChange={setBlushOpacity} />
+                      <Slider label="Blur" value={makeup.blushBlur} min={0} max={1} onChange={setBlushBlur} />
+                    </GhostSliders>
+                  )}
+
+                  {/* TIRA HORIZONTAL de quadradinhos (sem nome) */}
+                  <div className="flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {panelTab === "filtros" && PRESETS.map((p) => (
+                      <Tile key={p.id} active={presetId === p.id} onClick={() => applyPreset(p.id)} label={p.label}>
+                        <span className="h-full w-full" style={{ background: p.swatch }} />
+                      </Tile>
                     ))}
-                  </div>
-                  <div className="max-h-[40dvh] overflow-y-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {panelTab === "filtros" && (
-                      <div className="space-y-3">
-                        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {PRESETS.map((p) => (
-                            <button key={p.id} onClick={() => applyPreset(p.id)} className="flex shrink-0 flex-col items-center gap-1">
-                              <span className={cn("h-12 w-12 rounded-2xl ring-2 transition", presetId === p.id ? "ring-yellow-400" : "ring-white/15")} style={{ background: p.swatch }} />
-                              <span className={cn("text-[10px]", presetId === p.id ? "text-yellow-300" : "text-white/55")}>{p.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                        <div className="space-y-2">
-                          <Slider label="Brilho" value={filter.brightness} min={-0.5} max={0.5} onChange={(v) => setAdj("brightness", v)} />
-                          <Slider label="Contraste" value={filter.contrast} min={-0.5} max={0.5} onChange={(v) => setAdj("contrast", v)} />
-                          <Slider label="Saturação" value={filter.saturation} min={-1} max={1} onChange={(v) => setAdj("saturation", v)} />
-                          <Slider label="Temperatura" value={filter.temperature} min={-0.5} max={0.5} onChange={(v) => setAdj("temperature", v)} />
-                          <Slider label="Vinheta" value={filter.vignette} min={0} max={1} onChange={(v) => setAdj("vignette", v)} />
-                        </div>
-                      </div>
-                    )}
 
-                    {panelTab === "rostos" && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {ACCESSORIES.map((a) => (
-                          <Chip key={a.id} active={overlay.accessory === a.id} onClick={() => selectAccessory(a.id)}>{a.label}</Chip>
-                        ))}
-                        {faceLoading && <Loader2 className="h-4 w-4 animate-spin text-yellow-300" />}
-                      </div>
-                    )}
+                    {panelTab === "rostos" && ACCESSORY_TILES.map((a) => (
+                      <Tile key={a.id} active={overlay.accessory === a.id} onClick={() => selectAccessory(a.id)} label={a.id}>
+                        {a.id === "none" ? <X className="h-5 w-5 text-white/70" /> : <span className="text-2xl">{a.emoji}</span>}
+                      </Tile>
+                    ))}
 
-                    {panelTab === "maquiagem" && (
-                      <div className="space-y-4">
-                        <Slider label="Pele" value={makeup.skinSmooth} min={0} max={1} onChange={(v) => setSkin(v)} />
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Batom</p>
-                          <HueSlider label="Cor" hue={hexToHue(makeup.lipColor)} color={makeup.lipColor} onChange={setLipHue} />
-                          <Slider label="Opacidade" value={makeup.lipstick} min={0} max={1} onChange={setLipOpacity} />
-                          <Slider label="Blur" value={makeup.lipBlur} min={0} max={1} onChange={setLipBlur} />
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">Blush</p>
-                          <HueSlider label="Cor" hue={hexToHue(makeup.blushColor)} color={makeup.blushColor} onChange={setBlushHue} />
-                          <Slider label="Opacidade" value={makeup.blush} min={0} max={1} onChange={setBlushOpacity} />
-                          <Slider label="Blur" value={makeup.blushBlur} min={0} max={1} onChange={setBlushBlur} />
-                        </div>
-                        {faceLoading && <p className="flex items-center gap-1.5 text-[11px] text-yellow-300"><Loader2 className="h-3.5 w-3.5 animate-spin" />Carregando detector de rosto…</p>}
-                      </div>
-                    )}
+                    {panelTab === "maquiagem" && MAKEUP_TILES.map((m) => (
+                      <Tile key={m.id} active={makeupItem === m.id} onClick={() => setMakeupItem(m.id)} label={m.id}>
+                        <span className="text-2xl">{m.emoji}</span>
+                      </Tile>
+                    ))}
 
                     {panelTab === "molduras" && (
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {FRAMES.map((fr) => (
-                            <Chip key={fr.id} active={overlay.frame === fr.id} onClick={() => setOverlay((o) => ({ ...o, frame: fr.id }))}>{fr.label}</Chip>
-                          ))}
-                          <Chip active={overlay.watermark} onClick={() => setOverlay((o) => ({ ...o, watermark: !o.watermark }))}>Marca</Chip>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {STICKER_CHARS.map((c) => (
-                            <button key={c} onClick={() => addSticker(c)} className="rounded-lg px-1 text-2xl">{c}</button>
-                          ))}
-                          {overlay.stickers.length > 0 && (
-                            <button onClick={clearStickers} className="rounded-full bg-white/10 p-1.5 text-white/70"><RefreshCw className="h-3.5 w-3.5" /></button>
-                          )}
-                        </div>
-                      </div>
+                      <>
+                        {FRAMES.map((fr) => (
+                          <Tile key={fr.id} active={overlay.frame === fr.id} onClick={() => setOverlay((o) => ({ ...o, frame: fr.id }))} label={fr.label}>
+                            <FramePreview id={fr.id} />
+                          </Tile>
+                        ))}
+                        <Tile active={overlay.watermark} onClick={() => setOverlay((o) => ({ ...o, watermark: !o.watermark }))} label="Marca">
+                          <span className="text-lg font-extrabold text-yellow-400">f</span>
+                        </Tile>
+                        {STICKER_CHARS.map((c) => (
+                          <Tile key={c} active={false} onClick={() => addSticker(c)} label="sticker">
+                            <span className="text-2xl">{c}</span>
+                          </Tile>
+                        ))}
+                        {overlay.stickers.length > 0 && (
+                          <Tile active={false} onClick={clearStickers} label="Limpar stickers">
+                            <RefreshCw className="h-5 w-5 text-white/70" />
+                          </Tile>
+                        )}
+                      </>
                     )}
+
+                    {faceLoading && (panelTab === "rostos" || panelTab === "maquiagem") && (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-yellow-300" />
+                      </span>
+                    )}
+                  </div>
+
+                  {/* trocador de categoria — só ícones, transparente */}
+                  <div className="flex items-center justify-center gap-2.5">
+                    {CATS.map(({ id, Icon }) => (
+                      <button
+                        key={id}
+                        onClick={() => setPanelTab(id)}
+                        aria-label={id}
+                        className={cn(
+                          "rounded-full p-2.5 backdrop-blur transition",
+                          panelTab === id ? "bg-yellow-400/25 text-yellow-300" : "bg-black/30 text-white/70"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </button>
+                    ))}
                   </div>
                 </motion.div>
               )}
@@ -667,9 +702,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
                   <button
                     onClick={() => setPanelTab((t) => (t ? null : "filtros"))}
                     className={cn("absolute right-7 top-1/2 -translate-y-1/2 rounded-full p-3.5 backdrop-blur-md transition", panelTab ? "bg-yellow-400/25 text-yellow-300" : "bg-white/15 text-white")}
-                    aria-label="Opções"
+                    aria-label={panelTab ? "Fechar efeitos" : "Efeitos"}
                   >
-                    <Palette className="h-5 w-5" />
+                    {panelTab ? <X className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
                   </button>
                 )}
               </div>
@@ -698,19 +733,31 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   )
 }
 
+const LABEL_SHADOW = { textShadow: "0 1px 3px rgba(0,0,0,0.95)" } as const
+
+// Wrapper das réguas: quase transparente (só um degradê fino p/ legibilidade),
+// pra pessoa ver o que está fazendo enquanto arrasta — sem "caixa".
+function GhostSliders({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-3 space-y-2.5 rounded-2xl bg-gradient-to-t from-black/45 via-black/15 to-transparent px-4 pb-2 pt-4">
+      {children}
+    </div>
+  )
+}
+
 function Slider({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
   return (
-    <label className="flex items-center gap-3 text-[11px] text-white/60">
-      <span className="w-20 shrink-0">{label}</span>
-      <input type="range" min={min} max={max} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-1 flex-1 accent-yellow-400" />
+    <label className="flex items-center gap-3 text-[11px] text-white/85">
+      <span className="w-20 shrink-0" style={LABEL_SHADOW}>{label}</span>
+      <input type="range" min={min} max={max} step={0.01} value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-1 flex-1 accent-yellow-400 drop-shadow" />
     </label>
   )
 }
 
 function HueSlider({ label, hue, color, onChange }: { label: string; hue: number; color: string; onChange: (h: number) => void }) {
   return (
-    <label className="flex items-center gap-3 text-[11px] text-white/60">
-      <span className="w-20 shrink-0">{label}</span>
+    <label className="flex items-center gap-3 text-[11px] text-white/85">
+      <span className="w-20 shrink-0" style={LABEL_SHADOW}>{label}</span>
       <input
         type="range"
         min={0}
@@ -718,7 +765,7 @@ function HueSlider({ label, hue, color, onChange }: { label: string; hue: number
         step={1}
         value={hue}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 flex-1 cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-transparent"
+        className="h-2 flex-1 cursor-pointer appearance-none rounded-full drop-shadow [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-transparent"
         style={{ background: "linear-gradient(to right,#ff0000,#ffff00,#00ff00,#00ffff,#0000ff,#ff00ff,#ff0000)" }}
       />
       <span className="h-5 w-5 shrink-0 rounded-full ring-1 ring-white/40" style={{ background: color }} />
@@ -726,10 +773,32 @@ function HueSlider({ label, hue, color, onChange }: { label: string; hue: number
   )
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+// Quadradinho de efeito (sem nome): só ícone/imagem, rolagem horizontal.
+function Tile({ active, onClick, label, children }: { active: boolean; onClick: () => void; label: string; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs transition", active ? "border-yellow-400 bg-yellow-400/15 text-yellow-300" : "border-white/15 text-white/70")}>
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className={cn(
+        "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black/40 ring-2 backdrop-blur transition",
+        active ? "ring-yellow-400" : "ring-white/20"
+      )}
+    >
       {children}
     </button>
   )
+}
+
+// Mini-preview da moldura dentro do quadradinho (sem texto).
+function FramePreview({ id }: { id: FrameStyle }) {
+  if (id === "none") return <X className="h-5 w-5 text-white/70" />
+  if (id === "classic") return <span className="h-8 w-8 rounded-sm border-[3px] border-white/90" />
+  if (id === "tabloide")
+    return (
+      <span className="relative h-9 w-9 bg-neutral-800">
+        <span className="absolute inset-x-0 top-0 h-1.5 bg-yellow-400" />
+        <span className="absolute inset-x-0 bottom-0 h-1.5 bg-yellow-400" />
+      </span>
+    )
+  return <span className="h-9 w-8 border-[3px] border-b-[10px] border-white bg-neutral-700" /> // polaroid
 }
