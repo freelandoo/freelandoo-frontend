@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw,
+  AlertCircle, Check, Loader2, Mic, MicOff, RefreshCw, RotateCcw, RotateCw,
   SwitchCamera, Upload, X, Sparkles, Palette,
   SlidersHorizontal, Glasses, Brush, Frame,
 } from "lucide-react"
@@ -83,6 +83,26 @@ function hexToHue(hex: string): number {
   return h < 0 ? h + 360 : h
 }
 
+// Ângulo da UI vs. orientação natural do aparelho (0 = retrato em phones).
+function deviceAngle(): number {
+  if (typeof window === "undefined") return 0
+  const so = window.screen?.orientation
+  if (so && typeof so.angle === "number") return so.angle
+  const wo = (window as unknown as { orientation?: number }).orientation
+  return typeof wo === "number" ? (((wo % 360) + 360) % 360) : 0
+}
+
+// Palpite de rotação p/ corrigir webviews que entregam o stream deitado.
+// 0..3 = 0/90/180/270°. O usuário pode corrigir no botão de girar.
+function autoRotation(vw: number, vh: number, angle: number, facing: Facing): 0 | 1 | 2 | 3 {
+  if (!vw || !vh) return 0
+  const streamLandscape = vw > vh
+  const devicePortrait = angle === 0 || angle === 180
+  if (streamLandscape && devicePortrait) return facing === "user" ? 3 : 1
+  if (!streamLandscape && !devicePortrait) return facing === "user" ? 1 : 3
+  return 0
+}
+
 type Phase = "permission" | "denied" | "unsupported" | "live" | "review" | "publishing"
 
 interface CameraStudioProps {
@@ -106,6 +126,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const makeupRef = useRef<MakeupState>(NEUTRAL_MAKEUP)
   const recStartRef = useRef<number>(0)
   const faceTrackerRef = useRef<FaceTracker | null>(null)
+  const rotationRef = useRef(0)
 
   const [caps, setCaps] = useState<CameraCapabilities | null>(null)
   const [phase, setPhase] = useState<Phase>("permission")
@@ -117,6 +138,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [makeup, setMakeup] = useState<MakeupState>(NEUTRAL_MAKEUP)
   const [panelTab, setPanelTab] = useState<PanelTab>(null)
   const [makeupItem, setMakeupItem] = useState<MakeupItem>("pele")
+  const [rotation, setRotation] = useState<0 | 1 | 2 | 3>(0)
+  const [dbg, setDbg] = useState({ w: 0, h: 0, angle: 0 })
+  const [showDebug, setShowDebug] = useState(true)
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<RecordResult | null>(null)
@@ -129,6 +153,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   useEffect(() => { filterRef.current = filter }, [filter])
   useEffect(() => { overlayRef.current = overlay }, [overlay])
   useEffect(() => { makeupRef.current = makeup }, [makeup])
+  useEffect(() => { rotationRef.current = rotation }, [rotation])
 
   // ─── loop de render ──────────────────────────────────────────────────────
   const loop = useCallback(() => {
@@ -147,6 +172,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       r.setMakeup(mk)
       r.setFilter(filterRef.current)
       r.setOverlay(overlayRef.current)
+      r.setRotation(rotationRef.current)
       r.renderFrame(v)
       recorderRef.current?.captureVideoFrame()
     }
@@ -176,6 +202,10 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
         video.onloadedmetadata = () => { window.clearTimeout(timer); resolve() }
       })
       await video.play().catch(() => {})
+      // orientação: tenta corrigir webviews que entregam o stream deitado
+      const angle = deviceAngle()
+      setRotation(autoRotation(video.videoWidth, video.videoHeight, angle, handle.facing))
+      setDbg({ w: video.videoWidth, h: video.videoHeight, angle })
       setPhase("live")
       // O renderer é criado no efeito abaixo, quando o <canvas> já está montado.
       // Na 1ª abertura o canvas só existe DEPOIS de phase virar "live"; criar o
@@ -234,6 +264,25 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     return () => document.removeEventListener("visibilitychange", onVis)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  // recalcula a rotação quando o aparelho gira
+  useEffect(() => {
+    if (!open) return
+    const onRot = () => {
+      const v = videoRef.current
+      if (!v || !v.videoWidth) return
+      const angle = deviceAngle()
+      setRotation(autoRotation(v.videoWidth, v.videoHeight, angle, facing))
+      setDbg({ w: v.videoWidth, h: v.videoHeight, angle })
+    }
+    window.addEventListener("orientationchange", onRot)
+    const so = window.screen?.orientation
+    so?.addEventListener?.("change", onRot)
+    return () => {
+      window.removeEventListener("orientationchange", onRot)
+      so?.removeEventListener?.("change", onRot)
+    }
+  }, [open, facing])
 
   const teardown = useCallback(() => {
     if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
@@ -477,6 +526,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
             </button>
             {phase === "live" && (
               <div className="flex items-center gap-2">
+                <button onClick={() => setRotation((r) => (((r + 1) % 4) as 0 | 1 | 2 | 3))} className="rounded-full bg-black/50 p-2 text-white backdrop-blur" aria-label="Girar imagem">
+                  <RotateCw className="h-5 w-5" />
+                </button>
                 <button onClick={() => { setMicOn((m) => !m) }} className="rounded-full bg-black/50 p-2 text-white backdrop-blur" aria-label="Microfone">
                   {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-red-300" />}
                 </button>
@@ -486,6 +538,18 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
               </div>
             )}
           </div>
+
+          {/* leitor de debug temporário — toque p/ ocultar */}
+          {phase === "live" && (
+            <button
+              onClick={() => setShowDebug((s) => !s)}
+              className="absolute left-3 top-16 z-30 rounded-lg bg-black/65 px-2 py-1 font-mono text-[10px] text-yellow-300 backdrop-blur"
+            >
+              {showDebug
+                ? `cam ${dbg.w}×${dbg.h} · ângulo ${dbg.angle}° · giro ${rotation * 90}° · ${facing}`
+                : "debug"}
+            </button>
+          )}
 
           {/* timer */}
           {phase === "live" && recording && (

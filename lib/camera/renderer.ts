@@ -12,12 +12,19 @@ import { drawMakeup } from "./face-makeup"
 export const VERT = `
 attribute vec2 a_pos;
 uniform float u_flipX;
+uniform float u_rot; // 0,1,2,3 = 0/90/180/270 graus
 varying vec2 v_uv;
 void main() {
   float ux = a_pos.x * 0.5 + 0.5;
   ux = mix(ux, 1.0 - ux, u_flipX);
   float uy = 1.0 - (a_pos.y * 0.5 + 0.5);
-  v_uv = vec2(ux, uy);
+  vec2 base = vec2(ux, uy);
+  vec2 uv;
+  if (u_rot < 0.5) uv = base;
+  else if (u_rot < 1.5) uv = vec2(base.y, 1.0 - base.x);
+  else if (u_rot < 2.5) uv = vec2(1.0 - base.x, 1.0 - base.y);
+  else uv = vec2(1.0 - base.y, base.x);
+  v_uv = uv;
   gl_Position = vec4(a_pos, 0.0, 1.0);
 }
 `
@@ -132,6 +139,7 @@ export class CameraRenderer {
   private filter: FilterState
   private overlay: OverlayState
   private flipX = false
+  private rotation = 0 // 0..3 (×90°)
   private startTime = performance.now()
   private face: FaceLite | null = null
   private makeup: MakeupState = NEUTRAL_MAKEUP
@@ -183,7 +191,7 @@ export class CameraRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
     for (const name of [
-      "u_flipX", "u_uvScale", "u_uvOffset", "u_brightness", "u_contrast",
+      "u_flipX", "u_rot", "u_uvScale", "u_uvOffset", "u_brightness", "u_contrast",
       "u_saturation", "u_temperature", "u_vignette", "u_grain", "u_mono",
       "u_tint", "u_tintStrength", "u_time", "u_tex",
       "u_skinSmooth", "u_faceCenter", "u_faceRadius", "u_blurStep",
@@ -207,15 +215,29 @@ export class CameraRenderer {
   setFilter(f: FilterState) { this.filter = f }
   setOverlay(o: OverlayState) { this.overlay = o }
   setFlipX(flip: boolean) { this.flipX = flip }
+  setRotation(r: number) { this.rotation = ((Math.round(r) % 4) + 4) % 4 }
   setFace(f: FaceLite | null) { this.face = f }
   setMakeup(m: MakeupState) { this.makeup = m }
 
+  /** Ponto do vídeo (normalizado) → normalizado no espaço de SAÍDA, aplicando o
+   *  mesmo flip + rotação do shader (mantém acessórios grudados ao rosto). */
+  private toOutputNorm(px: number, py: number): { x: number; y: number } {
+    const sx = this.flipX ? 1 - px : px
+    const sy = py
+    switch (this.rotation) {
+      case 1: return { x: 1 - sy, y: sx }
+      case 2: return { x: 1 - sx, y: 1 - sy }
+      case 3: return { x: sy, y: 1 - sx }
+      default: return { x: sx, y: sy }
+    }
+  }
+
   /** Mapeia um ponto do vídeo (normalizado) p/ px do canvas de saída,
-   *  aplicando a MESMA transformação contain+flip do preview. */
+   *  aplicando a MESMA transformação contain+flip+rotação do preview. */
   private mapPoint(p: P): { x: number; y: number } {
     const r = this.videoRect
-    const screenX = this.flipX ? 1 - p.x : p.x
-    return { x: r.x + screenX * r.w, y: r.y + p.y * r.h }
+    const o = this.toOutputNorm(p.x, p.y)
+    return { x: r.x + o.x * r.w, y: r.y + o.y * r.h }
   }
   get size() { return { width: this.W, height: this.H } }
   get outputCanvas() { return this.out }
@@ -232,9 +254,14 @@ export class CameraRenderer {
     // sobra espaço em cima/embaixo no quadro retrato. Em vez de barras pretas
     // (parecia "deitado") ou de cortar tudo no "cover" (ficava com muito zoom),
     // preenchemos o fundo com a própria imagem ampliada e desfocada (estilo IG).
-    const fitScale = Math.min(this.W / vw, this.H / vh)
-    const fw = Math.max(2, Math.round(vw * fitScale))
-    const fh = Math.max(2, Math.round(vh * fitScale))
+    // dims efetivas após rotação (90°/270° trocam largura ↔ altura)
+    const rot = this.rotation
+    const odd = rot === 1 || rot === 3
+    const efw = odd ? vh : vw
+    const efh = odd ? vw : vh
+    const fitScale = Math.min(this.W / efw, this.H / efh)
+    const fw = Math.max(2, Math.round(efw * fitScale))
+    const fh = Math.max(2, Math.round(efh * fitScale))
     const fx = Math.round((this.W - fw) / 2)
     const fy = Math.round((this.H - fh) / 2)
     this.videoRect = { x: fx, y: fy, w: fw, h: fh }
@@ -253,6 +280,7 @@ export class CameraRenderer {
 
     const f = this.filter
     gl.uniform1f(this.uloc.u_flipX, this.flipX ? 1 : 0)
+    gl.uniform1f(this.uloc.u_rot, rot)
     gl.uniform2f(this.uloc.u_uvScale, 1, 1)
     gl.uniform2f(this.uloc.u_uvOffset, 0, 0)
     gl.uniform1f(this.uloc.u_brightness, f.brightness)
@@ -297,9 +325,9 @@ export class CameraRenderer {
 
     // fundo: a mesma imagem ampliada p/ cobrir a tela, desfocada e escurecida.
     // Some as barras pretas sem aplicar zoom no que importa (o foreground).
-    const coverScale = Math.max(this.W / vw, this.H / vh)
-    const bw = Math.round(vw * coverScale)
-    const bh = Math.round(vh * coverScale)
+    const coverScale = Math.max(this.W / efw, this.H / efh)
+    const bw = Math.round(efw * coverScale)
+    const bh = Math.round(efh * coverScale)
     const bx = Math.round((this.W - bw) / 2)
     const by = Math.round((this.H - bh) / 2)
     ctx.save()
