@@ -47,6 +47,34 @@ export interface MediaDraft {
   durationSec?: number // só vídeo
 }
 
+/** Estilo da caixa do texto sobreposto. */
+export type TextBoxStyle = "rounded" | "transparent"
+
+/** Fontes disponíveis p/ texto (mapeadas p/ CSS var + família canvas). */
+export type TextFontId = "display" | "sans" | "marker"
+
+export const TEXT_FONTS: Record<TextFontId, { label: string; cssVar: string; canvas: string }> = {
+  display: { label: "Manchete", cssVar: "var(--font-anton)", canvas: "Anton, 'Arial Narrow', sans-serif" },
+  sans: { label: "Corpo", cssVar: "var(--font-archivo)", canvas: "Archivo, system-ui, sans-serif" },
+  marker: { label: "Manuscrito", cssVar: "var(--font-caveat)", canvas: "Caveat, cursive" },
+}
+
+/** Cores disponíveis p/ texto/caixa (paleta tabloide). */
+export const TEXT_COLORS = ["#F2B705", "#0B0B0D", "#F1EDE2", "#1d4ed8", "#c2371f"] as const
+
+/** Camada de texto sobreposto (queimada no canvas). Posição/tamanho relativos (0..1). */
+export interface TextLayer {
+  id: string
+  text: string
+  font: TextFontId
+  color: string
+  box: TextBoxStyle
+  boxColor: string
+  x: number // centro 0..1
+  y: number // centro 0..1
+  size: number // fração da menor dimensão (altura da fonte)
+}
+
 /** Música anexada (metadado — não é queimada). Preenchido no slice 5. */
 export interface AudioPick {
   trackId: string

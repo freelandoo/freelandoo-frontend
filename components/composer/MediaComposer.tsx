@@ -20,7 +20,12 @@ import { uploadStory } from "@/lib/camera/upload"
 import type { FilterState, FilterMeta } from "@/lib/camera/types"
 import { ComposerRenderer } from "@/lib/composer/renderer"
 import { compose } from "@/lib/composer/compose"
-import { ASPECTS, NEUTRAL_CROP, type ComposerProps, type CropState, type MediaDraft, type MediaKind } from "@/lib/composer/types"
+import { drawTextLayers, layerBox } from "@/lib/composer/text-layer"
+import {
+  ASPECTS, NEUTRAL_CROP, TEXT_COLORS, TEXT_FONTS,
+  type ComposerProps, type CropState, type MediaDraft, type MediaKind,
+  type TextLayer, type TextFontId, type TextBoxStyle,
+} from "@/lib/composer/types"
 import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
 
 type Step = "pick" | "crop" | "edit" | "details" | "publish"
@@ -46,6 +51,8 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const [crop, setCrop] = useState<CropState>(NEUTRAL_CROP)
   const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID)
   const [filter, setFilter] = useState<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
+  const [textLayers, setTextLayers] = useState<TextLayer[]>([])
+  const [activeTextId, setActiveTextId] = useState<string | null>(null)
 
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
   const [loadingProfiles, setLoadingProfiles] = useState(false)
@@ -67,8 +74,10 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
   const rafRef = useRef<number | null>(null)
   const filterRef = useRef(filter)
   const cropRef = useRef(crop)
+  const textRef = useRef<TextLayer[]>(textLayers)
   useEffect(() => { filterRef.current = filter }, [filter])
   useEffect(() => { cropRef.current = crop }, [crop])
+  useEffect(() => { textRef.current = textLayers }, [textLayers])
 
   const allowedAspects = aspectsFor(mode)
   const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
@@ -79,6 +88,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     if (draft?.url) URL.revokeObjectURL(draft.url)
     setStep("pick"); setEditTab("filtro"); setDraft(null); setCrop(NEUTRAL_CROP)
     setPresetId(DEFAULT_PRESET_ID); setFilter(getPreset(DEFAULT_PRESET_ID).filter)
+    setTextLayers([]); setActiveTextId(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null)
     setCameraOpen(false)
   }, [draft?.url])
@@ -176,6 +186,8 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
       // tamanho do preview proporcional ao aspect
       const baseW = 720
       r.setSize(baseW, Math.round(baseW / cropRef.current.aspect))
+      // texto sobreposto desenhado por cima da cor (mesmo no preview e no export)
+      r.afterCompose = (ctx, w, h) => drawTextLayers(ctx, w, h, textRef.current)
       rendererRef.current = r
 
       const loop = () => {
@@ -204,21 +216,69 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, draft?.url])
 
-  // ── pan por arraste no preview ───────────────────────────────────────────────
-  const dragRef = useRef<{ x: number; y: number } | null>(null)
+  // ── arraste no preview: pan (crop) ou mover texto (edit) ─────────────────────
+  const dragRef = useRef<{ x: number; y: number; textId?: string } | null>(null)
   const onPointerDown = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current
+    if (step === "edit" && canvas) {
+      // hit-test em camadas de texto (de cima p/ baixo)
+      const rect = canvas.getBoundingClientRect()
+      const px = ((e.clientX - rect.left) / rect.width) * canvas.width
+      const py = ((e.clientY - rect.top) / rect.height) * canvas.height
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        for (let i = textRef.current.length - 1; i >= 0; i--) {
+          const b = layerBox(ctx, canvas.width, canvas.height, textRef.current[i])
+          if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) {
+            dragRef.current = { x: e.clientX, y: e.clientY, textId: textRef.current[i].id }
+            setActiveTextId(textRef.current[i].id)
+            ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+            return
+          }
+        }
+      }
+      return
+    }
     if (step !== "crop") return
     dragRef.current = { x: e.clientX, y: e.clientY }
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return
+    const canvas = canvasRef.current
+    if (dragRef.current.textId && canvas) {
+      const rect = canvas.getBoundingClientRect()
+      const dx = (e.clientX - dragRef.current.x) / rect.width
+      const dy = (e.clientY - dragRef.current.y) / rect.height
+      dragRef.current = { ...dragRef.current, x: e.clientX, y: e.clientY }
+      const id = dragRef.current.textId
+      setTextLayers((ls) => ls.map((l) => l.id === id
+        ? { ...l, x: Math.max(0, Math.min(1, l.x + dx)), y: Math.max(0, Math.min(1, l.y + dy)) }
+        : l))
+      return
+    }
     const dx = (e.clientX - dragRef.current.x) / 200
     const dy = (e.clientY - dragRef.current.y) / 200
     dragRef.current = { x: e.clientX, y: e.clientY }
     setCrop((c) => ({ ...c, panX: Math.max(-1, Math.min(1, c.panX - dx)), panY: Math.max(-1, Math.min(1, c.panY - dy)) }))
   }
   const onPointerUp = () => { dragRef.current = null }
+
+  // ── helpers de texto ─────────────────────────────────────────────────────────
+  const addText = () => {
+    const layer: TextLayer = {
+      id: crypto.randomUUID(), text: "Toque para editar", font: "display",
+      color: "#0B0B0D", box: "rounded", boxColor: "#F2B705", x: 0.5, y: 0.46, size: 0.07,
+    }
+    setTextLayers((ls) => [...ls, layer])
+    setActiveTextId(layer.id)
+  }
+  const updateText = (id: string, patch: Partial<TextLayer>) =>
+    setTextLayers((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+  const removeText = (id: string) => {
+    setTextLayers((ls) => ls.filter((l) => l.id !== id))
+    setActiveTextId((cur) => (cur === id ? null : cur))
+  }
 
   // ── publicar ─────────────────────────────────────────────────────────────────
   const applyPreset = (id: string) => { setPresetId(id); setFilter({ ...getPreset(id).filter }) }
@@ -232,8 +292,12 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
     if (!token) { setError("Sessão expirada. Faça login novamente."); return }
     setStep("publish"); setSubmitting(true); setProgress(0); setError(null)
     try {
+      // garante que as fontes estão carregadas antes de queimar o texto no canvas
+      try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready } catch { /* noop */ }
+      const layers = textLayers
       const result = await compose({
         draft, filter, crop,
+        afterCompose: (ctx, w, h) => drawTextLayers(ctx, w, h, layers),
         onProgress: (f) => setProgress(f * 0.5),
       })
       if (mode === "story") {
@@ -369,6 +433,8 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
                   tab={editTab} onTab={setEditTab}
                   presetId={presetId} onPreset={applyPreset}
                   filter={filter} onAdj={setAdj}
+                  textLayers={textLayers} activeTextId={activeTextId} setActiveTextId={setActiveTextId}
+                  onAddText={addText} onUpdateText={updateText} onRemoveText={removeText}
                 />
               )}
             </div>
@@ -471,10 +537,13 @@ function PickStep({ onPick, onCamera, error }: { onPick: () => void; onCamera?: 
 
 function EditPanel({
   tab, onTab, presetId, onPreset, filter, onAdj,
+  textLayers, activeTextId, setActiveTextId, onAddText, onUpdateText, onRemoveText,
 }: {
   tab: EditTab; onTab: (t: EditTab) => void
   presetId: string; onPreset: (id: string) => void
   filter: FilterState; onAdj: (k: keyof FilterState, v: number) => void
+  textLayers: TextLayer[]; activeTextId: string | null; setActiveTextId: (id: string | null) => void
+  onAddText: () => void; onUpdateText: (id: string, patch: Partial<TextLayer>) => void; onRemoveText: (id: string) => void
 }) {
   const tabs: { id: EditTab; label: string; icon: React.ReactNode }[] = [
     { id: "filtro", label: "Filtro", icon: <SlidersHorizontal className="h-4 w-4" /> },
@@ -506,12 +575,16 @@ function EditPanel({
             <Adj label="Saturação" value={filter.saturation} onChange={(v) => onAdj("saturation", v)} />
             <Adj label="Temperatura" value={filter.temperature} onChange={(v) => onAdj("temperature", v)} />
           </div>
+        ) : tab === "texto" ? (
+          <TextEditor
+            layers={textLayers} activeId={activeTextId} setActiveId={setActiveTextId}
+            onAdd={onAddText} onUpdate={onUpdateText} onRemove={onRemoveText}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
             <Sparkles className="h-6 w-6 text-[#F2B705]" />
             <p className="font-[family-name:var(--font-anton)] text-lg uppercase text-[#F1EDE2]">Em breve</p>
             <p className="max-w-[220px] text-xs text-[#a89f8d]">
-              {tab === "texto" && "Texto sobreposto (fonte, cor, caixa) chega no próximo slice."}
               {tab === "sobreposicao" && "Sobreposição de imagem/vídeo chega em breve."}
               {tab === "musica" && "Biblioteca de música chega em breve."}
             </p>
@@ -531,6 +604,134 @@ function EditPanel({
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+function TextEditor({
+  layers, activeId, setActiveId, onAdd, onUpdate, onRemove,
+}: {
+  layers: TextLayer[]; activeId: string | null; setActiveId: (id: string | null) => void
+  onAdd: () => void; onUpdate: (id: string, patch: Partial<TextLayer>) => void; onRemove: (id: string) => void
+}) {
+  const active = layers.find((l) => l.id === activeId) || null
+  const fonts = Object.entries(TEXT_FONTS) as [TextFontId, (typeof TEXT_FONTS)[TextFontId]][]
+
+  if (!active) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        {layers.length > 0 && (
+          <div className="flex w-full flex-wrap justify-center gap-2">
+            {layers.map((l) => (
+              <button
+                key={l.id} type="button" onClick={() => setActiveId(l.id)}
+                className="max-w-[140px] truncate border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-xs font-bold text-[#0B0B0D]"
+              >
+                {l.text || "(vazio)"}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button" onClick={onAdd}
+          className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+        >
+          <Type className="h-4 w-4" /> Adicionar texto
+        </button>
+        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">Arraste o texto no preview para posicionar</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <textarea
+        value={active.text}
+        onChange={(e) => onUpdate(active.id, { text: e.target.value.slice(0, 120) })}
+        rows={2} autoFocus
+        placeholder="Escreva algo…"
+        className="w-full resize-none border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
+      />
+      <div>
+        <Label>Fonte</Label>
+        <div className="mt-1.5 flex gap-2">
+          {fonts.map(([id, f]) => (
+            <button
+              key={id} type="button" onClick={() => onUpdate(active.id, { font: id })}
+              style={{ fontFamily: f.cssVar }}
+              className={cn(
+                "flex-1 border-2 border-[#0B0B0D] px-2 py-1.5 text-sm",
+                active.font === id ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#F1EDE2] text-[#0B0B0D]",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label>Caixa</Label>
+        <div className="mt-1.5 flex gap-2">
+          {(["rounded", "transparent"] as TextBoxStyle[]).map((b) => (
+            <button
+              key={b} type="button" onClick={() => onUpdate(active.id, { box: b })}
+              className={cn(
+                "flex-1 border-2 border-[#0B0B0D] px-2 py-1.5 text-[11px] font-black uppercase tracking-[0.06em]",
+                active.box === b ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#F1EDE2] text-[#0B0B0D]",
+              )}
+            >
+              {b === "rounded" ? "Arredondada" : "Transparente"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label>Cor do texto</Label>
+        <Swatches value={active.color} onPick={(c) => onUpdate(active.id, { color: c })} />
+      </div>
+      {active.box === "rounded" && (
+        <div>
+          <Label>Cor da caixa</Label>
+          <Swatches value={active.boxColor} onPick={(c) => onUpdate(active.id, { boxColor: c })} />
+        </div>
+      )}
+      <div>
+        <Label>Tamanho</Label>
+        <input
+          type="range" min={0.04} max={0.16} step={0.005} value={active.size}
+          onChange={(e) => onUpdate(active.id, { size: Number(e.target.value) })}
+          className="mt-1.5 w-full accent-[#F2B705]"
+        />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button" onClick={() => setActiveId(null)}
+          className="flex-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] py-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]"
+        >
+          Concluir
+        </button>
+        <button
+          type="button" onClick={() => onRemove(active.id)}
+          className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F2B705]"
+          aria-label="Remover texto"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Swatches({ value, onPick }: { value: string; onPick: (c: string) => void }) {
+  return (
+    <div className="mt-1.5 flex gap-2">
+      {TEXT_COLORS.map((c) => (
+        <button
+          key={c} type="button" onClick={() => onPick(c)} aria-label={`Cor ${c}`}
+          className={cn("h-7 w-7 border-2 border-[#0B0B0D]", value.toLowerCase() === c.toLowerCase() && "shadow-[0_0_0_2px_#F2B705]")}
+          style={{ background: c }}
+        />
+      ))}
     </div>
   )
 }
