@@ -23,6 +23,8 @@ import {
 } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { CoursesSection, type ProfileOption } from "./courses-section"
+import { MediaComposer } from "@/components/composer/MediaComposer"
+import type { ComposerMode } from "@/lib/composer/types"
 import {
   Dialog,
   DialogContent,
@@ -120,6 +122,7 @@ export function UserPortfolio({
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("feed")
+  const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -191,11 +194,8 @@ export function UserPortfolio({
         setEditingItemId(null)
         setForm({ title: "", description: "" })
         setPortfolioError(null)
-        if (pendingPreview) URL.revokeObjectURL(pendingPreview)
-        setPendingFile(null)
-        setPendingOriginalFile(null)
-        setPendingPreview(null)
-        setIsModalOpen(true)
+        clearPending()
+        setComposerMode(next === "bees" ? "bee" : "post")
       } else if (detail.kind === "curso") {
         setPortfolioTab("courses")
         // CoursesSection abre seu próprio modal escutando o mesmo evento.
@@ -203,7 +203,7 @@ export function UserPortfolio({
     }
     window.addEventListener("freelandoo:create", onCreate)
     return () => window.removeEventListener("freelandoo:create", onCreate)
-  }, [pendingPreview])
+  }, [clearPending])
 
   const isPortfolioGridTab = portfolioTab === "feed" || portfolioTab === "bees"
   const filteredItems = useMemo(
@@ -218,6 +218,11 @@ export function UserPortfolio({
     portfolioTab === "bees" ? "Nenhum Bees ainda." : "Nenhum item no portfólio ainda."
 
   const handleAddItem = () => {
+    if (portfolioTab === "feed" || portfolioTab === "bees") {
+      setPortfolioError(null)
+      setComposerMode(portfolioTab === "bees" ? "bee" : "post")
+      return
+    }
     setEditingItemId(null)
     setForm({ title: "", description: "" })
     setPortfolioError(null)
@@ -1113,6 +1118,16 @@ export function UserPortfolio({
           onConfirm={handleCropConfirm}
         />
       )}
+
+      <MediaComposer
+        open={composerMode !== null}
+        mode={composerMode ?? "post"}
+        onClose={() => setComposerMode(null)}
+        onPosted={() => {
+          setComposerMode(null)
+          void fetchItems()
+        }}
+      />
     </section>
   )
 }

@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 import { useAuth } from "@/hooks/use-auth"
 import { CameraStudio } from "@/components/camera/CameraStudio"
 import { PRESETS, DEFAULT_PRESET_ID, getPreset } from "@/lib/camera/presets"
@@ -37,13 +38,14 @@ const MAX_BYTES = 80 * 1024 * 1024
 const MAX_TITLE = 120
 const MAX_DESC = 500
 const MAX_CAPTION = 280
+const SERVERLESS_UPLOAD_LIMIT = 4 * 1024 * 1024
 
 /** Proporções permitidas por modo. */
 function aspectsFor(mode: ComposerProps["mode"]): string[] {
   return mode === "post" ? ["4:5", "1:1", "16:9"] : ["9:16"]
 }
 
-export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPosted }: ComposerProps) {
+export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, onClose, onPosted }: ComposerProps) {
   const router = useRouter()
   const { user, status } = useAuth()
 
@@ -132,13 +134,17 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
         if (cancelled) return
         const list: ProfileLite[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
         setProfiles(list)
-        if (list.length && !selectedProfileId) setSelectedProfileId(list[0].id_profile)
+        setSelectedProfileId((cur) => {
+          if (cur && list.some((p) => p.id_profile === cur)) return cur
+          if (initialProfileId && list.some((p) => p.id_profile === initialProfileId)) return initialProfileId
+          return list[0]?.id_profile ?? null
+        })
       })
       .catch(() => { if (!cancelled) setProfiles([]) })
       .finally(() => { if (!cancelled) setLoadingProfiles(false) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, status, user?.id_user])
+  }, [open, status, user?.id_user, initialProfileId])
 
   // ── seleção de arquivo ───────────────────────────────────────────────────────
   const handleFile = (f: File | null) => {
@@ -416,9 +422,69 @@ export function MediaComposer({ open, mode, initialKind = "rest", onClose, onPos
           onProgress: (f) => setProgress(0.5 + f * 0.5),
         })
       } else {
-        // Post/Bee: wiring completo no slice 6 (migração dos composers existentes).
-        setError("Publicação de Post/Bee por este editor chega no próximo slice.")
-        setStep("details"); setSubmitting(false); return
+        const portfolioKind = mode === "bee" ? "bees" : "feed"
+        const renderMeta = {
+          composer: "media-composer",
+          preset: presetId,
+          filter,
+          crop,
+          text_layers: textLayers.map((layer) => ({
+            text: layer.text,
+            font: layer.font,
+            color: layer.color,
+            box: layer.box,
+            boxColor: layer.boxColor,
+            x: layer.x,
+            y: layer.y,
+            size: layer.size,
+          })),
+          overlay: overlay ? { kind: overlay.kind, x: overlay.x, y: overlay.y, scale: overlay.scale } : null,
+          encoder: result.encoder,
+        }
+        const itemRes = await fetch(`/api/profile/${selectedProfileId}/portfolio`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            feed_kind: portfolioKind,
+            title: title.trim() || null,
+            description: description.trim() || null,
+            is_featured: false,
+            sort_order: 0,
+            audio_track_id: audioPick?.trackId || null,
+            audio_start_ms: audioPick?.startMs ?? 0,
+            render_meta: renderMeta,
+          }),
+        })
+        const itemData = await itemRes.json().catch(() => ({}))
+        if (!itemRes.ok) throw new Error(itemData?.error || "Erro ao criar item.")
+
+        const itemId: string | undefined = itemData?.id_portfolio_item ?? itemData?.item?.id_portfolio_item
+        if (!itemId) throw new Error("Resposta inesperada ao criar item.")
+
+        const ext = result.kind === "image" ? "webp" : "mp4"
+        const mime = result.kind === "image" ? "image/webp" : (result.blob.type || "video/mp4")
+        const file = new File([result.blob], `freelandoo-${portfolioKind}-${itemId}.${ext}`, { type: mime })
+        const fd = new FormData()
+        fd.append("file", file)
+        fd.append("media_type", result.kind)
+
+        const shouldBypassProxy = result.kind === "video" || result.blob.size > SERVERLESS_UPLOAD_LIMIT
+        const uploadUrl = shouldBypassProxy
+          ? `${getPublicBackendUrl()}/profile/${selectedProfileId}/portfolio/${itemId}/upload`
+          : `/api/profile/${selectedProfileId}/portfolio/${itemId}/upload`
+        const uploadRes = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        })
+        if (!uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => ({}))
+          throw new Error(uploadData?.error || "Item criado, mas o upload da mídia falhou.")
+        }
+        setProgress(1)
       }
       onPosted?.(); onClose(); router.refresh()
     } catch (err) {

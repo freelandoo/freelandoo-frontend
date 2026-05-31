@@ -61,6 +61,8 @@ import { MuralModal } from "@/components/profile/mural-modal"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { buildProfileUrl } from "@/lib/slug"
+import { MediaComposer } from "@/components/composer/MediaComposer"
+import type { ComposerMode } from "@/lib/composer/types"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
   BEES_VIDEO_ASPECT_RATIO_MAX,
@@ -126,6 +128,7 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
+  const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
   const searchParams = useSearchParams()
 
@@ -365,6 +368,11 @@ export default function FreelancerProfileView({
   }
 
   const handleAddPortfolioItem = () => {
+    if (portfolioTab === "feed" || portfolioTab === "bees") {
+      setPortfolioError(null)
+      setComposerMode(portfolioTab === "bees" ? "bee" : "post")
+      return
+    }
     setEditingPortfolioItemId(null)
     setPortfolioForm({ title: "", description: "", is_featured: false, sort_order: 0 })
     setPortfolioError(null)
@@ -379,10 +387,12 @@ export default function FreelancerProfileView({
       if (!detail) return
       if (detail.kind === "post") {
         setPortfolioTab("feed")
-        handleAddPortfolioItem()
+        setPortfolioError(null)
+        setComposerMode("post")
       } else if (detail.kind === "bees") {
         setPortfolioTab("bees")
-        handleAddPortfolioItem()
+        setPortfolioError(null)
+        setComposerMode("bee")
       } else if (detail.kind === "servico") {
         setPortfolioTab("services")
         // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
@@ -1480,6 +1490,17 @@ export default function FreelancerProfileView({
           profileId={profileId}
         />
       )}
+
+      <MediaComposer
+        open={composerMode !== null}
+        mode={composerMode ?? "post"}
+        initialProfileId={profileId}
+        onClose={() => setComposerMode(null)}
+        onPosted={() => {
+          setComposerMode(null)
+          void refetchPortfolio()
+        }}
+      />
     </div>
   )
 }

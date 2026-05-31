@@ -117,6 +117,7 @@ export interface ComposerProps {
   mode: ComposerMode
   /** Só story: canal herdado do lugar (feed→rest / enxame→trampo). */
   initialKind?: StoryKind
+  initialProfileId?: string | null
   onClose: () => void
   onPosted?: () => void
 }
