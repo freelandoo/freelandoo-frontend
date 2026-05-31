@@ -97,6 +97,27 @@ export function detectCapabilities(): CameraCapabilities {
 }
 
 /**
+ * Detecta navegador embutido (in-app webview) — onde a câmera costuma vir
+ * travada em paisagem. Heurística por user-agent (não 100%, mas cobre os apps
+ * comuns). Chrome/Firefox iOS contam como navegador "de verdade".
+ */
+export function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false
+  const ua = navigator.userAgent || ""
+  const apps =
+    /(FBAN|FBAV|FB_IAB|Instagram|Line\/|Twitter|MicroMessenger|WhatsApp|Snapchat|Pinterest|LinkedInApp|GSA\/|TikTok|musical_ly|Telegram)/i
+  if (apps.test(ua)) return true
+  const isIOS = /iPhone|iPad|iPod/i.test(ua)
+  if (isIOS) {
+    const chromeOrFx = /CriOS|FxiOS|EdgiOS/i.test(ua) // navegadores de verdade
+    const realSafari = /Safari/i.test(ua) && /Version\//i.test(ua)
+    if (!chromeOrFx && !realSafari) return true // WKWebView in-app
+  }
+  if (/Android/i.test(ua) && /; wv\)/i.test(ua)) return true // WebView Android
+  return false
+}
+
+/**
  * Checagem assíncrona fina do VideoEncoder (config H.264 realmente suportada).
  * Chamar antes de gravar pelo caminho webcodecs; se falhar, cair p/ mediarecorder.
  */

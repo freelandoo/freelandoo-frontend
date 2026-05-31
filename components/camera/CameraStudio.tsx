@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
-import { detectCapabilities, isH264EncodeSupported, type CameraCapabilities } from "@/lib/camera/capabilities"
+import { detectCapabilities, isH264EncodeSupported, isInAppBrowser, type CameraCapabilities } from "@/lib/camera/capabilities"
 import { openCamera, switchCamera, stopStream, CameraPermissionError, type CameraHandle, type Facing } from "@/lib/camera/camera-stream"
 import { CameraRenderer } from "@/lib/camera/renderer"
 import { StoryRecorder, canvasToPoster, type RecordResult } from "@/lib/camera/recorder"
@@ -140,8 +140,9 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   const [panelTab, setPanelTab] = useState<PanelTab>(null)
   const [makeupItem, setMakeupItem] = useState<MakeupItem>("pele")
   const [rotation, setRotation] = useState<0 | 1 | 2 | 3>(0)
-  const [dbg, setDbg] = useState({ w: 0, h: 0, angle: 0 })
-  const [showDebug, setShowDebug] = useState(true)
+  const [inApp, setInApp] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [showWebviewTip, setShowWebviewTip] = useState(true)
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<RecordResult | null>(null)
@@ -155,6 +156,17 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
   useEffect(() => { overlayRef.current = overlay }, [overlay])
   useEffect(() => { makeupRef.current = makeup }, [makeup])
   useEffect(() => { rotationRef.current = rotation }, [rotation])
+  useEffect(() => { setInApp(isInAppBrowser()) }, [])
+
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setLinkCopied(true)
+      window.setTimeout(() => setLinkCopied(false), 2200)
+    } catch {
+      /* clipboard bloqueado — usuário copia manual pela barra */
+    }
+  }, [])
 
   // ─── loop de render ──────────────────────────────────────────────────────
   const loop = useCallback(() => {
@@ -204,9 +216,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       })
       await video.play().catch(() => {})
       // orientação: tenta corrigir webviews que entregam o stream deitado
-      const angle = deviceAngle()
-      setRotation(autoRotation(video.videoWidth, video.videoHeight, angle))
-      setDbg({ w: video.videoWidth, h: video.videoHeight, angle })
+      setRotation(autoRotation(video.videoWidth, video.videoHeight, deviceAngle()))
       setPhase("live")
       // O renderer é criado no efeito abaixo, quando o <canvas> já está montado.
       // Na 1ª abertura o canvas só existe DEPOIS de phase virar "live"; criar o
@@ -272,9 +282,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     const onRot = () => {
       const v = videoRef.current
       if (!v || !v.videoWidth) return
-      const angle = deviceAngle()
-      setRotation(autoRotation(v.videoWidth, v.videoHeight, angle))
-      setDbg({ w: v.videoWidth, h: v.videoHeight, angle })
+      setRotation(autoRotation(v.videoWidth, v.videoHeight, deviceAngle()))
     }
     window.addEventListener("orientationchange", onRot)
     const so = window.screen?.orientation
@@ -540,16 +548,21 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
             )}
           </div>
 
-          {/* leitor de debug temporário — toque p/ ocultar */}
-          {phase === "live" && (
-            <button
-              onClick={() => setShowDebug((s) => !s)}
-              className="absolute left-3 top-16 z-30 rounded-lg bg-black/65 px-2 py-1 font-mono text-[10px] text-yellow-300 backdrop-blur"
-            >
-              {showDebug
-                ? `cam ${dbg.w}×${dbg.h} · ângulo ${dbg.angle}° · giro ${rotation * 90}° · ${facing}`
-                : "debug"}
-            </button>
+          {/* aviso de webview embutido (câmera presa em paisagem) */}
+          {phase === "live" && inApp && showWebviewTip && (
+            <div className="absolute inset-x-3 top-28 z-30 flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-black/70 p-3 text-[12px] text-amber-100 backdrop-blur">
+              <AlertCircle className="mt-px h-4 w-4 shrink-0 text-amber-300" />
+              <div className="flex-1">
+                <p className="font-semibold text-amber-200">Câmera em paisagem neste app</p>
+                <p className="mt-0.5 text-amber-100/80">Para retrato e melhor qualidade, abra no navegador: ⋯ → “Abrir no Safari/Chrome”.</p>
+                <button onClick={copyLink} className="mt-1.5 rounded-lg bg-amber-400/20 px-2.5 py-1 font-semibold text-amber-100">
+                  {linkCopied ? "Copiado!" : "Copiar link"}
+                </button>
+              </div>
+              <button onClick={() => setShowWebviewTip(false)} aria-label="Fechar aviso">
+                <X className="h-4 w-4 text-white/60" />
+              </button>
+            </div>
           )}
 
           {/* timer */}
@@ -575,6 +588,18 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
                       <h3 className="text-lg font-semibold text-white">Gravar com a câmera</h3>
                       <p className="mt-1 text-sm text-white/55">Filtros e efeitos rodam no seu aparelho. Nada é enviado antes de você publicar.</p>
                     </div>
+                    {inApp && (
+                      <div className="max-w-xs rounded-2xl border border-amber-400/30 bg-amber-400/10 p-3 text-left text-[12px] text-amber-100">
+                        <p className="font-semibold text-amber-200">Abra no navegador para câmera em retrato</p>
+                        <p className="mt-1 text-amber-100/80">
+                          Você está num navegador dentro de outro app — aqui a câmera vem em paisagem.
+                          Toque em <span className="font-semibold">⋯</span> e escolha “Abrir no Safari/Chrome”.
+                        </p>
+                        <button onClick={copyLink} className="mt-2 rounded-lg bg-amber-400/20 px-3 py-1.5 font-semibold text-amber-100">
+                          {linkCopied ? "Link copiado!" : "Copiar link"}
+                        </button>
+                      </div>
+                    )}
                     <button onClick={() => boot(facing, micOn)} className="rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 text-sm font-semibold text-black">
                       Permitir câmera
                     </button>
