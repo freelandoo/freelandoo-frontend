@@ -5,6 +5,7 @@
 // com o motivo (ex.: clan não posta trampo).
 
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export interface ProfileLite {
   id_profile: string
@@ -34,6 +35,7 @@ export function ProfileSelect({
   onSelect: (id: string) => void
   ineligible?: (p: ProfileLite) => string | null
 }) {
+  const t = useTranslations("Composer")
   return (
     <div>
       {/* Conta — cabeçalho dourado (rótulo, não selecionável) */}
@@ -43,10 +45,10 @@ export function ProfileSelect({
         </span>
         <div className="min-w-0">
           <div className="truncate font-[family-name:var(--font-anton)] text-sm uppercase leading-none text-[#0B0B0D]">
-            {userName || "Sua conta"}
+            {userName || t("profile.yourAccount", "Sua conta")}
           </div>
           <div className="mt-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-[#0B0B0D]/70">
-            Sua conta · publicar como
+            {t("profile.publishAsAccount", "Sua conta · publicar como")}
           </div>
         </div>
       </div>
@@ -92,7 +94,7 @@ export function ProfileSelect({
               </span>
               {p.is_clan && (
                 <span className="border-2 border-[#0B0B0D] bg-[#1D1810] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.06em] text-[#F2B705]">
-                  Clan
+                  {t("profile.clan", "Clan")}
                 </span>
               )}
               {on && !disabled && (

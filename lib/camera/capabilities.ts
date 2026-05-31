@@ -12,6 +12,7 @@ export interface CameraCapabilities {
   webcodecsAudio: boolean // AudioEncoder
   mediaRecorder: boolean
   mediaRecorderMp4: boolean
+  mediaRecorderWebm: boolean
   recordPath: RecordPath
   canFilter: boolean
 }
@@ -41,6 +42,19 @@ function mediaRecorderSupportsMp4(): boolean {
   }
 }
 
+function mediaRecorderSupportsWebm(): boolean {
+  if (typeof MediaRecorder === "undefined") return false
+  try {
+    return (
+      MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ||
+      MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ||
+      MediaRecorder.isTypeSupported("video/webm")
+    )
+  } catch {
+    return false
+  }
+}
+
 export function detectCapabilities(): CameraCapabilities {
   const getUserMedia =
     typeof navigator !== "undefined" &&
@@ -61,6 +75,7 @@ export function detectCapabilities(): CameraCapabilities {
 
   const mediaRecorder = typeof MediaRecorder !== "undefined"
   const mediaRecorderMp4 = mediaRecorderSupportsMp4()
+  const mediaRecorderWebm = mediaRecorderSupportsWebm()
 
   // WebCodecs só vale a pena com WebGL (precisamos renderizar frames filtrados).
   let recordPath: RecordPath = "none"
@@ -75,6 +90,7 @@ export function detectCapabilities(): CameraCapabilities {
     webcodecsAudio,
     mediaRecorder,
     mediaRecorderMp4,
+    mediaRecorderWebm,
     recordPath,
     canFilter: webgl,
   }

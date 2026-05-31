@@ -103,6 +103,7 @@ export interface ComposedResult {
   durationSec: number
   posterBlob: Blob | null
   encoder: "webcodecs" | "mediarecorder" | "image"
+  mimeType: string
 }
 
 /** Resolução-alvo de saída por modo (largura base; altura = largura/aspect). */

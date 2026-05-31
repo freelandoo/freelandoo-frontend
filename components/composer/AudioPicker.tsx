@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react"
 import { Loader2, Music, Pause, Play, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { AudioPick } from "@/lib/composer/types"
 
 interface AudioTrack {
@@ -32,6 +33,7 @@ function fmt(ms: number) {
 }
 
 export function AudioPicker({ value, onChange }: AudioPickerProps) {
+  const t = useTranslations("Composer")
   const [tracks, setTracks] = useState<AudioTrack[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -48,12 +50,12 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
     setError(null)
     const url = q.trim() ? `/api/audio-library?q=${encodeURIComponent(q.trim())}` : "/api/audio-library"
     fetch(url, { headers: { Authorization: `Bearer ${getToken() || ""}` }, cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Falha ao carregar músicas"))))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Failed to load audio library"))))
       .then((data) => { if (!cancelled) setTracks(Array.isArray(data?.tracks) ? data.tracks : []) })
-      .catch(() => { if (!cancelled) setError("Não consegui carregar a biblioteca.") })
+      .catch(() => { if (!cancelled) setError(t("audio.loadError", "Não consegui carregar a biblioteca.")) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [q])
+  }, [q, t])
 
   // Pára o preview ao desmontar.
   useEffect(() => () => { audioRef.current?.pause() }, [])
@@ -91,7 +93,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
             </div>
             <button
               type="button" onClick={() => { audioRef.current?.pause(); setPreviewId(null); onChange(null) }}
-              className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[#F2B705]" aria-label="Remover música"
+              className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[#F2B705]" aria-label={t("audio.remove", "Remover música")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -99,7 +101,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
           {selected.duration_ms > 0 && maxStartMs > 0 && (
             <div>
               <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.1em] text-[#0B0B0D]/60">
-                <span>Início</span><span className="tabular-nums">{fmt(startMs)}</span>
+                <span>{t("audio.start", "Início")}</span><span className="tabular-nums">{fmt(startMs)}</span>
               </div>
               <input
                 type="range" min={0} max={maxStartMs} step={500} value={Math.min(startMs, maxStartMs)}
@@ -115,7 +117,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
       <div className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2.5 py-1.5">
         <Search className="h-3.5 w-3.5 text-[#0B0B0D]/60" />
         <input
-          value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar música…"
+          value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("audio.search", "Buscar música…")}
           className="w-full bg-transparent text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
         />
       </div>
@@ -123,7 +125,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#a89f8d]">
-          <Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" /> Carregando…
+          <Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" /> {t("loading", "Carregando…")}
         </div>
       ) : error ? (
         <div className="flex flex-col items-center gap-1 py-8 text-center">
@@ -132,8 +134,8 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
       ) : tracks.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Music className="h-6 w-6 text-[#a89f8d]" />
-          <p className="font-[family-name:var(--font-anton)] text-base uppercase text-[#F1EDE2]">Sem músicas</p>
-          <p className="max-w-[220px] text-xs text-[#a89f8d]">{q.trim() ? "Nada encontrado para essa busca." : "A biblioteca ainda está vazia."}</p>
+          <p className="font-[family-name:var(--font-anton)] text-base uppercase text-[#F1EDE2]">{t("audio.emptyTitle", "Sem músicas")}</p>
+          <p className="max-w-[220px] text-xs text-[#a89f8d]">{q.trim() ? t("audio.emptySearch", "Nada encontrado para essa busca.") : t("audio.emptyLibrary", "A biblioteca ainda está vazia.")}</p>
         </div>
       ) : (
         <ul className="space-y-1.5">
@@ -155,7 +157,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
                       active ? "bg-[#0B0B0D] text-[#F2B705]" : "bg-[#F1EDE2] text-[#0B0B0D]",
                       !track.audio_url && "opacity-40",
                     )}
-                    aria-label={playing ? "Pausar prévia" : "Ouvir prévia"}
+                    aria-label={playing ? t("audio.pausePreview", "Pausar prévia") : t("audio.playPreview", "Ouvir prévia")}
                   >
                     {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                   </button>
@@ -172,7 +174,7 @@ export function AudioPicker({ value, onChange }: AudioPickerProps) {
                       type="button" onClick={() => pick(track)}
                       className="shrink-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]"
                     >
-                      Usar
+                      {t("audio.use", "Usar")}
                     </button>
                   )}
                 </div>

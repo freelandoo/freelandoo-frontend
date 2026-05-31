@@ -15,9 +15,11 @@ import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { useAuth } from "@/hooks/use-auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { CameraStudio } from "@/components/camera/CameraStudio"
 import { PRESETS, DEFAULT_PRESET_ID, getPreset } from "@/lib/camera/presets"
 import { uploadStory } from "@/lib/camera/upload"
+import { detectCapabilities } from "@/lib/camera/capabilities"
 import type { FilterState, FilterMeta } from "@/lib/camera/types"
 import { ComposerRenderer } from "@/lib/composer/renderer"
 import { compose } from "@/lib/composer/compose"
@@ -46,6 +48,7 @@ function aspectsFor(mode: ComposerProps["mode"]): string[] {
 }
 
 export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, onClose, onPosted }: ComposerProps) {
+  const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
 
@@ -71,6 +74,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const [progress, setProgress] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [videoNotice, setVideoNotice] = useState<string | null>(null)
   const [cameraOpen, setCameraOpen] = useState(false)
 
   const fileRef = useRef<HTMLInputElement | null>(null)
@@ -105,7 +109,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     overlayElRef.current = null
     setOverlay(null)
     setAudioPick(null)
-    setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null)
+    setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null); setVideoNotice(null)
     setCameraOpen(false)
   }, [draft?.url, overlay?.url])
 
@@ -152,10 +156,11 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     if (!f) return
     const isImg = f.type.startsWith("image/")
     const isVid = f.type.startsWith("video/")
-    if (!isImg && !isVid) { setError("Selecione uma imagem ou um vídeo."); return }
-    if (f.size > MAX_BYTES) { setError("Arquivo acima de 80MB. Reduza ou corte."); return }
+    if (!isImg && !isVid) { setError(t("errors.pickMedia", "Selecione uma imagem ou um vídeo.")); return }
+    if (f.size > MAX_BYTES) { setError(t("errors.fileTooLarge", "Arquivo acima de 80MB. Reduza ou corte.")); return }
     const url = URL.createObjectURL(f)
     const kind: MediaKind = isImg ? "image" : "video"
+    setVideoNotice(null)
     const aspect = ASPECTS[allowedAspects[0]].ratio
     setCrop({ ...NEUTRAL_CROP, aspect })
 
@@ -165,16 +170,24 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         setDraft({ file: f, kind, url, width: img.naturalWidth, height: img.naturalHeight })
         setStep("crop")
       }
-      img.onerror = () => setError("Não consegui ler essa imagem.")
+      img.onerror = () => setError(t("errors.readImage", "Não consegui ler essa imagem."))
       img.src = url
     } else {
+      const caps = detectCapabilities()
+      if (mode !== "story" && !caps.mediaRecorderMp4 && caps.mediaRecorderWebm) {
+        setVideoNotice(t("capabilities.webmFallback", "Seu navegador vai exportar este vídeo em WebM; Post e Bee aceitam esse fallback."))
+      } else if (caps.recordPath === "mediarecorder") {
+        setVideoNotice(t("capabilities.mediaRecorderFallback", "WebCodecs indisponível; usando MediaRecorder como fallback."))
+      } else if (caps.recordPath === "none") {
+        setVideoNotice(t("capabilities.noVideoExport", "Este navegador pode não conseguir exportar vídeo editado."))
+      }
       const v = document.createElement("video")
       v.preload = "metadata"
       v.onloadedmetadata = () => {
         setDraft({ file: f, kind, url, width: v.videoWidth, height: v.videoHeight, durationSec: Math.round(v.duration) })
         setStep("crop")
       }
-      v.onerror = () => setError("Não consegui ler esse vídeo.")
+      v.onerror = () => setError(t("errors.readVideo", "Não consegui ler esse vídeo."))
       v.src = url
     }
   }
@@ -335,8 +348,8 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     if (!f) return
     const isImg = f.type.startsWith("image/")
     const isVid = f.type.startsWith("video/")
-    if (!isImg && !isVid) { setError("Sobreposição deve ser imagem ou vídeo."); return }
-    if (f.size > MAX_BYTES) { setError("Sobreposição acima de 80MB."); return }
+    if (!isImg && !isVid) { setError(t("errors.overlayMedia", "Sobreposição deve ser imagem ou vídeo.")); return }
+    if (f.size > MAX_BYTES) { setError(t("errors.overlayTooLarge", "Sobreposição acima de 80MB.")); return }
     // limpa anterior
     if (overlay?.url) URL.revokeObjectURL(overlay.url)
     const prev = overlayElRef.current
@@ -347,13 +360,13 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     if (kind === "image") {
       const img = new Image(); img.crossOrigin = "anonymous"
       img.onload = () => { overlayElRef.current = img; setOverlay(layer) }
-      img.onerror = () => setError("Não consegui ler a imagem de sobreposição.")
+      img.onerror = () => setError(t("errors.readOverlayImage", "Não consegui ler a imagem de sobreposição."))
       img.src = url
     } else {
       const v = document.createElement("video")
       v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
       v.onloadeddata = () => { v.play().catch(() => {}); overlayElRef.current = v; setOverlay(layer) }
-      v.onerror = () => setError("Não consegui ler o vídeo de sobreposição.")
+      v.onerror = () => setError(t("errors.readOverlayVideo", "Não consegui ler o vídeo de sobreposição."))
     }
   }
   const removeOverlay = () => {
@@ -389,7 +402,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const publish = async () => {
     if (!draft || !selectedProfileId) return
     const token = getToken()
-    if (!token) { setError("Sessão expirada. Faça login novamente."); return }
+    if (!token) { setError(t("errors.sessionExpired", "Sessão expirada. Faça login novamente.")); return }
     setStep("publish"); setSubmitting(true); setProgress(0); setError(null)
     try {
       // garante que as fontes estão carregadas antes de queimar o texto no canvas
@@ -398,6 +411,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
       const result = await compose({
         draft, filter, crop,
         afterCompose: (ctx, w, h) => { drawOverlayLayer(ctx, w, h); drawTextLayers(ctx, w, h, layers) },
+        allowWebmFallback: mode !== "story",
         onProgress: (f) => setProgress(f * 0.5),
       })
       if (mode === "story") {
@@ -410,7 +424,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         // Story exige vídeo no backend atual; foto vira "vídeo" só quando houver
         // suporte — por ora, story de foto não é suportado (slice futuro). Guarda:
         if (result.kind === "image") {
-          setError("Story de foto chega em breve. Por enquanto use vídeo.")
+          setError(t("errors.storyImageSoon", "Story de foto chega em breve. Por enquanto use vídeo."))
           setStep("details"); setSubmitting(false); return
         }
         await uploadStory({
@@ -459,13 +473,13 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           }),
         })
         const itemData = await itemRes.json().catch(() => ({}))
-        if (!itemRes.ok) throw new Error(itemData?.error || "Erro ao criar item.")
+        if (!itemRes.ok) throw new Error(itemData?.error || t("errors.createItem", "Erro ao criar item."))
 
         const itemId: string | undefined = itemData?.id_portfolio_item ?? itemData?.item?.id_portfolio_item
-        if (!itemId) throw new Error("Resposta inesperada ao criar item.")
+        if (!itemId) throw new Error(t("errors.createItemResponse", "Resposta inesperada ao criar item."))
 
-        const ext = result.kind === "image" ? "webp" : "mp4"
-        const mime = result.kind === "image" ? "image/webp" : (result.blob.type || "video/mp4")
+        const mime = result.mimeType || result.blob.type || (result.kind === "image" ? "image/webp" : "video/mp4")
+        const ext = result.kind === "image" ? "webp" : (mime.includes("webm") ? "webm" : "mp4")
         const file = new File([result.blob], `freelandoo-${portfolioKind}-${itemId}.${ext}`, { type: mime })
         const fd = new FormData()
         fd.append("file", file)
@@ -482,13 +496,13 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         })
         if (!uploadRes.ok) {
           const uploadData = await uploadRes.json().catch(() => ({}))
-          throw new Error(uploadData?.error || "Item criado, mas o upload da mídia falhou.")
+          throw new Error(uploadData?.error || t("errors.uploadMedia", "Item criado, mas o upload da mídia falhou."))
         }
         setProgress(1)
       }
       onPosted?.(); onClose(); router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao publicar.")
+      setError(err instanceof Error ? err.message : t("errors.publish", "Falha ao publicar."))
       setStep("details")
     } finally {
       setSubmitting(false)
@@ -497,7 +511,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
 
   if (!open) return null
 
-  const modeLabel = mode === "post" ? "Novo Post" : mode === "bee" ? "Novo Bee" : "Story"
+  const modeLabel = mode === "post" ? t("mode.post", "Novo Post") : mode === "bee" ? t("mode.bee", "Novo Bee") : t("mode.story", "Story")
   const canAdvanceFromCrop = !!draft
   const canPublish = !!draft && !!selectedProfileId && !trampoBlockedFatal(mode, profiles, selectedProfile)
 
@@ -523,7 +537,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
               else onClose()
             }}
             className="grid h-8 w-8 place-items-center text-[#F1EDE2]"
-            aria-label="Voltar"
+            aria-label={t("back", "Voltar")}
           >
             {step === "pick" ? <X className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
           </button>
@@ -580,16 +594,22 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
                   </div>
                 )}
               </div>
+              {draft.kind === "video" && videoNotice && (
+                <div className="flex items-start gap-2 border-t-2 border-[#0B0B0D] bg-[#201a10] px-4 py-2 text-[11px] font-bold text-[#d6cfbf]">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
+                  <span>{videoNotice}</span>
+                </div>
+              )}
 
               {step === "crop" && (
                 <div className="border-t-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3">
-                  <Label>Zoom</Label>
+                  <Label>{t("crop.zoom", "Zoom")}</Label>
                   <input
                     type="range" min={1} max={3} step={0.01} value={crop.zoom}
                     onChange={(e) => setCrop((c) => ({ ...c, zoom: Number(e.target.value) }))}
                     className="fl-range mt-2 w-full"
                   />
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#a89f8d]">Arraste a imagem para reposicionar</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#a89f8d]">{t("crop.dragHint", "Arraste a imagem para reposicionar")}</p>
                 </div>
               )}
 
@@ -614,7 +634,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
               mode={mode} userName={user?.nome || null}
               profiles={profiles} loadingProfiles={loadingProfiles}
               selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId}
-              ineligible={(p) => (mode === "story" && initialKind === "trampo" && p.is_clan ? "Clan não posta Trampo — só Rest" : null)}
+              ineligible={(p) => (mode === "story" && initialKind === "trampo" && p.is_clan ? t("profile.clanNoTrampo", "Clan não posta Trampo — só Rest") : null)}
               title={title} setTitle={setTitle} description={description} setDescription={setDescription}
               caption={caption} setCaption={setCaption}
               error={error}
@@ -624,10 +644,10 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           {step === "publish" && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
               <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#F1EDE2]/15 border-t-[#F2B705]" />
-              <div className="font-[family-name:var(--font-anton)] text-xl uppercase text-[#F2B705]">Renderizando</div>
+              <div className="font-[family-name:var(--font-anton)] text-xl uppercase text-[#F2B705]">{t("publish.rendering", "Renderizando")}</div>
               <div className="w-56">
                 <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-[0.1em] text-[#a89f8d]">
-                  <span>Enviando ao R2</span><span className="tabular-nums">{Math.round(progress * 100)}%</span>
+                  <span>{t("publish.uploading", "Enviando ao R2")}</span><span className="tabular-nums">{Math.round(progress * 100)}%</span>
                 </div>
                 <div className="h-2 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
                   <div className="h-full bg-[#F2B705] transition-all" style={{ width: `${progress * 100}%` }} />
@@ -661,8 +681,9 @@ function trampoBlockedFatal(_mode: string, _profiles: ProfileLite[], _p: Profile
 // ─── peças ──────────────────────────────────────────────────────────────────
 
 function StepAction({ step, disabledNext, onNext, mode }: { step: Step; disabledNext: boolean; onNext: () => void; mode: string }) {
+  const t = useTranslations("Composer")
   if (step === "pick" || step === "publish") return <span className="w-8" />
-  const label = step === "details" ? (mode === "story" ? "Publicar" : "Compartilhar") : "Avançar"
+  const label = step === "details" ? (mode === "story" ? t("publish.publish", "Publicar") : t("publish.share", "Compartilhar")) : t("next", "Avançar")
   return (
     <button
       type="button" onClick={onNext} disabled={disabledNext}
@@ -677,22 +698,23 @@ function StepAction({ step, disabledNext, onNext, mode }: { step: Step; disabled
 }
 
 function PickStep({ onPick, onCamera, error }: { onPick: () => void; onCamera?: () => void; error: string | null }) {
+  const t = useTranslations("Composer")
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-      <div className="font-[family-name:var(--font-anton)] text-4xl uppercase text-[#F2B705]">EXTRA!</div>
-      <p className="max-w-xs text-sm text-[#d6cfbf]">Toque para escolher uma foto ou vídeo da sua galeria.</p>
+      <div className="font-[family-name:var(--font-anton)] text-4xl uppercase text-[#F2B705]">{t("pick.kicker", "EXTRA!")}</div>
+      <p className="max-w-xs text-sm text-[#d6cfbf]">{t("pick.description", "Toque para escolher uma foto ou vídeo da sua galeria.")}</p>
       <button
         type="button" onClick={onPick}
         className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D]"
       >
-        <ImagePlus className="h-4 w-4" /> Selecionar mídia
+        <ImagePlus className="h-4 w-4" /> {t("pick.selectMedia", "Selecionar mídia")}
       </button>
       {onCamera && (
         <button
           type="button" onClick={onCamera}
           className="flex items-center gap-2 border-2 border-[#F1EDE2]/25 bg-transparent px-5 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
         >
-          <Video className="h-4 w-4" /> Gravar com a câmera
+          <Video className="h-4 w-4" /> {t("pick.recordCamera", "Gravar com a câmera")}
         </button>
       )}
       {error && (
@@ -718,11 +740,12 @@ function EditPanel({
   overlay: OverlayLayer | null; onPickOverlay: () => void; onOverlayScale: (s: number) => void; onRemoveOverlay: () => void
   audioPick: AudioPick | null; onAudioChange: (a: AudioPick | null) => void
 }) {
+  const t = useTranslations("Composer")
   const tabs: { id: EditTab; label: string; icon: React.ReactNode }[] = [
-    { id: "filtro", label: "Filtro", icon: <SlidersHorizontal className="h-4 w-4" /> },
-    { id: "texto", label: "Texto", icon: <Type className="h-4 w-4" /> },
-    { id: "sobreposicao", label: "Sobrepor", icon: <Layers className="h-4 w-4" /> },
-    { id: "musica", label: "Música", icon: <Music className="h-4 w-4" /> },
+    { id: "filtro", label: t("tabs.filter", "Filtro"), icon: <SlidersHorizontal className="h-4 w-4" /> },
+    { id: "texto", label: t("tabs.text", "Texto"), icon: <Type className="h-4 w-4" /> },
+    { id: "sobreposicao", label: t("tabs.overlay", "Sobrepor"), icon: <Layers className="h-4 w-4" /> },
+    { id: "musica", label: t("tabs.music", "Música"), icon: <Music className="h-4 w-4" /> },
   ]
   return (
     <div className="border-t-2 border-[#0B0B0D] bg-[#1D1810]">
@@ -743,10 +766,10 @@ function EditPanel({
                 </button>
               ))}
             </div>
-            <Adj label="Brilho" value={filter.brightness} onChange={(v) => onAdj("brightness", v)} />
-            <Adj label="Contraste" value={filter.contrast} onChange={(v) => onAdj("contrast", v)} />
-            <Adj label="Saturação" value={filter.saturation} onChange={(v) => onAdj("saturation", v)} />
-            <Adj label="Temperatura" value={filter.temperature} onChange={(v) => onAdj("temperature", v)} />
+            <Adj label={t("filter.brightness", "Brilho")} value={filter.brightness} onChange={(v) => onAdj("brightness", v)} />
+            <Adj label={t("filter.contrast", "Contraste")} value={filter.contrast} onChange={(v) => onAdj("contrast", v)} />
+            <Adj label={t("filter.saturation", "Saturação")} value={filter.saturation} onChange={(v) => onAdj("saturation", v)} />
+            <Adj label={t("filter.temperature", "Temperatura")} value={filter.temperature} onChange={(v) => onAdj("temperature", v)} />
           </div>
         ) : tab === "texto" ? (
           <TextEditor
@@ -782,6 +805,7 @@ function TextEditor({
   layers: TextLayer[]; activeId: string | null; setActiveId: (id: string | null) => void
   onAdd: () => void; onUpdate: (id: string, patch: Partial<TextLayer>) => void; onRemove: (id: string) => void
 }) {
+  const t = useTranslations("Composer")
   const active = layers.find((l) => l.id === activeId) || null
   const fonts = Object.entries(TEXT_FONTS) as [TextFontId, (typeof TEXT_FONTS)[TextFontId]][]
 
@@ -795,7 +819,7 @@ function TextEditor({
                 key={l.id} type="button" onClick={() => setActiveId(l.id)}
                 className="max-w-[140px] truncate border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-xs font-bold text-[#0B0B0D]"
               >
-                {l.text || "(vazio)"}
+                {l.text || t("text.empty", "(vazio)")}
               </button>
             ))}
           </div>
@@ -804,9 +828,9 @@ function TextEditor({
           type="button" onClick={onAdd}
           className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
         >
-          <Type className="h-4 w-4" /> Adicionar texto
+          <Type className="h-4 w-4" /> {t("text.add", "Adicionar texto")}
         </button>
-        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">Arraste o texto no preview para posicionar</p>
+        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">{t("text.dragHint", "Arraste o texto no preview para posicionar")}</p>
       </div>
     )
   }
@@ -817,11 +841,11 @@ function TextEditor({
         value={active.text}
         onChange={(e) => onUpdate(active.id, { text: e.target.value.slice(0, 120) })}
         rows={2} autoFocus
-        placeholder="Escreva algo…"
+        placeholder={t("text.placeholder", "Escreva algo…")}
         className="w-full resize-none border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
       />
       <div>
-        <Label>Fonte</Label>
+        <Label>{t("text.font", "Fonte")}</Label>
         <div className="mt-1.5 flex gap-2">
           {fonts.map(([id, f]) => (
             <button
@@ -838,7 +862,7 @@ function TextEditor({
         </div>
       </div>
       <div>
-        <Label>Caixa</Label>
+        <Label>{t("text.box", "Caixa")}</Label>
         <div className="mt-1.5 flex gap-2">
           {(["rounded", "transparent"] as TextBoxStyle[]).map((b) => (
             <button
@@ -848,23 +872,23 @@ function TextEditor({
                 active.box === b ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#F1EDE2] text-[#0B0B0D]",
               )}
             >
-              {b === "rounded" ? "Arredondada" : "Transparente"}
+              {b === "rounded" ? t("text.rounded", "Arredondada") : t("text.transparent", "Transparente")}
             </button>
           ))}
         </div>
       </div>
       <div>
-        <Label>Cor do texto</Label>
+        <Label>{t("text.textColor", "Cor do texto")}</Label>
         <Swatches value={active.color} onPick={(c) => onUpdate(active.id, { color: c })} />
       </div>
       {active.box === "rounded" && (
         <div>
-          <Label>Cor da caixa</Label>
+          <Label>{t("text.boxColor", "Cor da caixa")}</Label>
           <Swatches value={active.boxColor} onPick={(c) => onUpdate(active.id, { boxColor: c })} />
         </div>
       )}
       <div>
-        <Label>Tamanho</Label>
+        <Label>{t("size", "Tamanho")}</Label>
         <input
           type="range" min={0.04} max={0.16} step={0.005} value={active.size}
           onChange={(e) => onUpdate(active.id, { size: Number(e.target.value) })}
@@ -876,12 +900,12 @@ function TextEditor({
           type="button" onClick={() => setActiveId(null)}
           className="flex-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] py-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]"
         >
-          Concluir
+          {t("done", "Concluir")}
         </button>
         <button
           type="button" onClick={() => onRemove(active.id)}
           className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F2B705]"
-          aria-label="Remover texto"
+          aria-label={t("text.remove", "Remover texto")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -895,6 +919,7 @@ function OverlayEditor({
 }: {
   overlay: OverlayLayer | null; onPick: () => void; onScale: (s: number) => void; onRemove: () => void
 }) {
+  const t = useTranslations("Composer")
   if (!overlay) {
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -902,19 +927,19 @@ function OverlayEditor({
           type="button" onClick={onPick}
           className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
         >
-          <Layers className="h-4 w-4" /> Adicionar imagem/vídeo
+          <Layers className="h-4 w-4" /> {t("overlay.add", "Adicionar imagem/vídeo")}
         </button>
-        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">Cole uma foto ou vídeo por cima — arraste no preview para posicionar</p>
+        <p className="max-w-[220px] text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">{t("overlay.dragHint", "Cole uma foto ou vídeo por cima — arraste no preview para posicionar")}</p>
       </div>
     )
   }
   return (
     <div className="space-y-3 py-1">
       <div className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-[11px] font-black uppercase tracking-[0.06em] text-[#0B0B0D]">
-        <Layers className="h-4 w-4" /> Sobreposição de {overlay.kind === "video" ? "vídeo" : "imagem"}
+        <Layers className="h-4 w-4" /> {t("overlay.selected", "Sobreposição de")} {overlay.kind === "video" ? t("overlay.video", "vídeo") : t("overlay.image", "imagem")}
       </div>
       <div>
-        <Label>Tamanho</Label>
+        <Label>{t("size", "Tamanho")}</Label>
         <input
           type="range" min={0.15} max={0.7} step={0.01} value={overlay.scale}
           onChange={(e) => onScale(Number(e.target.value))}
@@ -922,19 +947,20 @@ function OverlayEditor({
         />
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onPick} className="flex-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] py-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]">Trocar</button>
-        <button type="button" onClick={onRemove} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F2B705]" aria-label="Remover sobreposição"><X className="h-4 w-4" /></button>
+        <button type="button" onClick={onPick} className="flex-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] py-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#0B0B0D]">{t("replace", "Trocar")}</button>
+        <button type="button" onClick={onRemove} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F2B705]" aria-label={t("overlay.remove", "Remover sobreposição")}><X className="h-4 w-4" /></button>
       </div>
     </div>
   )
 }
 
 function Swatches({ value, onPick }: { value: string; onPick: (c: string) => void }) {
+  const t = useTranslations("Composer")
   return (
     <div className="mt-1.5 flex gap-2">
       {TEXT_COLORS.map((c) => (
         <button
-          key={c} type="button" onClick={() => onPick(c)} aria-label={`Cor ${c}`}
+          key={c} type="button" onClick={() => onPick(c)} aria-label={`${t("color", "Cor")} ${c}`}
           className={cn("h-7 w-7 border-2 border-[#0B0B0D]", value.toLowerCase() === c.toLowerCase() && "shadow-[0_0_0_2px_#F2B705]")}
           style={{ background: c }}
         />
@@ -956,14 +982,15 @@ function DetailsStep({
   caption: string; setCaption: (s: string) => void
   error: string | null
 }) {
+  const t = useTranslations("Composer")
   return (
     <div className="h-full overflow-y-auto px-4 py-4">
-      <Label>Publicar como</Label>
+      <Label>{t("details.publishAs", "Publicar como")}</Label>
       <div className="mt-2">
         {loadingProfiles ? (
-          <div className="flex items-center gap-2 text-sm text-[#a89f8d]"><Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" /> Carregando perfis…</div>
+          <div className="flex items-center gap-2 text-sm text-[#a89f8d]"><Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" /> {t("details.loadingProfiles", "Carregando perfis…")}</div>
         ) : profiles.length === 0 ? (
-          <p className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D]">Sem subperfis elegíveis. Crie um subperfil para postar.</p>
+          <p className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D]">{t("details.noProfiles", "Sem subperfis elegíveis. Crie um subperfil para postar.")}</p>
         ) : (
           <ProfileSelect userName={userName} profiles={profiles} selectedId={selectedProfileId} onSelect={onSelectProfile} ineligible={ineligible} />
         )}
@@ -971,10 +998,10 @@ function DetailsStep({
 
       {mode === "story" ? (
         <div className="mt-5">
-          <Label>Legenda (opcional)</Label>
+          <Label>{t("details.caption", "Legenda (opcional)")}</Label>
           <textarea
             value={caption} onChange={(e) => setCaption(e.target.value.slice(0, MAX_CAPTION))} rows={2}
-            placeholder="Diga algo curto…"
+            placeholder={t("details.captionPlaceholder", "Diga algo curto…")}
             className="fl-input mt-2 w-full resize-none border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
           />
           <Counter n={caption.length} max={MAX_CAPTION} />
@@ -982,19 +1009,19 @@ function DetailsStep({
       ) : (
         <>
           <div className="mt-5">
-            <Label>Título</Label>
+            <Label>{t("details.title", "Título")}</Label>
             <input
               value={title} onChange={(e) => setTitle(e.target.value.slice(0, MAX_TITLE))}
-              placeholder="Trabalho que fiz ontem…"
+              placeholder={t("details.titlePlaceholder", "Trabalho que fiz ontem…")}
               className="mt-2 w-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
             />
             <Counter n={title.length} max={MAX_TITLE} />
           </div>
           <div className="mt-4">
-            <Label>Descrição</Label>
+            <Label>{t("details.description", "Descrição")}</Label>
             <textarea
               value={description} onChange={(e) => setDescription(e.target.value.slice(0, MAX_DESC))} rows={3}
-              placeholder="Conte o contexto…"
+              placeholder={t("details.descriptionPlaceholder", "Conte o contexto…")}
               className="mt-2 w-full resize-none border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
             />
             <Counter n={description.length} max={MAX_DESC} />

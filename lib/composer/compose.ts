@@ -34,6 +34,8 @@ export interface ComposeParams {
   crop: CropState
   /** Hook de overlays (texto/PiP) — desenhado por cima da cor (slices 2/3). */
   afterCompose?: (ctx: CanvasRenderingContext2D, w: number, h: number) => void
+  /** Permite fallback WebM em superfícies que aceitam esse formato (Post/Bee). */
+  allowWebmFallback?: boolean
   onProgress?: (frac: number) => void
 }
 
@@ -51,7 +53,7 @@ async function composeImage(p: ComposeParams): Promise<ComposedResult> {
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.9))
     if (!blob) throw new Error("Falha ao gerar a imagem.")
     p.onProgress?.(1)
-    return { blob, kind: "image", width: w, height: h, durationSec: 0, posterBlob: blob, encoder: "image" }
+    return { blob, kind: "image", width: w, height: h, durationSec: 0, posterBlob: blob, encoder: "image", mimeType: "image/webp" }
   } finally {
     renderer.dispose()
   }
@@ -64,7 +66,11 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
   const { w, h } = outSize(p.crop.aspect, targetWidthFor("bee", "video"))
   if (path === "webcodecs") {
     const ok = await isH264EncodeSupported(w, h)
-    if (!ok) path = caps.mediaRecorderMp4 ? "mediarecorder" : "none"
+    if (!ok) path = caps.mediaRecorderMp4 || (p.allowWebmFallback && caps.mediaRecorderWebm) ? "mediarecorder" : "none"
+  } else if (path === "mediarecorder" && !caps.mediaRecorderMp4 && !p.allowWebmFallback) {
+    path = "none"
+  } else if (path === "none" && p.allowWebmFallback && caps.mediaRecorder && caps.mediaRecorderWebm) {
+    path = "mediarecorder"
   }
   if (path === "none") throw new Error("Este navegador não suporta exportar vídeo. Tente outro.")
 
@@ -109,7 +115,7 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
     p.onProgress?.(1)
     return {
       blob: res.blob, kind: "video", width: res.width, height: res.height,
-      durationSec: Math.min(60, Math.round(totalSec)), posterBlob: poster, encoder: res.encoder,
+      durationSec: Math.min(60, Math.round(totalSec)), posterBlob: poster, encoder: res.encoder, mimeType: res.mimeType,
     }
   } catch (err) {
     cancelAnimationFrame(raf)

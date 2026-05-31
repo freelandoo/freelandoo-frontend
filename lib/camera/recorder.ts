@@ -2,7 +2,7 @@
 // Gravação 100% no cliente (GPU-local). Caminho preferido: WebCodecs VideoEncoder
 // (H.264 por hardware) + mux MP4 no browser (mp4-muxer). Áudio via AudioEncoder
 // (AAC) quando disponível; senão grava vídeo sem áudio (audioDropped=true) — sem
-// fingir. Fallback: MediaRecorder MP4 (canvas.captureStream) onde não há WebCodecs.
+// fingir. Fallback: MediaRecorder MP4/WebM (canvas.captureStream) onde não há WebCodecs.
 
 import { Muxer, ArrayBufferTarget } from "mp4-muxer"
 import type { RecordPath } from "./capabilities"
@@ -28,11 +28,27 @@ export interface RecorderOptions {
 
 export interface RecordResult {
   blob: Blob
+  mimeType: string
   durationSec: number
   encoder: "webcodecs" | "mediarecorder"
   audioDropped: boolean
   width: number
   height: number
+}
+
+function pickMediaRecorderMime(): { mimeType: string; blobType: string } {
+  const candidates = [
+    { mimeType: "video/mp4;codecs=avc1.42E01E,mp4a.40.2", blobType: "video/mp4" },
+    { mimeType: "video/mp4;codecs=avc1", blobType: "video/mp4" },
+    { mimeType: "video/mp4", blobType: "video/mp4" },
+    { mimeType: "video/webm;codecs=vp9,opus", blobType: "video/webm" },
+    { mimeType: "video/webm;codecs=vp8,opus", blobType: "video/webm" },
+    { mimeType: "video/webm", blobType: "video/webm" },
+  ]
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c.mimeType)) return c
+  }
+  return { mimeType: "", blobType: "video/webm" }
 }
 
 export class StoryRecorder {
@@ -55,6 +71,7 @@ export class StoryRecorder {
 
   // MediaRecorder fallback
   private mediaRecorder: MediaRecorder | null = null
+  private mediaRecorderMime = "video/mp4"
   private chunks: Blob[] = []
   private captureStream: MediaStream | null = null
 
@@ -227,12 +244,12 @@ export class StoryRecorder {
     else this.audioDropped = false
     this.captureStream = stream
 
-    const mime =
-      MediaRecorder.isTypeSupported("video/mp4;codecs=avc1.42E01E,mp4a.40.2")
-        ? "video/mp4;codecs=avc1.42E01E,mp4a.40.2"
-        : "video/mp4"
+    const mime = pickMediaRecorderMime()
+    this.mediaRecorderMime = mime.blobType
     this.chunks = []
-    this.mediaRecorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: this.opts.videoBitrate })
+    const options: MediaRecorderOptions = { videoBitsPerSecond: this.opts.videoBitrate }
+    if (mime.mimeType) options.mimeType = mime.mimeType
+    this.mediaRecorder = new MediaRecorder(stream, options)
     this.mediaRecorder.ondataavailable = (e) => { if (e.data.size) this.chunks.push(e.data) }
     this.mediaRecorder.start(250)
   }
@@ -261,17 +278,17 @@ export class StoryRecorder {
       this.muxer = null
       this.vEncoder = null
       this.aEncoder = null
-      return { blob, durationSec, encoder: "webcodecs", audioDropped: this.audioDropped, width, height }
+      return { blob, mimeType: "video/mp4", durationSec, encoder: "webcodecs", audioDropped: this.audioDropped, width, height }
     }
 
     // mediarecorder
     const blob: Blob = await new Promise((resolve) => {
       const mr = this.mediaRecorder!
-      mr.onstop = () => resolve(new Blob(this.chunks, { type: "video/mp4" }))
+      mr.onstop = () => resolve(new Blob(this.chunks, { type: this.mediaRecorderMime }))
       mr.stop()
     })
     this.cleanupCaptureStream()
-    return { blob, durationSec, encoder: "mediarecorder", audioDropped: this.audioDropped, width, height }
+    return { blob, mimeType: this.mediaRecorderMime, durationSec, encoder: "mediarecorder", audioDropped: this.audioDropped, width, height }
   }
 
   cancel(): void {
