@@ -12,7 +12,7 @@ import { FeedSkeleton } from "@/components/feed/feed-skeleton"
 import { CommentsPanel } from "@/components/comments/comments-panel"
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
-import { StoryCreator } from "@/components/stories/story-creator"
+import { MediaComposer } from "@/components/composer/MediaComposer"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
@@ -315,8 +315,9 @@ function FeedPageInner() {
         />
       )}
 
-      <StoryCreator
+      <MediaComposer
         open={creatorOpen}
+        mode="story"
         initialKind="rest"
         onClose={() => setCreatorOpen(false)}
         onPosted={() => setStoryBarKey((k) => k + 1)}

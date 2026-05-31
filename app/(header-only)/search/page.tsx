@@ -12,7 +12,7 @@ import { FreelancerTile } from "@/components/freelancer/freelancer-tile"
 import { SearchRetractableHeader } from "@/components/search/search-retractable-header"
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
 import { StoryPlayer } from "@/components/stories/story-player"
-import { StoryCreator } from "@/components/stories/story-creator"
+import { MediaComposer } from "@/components/composer/MediaComposer"
 import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { ProductsGrid } from "@/components/search/products-grid"
@@ -534,8 +534,9 @@ function SearchPageInner() {
         />
       )}
 
-      <StoryCreator
+      <MediaComposer
         open={creatorOpen}
+        mode="story"
         initialKind="trampo"
         onClose={() => setCreatorOpen(false)}
         onPosted={() => setStoryBarKey((k) => k + 1)}

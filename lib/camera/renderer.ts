@@ -9,7 +9,7 @@ import type { FaceLite, P } from "./face-tracker"
 import { drawAccessory, type FaceGeomPx } from "./face-accessories"
 import { drawMakeup } from "./face-makeup"
 
-const VERT = `
+export const VERT = `
 attribute vec2 a_pos;
 uniform float u_flipX;
 varying vec2 v_uv;
@@ -22,7 +22,7 @@ void main() {
 }
 `
 
-const FRAG = `
+export const FRAG = `
 precision highp float;
 varying vec2 v_uv;
 uniform sampler2D u_tex;
@@ -107,7 +107,7 @@ void main() {
 }
 `
 
-function compile(gl: WebGLRenderingContext, type: number, src: string): WebGLShader {
+export function compile(gl: WebGLRenderingContext, type: number, src: string): WebGLShader {
   const sh = gl.createShader(type)!
   gl.shaderSource(sh, src)
   gl.compileShader(sh)
