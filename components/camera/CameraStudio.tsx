@@ -92,14 +92,15 @@ function deviceAngle(): number {
   return typeof wo === "number" ? (((wo % 360) + 360) % 360) : 0
 }
 
-// Palpite de rotação p/ corrigir webviews que entregam o stream deitado.
-// 0..3 = 0/90/180/270°. O usuário pode corrigir no botão de girar.
-function autoRotation(vw: number, vh: number, angle: number, facing: Facing): 0 | 1 | 2 | 3 {
+// 0..3 = 0/90/180/270°. A cena quase sempre vem EM PÉ (só num quadro paisagem),
+// então NÃO giramos por padrão (giraria o rosto). Só rotacionamos quando o
+// stream é retrato e o aparelho está deitado (pessoa segurando de lado).
+// Casos raros de stream realmente deitado: usar o botão manual de girar.
+function autoRotation(vw: number, vh: number, angle: number): 0 | 1 | 2 | 3 {
   if (!vw || !vh) return 0
-  const streamLandscape = vw > vh
-  const devicePortrait = angle === 0 || angle === 180
-  if (streamLandscape && devicePortrait) return facing === "user" ? 3 : 1
-  if (!streamLandscape && !devicePortrait) return facing === "user" ? 1 : 3
+  const streamPortrait = vh >= vw
+  const deviceLandscape = angle === 90 || angle === 270
+  if (streamPortrait && deviceLandscape) return angle === 90 ? 1 : 3
   return 0
 }
 
@@ -204,7 +205,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       await video.play().catch(() => {})
       // orientação: tenta corrigir webviews que entregam o stream deitado
       const angle = deviceAngle()
-      setRotation(autoRotation(video.videoWidth, video.videoHeight, angle, handle.facing))
+      setRotation(autoRotation(video.videoWidth, video.videoHeight, angle))
       setDbg({ w: video.videoWidth, h: video.videoHeight, angle })
       setPhase("live")
       // O renderer é criado no efeito abaixo, quando o <canvas> já está montado.
@@ -272,7 +273,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       const v = videoRef.current
       if (!v || !v.videoWidth) return
       const angle = deviceAngle()
-      setRotation(autoRotation(v.videoWidth, v.videoHeight, angle, facing))
+      setRotation(autoRotation(v.videoWidth, v.videoHeight, angle))
       setDbg({ w: v.videoWidth, h: v.videoHeight, angle })
     }
     window.addEventListener("orientationchange", onRot)
@@ -282,7 +283,7 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       window.removeEventListener("orientationchange", onRot)
       so?.removeEventListener?.("change", onRot)
     }
-  }, [open, facing])
+  }, [open])
 
   const teardown = useCallback(() => {
     if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }

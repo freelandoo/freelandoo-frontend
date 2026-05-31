@@ -53,6 +53,10 @@ export function stopStream(stream: MediaStream | null | undefined): void {
   }
 }
 
+function audioConstraint(audio: boolean): MediaStreamConstraints["audio"] {
+  return audio ? { echoCancellation: true, noiseSuppression: true } : false
+}
+
 export async function openCamera(opts: OpenCameraOptions): Promise<CameraHandle> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     if (typeof window !== "undefined" && !window.isSecureContext) {
@@ -61,38 +65,43 @@ export async function openCamera(opts: OpenCameraOptions): Promise<CameraHandle>
     throw new CameraPermissionError("unsupported", "Câmera não suportada neste navegador.")
   }
 
-  const video: MediaTrackConstraints = {
-    facingMode: { ideal: opts.facing },
-    width: { ideal: opts.width ?? 720 },
-    height: { ideal: opts.height ?? 1280 },
-    aspectRatio: { ideal: (opts.width ?? 720) / (opts.height ?? 1280) }, // dica de retrato
-    frameRate: { ideal: 30, max: 30 },
+  const w = opts.width ?? 720
+  const h = opts.height ?? 1280
+  const fm = { ideal: opts.facing }
+  const fr = { ideal: 30, max: 30 }
+
+  // Webviews in-app costumam ignorar width/height "ideal" e devolver paisagem.
+  // Tentamos FORÇAR retrato progressivamente (exact → aspectRatio → ideal →
+  // qualquer um). O 1º que o aparelho aceitar vence.
+  const tries: MediaTrackConstraints[] = [
+    { facingMode: fm, width: { exact: w }, height: { exact: h }, frameRate: fr },
+    { facingMode: fm, width: { exact: 1080 }, height: { exact: 1920 }, frameRate: fr },
+    { facingMode: fm, aspectRatio: { exact: w / h }, width: { ideal: w }, height: { ideal: h }, frameRate: fr },
+    { facingMode: fm, width: { ideal: w }, height: { ideal: h }, frameRate: fr },
+    { facingMode: fm },
+  ]
+
+  let lastErr: unknown = null
+  for (const video of tries) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video, audio: audioConstraint(opts.audio) })
+      return { stream, facing: opts.facing, hasAudio: stream.getAudioTracks().length > 0 }
+    } catch (err) {
+      lastErr = err
+    }
   }
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video,
-      audio: opts.audio
-        ? { echoCancellation: true, noiseSuppression: true }
-        : false,
-    })
-    return {
-      stream,
-      facing: opts.facing,
-      hasAudio: stream.getAudioTracks().length > 0,
+  // último recurso: sem áudio (mic pode estar ocupado) com constraint mínima
+  if (opts.audio) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: fm }, audio: false })
+      return { stream, facing: opts.facing, hasAudio: false }
+    } catch (e2) {
+      lastErr = e2
     }
-  } catch (err) {
-    // Retry sem áudio (alguns devices falham se o mic estiver ocupado).
-    if (opts.audio) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video, audio: false })
-        return { stream, facing: opts.facing, hasAudio: false }
-      } catch {
-        /* cai pro throw abaixo */
-      }
-    }
-    throw mapError(err)
   }
+
+  throw mapError(lastErr)
 }
 
 /** Troca front/back parando o stream antigo e abrindo o novo. */
