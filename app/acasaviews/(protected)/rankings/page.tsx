@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, Eye, Trophy } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
+import { fetchParticipantsForGrid } from "@/lib/acasaviews/participants-live"
+import { ParticipantCard } from "@/features/acasaviews/components/acasaviews/participants/participant-card"
+
+export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Rankings | A Casa Views",
@@ -37,7 +41,8 @@ const LINKS: RankingLink[] = [
   },
 ]
 
-export default function RankingsLandingPage() {
+export default async function RankingsLandingPage() {
+  const participants = await fetchParticipantsForGrid()
   return (
     <div className={`${casaFontVars} casa-rank casa-paper relative min-h-screen overflow-hidden`}>
       <div className="casa-dots pointer-events-none absolute right-0 top-20 h-40 w-40 opacity-[0.07]" />
@@ -109,6 +114,34 @@ export default function RankingsLandingPage() {
             </Link>
           )
         })}
+      </section>
+
+      {/* grid de participantes */}
+      <section className="mx-auto max-w-5xl px-5 pb-16 md:px-10">
+        <div className="mb-6 flex items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-3">
+          <div>
+            <p className="casa-marker text-2xl text-[var(--cyan)]">quem está jogando</p>
+            <h2 className="casa-display text-4xl leading-[0.85] text-[var(--ink)] md:text-5xl">OS PARTICIPANTES</h2>
+          </div>
+          <span className="casa-tape casa-tape-magenta inline-block -rotate-3 px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.16em] text-[var(--ink)]">
+            dossiês
+          </span>
+        </div>
+
+        {participants.length === 0 ? (
+          <div className="border-2 border-dashed border-[var(--ink)]/30 bg-white/50 px-6 py-14 text-center">
+            <p className="casa-display text-3xl text-[var(--ink)]/70">EM BREVE</p>
+            <p className="mt-2 casa-body text-sm font-semibold text-[var(--ink-soft)]/60">
+              Os dossiês dos participantes ainda estão sendo montados. Volte logo.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {participants.map((p) => (
+              <ParticipantCard key={p.id} p={p} />
+            ))}
+          </div>
+        )}
       </section>
 
       <footer className="mx-auto max-w-5xl px-5 pb-12 md:px-10">
