@@ -227,22 +227,22 @@ export class CameraRenderer {
     const vh = video.videoHeight
     if (!vw || !vh) return
 
-    // cover fit: preenche o quadro retrato cortando as sobras (estilo Stories).
-    // Muitos navegadores in-app entregam o stream em paisagem mesmo pedindo
-    // retrato; com "contain" isso virava uma faixa deitada no meio da tela
-    // (parecia que o giroscópio estava errado). Com "cover" a cena sobe e
-    // preenche, mantendo o rosto em pé.
-    const scale = Math.max(this.W / vw, this.H / vh)
-    const rw = Math.max(2, Math.round(vw * scale))
-    const rh = Math.max(2, Math.round(vh * scale))
-    const rx = Math.round((this.W - rw) / 2) // negativo no cover: corta as bordas
-    const ry = Math.round((this.H - rh) / 2)
-    this.videoRect = { x: rx, y: ry, w: rw, h: rh }
-    if (this.glCanvas.width !== rw || this.glCanvas.height !== rh) {
-      this.glCanvas.width = rw
-      this.glCanvas.height = rh
+    // Foreground = "contain": mostra o frame INTEIRO da câmera (FOV completo,
+    // sem zoom). Muitos navegadores in-app entregam o stream em paisagem, então
+    // sobra espaço em cima/embaixo no quadro retrato. Em vez de barras pretas
+    // (parecia "deitado") ou de cortar tudo no "cover" (ficava com muito zoom),
+    // preenchemos o fundo com a própria imagem ampliada e desfocada (estilo IG).
+    const fitScale = Math.min(this.W / vw, this.H / vh)
+    const fw = Math.max(2, Math.round(vw * fitScale))
+    const fh = Math.max(2, Math.round(vh * fitScale))
+    const fx = Math.round((this.W - fw) / 2)
+    const fy = Math.round((this.H - fh) / 2)
+    this.videoRect = { x: fx, y: fy, w: fw, h: fh }
+    if (this.glCanvas.width !== fw || this.glCanvas.height !== fh) {
+      this.glCanvas.width = fw
+      this.glCanvas.height = fh
     }
-    gl.viewport(0, 0, rw, rh)
+    gl.viewport(0, 0, fw, fh)
 
     gl.bindTexture(gl.TEXTURE_2D, this.tex)
     try {
@@ -289,11 +289,28 @@ export class CameraRenderer {
     gl.uniform1f(this.uloc.u_skinSmooth, skin)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-    // compositing 2D
-    this.ctx.clearRect(0, 0, this.W, this.H)
-    this.ctx.fillStyle = "#000"
-    this.ctx.fillRect(0, 0, this.W, this.H)
-    this.ctx.drawImage(this.glCanvas, rx, ry, rw, rh)
+    // compositing 2D — fundo desfocado (preenche a tela) + frame inteiro por cima
+    const ctx = this.ctx
+    ctx.clearRect(0, 0, this.W, this.H)
+    ctx.fillStyle = "#000"
+    ctx.fillRect(0, 0, this.W, this.H)
+
+    // fundo: a mesma imagem ampliada p/ cobrir a tela, desfocada e escurecida.
+    // Some as barras pretas sem aplicar zoom no que importa (o foreground).
+    const coverScale = Math.max(this.W / vw, this.H / vh)
+    const bw = Math.round(vw * coverScale)
+    const bh = Math.round(vh * coverScale)
+    const bx = Math.round((this.W - bw) / 2)
+    const by = Math.round((this.H - bh) / 2)
+    ctx.save()
+    ctx.filter = "blur(18px)" // navegador sem suporte ignora → fundo nítido (ok)
+    ctx.drawImage(this.glCanvas, bx, by, bw, bh)
+    ctx.restore()
+    ctx.fillStyle = "rgba(0,0,0,0.4)"
+    ctx.fillRect(0, 0, this.W, this.H)
+
+    // foreground: frame INTEIRO da câmera, sem zoom
+    ctx.drawImage(this.glCanvas, fx, fy, fw, fh)
     this.drawOverlays()
   }
 
