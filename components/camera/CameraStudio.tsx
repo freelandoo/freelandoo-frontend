@@ -205,7 +205,6 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
       rendererRef.current = rnd
     }
     rnd.setFlipX(facing === "user")
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, facing])
 
   // init quando abre
