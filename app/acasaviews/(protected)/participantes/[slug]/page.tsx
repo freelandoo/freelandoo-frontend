@@ -68,13 +68,20 @@ export default async function ParticipantPage({
               </span>
             )}
           </div>
-          <div className="flex flex-col gap-4 bg-white px-4 pb-5 pt-3 md:flex-row md:items-end md:px-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.avatar_url || "/placeholder-user.jpg"} alt={p.display_name} className="-mt-16 h-28 w-28 border-2 border-[var(--ink)] object-cover shadow-[4px_4px_0_0_var(--ink)] md:h-32 md:w-32" style={{ background: "var(--paper-2)" }} />
-            <div className="flex-1">
-              <h1 className="casa-display text-5xl leading-[0.85] text-[var(--ink)] md:text-6xl">{p.display_name}</h1>
-              {p.tagline && <p className="mt-2 max-w-xl casa-body text-sm font-semibold text-[var(--ink-soft)]/75">{p.tagline}</p>}
-            </div>
+        </div>
+
+        {/* identidade — avatar 100% à frente do banner (sobreposto) + nome ao lado */}
+        <div className="relative z-20 -mt-12 flex items-end gap-4 px-2 md:-mt-16 md:px-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={p.avatar_url || "/placeholder-user.jpg"}
+            alt={p.display_name}
+            className="h-28 w-28 shrink-0 border-2 border-[var(--ink)] object-cover shadow-[5px_5px_0_0_var(--ink)] md:h-36 md:w-36"
+            style={{ background: "var(--paper-2)" }}
+          />
+          <div className="pb-1 md:pb-2">
+            <h1 className="casa-display text-4xl leading-[0.85] text-[var(--ink)] sm:text-5xl md:text-6xl">{p.display_name}</h1>
+            {p.tagline && <p className="mt-2 max-w-xl casa-body text-sm font-semibold text-[var(--ink-soft)]/75">{p.tagline}</p>}
           </div>
         </div>
       </header>
