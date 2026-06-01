@@ -253,6 +253,31 @@ function ProductForm({ token, editing, headers, onClose, onSaved }: {
         <DialogHeader><DialogTitle>{product ? "Editar produto" : "Novo produto"} — Conveniência Views</DialogTitle></DialogHeader>
         {err && <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{err}</div>}
 
+        {/* Preview ao vivo (como aparece na loja do participante) */}
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pré-visualização</div>
+          <div className="mx-auto max-w-[220px] overflow-hidden border-2 border-foreground bg-background shadow-[5px_5px_0_0] shadow-foreground">
+            <div className="aspect-square overflow-hidden bg-muted">
+              {(media[0]?.media_url) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={media[0].media_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">sem imagem</div>
+              )}
+            </div>
+            <div className="p-3">
+              <div className="truncate font-bold">{form.name || "Nome do produto"}</div>
+              {form.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{form.description}</p>}
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-lg font-extrabold text-amber-500">{brl(priceCents())}</span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {form.stock === "" ? "disponível" : Number(form.stock) > 0 ? `${form.stock} un` : "esgotado"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Nome*</Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></div>
           <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Descrição</Label><Textarea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>

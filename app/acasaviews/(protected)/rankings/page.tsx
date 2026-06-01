@@ -4,7 +4,7 @@ import { ArrowRight, Eye, Trophy } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 import { fetchParticipantsForGrid } from "@/lib/acasaviews/participants-live"
 import { ParticipantCard } from "@/features/acasaviews/components/acasaviews/participants/participant-card"
-import { AdminStoreButton } from "@/features/acasaviews/components/acasaviews/admin-store-button"
+import { AdminCasaToolbar } from "@/features/acasaviews/components/acasaviews/admin-store-button"
 
 export const dynamic = "force-dynamic"
 
@@ -50,8 +50,7 @@ export default async function RankingsLandingPage() {
       <div className="casa-dots pointer-events-none absolute left-0 bottom-10 h-32 w-32 opacity-[0.06]" />
 
       {/* topo / marca */}
-      <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-8 md:px-10">
-        <AdminStoreButton />
+      <header className="relative mx-auto flex max-w-5xl items-center justify-end px-5 pt-8 md:px-10">
         <span className="casa-tape inline-block -rotate-2 px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink)]">
           ao vivo
         </span>
@@ -120,14 +119,12 @@ export default async function RankingsLandingPage() {
 
       {/* grid de participantes */}
       <section className="mx-auto max-w-5xl px-5 pb-16 md:px-10">
-        <div className="mb-6 flex items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-3">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-3">
           <div>
             <p className="casa-marker text-2xl text-[var(--cyan)]">quem está jogando</p>
             <h2 className="casa-display text-4xl leading-[0.85] text-[var(--ink)] md:text-5xl">OS PARTICIPANTES</h2>
           </div>
-          <span className="casa-tape casa-tape-magenta inline-block -rotate-3 px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.16em] text-[var(--ink)]">
-            dossiês
-          </span>
+          <AdminCasaToolbar />
         </div>
 
         {participants.length === 0 ? (

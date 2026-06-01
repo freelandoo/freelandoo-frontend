@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, type LucideIcon } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, Clapperboard, ShoppingBag, type LucideIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
 type AdminCard = {
-  hint: HintId
+  hint?: HintId
   href: string
   icon: LucideIcon
   iconClass?: string
@@ -33,6 +33,8 @@ const ADMIN_CARDS: AdminCard[] = [
   { hint: "admin-chat-mod", href: "/administracao/chat-moderation", icon: ShieldAlert, title: "Moderação do Chat", body: "Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público." },
   { hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
   { hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
+  { href: "/administracao/casa", icon: Clapperboard, title: "Casa Views", body: "Participantes da Casa: dossiês, jornada, segredos, teorias e vínculo com o ranking." },
+  { href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos." },
 ]
 interface UserData {
   id_user: string
@@ -99,23 +101,28 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ADMIN_CARDS.map((card) => {
             const Icon = card.icon
-            return (
+            const inner = (
+              <Card
+                className="hover:shadow-md transition-shadow cursor-pointer w-full"
+                onClick={() => router.push(card.href)}
+              >
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Icon className={`h-5 w-5 ${card.iconClass ?? "text-primary"}`} />
+                    {card.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{card.body}</p>
+                </CardContent>
+              </Card>
+            )
+            return card.hint ? (
               <HoverHint key={card.hint} id={card.hint} side="top" className="block w-full">
-                <Card
-                  className="hover:shadow-md transition-shadow cursor-pointer w-full"
-                  onClick={() => router.push(card.href)}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Icon className={`h-5 w-5 ${card.iconClass ?? "text-primary"}`} />
-                      {card.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{card.body}</p>
-                  </CardContent>
-                </Card>
+                {inner}
               </HoverHint>
+            ) : (
+              <div key={card.href} className="block w-full">{inner}</div>
             )
           })}
         </div>
