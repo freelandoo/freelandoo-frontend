@@ -43,6 +43,10 @@ export type ParticipantBase = {
   cover_url: string | null
   bio: string | null
   quote: string | null
+  profession: string | null
+  archetype: string | null
+  strengths: string | null
+  risks: string | null
   vault_amount_cents: number
   suspicion_pct: number
   captures_count: number

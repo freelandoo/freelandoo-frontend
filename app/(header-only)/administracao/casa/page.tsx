@@ -24,6 +24,10 @@ type Participant = {
   cover_url: string | null
   bio: string | null
   quote: string | null
+  profession: string | null
+  archetype: string | null
+  strengths: string | null
+  risks: string | null
   vault_amount_cents: number
   suspicion_pct: number
   captures_count: number
@@ -218,6 +222,10 @@ function ParticipantForm({ token, editing, onClose, onSaved }: {
     tagline: editing?.tagline ?? "",
     bio: editing?.bio ?? "",
     quote: editing?.quote ?? "",
+    profession: editing?.profession ?? "",
+    archetype: editing?.archetype ?? "",
+    strengths: editing?.strengths ?? "",
+    risks: editing?.risks ?? "",
     vault_amount_cents: String(editing?.vault_amount_cents ?? 0),
     suspicion_pct: String(editing?.suspicion_pct ?? 0),
     captures_count: String(editing?.captures_count ?? 0),
@@ -272,6 +280,10 @@ function ParticipantForm({ token, editing, onClose, onSaved }: {
           <Field label="Chamada (tagline)" full><Input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} /></Field>
           <Field label="Bio (perfil narrativo)" full><Textarea rows={3} value={form.bio} onChange={(e) => set("bio", e.target.value)} /></Field>
           <Field label="Citação de destaque" full><Textarea rows={2} value={form.quote} onChange={(e) => set("quote", e.target.value)} /></Field>
+          <Field label="Profissão"><Input value={form.profession} onChange={(e) => set("profession", e.target.value)} placeholder="Publicitária" /></Field>
+          <Field label="Arquétipo"><Input value={form.archetype} onChange={(e) => set("archetype", e.target.value)} placeholder="A Estrategista" /></Field>
+          <Field label="Força (use | entre itens)"><Input value={form.strengths} onChange={(e) => set("strengths", e.target.value)} placeholder="Leitura | Controle | Resiliência" /></Field>
+          <Field label="Risco (use | entre itens)"><Input value={form.risks} onChange={(e) => set("risks", e.target.value)} placeholder="Frieza | Isolamento | Cálculo" /></Field>
           <Field label="Cofre (centavos)"><Input type="number" value={form.vault_amount_cents} onChange={(e) => set("vault_amount_cents", e.target.value)} /></Field>
           <Field label="Suspeita (0–100)"><Input type="number" value={form.suspicion_pct} onChange={(e) => set("suspicion_pct", e.target.value)} /></Field>
           <Field label="Capturas"><Input type="number" value={form.captures_count} onChange={(e) => set("captures_count", e.target.value)} /></Field>
