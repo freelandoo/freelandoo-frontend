@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, Clapperboard, ShoppingBag, type LucideIcon } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, type LucideIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
@@ -33,8 +33,7 @@ const ADMIN_CARDS: AdminCard[] = [
   { hint: "admin-chat-mod", href: "/administracao/chat-moderation", icon: ShieldAlert, title: "Moderação do Chat", body: "Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público." },
   { hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
   { hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
-  { href: "/administracao/casa", icon: Clapperboard, title: "Casa Views", body: "Participantes da Casa: dossiês, jornada, segredos, teorias e vínculo com o ranking." },
-  { href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos." },
+  { href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos. Os participantes são editados na própria página (/acasaviews)." },
 ]
 interface UserData {
   id_user: string

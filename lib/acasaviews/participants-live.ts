@@ -51,6 +51,15 @@ export type ParticipantBase = {
   external_ranking_user_id: string | null
   is_active: boolean
   sort_order: number
+  show_perfil: boolean
+  show_journey: boolean
+  show_secrets: boolean
+  show_theories: boolean
+  show_desempenho: boolean
+  show_cofre: boolean
+  show_suspicion: boolean
+  show_captures: boolean
+  show_store: boolean
 }
 
 export type JourneyItem = { id: string; label: string | null; title: string; description: string | null; happened_on: string | null; sentiment: string; sort_order: number }
