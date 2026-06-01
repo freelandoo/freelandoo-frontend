@@ -46,12 +46,12 @@ export function ParticipantCard({ p }: { p: TCard }) {
         )}
       </div>
 
-      <div className="-mt-9 flex items-end gap-3 px-4">
+      <div className="relative z-20 -mt-10 flex items-end gap-3 px-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={p.avatar_url || "/placeholder-user.jpg"}
           alt={p.display_name}
-          className="h-16 w-16 border-2 border-[var(--ink)] object-cover shadow-[3px_3px_0_0_var(--ink)]"
+          className="h-20 w-20 border-2 border-[var(--ink)] object-cover shadow-[3px_3px_0_0_var(--ink)]"
           style={{ background: "var(--paper-2)" }}
         />
       </div>
