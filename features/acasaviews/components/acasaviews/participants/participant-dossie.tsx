@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   ArrowLeft, Eye, EyeOff, Heart, MessageCircle, Trophy, Hash, Vault, Flame,
   Camera, ScrollText, Lock, Lightbulb, ShoppingBag, Loader2, Save, Trash2,
-  Plus, X, ImagePlus,
+  Plus, X, ImagePlus, Palette,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import type { ParticipantFull, JourneyItem, SecretItem, TheoryItem } from "@/lib/acasaviews/participants-live"
@@ -17,13 +17,17 @@ const ACCENTS: { key: string; label: string; varName: string }[] = [
   { key: "magenta", label: "Magenta", varName: "var(--magenta)" },
   { key: "cyan", label: "Ciano", varName: "var(--cyan)" },
   { key: "gold", label: "Dourado", varName: "var(--gold)" },
+  { key: "purple", label: "Roxo", varName: "var(--purple)" },
+  { key: "leaf", label: "Verde folha", varName: "var(--leaf)" },
 ]
 const STATUSES = [
   { key: "active", label: "Na casa" }, { key: "finalist", label: "Finalista" },
   { key: "eliminated", label: "Eliminado" }, { key: "winner", label: "Campeão" },
 ]
 const SENTIMENTS = ["positive", "neutral", "negative"]
-function accentVar(a: string) { return a === "cyan" ? "var(--cyan)" : a === "gold" ? "var(--gold)" : "var(--magenta)" }
+function accentVar(a: string) {
+  return a === "cyan" ? "var(--cyan)" : a === "gold" ? "var(--gold)" : a === "purple" ? "var(--purple)" : a === "leaf" ? "var(--leaf)" : "var(--magenta)"
+}
 function brl(c: number) { return (Number(c) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) }
 function compact(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
@@ -127,9 +131,22 @@ export function ParticipantDossie({ initial, slug, compra }: { initial: Particip
           <ArrowLeft className="h-4 w-4" /> rankings
         </Link>
         {isAdmin && (
-          <button onClick={() => setEdit((e) => !e)} className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]">
-            {edit ? <><Eye className="h-4 w-4" /> ver como público</> : <><ScrollText className="h-4 w-4" /> editar</>}
-          </button>
+          <div className="flex items-center gap-2">
+            {edit && (
+              <div className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-2.5 py-1.5 shadow-[3px_3px_0_0_var(--ink)]">
+                <Palette className="h-4 w-4 text-[var(--ink)]" />
+                <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]">Cores</span>
+                <span className="h-5 w-5 rounded-full border-2 border-[var(--ink)]" style={{ background: accent }} />
+                <select value={d.accent_color} onChange={(e) => set("accent_color", e.target.value)}
+                  className="border-l-2 border-[var(--ink)]/20 bg-transparent pl-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] outline-none">
+                  {ACCENTS.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
+                </select>
+              </div>
+            )}
+            <button onClick={() => setEdit((e) => !e)} className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]">
+              {edit ? <><Eye className="h-4 w-4" /> ver como público</> : <><ScrollText className="h-4 w-4" /> editar</>}
+            </button>
+          </div>
         )}
       </div>
 
@@ -145,22 +162,13 @@ export function ParticipantDossie({ initial, slug, compra }: { initial: Particip
             {edit && <ImageDrop label="banner" onFile={(f) => uploadImage(f, "cover")} />}
             {/* status */}
             {edit ? (
-              <select value={d.status} onChange={(e) => set("status", e.target.value)} className="absolute left-4 top-4 border-2 border-[var(--ink)] bg-white px-2 py-1 casa-body text-[10px] font-extrabold uppercase text-[var(--ink)]">
+              <select value={d.status} onChange={(e) => set("status", e.target.value)} className="absolute left-4 top-4 z-40 border-2 border-[var(--ink)] bg-white px-2 py-1 casa-body text-[10px] font-extrabold uppercase text-[var(--ink)]">
                 {STATUSES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             ) : (
               <span className="absolute left-4 top-4 -rotate-2 border-2 border-[var(--ink)] bg-white px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink)]">
                 {STATUSES.find((s) => s.key === d.status)?.label || d.status}
               </span>
-            )}
-            {/* cor do filtro */}
-            {edit && (
-              <div className="absolute right-4 top-4 flex gap-1">
-                {ACCENTS.map((a) => (
-                  <button key={a.key} onClick={() => set("accent_color", a.key)} title={a.label}
-                    className={`h-7 w-7 rounded-full border-2 ${d.accent_color === a.key ? "border-[var(--ink)] ring-2 ring-white" : "border-white/60"}`} style={{ background: a.varName }} />
-                ))}
-              </div>
             )}
             {!edit && live.matched && live.posicao && (
               <span className="absolute right-4 top-4 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[var(--ink)] bg-white px-2 text-[var(--ink)]">

@@ -94,6 +94,8 @@
   --magenta-deep: #d4126f;
   --cyan: #16c8e8;
   --gold: #f4c430;
+  --purple: #8b3dff;
+  --leaf: #3faf4a;
   --line: rgba(11, 11, 13, 0.1);
 
   font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;

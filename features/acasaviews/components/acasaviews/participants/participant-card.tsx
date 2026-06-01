@@ -5,6 +5,8 @@ import type { ParticipantCard as TCard } from "@/lib/acasaviews/participants-liv
 function accentVar(accent: string): string {
   if (accent === "cyan") return "var(--cyan)"
   if (accent === "gold") return "var(--gold)"
+  if (accent === "purple") return "var(--purple)"
+  if (accent === "leaf") return "var(--leaf)"
   return "var(--magenta)"
 }
 
