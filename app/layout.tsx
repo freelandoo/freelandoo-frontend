@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { Geist, Geist_Mono, Anton, Archivo, Caveat } from "next/font/google"
 import { CookieConsent } from "@/components/cookie-consent"
@@ -8,6 +8,7 @@ import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
+import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
 import { IntentModal } from "@/features/intent/IntentModal"
@@ -26,6 +27,11 @@ const caveat = Caveat({ subsets: ["latin"], weight: ["400", "700"], variable: "-
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.freelandoo.com.br"),
   applicationName: "Freelandoo",
+  appleWebApp: {
+    capable: true,
+    title: "Freelandoo",
+    statusBarStyle: "default",
+  },
   title: {
     default: "Freelandoo — Plataforma para freelancers e clientes",
     template: "%s | Freelandoo",
@@ -65,6 +71,10 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#FFC600",
 }
 
 export default async function RootLayout({
@@ -121,6 +131,7 @@ export default async function RootLayout({
             <AnalyticsProvider />
             <CouponCapture />
             <OnlineHeartbeat />
+            <InstallPrompt />
           </TourProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
