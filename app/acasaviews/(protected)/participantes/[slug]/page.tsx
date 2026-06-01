@@ -7,6 +7,7 @@ import {
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 import { fetchParticipantBySlug } from "@/lib/acasaviews/participants-live"
 import { ConvenienceStore } from "@/features/acasaviews/components/acasaviews/participants/convenience-store"
+import { AdminStoreButton } from "@/features/acasaviews/components/acasaviews/admin-store-button"
 
 export const dynamic = "force-dynamic"
 
@@ -203,9 +204,10 @@ export default async function ParticipantPage({
 
       {/* ── Conveniência Views (vitrine; compra no Slice 6) ── */}
       <section className="relative z-10 mx-auto mt-10 max-w-5xl px-5 md:px-10">
-        <div className="mb-5 flex items-center gap-3 border-b-2 border-[var(--ink)] pb-3">
+        <div className="mb-5 flex flex-wrap items-center gap-3 border-b-2 border-[var(--ink)] pb-3">
           <ShoppingBag className="h-6 w-6" style={{ color: accent }} />
           <h2 className="casa-display text-3xl leading-none text-[var(--ink)] md:text-4xl">CONVENIÊNCIA VIEWS</h2>
+          <div className="ml-auto"><AdminStoreButton /></div>
         </div>
         {compra === "success" && (
           <div className="mb-5 border-2 border-emerald-600 bg-emerald-50 px-4 py-3 casa-body text-sm font-bold text-emerald-700">

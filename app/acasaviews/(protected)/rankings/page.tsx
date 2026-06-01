@@ -4,6 +4,7 @@ import { ArrowRight, Eye, Trophy } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 import { fetchParticipantsForGrid } from "@/lib/acasaviews/participants-live"
 import { ParticipantCard } from "@/features/acasaviews/components/acasaviews/participants/participant-card"
+import { AdminStoreButton } from "@/features/acasaviews/components/acasaviews/admin-store-button"
 
 export const dynamic = "force-dynamic"
 
@@ -49,7 +50,8 @@ export default async function RankingsLandingPage() {
       <div className="casa-dots pointer-events-none absolute left-0 bottom-10 h-32 w-32 opacity-[0.06]" />
 
       {/* topo / marca */}
-      <header className="mx-auto flex max-w-5xl items-center justify-end px-5 pt-8 md:px-10">
+      <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-8 md:px-10">
+        <AdminStoreButton />
         <span className="casa-tape inline-block -rotate-2 px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink)]">
           ao vivo
         </span>
