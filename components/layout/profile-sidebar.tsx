@@ -146,6 +146,11 @@ export function ProfileSidebar() {
 
   const bundle = buildContextBundle(active, user)
 
+  // Ambiente A Casa Views tem fundo claro (papel) — os ícones brancos da rail
+  // somem. Escurece o contorno só nessas rotas; no hover (painel vira vidro
+  // escuro) volta ao branco pra continuar legível.
+  const isCasa = pathname.startsWith("/acasaviews")
+
   const isAdmin =
     !!user.is_admin ||
     !!user.roles?.some((r) => r.desc_role === "Administrator")
@@ -172,7 +177,8 @@ export function ProfileSidebar() {
           "group/sidebar fixed left-3 top-1/2 z-40 hidden -translate-y-1/2 md:flex",
           "w-14 flex-col gap-1 rounded-[22px] border border-white/10 bg-transparent p-1.5 shadow-none",
           "transition-[width,background-color,border-color] duration-300 ease-out",
-          "hover:w-[216px] hover:border-white/20 hover:bg-zinc-950/55 hover:backdrop-blur-xl"
+          "hover:w-[216px] hover:border-white/20 hover:bg-zinc-950/55 hover:backdrop-blur-xl",
+          isCasa && "border-zinc-900/25 [&_svg]:!text-zinc-900 group-hover/sidebar:border-white/20 group-hover/sidebar:[&_svg]:!text-white/85"
         )}
       >
         <span
@@ -195,7 +201,10 @@ export function ProfileSidebar() {
       <nav
         aria-label="Toolbar do perfil"
         data-app-toolbar
-        className="fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-transparent px-2 py-1.5 shadow-none md:hidden"
+        className={cn(
+          "fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-transparent px-2 py-1.5 shadow-none md:hidden",
+          isCasa && "border-zinc-900/25 bg-white/70 backdrop-blur [&_svg]:!text-zinc-900"
+        )}
         style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
         <ProfileTriggerButton
