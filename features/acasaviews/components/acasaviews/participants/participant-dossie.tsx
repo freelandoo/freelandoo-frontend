@@ -19,6 +19,8 @@ const ACCENTS: { key: string; label: string; varName: string }[] = [
   { key: "gold", label: "Dourado", varName: "var(--gold)" },
   { key: "purple", label: "Roxo", varName: "var(--purple)" },
   { key: "leaf", label: "Verde folha", varName: "var(--leaf)" },
+  { key: "red", label: "Vermelho", varName: "var(--red)" },
+  { key: "orange", label: "Laranja", varName: "var(--orange)" },
 ]
 const STATUSES = [
   { key: "active", label: "Na casa" }, { key: "finalist", label: "Finalista" },
@@ -26,7 +28,7 @@ const STATUSES = [
 ]
 const SENTIMENTS = ["positive", "neutral", "negative"]
 function accentVar(a: string) {
-  return a === "cyan" ? "var(--cyan)" : a === "gold" ? "var(--gold)" : a === "purple" ? "var(--purple)" : a === "leaf" ? "var(--leaf)" : "var(--magenta)"
+  return a === "cyan" ? "var(--cyan)" : a === "gold" ? "var(--gold)" : a === "purple" ? "var(--purple)" : a === "leaf" ? "var(--leaf)" : a === "red" ? "var(--red)" : a === "orange" ? "var(--orange)" : "var(--magenta)"
 }
 function brl(c: number) { return (Number(c) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) }
 function compact(n: number) {
