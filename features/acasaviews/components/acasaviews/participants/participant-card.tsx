@@ -9,6 +9,7 @@ function accentVar(accent: string): string {
   if (accent === "leaf") return "var(--leaf)"
   if (accent === "red") return "var(--red)"
   if (accent === "orange") return "var(--orange)"
+  if (accent === "gray") return "var(--gray)"
   return "var(--magenta)"
 }
 

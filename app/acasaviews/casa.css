@@ -98,6 +98,7 @@
   --leaf: #3faf4a;
   --red: #e8331c;
   --orange: #ff7a18;
+  --gray: #8a8a8f;
   --line: rgba(11, 11, 13, 0.1);
 
   font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
