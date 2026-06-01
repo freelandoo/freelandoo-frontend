@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Download, Share, Plus, X } from "lucide-react"
+import { Download, Share, Plus, X, MoreHorizontal } from "lucide-react"
 
 // Evento não-padronizado do Chrome/Android. Tipado localmente.
 interface BeforeInstallPromptEvent extends Event {
@@ -116,10 +116,10 @@ export function InstallPrompt() {
   if (mode === "none") return null
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-4">
-      <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border-2 border-black bg-[#FFC600] p-3 shadow-[4px_4px_0_0_#0b0b0d]">
+    <div className="fixed inset-x-0 top-0 z-[60] border-b-2 border-black bg-[#FFC600] pt-[env(safe-area-inset-top)] shadow-[0_3px_0_0_#0b0b0d]">
+      <div className="mx-auto flex max-w-2xl items-center gap-3 px-3 py-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/icon-192.png" alt="Freelandoo" className="h-12 w-12 shrink-0 rounded-xl border-2 border-black" />
+        <img src="/icons/icon-192.png" alt="Freelandoo" className="h-10 w-10 shrink-0 rounded-xl border-2 border-black" />
         <div className="min-w-0 flex-1 text-black">
           {mode === "android" ? (
             <>
@@ -127,10 +127,16 @@ export function InstallPrompt() {
               <p className="text-xs leading-snug opacity-80">Adicione o app à sua tela inicial — abre rápido e em tela cheia.</p>
             </>
           ) : (
-            <p className="text-xs font-semibold leading-snug">
-              Para instalar: toque em <Share className="inline h-3.5 w-3.5 align-text-bottom" /> e depois em
-              <span className="font-extrabold"> “Adicionar à Tela de Início” <Plus className="inline h-3.5 w-3.5 align-text-bottom" /></span>.
-            </p>
+            <>
+              <p className="text-sm font-extrabold leading-tight">Instalar a Freelandoo</p>
+              <p className="text-xs leading-snug">
+                Clique nos <MoreHorizontal className="inline h-4 w-4 align-text-bottom" />, vá em{" "}
+                <span className="font-bold">Compartilhar</span>{" "}
+                <Share className="inline h-3.5 w-3.5 align-text-bottom" /> e depois em{" "}
+                <span className="font-bold">“Adicionar à Tela de Início”</span>{" "}
+                <Plus className="inline h-3.5 w-3.5 align-text-bottom" />.
+              </p>
+            </>
           )}
         </div>
         {mode === "android" ? (
@@ -142,7 +148,7 @@ export function InstallPrompt() {
           </button>
         ) : null}
         <button onClick={dismiss} aria-label="Fechar" className="shrink-0 rounded-full p-1 text-black/70 hover:text-black">
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
       </div>
     </div>
