@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import type { Accent } from "@/lib/acasaviews/ranking-data"
 import { AnimatedNumber } from "./animated-number"
 import { DoodleAccent } from "./doodle-accent"
+import { CasaAvatar } from "./casa-avatar"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -83,11 +84,11 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
           className={cn("casa-torn-b casa-cut relative overflow-hidden bg-white", isFirst ? "p-2.5" : "p-2")}
           style={{ background: frameColor }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.avatar || "/acasaviews/placeholder-user.jpg"}
-            alt={item.name}
-            className={cn("w-full object-cover", isFirst ? "aspect-[4/5]" : "aspect-square")}
+          <CasaAvatar
+            name={item.name}
+            src={item.avatar}
+            className={cn("w-full", isFirst ? "aspect-[4/5]" : "aspect-square")}
+            textClassName={isFirst ? "text-7xl md:text-8xl" : "text-5xl md:text-6xl"}
           />
         </div>
 

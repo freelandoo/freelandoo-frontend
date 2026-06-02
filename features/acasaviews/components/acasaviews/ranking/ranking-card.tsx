@@ -2,6 +2,7 @@ import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Accent, Trend } from "@/lib/acasaviews/ranking-data"
 import { AnimatedNumber } from "./animated-number"
+import { CasaAvatar } from "./casa-avatar"
 
 export interface RankingCardStat {
   label: string
@@ -87,8 +88,7 @@ export function RankingCard({
         className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[var(--ink)]"
         style={{ outline: `2px solid ${accentVar}`, outlineOffset: "1px" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={avatar || "/acasaviews/placeholder-user.jpg"} alt={name} className="h-12 w-12 object-cover md:h-16 md:w-16" />
+        <CasaAvatar name={name} src={avatar} className="h-12 w-12 md:h-16 md:w-16" textClassName="text-xl md:text-2xl" />
       </div>
 
       {/* Nome + tag */}
