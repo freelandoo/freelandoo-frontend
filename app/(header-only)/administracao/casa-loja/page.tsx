@@ -1,18 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import "@/app/acasaviews/casa.css"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  ArrowLeft, Loader2, Plus, Pencil, Trash2, Upload, ShoppingBag,
-  Package, Receipt, ArrowUp, ArrowDown, X, EyeOff,
+  ArrowLeft, Loader2, Plus, Trash2, ShoppingBag, Package, Receipt,
+  ImagePlus, Save, ChevronDown, ChevronUp, EyeOff, Eye,
 } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 type Media = { id: string; media_url: string; media_type: string; sort_order: number }
 type Product = {
@@ -25,7 +19,9 @@ type Order = {
   amount_cents: number; status: string; created_at: string
 }
 
-function brl(cents: number) { return (Number(cents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) }
+function brl(cents: number) {
+  return (Number(cents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
 const STATUS_BADGE: Record<string, string> = { paid: "pago", pending: "pendente", canceled: "cancelado", refunded: "reembolsado" }
 
 export default function AdminCasaStorePage() {
@@ -35,12 +31,11 @@ export default function AdminCasaStorePage() {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editing, setEditing] = useState<Product | null>(null)
-  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => { setToken(typeof window !== "undefined" ? localStorage.getItem("token") : null) }, [])
-  const headers = useCallback((json = true): Record<string, string> => ({
+  const authHeaders = useCallback((json = true): Record<string, string> => ({
     Authorization: `Bearer ${token}`, ...(json ? { "Content-Type": "application/json" } : {}),
   }), [token])
 
@@ -48,276 +43,333 @@ export default function AdminCasaStorePage() {
     if (!token) return
     setLoading(true); setError(null)
     try {
-      const res = await fetch("/api/admin/casa/store/products", { headers: headers() })
+      const res = await fetch("/api/admin/casa/store/products", { headers: authHeaders() })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Falha ao carregar")
       setProducts(data.products || [])
     } catch (e) { setError(e instanceof Error ? e.message : "Erro") } finally { setLoading(false) }
-  }, [token, headers])
+  }, [token, authHeaders])
 
   const loadOrders = useCallback(async () => {
     if (!token) return
-    const res = await fetch("/api/admin/casa/store/orders", { headers: headers() })
+    const res = await fetch("/api/admin/casa/store/orders", { headers: authHeaders() })
     const data = await res.json()
     if (res.ok) setOrders(data.orders || [])
-  }, [token, headers])
+  }, [token, authHeaders])
 
   useEffect(() => { if (token) loadProducts() }, [token, loadProducts])
   useEffect(() => { if (token && tab === "pedidos") loadOrders() }, [token, tab, loadOrders])
 
-  async function removeProduct(p: Product) {
-    if (!confirm(`Desativar "${p.name}"?`)) return
-    await fetch(`/api/admin/casa/store/products/${p.id}`, { method: "DELETE", headers: headers() })
-    loadProducts()
+  async function addProduct() {
+    if (creating) return
+    setCreating(true); setError(null)
+    try {
+      const res = await fetch("/api/admin/casa/store/products", {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({ name: "Novo produto", price_cents: 0, is_active: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Falha ao criar")
+      setProducts((prev) => [data.product, ...prev])
+    } catch (e) { setError(e instanceof Error ? e.message : "Erro") } finally { setCreating(false) }
   }
 
   if (!token) {
-    return <div className="flex min-h-[60dvh] items-center justify-center text-muted-foreground"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verificando sessão…</div>
+    return (
+      <div className="casa-app">
+        <div className="casa-rank casa-paper flex min-h-[60dvh] items-center justify-center casa-body font-bold text-[var(--ink-soft)]/70">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verificando sessão…
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/administracao")}><ArrowLeft className="h-5 w-5" /></Button>
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold"><ShoppingBag className="h-6 w-6" /> Conveniência Views</h1>
-            <p className="text-sm text-muted-foreground">Loja única espelhada em todas as páginas de participante. A venda registra qual participante recebeu.</p>
+    <div className="casa-app">
+      <div className="casa-rank casa-paper min-h-screen">
+        <div className="mx-auto max-w-6xl px-5 py-8 md:px-8">
+          {/* Header */}
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-4">
+            <div className="flex items-center gap-3">
+              <button onClick={() => router.push("/administracao")} className="border-2 border-[var(--ink)] p-2 text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <p className="casa-marker text-xl text-[var(--gold)] md:text-2xl">loja oficial</p>
+                <h1 className="casa-display flex items-center gap-2 text-4xl leading-[0.85] text-[var(--ink)] md:text-5xl">
+                  <ShoppingBag className="h-7 w-7" /> CONVENIÊNCIA VIEWS
+                </h1>
+                <p className="mt-1 casa-body text-sm font-semibold text-[var(--ink-soft)]/65">
+                  Loja única espelhada em todas as páginas de participante. A venda registra qual participante recebeu.
+                </p>
+              </div>
+            </div>
+            {tab === "produtos" && (
+              <button
+                onClick={addProduct}
+                disabled={creating}
+                className="inline-flex items-center gap-2 border-2 border-[var(--ink)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[4px_4px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+                style={{ background: "var(--gold)" }}
+              >
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Adicionar produto
+              </button>
+            )}
           </div>
+
+          {/* Tabs */}
+          <div className="mb-6 flex gap-2">
+            <TabBtn active={tab === "produtos"} onClick={() => setTab("produtos")} icon={<Package className="h-4 w-4" />}>Produtos</TabBtn>
+            <TabBtn active={tab === "pedidos"} onClick={() => setTab("pedidos")} icon={<Receipt className="h-4 w-4" />}>Pedidos</TabBtn>
+          </div>
+
+          {error && (
+            <div className="mb-4 border-2 border-[var(--magenta)] bg-[var(--magenta)]/10 px-4 py-3 casa-body text-sm font-bold text-[var(--magenta-deep)]">{error}</div>
+          )}
+
+          {tab === "produtos" ? (
+            loading ? (
+              <div className="flex items-center gap-2 py-20 casa-body font-bold text-[var(--ink-soft)]/60"><Loader2 className="h-5 w-5 animate-spin" /> Carregando…</div>
+            ) : products.length === 0 ? (
+              <div className="border-2 border-dashed border-[var(--ink)]/30 bg-white/60 px-6 py-16 text-center">
+                <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-[var(--ink)]/30" />
+                <p className="casa-display text-2xl text-[var(--ink)]/70">VITRINE VAZIA</p>
+                <p className="mt-1 casa-body text-sm font-semibold text-[var(--ink-soft)]/55">Clique em “Adicionar produto” pra criar o primeiro card.</p>
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {products.map((p) => (
+                  <ProductCardEditable key={p.id} product={p} token={token} authHeaders={authHeaders} onChanged={loadProducts} />
+                ))}
+              </div>
+            )
+          ) : (
+            <OrdersTable orders={orders} />
+          )}
         </div>
-        {tab === "produtos" && (
-          <Button onClick={() => { setEditing(null); setShowForm(true) }}><Plus className="mr-1 h-4 w-4" /> Novo produto</Button>
-        )}
       </div>
-
-      <div className="mb-5 flex gap-2 border-b">
-        <TabBtn active={tab === "produtos"} onClick={() => setTab("produtos")} icon={<Package className="h-4 w-4" />}>Produtos</TabBtn>
-        <TabBtn active={tab === "pedidos"} onClick={() => setTab("pedidos")} icon={<Receipt className="h-4 w-4" />}>Pedidos</TabBtn>
-      </div>
-
-      {error && <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
-
-      {tab === "produtos" ? (
-        loading ? (
-          <div className="flex items-center gap-2 py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Carregando…</div>
-        ) : products.length === 0 ? (
-          <Card><CardContent className="py-16 text-center text-muted-foreground"><ShoppingBag className="mx-auto mb-3 h-10 w-10 opacity-40" />Nenhum produto. Crie o primeiro.</CardContent></Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p) => (
-              <Card key={p.id} className="overflow-hidden">
-                <div className="aspect-video overflow-hidden bg-muted">
-                  {p.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt="" className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <div className="p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-semibold">{p.name}</span>
-                    {!p.is_active && <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{brl(p.price_cents)} · {p.stock === null ? "estoque ∞" : `${p.stock} un`} · {p.media?.length || 0} mídia(s)</div>
-                </div>
-                <div className="flex items-center gap-1 border-t p-2">
-                  <Button size="sm" variant="ghost" className="flex-1" onClick={() => { setEditing(p); setShowForm(true) }}><Pencil className="mr-1 h-4 w-4" /> Editar</Button>
-                  <Button size="icon" variant="ghost" onClick={() => removeProduct(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )
-      ) : (
-        <OrdersTable orders={orders} />
-      )}
-
-      {showForm && (
-        <ProductForm token={token} editing={editing} headers={headers} onClose={() => setShowForm(false)} onSaved={() => loadProducts()} />
-      )}
     </div>
   )
 }
 
 function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 border-2 border-[var(--ink)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5 ${active ? "text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]" : "text-[var(--ink-soft)]/60"}`}
+      style={active ? { background: "var(--cyan)" } : { background: "transparent" }}
+    >
       {icon}{children}
     </button>
   )
 }
 
+// ════════════════════ Card editável inline (sem modal) ════════════════════
+function ProductCardEditable({ product, token, authHeaders, onChanged }: {
+  product: Product; token: string; authHeaders: (json?: boolean) => Record<string, string>; onChanged: () => void
+}) {
+  const [name, setName] = useState(product.name)
+  const [price, setPrice] = useState((product.price_cents / 100).toFixed(2).replace(".", ","))
+  const [description, setDescription] = useState(product.description ?? "")
+  const [stock, setStock] = useState(product.stock != null ? String(product.stock) : "")
+  const [active, setActive] = useState(product.is_active)
+  const [image, setImage] = useState(product.image_url)
+  const [media, setMedia] = useState<Media[]>(product.media ?? [])
+  const [showDesc, setShowDesc] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const dirty =
+    name !== product.name ||
+    description !== (product.description ?? "") ||
+    price !== (product.price_cents / 100).toFixed(2).replace(".", ",") ||
+    stock !== (product.stock != null ? String(product.stock) : "") ||
+    active !== product.is_active
+
+  function priceCents() { return Math.round((Number(price.replace(",", ".")) || 0) * 100) }
+
+  async function save() {
+    if (!name.trim()) { setErr("Nome obrigatório"); return }
+    setSaving(true); setErr(null)
+    try {
+      const res = await fetch(`/api/admin/casa/store/products/${product.id}`, {
+        method: "PUT", headers: authHeaders(),
+        body: JSON.stringify({
+          name, description, price_cents: priceCents(),
+          stock: stock === "" ? "" : Number(stock), is_active: active,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Falha ao salvar")
+      onChanged()
+    } catch (e) { setErr(e instanceof Error ? e.message : "Erro") } finally { setSaving(false) }
+  }
+
+  async function changePhoto(file: File) {
+    setUploading(true); setErr(null)
+    try {
+      // "trocar a foto": remove mídias antigas e sobe a nova (imagem única do card)
+      for (const m of media) {
+        await fetch(`/api/admin/casa/store/media/${m.id}`, { method: "DELETE", headers: authHeaders() })
+      }
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch(`/api/admin/casa/store/products/${product.id}/media`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Falha no upload")
+      setMedia([data.media]); setImage(data.media.media_url)
+      onChanged()
+    } catch (e) { setErr(e instanceof Error ? e.message : "Erro") } finally { setUploading(false) }
+  }
+
+  async function remove() {
+    if (!confirm(`Excluir “${product.name}”?`)) return
+    await fetch(`/api/admin/casa/store/products/${product.id}`, { method: "DELETE", headers: authHeaders() })
+    onChanged()
+  }
+
+  return (
+    <div className="flex flex-col border-2 border-[var(--ink)] bg-white shadow-[5px_5px_0_0_var(--ink)]">
+      {/* Foto (clicável) */}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className="group relative aspect-square overflow-hidden border-b-2 border-[var(--ink)] bg-[var(--paper-2)]"
+      >
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[var(--ink)]/40">
+            <ImagePlus className="h-8 w-8" />
+          </div>
+        )}
+        <span className="absolute inset-0 flex items-center justify-center gap-2 bg-[var(--ink)]/65 opacity-0 transition group-hover:opacity-100">
+          {uploading ? <Loader2 className="h-6 w-6 animate-spin text-white" /> : (
+            <span className="inline-flex items-center gap-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-white">
+              <ImagePlus className="h-5 w-5" /> trocar foto
+            </span>
+          )}
+        </span>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) changePhoto(f); e.target.value = "" }} />
+      </button>
+
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        {/* Nome editável */}
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nome do produto"
+          className="w-full border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-xl leading-tight text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+        />
+
+        {/* Preço editável */}
+        <div className="flex items-center gap-2">
+          <span className="casa-display text-lg" style={{ color: "var(--magenta)" }}>R$</span>
+          <input
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="0,00"
+            inputMode="decimal"
+            className="w-24 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent casa-display text-2xl text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+          />
+        </div>
+
+        {/* Ver/editar descrição */}
+        <button
+          type="button"
+          onClick={() => setShowDesc((s) => !s)}
+          className="inline-flex w-fit items-center gap-1 casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/70 underline hover:text-[var(--ink)]"
+        >
+          {showDesc ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {description ? "editar descrição" : "+ descrição"}
+        </button>
+        {showDesc && (
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Descrição do produto…"
+            className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper-2)] p-2 casa-body text-xs text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+          />
+        )}
+
+        {/* Estoque + ativo */}
+        <div className="flex items-center gap-3 pt-1">
+          <label className="flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/55">
+            estoque
+            <input
+              value={stock}
+              onChange={(e) => setStock(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="∞"
+              className="w-12 border-b-2 border-dashed border-[var(--ink)]/30 bg-transparent text-center casa-body text-sm font-bold text-[var(--ink)] outline-none focus:border-[var(--gold)]"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => setActive((a) => !a)}
+            className="inline-flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em]"
+            style={{ color: active ? "var(--ink)" : "var(--ink-soft)" }}
+          >
+            {active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            {active ? "ativo" : "oculto"}
+          </button>
+        </div>
+
+        {err && <p className="casa-body text-[11px] font-bold text-[var(--magenta)]">{err}</p>}
+
+        {/* Ações */}
+        <div className="mt-auto flex items-center gap-2 border-t-2 border-[var(--ink)]/15 pt-2">
+          <button
+            onClick={save}
+            disabled={saving || !dirty}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 border-2 border-[var(--ink)] py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40 disabled:shadow-none"
+            style={{ background: dirty ? "var(--cyan)" : "transparent" }}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {dirty ? "salvar" : "salvo"}
+          </button>
+          <button onClick={remove} className="border-2 border-[var(--ink)] p-1.5 text-[var(--magenta)] transition-transform hover:-translate-y-0.5">
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OrdersTable({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
-    return <Card><CardContent className="py-16 text-center text-muted-foreground"><Receipt className="mx-auto mb-3 h-10 w-10 opacity-40" />Nenhum pedido ainda.</CardContent></Card>
+    return (
+      <div className="border-2 border-dashed border-[var(--ink)]/30 bg-white/60 px-6 py-16 text-center">
+        <Receipt className="mx-auto mb-3 h-10 w-10 text-[var(--ink)]/30" />
+        <p className="casa-body text-sm font-semibold text-[var(--ink-soft)]/55">Nenhum pedido ainda.</p>
+      </div>
+    )
   }
   return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+    <div className="overflow-x-auto border-2 border-[var(--ink)] bg-white">
+      <table className="w-full casa-body text-sm">
+        <thead className="border-b-2 border-[var(--ink)] text-left text-[10px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60">
           <tr><th className="px-3 py-2">Produto</th><th className="px-3 py-2">Participante (recebeu)</th><th className="px-3 py-2">Comprador</th><th className="px-3 py-2">Valor</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Data</th></tr>
         </thead>
         <tbody>
           {orders.map((o) => (
-            <tr key={o.id} className="border-t">
-              <td className="px-3 py-2 font-medium">{o.product_name}</td>
-              <td className="px-3 py-2"><Badge variant="outline">{o.participant_name}</Badge></td>
-              <td className="px-3 py-2 text-muted-foreground">{o.buyer_name || o.buyer_user_email || o.buyer_email || "—"}</td>
-              <td className="px-3 py-2">{brl(o.amount_cents)}</td>
-              <td className="px-3 py-2"><Badge variant={o.status === "paid" ? "default" : "secondary"}>{STATUS_BADGE[o.status] || o.status}</Badge></td>
-              <td className="px-3 py-2 text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</td>
+            <tr key={o.id} className="border-t border-[var(--ink)]/15">
+              <td className="px-3 py-2 font-bold text-[var(--ink)]">{o.product_name}</td>
+              <td className="px-3 py-2"><span className="border border-[var(--ink)]/40 px-1.5 py-0.5 text-[11px] font-bold text-[var(--ink)]">{o.participant_name}</span></td>
+              <td className="px-3 py-2 text-[var(--ink-soft)]/70">{o.buyer_name || o.buyer_user_email || o.buyer_email || "—"}</td>
+              <td className="px-3 py-2 font-bold text-[var(--ink)]">{brl(o.amount_cents)}</td>
+              <td className="px-3 py-2"><span className="font-extrabold uppercase text-[11px] tracking-[0.1em]" style={{ color: o.status === "paid" ? "var(--ink)" : "var(--ink-soft)" }}>{STATUS_BADGE[o.status] || o.status}</span></td>
+              <td className="px-3 py-2 text-[var(--ink-soft)]/70">{new Date(o.created_at).toLocaleDateString("pt-BR")}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
-  )
-}
-
-// ════════════════════ Modal do produto (enxuto, com galeria) ════════════════════
-function ProductForm({ token, editing, headers, onClose, onSaved }: {
-  token: string; editing: Product | null; headers: (json?: boolean) => Record<string, string>; onClose: () => void; onSaved: () => void
-}) {
-  const [product, setProduct] = useState<Product | null>(editing)
-  const [form, setForm] = useState({
-    name: editing?.name ?? "",
-    description: editing?.description ?? "",
-    price_reais: editing ? (editing.price_cents / 100).toFixed(2).replace(".", ",") : "",
-    stock: editing?.stock != null ? String(editing.stock) : "",
-    is_active: editing ? String(editing.is_active) : "true",
-  })
-  const [media, setMedia] = useState<Media[]>(editing?.media ?? [])
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
-
-  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })) }
-  function priceCents() { return Math.round((Number(form.price_reais.replace(",", ".")) || 0) * 100) }
-
-  async function save() {
-    if (!form.name.trim()) { setErr("Nome é obrigatório."); return }
-    setSaving(true); setErr(null)
-    try {
-      const payload = {
-        name: form.name,
-        description: form.description,
-        price_cents: priceCents(),
-        stock: form.stock === "" ? "" : Number(form.stock),
-        is_active: form.is_active === "true",
-      }
-      const url = product ? `/api/admin/casa/store/products/${product.id}` : "/api/admin/casa/store/products"
-      const res = await fetch(url, { method: product ? "PUT" : "POST", headers: headers(), body: JSON.stringify(payload) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Falha ao salvar")
-      setProduct(data.product)         // entra em modo edição → libera galeria
-      onSaved()
-    } catch (e) { setErr(e instanceof Error ? e.message : "Erro") } finally { setSaving(false) }
-  }
-
-  async function uploadMedia(file: File) {
-    if (!product) { setErr("Salve o produto antes de adicionar mídias."); return }
-    setUploading(true); setErr(null)
-    try {
-      const fd = new FormData()
-      fd.append("file", file)
-      const res = await fetch(`/api/admin/casa/store/products/${product.id}/media`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Falha no upload")
-      setMedia((m) => [...m, data.media])
-      onSaved()
-    } catch (e) { setErr(e instanceof Error ? e.message : "Erro") } finally { setUploading(false) }
-  }
-
-  async function delMedia(id: string) {
-    await fetch(`/api/admin/casa/store/media/${id}`, { method: "DELETE", headers: headers() })
-    setMedia((m) => m.filter((x) => x.id !== id))
-    onSaved()
-  }
-
-  async function move(idx: number, dir: -1 | 1) {
-    const next = [...media]
-    const j = idx + dir
-    if (j < 0 || j >= next.length) return
-    ;[next[idx], next[j]] = [next[j], next[idx]]
-    setMedia(next)
-    if (product) {
-      await fetch(`/api/admin/casa/store/products/${product.id}/media/reorder`, {
-        method: "PUT", headers: headers(), body: JSON.stringify({ ordered_ids: next.map((m) => m.id) }),
-      })
-      onSaved()
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader><DialogTitle>{product ? "Editar produto" : "Novo produto"} — Conveniência Views</DialogTitle></DialogHeader>
-        {err && <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{err}</div>}
-
-        {/* Preview ao vivo (como aparece na loja do participante) */}
-        <div className="rounded-lg border bg-muted/30 p-3">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pré-visualização</div>
-          <div className="mx-auto max-w-[220px] overflow-hidden border-2 border-foreground bg-background shadow-[5px_5px_0_0] shadow-foreground">
-            <div className="aspect-square overflow-hidden bg-muted">
-              {(media[0]?.media_url) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={media[0].media_url} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">sem imagem</div>
-              )}
-            </div>
-            <div className="p-3">
-              <div className="truncate font-bold">{form.name || "Nome do produto"}</div>
-              {form.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{form.description}</p>}
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-lg font-extrabold text-amber-500">{brl(priceCents())}</span>
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {form.stock === "" ? "disponível" : Number(form.stock) > 0 ? `${form.stock} un` : "esgotado"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Nome*</Label><Input value={form.name} onChange={(e) => set("name", e.target.value)} /></div>
-          <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Descrição</Label><Textarea rows={3} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>
-          <div className="space-y-1"><Label className="text-xs">Preço (R$)</Label><Input value={form.price_reais} onChange={(e) => set("price_reais", e.target.value)} placeholder="0,00" /></div>
-          <div className="space-y-1"><Label className="text-xs">Estoque (vazio = ∞)</Label><Input type="number" value={form.stock} onChange={(e) => set("stock", e.target.value)} /></div>
-          <div className="space-y-1"><Label className="text-xs">Ativo</Label>
-            <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={form.is_active} onChange={(e) => set("is_active", e.target.value)}>
-              <option value="true">Sim</option><option value="false">Não</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Galeria de mídia */}
-        <div className="mt-2 space-y-2 rounded-md border p-3">
-          <Label className="text-xs font-semibold">Galeria de mídia {!product && <span className="text-muted-foreground">(salve o produto primeiro)</span>}</Label>
-          <div className="flex flex-wrap gap-2">
-            {media.map((m, idx) => (
-              <div key={m.id} className="group relative h-20 w-20 overflow-hidden rounded border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.media_url} alt="" className="h-full w-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/50 px-0.5 opacity-0 transition group-hover:opacity-100">
-                  <button onClick={() => move(idx, -1)} className="text-white"><ArrowUp className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => delMedia(m.id)} className="text-white"><X className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => move(idx, 1)} className="text-white"><ArrowDown className="h-3.5 w-3.5" /></button>
-                </div>
-              </div>
-            ))}
-            <label className={`flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded border border-dashed text-muted-foreground ${!product || uploading ? "pointer-events-none opacity-40" : ""}`}>
-              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-              <span className="mt-1 text-[10px]">imagem</span>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMedia(f); e.target.value = "" }} />
-            </label>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Fechar</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{product ? "Salvar alterações" : "Criar produto"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }

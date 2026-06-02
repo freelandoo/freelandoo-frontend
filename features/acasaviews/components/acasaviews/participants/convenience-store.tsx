@@ -17,6 +17,7 @@ function getToken(): string | null {
 export function ConvenienceStore({ products, accent, slug }: { products: ProductItem[]; accent: string; slug: string }) {
   const router = useRouter()
   const [selected, setSelected] = useState<ProductItem | null>(null)
+  const [descModal, setDescModal] = useState<ProductItem | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,7 +69,15 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
               </div>
               <div className="flex flex-1 flex-col p-3">
                 <h3 className="casa-display text-xl leading-tight text-[var(--ink)]">{prod.name}</h3>
-                {prod.description && <p className="mt-1 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{prod.description}</p>}
+                {prod.description && (
+                  <button
+                    type="button"
+                    onClick={() => setDescModal(prod)}
+                    className="mt-1 w-fit casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/70 underline hover:text-[var(--ink)]"
+                  >
+                    ver descrição
+                  </button>
+                )}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                   <span className="casa-display text-2xl" style={{ color: accent }}>{brl(prod.price_cents)}</span>
                   <button
@@ -120,6 +129,21 @@ export function ConvenienceStore({ products, accent, slug }: { products: Product
               >
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecionando…</> : "Ir para o pagamento"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Descrição (somente leitura) */}
+      {descModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setDescModal(null)}>
+          <div className="w-full max-w-md border-2 border-[var(--ink)] bg-white shadow-[8px_8px_0_0_var(--ink)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b-2 border-[var(--ink)] px-4 py-3">
+              <span className="casa-display text-xl leading-tight text-[var(--ink)]">{descModal.name}</span>
+              <button onClick={() => setDescModal(null)} className="text-[var(--ink)]"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-4">
+              <p className="whitespace-pre-line casa-body text-sm leading-relaxed text-[var(--ink-soft)]/80">{descModal.description}</p>
             </div>
           </div>
         </div>
