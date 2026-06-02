@@ -10,6 +10,7 @@ import { RankingList } from "@/features/acasaviews/components/acasaviews/ranking
 import { RankingCard } from "@/features/acasaviews/components/acasaviews/ranking/ranking-card"
 import { RankingHighlightNote } from "@/features/acasaviews/components/acasaviews/ranking/ranking-highlight-note"
 import { RankingPageFooter } from "@/features/acasaviews/components/acasaviews/ranking/ranking-page-footer"
+import { AudienceDateAdmin } from "@/features/acasaviews/components/acasaviews/ranking/audience-date-admin"
 
 export const metadata: Metadata = {
   title: "Ranking da Audiência | Casa Views",
@@ -49,6 +50,8 @@ export default async function RankingAudienciaPage() {
         switchHref="/acasaviews/ranking-participantes"
         switchLabel="Ver participantes →"
       />
+
+      <AudienceDateAdmin />
 
       <RankingHero
         title1="RANKING DA"
