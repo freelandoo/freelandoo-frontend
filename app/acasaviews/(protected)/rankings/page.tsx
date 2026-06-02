@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight, Eye, Trophy } from "lucide-react"
+import { ArrowRight, Eye, Trophy, Crown } from "lucide-react"
 import { casaFontVars } from "@/lib/acasaviews/fonts"
 import { fetchParticipantsForGrid } from "@/lib/acasaviews/participants-live"
 import { ParticipantCard } from "@/features/acasaviews/components/acasaviews/participants/participant-card"
@@ -20,7 +20,7 @@ interface RankingLink {
   title: string
   desc: string
   icon: typeof Eye
-  accent: "cyan" | "magenta"
+  accent: "cyan" | "magenta" | "gold"
 }
 
 const LINKS: RankingLink[] = [
@@ -34,11 +34,19 @@ const LINKS: RankingLink[] = [
   },
   {
     href: "/acasaviews/ranking-participantes",
-    kicker: "performance",
+    kicker: "o dia de hoje",
     title: "Ranking dos Participantes",
-    desc: "Quem domina a temporada dentro da casa. Atenção vira poder.",
+    desc: "A pontuação crua do dia: views, likes, comentários, salvamentos e shares somados.",
     icon: Trophy,
     accent: "magenta",
+  },
+  {
+    href: "/acasaviews/ranking-geral",
+    kicker: "a temporada",
+    title: "Ranking Geral",
+    desc: "Cada dia fecha valendo pontos por posição (8/7/6/5/4). Consistência vence o pico viral.",
+    icon: Crown,
+    accent: "gold",
   },
 ]
 
@@ -70,9 +78,10 @@ export default async function RankingsLandingPage() {
       </section>
 
       {/* 2 botões */}
-      <section className="mx-auto grid max-w-5xl gap-5 px-5 pb-16 pt-6 md:grid-cols-2 md:px-10">
+      <section className="mx-auto grid max-w-5xl gap-5 px-5 pb-16 pt-6 md:grid-cols-3 md:px-10">
         {LINKS.map((l) => {
-          const accentVar = l.accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
+          const accentVar =
+            l.accent === "cyan" ? "var(--cyan)" : l.accent === "gold" ? "var(--gold)" : "var(--magenta)"
           const Icon = l.icon
           return (
             <Link

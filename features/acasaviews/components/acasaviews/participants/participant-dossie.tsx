@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   ArrowLeft, Eye, EyeOff, Heart, MessageCircle, Trophy, Hash, Vault, Flame,
   Camera, ScrollText, Lock, Lightbulb, ShoppingBag, Loader2, Save, Trash2,
-  Plus, X, ImagePlus, Palette,
+  Plus, X, ImagePlus, Palette, Bookmark, Share2,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import type { ParticipantFull, JourneyItem, SecretItem, TheoryItem } from "@/lib/acasaviews/participants-live"
@@ -221,12 +221,14 @@ export function ParticipantDossie({ initial, slug, compra }: { initial: Particip
         {!live.matched && (
           <p className="mb-3 inline-block -rotate-1 border border-[var(--ink)]/30 bg-white/60 px-3 py-1 casa-body text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-soft)]/60">números ao vivo aparecem quando o participante é vinculado ao ranking</p>
         )}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
           <Kpi icon={<Trophy className="h-4 w-4" />} label="pontos" value={compact(live.pontuacao)} pct={live.matched ? live.pontuacao_pct_24h : null} accent={accent} />
           <Kpi icon={<Hash className="h-4 w-4" />} label="posição" value={live.posicao ? `#${live.posicao}` : "—"} pct={null} accent={accent} />
           <Kpi icon={<Eye className="h-4 w-4" />} label="views" value={compact(live.views)} pct={live.matched ? live.views_pct_24h : null} accent={accent} />
           <Kpi icon={<Heart className="h-4 w-4" />} label="likes" value={compact(live.likes)} pct={live.matched ? live.likes_pct_24h : null} accent={accent} />
           <Kpi icon={<MessageCircle className="h-4 w-4" />} label="comentários" value={compact(live.comments)} pct={live.matched ? live.comments_pct_24h : null} accent={accent} />
+          <Kpi icon={<Bookmark className="h-4 w-4" />} label="salvamentos" value={compact(live.saved)} pct={null} accent={accent} />
+          <Kpi icon={<Share2 className="h-4 w-4" />} label="compart." value={compact(live.shares)} pct={null} accent={accent} />
         </div>
       </section>
 

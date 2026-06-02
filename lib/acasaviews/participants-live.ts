@@ -22,6 +22,8 @@ export type LiveStats = {
   views: number
   likes: number
   comments: number
+  saved: number
+  shares: number
   pontuacao: number
   views_delta_24h: number
   likes_delta_24h: number
@@ -84,10 +86,11 @@ type RawDelta = {
   views: number; views_delta_24h: number; views_pct_24h: number
   likes: number; likes_delta_24h: number; likes_pct_24h: number
   comments: number; comments_delta_24h: number; comments_pct_24h: number
+  saved: number; shares: number
 }
 
 const EMPTY_LIVE: LiveStats = {
-  posicao: null, posicao_prev: null, views: 0, likes: 0, comments: 0, pontuacao: 0,
+  posicao: null, posicao_prev: null, views: 0, likes: 0, comments: 0, saved: 0, shares: 0, pontuacao: 0,
   views_delta_24h: 0, likes_delta_24h: 0, comments_delta_24h: 0, pontuacao_delta_24h: 0,
   views_pct_24h: 0, likes_pct_24h: 0, comments_pct_24h: 0, pontuacao_pct_24h: 0, matched: false,
 }
@@ -123,7 +126,8 @@ function mergeLive(p: ParticipantBase, idx: Map<string, RawDelta>): LiveStats {
   return {
     posicao: d.posicao ?? null,
     posicao_prev: d.posicao_prev ?? null,
-    views: n(d.views), likes: n(d.likes), comments: n(d.comments), pontuacao: n(d.pontuacao),
+    views: n(d.views), likes: n(d.likes), comments: n(d.comments),
+    saved: n(d.saved), shares: n(d.shares), pontuacao: n(d.pontuacao),
     views_delta_24h: n(d.views_delta_24h), likes_delta_24h: n(d.likes_delta_24h),
     comments_delta_24h: n(d.comments_delta_24h), pontuacao_delta_24h: n(d.pontuacao_delta_24h),
     views_pct_24h: n(d.views_pct_24h), likes_pct_24h: n(d.likes_pct_24h),
