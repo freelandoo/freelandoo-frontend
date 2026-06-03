@@ -85,7 +85,7 @@ const sections = [
   },
   {
     title: "10. Contato",
-    paragraphs: ["Dúvidas sobre Poléns e itens digitais podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre Poléns e itens digitais podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

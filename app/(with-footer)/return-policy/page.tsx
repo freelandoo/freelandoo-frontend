@@ -35,7 +35,7 @@ const sections = [
   {
     title: "4. Como solicitar devolução ou troca",
     items: [
-      "A solicitação deve ser feita pelos canais da plataforma ou por suporte@freelandoo.com, dentro dos prazos aplicáveis.",
+      "A solicitação deve ser feita pelos canais da plataforma ou por freelandoogroup@gmail.com, dentro dos prazos aplicáveis.",
       "O comprador deve informar o número do pedido e descrever o motivo, anexando fotos quando houver defeito.",
       "Após a análise, a plataforma orienta os próximos passos para a devolução.",
     ],
@@ -79,7 +79,7 @@ const sections = [
   },
   {
     title: "10. Contato",
-    paragraphs: ["Dúvidas sobre trocas, devoluções e frete podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre trocas, devoluções e frete podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

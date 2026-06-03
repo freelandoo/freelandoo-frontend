@@ -26,7 +26,7 @@ const sections = [
   {
     title: "3. Como notificar uma infração",
     paragraphs: [
-      "O titular de direitos, ou seu representante, pode enviar uma notificação para suporte@freelandoo.com contendo:",
+      "O titular de direitos, ou seu representante, pode enviar uma notificação para freelandoogroup@gmail.com contendo:",
     ],
     items: [
       "Identificação do titular e dados de contato.",
@@ -48,7 +48,7 @@ const sections = [
   {
     title: "5. Contranotificação",
     items: [
-      "O usuário que considerar indevida a remoção pode apresentar uma contranotificação para suporte@freelandoo.com.",
+      "O usuário que considerar indevida a remoção pode apresentar uma contranotificação para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
       "A contranotificação deve explicar por que o conteúdo não viola direitos de terceiros e apresentar provas, quando houver.",
       "Após a análise, o conteúdo pode ser restabelecido ou mantido removido.",
     ],
@@ -62,12 +62,12 @@ const sections = [
   {
     title: "7. Uso da marca Freelandoo",
     paragraphs: [
-      "A marca, o logotipo e a identidade visual da Freelandoo não podem ser usados sem autorização. Solicitações de uso devem ser enviadas para suporte@freelandoo.com.",
+      "A marca, o logotipo e a identidade visual da Freelandoo não podem ser usados sem autorização. Solicitações de uso devem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
     ],
   },
   {
     title: "8. Contato",
-    paragraphs: ["Notificações e dúvidas sobre direitos autorais devem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Notificações e dúvidas sobre direitos autorais devem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

@@ -11,7 +11,7 @@ const sections = [
     title: "1. Controlador dos dados e Encarregado",
     items: [
       "O controlador dos dados pessoais tratados na plataforma é [RAZÃO SOCIAL], CNPJ [CNPJ], com sede em [ENDEREÇO].",
-      "O Encarregado pelo Tratamento de Dados Pessoais (DPO) pode ser contatado em [E-MAIL DO ENCARREGADO].",
+      "O Encarregado pelo Tratamento de Dados Pessoais (DPO) pode ser contatado em freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
       "Esta política observa a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e o Marco Civil da Internet.",
     ],
   },
@@ -100,7 +100,7 @@ const sections = [
       "Solicitar anonimização, bloqueio ou eliminação de dados desnecessários.",
       "Solicitar a portabilidade dos dados.",
       "Revogar o consentimento e se opor a tratamentos baseados em legítimo interesse.",
-      "Exercer esses direitos por meio do contato com o Encarregado em [E-MAIL DO ENCARREGADO].",
+      "Exercer esses direitos por meio do contato com o Encarregado em freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
     ],
   },
   {
@@ -120,7 +120,7 @@ const sections = [
   {
     title: "13. Contato",
     paragraphs: [
-      "Dúvidas sobre privacidade podem ser enviadas para suporte@freelandoo.com ou ao Encarregado em [E-MAIL DO ENCARREGADO]. O titular também pode peticionar à Autoridade Nacional de Proteção de Dados (ANPD).",
+      "Dúvidas sobre privacidade, ou contato com o Encarregado de Proteção de Dados, podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599. O titular também pode peticionar à Autoridade Nacional de Proteção de Dados (ANPD).",
     ],
   },
 ]

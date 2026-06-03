@@ -61,7 +61,7 @@ export function PrecosContent() {
   useReveal()
 
   return (
-    <main className="flex-1 bg-[#141009]">
+    <main className="flex-1 bg-[#0b0804]">
       {/* HERO */}
       <section className="relative overflow-hidden py-24 md:py-32">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[800px] rounded-full bg-[#F2B705]/5 blur-[120px]" />
@@ -77,7 +77,7 @@ export function PrecosContent() {
           </p>
           <div className="flex flex-wrap gap-4" data-reveal>
             <Link href="/cadastro" className="inline-flex items-center bg-[#F2B705] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#F2B705]/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              {t("hero.primaryCta", "Assinar e ativar perfil")}
+              {t("hero.primaryCta", "Ativar meu perfil")}
             </Link>
             <Link href="/anunciar-servicos" className="inline-flex items-center border border-[#2A2218] text-[#F5F1E8] font-medium px-6 py-3 rounded-lg hover:border-[#F2B705]/40 transition-all">
               {t("hero.secondaryCta", "Anunciar serviços")}

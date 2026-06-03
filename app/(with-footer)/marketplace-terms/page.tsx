@@ -132,7 +132,7 @@ const sections = [
   },
   {
     title: "16. Contato",
-    paragraphs: ["Dúvidas sobre a Loja podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre a Loja podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

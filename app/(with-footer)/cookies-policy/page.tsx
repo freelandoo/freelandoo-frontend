@@ -64,7 +64,7 @@ const sections = [
   },
   {
     title: "8. Contato",
-    paragraphs: ["Dúvidas sobre cookies ou privacidade podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre cookies ou privacidade podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

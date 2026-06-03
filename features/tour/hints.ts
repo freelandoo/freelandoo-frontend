@@ -150,7 +150,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "account-activate": {
     title: "Ativar conta",
-    text: "Paga a anuidade da plataforma e desbloqueia a publicação do seu perfil profissional.",
+    text: "Paga a ativação vitalícia da plataforma (uma vez só) e desbloqueia a publicação do seu perfil profissional.",
   },
 
   // ── /account — badges ──────────────────────────────────────────────────
@@ -382,7 +382,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "admin-entries": {
     title: "Entradas",
-    text: "Histórico de ativações pagas (anuidade) e taxas de agendamento recebidas.",
+    text: "Histórico de ativações pagas (vitalícias) e taxas de agendamento recebidas.",
   },
   "admin-stats": {
     title: "Estatísticas",
@@ -402,7 +402,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "admin-anuidade": {
     title: "Ativação do perfil",
-    text: "Configura o valor da ativação anual (Stripe) e ativa/desativa a cobrança.",
+    text: "Configura o valor da ativação vitalícia (Stripe) e ativa/desativa a cobrança.",
   },
   "admin-booking-fees": {
     title: "Agendamento (taxas)",

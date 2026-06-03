@@ -890,7 +890,7 @@ type SimCategory = "course" | "service" | "profile" | "product"
 const SIM_CATEGORIES: { id: SimCategory; label: string; icon: React.ReactNode; hint: string }[] = [
   { id: "course",  label: "Curso",              icon: <GraduationCap className="h-4 w-4" />, hint: "Venda única do curso." },
   { id: "service", label: "Serviço (booking)",  icon: <Briefcase className="h-4 w-4" />,     hint: "Agendamento pago." },
-  { id: "profile", label: "Perfil (assinatura)", icon: <User className="h-4 w-4" />,         hint: "Mensalidade/anuidade do subperfil." },
+  { id: "profile", label: "Perfil (ativação)", icon: <User className="h-4 w-4" />,         hint: "Ativação vitalícia do subperfil (pagamento único)." },
   { id: "product", label: "Produto (loja)",     icon: <Package className="h-4 w-4" />,       hint: "Venda da loja. Frete sai da margem da plataforma." },
 ]
 

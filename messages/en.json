@@ -616,6 +616,17 @@
     "cookiesPolicy": "Cookies policy",
     "subscriptionTerms": "Subscription terms",
     "affiliateProgram": "Affiliate program",
+    "marketplaceTerms": "Marketplace Terms",
+    "returnPolicy": "Returns & Refunds",
+    "communityGuidelines": "Community Guidelines",
+    "moderationPolicy": "Moderation & Reports",
+    "copyrightPolicy": "Copyright",
+    "polensTerms": "Poléns & Digital Items",
+    "minorsPolicy": "Minors' Privacy",
+    "advertisingPolicy": "Advertising Policy",
+    "casaViewsRegulamento": "Casa Views Rules",
+    "contact": "Contact",
+    "appAvailability": "Use it in your browser or install as an app (PWA)",
     "copyright": "All rights reserved."
   },
   "Course": {
@@ -780,8 +791,10 @@
     "empty.title": "No results found",
     "empty.description": "Try another search or contact support directly.",
     "support.title": "Didn't find what you needed?",
-    "support.description": "Contact Freelandoo to get help.",
-    "support.cta": "Contact support"
+    "support.description": "Reach Freelandoo via the email or WhatsApp below.",
+    "support.cta": "Contact support",
+    "support.ctaWhatsapp": "WhatsApp (11) 96275-7599",
+    "support.ctaEmail": "freelandoogroup@gmail.com"
   },
   "Community": {
     "hero.badge": "Community",
@@ -841,6 +854,16 @@
     "final.description": "A simple, direct platform made for people who want to be seen and for people who need to solve something.",
     "final.primaryCta": "Find professionals",
     "final.secondaryCta": "Advertise services"
+  },
+  "CasaViewsRegulamento": {
+    "title": "Casa Views Rules",
+    "updatedAt": "Last updated: June 3, 2026",
+    "intro": "These Rules describe how the Casa Views reality show works: participants, ranking, merit-based prizes, and audience participation. Participation is free and prizes are awarded by performance and engagement, with no random draw.",
+    "footer.prefix": "By participating in or interacting with Casa Views, you agree to these Rules. Also see our",
+    "footer.and": "and",
+    "footer.links.0": "Terms of Use",
+    "footer.links.1": "Poléns & Digital Items",
+    "footer.links.2": "Marketplace Terms"
   },
   "Terms": {
     "title": "Terms of Use",

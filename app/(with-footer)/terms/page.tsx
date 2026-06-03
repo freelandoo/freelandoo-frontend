@@ -83,6 +83,7 @@ const sections = [
       "Loja de produtos e agendamento de serviços.",
       "Itens de destaque e personalização, como Manifestação e Premium.",
       "Programa de afiliados e cupons.",
+      "Casa Views: reality show, ranking de engajamento e participação da audiência, regidos pelo Regulamento da Casa Views.",
     ],
   },
   {
@@ -169,7 +170,7 @@ const sections = [
   {
     title: "18. Contato",
     paragraphs: [
-      "Dúvidas sobre estes termos podem ser enviadas para suporte@freelandoo.com ou ao Encarregado de Proteção de Dados em [E-MAIL DO ENCARREGADO].",
+      "Dúvidas sobre estes termos, ou contato com o Encarregado de Proteção de Dados, podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
     ],
   },
 ]

@@ -90,12 +90,12 @@ const sections = [
   {
     title: "10. Como denunciar",
     paragraphs: [
-      "Conteúdo ou conduta que viole estas diretrizes pode ser denunciado pelos botões de denúncia da plataforma ou pelo e-mail suporte@freelandoo.com.",
+      "Conteúdo ou conduta que viole estas diretrizes pode ser denunciado pelos botões de denúncia da plataforma ou pelo e-mail freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
     ],
   },
   {
     title: "11. Contato",
-    paragraphs: ["Dúvidas sobre estas diretrizes podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre estas diretrizes podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

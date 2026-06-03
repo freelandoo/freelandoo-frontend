@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useScrollReveal } from "@/lib/scroll-reveal"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { TourHelpCenter } from "@/features/tour/TourHelpCenter"
@@ -71,7 +70,7 @@ export function CentralDeAjudaContent() {
     : faqs
 
   return (
-    <main className="flex-1 bg-[#141009]">
+    <main className="flex-1 bg-[#0b0804]">
       {/* HERO */}
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[300px] w-[700px] rounded-full bg-[#F2B705]/5 blur-[100px]" />
@@ -150,11 +149,16 @@ export function CentralDeAjudaContent() {
               {t("support.title", "Não encontrou o que precisava?")}
             </h2>
             <p className="text-[#9A938A] mb-6 text-sm leading-relaxed">
-              {t("support.description", "Entre em contato com a Freelandoo para receber ajuda.")}
+              {t("support.description", "Fale com a Freelandoo pelo e-mail ou WhatsApp abaixo.")}
             </p>
-            <Link href="/cadastro" className="inline-flex items-center bg-[#F2B705] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#F2B705]/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
-              {t("support.cta", "Falar com suporte")}
-            </Link>
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a href="https://wa.me/5511962757599" target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-[#F2B705] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#F2B705]/90 hover:shadow-[0_0_20px_rgba(242,196,9,0.35)] transition-all">
+                {t("support.ctaWhatsapp", "WhatsApp (11) 96275-7599")}
+              </a>
+              <a href="mailto:freelandoogroup@gmail.com" className="inline-flex items-center border border-[#2A2218] text-[#F5F1E8] font-semibold px-6 py-3 rounded-lg hover:border-[#F2B705]/50 transition-all">
+                {t("support.ctaEmail", "freelandoogroup@gmail.com")}
+              </a>
+            </div>
           </div>
           <TourHelpCenter />
         </div>

@@ -86,7 +86,7 @@ const sections = [
   {
     title: "10. Contato",
     paragraphs: [
-      "Dúvidas sobre Contas Supervisionadas e privacidade de menores podem ser enviadas para suporte@freelandoo.com ou ao Encarregado em [E-MAIL DO ENCARREGADO].",
+      "Dúvidas sobre Contas Supervisionadas e privacidade de menores, ou contato com o Encarregado de Proteção de Dados, podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
     ],
   },
 ]

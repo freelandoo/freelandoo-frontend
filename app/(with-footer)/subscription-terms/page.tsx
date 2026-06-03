@@ -37,7 +37,7 @@ const sections = [
     title: "4. Direito de arrependimento e reembolso",
     items: [
       "Nos termos do art. 49 do Código de Defesa do Consumidor, o usuário pode solicitar o cancelamento e o reembolso integral em até 7 (sete) dias corridos a partir do pagamento.",
-      "O pedido de arrependimento deve ser enviado para suporte@freelandoo.com.",
+      "O pedido de arrependimento deve ser enviado para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
       "O reembolso desativa o perfil imediatamente e é processado pelo mesmo meio de pagamento.",
       "Após o prazo de 7 dias, por se tratar de pagamento único de acesso já disponibilizado, não há reembolso, salvo nas hipóteses previstas em lei.",
     ],
@@ -90,7 +90,7 @@ const sections = [
   },
   {
     title: "11. Contato",
-    paragraphs: ["Dúvidas sobre a ativação podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre a ativação podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

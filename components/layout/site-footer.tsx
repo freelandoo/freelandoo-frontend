@@ -3,14 +3,14 @@
 /**
  * SiteFooter — rodapé global do grupo (with-footer), no estilo tabloide
  * editorial (canvas escuro, dourado, fontes condensada/manuscrita). Espelha o
- * LandingFooter, mas preserva as traduções (i18n) e os 13 links legais.
+ * LandingFooter, mas preserva as traduções (i18n) e os 14 links legais.
  *
  * Envolto em `.fl-root` para resolver os tokens `--fl-*` (definidos só nesse
  * escopo), já que o footer pode ser montado fora do subtree da landing.
  */
 import Image from "next/image"
 import Link from "next/link"
-import { Instagram, Youtube, Facebook, Twitter, Linkedin, Smartphone, ArrowRight } from "lucide-react"
+import { Instagram, Smartphone, ArrowRight } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { HiveDoodle, GoldButton, YellowHighlight, DoodleArrow } from "@/components/home/landing/primitives"
 
@@ -28,14 +28,7 @@ const legalLinks = [
   { href: "/polens-terms", key: "polensTerms", label: "Poléns e Itens Digitais" },
   { href: "/minors-policy", key: "minorsPolicy", label: "Privacidade de Menores" },
   { href: "/advertising-policy", key: "advertisingPolicy", label: "Política de Publicidade" },
-]
-
-const SOCIAL = [
-  { Icon: Instagram, label: "Instagram" },
-  { Icon: Youtube, label: "YouTube" },
-  { Icon: Facebook, label: "Facebook" },
-  { Icon: Twitter, label: "Twitter" },
-  { Icon: Linkedin, label: "LinkedIn" },
+  { href: "/casa-views-regulamento", key: "casaViewsRegulamento", label: "Regulamento da Casa Views" },
 ]
 
 export function SiteFooter() {
@@ -108,28 +101,39 @@ export function SiteFooter() {
               <li><Link href="/sobre-nos" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("about", "Sobre nós")}</Link></li>
               <li><Link href="/carreiras" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("careers", "Carreiras")}</Link></li>
             </ul>
+            <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{tFooter("contact", "Contato")}</h3>
+            <ul className="mt-4 space-y-2.5">
+              <li>
+                <a href="mailto:freelandoogroup@gmail.com" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">
+                  freelandoogroup@gmail.com
+                </a>
+              </li>
+              <li>
+                <a href="https://wa.me/5511962757599" target="_blank" rel="noopener noreferrer" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">
+                  WhatsApp (11) 96275-7599
+                </a>
+              </li>
+            </ul>
           </div>
 
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{tFooter("followUs", "Siga a Freelandoo")}</h3>
             <div className="mt-4 flex flex-wrap gap-2">
-              {SOCIAL.map(({ Icon, label }) => (
-                <a
-                  key={label} href="#" aria-label={label}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
+              <a
+                href="https://www.instagram.com/printtei_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @printtei_"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
             </div>
             <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{tFooter("downloadApp", "Baixe o app")}</h3>
             <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#F5F1E8]/15 px-3 py-2 text-sm text-[#C9C2B6]">
-              <Smartphone className="h-4 w-4 text-[#F2B705]" /> {tFooter("appAvailability", "Disponível para iOS e Android")}
+              <Smartphone className="h-4 w-4 text-[#F2B705]" /> {tFooter("appAvailability", "Acesse pelo navegador ou instale como app (PWA)")}
             </div>
           </div>
         </div>
 
-        {/* Jurídico — todos os 13 links preservados */}
+        {/* Jurídico — todos os 14 links preservados */}
         <div className="mt-12 border-t border-[#F5F1E8]/10 pt-8">
           <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{tFooter("legal", "Jurídico")}</h3>
           <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#9A938A]">

@@ -63,7 +63,7 @@ const sections = [
   {
     title: "7. Recurso e contestação",
     items: [
-      "O usuário afetado por uma medida de moderação pode contestá-la pelo e-mail suporte@freelandoo.com.",
+      "O usuário afetado por uma medida de moderação pode contestá-la pelo e-mail freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
       "A contestação deve indicar o conteúdo ou a conta e os motivos da discordância.",
       "A Freelandoo reavalia a decisão e comunica o resultado.",
     ],
@@ -84,7 +84,7 @@ const sections = [
   },
   {
     title: "10. Contato",
-    paragraphs: ["Dúvidas sobre moderação e denúncias podem ser enviadas para suporte@freelandoo.com."],
+    paragraphs: ["Dúvidas sobre moderação e denúncias podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

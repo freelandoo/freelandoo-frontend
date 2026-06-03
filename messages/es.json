@@ -616,6 +616,17 @@
     "cookiesPolicy": "Política de cookies",
     "subscriptionTerms": "Términos de activación",
     "affiliateProgram": "Programa de afiliados",
+    "marketplaceTerms": "Términos del Marketplace",
+    "returnPolicy": "Cambios y Devoluciones",
+    "communityGuidelines": "Normas de la Comunidad",
+    "moderationPolicy": "Moderación y Denuncias",
+    "copyrightPolicy": "Derechos de Autor",
+    "polensTerms": "Poléns e Ítems Digitales",
+    "minorsPolicy": "Privacidad de Menores",
+    "advertisingPolicy": "Política de Publicidad",
+    "casaViewsRegulamento": "Reglamento de Casa Views",
+    "contact": "Contacto",
+    "appAvailability": "Úsalo en el navegador o instálalo como app (PWA)",
     "copyright": "Todos los derechos reservados."
   },
   "Course": {
@@ -780,8 +791,10 @@
     "empty.title": "No se encontraron resultados",
     "empty.description": "Intenta otra búsqueda o habla directamente con soporte.",
     "support.title": "¿No encontraste lo que necesitabas?",
-    "support.description": "Contacta a Freelandoo para recibir ayuda.",
-    "support.cta": "Hablar con soporte"
+    "support.description": "Habla con Freelandoo por el correo o WhatsApp abajo.",
+    "support.cta": "Hablar con soporte",
+    "support.ctaWhatsapp": "WhatsApp (11) 96275-7599",
+    "support.ctaEmail": "freelandoogroup@gmail.com"
   },
   "Community": {
     "hero.badge": "Comunidad",
@@ -841,6 +854,16 @@
     "final.description": "Una plataforma simple, directa y hecha para quienes quieren aparecer y para quienes necesitan resolver.",
     "final.primaryCta": "Encontrar profesionales",
     "final.secondaryCta": "Anunciar servicios"
+  },
+  "CasaViewsRegulamento": {
+    "title": "Reglamento de Casa Views",
+    "updatedAt": "Última actualización: 3 de junio de 2026",
+    "intro": "Este Reglamento describe cómo funciona el reality show Casa Views: participantes, ranking, premios por mérito y participación de la audiencia. La participación es gratuita y los premios se otorgan por desempeño y engagement, sin sorteo.",
+    "footer.prefix": "Al participar o interactuar con Casa Views, aceptas este Reglamento. Consulta también nuestros",
+    "footer.and": "y",
+    "footer.links.0": "Términos de Uso",
+    "footer.links.1": "Poléns e Ítems Digitales",
+    "footer.links.2": "Términos del Marketplace"
   },
   "Terms": {
     "title": "Términos de Uso",

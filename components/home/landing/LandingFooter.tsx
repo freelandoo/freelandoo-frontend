@@ -4,7 +4,7 @@
  */
 import Image from "next/image"
 import Link from "next/link"
-import { Instagram, Youtube, Facebook, Twitter, Linkedin, Smartphone, ArrowRight } from "lucide-react"
+import { Instagram, Smartphone, ArrowRight } from "lucide-react"
 import { LINKS } from "./tokens"
 import { HiveDoodle, GoldButton, YellowHighlight, DoodleArrow } from "./primitives"
 
@@ -36,14 +36,6 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "Imprensa", href: "/sobre-nos" },
     ],
   },
-]
-
-const SOCIAL = [
-  { Icon: Instagram, label: "Instagram" },
-  { Icon: Youtube, label: "YouTube" },
-  { Icon: Facebook, label: "Facebook" },
-  { Icon: Twitter, label: "Twitter" },
-  { Icon: Linkedin, label: "LinkedIn" },
 ]
 
 export function LandingFooter() {
@@ -99,18 +91,29 @@ export function LandingFooter() {
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Siga a Freelandoo</h3>
             <div className="mt-4 flex flex-wrap gap-2">
-              {SOCIAL.map(({ Icon, label }) => (
-                <a
-                  key={label} href="#" aria-label={label}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
+              <a
+                href="https://www.instagram.com/printtei_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @printtei_"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
             </div>
+            <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Contato</h3>
+            <ul className="mt-4 space-y-2.5">
+              <li>
+                <a href="mailto:freelandoogroup@gmail.com" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">
+                  freelandoogroup@gmail.com
+                </a>
+              </li>
+              <li>
+                <a href="https://wa.me/5511962757599" target="_blank" rel="noopener noreferrer" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">
+                  WhatsApp (11) 96275-7599
+                </a>
+              </li>
+            </ul>
             <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Baixe o app</h3>
             <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#F5F1E8]/15 px-3 py-2 text-sm text-[#C9C2B6]">
-              <Smartphone className="h-4 w-4 text-[#F2B705]" /> Disponível para iOS e Android
+              <Smartphone className="h-4 w-4 text-[#F2B705]" /> Acesse pelo navegador ou instale como app (PWA)
             </div>
           </div>
         </div>
