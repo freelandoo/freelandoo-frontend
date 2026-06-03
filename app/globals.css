@@ -399,16 +399,18 @@
 }
 .fl-hard:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 0 var(--fl-gold); }
 
-/* Cards "Seu caminho dentro da Freelandoo" (home) — mesmo movimento dos cards
-   de participantes da Casa Views: sobe e inclina de leve, sombra dura fixa. */
+/* Cards "Seu caminho dentro da Freelandoo" (home) — movimento dos cards de
+   participantes da Casa Views (sobe + inclina de leve) somado ao "select"
+   amarelo: no hover a sombra dura vira dourada e cresce atrás do card. */
 .mp-card {
   box-shadow: 6px 6px 0 0 var(--fl-ink);
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 .mp-card:hover,
 .mp-card:focus-within {
   transform: translateY(-6px) rotate(-0.4deg);
+  box-shadow: 12px 13px 0 0 var(--fl-gold);
   z-index: 2;
 }
 /* Card escuro de papel (bloco preto editorial) */
