@@ -19,12 +19,11 @@ export function MoneyPathCards() {
       </div>
 
       <div data-stagger className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
-        {MONEY_PATHS.map((p, i) => (
+        {MONEY_PATHS.map((p) => (
           <div
             key={p.id}
             data-card
-            className="group relative flex flex-col overflow-hidden rounded-xl fl-card fl-hard"
-            style={{ transform: `rotate(${i % 2 ? 0.6 : -0.6}deg)` }}
+            className="group mp-card relative flex flex-col overflow-hidden rounded-xl fl-card"
           >
             <div className="relative">
               <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} ready className="aspect-[3/4] w-full" />

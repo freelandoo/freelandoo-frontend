@@ -39,11 +39,11 @@
 }
 
 .dark {
-  --background: oklch(0.12 0 0);
+  --background: oklch(0.07 0 0);
   --foreground: oklch(0.98 0 0);
-  --card: oklch(0.15 0 0);
+  --card: oklch(0.11 0 0);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.15 0 0);
+  --popover: oklch(0.11 0 0);
   --popover-foreground: oklch(0.98 0 0);
   --primary: #f2c409;
   --primary-foreground: #171717;
@@ -63,7 +63,7 @@
   --chart-3: oklch(0.65 0.12 200);
   --chart-4: oklch(0.85 0.1 80);
   --chart-5: oklch(0.65 0.2 340);
-  --sidebar: oklch(0.15 0 0);
+  --sidebar: oklch(0.11 0 0);
   --sidebar-foreground: oklch(0.98 0 0);
   --sidebar-primary: #f2c409;
   --sidebar-primary-foreground: #171717;
@@ -126,7 +126,7 @@
 @layer utilities {
   /* Fundo escuro compartilhado (auth, conta, perfil) */
   .bg-page-shell-dark {
-    @apply min-h-screen bg-gradient-to-b from-neutral-900 to-black;
+    @apply min-h-screen bg-gradient-to-b from-neutral-950 to-black;
   }
 
   /* Horizontal snap scroll */
@@ -152,7 +152,7 @@
 
   /* Machines dark background */
   .bg-machines-dark {
-    background-color: #05060a;
+    background-color: #020305;
   }
 }
 
@@ -333,8 +333,8 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 .fl-root {
-  --fl-canvas: #141009;
-  --fl-canvas-2: #1d1810;
+  --fl-canvas: #0b0804;
+  --fl-canvas-2: #161109;
   --fl-paper: #f1ede2;
   --fl-paper-2: #e8e2d4;
   --fl-ink: #0b0b0d;
@@ -398,6 +398,19 @@
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fl-hard:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 0 var(--fl-gold); }
+
+/* Cards "Seu caminho dentro da Freelandoo" (home) — mesmo movimento dos cards
+   de participantes da Casa Views: sobe e inclina de leve, sombra dura fixa. */
+.mp-card {
+  box-shadow: 6px 6px 0 0 var(--fl-ink);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.mp-card:hover,
+.mp-card:focus-within {
+  transform: translateY(-6px) rotate(-0.4deg);
+  z-index: 2;
+}
 /* Card escuro de papel (bloco preto editorial) */
 .fl-card-dark {
   background: var(--fl-canvas-2);
@@ -586,6 +599,8 @@
 @media (prefers-reduced-motion: reduce) {
   .fl-float, .fl-float-slow { animation: none !important; }
   .fl-hard, .fl-btn-gold { transition: none !important; }
+  .mp-card { transition: none !important; }
+  .mp-card:hover, .mp-card:focus-within { transform: none; }
   .fl-like-tape { animation: none !important; }
 }
 
