@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { getBackendApiUrl } from "@/lib/backend"
 import { buildProfileUrl, slugify } from "@/lib/slug"
+import { fetchBlogSlugs } from "@/lib/blog"
 
 const BASE_URL = "https://www.freelandoo.com.br"
 
@@ -36,6 +37,7 @@ const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: `${BASE_URL}/anunciar-servicos`, changeFrequency: "monthly", priority: 0.8 },
   { url: `${BASE_URL}/precos`, changeFrequency: "monthly", priority: 0.7 },
   { url: `${BASE_URL}/comofunciona`, changeFrequency: "monthly", priority: 0.7 },
+  { url: `${BASE_URL}/blog`, changeFrequency: "weekly", priority: 0.8 },
   { url: `${BASE_URL}/ranking`, changeFrequency: "weekly", priority: 0.6 },
   { url: `${BASE_URL}/sobre-nos`, changeFrequency: "monthly", priority: 0.5 },
   { url: `${BASE_URL}/comunidade`, changeFrequency: "monthly", priority: 0.5 },
@@ -124,6 +126,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/enxame/${m.slug}`,
       changeFrequency: "daily",
       priority: 0.85,
+    })
+  }
+
+  // Posts do blog — camada de conteúdo editorial (SEO).
+  for (const b of await fetchBlogSlugs()) {
+    push({
+      url: `${BASE_URL}/blog/${b.slug}`,
+      lastModified: b.updated_at ? new Date(b.updated_at) : now,
+      changeFrequency: "monthly",
+      priority: 0.7,
     })
   }
 

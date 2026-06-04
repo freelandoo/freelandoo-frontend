@@ -84,6 +84,7 @@ export function SiteFooter() {
           <div>
             <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">{tFooter("resources", "Recursos")}</h3>
             <ul className="mt-4 space-y-2.5">
+              <li><Link href="/blog" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("blog", "Blog")}</Link></li>
               <li><Link href="/central-de-ajuda" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("helpCenter", "Central de ajuda")}</Link></li>
               <li><Link href="/comunidade" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("community", "Comunidade")}</Link></li>
               <li><Link href="/dicas-de-seguranca" className="text-sm text-[#C9C2B6] transition hover:text-[#F5F1E8]">{tFooter("safetyTips", "Dicas de segurança")}</Link></li>
