@@ -3,6 +3,12 @@ import { defineConfig, devices } from "@playwright/test"
 /**
  * Config do Playwright para o teste de regressão de links públicos.
  *
+ * Playwright é dependência OPCIONAL (não está no package.json para não pesar o
+ * build de produção). Antes de rodar o teste, instale-o:
+ *   npm i -D @playwright/test
+ *   npm run test:e2e:install   # baixa o Chromium
+ *   npm run test:e2e
+ *
  * Por padrão sobe o servidor de desenvolvimento (`npm run dev`) e testa contra
  * http://localhost:3000. Defina PLAYWRIGHT_BASE_URL para apontar para um deploy
  * (ex.: preview do Vercel) e o webServer é ignorado.
