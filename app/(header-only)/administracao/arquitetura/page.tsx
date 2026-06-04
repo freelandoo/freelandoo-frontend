@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Boxes, Loader2, RefreshCw, Search, AlertTriangle, GitCommitHorizontal,
-  Archive, CircleDot, Trash2, X, Save, Activity, Layers, ServerCog,
+  Archive, CircleDot, Trash2, X, Save, Activity, Layers, ServerCog, Download,
 } from "lucide-react"
 
 // ---------------------------------------------------------------------------
@@ -281,6 +281,25 @@ function FuncoesTab() {
   useEffect(() => { load() }, [load])
   useEffect(() => { setPage(1) }, [q, status, repo, kind])
 
+  function exportCsv() {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (status) params.set("status", status)
+    if (repo) params.set("repo", repo)
+    if (kind) params.set("kind", kind)
+    params.set("format", "csv")
+    fetch(`/api/admin/architecture/functions?${params}`, { headers: authHeaders() })
+      .then((r) => r.blob())
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `arch-functions-${new Date().toISOString().slice(0, 10)}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+      })
+  }
+
   return (
     <div className="space-y-4">
       {/* Filtros */}
@@ -293,6 +312,10 @@ function FuncoesTab() {
         <Select value={status} onChange={setStatus} options={[["", "Todos status"], ["live", "Vivo"], ["orphan", "Órfão"], ["wip", "WIP"], ["deprecated", "Deprecated"]]} />
         <Select value={repo} onChange={setRepo} options={[["", "Todos repos"], ["frontend", "Frontend"], ["backend", "Backend"]]} />
         <Select value={kind} onChange={setKind} options={[["", "Todos tipos"], ["page", "Página"], ["proxy", "Proxy"], ["component", "Componente"], ["button", "Botão"], ["route", "Rota"], ["service", "Service"], ["hook", "Hook"]]} />
+        <button onClick={exportCsv} title="Exportar CSV (respeita filtros)"
+          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary">
+          <Download className="h-4 w-4" /> CSV
+        </button>
       </div>
 
       <p className="text-xs text-muted-foreground">{total} função{total !== 1 ? "ões" : ""}</p>
