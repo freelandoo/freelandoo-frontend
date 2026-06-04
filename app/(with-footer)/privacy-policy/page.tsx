@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { LegalDocument } from "../_components/legal-document"
+import { legalControllerLine } from "@/lib/legal"
 
 export const metadata: Metadata = {
   title: "Política de Privacidade — Freelandoo",
@@ -10,7 +11,7 @@ const sections = [
   {
     title: "1. Controlador dos dados e Encarregado",
     items: [
-      "O controlador dos dados pessoais tratados na plataforma é [RAZÃO SOCIAL], CNPJ [CNPJ], com sede em [ENDEREÇO].",
+      legalControllerLine(),
       "O Encarregado pelo Tratamento de Dados Pessoais (DPO) pode ser contatado em freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599.",
       "Esta política observa a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e o Marco Civil da Internet.",
     ],
@@ -18,7 +19,7 @@ const sections = [
   {
     title: "2. Dados que coletamos",
     items: [
-      "Dados de cadastro: nome, e-mail, senha, data de nascimento e, quando fornecidos, CPF e telefone.",
+      "Dados de cadastro: nome, e-mail, credenciais de autenticação (armazenadas de forma protegida, com hash, nunca em texto puro), data de nascimento e, quando fornecidos, CPF e telefone.",
       "Dados de perfil: profissão, experiência, portfólio, fotos, vídeos, localização e descrição.",
       "Conteúdo publicado: posts, stories, vídeos, comentários e arquivos enviados.",
       "Comunicações: mensagens privadas, áudios e interações em salas de chat.",
@@ -87,6 +88,7 @@ const sections = [
     title: "9. Segurança",
     items: [
       "Adotamos medidas técnicas e administrativas para proteger os dados, incluindo criptografia em trânsito (HTTPS).",
+      "As credenciais de autenticação (senhas) são armazenadas de forma protegida, por meio de hash, e nunca em texto puro — a plataforma não tem acesso à sua senha original.",
       "O acesso interno aos dados é restrito a pessoal autorizado.",
       "Nenhum sistema é completamente imune a incidentes; em caso de incidente relevante, comunicaremos os titulares e a ANPD conforme a lei.",
     ],

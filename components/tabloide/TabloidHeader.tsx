@@ -16,12 +16,13 @@ import { Menu, X, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { GoldButton } from "@/components/home/landing/primitives"
+import { ROUTES } from "@/lib/routes"
 
 const NAV = [
-  { key: "howItWorks", label: "Como funciona", href: "/comofunciona" },
-  { key: "pricing", label: "Preços", href: "/precos" },
-  { key: "ranking", label: "Ranking", href: "/ranking" },
-  { key: "courses", label: "Cursos", href: "/cursos" },
+  { key: "howItWorks", label: "Como funciona", href: ROUTES.howItWorks },
+  { key: "pricing", label: "Preços", href: ROUTES.pricing },
+  { key: "ranking", label: "Ranking", href: ROUTES.ranking },
+  { key: "courses", label: "Cursos", href: ROUTES.courses },
 ] as const
 
 export function TabloidHeader() {

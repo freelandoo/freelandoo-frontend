@@ -4,6 +4,9 @@ const require = createRequire(import.meta.url)
 
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
+  // Testes e2e (Playwright) ficam fora do lint do app — dependência opcional,
+  // instalada sob demanda (npm i + npm run test:e2e:install).
+  { ignores: ["e2e/**", "playwright.config.ts"] },
   ...require("eslint-config-next/core-web-vitals"),
   {
     rules: {

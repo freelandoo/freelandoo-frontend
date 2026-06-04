@@ -9,11 +9,15 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. Objeto e definições",
+    paragraphs: [
+      "Estes termos regulam as transações realizadas dentro da plataforma Freelandoo. Para evitar dúvidas, distinguimos dois cenários:",
+    ],
     items: [
-      "Estes termos regulam a Loja da Freelandoo, ambiente em que usuários anunciam, compram e vendem produtos dentro da plataforma.",
-      "Vendedor: usuário com perfil ativado que anuncia produtos na Loja.",
-      "Comprador: usuário que adquire produtos na Loja.",
-      "Pedido: a compra de um ou mais produtos, com pagamento processado pela plataforma.",
+      "Transações processadas pela plataforma: a Loja (produtos), os Agendamentos pagos (serviços agendados e pagos dentro da plataforma) e os Cursos. Nesses casos, o pagamento é processado pela plataforma (via Stripe) e podem existir garantia, retenção e repasse, conforme cada seção.",
+      "Serviços negociados diretamente entre as partes: combinações feitas fora da plataforma (por exemplo, pelo WhatsApp). Nesse caso, a Freelandoo apenas conecta as pessoas e não intermedia o pagamento, não retém valores e não oferece as garantias da plataforma (ver seção própria).",
+      "Vendedor: usuário com perfil ativado que anuncia produtos na Loja ou oferece cursos e agendamentos pagos pela plataforma.",
+      "Comprador: usuário que adquire produtos, cursos ou agendamentos na plataforma.",
+      "Pedido: a compra de um ou mais itens, com pagamento processado pela plataforma.",
     ],
   },
   {
@@ -88,51 +92,69 @@ const sections = [
     ],
   },
   {
-    title: "10. Agendamento de serviços",
+    title: "10. Agendamentos pagos (serviços na plataforma)",
     items: [
-      "Serviços agendados e pagos pela plataforma seguem um modelo de repasse semelhante ao da Loja, com período de garantia antes da liberação do saldo ao profissional.",
+      "Quando um serviço é agendado e pago dentro da plataforma, o pagamento é processado pela Freelandoo e segue um modelo de repasse semelhante ao da Loja, com período de garantia antes da liberação do saldo ao profissional.",
       "A execução, a qualidade e o cumprimento do serviço são de responsabilidade do profissional contratado.",
-      "Serviços negociados e pagos diretamente entre as partes, fora da plataforma, não contam com essa intermediação nem com as garantias correspondentes.",
+      "Serviços combinados e pagos diretamente entre as partes, fora da plataforma, são tratados na seção 'Serviços negociados diretamente'.",
     ],
   },
   {
-    title: "11. Devoluções, trocas e reembolsos",
+    title: "11. Cursos",
+    items: [
+      "Os Cursos são produtos digitais criados por usuários e vendidos dentro da plataforma; a compra dá acesso ao conteúdo ao aluno.",
+      "A compra do curso é processada pela plataforma (via Stripe). O preço definido pelo criador corresponde ao valor que ele recebe; o comprador paga esse valor acrescido das tarifas da plataforma, informadas antes da conclusão da compra.",
+      "O conteúdo, a qualidade e a atualização do curso são de responsabilidade de quem o criou. A Freelandoo não garante resultado de aprendizado nem volume de vendas.",
+      "Eventuais regras de reembolso de cursos seguem a Política de Trocas, Devoluções e Frete e as condições informadas no momento da compra.",
+    ],
+  },
+  {
+    title: "12. Serviços negociados diretamente (fora da plataforma)",
+    items: [
+      "Quando cliente e profissional combinam um serviço diretamente entre si — por exemplo, pelo WhatsApp ou outro canal externo —, trata-se de negociação direta entre as partes.",
+      "Nessas contratações, a Freelandoo apenas conecta as pessoas: não intermedia o pagamento, não retém valores, não define preço e não oferece as garantias de retenção, repasse ou mediação aplicáveis às transações processadas pela plataforma.",
+      "Preço, escopo, prazos, execução e eventuais reembolsos desses serviços são acordados e cumpridos exclusivamente entre cliente e profissional.",
+    ],
+  },
+  {
+    title: "13. Devoluções, trocas e reembolsos",
     paragraphs: [
-      "As regras de arrependimento, devolução por defeito, troca e reembolso constam na Política de Trocas, Devoluções e Frete.",
+      "As regras de arrependimento, devolução por defeito, troca e reembolso das transações processadas pela plataforma constam na Política de Trocas, Devoluções e Frete.",
     ],
   },
   {
-    title: "12. Tarifas da plataforma",
+    title: "14. Tarifas da plataforma",
     items: [
-      "A Freelandoo pode cobrar tarifas sobre as transações da Loja e dos Agendamentos.",
-      "As tarifas aplicáveis são informadas antes da conclusão da venda ou refletidas no repasse ao vendedor.",
+      "A Freelandoo pode cobrar tarifas sobre as transações processadas pela plataforma (Loja, Agendamentos pagos e Cursos).",
+      "As tarifas aplicáveis são informadas antes da conclusão da compra ou refletidas no repasse ao vendedor.",
+      "Serviços negociados diretamente entre as partes não geram tarifa de intermediação, justamente por não serem processados pela plataforma.",
     ],
   },
   {
-    title: "13. Condutas vedadas e sanções",
+    title: "15. Condutas vedadas e sanções",
     items: [
-      "É proibido combinar pagamentos por fora para burlar a intermediação e as garantias da plataforma.",
-      "É proibido manipular avaliações, criar pedidos fraudulentos ou usar a Loja para fins ilícitos.",
+      "É proibido usar a plataforma para induzir compradores a burlar transações que deveriam ser processadas por ela (por exemplo, simular uma venda da Loja e desviar o pagamento para fora).",
+      "É proibido manipular avaliações, criar pedidos fraudulentos ou usar a plataforma para fins ilícitos.",
       "O descumprimento pode resultar em remoção de anúncios, retenção de valores, suspensão ou exclusão da conta.",
     ],
   },
   {
-    title: "14. Limitação de responsabilidade",
+    title: "16. Limitação de responsabilidade",
     items: [
-      "A Freelandoo atua como facilitadora da transação e do pagamento, não sendo a vendedora dos produtos nem a prestadora dos serviços.",
-      "A responsabilidade pela qualidade, pela entrega e pela conformidade é do vendedor ou do profissional.",
-      "A Freelandoo pode mediar conflitos e aplicar as garantias previstas, sem assumir a obrigação principal das partes.",
+      "Nas transações processadas pela plataforma, a Freelandoo atua como facilitadora da transação e do pagamento, não sendo a vendedora dos produtos, a criadora dos cursos nem a prestadora dos serviços.",
+      "Nas contratações diretas entre as partes, a Freelandoo atua apenas como ponto de conexão e não participa do acordo, do pagamento ou da entrega.",
+      "A responsabilidade pela qualidade, pela entrega e pela conformidade é sempre do vendedor ou do profissional. A Freelandoo não garante contratação, entrega ou resultado.",
     ],
   },
   {
-    title: "15. Alterações",
+    title: "17. Alterações",
     paragraphs: [
-      "Estes termos podem ser atualizados a qualquer momento, com comunicação na plataforma. O uso continuado da Loja implica concordância.",
+      "Estes termos podem ser atualizados a qualquer momento, com comunicação na plataforma. O uso continuado da plataforma implica concordância.",
     ],
   },
   {
-    title: "16. Contato",
-    paragraphs: ["Dúvidas sobre a Loja podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
+    title: "18. Contato",
+    paragraphs: ["Dúvidas sobre a Loja, os Cursos e os Agendamentos podem ser enviadas para freelandoogroup@gmail.com ou pelo WhatsApp (11) 96275-7599."],
   },
 ]
 

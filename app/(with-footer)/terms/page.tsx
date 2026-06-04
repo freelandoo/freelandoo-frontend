@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { LegalDocument } from "../_components/legal-document"
+import { legalCompanyQualification } from "@/lib/legal"
 
 export const metadata: Metadata = {
   title: "Termos de Uso — Freelandoo",
@@ -10,7 +11,7 @@ const sections = [
   {
     title: "1. Definições",
     items: [
-      "Plataforma / Freelandoo: o site, as aplicações e os serviços operados por [RAZÃO SOCIAL], inscrita no CNPJ sob nº [CNPJ], com sede em [ENDEREÇO].",
+      `Plataforma / Freelandoo: o site, as aplicações e os serviços operados pela ${legalCompanyQualification()}.`,
       "Usuário: qualquer pessoa que acessa ou utiliza a plataforma, cadastrada ou não.",
       "Conta: o registro único de um usuário, vinculado a um e-mail.",
       "Perfil e subperfil: páginas profissionais públicas criadas pelo usuário; um usuário pode manter um perfil principal e subperfis.",
