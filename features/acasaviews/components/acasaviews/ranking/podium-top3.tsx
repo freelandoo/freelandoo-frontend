@@ -47,12 +47,12 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
   const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
   const frameColor = isFirst ? accentVar : "var(--ink)"
 
-  const order = item.rank === 1 ? "md:order-2" : item.rank === 2 ? "md:order-1" : "md:order-3"
-  const width = isFirst ? "md:w-[40%]" : "md:w-[30%]"
-  const pedestalH = isFirst ? "h-28 md:h-40" : item.rank === 2 ? "h-20 md:h-28" : "h-16 md:h-20"
+  const order = item.rank === 1 ? "order-2" : item.rank === 2 ? "order-1" : "order-3"
+  const width = isFirst ? "w-[40%]" : "w-[30%]"
+  const pedestalH = isFirst ? "h-14 md:h-40" : item.rank === 2 ? "h-10 md:h-28" : "h-8 md:h-20"
 
   return (
-    <div className={cn("flex w-full flex-col items-center", order, width)} data-podium-col data-rank={item.rank}>
+    <div className={cn("flex min-w-0 flex-col items-center", order, width)} data-podium-col data-rank={item.rank}>
       {/* Card flutuante */}
       <div className="relative w-full">
         {isFirst && (
@@ -63,7 +63,7 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
             />
             <DoodleAccent
               type="crown"
-              className="absolute -top-12 left-1/2 z-20 h-12 w-16 -translate-x-1/2"
+              className="absolute -top-7 left-1/2 z-20 h-8 w-12 -translate-x-1/2 md:-top-12 md:h-12 md:w-16"
               style={{ color: accentVar }}
             />
           </>
@@ -72,7 +72,7 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
         {/* Selo de posição */}
         <span
           className={cn(
-            "absolute -left-2 -top-2 z-20 flex h-10 w-10 rotate-[-6deg] items-center justify-center casa-display text-2xl md:h-12 md:w-12 md:text-3xl",
+            "absolute -left-1.5 -top-1.5 z-20 flex h-6 w-6 rotate-[-6deg] items-center justify-center casa-display text-base md:-left-2 md:-top-2 md:h-12 md:w-12 md:text-3xl",
             isFirst ? accentBg[accent] : "bg-[var(--ink)] text-white",
           )}
         >
@@ -81,19 +81,19 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
 
         {/* Foto recortada */}
         <div
-          className={cn("casa-torn-b casa-cut relative overflow-hidden bg-white", isFirst ? "p-2.5" : "p-2")}
+          className="casa-torn-b casa-cut relative overflow-hidden bg-white p-2 md:p-2.5"
           style={{ background: frameColor }}
         >
           <CasaAvatar
             name={item.name}
             src={item.avatar}
             className={cn("w-full", isFirst ? "aspect-[4/5]" : "aspect-square")}
-            textClassName={isFirst ? "text-7xl md:text-8xl" : "text-5xl md:text-6xl"}
+            textClassName={isFirst ? "text-3xl md:text-8xl" : "text-2xl md:text-6xl"}
           />
         </div>
 
         {/* Bloco de nome + score */}
-        <div className="relative mt-3 bg-white p-3 text-center casa-cut">
+        <div className="relative mt-2 bg-white p-2 text-center casa-cut md:mt-3 md:p-3">
           <span
             className={cn(
               "inline-block -rotate-1 px-2 py-0.5 casa-body text-[9px] font-extrabold uppercase tracking-[0.14em]",
@@ -102,38 +102,40 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
           >
             {item.tag}
           </span>
-          <h3 className={cn("casa-display mt-2 leading-none text-[var(--ink)]", isFirst ? "text-3xl md:text-4xl" : "text-2xl md:text-3xl")}>
+          <h3 className={cn("casa-display mt-1.5 leading-none text-[var(--ink)] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
             {item.name}
           </h3>
-          <p className="casa-body text-[11px] font-semibold text-[var(--ink-soft)]/60">{item.handle}</p>
+          <p className="casa-body text-[9px] font-semibold text-[var(--ink-soft)]/60 md:text-[11px]">{item.handle}</p>
 
-          <div className="mt-2 casa-display leading-none" style={{ color: accentVar }}>
-            <span className={isFirst ? "text-4xl md:text-5xl" : "text-3xl md:text-4xl"}>
+          <div className="mt-1.5 casa-display leading-none md:mt-2" style={{ color: accentVar }}>
+            <span className={isFirst ? "text-xl md:text-5xl" : "text-lg md:text-4xl"}>
               <AnimatedNumber value={item.score} compact={item.score >= 100000} />
             </span>
           </div>
-          <p className="casa-body text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-soft)]/55">
+          <p className="casa-body text-[8px] font-bold uppercase tracking-[0.18em] text-[var(--ink-soft)]/55 md:text-[10px]">
             {item.scoreLabel}
           </p>
 
-          <div className="mt-3 flex items-center justify-center gap-3 border-t border-[var(--line)] pt-2">
-            {item.meta.slice(0, 3).map((m) => (
-              <div key={m.label} className="text-center">
-                <div className="casa-body text-xs font-extrabold tabular-nums text-[var(--ink)]">
-                  <AnimatedNumber value={m.value} compact={m.compact} />
+          {item.meta.length > 0 && (
+            <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-[var(--line)] pt-2 md:mt-3 md:gap-3">
+              {item.meta.slice(0, 3).map((m) => (
+                <div key={m.label} className="text-center">
+                  <div className="casa-body text-xs font-extrabold tabular-nums text-[var(--ink)]">
+                    <AnimatedNumber value={m.value} compact={m.compact} />
+                  </div>
+                  <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/50">
+                    {m.label}
+                  </div>
                 </div>
-                <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/50">
-                  {m.label}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Pedestal */}
       <div
-        className={cn("relative mt-3 flex w-[80%] items-center justify-center md:w-full", pedestalH)}
+        className={cn("relative mt-3 flex w-[78%] items-center justify-center md:w-full", pedestalH)}
       >
         <div
           className={cn("absolute inset-0", isFirst ? accentBg[accent] : "bg-[var(--ink)]")}
@@ -141,7 +143,7 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
         />
         <span
           className={cn(
-            "casa-display relative z-10 text-6xl md:text-8xl",
+            "casa-display relative z-10 text-2xl md:text-8xl",
             isFirst ? "text-white/90" : "text-white/85",
           )}
         >
@@ -186,7 +188,7 @@ export function PodiumTop3({ items, accent }: PodiumTop3Props) {
 
   return (
     <div ref={root} className="mx-auto max-w-5xl px-5 pb-10 pt-16 md:px-10 md:pt-20">
-      <div className="flex flex-col items-center gap-6 md:flex-row md:items-end md:justify-center md:gap-5">
+      <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
         {items.map((item) => (
           <PodiumColumn key={item.rank} item={item} accent={accent} />
         ))}
