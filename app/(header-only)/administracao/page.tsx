@@ -271,7 +271,7 @@ export default function AdministracaoPage() {
             Manifestação
           </button>
           <button
-            onClick={() => router.push("/administracao/blog")}
+            onClick={() => router.push("/blog")}
             className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
           >
             <Newspaper className="h-4 w-4" />

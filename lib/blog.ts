@@ -16,6 +16,7 @@ export interface BlogPostCard {
 export interface BlogPostFull extends BlogPostCard {
   id: string
   body_md: string
+  status: "draft" | "published"
   seo_title: string | null
   seo_description: string | null
   views: number

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Clock } from "lucide-react"
 import { fetchBlogList, type BlogPostCard } from "@/lib/blog"
+import { BlogAdminBar } from "@/components/blog/blog-admin-bar"
 
 export const revalidate = 300
 
@@ -103,6 +104,7 @@ export default async function BlogIndexPage({
       </section>
 
       <div className="container mx-auto px-4 py-10">
+        <BlogAdminBar />
         {categories.length > 0 && (
           <nav className="mb-8 flex flex-wrap gap-2">
             <Link
