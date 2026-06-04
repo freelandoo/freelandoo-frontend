@@ -8,7 +8,7 @@ export default function AdminProfilesPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace("/administracao")
+    router.replace("/admin/usuarios")
   }, [router])
 
   return (

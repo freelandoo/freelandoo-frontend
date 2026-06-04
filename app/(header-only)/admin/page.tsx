@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, type LucideIcon } from "lucide-react"
+import { Shield, Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, type LucideIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
@@ -17,7 +17,7 @@ type AdminCard = {
 }
 
 const ADMIN_CARDS: AdminCard[] = [
-  { hint: "admin-users", href: "/administracao", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus sub-perfis, premium e total recebido." },
+  { hint: "admin-users", href: "/admin/usuarios", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus sub-perfis, premium e total recebido." },
   { hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Histórico de ativações pagas e taxas de agendamento recebidas." },
   { hint: "admin-stats", href: "/admin/stats", icon: BarChart2, title: "Estatísticas", body: "Visualizar métricas e dados da plataforma." },
   { hint: "admin-items", href: "/admin/itens", icon: Package, title: "Itens", body: "Gerenciar itens e preços da plataforma." },
@@ -34,6 +34,11 @@ const ADMIN_CARDS: AdminCard[] = [
   { hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
   { hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
   { href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos. Os participantes são editados na própria página (/acasaviews)." },
+  { href: "/administracao/loja", icon: Store, title: "Loja", body: "Moderação da Loja, categorias e produtos proibidos." },
+  { href: "/administracao/booking-payouts", icon: Calendar, title: "Agendamentos — Payouts", body: "Saldo de agendamentos liberado após holdback (PIX manual)." },
+  { href: "/administracao/posts", icon: Flag, title: "Posts denunciados", body: "Fila de posts (portfólio/bees) denunciados pelos usuários." },
+  { href: "/blog", icon: Newspaper, title: "Blog", body: "CMS do blog: criar, editar e publicar guias e conteúdo." },
+  { href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota." },
 ]
 interface UserData {
   id_user: string

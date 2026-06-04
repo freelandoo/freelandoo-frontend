@@ -164,7 +164,7 @@ export default function AdminPostsPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto max-w-6xl px-4 py-10">
         <button
-          onClick={() => router.push("/administracao")}
+          onClick={() => router.push("/admin")}
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

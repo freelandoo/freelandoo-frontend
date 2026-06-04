@@ -331,7 +331,7 @@ export default function AdminEnxamesPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <button
-          onClick={() => router.push("/administracao")}
+          onClick={() => router.push("/admin")}
           className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

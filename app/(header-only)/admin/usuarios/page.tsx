@@ -18,15 +18,7 @@ import {
   Star,
   ChevronDown,
   ChevronRight,
-  Receipt,
-  Sparkles,
-  Hexagon,
-  Store,
-  ShieldAlert,
-  Calendar,
-  Flag,
-  Newspaper,
-  Boxes,
+  ArrowLeft,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -98,7 +90,7 @@ function subscriptionStatusBadge(status: string | null) {
   )
 }
 
-export default function AdministracaoPage() {
+export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<UserAdmin[]>([])
   const [filteredUsers, setFilteredUsers] = useState<UserAdmin[]>([])
   const [loading, setLoading] = useState(true)
@@ -233,100 +225,19 @@ export default function AdministracaoPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
+        <button
+          onClick={() => router.push("/admin")}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para Administração
+        </button>
         <div className="mb-8 flex items-center gap-3">
-          <Shield className="h-8 w-8 text-primary" />
+          <Users className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
+            <h1 className="text-2xl font-bold text-foreground">Usuários / Perfis</h1>
             <p className="text-sm text-muted-foreground">Usuários e perfis da plataforma</p>
           </div>
-        </div>
-
-        {/* Quick links */}
-        <div className="mb-8 flex flex-wrap gap-3">
-          <button
-            onClick={() => router.push("/administracao/anuidade")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <CreditCard className="h-4 w-4" />
-            Ativação do perfil
-          </button>
-          <button
-            onClick={() => router.push("/administracao/taxas-agendamento")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Receipt className="h-4 w-4" />
-            Taxas de Agendamento
-          </button>
-          <button
-            onClick={() => router.push("/administracao/cupons")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Star className="h-4 w-4" />
-            Cupons
-          </button>
-          <button
-            onClick={() => router.push("/administracao/manifestacao")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Sparkles className="h-4 w-4" />
-            Manifestação
-          </button>
-          <button
-            onClick={() => router.push("/blog")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Newspaper className="h-4 w-4" />
-            Blog
-          </button>
-          <button
-            onClick={() => router.push("/admin/polens")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Hexagon className="h-4 w-4 fill-amber-300 text-amber-300" />
-            Poléns
-          </button>
-          <button
-            onClick={() => router.push("/administracao/loja-payouts")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Store className="h-4 w-4" />
-            Loja — Payouts
-          </button>
-          <button
-            onClick={() => router.push("/administracao/loja")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Store className="h-4 w-4" />
-            Loja
-          </button>
-          <button
-            onClick={() => router.push("/administracao/booking-payouts")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Calendar className="h-4 w-4" />
-            Agendamentos — Payouts
-          </button>
-          <button
-            onClick={() => router.push("/administracao/chat-moderation")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <ShieldAlert className="h-4 w-4" />
-            Moderação Chat
-          </button>
-          <button
-            onClick={() => router.push("/administracao/posts")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Flag className="h-4 w-4" />
-            Posts denunciados
-          </button>
-          <button
-            onClick={() => router.push("/administracao/arquitetura")}
-            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-          >
-            <Boxes className="h-4 w-4" />
-            Arquitetura
-          </button>
         </div>
 
         {/* Stats */}

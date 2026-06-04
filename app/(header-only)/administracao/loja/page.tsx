@@ -65,7 +65,7 @@ export default function AdminLojaPage() {
       <div className="border-b border-border bg-card/60">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4">
           <button
-            onClick={() => router.push("/administracao")}
+            onClick={() => router.push("/admin")}
             className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

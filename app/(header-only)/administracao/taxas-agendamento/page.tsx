@@ -147,7 +147,7 @@ export default function TaxasAgendamentoPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/administracao")}>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/admin")}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>

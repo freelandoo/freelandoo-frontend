@@ -414,7 +414,7 @@ export default function AdminManifestationPage() {
           {/* Header */}
           <div className="flex items-center justify-between gap-4">
             <div>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/administracao")} className="mb-2">
+              <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="mb-2">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Administração
               </Button>
               <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl flex items-center gap-2">

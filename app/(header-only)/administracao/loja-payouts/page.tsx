@@ -124,7 +124,7 @@ export default function LojaPayoutsPage() {
       <div className="mx-auto max-w-6xl">
         <button
           type="button"
-          onClick={() => router.push("/administracao")}
+          onClick={() => router.push("/admin")}
           className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
         >
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Voltar

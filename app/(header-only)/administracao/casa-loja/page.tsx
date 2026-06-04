@@ -91,7 +91,7 @@ export default function AdminCasaStorePage() {
           {/* Header */}
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--ink)] pb-4">
             <div className="flex items-center gap-3">
-              <button onClick={() => router.push("/administracao")} className="border-2 border-[var(--ink)] p-2 text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5">
+              <button onClick={() => router.push("/admin")} className="border-2 border-[var(--ink)] p-2 text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] transition-transform hover:-translate-y-0.5">
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
