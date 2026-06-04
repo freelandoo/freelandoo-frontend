@@ -50,14 +50,17 @@ async function getJson<T>(url: string, revalidate: number): Promise<T | null> {
   }
 }
 
-export async function fetchBlogList(params: { page?: number; category?: string } = {}): Promise<BlogListResult> {
+export async function fetchBlogList(
+  params: { page?: number; category?: string; per_page?: number } = {},
+): Promise<BlogListResult> {
   const qs = new URLSearchParams()
   if (params.page && params.page > 1) qs.set("page", String(params.page))
+  if (params.per_page) qs.set("per_page", String(params.per_page))
   if (params.category) qs.set("category", params.category)
   const url = `${getBackendApiUrl()}/blog/posts${qs.toString() ? `?${qs.toString()}` : ""}`
   const data = await getJson<BlogListResult>(url, 300)
   return (
-    data || { posts: [], total: 0, page: params.page || 1, per_page: 12, categories: [] }
+    data || { posts: [], total: 0, page: params.page || 1, per_page: params.per_page || 12, categories: [] }
   )
 }
 
@@ -69,12 +72,18 @@ export async function fetchBlogPost(
 }
 
 export async function fetchBlogSlugs(): Promise<{ slug: string; updated_at: string }[]> {
-  // Usa a listagem paginada para coletar slugs (até ~250). Suficiente para sitemap.
+  // Coleta TODOS os slugs publicados para o sitemap. per_page alto (48) pega tudo
+  // em poucas requisições e evita fragilidade de paginação/timeout.
   const all: { slug: string; updated_at: string }[] = []
-  for (let page = 1; page <= 20; page++) {
-    const data = await fetchBlogList({ page })
+  const seen = new Set<string>()
+  for (let page = 1; page <= 10; page++) {
+    const data = await fetchBlogList({ page, per_page: 48 })
     if (!data.posts.length) break
-    for (const p of data.posts) all.push({ slug: p.slug, updated_at: p.published_at })
+    for (const p of data.posts) {
+      if (seen.has(p.slug)) continue
+      seen.add(p.slug)
+      all.push({ slug: p.slug, updated_at: p.published_at })
+    }
     if (data.posts.length < data.per_page) break
   }
   return all

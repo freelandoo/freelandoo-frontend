@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   description:
     "Guias práticos sobre como precificar serviços, montar portfólio, vender produtos, usar vídeo e crescer como profissional autônomo no Brasil.",
   alternates: { canonical: `${BASE_URL}/blog` },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   openGraph: {
     type: "website",
     title: "Blog Freelandoo",

@@ -23,8 +23,10 @@ export async function generateMetadata({
   return {
     title,
     description,
-    // Rascunho não deve ser indexado mesmo que acessível por link direto.
-    robots: isDraft ? { index: false, follow: false } : undefined,
+    // Rascunho nunca é indexado; publicado é explicitamente indexável.
+    robots: isDraft
+      ? { index: false, follow: false }
+      : { index: true, follow: true, googleBot: { index: true, follow: true } },
     alternates: { canonical: url },
     openGraph: {
       type: "article",

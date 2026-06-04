@@ -8,7 +8,8 @@
     "lint": "eslint . --max-warnings 0",
     "start": "next start",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "submit:indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
