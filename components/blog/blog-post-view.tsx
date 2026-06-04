@@ -169,20 +169,20 @@ export function BlogPostView({
   const inputBase = "w-full bg-transparent outline-none"
 
   return (
-    <main className={`min-h-[100dvh] bg-white ${editing ? "pb-28" : ""}`}>
-      <article className="mx-auto w-full max-w-3xl px-4 py-10 md:py-16">
+    <main className={`relative z-10 min-h-[100dvh] ${editing ? "pb-28" : ""}`}>
+      <article className="mx-auto w-full max-w-3xl px-5 py-10 md:py-16">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition hover:text-zinc-800">
-            <ArrowLeft className="h-4 w-4" /> Voltar ao blog
+          <Link href="/blog" className="inline-flex items-center gap-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--ink-soft)]/70 transition hover:text-[var(--ink)]">
+            <ArrowLeft className="h-4 w-4" /> Blog
           </Link>
           {isAdmin && (
             <div className="flex items-center gap-2">
               {d.status === "draft" && (
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Rascunho</span>
+                <span className="-rotate-2 border-2 border-[var(--ink)] bg-[var(--gold)] px-2.5 py-0.5 casa-body text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]">Rascunho</span>
               )}
               <button
                 onClick={() => setEdit((e) => !e)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:border-zinc-400"
+                className="inline-flex items-center gap-1.5 border-2 border-[var(--ink)] bg-[var(--paper)] px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] hover:bg-[var(--paper-2)]"
               >
                 {edit ? <><Eye className="h-4 w-4" /> Ver como público</> : <><Pencil className="h-4 w-4" /> Editar</>}
               </button>
@@ -190,17 +190,17 @@ export function BlogPostView({
           )}
         </div>
 
-        <header className="mt-6">
+        <header className="mt-8">
           {editing ? (
             <input
               value={d.category || ""}
               onChange={(e) => set("category", e.target.value)}
               placeholder="Categoria"
-              className={`${inputBase} text-sm font-semibold uppercase tracking-[0.15em] text-amber-600 placeholder:text-amber-300`}
+              className={`${inputBase} casa-body text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--magenta-deep)] placeholder:text-[var(--magenta)]/40`}
             />
           ) : (
             d.category && (
-              <Link href={`/blog?category=${encodeURIComponent(d.category)}`} className="text-sm font-semibold uppercase tracking-[0.15em] text-amber-600 hover:text-amber-700">
+              <Link href={`/blog?category=${encodeURIComponent(d.category)}`} className="casa-body text-sm font-extrabold uppercase tracking-[0.16em] text-[var(--magenta-deep)] hover:text-[var(--magenta)]">
                 {d.category}
               </Link>
             )
@@ -212,10 +212,10 @@ export function BlogPostView({
               onChange={(e) => set("title", e.target.value)}
               placeholder="Título do post"
               rows={2}
-              className={`${inputBase} mt-3 resize-none text-3xl font-bold leading-tight tracking-tight text-zinc-900 placeholder:text-zinc-300 md:text-4xl`}
+              className={`${inputBase} casa-display mt-3 resize-none text-4xl leading-[0.9] text-[var(--ink)] placeholder:text-[var(--ink)]/25 md:text-6xl`}
             />
           ) : (
-            <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight text-zinc-900 md:text-4xl">{d.title}</h1>
+            <h1 className="casa-display mt-3 text-4xl leading-[0.9] text-[var(--ink)] md:text-6xl">{d.title}</h1>
           )}
 
           {editing ? (
@@ -224,40 +224,40 @@ export function BlogPostView({
               onChange={(e) => set("excerpt", e.target.value)}
               placeholder="Resumo (aparece no card e na busca)"
               rows={2}
-              className={`${inputBase} mt-4 resize-none text-lg leading-relaxed text-zinc-600 placeholder:text-zinc-300`}
+              className={`${inputBase} casa-body mt-4 resize-none text-lg font-semibold leading-relaxed text-[var(--ink-soft)]/80 placeholder:text-[var(--ink)]/25`}
             />
           ) : (
-            d.excerpt && <p className="mt-4 text-lg leading-relaxed text-zinc-600">{d.excerpt}</p>
+            d.excerpt && <p className="casa-body mt-4 text-lg font-semibold leading-relaxed text-[var(--ink-soft)]/80">{d.excerpt}</p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3 border-b border-zinc-200 pb-6 text-sm text-zinc-500">
-            <span className="font-medium text-zinc-700">{d.author_name}</span>
-            <span aria-hidden>·</span>
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-b-2 border-[var(--ink)] pb-4 casa-body text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--ink-soft)]/70">
+            <span className="text-[var(--ink)]">{d.author_name}</span>
+            <span aria-hidden>—</span>
             <span>{formatDate(d.published_at)}</span>
-            <span aria-hidden>·</span>
+            <span aria-hidden>—</span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {d.reading_minutes} min de leitura
+              {d.reading_minutes} min
             </span>
           </div>
         </header>
 
         {/* Capa */}
         {editing ? (
-          <div className="relative mt-8 overflow-hidden rounded-3xl border border-zinc-200">
-            <div className="relative aspect-[16/9] w-full bg-zinc-100">
+          <div className="relative mt-8 overflow-hidden border-2 border-[var(--ink)] shadow-[6px_6px_0_0_var(--ink)]">
+            <div className="relative aspect-[16/9] w-full bg-[var(--paper-2)]">
               {d.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={d.cover_url} alt={d.cover_alt || ""} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-zinc-400">Sem capa</div>
+                <div className="flex h-full w-full items-center justify-center casa-body text-sm font-bold uppercase tracking-wide text-[var(--ink-soft)]/50">Sem capa</div>
               )}
               <ImageDrop onFile={uploadCover} />
             </div>
           </div>
         ) : (
           d.cover_url && (
-            <div className="mt-8 overflow-hidden rounded-3xl border border-zinc-200">
+            <div className="mt-8 overflow-hidden border-2 border-[var(--ink)] shadow-[6px_6px_0_0_var(--ink)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={d.cover_url} alt={d.cover_alt || d.title} className="w-full object-cover" />
             </div>
@@ -268,24 +268,24 @@ export function BlogPostView({
             value={d.cover_alt || ""}
             onChange={(e) => set("cover_alt", e.target.value)}
             placeholder="Texto alternativo da capa (acessibilidade/SEO)"
-            className="mt-2 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 outline-none focus:border-amber-300"
+            className="mt-2 w-full border-2 border-[var(--ink)]/30 bg-[var(--paper-2)]/50 px-3 py-2 casa-body text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]"
           />
         )}
 
         {/* Corpo */}
-        <div className="mt-8">
+        <div className="mt-9">
           {editing ? (
             <textarea
               value={d.body_md}
               onChange={(e) => set("body_md", e.target.value)}
               placeholder={"## Subtítulo\n\nEscreva o post em Markdown...\n\n- item\n- item"}
-              className="min-h-[460px] w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-[13px] leading-relaxed text-zinc-800 outline-none focus:border-amber-300"
+              className="min-h-[460px] w-full border-2 border-[var(--ink)] bg-[var(--paper-2)]/40 p-4 font-mono text-[13px] leading-relaxed text-[var(--ink)] outline-none focus:bg-[var(--paper-2)]/70"
             />
           ) : (
             <BlogArticle markdown={d.body_md} />
           )}
           {editing && (
-            <p className="mt-2 text-xs text-zinc-400">
+            <p className="mt-2 casa-body text-xs text-[var(--ink-soft)]/55">
               Markdown: <code>## título</code>, <code>**negrito**</code>, listas com <code>-</code>, links{" "}
               <code>[texto](url)</code>. Use “Ver como público” para conferir o resultado.
             </p>
@@ -294,22 +294,22 @@ export function BlogPostView({
 
         {/* Tags */}
         {editing ? (
-          <div className="mt-8 border-t border-zinc-200 pt-6">
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <div className="mt-8 border-t-2 border-[var(--ink)]/15 pt-6">
+            <label className="mb-1 block casa-body text-[11px] font-extrabold uppercase tracking-wide text-[var(--ink-soft)]/60">
               Tags (separadas por vírgula)
             </label>
             <input
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
               placeholder="preço, serviços"
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 outline-none focus:border-amber-300"
+              className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper-2)]/50 px-3 py-2 casa-body text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]"
             />
           </div>
         ) : (
           d.tags?.length > 0 && (
-            <div className="mt-10 flex flex-wrap gap-2 border-t border-zinc-200 pt-6">
+            <div className="mt-10 flex flex-wrap gap-2 border-t-2 border-[var(--ink)]/15 pt-6">
               {d.tags.map((t) => (
-                <span key={t} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
+                <span key={t} className="border-2 border-[var(--ink)] bg-[var(--paper)] px-2.5 py-0.5 casa-body text-[11px] font-bold uppercase text-[var(--ink-soft)]">
                   #{t}
                 </span>
               ))}
@@ -319,21 +319,21 @@ export function BlogPostView({
 
         {/* SEO (só edição) */}
         {editing && (
-          <details className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-zinc-500">SEO (opcional)</summary>
+          <details className="mt-6 border-2 border-[var(--ink)]/20 bg-[var(--paper-2)]/40 p-4">
+            <summary className="cursor-pointer casa-body text-[11px] font-extrabold uppercase tracking-wide text-[var(--ink-soft)]/70">SEO (opcional)</summary>
             <div className="mt-3 space-y-3">
               <input
                 value={d.seo_title || ""}
                 onChange={(e) => set("seo_title", e.target.value)}
                 placeholder="Título para o Google (deixe vazio para usar o título)"
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none focus:border-amber-300"
+                className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper)] px-3 py-2 casa-body text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]"
               />
               <textarea
                 value={d.seo_description || ""}
                 onChange={(e) => set("seo_description", e.target.value)}
                 placeholder="Descrição para o Google (deixe vazio para usar o resumo)"
                 rows={2}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none focus:border-amber-300"
+                className="w-full border-2 border-[var(--ink)]/30 bg-[var(--paper)] px-3 py-2 casa-body text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]"
               />
             </div>
           </details>
@@ -343,21 +343,21 @@ export function BlogPostView({
       {!editing && <ContentAd />}
 
       {!editing && related.length > 0 && (
-        <section className="border-t border-zinc-200 bg-zinc-50">
-          <div className="mx-auto w-full max-w-5xl px-4 py-12">
-            <h2 className="text-xl font-semibold text-zinc-900">Continue lendo</h2>
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <section className="border-t-2 border-[var(--ink)] bg-[var(--paper-2)]/50">
+          <div className="mx-auto w-full max-w-5xl px-5 py-12">
+            <h2 className="casa-display text-3xl text-[var(--ink)]">Continue lendo</h2>
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
               {related.map((r) => (
                 <Link
                   key={r.slug}
                   href={`/blog/${r.slug}`}
-                  className="group rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-sm"
+                  className="group border-2 border-[var(--ink)] bg-[var(--paper)] p-5 shadow-[4px_4px_0_0_var(--ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_var(--ink)]"
                 >
                   {r.category && (
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600">{r.category}</span>
+                    <span className="casa-body text-[10px] font-extrabold uppercase tracking-wide text-[var(--magenta-deep)]">{r.category}</span>
                   )}
-                  <p className="mt-2 font-semibold leading-snug text-zinc-900 group-hover:text-amber-700">{r.title}</p>
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs text-zinc-500">
+                  <p className="casa-display mt-2 text-xl leading-[0.95] text-[var(--ink)] group-hover:text-[var(--magenta-deep)]">{r.title}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 casa-body text-[11px] font-bold uppercase text-[var(--ink-soft)]/60">
                     <Clock className="h-3.5 w-3.5" />
                     {r.reading_minutes} min
                   </span>
@@ -370,27 +370,27 @@ export function BlogPostView({
 
       {/* Barra fixa de edição (admin) */}
       {editing && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[var(--ink)] bg-[var(--paper)]/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <button
               onClick={del}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              className="inline-flex items-center gap-2 border-2 border-[var(--magenta)] px-3 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--magenta-deep)] hover:bg-[var(--magenta)]/10"
             >
               <Trash2 className="h-4 w-4" /> Excluir
             </button>
-            {msg && <span className="text-sm font-medium text-zinc-500">{msg}</span>}
+            {msg && <span className="casa-body text-xs font-bold text-[var(--ink-soft)]/70">{msg}</span>}
             <div className="ml-auto flex items-center gap-2">
               <button
                 onClick={() => save(false)}
                 disabled={saving}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                className="border-2 border-[var(--ink)] bg-[var(--paper)] px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] hover:bg-[var(--paper-2)] disabled:opacity-50"
               >
-                Salvar rascunho
+                Rascunho
               </button>
               <button
                 onClick={() => save(true)}
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+                className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--paper)] hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {d.status === "published" ? "Salvar e publicar" : "Publicar"}
