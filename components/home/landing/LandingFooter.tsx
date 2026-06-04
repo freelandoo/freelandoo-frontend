@@ -31,7 +31,7 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
     title: "Sobre",
     links: [
       { label: "Quem somos", href: "/sobre-nos" },
-      { label: "Blog", href: "/comunidade" },
+      { label: "Blog", href: "/blog" },
       { label: "Carreiras", href: "/carreiras" },
       { label: "Imprensa", href: "/sobre-nos" },
     ],
