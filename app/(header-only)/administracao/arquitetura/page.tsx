@@ -268,7 +268,8 @@ function FuncoesTab() {
     setLoading(true)
     const params = new URLSearchParams()
     if (q) params.set("q", q)
-    if (status) params.set("status", status)
+    if (status === "uncommitted") params.set("committed", "false")
+    else if (status) params.set("status", status)
     if (repo) params.set("repo", repo)
     if (kind) params.set("kind", kind)
     params.set("page", String(page))
@@ -284,7 +285,8 @@ function FuncoesTab() {
   function exportCsv() {
     const params = new URLSearchParams()
     if (q) params.set("q", q)
-    if (status) params.set("status", status)
+    if (status === "uncommitted") params.set("committed", "false")
+    else if (status) params.set("status", status)
     if (repo) params.set("repo", repo)
     if (kind) params.set("kind", kind)
     params.set("format", "csv")
@@ -309,7 +311,7 @@ function FuncoesTab() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar nome, arquivo, área…"
             className="w-full rounded-lg border border-border bg-card pl-10 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none" />
         </div>
-        <Select value={status} onChange={setStatus} options={[["", "Todos status"], ["live", "Vivo"], ["orphan", "Órfão"], ["wip", "WIP"], ["deprecated", "Deprecated"]]} />
+        <Select value={status} onChange={setStatus} options={[["", "Todos status"], ["live", "Vivo"], ["uncommitted", "Não-commitado"], ["orphan", "Órfão"], ["wip", "WIP"], ["deprecated", "Deprecated"]]} />
         <Select value={repo} onChange={setRepo} options={[["", "Todos repos"], ["frontend", "Frontend"], ["backend", "Backend"]]} />
         <Select value={kind} onChange={setKind} options={[["", "Todos tipos"], ["page", "Página"], ["proxy", "Proxy"], ["component", "Componente"], ["button", "Botão"], ["route", "Rota"], ["service", "Service"], ["hook", "Hook"]]} />
         <button onClick={exportCsv} title="Exportar CSV (respeita filtros)"
