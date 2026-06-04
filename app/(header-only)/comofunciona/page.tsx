@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { ContentAd } from "@/components/ads/content-ad"
 import { ComoFuncionaClient } from "./_components/como-funciona-client"
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default function ComoFuncionaPage() {
   return (
     <>
       <ComoFuncionaClient />
-      <ContentAd />
     </>
   )
 }

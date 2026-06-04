@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { ContentAd } from "@/components/ads/content-ad"
 import { SobreNosContent } from "./content"
 
 export const metadata: Metadata = {
@@ -12,7 +11,6 @@ export default function SobreNosPage() {
   return (
     <>
       <SobreNosContent />
-      <ContentAd />
     </>
   )
 }
