@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  Eye,
   Flag,
   Loader2,
   Search,
@@ -66,7 +67,8 @@ export default function AdminPostsPage() {
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [preview, setPreview] = useState<PostPreview | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
-  const [acting, setActing] = useState(false)
+  // id do post em ação (banir/restaurar) — trava/spinna só a linha/botão dele.
+  const [actingId, setActingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const tk = getToken()
@@ -127,7 +129,7 @@ export default function AdminPostsPage() {
   const doBan = async (id: string) => {
     const tk = getToken()
     if (!tk) return
-    setActing(true)
+    setActingId(id)
     try {
       const res = await fetch(`/api/admin/posts/${id}/ban`, {
         method: "POST",
@@ -138,14 +140,14 @@ export default function AdminPostsPage() {
         closePreview()
       }
     } finally {
-      setActing(false)
+      setActingId(null)
     }
   }
 
   const doUnban = async (id: string) => {
     const tk = getToken()
     if (!tk) return
-    setActing(true)
+    setActingId(id)
     try {
       const res = await fetch(`/api/admin/posts/${id}/unban`, {
         method: "POST",
@@ -156,7 +158,16 @@ export default function AdminPostsPage() {
         closePreview()
       }
     } finally {
-      setActing(false)
+      setActingId(null)
+    }
+  }
+
+  // Suspender direto da linha pede confirmação (ação some o post do ar).
+  const confirmAndBan = (it: PostRow) => {
+    const who = it.owner_name || it.owner_username || "autor"
+    const what = it.title || (it.feed_kind === "bees" ? "este Bee" : "este post")
+    if (window.confirm(`Suspender "${what}" de ${who}? O post sai do ar até ser restaurado.`)) {
+      doBan(it.id)
     }
   }
 
@@ -233,6 +244,7 @@ export default function AdminPostsPage() {
                   <th className="px-3 py-2 text-right">Denúncias</th>
                   <th className="px-3 py-2 text-left">Motivo top</th>
                   <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -312,6 +324,39 @@ export default function AdminPostsPage() {
                           <ShieldAlert className="h-3 w-3" /> Ativo
                         </span>
                       )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openPreview(it.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] font-medium text-foreground hover:border-primary/50 hover:text-primary"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Ver
+                        </button>
+                        {it.is_banned ? (
+                          <button
+                            type="button"
+                            onClick={() => doUnban(it.id)}
+                            disabled={actingId === it.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[12px] font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                          >
+                            {actingId === it.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+                            Restaurar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => confirmAndBan(it)}
+                            disabled={actingId === it.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[12px] font-medium text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+                          >
+                            {actingId === it.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                            Suspender
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -424,20 +469,20 @@ export default function AdminPostsPage() {
                       <button
                         type="button"
                         onClick={() => doUnban(preview.id)}
-                        disabled={acting}
+                        disabled={actingId === preview.id}
                         className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
                       >
-                        {acting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+                        {actingId === preview.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldAlert className="h-3.5 w-3.5" />}
                         Restaurar
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={() => doBan(preview.id)}
-                        disabled={acting}
+                        disabled={actingId === preview.id}
                         className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/20 disabled:opacity-50"
                       >
-                        {acting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                        {actingId === preview.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
                         Banir e remover
                       </button>
                     )}
