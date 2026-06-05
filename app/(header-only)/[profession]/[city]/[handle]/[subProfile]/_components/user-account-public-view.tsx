@@ -2,6 +2,7 @@ import Link from "next/link"
 import { getBackendApiUrl } from "@/lib/backend"
 import { BookOpen, ImageIcon, Layers3, MapPin, MessageCircle, Shield, Sparkles } from "lucide-react"
 import { UserAccountPortfolioTabs } from "./user-account-portfolio-tabs"
+import { ProfileVisitTracker } from "@/components/profile/profile-visit-tracker"
 
 type Media = {
   id_portfolio_media: string
@@ -120,6 +121,7 @@ export async function UserAccountPublicView({ profile }: { profile: Profile }) {
 
   return (
     <div className="bg-background min-h-screen">
+      <ProfileVisitTracker idProfile={profile.id_profile} />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <section className="mb-10 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
           <div className="relative h-40 bg-muted md:h-52">

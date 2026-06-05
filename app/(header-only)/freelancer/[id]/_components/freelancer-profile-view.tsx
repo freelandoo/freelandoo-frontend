@@ -106,6 +106,23 @@ export default function FreelancerProfileView({
     return () => { cancelled = true }
   }, [profileId, isClan])
 
+  // Registra visita ao perfil (XP de visita pro dono; dedup diário no backend).
+  // Só após carregar, e não conta auto-visita do próprio dono nem clans.
+  const visitSentRef = useRef(false)
+  useEffect(() => {
+    if (loading || isClan || isOwnProfile || !profileId || visitSentRef.current) return
+    visitSentRef.current = true
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("token") : null
+    fetch("/api/ranking/visit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ id_profile: profileId }),
+    }).catch(() => {})
+  }, [loading, isClan, isOwnProfile, profileId])
+
   const [isUploadingPortfolio, setIsUploadingPortfolio] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [isAddingPortfolioItem, setIsAddingPortfolioItem] = useState(false)
