@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -35,16 +35,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   useMyCourses,
   type CourseStatus,
@@ -54,11 +44,7 @@ import {
   usePurchasedCourses,
   type PurchasedCourse,
 } from "@/hooks/use-purchased-courses"
-import {
-  COURSE_MIN_PUBLISH_PRICE_CENTS,
-  formatPriceBRL,
-  parsePriceInput,
-} from "@/lib/courses/format"
+import { formatPriceBRL } from "@/lib/courses/format"
 
 type CoursesTab = "created" | "purchased"
 
@@ -381,141 +367,12 @@ function EmptyState({
 }
 
 // ---------------------------------------------------------------------------
-// Form do modal "Novo Curso"
-// ---------------------------------------------------------------------------
-
-interface NewCourseFormState {
-  title: string
-  short_description: string
-  description: string
-  cover_url: string
-  price_text: string
-  profile_id: string
-}
-
-function emptyNewForm(): NewCourseFormState {
-  return {
-    title: "",
-    short_description: "",
-    description: "",
-    cover_url: "",
-    price_text: "",
-    profile_id: "",
-  }
-}
-
-function NewCourseForm({
-  value,
-  onChange,
-  profileOptions = [],
-  disabled,
-}: {
-  value: NewCourseFormState
-  onChange: (next: NewCourseFormState) => void
-  profileOptions?: ProfileOption[]
-  disabled?: boolean
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="nc-title">
-          Nome do curso <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="nc-title"
-          placeholder="Ex.: Fundamentos de Edição de Vídeo"
-          value={value.title}
-          onChange={(e) => onChange({ ...value, title: e.target.value })}
-          disabled={disabled}
-          maxLength={160}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="nc-short">Descrição curta (opcional)</Label>
-        <Input
-          id="nc-short"
-          placeholder="Uma frase que resume a proposta do curso"
-          value={value.short_description}
-          onChange={(e) =>
-            onChange({ ...value, short_description: e.target.value })
-          }
-          disabled={disabled}
-          maxLength={280}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="nc-desc">Descrição completa (opcional)</Label>
-        <Textarea
-          id="nc-desc"
-          placeholder="Pode editar depois pela engrenagem do curso."
-          value={value.description}
-          onChange={(e) => onChange({ ...value, description: e.target.value })}
-          rows={4}
-          disabled={disabled}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="nc-price">Preço (R$, opcional)</Label>
-          <Input
-            id="nc-price"
-            placeholder="0,00"
-            value={value.price_text}
-            onChange={(e) =>
-              onChange({ ...value, price_text: e.target.value })
-            }
-            disabled={disabled}
-            inputMode="decimal"
-          />
-          <p className="text-[11px] text-white/45">
-            Mínimo R$ 5,00 para publicar.
-          </p>
-        </div>
-
-        {profileOptions.length > 0 && (
-          <div className="space-y-2">
-            <Label htmlFor="nc-profile">Perfil vinculado (opcional)</Label>
-            <Select
-              value={value.profile_id || "__none__"}
-              onValueChange={(v) =>
-                onChange({ ...value, profile_id: v === "__none__" ? "" : v })
-              }
-              disabled={disabled}
-            >
-              <SelectTrigger id="nc-profile">
-                <SelectValue placeholder="Sem perfil vinculado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Sem perfil vinculado</SelectItem>
-                {profileOptions.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
-
-      <p className="text-[11px] text-white/55">
-        Após criar, você poderá ajustar capa, descrição completa, módulos e
-        aulas pela <strong>engrenagem</strong> do card.
-      </p>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
-export function CoursesSection({ profileOptions = [] }: Props) {
+export function CoursesSection(_props: Props) {
   const router = useRouter()
-  const { courses, isLoading, error, createCourse, updateCourse, deleteCourse } =
+  const { courses, isLoading, error, createCourse, deleteCourse } =
     useMyCourses()
   const {
     courses: purchasedCourses,
@@ -524,15 +381,28 @@ export function CoursesSection({ profileOptions = [] }: Props) {
   } = usePurchasedCourses()
 
   const [tab, setTab] = useState<CoursesTab>("created")
-
-  // Modal de novo curso
-  const [isNewOpen, setIsNewOpen] = useState(false)
-  const [newForm, setNewForm] = useState<NewCourseFormState>(emptyNewForm())
-  const [isSavingNew, setIsSavingNew] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const creatingRef = useRef(false)
 
   // Modal de exclusão
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // "+Curso": cria um rascunho na hora e abre a landing do curso já editável
+  // in-place — sem modal de cadastro.
+  const createAndGo = useCallback(async () => {
+    if (creatingRef.current) return
+    creatingRef.current = true
+    setCreating(true)
+    try {
+      const created = await createCourse({ title: "Novo curso" })
+      router.push(`/account/courses/${created.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao criar curso")
+      creatingRef.current = false
+      setCreating(false)
+    }
+  }, [createCourse, router])
 
   // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
   useEffect(() => {
@@ -540,13 +410,12 @@ export function CoursesSection({ profileOptions = [] }: Props) {
       const detail = (e as CustomEvent<{ kind: string }>).detail
       if (detail?.kind === "curso" || detail?.kind === "cursos") {
         setTab("created")
-        setNewForm(emptyNewForm())
-        setIsNewOpen(true)
+        void createAndGo()
       }
     }
     window.addEventListener("freelandoo:create", onCreate)
     return () => window.removeEventListener("freelandoo:create", onCreate)
-  }, [])
+  }, [createAndGo])
 
   const counts = useMemo(
     () => ({
@@ -563,11 +432,6 @@ export function CoursesSection({ profileOptions = [] }: Props) {
       ? `${counts.createdTotal} criado${counts.createdTotal === 1 ? "" : "s"} · ${counts.createdPublished} publicado${counts.createdPublished === 1 ? "" : "s"} · ${counts.createdDraft} em rascunho`
       : `${counts.purchasedTotal} curso${counts.purchasedTotal === 1 ? "" : "s"} com acesso ativo`
 
-  function openNewCourse() {
-    setNewForm(emptyNewForm())
-    setIsNewOpen(true)
-  }
-
   function goToManage(id: string) {
     router.push(`/account/courses/${id}`)
   }
@@ -576,55 +440,6 @@ export function CoursesSection({ profileOptions = [] }: Props) {
     const c = courses.find((x) => x.id === id)
     if (!c?.slug) return
     router.push(`/cursos/${c.slug}`)
-  }
-
-  async function handleCreate(opts: { publish?: boolean }) {
-    const title = newForm.title.trim()
-    if (!title) {
-      toast.error("Informe o título do curso")
-      return
-    }
-    const priceCents = parsePriceInput(newForm.price_text)
-    if (
-      opts.publish &&
-      (priceCents == null || priceCents < COURSE_MIN_PUBLISH_PRICE_CENTS)
-    ) {
-      toast.error("Para publicar, o preço precisa ser de no mínimo R$ 5,00")
-      return
-    }
-    setIsSavingNew(true)
-    try {
-      const created = await createCourse({
-        title,
-        short_description: newForm.short_description.trim() || null,
-        description: newForm.description.trim() || null,
-        cover_url: newForm.cover_url.trim() || null,
-        price_cents: priceCents,
-        profile_id: newForm.profile_id || null,
-      })
-      if (opts.publish) {
-        try {
-          await updateCourse(created.id, { status: "published" })
-          toast.success("Curso publicado!")
-        } catch (err) {
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : "Curso criado em rascunho, mas falhou ao publicar",
-          )
-        }
-      } else {
-        toast.success("Curso criado em rascunho")
-      }
-      setIsNewOpen(false)
-      setNewForm(emptyNewForm())
-      // Leva direto pra engrenagem para o usuário continuar configurando.
-      router.push(`/account/courses/${created.id}`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao criar curso")
-    } finally {
-      setIsSavingNew(false)
-    }
   }
 
   async function handleConfirmDelete() {
@@ -660,14 +475,19 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           {tab === "created" && (
             <button
               type="button"
-              onClick={openNewCourse}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98]"
+              onClick={createAndGo}
+              disabled={creating}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
               style={{
                 boxShadow:
                   "0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 28px -16px rgba(242,196,9,0.5)",
               }}
             >
-              <Plus className="h-3.5 w-3.5" />
+              {creating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plus className="h-3.5 w-3.5" />
+              )}
               Novo Curso
             </button>
           )}
@@ -752,7 +572,7 @@ export function CoursesSection({ profileOptions = [] }: Props) {
                   ))}
                 </div>
               ) : (
-                <EmptyState variant="created" onCreate={openNewCourse} />
+                <EmptyState variant="created" onCreate={createAndGo} />
               )}
             </>
           )}
@@ -791,57 +611,6 @@ export function CoursesSection({ profileOptions = [] }: Props) {
           )}
         </div>
       </article>
-
-      {/* Modal Novo Curso */}
-      <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
-        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Criar novo curso</DialogTitle>
-            <DialogDescription>
-              O curso nasce como <strong>rascunho</strong>. Você pode editar
-              tudo depois pela engrenagem. Para vender, é preciso publicar com
-              preço de no mínimo R$ 5,00.
-            </DialogDescription>
-          </DialogHeader>
-          <NewCourseForm
-            value={newForm}
-            onChange={setNewForm}
-            profileOptions={profileOptions}
-            disabled={isSavingNew}
-          />
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsNewOpen(false)}
-              disabled={isSavingNew}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => handleCreate({ publish: false })}
-              disabled={isSavingNew}
-            >
-              {isSavingNew ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Salvar como rascunho
-            </Button>
-            <Button
-              type="button"
-              onClick={() => handleCreate({ publish: true })}
-              disabled={isSavingNew}
-            >
-              {isSavingNew ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              Salvar e publicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal de confirmação de exclusão */}
       <Dialog
