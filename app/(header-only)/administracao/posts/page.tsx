@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  CheckCircle2,
   Eye,
   Flag,
   Loader2,
@@ -23,6 +24,7 @@ type PostRow = {
   top_report_reason: string | null
   is_banned: boolean
   banned_at: string | null
+  reports_resolved_at: string | null
   id_profile: string
   owner_name: string | null
   owner_avatar: string | null
@@ -69,6 +71,8 @@ export default function AdminPostsPage() {
   const [previewLoading, setPreviewLoading] = useState(false)
   // id do post em ação (banir/restaurar) — trava/spinna só a linha/botão dele.
   const [actingId, setActingId] = useState<string | null>(null)
+  // id do post sendo marcado como resolvido (independente do banir).
+  const [resolvingId, setResolvingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const tk = getToken()
@@ -168,6 +172,29 @@ export default function AdminPostsPage() {
     const what = it.title || (it.feed_kind === "bees" ? "este Bee" : "este post")
     if (window.confirm(`Suspender "${what}" de ${who}? O post sai do ar até ser restaurado.`)) {
       doBan(it.id)
+    }
+  }
+
+  // Marca as denúncias como resolvidas (sem banir): some do modal de alerta do
+  // admin no próximo login. O post continua no ar. Atualiza a linha otimista.
+  const doResolve = async (id: string) => {
+    const tk = getToken()
+    if (!tk) return
+    setResolvingId(id)
+    try {
+      const res = await fetch(`/api/admin/posts/${id}/resolve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tk}` },
+      })
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === id ? { ...it, reports_resolved_at: new Date().toISOString() } : it,
+          ),
+        )
+      }
+    } finally {
+      setResolvingId(null)
     }
   }
 
@@ -335,6 +362,25 @@ export default function AdminPostsPage() {
                           <Eye className="h-3.5 w-3.5" />
                           Ver
                         </button>
+                        {!it.is_banned && it.report_count > 0 && (
+                          it.reports_resolved_at ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 px-2.5 py-1.5 text-[12px] font-medium text-emerald-400/80">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Resolvido
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => doResolve(it.id)}
+                              disabled={resolvingId === it.id}
+                              title="Marcar como resolvido (sai do alerta, sem suspender o post)"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[12px] font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                            >
+                              {resolvingId === it.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                              Resolvido
+                            </button>
+                          )
+                        )}
                         {it.is_banned ? (
                           <button
                             type="button"

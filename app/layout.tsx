@@ -8,6 +8,7 @@ import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
+import { AdminAlerts } from "@/components/admin/admin-alerts"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
@@ -131,6 +132,7 @@ export default async function RootLayout({
             <AnalyticsProvider />
             <CouponCapture />
             <OnlineHeartbeat />
+            <AdminAlerts />
             <InstallPrompt />
           </TourProvider>
         </I18nProvider>
