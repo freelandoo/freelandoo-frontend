@@ -207,6 +207,17 @@ export default function PerfilPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfil])
 
+  // Mesma-página: quando o usuário já está em /account, trocar a query (?edit=1)
+  // não remonta nada, então a toolbar dispara este evento pra abrir o editor na
+  // hora. Cobre o caso em que o menu da conta só abre estando em /account.
+  React.useEffect(() => {
+    if (!perfil) return
+    const handler = () => openEditModal()
+    window.addEventListener("freelandoo:open-account-edit", handler)
+    return () => window.removeEventListener("freelandoo:open-account-edit", handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perfil])
+
   if (isLoading) {
     return <AccountLoading />
   }

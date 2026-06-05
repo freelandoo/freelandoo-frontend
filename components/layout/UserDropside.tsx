@@ -67,6 +67,18 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     setChamadoOpen(true)
   }
 
+  // Abre o editor de dados do usuário (modal na página /account). Se já estamos
+  // em /account, trocar a query não remontaria nada — então sinalizamos por
+  // evento. Em outra rota, navegamos com ?edit=1 (a /account abre no mount).
+  const openAccountEdit = () => {
+    onClose()
+    if (typeof window !== "undefined" && window.location.pathname === "/account") {
+      window.dispatchEvent(new Event("freelandoo:open-account-edit"))
+    } else {
+      router.push("/account?edit=1")
+    }
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -93,13 +105,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
 
   if (!mounted) return null
 
-  // Itens acima do "Abrir chamado".
+  // Itens acima do "Abrir chamado". ("Editar" é um botão dedicado — abre o modal
+  // de edição da conta via openAccountEdit, não um link.)
   const actionsTop: Action[] = [
-    {
-      href: "/account?edit=1",
-      label: tAcc("editLabel", "Editar"),
-      icon: Edit3,
-    },
     {
       href: "/manifestacao",
       label: tAcc("manifestationLabel", "Manifestação"),
@@ -229,6 +237,23 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             {tAcc("actionsHeading", "Ações")}
           </p>
           <ul className="space-y-1.5">
+            {/* Editar — abre o modal de edição da conta (não é link) */}
+            <li>
+              <HoverHint id="dropside-edit" side="right" className="block w-full">
+                <button
+                  type="button"
+                  data-tour="dropside-edit"
+                  onClick={openAccountEdit}
+                  className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                >
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70">
+                    <Edit3 className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-semibold">{tAcc("editLabel", "Editar")}</span>
+                </button>
+              </HoverHint>
+            </li>
+
             {actionsTop.map((a) => (
               <li key={a.href}>{renderActionLink(a)}</li>
             ))}
@@ -286,19 +311,6 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             {tAcc("myAccount", "Conta")}
           </p>
           <ul className="space-y-1">
-            <li>
-              <HoverHint id="dropside-account" side="right" className="block w-full">
-                <Link
-                  href="/account?edit=1"
-                  onClick={onClose}
-                  data-tour="dropside-account"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
-                >
-                  <Briefcase className="h-4 w-4 text-white/45" />
-                  {tNav("account", "Minha conta")}
-                </Link>
-              </HoverHint>
-            </li>
             <li>
               <HoverHint id="dropside-payments" side="right" className="block w-full">
                 <Link
