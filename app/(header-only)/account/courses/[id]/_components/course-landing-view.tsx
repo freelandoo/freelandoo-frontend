@@ -36,6 +36,7 @@ import {
   formatPriceBRL,
   parsePriceInput,
 } from "@/lib/courses/format"
+import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
 import { CourseFeeBreakdown } from "./course-fee-breakdown"
 import { CoursePublishSection } from "./section-publish"
 import { CourseStudentsSection } from "./section-students"
@@ -195,6 +196,7 @@ export function CourseLandingView({ courseId }: Props) {
     price_text: "",
     profile_id: "",
   })
+  const [affiliatesAllowed, setAffiliatesAllowed] = useState(false)
   const [savingField, setSavingField] = useState<string | null>(null)
   const courseSyncId = course?.id
 
@@ -207,6 +209,7 @@ export function CourseLandingView({ courseId }: Props) {
       price_text: centsToInputText(course.price_cents),
       profile_id: course.profile_id || "",
     })
+    setAffiliatesAllowed(course.affiliates_allowed ?? false)
     // sincroniza só quando troca de curso — não sobrescreve edição em andamento
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseSyncId])
@@ -243,6 +246,25 @@ export function CourseLandingView({ courseId }: Props) {
       }
     },
     [course, form.price_text, updateCourse],
+  )
+
+  const saveAffiliates = useCallback(
+    async (next: boolean) => {
+      if (!course) return
+      const prev = course.affiliates_allowed ?? false
+      if (next === prev) return
+      setAffiliatesAllowed(next) // otimista — o breakdown reage na hora
+      setSavingField("affiliates")
+      try {
+        await updateCourse({ affiliates_allowed: next })
+      } catch (err) {
+        setAffiliatesAllowed(prev) // reverte se falhar
+        toast.error(err instanceof Error ? err.message : "Falha ao salvar")
+      } finally {
+        setSavingField(null)
+      }
+    },
+    [course, updateCourse],
   )
 
   // Carrega subperfis do usuário (não-clan) para o select no modal de dados.
@@ -514,10 +536,18 @@ export function CourseLandingView({ courseId }: Props) {
               )}
             </div>
 
+            {/* Opt-in de afiliados — quando ligado, a comissão entra no breakdown */}
+            <AffiliateOptInField
+              allowed={affiliatesAllowed}
+              onAllowedChange={(v) => void saveAffiliates(v)}
+              disabled={savingField === "affiliates"}
+              className="mt-5 rounded-none border-2 border-white/12 bg-[#0E0B06]"
+            />
+
             {/* Breakdown: o que você recebe × o que o cliente paga */}
             <CourseFeeBreakdown
               priceCents={parsePriceInput(form.price_text)}
-              affiliatesAllowed={course.affiliates_allowed}
+              affiliatesAllowed={affiliatesAllowed}
             />
           </div>
         </section>
