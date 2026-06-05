@@ -410,16 +410,6 @@ export default function ManifestacaoPage() {
                   {/* Banner LIMPO no topo (a arte já traz o nome) */}
                   <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#141009]">
                     <BannerImage src={p.banner_url} alt={p.name} />
-                    <span
-                      className={cn(
-                        "absolute left-2 top-2 inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide backdrop-blur",
-                        p.type === "motivational"
-                          ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
-                          : "border-sky-300/40 bg-sky-50/90 text-sky-800",
-                      )}
-                    >
-                      {typeLabel(p.type)}
-                    </span>
                     {isActive && (
                       <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-semibold text-emerald-200 backdrop-blur">
                         <CheckCircle2 className="h-3 w-3" />
@@ -430,6 +420,16 @@ export default function ManifestacaoPage() {
 
                   {/* Faixa de dados embaixo (fundo escuro, separada do banner) */}
                   <div className="flex flex-1 flex-col gap-2 border-t-2 border-[#F5F1E8]/10 bg-[#15100A] p-3">
+                    <span
+                      className={cn(
+                        "inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                        p.type === "motivational"
+                          ? "border-amber-300/30 bg-amber-500/12 text-amber-200"
+                          : "border-sky-300/30 bg-sky-500/12 text-sky-200",
+                      )}
+                    >
+                      {typeLabel(p.type)}
+                    </span>
                     <h3 className="fl-display text-lg leading-none text-[#F5F1E8]">{p.name}</h3>
 
                     {p.tag_label && (
@@ -501,20 +501,20 @@ export default function ManifestacaoPage() {
               {/* Preview do banner — proporcao 16:5 (formato real do headcard) */}
               <div className="group relative aspect-[16/5] w-full overflow-hidden bg-[#1D1810]">
                 <BannerImage src={p.banner_url} alt={p.name} />
-                <span
-                  className={cn(
-                    "absolute left-3 top-3 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur",
-                    p.type === "motivational"
-                      ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
-                      : "border-sky-300/40 bg-sky-50/90 text-sky-800",
-                  )}
-                >
-                  {typeLabel(p.type)}
-                </span>
               </div>
 
               <div className="flex flex-col gap-3 p-5">
                 <div>
+                  <span
+                    className={cn(
+                      "mb-1.5 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                      p.type === "motivational"
+                        ? "border-amber-400/40 bg-amber-400/15 text-amber-700"
+                        : "border-sky-400/40 bg-sky-400/15 text-sky-700",
+                    )}
+                  >
+                    {typeLabel(p.type)}
+                  </span>
                   <h3 className="fl-display text-2xl text-[var(--fl-ink)]">{p.name}</h3>
                   {p.headline && (
                     <p className="mt-1 text-sm font-bold text-[#3a352d]">{p.headline}</p>
