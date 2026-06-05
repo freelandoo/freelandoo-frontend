@@ -248,21 +248,29 @@ export function CameraStudio({ open, profileId, kind, caption, onClose, onPosted
     rnd.setFlipX(facing === "user")
   }, [phase, facing])
 
+  // Classe global que esconde a toolbar (body.camera-active → display:none) enquanto
+  // a câmera está aberta. ISOLADA do teardown de propósito: se algo no teardown
+  // lançar erro, a classe ainda assim é removida — senão a toolbar fica display:none
+  // e a página travada (overflow:hidden) depois de fechar a câmera.
+  useEffect(() => {
+    if (!open) return
+    document.body.classList.add("camera-active")
+    return () => { document.body.classList.remove("camera-active") }
+  }, [open])
+
   // init quando abre
   useEffect(() => {
     if (!open) return
-    document.body.classList.add("camera-active") // oculta a toolbar global
     const c = detectCapabilities()
     setCaps(c)
     if (!c.getUserMedia || c.recordPath === "none" || !c.canFilter) {
       setPhase("unsupported")
-      return () => { document.body.classList.remove("camera-active") }
+      return
     }
     setPhase("permission")
     // não auto-inicia: espera o gesto do usuário (botão "Permitir")
     return () => {
       teardown()
-      document.body.classList.remove("camera-active")
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])

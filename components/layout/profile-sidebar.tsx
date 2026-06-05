@@ -125,6 +125,15 @@ export function ProfileSidebar() {
     }
   }, [registerAction])
 
+  // Rede de segurança: a câmera adiciona `body.camera-active` (que faz
+  // display:none na toolbar). O cleanup dela já remove a classe, mas se vazar
+  // (ex.: erro no teardown), a toolbar ficaria "morta". Ao navegar, garantimos
+  // que a classe não persiste — a câmera é um modal, então nunca está aberta
+  // junto de uma troca de rota.
+  useEffect(() => {
+    document.body.classList.remove("camera-active")
+  }, [pathname])
+
   // Em /account o avatar abre o dropside; em outras telas, navega pra /account.
   const isOnAccountHome = pathname === "/account"
   const handleTriggerClick = () => {
