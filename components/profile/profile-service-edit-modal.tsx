@@ -108,7 +108,11 @@ export function ProfileServiceEditModal({
     affiliates_allowed: false,
   })
   const [saving, setSaving] = useState(false)
-  const [bookingFees, setBookingFees] = useState({ stripe_fee_percent: 0, service_fee_cents: 0 })
+  const [bookingFees, setBookingFees] = useState({
+    stripe_fee_percent: 0,
+    service_fee_cents: 0,
+    affiliate_commission_percent: 0,
+  })
   const [bookingFeesReady, setBookingFeesReady] = useState(false)
 
   const [mediaList, setMediaList] = useState<ServiceMedia[]>([])
@@ -127,6 +131,7 @@ export function ProfileServiceEditModal({
           setBookingFees({
             stripe_fee_percent: d.stripe_fee_percent ?? 0,
             service_fee_cents: d.service_fee_cents ?? 0,
+            affiliate_commission_percent: d.affiliate_commission_percent ?? 0,
           })
       })
       .catch(() => {})
@@ -516,6 +521,14 @@ export function ProfileServiceEditModal({
             const stripeFee = Math.round((baseCents * bookingFees.stripe_fee_percent) / 100)
             const serviceFee = bookingFees.service_fee_cents
             const clientTotal = baseCents + stripeFee + serviceFee
+            // Comissão de afiliado (aditiva): % global sobre o preço cheio do
+            // cliente, somada por cima — mesma regra do BookingService no backend.
+            const affiliatePct = bookingFees.affiliate_commission_percent
+            const affiliateFee =
+              serviceForm.affiliates_allowed && affiliatePct > 0
+                ? Math.round((clientTotal * affiliatePct) / 100)
+                : 0
+            const clientPays = clientTotal + affiliateFee
             return (
               <div className="space-y-2 rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4 text-xs">
                 <p className="mb-3 font-bold text-[#5b554b]">Resumo do valor</p>
@@ -531,9 +544,15 @@ export function ProfileServiceEditModal({
                   <span>Taxa de serviço (fixo)</span>
                   <span className="font-mono text-[#b8860b]">+ {centsToReais(serviceFee)}</span>
                 </div>
+                {affiliateFee > 0 && (
+                  <div className="flex justify-between text-[#5b554b]">
+                    <span>Comissão de afiliado ({affiliatePct}%)</span>
+                    <span className="font-mono text-[#b8860b]">+ {centsToReais(affiliateFee)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t-2 border-[#0B0B0D]/15 pt-2 text-sm font-bold">
                   <span className="text-[#0B0B0D]">Cliente pagará</span>
-                  <span className="font-mono text-[#E0A500]">{centsToReais(clientTotal)}</span>
+                  <span className="font-mono text-[#E0A500]">{centsToReais(clientPays)}</span>
                 </div>
               </div>
             )
@@ -700,6 +719,7 @@ export function ProfileServiceEditModal({
           </label>
 
           <AffiliateOptInField
+            variant="light"
             allowed={serviceForm.affiliates_allowed}
             onAllowedChange={(v) => setServiceForm((f) => ({ ...f, affiliates_allowed: v }))}
             disabled={saving}

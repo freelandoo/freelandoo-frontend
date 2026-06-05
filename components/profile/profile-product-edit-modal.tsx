@@ -234,6 +234,7 @@ export function ProfileProductEditModal({
     seller_amount_cents: number
     service_fee_cents: number
     processor_fee_cents: number
+    affiliate_commission_cents: number
     display_price_cents: number
   } | null>(null)
 
@@ -322,13 +323,15 @@ export function ProfileProductEditModal({
     let cancelled = false
     const t = window.setTimeout(async () => {
       try {
-        const r = await fetch(`/api/store/price-preview?seller_cents=${cents}`, { headers: headers() })
+        const params = new URLSearchParams({ seller_cents: String(cents) })
+        if (form.affiliates_allowed) params.set("affiliates_allowed", "true")
+        const r = await fetch(`/api/store/price-preview?${params.toString()}`, { headers: headers() })
         const d = await r.json()
         if (!cancelled && r.ok) setPricingPreview(d.pricing)
       } catch { /* silencioso */ }
     }, 300)
     return () => { cancelled = true; window.clearTimeout(t) }
-  }, [open, form.price_reais])
+  }, [open, form.price_reais, form.affiliates_allowed])
 
   const isEdit = product !== null
   const mediaUrl = (pid: number) =>
@@ -664,6 +667,11 @@ export function ProfileProductEditModal({
                 <span className="text-[10px] text-[#5b554b]">
                   Serviço {(pricingPreview.service_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   {" · "}Maquininha {(pricingPreview.processor_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {pricingPreview.affiliate_commission_cents > 0 && (
+                    <>
+                      {" · "}Afiliado {(pricingPreview.affiliate_commission_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </>
+                  )}
                 </span>
               </div>
               <p className="mt-1 text-[10px] text-[#8a8275]">
@@ -915,6 +923,7 @@ export function ProfileProductEditModal({
           </label>
 
           <AffiliateOptInField
+            variant="light"
             allowed={form.affiliates_allowed}
             onAllowedChange={(v) => setForm((f) => ({ ...f, affiliates_allowed: v }))}
             disabled={saving}
