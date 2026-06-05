@@ -54,6 +54,9 @@ export interface UploadStoryParams {
   token: string
   id_profile: string
   kind: StoryKind
+  /** "video" (default) ou "image" (story de foto). */
+  mediaType?: "video" | "image"
+  /** Mídia principal — vídeo MP4 ou imagem WebP (o campo segue chamando videoBlob). */
   videoBlob: Blob
   posterBlob: Blob | null
   durationSeconds: number
@@ -72,17 +75,22 @@ export interface PublishedStory {
 }
 
 export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory> {
-  if (p.videoBlob.size > 80 * 1024 * 1024) {
+  const isImage = p.mediaType === "image"
+  if (!isImage && p.videoBlob.size > 80 * 1024 * 1024) {
     throw new Error("O vídeo excede 80MB. Grave um trecho menor.")
+  }
+  if (isImage && p.videoBlob.size > 8 * 1024 * 1024) {
+    throw new Error("A imagem excede 8MB. Use uma foto menor.")
   }
 
   // 1) presigned URLs
   const urls = await postJson<UploadUrls>("/me/stories/upload-url", p.token, {
     id_profile: p.id_profile,
     kind: p.kind,
+    media_type: isImage ? "image" : "video",
   })
 
-  // 2) PUT direto pro R2 (vídeo = 85% da barra; poster = 15%)
+  // 2) PUT direto pro R2 (mídia principal = 85% da barra; poster = 15%)
   await putToR2(urls.video, p.videoBlob, (f) => p.onProgress?.(f * 0.85))
   let thumbnailKey: string | null = null
   if (p.posterBlob && p.posterBlob.size <= urls.poster.max_bytes) {
@@ -99,6 +107,7 @@ export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory>
   return postJson<PublishedStory>("/me/stories/from-upload", p.token, {
     id_profile: p.id_profile,
     kind: p.kind,
+    media_type: isImage ? "image" : "video",
     duration_seconds: p.durationSeconds,
     width: p.width,
     height: p.height,

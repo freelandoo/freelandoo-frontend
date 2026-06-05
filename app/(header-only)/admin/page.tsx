@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, BarChart2, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -60,7 +60,6 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Moderação", href: "/administracao/posts", icon: Flag, title: "Posts denunciados", body: "Fila de posts (portfólio/bees) denunciados pelos usuários." },
 
   // Sistema & Dados
-  { section: "Sistema & Dados", hint: "admin-stats", href: "/admin/stats", icon: BarChart2, title: "Estatísticas", body: "Visualizar métricas e dados da plataforma." },
   { section: "Sistema & Dados", href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota.", badge: "novo" },
 ]
 

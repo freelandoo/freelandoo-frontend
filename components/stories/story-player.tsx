@@ -15,6 +15,7 @@ export interface StoryItem {
   id_profile: string
   id_user: string
   kind: "trampo" | "rest"
+  media_type?: "video" | "image"
   video_url: string
   thumbnail_url: string | null
   duration_seconds: number
@@ -253,6 +254,15 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
           <div className="absolute inset-0 flex items-center justify-center text-white/60">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
+        ) : activeStory.media_type === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={activeStory.id_story}
+            src={activeStory.video_url}
+            alt={activeStory.caption || ""}
+            className="absolute inset-0 h-full w-full object-cover"
+            onClick={() => setPaused((p) => !p)}
+          />
         ) : (
           <video
             key={activeStory.id_story}

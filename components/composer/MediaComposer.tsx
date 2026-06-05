@@ -421,16 +421,14 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           makeup: { skin_smooth: 0, lipstick: 0, blush: 0 },
           encoder: result.encoder === "image" ? "webcodecs" : result.encoder,
         }
-        // Story exige vídeo no backend atual; foto vira "vídeo" só quando houver
-        // suporte — por ora, story de foto não é suportado (slice futuro). Guarda:
-        if (result.kind === "image") {
-          setError(t("errors.storyImageSoon", "Story de foto chega em breve. Por enquanto use vídeo."))
-          setStep("details"); setSubmitting(false); return
-        }
+        const isImageStory = result.kind === "image"
         await uploadStory({
           token, id_profile: selectedProfileId, kind: effectiveKind,
+          mediaType: isImageStory ? "image" : "video",
           videoBlob: result.blob, posterBlob: result.posterBlob,
-          durationSeconds: result.durationSec, width: result.width, height: result.height,
+          // Foto não tem duração própria — o backend aplica o tempo padrão de exibição.
+          durationSeconds: isImageStory ? 7 : result.durationSec,
+          width: result.width, height: result.height,
           caption: caption.trim() || undefined, filterMeta,
           audioTrackId: audioPick?.trackId || null, audioStartMs: audioPick?.startMs ?? 0,
           onProgress: (f) => setProgress(0.5 + f * 0.5),
@@ -516,7 +514,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const canPublish = !!draft && !!selectedProfileId && !trampoBlockedFatal(mode, profiles, selectedProfile)
 
   return (
-    <div className="fl-root fixed inset-0 z-[95] flex items-stretch justify-center bg-[#141009]">
+    <div className="fl-root fixed inset-0 z-[95] flex items-stretch justify-center bg-[#0b0804]">
       <input
         ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0] || null)}
@@ -525,7 +523,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         ref={overlayInputRef} type="file" accept="image/*,video/*" className="hidden"
         onChange={(e) => { handleOverlayFile(e.target.files?.[0] || null); e.target.value = "" }}
       />
-      <div className="relative flex h-full w-full max-w-[560px] flex-col overflow-hidden border-x-2 border-[#0B0B0D] bg-[#141009]">
+      <div className="relative flex h-full w-full max-w-[560px] flex-col overflow-hidden border-x-2 border-[#0B0B0D] bg-[#0b0804]">
         {/* App bar tabloide */}
         <header className="flex items-center justify-between border-b-2 border-[#F1EDE2]/12 px-3 py-2.5">
           <button
