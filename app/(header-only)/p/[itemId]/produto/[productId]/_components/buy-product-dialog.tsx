@@ -72,7 +72,10 @@ export function BuyProductDialog({
 
   if (!open) return null
 
-  const total = product.price_amount + shipping.price_cents
+  // Proteção de pagamento: o preço embute ida + volta. O frete reverso (≈ frete
+  // de ida) é retido pela plataforma para custear a etiqueta de devolução.
+  const returnShipping = shipping.price_cents
+  const total = product.price_amount + shipping.price_cents + returnShipping
 
   async function submit() {
     setError(null)
@@ -148,6 +151,7 @@ export function BuyProductDialog({
         <dl className="mt-4 space-y-1 rounded-xl bg-muted/30 p-3 text-sm">
           <div className="flex justify-between"><dt>{t("productLineLabel", "Produto")}</dt><dd className="tabular-nums">{formatBRL(product.price_amount, locale)}</dd></div>
           <div className="flex justify-between"><dt>{t("shippingLineLabel", "Frete")}</dt><dd className="tabular-nums">{formatBRL(shipping.price_cents, locale)}</dd></div>
+          <div className="flex justify-between"><dt>{t("returnProtectionLineLabel", "Proteção de devolução")}</dt><dd className="tabular-nums">{formatBRL(returnShipping, locale)}</dd></div>
           <div className="flex justify-between border-t border-border/60 pt-1 font-semibold"><dt>{t("totalLineLabel", "Total")}</dt><dd className="tabular-nums">{formatBRL(total, locale)}</dd></div>
         </dl>
 
