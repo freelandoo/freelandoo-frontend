@@ -58,7 +58,6 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/chat-moderation", icon: ShieldAlert, title: "Moderação do Chat", body: "Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público." },
   { section: "Moderação", hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
   { section: "Moderação", href: "/administracao/posts", icon: Flag, title: "Posts denunciados", body: "Fila de posts (portfólio/bees) denunciados pelos usuários." },
-  { section: "Moderação", href: "/administracao/disputas", icon: ShieldAlert, title: "Disputas", body: "Proteção de pagamento: devoluções, reembolsos e casos escalados (Loja + Agendamentos)." },
 
   // Sistema & Dados
   { section: "Sistema & Dados", href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota.", badge: "novo" },

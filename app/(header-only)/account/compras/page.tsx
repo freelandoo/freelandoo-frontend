@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertTriangle, Package, ShoppingBag, Truck } from "lucide-react"
-import { OpenDisputeDialog } from "@/components/protection/open-dispute-dialog"
+import { Package, ShoppingBag, Truck } from "lucide-react"
 import {
   EmptyState,
   ErrorState,
@@ -63,9 +62,6 @@ function getToken() {
 export default function ComprasPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error" | "unauth">("loading")
-  const [disputeOrder, setDisputeOrder] = useState<number | null>(null)
-
-  const DISPUTABLE = new Set(["paid", "shipped", "delivered"])
 
   useEffect(() => {
     let cancelled = false
@@ -176,16 +172,6 @@ export default function ComprasPage() {
                   <div className="shrink-0 text-left md:text-right">
                     <p className="text-base font-black tabular-nums text-[var(--fl-ink)] md:text-lg">{formatBRL(o.total_cents)}</p>
                     <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + frete {formatBRL(o.shipping_cents)}</p>
-                    {DISPUTABLE.has(o.status) && (
-                      <button
-                        type="button"
-                        onClick={() => setDisputeOrder(o.id_order)}
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-[4px] border-2 border-[#BE123C] bg-[#FFE4E6] px-2.5 py-1 text-[11px] font-black text-[#9F1239] hover:bg-[#FFD0D6]"
-                      >
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                        Tive um problema
-                      </button>
-                    )}
                   </div>
                 </li>
               )
@@ -193,15 +179,6 @@ export default function ComprasPage() {
           </ul>
         )}
       </main>
-
-      {disputeOrder != null && (
-        <OpenDisputeDialog
-          domain="product"
-          refId={disputeOrder}
-          open
-          onClose={() => setDisputeOrder(null)}
-        />
-      )}
     </PageShell>
   )
 }

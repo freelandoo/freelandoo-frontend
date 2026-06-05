@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { AlertTriangle, Flag, Coins, X, ArrowRight, ShieldAlert } from "lucide-react"
+import { AlertTriangle, Flag, Coins, X, ArrowRight } from "lucide-react"
 import { getToken } from "@/lib/auth"
 
 type ReportedPost = {
@@ -41,7 +41,6 @@ type AlertSummary = {
   urgent_affiliates: UrgentAffiliate[]
   urgent_affiliates_count: number
   urgent_total_cents: number
-  escalated_disputes_count?: number
   has_alerts: boolean
 }
 
@@ -226,25 +225,6 @@ export function AdminAlerts() {
                 className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-300 hover:bg-red-500/20"
               >
                 Pagar afiliados <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </section>
-          )}
-          {/* Disputas escaladas (proteção de pagamento) */}
-          {(data.escalated_disputes_count ?? 0) > 0 && (
-            <section>
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <ShieldAlert className="h-3.5 w-3.5 text-rose-300" />
-                Disputas escaladas
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {data.escalated_disputes_count} disputa{(data.escalated_disputes_count ?? 0) > 1 ? "s" : ""} aguardando sua decisão (reembolsar ou liberar).
-              </p>
-              <Link
-                href="/administracao/disputas"
-                onClick={close}
-                className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-sm font-medium text-rose-300 hover:bg-rose-500/20"
-              >
-                Revisar disputas <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </section>
           )}
