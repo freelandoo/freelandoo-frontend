@@ -15,6 +15,7 @@ import {
   Shield,
   LogOut,
   X,
+  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
@@ -113,6 +114,11 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       href: "/loja-polens",
       label: tAcc("polenLabel", "Seus Pólens"),
       icon: Coins,
+    },
+    {
+      href: "/account/xp",
+      label: tAcc("xpLabel", "Meu XP"),
+      icon: Zap,
     },
   ]
 
