@@ -115,6 +115,21 @@ export default function CadastroPage() {
     passwordsMatch &&
     acceptedTerms
 
+  // Primeiro requisito não satisfeito, na ordem do formulário — evita botão "morto" sem explicação.
+  const step1BlockReason = (() => {
+    if (!formData.nome.trim()) return t("blockNome", "Preencha seu nome completo.")
+    if (!formData.username) return t("blockUsername", "Escolha um nome de usuário.")
+    if (usernameStatus === "checking") return t("blockUsernameChecking", "Verificando o nome de usuário...")
+    if (usernameStatus !== "available") return t("blockUsernameUnavailable", "Confirme um nome de usuário disponível.")
+    if (!formData.email || !emailOk) return t("blockEmail", "Digite um email válido.")
+    if (!dateOk) return t("blockBirth", "Informe sua data de nascimento.")
+    if (isMinorBirth && codeStatus !== "valid") return t("blockCode", "Informe um código de responsável válido.")
+    if (!passwordStrong) return t("blockPassword", "Sua senha não atende a todos os requisitos.")
+    if (!passwordsMatch) return t("blockPasswordMatch", "As senhas não coincidem.")
+    if (!acceptedTerms) return t("blockTerms", "Aceite os termos de uso para continuar.")
+    return ""
+  })()
+
   const checkUsername = useCallback(async (u: string) => {
     if (u.length < 3) {
       setUsernameStatus("invalid")
@@ -567,6 +582,12 @@ export default function CadastroPage() {
               >
                 {t("continue", "Continuar")}
               </button>
+
+              {!step1Valid && (
+                <p className="-mt-3 text-center text-xs font-medium text-[#5b554b]">
+                  {step1BlockReason}
+                </p>
+              )}
 
               <p className="text-center text-sm text-[#5b554b]">
                 {t("alreadyHaveAccount", "Já tem uma conta?")}{" "}
