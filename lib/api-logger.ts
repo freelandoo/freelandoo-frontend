@@ -1,6 +1,14 @@
 const isDev = process.env.NODE_ENV === "development"
 const MAX_LOG_LEN = 200
 
+// Verbosidade de logs por-request. Cada `console.*` numa função serverless do
+// Vercel é ingerido como 1 Observability Event (cobrado). O tripé
+// start/backend-fetch/end multiplicava ~3x as invocações em eventos de log.
+// Em produção logamos APENAS erros/non-2xx; o trace completo fica em dev ou
+// sob API_VERBOSE_LOGS=1 (debug pontual). Isso derruba a linha "Observability
+// Events" da fatura sem perder visibilidade de falhas.
+const VERBOSE = isDev || process.env.API_VERBOSE_LOGS === "1"
+
 /** Path da requisição de entrada, sem query string (evita tokens na URL em logs). */
 export function apiRequestPath(request: Request | undefined): string {
   if (!request) return ""
@@ -37,8 +45,14 @@ export function apiDebug(label: string, ...args: unknown[]) {
   console.log(`[api:${label}]`, ...args)
 }
 
-/** Linha estruturada: visível em todos os ambientes (evite PII em `meta`). */
+/**
+ * Linha estruturada de trace (start/backend-fetch/end). Silenciada em produção
+ * por padrão para não gerar Observability Events no Vercel — ligue com
+ * API_VERBOSE_LOGS=1 quando precisar depurar. Erros usam apiWarn/apiError,
+ * que NÃO são silenciados.
+ */
 export function apiInfo(label: string, phase: string, meta?: Record<string, unknown>) {
+  if (!VERBOSE) return
   const extra = meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(scrubMeta(meta))}` : ""
   console.info(`[api:${label}]`, `${phase}${extra}`)
 }
