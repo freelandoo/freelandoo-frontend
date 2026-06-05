@@ -8,7 +8,6 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  Edit3,
   Eye,
   EyeOff,
   Layers,
@@ -16,7 +15,6 @@ import {
   PlaySquare,
   Plus,
   Sparkles,
-  Tag,
   Users,
 } from "lucide-react"
 import {
@@ -32,8 +30,13 @@ import { PageShell } from "@/components/tabloide"
 import { fetchWithLog } from "@/lib/fetch-with-log"
 import { useMyCourse } from "@/hooks/use-my-course"
 import { useCourseModules, type CourseModule } from "@/hooks/use-course-modules"
-import { formatPriceBRL } from "@/lib/courses/format"
-import { CourseDataSection } from "./section-data"
+import {
+  COURSE_MIN_PUBLISH_PRICE_CENTS,
+  centsToInputText,
+  formatPriceBRL,
+  parsePriceInput,
+} from "@/lib/courses/format"
+import { CourseFeeBreakdown } from "./course-fee-breakdown"
 import { CoursePublishSection } from "./section-publish"
 import { CourseStudentsSection } from "./section-students"
 import { NewModuleModal } from "./new-module-modal"
@@ -167,6 +170,7 @@ export function CourseLandingView({ courseId }: Props) {
     isLoading: courseLoading,
     error: courseError,
     refresh: refreshCourse,
+    updateCourse,
     uploadCover,
     removeCover,
   } = useMyCourse(courseId)
@@ -180,9 +184,66 @@ export function CourseLandingView({ courseId }: Props) {
 
   const [profileOptions, setProfileOptions] = useState<SubProfileOption[]>([])
   const [isNewModuleOpen, setIsNewModuleOpen] = useState(false)
-  const [editDataOpen, setEditDataOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [studentsOpen, setStudentsOpen] = useState(false)
+
+  // ---- Edição in-place dos dados do curso (sem modal) ----
+  const [form, setForm] = useState({
+    title: "",
+    short_description: "",
+    description: "",
+    price_text: "",
+    profile_id: "",
+  })
+  const [savingField, setSavingField] = useState<string | null>(null)
+  const courseSyncId = course?.id
+
+  useEffect(() => {
+    if (!course) return
+    setForm({
+      title: course.title || "",
+      short_description: course.short_description || "",
+      description: course.description || "",
+      price_text: centsToInputText(course.price_cents),
+      profile_id: course.profile_id || "",
+    })
+    // sincroniza só quando troca de curso — não sobrescreve edição em andamento
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseSyncId])
+
+  const saveField = useCallback(
+    async (
+      field: "title" | "short_description" | "description" | "price" | "profile_id",
+      rawValue?: string,
+    ) => {
+      if (!course) return
+      let patch: Record<string, unknown> | null = null
+      if (field === "price") {
+        const cents = parsePriceInput(form.price_text)
+        if (cents === course.price_cents) return
+        patch = { price_cents: cents }
+      } else if (field === "profile_id") {
+        const v = rawValue || null
+        if (v === course.profile_id) return
+        patch = { profile_id: v }
+      } else {
+        const v = (rawValue ?? "").trim()
+        if (v === (course[field] || "")) return
+        if (field === "title" && !v) return // título não pode ficar vazio
+        patch = { [field]: v || null }
+      }
+      if (!patch) return
+      setSavingField(field)
+      try {
+        await updateCourse(patch)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Falha ao salvar")
+      } finally {
+        setSavingField(null)
+      }
+    },
+    [course, form.price_text, updateCourse],
+  )
 
   // Carrega subperfis do usuário (não-clan) para o select no modal de dados.
   useEffect(() => {
@@ -315,15 +376,14 @@ export function CourseLandingView({ courseId }: Props) {
             </Link>
           )}
 
+          {savingField && (
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F2B705]" />
+              salvando…
+            </span>
+          )}
+
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setEditDataOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              Dados básicos
-            </button>
             <button
               type="button"
               onClick={() => setStudentsOpen(true)}
@@ -355,42 +415,110 @@ export function CourseLandingView({ courseId }: Props) {
             onRemove={course.cover_url ? handleCoverRemove : undefined}
           />
 
-          {/* Floating meta — abaixo da imagem, parecendo "passe livre" */}
-          <div className="relative mt-5 grid gap-4 rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-6">
-            <div className="flex flex-wrap items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/85">
-                  <Sparkles className="h-3 w-3" />
-                  Curso Freelandoo
-                </p>
-                <h1 className="mt-2 text-2xl font-semibold leading-tight text-white md:text-3xl">
-                  {course.title}
-                </h1>
-                {course.short_description && (
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">
-                    {course.short_description}
-                  </p>
-                )}
-              </div>
+          {/* Painel editável (tabloide) — tudo editável in-place pelo dono */}
+          <div className="relative mt-5 border-2 border-white/12 bg-[#15100A] p-5 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)] md:p-6">
+            <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#F2B705]">
+              <Sparkles className="h-3 w-3" />
+              Curso Freelandoo · edite tudo aqui
+            </p>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <MetaPill icon={<Tag className="h-3.5 w-3.5" />}>
-                  {formatPriceBRL(course.price_cents)}
-                </MetaPill>
-                <MetaPill icon={<Layers className="h-3.5 w-3.5" />}>
-                  {course.modules_count ?? modules.length} módulos
-                </MetaPill>
-                <MetaPill icon={<PlaySquare className="h-3.5 w-3.5" />}>
-                  {course.lessons_count ?? lessonsTotal} aulas
-                </MetaPill>
-              </div>
+            {/* Título editável */}
+            <input
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              onBlur={(e) => saveField("title", e.target.value)}
+              placeholder="Nome do curso"
+              maxLength={160}
+              className="fl-display mt-2 w-full bg-transparent text-3xl leading-tight text-white outline-none placeholder:text-white/25 md:text-4xl"
+            />
+
+            {/* Descrição curta */}
+            <input
+              value={form.short_description}
+              onChange={(e) => setForm((f) => ({ ...f, short_description: e.target.value }))}
+              onBlur={(e) => saveField("short_description", e.target.value)}
+              placeholder="Uma frase que resume a proposta do curso (opcional)"
+              maxLength={280}
+              className="mt-3 w-full border-b border-white/10 bg-transparent pb-1.5 text-sm text-white/75 outline-none placeholder:text-white/30 focus:border-[#F2B705]/50"
+            />
+
+            {/* Meta pills (contadores) */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <MetaPill icon={<Layers className="h-3.5 w-3.5" />}>
+                {course.modules_count ?? modules.length} módulos
+              </MetaPill>
+              <MetaPill icon={<PlaySquare className="h-3.5 w-3.5" />}>
+                {course.lessons_count ?? lessonsTotal} aulas
+              </MetaPill>
             </div>
 
-            {course.description && (
-              <p className="line-clamp-3 text-sm leading-relaxed text-white/55">
-                {course.description}
-              </p>
-            )}
+            {/* Descrição completa */}
+            <div className="mt-5">
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                Descrição completa
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onBlur={(e) => saveField("description", e.target.value)}
+                rows={4}
+                placeholder="Conte o que o aluno vai aprender, pra quem é o curso, o que ele precisa saber antes…"
+                className="w-full resize-y border-2 border-white/10 bg-[#0E0B06] p-3 text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/30 focus:border-[#F2B705]/40"
+              />
+            </div>
+
+            {/* Preço + perfil vinculado */}
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                  Preço
+                </label>
+                <div className="flex items-center border-2 border-white/12 bg-[#0E0B06] px-3 focus-within:border-[#F2B705]/50">
+                  <span className="fl-display text-lg text-[#F2B705]">R$</span>
+                  <input
+                    value={form.price_text}
+                    onChange={(e) => setForm((f) => ({ ...f, price_text: e.target.value }))}
+                    onBlur={() => saveField("price")}
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    className="fl-display w-full bg-transparent px-2 py-2.5 text-xl text-white outline-none placeholder:text-white/25"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-white/40">
+                  Mínimo {formatPriceBRL(COURSE_MIN_PUBLISH_PRICE_CENTS)} para publicar.
+                </p>
+              </div>
+
+              {profileOptions.length > 0 && (
+                <div>
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                    Perfil vinculado
+                  </label>
+                  <select
+                    value={form.profile_id}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setForm((f) => ({ ...f, profile_id: v }))
+                      void saveField("profile_id", v)
+                    }}
+                    className="h-[46px] w-full border-2 border-white/12 bg-[#0E0B06] px-3 text-sm text-white outline-none focus:border-[#F2B705]/40"
+                  >
+                    <option value="">Sem perfil vinculado</option>
+                    {profileOptions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Breakdown: o que você recebe × o que o cliente paga */}
+            <CourseFeeBreakdown
+              priceCents={parsePriceInput(form.price_text)}
+              affiliatesAllowed={course.affiliates_allowed}
+            />
           </div>
         </section>
 
@@ -489,26 +617,6 @@ export function CourseLandingView({ courseId }: Props) {
           )
         }}
       />
-
-      {/* Modal: Dados básicos */}
-      <Dialog open={editDataOpen} onOpenChange={setEditDataOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
-          <DialogHeader>
-            <DialogTitle>Dados do curso</DialogTitle>
-            <DialogDescription>
-              Atualize o nome, descrição, preço e perfil vinculado.
-            </DialogDescription>
-          </DialogHeader>
-          <CourseDataSection
-            course={course}
-            profileOptions={profileOptions}
-            onSaved={() => {
-              void refreshCourse()
-              setEditDataOpen(false)
-            }}
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Modal: Publicação */}
       <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
