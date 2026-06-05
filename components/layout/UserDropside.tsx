@@ -8,7 +8,6 @@ import {
   Edit3,
   Briefcase,
   MessageSquarePlus,
-  PackageSearch,
   Coins,
   CreditCard,
   Settings,
@@ -16,9 +15,13 @@ import {
   LogOut,
   X,
   Zap,
+  Sparkles,
+  Package,
+  GraduationCap,
+  ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -53,6 +56,17 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const tAcc = useTranslations("Account")
   const tCommon = useTranslations("Common")
 
+  // Abrir chamado (serviço / produto / curso) — mesmo fluxo das Mensagens.
+  const [chamadoExpanded, setChamadoExpanded] = useState(false)
+  const [chamadoOpen, setChamadoOpen] = useState(false)
+  const [chamadoMode, setChamadoMode] = useState<ChamadoMode>("service")
+  const startChamado = (mode: ChamadoMode) => {
+    setChamadoMode(mode)
+    setChamadoExpanded(false)
+    onClose() // fecha a dropside; o modal abre por cima da página
+    setChamadoOpen(true)
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -79,7 +93,8 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
 
   if (!mounted) return null
 
-  const actions: Action[] = [
+  // Itens acima do "Abrir chamado".
+  const actionsTop: Action[] = [
     {
       href: "/account?edit=1",
       label: tAcc("editLabel", "Editar"),
@@ -88,28 +103,16 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     {
       href: "/manifestacao",
       label: tAcc("manifestationLabel", "Manifestação"),
-      icon: () => <span className="h-4 w-4" aria-hidden />,
-      badge: <ManifestationBadge label={tAcc("premiumBadge", "Premium")} size="sm" />,
-      highlight: true,
+      icon: Sparkles,
     },
     {
       href: "/account/afiliado",
       label: tAcc("earningsLabel", "Meus Faturamentos"),
       icon: Briefcase,
     },
-    {
-      href: "/pedir-servico",
-      label: tAcc("requestServiceLabel", "Pedir serviço"),
-      icon: MessageSquarePlus,
-      badge: unreadServiceRequest ? (
-        <span className="h-2 w-2 rounded-full bg-red-500" aria-label={tAcc("newRepliesAria", "Novas respostas")} />
-      ) : undefined,
-    },
-    {
-      href: "/pedir-produto",
-      label: tAcc("requestProductLabel", "Pedir produto"),
-      icon: PackageSearch,
-    },
+  ]
+  // Itens abaixo do "Abrir chamado".
+  const actionsBottom: Action[] = [
     {
       href: "/loja-polens",
       label: tAcc("polenLabel", "Seus Pólens"),
@@ -122,8 +125,51 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     },
   ]
 
+  const chamadoOptions: { mode: ChamadoMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { mode: "service", label: tAcc("chamadoModeService", "Serviço"), icon: Briefcase },
+    { mode: "product", label: tAcc("chamadoModeProduct", "Produto"), icon: Package },
+    { mode: "course", label: tAcc("chamadoModeCourse", "Curso"), icon: GraduationCap },
+  ]
+
   const isAdmin =
     user?.is_admin || user?.roles?.some((r) => r.desc_role === "Administrator")
+
+  const renderActionLink = (a: Action) => {
+    const Icon = a.icon
+    const hintId: HintId | undefined =
+      a.href === "/manifestacao"
+        ? "dropside-manifestation"
+        : a.href === "/account/afiliado"
+          ? "dropside-earnings"
+          : a.href === "/loja-polens"
+            ? "dropside-pollens"
+            : a.href.startsWith("/account?edit")
+              ? "dropside-edit"
+              : undefined
+    const link = (
+      <Link
+        href={a.href}
+        onClick={onClose}
+        data-tour={hintId}
+        className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+      >
+        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70">
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex flex-1 items-center gap-2">
+          <span className="truncate font-semibold">{a.label}</span>
+          {a.badge}
+        </span>
+      </Link>
+    )
+    return hintId ? (
+      <HoverHint id={hintId} side="right" className="block w-full">
+        {link}
+      </HoverHint>
+    ) : (
+      link
+    )
+  }
 
   const node = (
     <div
@@ -183,58 +229,56 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             {tAcc("actionsHeading", "Ações")}
           </p>
           <ul className="space-y-1.5">
-            {actions.map((a) => {
-              const Icon = a.icon
-              const hintId: HintId | undefined =
-                a.href === "/manifestacao"
-                  ? "dropside-manifestation"
-                  : a.href === "/account/afiliado"
-                    ? "dropside-earnings"
-                    : a.href === "/pedir-servico"
-                      ? "dropside-request-service"
-                      : a.href === "/pedir-produto"
-                        ? "dropside-request-product"
-                        : a.href === "/loja-polens"
-                          ? "dropside-pollens"
-                          : a.href.startsWith("/account?edit")
-                            ? "dropside-edit"
-                            : undefined
-              const link = (
-                <Link
-                  href={a.href}
-                  onClick={onClose}
-                  data-tour={hintId}
-                  className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white",
-                    a.highlight && "text-amber-100 hover:bg-amber-300/10",
-                  )}
+            {actionsTop.map((a) => (
+              <li key={a.href}>{renderActionLink(a)}</li>
+            ))}
+
+            {/* Abrir chamado — expande em Serviço / Produto / Curso e abre o modal */}
+            <li>
+              <HoverHint id="dropside-open-chamado" side="right" className="block w-full">
+                <button
+                  type="button"
+                  data-tour="dropside-open-chamado"
+                  onClick={() => setChamadoExpanded((v) => !v)}
+                  aria-expanded={chamadoExpanded}
+                  className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
                 >
-                  <span
-                    className={cn(
-                      "inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70",
-                      a.highlight && "text-amber-300",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-white/45 transition group-hover:text-white/70">
+                    <MessageSquarePlus className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex flex-1 items-center gap-2">
-                    <span className="truncate font-semibold">{a.label}</span>
-                    {a.badge}
+                    <span className="truncate font-semibold">{tAcc("openChamadoLabel", "Abrir chamado")}</span>
+                    {unreadServiceRequest && (
+                      <span className="h-2 w-2 rounded-full bg-red-500" aria-label={tAcc("newRepliesAria", "Novas respostas")} />
+                    )}
                   </span>
-                </Link>
-              )
-              return (
-                <li key={a.href}>
-                  {hintId ? (
-                    <HoverHint id={hintId} side="right" className="block w-full">
-                      {link}
-                    </HoverHint>
-                  ) : (
-                    link
-                  )}
-                </li>
-              )
-            })}
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 text-white/40 transition", chamadoExpanded && "rotate-180")} />
+                </button>
+              </HoverHint>
+              {chamadoExpanded && (
+                <ul className="mb-1 ml-7 mt-1 space-y-1 border-l border-white/10 pl-3">
+                  {chamadoOptions.map((opt) => {
+                    const OptIcon = opt.icon
+                    return (
+                      <li key={opt.mode}>
+                        <button
+                          type="button"
+                          onClick={() => startChamado(opt.mode)}
+                          className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[12.5px] text-white/70 transition hover:bg-white/[0.04] hover:text-white"
+                        >
+                          <OptIcon className="h-3.5 w-3.5 shrink-0 text-white/40 transition group-hover:text-amber-300" />
+                          <span className="truncate">{opt.label}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </li>
+
+            {actionsBottom.map((a) => (
+              <li key={a.href}>{renderActionLink(a)}</li>
+            ))}
           </ul>
 
           {/* Ações secundárias */}
@@ -245,7 +289,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             <li>
               <HoverHint id="dropside-account" side="right" className="block w-full">
                 <Link
-                  href="/account"
+                  href="/account?edit=1"
                   onClick={onClose}
                   data-tour="dropside-account"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
@@ -328,7 +372,13 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     </div>
   )
 
-  return createPortal(node, document.body)
+  return createPortal(
+    <>
+      {node}
+      <OpenChamadoModal open={chamadoOpen} onOpenChange={setChamadoOpen} mode={chamadoMode} />
+    </>,
+    document.body,
+  )
 }
 
 export default UserDropside

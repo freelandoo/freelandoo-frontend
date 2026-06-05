@@ -71,8 +71,7 @@ export type HintId =
   | "dropside-edit"
   | "dropside-manifestation"
   | "dropside-earnings"
-  | "dropside-request-service"
-  | "dropside-request-product"
+  | "dropside-open-chamado"
   | "dropside-pollens"
   // ── Dropside — Ações secundárias ───────────────────────────────────────
   | "dropside-account"
@@ -236,13 +235,9 @@ export const HINTS: Record<HintId, Hint> = {
     title: "Meus faturamentos",
     text: "Saldo, comissões de afiliado, cupons compartilhados e histórico financeiro.",
   },
-  "dropside-request-service": {
-    title: "Pedir serviço",
-    text: "Cria um pedido de serviço (O.S.) — profissionais respondem com proposta.",
-  },
-  "dropside-request-product": {
-    title: "Pedir produto",
-    text: "Publica o que quer comprar e os vendedores da loja entram em contato.",
+  "dropside-open-chamado": {
+    title: "Abrir chamado",
+    text: "Peça um serviço, produto ou curso (O.S.). Profissionais, vendedores e instrutores respondem na aba O.S. das mensagens.",
   },
   "dropside-pollens": {
     title: "Seus Pólens",
