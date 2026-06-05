@@ -28,6 +28,19 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
+/** Resolve quando `cond()` for verdadeiro ou após `timeoutMs` (o que vier antes). */
+function waitFor(cond: () => boolean, timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (cond()) { resolve(); return }
+    const start = performance.now()
+    const tick = () => {
+      if (cond() || performance.now() - start > timeoutMs) { resolve(); return }
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+}
+
 export interface ComposeParams {
   draft: MediaDraft
   filter: FilterState
@@ -79,6 +92,12 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
   video.muted = true
   video.playsInline = true
   video.crossOrigin = "anonymous"
+  video.preload = "auto"
+  // iOS/WebKit só decodifica frames de forma confiável com o <video> no DOM.
+  // Mantém invisível (1×1, fora da viewport) e remove no finally.
+  video.setAttribute("muted", "")
+  video.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
+  document.body.appendChild(video)
   await new Promise<void>((res, rej) => {
     video.onloadedmetadata = () => res()
     video.onerror = () => rej(new Error("Falha ao ler o vídeo."))
@@ -91,11 +110,21 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
 
   const rec = new StoryRecorder({ getCanvas: () => canvas, audioTrack: null, width: w, height: h, path })
   let raf = 0
-  const totalSec = Math.min(60, video.duration || 60)
+  // Duração robusta: alguns MP4/MOV de celular reportam duration NaN/Infinity/0.
+  const dur = video.duration
+  const totalSec =
+    Number.isFinite(dur) && dur > 0 ? Math.min(60, dur) : Math.min(60, p.draft.durationSec || 60)
 
   try {
     await rec.start()
+    // iOS/Safari: um <video> detached (fora do DOM) começa em readyState 1; se o
+    // loop capturar antes de HAVE_CURRENT_DATA, zero frames são codificados e o
+    // mp4-muxer quebra ao finalizar. Espera dados decodificáveis antes de gravar.
+    await waitFor(() => video.readyState >= 2, 5000)
     await video.play().catch(() => {})
+    const startWall = performance.now()
+    let lastT = -1
+    let stalled = 0
     await new Promise<void>((resolve) => {
       const loop = () => {
         if (video.readyState >= 2) {
@@ -104,7 +133,22 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
         }
         const t = video.currentTime
         p.onProgress?.(Math.min(0.9, (t / totalSec) * 0.9))
-        if (video.ended || t >= totalSec) { resolve(); return }
+        // Playback travado (comum em <video> detached no iOS): empurra o tempo
+        // manualmente para forçar a decodificação dos próximos frames.
+        if (Math.abs(t - lastT) < 1e-3) {
+          if (++stalled > 6) { try { video.currentTime = Math.min(totalSec, t + 1 / 30) } catch { /* noop */ } ; stalled = 0 }
+        } else {
+          stalled = 0
+        }
+        lastT = t
+        const wallSec = (performance.now() - startWall) / 1000
+        const reachedEnd = video.ended || t >= totalSec - 0.05
+        const timedOut = wallSec > totalSec + 10
+        // No caminho webcodecs, nunca finaliza sem ter codificado ao menos 1 frame
+        // (evita decoderConfig null no mux). O mediarecorder captura via
+        // captureStream e não usa encodedFrames, então só depende de reachedEnd.
+        const hasFrames = path !== "webcodecs" || rec.encodedFrames > 0
+        if ((reachedEnd && hasFrames) || timedOut) { resolve(); return }
         raf = requestAnimationFrame(loop)
       }
       raf = requestAnimationFrame(loop)
@@ -125,6 +169,7 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
     renderer.dispose()
     video.pause()
     video.src = ""
+    video.remove()
   }
 }
 

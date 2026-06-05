@@ -80,6 +80,8 @@ export class StoryRecorder {
   }
 
   get isRecording() { return this.recording }
+  /** Frames de vídeo efetivamente enviados ao encoder (caminho webcodecs). */
+  get encodedFrames() { return this.frameCount }
   private get frameIntervalMs() { return 1000 / this.opts.fps }
 
   async start(): Promise<void> {
@@ -264,6 +266,18 @@ export class StoryRecorder {
     if (this.opts.path === "webcodecs") {
       if (this.encodeError) {
         throw new Error("Não foi possível codificar o vídeo neste navegador. Tente um trecho mais curto.")
+      }
+      if (this.frameCount === 0) {
+        // Nenhum frame chegou ao encoder → o mux nunca recebeu o decoderConfig.
+        // Finalizar aqui quebraria dentro do mp4-muxer com o críptico
+        // "decoderConfig.colorSpace". Falha com mensagem clara e limpa o estado.
+        try { this.vEncoder?.close() } catch { /* noop */ }
+        try { this.aEncoder?.close() } catch { /* noop */ }
+        this.teardownAudio()
+        this.muxer = null
+        this.vEncoder = null
+        this.aEncoder = null
+        throw new Error("Não consegui capturar nenhum quadro do vídeo. Tente regravar ou escolher outro arquivo.")
       }
       await this.vEncoder?.flush()
       if (this.aEncoder) {
