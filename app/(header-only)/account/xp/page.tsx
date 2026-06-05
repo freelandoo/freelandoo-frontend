@@ -83,6 +83,9 @@ function relTime(iso: string): string {
 
 export default function XpPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
+  // Avatar do usuário — fallback quando o subperfil não tem avatar próprio
+  // (mesmo padrão do /account: subperfil.avatar_url || user.avatar).
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string>("")
   const [summary, setSummary] = useState<XpSummary | null>(null)
   const [feed, setFeed] = useState<FeedItem[]>([])
@@ -98,6 +101,7 @@ export default function XpPage() {
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((data) => {
+        setUserAvatar(data?.avatar ?? null)
         const subs: Profile[] = (data?.profiles || []).filter((p: Profile) => !p.is_clan)
         setProfiles(subs)
         if (subs.length) setSelectedId(subs[0].id_profile)
@@ -187,7 +191,7 @@ export default function XpPage() {
             {/* ===== Hero: foto + nível + XP embaixo ===== */}
             <div className="relative">
               <PhotoFrame
-                src={selected.avatar_url || undefined}
+                src={selected.avatar_url || userAvatar || undefined}
                 alt={selected.display_name || "Perfil"}
                 ready
                 torn
