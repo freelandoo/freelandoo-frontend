@@ -1481,7 +1481,7 @@ export default function PerfilPage() {
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
+            className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
           >
             <div className="relative h-40 bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (
@@ -1983,7 +1983,7 @@ export default function PerfilPage() {
 
       {/* Modal de Novo Perfil */}
       <Dialog open={isNewProfileModalOpen} onOpenChange={(open) => { if (!open) setNewProfileError(null); setIsNewProfileModalOpen(open) }}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Criar novo perfil</DialogTitle>
             <DialogDescription className="text-[#5b554b]">
@@ -2104,7 +2104,7 @@ export default function PerfilPage() {
         }
         setIsModalOpen(open)
       }}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{isEditing ? "Editar rede social" : "Adicionar rede social"}</DialogTitle>
           </DialogHeader>
@@ -2171,7 +2171,7 @@ export default function PerfilPage() {
 
       {/* Modal de Upload de Avatar */}
       <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Alterar avatar</DialogTitle>
           </DialogHeader>
@@ -2304,7 +2304,7 @@ export default function PerfilPage() {
 
       {/* Modal de Edição de Perfil */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
+        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar perfil</DialogTitle>
             <DialogDescription className="text-[#5b554b]">
@@ -2490,7 +2490,7 @@ export default function PerfilPage() {
 
       {/* Modal de Upload de Portfólio */}
       <Dialog open={isPortfolioModalOpen} onOpenChange={setIsPortfolioModalOpen}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Adicionar mídia ao portfólio</DialogTitle>
           </DialogHeader>
@@ -2602,7 +2602,7 @@ export default function PerfilPage() {
 
       {/* Modal de Edição de Mídia */}
       <Dialog open={isEditMediaModalOpen} onOpenChange={setIsEditMediaModalOpen}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar mídia</DialogTitle>
             <DialogDescription className="text-[#5b554b]">Edite as informações da sua mídia ou remova do portfólio.</DialogDescription>

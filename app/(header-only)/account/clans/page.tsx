@@ -400,7 +400,7 @@ export default function MyClansPage() {
       )}
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-lg">
+        <DialogContent className="fl-root max-h-[90vh] overflow-y-auto fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Criar novo clan</DialogTitle>
             <DialogDescription>

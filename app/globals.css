@@ -350,6 +350,19 @@
   font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Superfície de papel CLARO dentro de um `.fl-root` (modais, dialogs, cards).
+   O `.fl-root` precisa estar presente para resolver os tokens --fl-* que os
+   `.fl-btn-*`/`.fl-label` usam, mas ele força o canvas ESCURO. Esta classe
+   reverte para o papel off-white. Sem `@layer` e declarada DEPOIS de `.fl-root`
+   → vence a cascata (estilos sem layer > utilities; e empate de especificidade
+   resolve pela ordem). Use no lugar de `bg-[#F1EDE2] text-[#0B0B0D]`, que
+   perdem para o `.fl-root` por estarem na layer `utilities`. */
+.fl-paper-card {
+  background-color: var(--fl-paper);
+  color: var(--fl-ink);
+  color-scheme: light;
+}
+
 /* Fundo do canvas: cor base + vinheta dourada quente + grão de papel */
 .fl-paper-texture {
   position: relative;

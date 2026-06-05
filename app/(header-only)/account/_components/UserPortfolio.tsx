@@ -860,7 +860,7 @@ export function UserPortfolio({
           }
         }}
       >
-        <DialogContent className="fl-root sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
+        <DialogContent className="fl-root sm:max-w-[560px] max-h-[92vh] overflow-hidden p-0 gap-0 fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
           <div className="relative overflow-y-auto max-h-[92vh] [scrollbar-width:thin]">
             <DialogHeader className="px-6 pt-6 pb-3 border-b-2 border-[#0B0B0D]/15">
               <div className="flex items-center gap-3">

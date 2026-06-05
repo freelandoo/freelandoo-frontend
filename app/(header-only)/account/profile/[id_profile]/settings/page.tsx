@@ -962,7 +962,7 @@ export default function ProfileSettingsPage() {
 
       {/* Modal de Rede Social */}
       <Dialog open={isSocialMediaModalOpen} onOpenChange={setIsSocialMediaModalOpen}>
-        <DialogContent className="fl-root border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[480px]">
+        <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>{editingSocial ? "Editar Rede Social" : "Adicionar Rede Social"}</DialogTitle>
           </DialogHeader>
