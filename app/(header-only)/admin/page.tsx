@@ -20,7 +20,9 @@ type AdminCard = {
 // não ser um muro plano de cards.
 const SECTIONS = [
   "Pessoas & Acesso",
-  "Financeiro & Monetização",
+  "Receita",
+  "Repasses",
+  "Configurações de monetização",
   "Catálogo & Vitrine",
   "Conteúdo & Comunidade",
   "Moderação",
@@ -32,16 +34,20 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   // Pessoas & Acesso
   { section: "Pessoas & Acesso", hint: "admin-users", href: "/admin/usuarios", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus sub-perfis, premium e total recebido." },
 
-  // Financeiro & Monetização
-  { section: "Financeiro & Monetização", hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Histórico de ativações pagas e taxas de agendamento recebidas." },
-  { section: "Financeiro & Monetização", hint: "admin-anuidade", href: "/administracao/anuidade", icon: Wallet, title: "Ativação do perfil", body: "Configurar valor e status da ativação única cobrada via Stripe." },
-  { section: "Financeiro & Monetização", hint: "admin-booking-fees", href: "/administracao/taxas-agendamento", icon: Calendar, title: "Agendamento", body: "Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço." },
-  { section: "Financeiro & Monetização", hint: "admin-affiliates", href: "/admin/afiliados", icon: HandCoins, title: "Afiliados", body: "Comissões acumuladas, alertas de prazo e confirmação de pagamento." },
-  { section: "Financeiro & Monetização", hint: "admin-polens", href: "/admin/polens", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300", title: "Poléns", body: "Configurar moeda interna, rewarded ads, preços e métricas." },
-  { section: "Financeiro & Monetização", hint: "admin-premium", href: "/admin/premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400", title: "Premium", body: "Destaque por perfil — preço, dias e vagas por cidade." },
-  { section: "Financeiro & Monetização", hint: "admin-manifestation", href: "/administracao/manifestacao", icon: Sparkles, title: "Manifestação", body: "Cadastro de banners, tags, preços e dashboard de uso." },
-  { section: "Financeiro & Monetização", hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
-  { section: "Financeiro & Monetização", href: "/administracao/booking-payouts", icon: Calendar, title: "Agendamentos — Payouts", body: "Saldo de agendamentos liberado após holdback (PIX manual)." },
+  // Receita — tudo que a plataforma embolsa (será consolidado no extrato Entradas)
+  { section: "Receita", hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Extrato de receita: ativações, taxas de agendamento, comissão da Loja, Poléns, Premium e Manifestação." },
+
+  // Repasses — dinheiro de terceiros que a plataforma segura no holdback e paga via PIX
+  { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
+  { section: "Repasses", href: "/administracao/booking-payouts", icon: Calendar, title: "Agendamentos — Payouts", body: "Saldo de agendamentos liberado após holdback (PIX manual)." },
+  { section: "Repasses", hint: "admin-affiliates", href: "/admin/afiliados", icon: HandCoins, title: "Afiliados", body: "Comissões acumuladas, alertas de prazo e confirmação de pagamento." },
+
+  // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
+  { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/anuidade", icon: Wallet, title: "Ativação do perfil", body: "Configurar valor e status da ativação única cobrada via Stripe." },
+  { section: "Configurações de monetização", hint: "admin-booking-fees", href: "/administracao/taxas-agendamento", icon: Calendar, title: "Agendamento", body: "Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço." },
+  { section: "Configurações de monetização", hint: "admin-polens", href: "/admin/polens", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300", title: "Poléns", body: "Configurar moeda interna, rewarded ads, preços e métricas." },
+  { section: "Configurações de monetização", hint: "admin-premium", href: "/admin/premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400", title: "Premium", body: "Destaque por perfil — preço, dias e vagas por cidade." },
+  { section: "Configurações de monetização", hint: "admin-manifestation", href: "/administracao/manifestacao", icon: Sparkles, title: "Manifestação", body: "Cadastro de banners, tags, preços e dashboard de uso." },
 
   // Catálogo & Vitrine
   { section: "Catálogo & Vitrine", hint: "admin-items", href: "/admin/itens", icon: Package, title: "Itens", body: "Gerenciar itens e preços da plataforma." },
