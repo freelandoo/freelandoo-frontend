@@ -1532,7 +1532,13 @@ export default function PerfilPage() {
 
             <div className="px-5 pb-6 md:px-7">
               <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <div className="relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(true)}
+                  aria-label="Trocar foto de perfil"
+                  title="Trocar foto de perfil"
+                  className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
+                >
                   <Avatar className="h-full w-full rounded-none">
                     {perfil.avatar && (
                       <AvatarImage
@@ -1545,15 +1551,11 @@ export default function PerfilPage() {
                       {getInitials(perfil.nome)}
                     </AvatarFallback>
                   </Avatar>
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    aria-label="Trocar foto"
-                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#F2B705]"
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    <Camera className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
+                  </span>
+                </button>
 
                 <div className="min-w-0 flex-1 pb-1">
                   {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}

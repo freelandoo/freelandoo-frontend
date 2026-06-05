@@ -166,12 +166,12 @@ export function ProfileHeadCard({
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const handleClanAvatarSelect = () => {
-    if (!isClan || !isOwnProfile || uploadingAvatar) return
+  const handleAvatarSelect = () => {
+    if (!isOwnProfile || uploadingAvatar) return
     fileInputRef.current?.click()
   }
 
-  const handleClanAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (!file) return
@@ -257,7 +257,7 @@ export function ProfileHeadCard({
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
   const displayName = profile.display_name || "Sem nome"
-  const canUploadClanAvatar = isClan && isOwnProfile
+  const canUploadAvatar = isOwnProfile
 
   return (
     <>
@@ -309,42 +309,52 @@ export function ProfileHeadCard({
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
           <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
             <div className="flex shrink-0 flex-col items-center">
-              <div className="relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 md:w-32">
-                {avatarSrc ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={avatarSrc}
-                    alt={displayName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
-                    {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                  </div>
-                )}
-                {canUploadClanAvatar && (
-                  <button
-                    type="button"
-                    onClick={handleClanAvatarSelect}
-                    disabled={uploadingAvatar}
-                    aria-label="Mudar foto"
-                    title="Mudar foto"
-                    className="absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#F2B705] disabled:opacity-60"
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+              {canUploadAvatar ? (
+                <button
+                  type="button"
+                  onClick={handleAvatarSelect}
+                  disabled={uploadingAvatar}
+                  aria-label="Trocar foto de perfil"
+                  title="Trocar foto de perfil"
+                  className="group relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70 md:w-32"
+                >
+                  {avatarSrc ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
+                      {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+                    </div>
+                  )}
+                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    <Camera className="h-5 w-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">
+                      {uploadingAvatar ? "Enviando…" : "Trocar"}
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <div className="relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] md:w-32">
+                  {avatarSrc ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
+                      {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-2">
                 <AvatarRatingStar profileId={profileId} />
               </div>
-              {canUploadClanAvatar && (
+              {canUploadAvatar && (
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   className="hidden"
-                  onChange={handleClanAvatarFile}
+                  onChange={handleAvatarFile}
                 />
               )}
             </div>
