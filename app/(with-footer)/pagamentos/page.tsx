@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { TabloidPageIntro } from "@/components/tabloide"
 import { SellerBalanceSection } from "./_components/seller-balance-section"
+import { SellerShipmentsSection } from "./_components/seller-shipments-section"
 import { BookingPayoutsSection } from "./_components/booking-payouts-section"
 
 interface Subscription {
@@ -168,7 +169,7 @@ function CopyableId({ label, value }: { label: string; value: string }) {
     } catch {}
   }
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#2A2218] bg-[#141009]/40 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#2A2218] bg-[#0b0804]/40 px-3 py-2">
       <div className="min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-widest text-[#9A938A]">
           {label}
@@ -234,7 +235,7 @@ function RefundDrawer({
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-[#141009] border-t border-[#2A2218] max-h-[50vh] px-6 pt-5 pb-10">
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl bg-[#0b0804] border-t border-[#2A2218] max-h-[50vh] px-6 pt-5 pb-10">
           <div className="mx-auto w-12 h-1.5 rounded-full bg-[#2A2218] mb-6" />
           <div className="flex items-start gap-4 mb-6">
             <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/50">
@@ -627,7 +628,7 @@ export default function PagamentosPage() {
   if (!isAutenticado) return null
 
   return (
-    <main className="fl-root relative flex-1 bg-[#141009] text-[#F5F1E8]">
+    <main className="fl-root relative flex-1 bg-[#0b0804] text-[#F5F1E8]">
       <div className="mx-auto max-w-xl space-y-8 px-4 py-10 md:py-16">
 
         {/* Header */}
@@ -735,6 +736,8 @@ export default function PagamentosPage() {
             )}
           </div>
         )}
+
+        {!isLoading && <SellerShipmentsSection />}
 
         {!isLoading && <SellerBalanceSection />}
 
