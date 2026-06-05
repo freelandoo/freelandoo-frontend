@@ -1483,7 +1483,7 @@ export default function PerfilPage() {
             ref={headcardRef}
             className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
           >
-            <div className="relative h-40 bg-[#1d1810] md:h-52">
+            <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-40 bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -1494,7 +1494,6 @@ export default function PerfilPage() {
               ) : (
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#F1EDE2] via-[#F1EDE2]/25 to-transparent" />
 
               {/* Adesivo Casa Views — leva aos rankings (agora interno: /acasaviews) */}
               <Link
@@ -1533,7 +1532,7 @@ export default function PerfilPage() {
 
             <div className="px-5 pb-6 md:px-7">
               <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <div className="relative flex aspect-[4/5] w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 ring-2 ring-[#0B0B0D] md:w-28">
+                <div className="relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28">
                   <Avatar className="h-full w-full rounded-none">
                     {perfil.avatar && (
                       <AvatarImage

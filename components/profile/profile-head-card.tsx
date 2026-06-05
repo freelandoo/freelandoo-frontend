@@ -267,8 +267,9 @@ export function ProfileHeadCard({
           className
         )}
       >
-        {/* BANNER — imagem da manifestação ou gradiente warm */}
-        <div className="relative h-28 border-b-2 border-[#0B0B0D] bg-[#1d1810] md:h-52">
+        {/* BANNER — imagem da manifestação ou gradiente warm.
+            Borda inferior rasgada (papel) revelando o card creme por baixo. */}
+        <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52">
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -308,7 +309,7 @@ export function ProfileHeadCard({
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
           <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
             <div className="flex shrink-0 flex-col items-center">
-              <div className="relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[3px_3px_0_0_#0B0B0D] md:w-32">
+              <div className="relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 md:w-32">
                 {avatarSrc ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img

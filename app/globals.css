@@ -561,6 +561,24 @@
   border-width: 2px;
 }
 
+/* ── Papel rasgado (torn paper) ────────────────────────────────────────────
+   Borda inferior irregular estilo "recorte de revista" — usada na divisória
+   entre o banner e o card do headcard de perfil. O elemento recortado revela
+   o papel (#F1EDE2) por baixo. drop-shadow segue a silhueta rasgada. */
+.fl-torn-bottom {
+  clip-path: polygon(
+    0 0, 100% 0,
+    100% 90%, 97% 95%, 94% 89%, 91% 96%, 88% 90%, 85% 97%, 82% 91%, 79% 96%,
+    76% 90%, 73% 95%, 70% 89%, 67% 96%, 64% 91%, 61% 97%, 58% 90%, 55% 95%,
+    52% 89%, 49% 96%, 46% 91%, 43% 97%, 40% 90%, 37% 95%, 34% 89%, 31% 96%,
+    28% 91%, 25% 97%, 22% 90%, 19% 95%, 16% 89%, 13% 96%, 10% 91%, 7% 97%,
+    4% 90%, 0 95%
+  );
+}
+.fl-torn-bottom-shadow {
+  filter: drop-shadow(0 4px 3px rgba(11, 11, 13, 0.35));
+}
+
 /* ── Campos de formulário tabloide (dentro de cards de papel) ──────────────
    Reusáveis em todo o redesign. Dependem dos tokens --fl-* → só funcionam
    dentro de `.fl-root`. */
