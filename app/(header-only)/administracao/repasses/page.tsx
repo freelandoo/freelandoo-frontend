@@ -254,17 +254,19 @@ export default function RepassesPage() {
     })
   }, [rows, originFilter, q])
 
-  // Tiles combinados (somam as 3 origens, independentes do filtro de status)
+  // Tiles combinados (somam as 3 origens, independentes do filtro de status).
+  // ⚠️ Os totais do summary vêm como string (SUM do Postgres) — coerir p/ número
+  // antes de somar, senão vira concatenação.
   const tiles = useMemo(() => {
-    const affAprovado = affiliates.reduce((s, a) => s + (a.red_cents || 0), 0)
-    const affAguardando = affiliates.reduce((s, a) => s + (a.green_cents || 0), 0)
-    const affPago = affiliates.reduce((s, a) => s + (a.paid_cents || 0), 0)
+    const n = (v: unknown) => Number(v) || 0
+    const affAprovado = affiliates.reduce((s, a) => s + n(a.red_cents), 0)
+    const affAguardando = affiliates.reduce((s, a) => s + n(a.green_cents), 0)
+    const affPago = affiliates.reduce((s, a) => s + n(a.paid_cents), 0)
     return {
       aguardando:
-        (sellerSummary?.aguardando_cents || 0) + (bookingSummary?.aguardando_cents || 0) + affAguardando,
-      aprovado:
-        (sellerSummary?.aprovado_cents || 0) + (bookingSummary?.aprovado_cents || 0) + affAprovado,
-      pago: (sellerSummary?.pago_cents || 0) + (bookingSummary?.pago_cents || 0) + affPago,
+        n(sellerSummary?.aguardando_cents) + n(bookingSummary?.aguardando_cents) + affAguardando,
+      aprovado: n(sellerSummary?.aprovado_cents) + n(bookingSummary?.aprovado_cents) + affAprovado,
+      pago: n(sellerSummary?.pago_cents) + n(bookingSummary?.pago_cents) + affPago,
     }
   }, [sellerSummary, bookingSummary, affiliates])
 
