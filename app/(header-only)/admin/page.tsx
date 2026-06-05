@@ -38,9 +38,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Receita", hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Extrato de receita: ativações, taxas de agendamento, comissão da Loja, Poléns, Premium e Manifestação." },
 
   // Repasses — dinheiro de terceiros que a plataforma segura no holdback e paga via PIX
-  { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/loja-payouts", icon: Store, title: "Loja — Payouts", body: "Saldo dos vendedores da Loja após holdback (PIX manual)." },
-  { section: "Repasses", href: "/administracao/booking-payouts", icon: Calendar, title: "Agendamentos — Payouts", body: "Saldo de agendamentos liberado após holdback (PIX manual)." },
-  { section: "Repasses", hint: "admin-affiliates", href: "/admin/afiliados", icon: HandCoins, title: "Afiliados", body: "Comissões acumuladas, alertas de prazo e confirmação de pagamento." },
+  { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/repasses", icon: HandCoins, title: "Repasses", body: "Saldos a pagar via PIX: Loja, Agendamentos e Afiliados num só extrato, com filtro por origem e status." },
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
   { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/anuidade", icon: Wallet, title: "Ativação do perfil", body: "Configurar valor e status da ativação única cobrada via Stripe." },
