@@ -334,7 +334,7 @@ export default function ManifestacaoPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome ou estado"
-              className="h-11 w-full rounded-full border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
+              className="h-11 w-full rounded-md border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)] outline-none transition focus:border-[#F2B705]"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -343,9 +343,9 @@ export default function ManifestacaoPage() {
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "h-10 shrink-0 rounded-full border-2 px-4 text-sm font-bold transition active:scale-[0.98]",
+                  "h-10 shrink-0 rounded-md border-2 px-4 text-sm font-bold transition active:translate-x-[1px] active:translate-y-[1px]",
                   filter === f.id
-                    ? "border-[#F2B705] bg-[#F2B705] text-[#1A1505]"
+                    ? "border-[#F2B705] bg-[#F2B705] text-[#1A1505] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)]"
                     : "border-[#F5F1E8]/12 bg-[#1D1810] text-[#C9C2B6] hover:border-[#F5F1E8]/30",
                 )}
               >
@@ -359,7 +359,14 @@ export default function ManifestacaoPage() {
         {loading ? (
           <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="aspect-[16/9] animate-pulse rounded-[1.5rem] bg-[#F5F1E8]/8" />
+              <div key={i} className="overflow-hidden rounded-md border-2 border-[#F5F1E8]/10 bg-[#1D1810]">
+                <div className="aspect-[16/7] animate-pulse bg-[#F5F1E8]/8" />
+                <div className="space-y-2 border-t-2 border-[#F5F1E8]/10 p-3">
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-[#F5F1E8]/8" />
+                  <div className="h-3 w-1/3 animate-pulse rounded bg-[#F5F1E8]/8" />
+                  <div className="h-4 w-1/4 animate-pulse rounded bg-[#F5F1E8]/8" />
+                </div>
+              </div>
             ))}
           </div>
         ) : error ? (
@@ -395,65 +402,62 @@ export default function ManifestacaoPage() {
                       setPreviewId(p.id)
                     }
                   }}
-                  className="group relative aspect-[16/9] cursor-pointer overflow-hidden rounded-[1.5rem] border-2 border-[#F5F1E8]/10 bg-[#1D1810] transition hover:border-[#F5F1E8]/30 active:scale-[0.99]"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-md border-2 border-[#F5F1E8]/12 bg-[#1D1810] shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition-all duration-200 hover:-translate-x-[3px] hover:-translate-y-[3px] hover:border-[#F2B705] hover:shadow-[8px_8px_0_0_#F2B705]"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
                 >
-                  <div className="absolute inset-0">
+                  {/* Banner LIMPO no topo (a arte já traz o nome) */}
+                  <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#141009]">
                     <BannerImage src={p.banner_url} alt={p.name} />
+                    <span
+                      className={cn(
+                        "absolute left-2 top-2 inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide backdrop-blur",
+                        p.type === "motivational"
+                          ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
+                          : "border-sky-300/40 bg-sky-50/90 text-sky-800",
+                      )}
+                    >
+                      {typeLabel(p.type)}
+                    </span>
+                    {isActive && (
+                      <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-semibold text-emerald-200 backdrop-blur">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Ativo
+                      </span>
+                    )}
                   </div>
 
-                  {/* Gradiente pra legibilidade do overlay inferior */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#141009]/92 via-[#141009]/55 to-transparent" />
+                  {/* Faixa de dados embaixo (fundo escuro, separada do banner) */}
+                  <div className="flex flex-1 flex-col gap-2 border-t-2 border-[#F5F1E8]/10 bg-[#15100A] p-3">
+                    <h3 className="fl-display text-lg leading-none text-[#F5F1E8]">{p.name}</h3>
 
-                  {isActive && (
-                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Ativo
-                    </span>
-                  )}
-
-                  <span
-                    className={cn(
-                      "absolute left-3 top-3 inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide backdrop-blur",
-                      p.type === "motivational"
-                        ? "border-amber-300/40 bg-amber-50/90 text-amber-800"
-                        : "border-sky-300/40 bg-sky-50/90 text-sky-800",
+                    {p.tag_label && (
+                      <span
+                        className={cn(
+                          "inline-flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                          TAG_COLOR_CLASSES[p.tag_color || "emerald"] ?? TAG_COLOR_CLASSES.emerald,
+                        )}
+                      >
+                        <BadgeCheck className="h-2.5 w-2.5" />
+                        {p.tag_label}
+                      </span>
                     )}
-                  >
-                    {typeLabel(p.type)}
-                  </span>
 
-                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 text-white">
-                    <div className="flex items-end justify-between gap-2">
-                      <h3 className="truncate text-lg font-semibold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
-                      {p.tag_label && (
-                        <span
-                          className={cn(
-                            "shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold backdrop-blur",
-                            TAG_COLOR_CLASSES[p.tag_color || "emerald"] ?? TAG_COLOR_CLASSES.emerald,
-                          )}
-                        >
-                          <BadgeCheck className="h-2.5 w-2.5" />
-                          {p.tag_label}
-                        </span>
-                      )}
-                    </div>
                     {p.headline && (
-                      <p className="line-clamp-1 text-xs font-medium text-white/85">{p.headline}</p>
+                      <p className="line-clamp-1 text-xs font-medium text-[#9A938A]">{p.headline}</p>
                     )}
 
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 text-sm font-black text-[#F2B705] drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+                    <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#F5F1E8]/8 pt-2">
+                      <span className="fl-display text-base text-[#F2B705]">
                         {p.price_cents > 0
                           ? fmtBRL(p.price_cents)
                           : p.price_polens > 0
-                            ? `${p.price_polens.toLocaleString("pt-BR")} Poléns`
+                            ? `${p.price_polens.toLocaleString("pt-BR")} P`
                             : "Grátis"}
                       </span>
                       {owned && !isActive && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#F5F1E8]/15 bg-[#F5F1E8]/8 px-2 py-0.5 text-[10px] font-medium text-[#C9C2B6]">
                           <BadgeCheck className="h-3 w-3" />
                           Comprado
                         </span>
@@ -488,7 +492,7 @@ export default function ManifestacaoPage() {
               <button
                 type="button"
                 onClick={() => setPreviewId(null)}
-                className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-[#141009]/55 text-white backdrop-blur transition hover:bg-[#141009]/75"
+                className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-[#0b0804]/55 text-white backdrop-blur transition hover:bg-[#0b0804]/75"
                 aria-label="Fechar"
               >
                 <X className="h-4 w-4" />
