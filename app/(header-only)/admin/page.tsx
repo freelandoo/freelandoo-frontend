@@ -62,6 +62,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Sistema & Dados
   { section: "Sistema & Dados", href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota.", badge: "novo" },
+  { section: "Sistema & Dados", href: "/administracao/protecao-teste", icon: Boxes, title: "Proteção — Teste", body: "Painel temporário: simula compra/recebimento e percorre todo o fluxo de disputa/devolução.", badge: "teste" },
 ]
 
 interface UserData {
