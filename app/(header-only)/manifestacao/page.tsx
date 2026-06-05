@@ -10,11 +10,17 @@ import {
   Loader2,
   Search,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ShareIconButton } from "@/components/share/share-icon-button"
-import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
+import {
+  PageShell,
+  TabloidPageIntro,
+  EmptyState,
+  ErrorState,
+} from "@/components/tabloide"
 
 type ManifestationType = "motivational" | "emotion" | null
 
@@ -48,7 +54,21 @@ const TAG_COLOR_CLASSES: Record<string, string> = {
   orange:  "border-orange-300/40 bg-orange-500/15 text-orange-100",
 }
 
-type OwnedRow = { product_id: string; is_active: boolean }
+type OwnedRow = {
+  id: string
+  product_id: string
+  is_active: boolean
+  name: string
+  type: ManifestationType
+  headline: string | null
+  banner_url: string
+  slug: string | null
+  amount_polens: number | null
+  acquired_at: string
+  payment_method: string
+  tag_label?: string | null
+  tag_color?: string | null
+}
 type Mine = {
   active?: { product_id?: string } | null
   owned?: OwnedRow[]
@@ -202,6 +222,18 @@ export default function ManifestacaoPage() {
     })
   }, [products, ownedIds, filter, query])
 
+  // Lista de comprados (ativa primeiro, depois por aquisição mais recente).
+  const ownedList = useMemo(() => {
+    const rows = (mine?.owned || []).slice()
+    rows.sort((a, b) => {
+      const aActive = a.product_id === activeId ? 1 : 0
+      const bActive = b.product_id === activeId ? 1 : 0
+      if (aActive !== bActive) return bActive - aActive
+      return new Date(b.acquired_at).getTime() - new Date(a.acquired_at).getTime()
+    })
+    return rows
+  }, [mine, activeId])
+
   async function buy(product: Product) {
     if (!token) {
       window.location.href = "/login?next=/manifestacao"
@@ -264,17 +296,17 @@ export default function ManifestacaoPage() {
     }
   }
 
-  async function apply(product: Product) {
+  async function applyProductId(productId: string) {
     if (!token) {
       window.location.href = "/login?next=/manifestacao"
       return
     }
-    setBusy(`apply:${product.id}`)
+    setBusy(`apply:${productId}`)
     try {
       const res = await fetch("/api/manifestations/apply", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: product.id }),
+        body: JSON.stringify({ product_id: productId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || "Não foi possível aplicar")
@@ -296,33 +328,61 @@ export default function ManifestacaoPage() {
     }
   }
 
+  async function removeActive() {
+    if (!token) {
+      window.location.href = "/login?next=/manifestacao"
+      return
+    }
+    setBusy("remove")
+    try {
+      const res = await fetch("/api/manifestations/remove", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Não foi possível remover")
+      await loadMine()
+      setPreviewId(null)
+      setFeedback({
+        ok: true,
+        title: "Removida do perfil",
+        message: data?.message || "Sua manifestação saiu do headcard. Ela continua na sua lista de comprados.",
+      })
+    } catch (err) {
+      setFeedback({
+        ok: false,
+        title: "Não foi possível remover",
+        message: err instanceof Error ? err.message : "Erro ao remover",
+      })
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <PageShell>
-      {/* Hero */}
+      {/* Manchete tabloide */}
       <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8 md:pt-14">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
-            <Sparkles className="h-3.5 w-3.5" />
-            Banners para o seu perfil
-          </span>
-          <ShareIconButton path="/manifestacao" title="Loja de Manifestações no Freelandoo" />
-          {token && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F2B705]/30 bg-[#F2B705]/12 px-3 py-1 text-xs font-bold text-[#F2B705]">
-              <Coins className="h-3.5 w-3.5" />
-              {polens == null ? "—" : polens.toLocaleString("pt-BR")} Poléns
-              <Link href="/loja-polens" className="ml-1 underline underline-offset-2">
-                comprar
-              </Link>
-            </span>
-          )}
-        </div>
-        <h1 className="fl-display mt-5 max-w-[760px] text-5xl leading-[0.95] text-[#F5F1E8] md:text-7xl">
-          Loja de Manifestações
-        </h1>
-        <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-[#C9C2B6]">
-          Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no
-          headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre.
-        </p>
+        <TabloidPageIntro
+          size="compact"
+          eyebrow="Manifestação"
+          title="Loja de Manifestações"
+          subtitle="Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre."
+          actions={
+            <>
+              {token && (
+                <span className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
+                  <Coins className="h-3.5 w-3.5" />
+                  {polens == null ? "—" : polens.toLocaleString("pt-BR")} Poléns
+                  <Link href="/loja-polens" className="ml-1 underline underline-offset-2">
+                    comprar
+                  </Link>
+                </span>
+              )}
+              <ShareIconButton path="/manifestacao" title="Loja de Manifestações no Freelandoo" />
+            </>
+          }
+        />
       </section>
 
       {/* Filtros + busca */}
@@ -334,7 +394,7 @@ export default function ManifestacaoPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome ou estado"
-              className="h-11 w-full rounded-md border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)] outline-none transition focus:border-[#F2B705]"
+              className="h-11 w-full rounded-none border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)] outline-none transition focus:border-[#F2B705]"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -343,9 +403,9 @@ export default function ManifestacaoPage() {
                 key={f.id}
                 onClick={() => setFilter(f.id)}
                 className={cn(
-                  "h-10 shrink-0 rounded-md border-2 px-4 text-sm font-bold transition active:translate-x-[1px] active:translate-y-[1px]",
+                  "h-10 shrink-0 rounded-none border-2 px-4 text-xs font-black uppercase tracking-wider transition active:translate-x-[1px] active:translate-y-[1px]",
                   filter === f.id
-                    ? "border-[#F2B705] bg-[#F2B705] text-[#1A1505] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)]"
+                    ? "border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[3px_3px_0_0_#0B0B0D]"
                     : "border-[#F5F1E8]/12 bg-[#1D1810] text-[#C9C2B6] hover:border-[#F5F1E8]/30",
                 )}
               >
@@ -355,11 +415,89 @@ export default function ManifestacaoPage() {
           </div>
         </div>
 
+        {/* Comprados — aplicar / remover direto na loja */}
+        {ownedList.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-4 flex items-center gap-3">
+              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Comprados</h2>
+              <span className="border-2 border-[#F5F1E8]/14 bg-[#1D1810] px-2 py-0.5 text-xs font-black uppercase tracking-wider text-[#C9C2B6]">
+                {ownedList.length}
+              </span>
+              <span className="hidden text-xs font-medium text-[#9A938A] sm:inline">
+                Aplique uma no headcard ou remova a que está em uso.
+              </span>
+            </div>
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {ownedList.map((o) => {
+                const isActive = o.product_id === activeId
+                const applying = busy === `apply:${o.product_id}`
+                const removing = busy === "remove"
+                return (
+                  <div
+                    key={o.id}
+                    className={cn(
+                      "flex flex-col overflow-hidden border-2 bg-[#15100A] shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]",
+                      isActive ? "border-[#F2B705]" : "border-[#F5F1E8]/14",
+                    )}
+                  >
+                    <div className="relative aspect-[16/7] w-full overflow-hidden bg-[#141009]">
+                      <BannerImage src={o.banner_url} alt={o.name} />
+                      {isActive && (
+                        <span className="absolute right-2 top-2 inline-flex items-center gap-1 border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200 backdrop-blur">
+                          <CheckCircle2 className="h-3 w-3" />
+                          No perfil
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-1 flex-col gap-2 border-t-2 border-[#F5F1E8]/10 p-3">
+                      <span
+                        className={cn(
+                          "inline-flex w-fit items-center border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                          o.type === "motivational"
+                            ? "border-amber-300/30 bg-amber-500/12 text-amber-200"
+                            : "border-sky-300/30 bg-sky-500/12 text-sky-200",
+                        )}
+                      >
+                        {typeLabel(o.type)}
+                      </span>
+                      <h3 className="fl-display text-base leading-none text-[#F5F1E8]">{o.name}</h3>
+                      <div className="mt-auto pt-1">
+                        {isActive ? (
+                          <button
+                            type="button"
+                            onClick={() => removeActive()}
+                            disabled={busy != null}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-none border-2 border-[#F5F1E8]/25 bg-transparent px-3 py-2 text-[11px] font-black uppercase tracking-wider text-[#F5F1E8] transition hover:border-rose-400 hover:bg-rose-500/10 hover:text-rose-200 disabled:opacity-55"
+                          >
+                            {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            Remover
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => applyProductId(o.product_id)}
+                            disabled={busy != null}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-none border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-[11px] font-black uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#0B0B0D] disabled:opacity-55"
+                          >
+                            {applying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BadgeCheck className="h-3.5 w-3.5" />}
+                            Aplicar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-8 h-0.5 w-full bg-[#F5F1E8]/10" />
+          </div>
+        )}
+
         {/* Estados */}
         {loading ? (
           <div className="grid gap-5 py-8 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="overflow-hidden rounded-md border-2 border-[#F5F1E8]/10 bg-[#1D1810]">
+              <div key={i} className="overflow-hidden rounded-none border-2 border-[#F5F1E8]/10 bg-[#1D1810]">
                 <div className="aspect-[16/7] animate-pulse bg-[#F5F1E8]/8" />
                 <div className="space-y-2 border-t-2 border-[#F5F1E8]/10 p-3">
                   <div className="h-4 w-2/3 animate-pulse rounded bg-[#F5F1E8]/8" />
@@ -402,7 +540,7 @@ export default function ManifestacaoPage() {
                       setPreviewId(p.id)
                     }
                   }}
-                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-md border-2 border-[#F5F1E8]/12 bg-[#1D1810] shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition-all duration-200 hover:-translate-x-[3px] hover:-translate-y-[3px] hover:border-[#F2B705] hover:shadow-[8px_8px_0_0_#F2B705]"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-none border-2 border-[#F5F1E8]/12 bg-[#1D1810] shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition-all duration-200 hover:-translate-x-[3px] hover:-translate-y-[3px] hover:border-[#F2B705] hover:shadow-[8px_8px_0_0_#F2B705]"
                   style={{
                     animation: `fade-in .42s cubic-bezier(.16,1,.3,1) both ${index * 45}ms`,
                   }}
@@ -483,7 +621,7 @@ export default function ManifestacaoPage() {
             role="presentation"
           >
             <div
-              className="fl-card relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl shadow-2xl"
+              className="fl-card relative flex w-full max-w-md flex-col overflow-hidden rounded-none shadow-2xl"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
@@ -543,16 +681,27 @@ export default function ManifestacaoPage() {
 
                 <div className="mt-1 space-y-2">
                   {isActive ? (
-                    <button type="button" disabled className="inline-flex w-full items-center justify-center rounded-full bg-[#16a34a] py-3 text-sm font-bold text-white opacity-90">
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Aplicada no seu perfil
-                    </button>
+                    <>
+                      <div className="inline-flex w-full items-center justify-center gap-2 rounded-none border-2 border-[#16a34a] bg-[#16a34a]/12 py-3 text-sm font-black uppercase tracking-wider text-[#15803d]">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Aplicada no seu perfil
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeActive()}
+                        disabled={busy != null}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-none border-2 border-[#0B0B0D]/25 bg-transparent py-3 text-sm font-black uppercase tracking-wider text-[#0B0B0D] transition hover:border-rose-500 hover:bg-rose-500/10 hover:text-rose-700 disabled:opacity-55"
+                      >
+                        {busy === "remove" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        Remover do perfil
+                      </button>
+                    </>
                   ) : owned ? (
                     <button
                       type="button"
-                      onClick={() => apply(p)}
+                      onClick={() => applyProductId(p.id)}
                       disabled={busy != null}
-                      className="fl-btn-ink inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold disabled:opacity-60"
+                      className="fl-btn-ink inline-flex w-full items-center justify-center rounded-none py-3 text-sm font-bold disabled:opacity-60"
                     >
                       {busy === `apply:${p.id}` ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -568,7 +717,7 @@ export default function ManifestacaoPage() {
                           type="button"
                           onClick={() => buyStripe(p)}
                           disabled={busy != null}
-                          className="fl-btn-gold inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold disabled:opacity-60"
+                          className="fl-btn-gold inline-flex w-full items-center justify-center rounded-none py-3 text-sm font-bold disabled:opacity-60"
                         >
                           {busy === `stripe:${p.id}` ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -582,7 +731,7 @@ export default function ManifestacaoPage() {
                         type="button"
                         onClick={() => buy(p)}
                         disabled={busy != null}
-                        className="fl-btn-card inline-flex w-full items-center justify-center rounded-full py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-60"
+                        className="fl-btn-card inline-flex w-full items-center justify-center rounded-none py-3 text-sm font-bold uppercase tracking-wider disabled:opacity-60"
                       >
                         {busy === `buy:${p.id}` ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -609,7 +758,7 @@ export default function ManifestacaoPage() {
           onClick={() => setFeedback(null)}
         >
           <div
-            className="fl-card w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+            className="fl-card w-full max-w-sm rounded-none p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div
