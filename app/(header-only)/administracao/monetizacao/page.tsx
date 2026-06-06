@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { AtivacaoConfig } from "@/components/admin/monetizacao/AtivacaoConfig"
 import { AgendamentoConfig } from "@/components/admin/monetizacao/AgendamentoConfig"
 import { PolensConfig } from "@/components/admin/monetizacao/PolensConfig"
+import { PremiumConfig } from "@/components/admin/monetizacao/PremiumConfig"
 
 type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao"
 
@@ -131,7 +132,7 @@ function MonetizacaoInner() {
         {tab === "ativacao" && <AtivacaoConfig />}
         {tab === "agendamento" && <AgendamentoConfig />}
         {tab === "polens" && <PolensConfig />}
-        {tab === "premium" && <ExternalTab href="/admin/premium" label="Premium" />}
+        {tab === "premium" && <PremiumConfig />}
         {tab === "manifestacao" && (
           <ExternalTab href="/administracao/manifestacao" label="Manifestação" />
         )}
