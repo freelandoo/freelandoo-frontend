@@ -31,6 +31,7 @@ interface MachineEntry {
 
 const STATIC_ROUTES: MetadataRoute.Sitemap = [
   { url: BASE_URL, changeFrequency: "daily", priority: 1.0 },
+  { url: `${BASE_URL}/ganhar`, changeFrequency: "daily", priority: 0.9 },
   { url: `${BASE_URL}/feed`, changeFrequency: "daily", priority: 0.9 },
   { url: `${BASE_URL}/search`, changeFrequency: "daily", priority: 0.9 },
   { url: `${BASE_URL}/contratar-profissionais`, changeFrequency: "monthly", priority: 0.8 },
