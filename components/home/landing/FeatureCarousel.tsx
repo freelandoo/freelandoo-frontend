@@ -11,7 +11,8 @@ import Link from "next/link"
 import useEmblaCarousel from "embla-carousel-react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { CAROUSEL_SLIDES } from "./tokens"
-import { Section, YellowHighlight, DoodleArrow } from "./primitives"
+import { Section, DoodleArrow } from "./primitives"
+import { EditableText } from "@/components/site-texts/EditableText"
 
 export function FeatureCarousel() {
   const [emblaRef, embla] = useEmblaCarousel({ loop: true, align: "center" })
@@ -35,9 +36,11 @@ export function FeatureCarousel() {
     <Section id="ganhar-mais" className="overflow-x-clip">
       {/* Título da seção (fora do card) */}
       <div className="relative mx-auto mb-10 max-w-2xl text-center">
-        <p className="fl-marker mb-1 text-2xl font-bold text-[#F2B705]">é rápido e fácil</p>
+        <p className="fl-marker mb-1 text-2xl font-bold text-[#F2B705]">
+          <EditableText as="span" mark={false} slot="home_seller_carousel_eyebrow" fallback="é rápido e fácil" />
+        </p>
         <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">
-          Tudo que você precisa para <YellowHighlight mark>ganhar mais.</YellowHighlight>
+          <EditableText as="span" slot="home_seller_carousel_heading" fallback="Tudo que você precisa para *ganhar mais.*" />
         </h2>
         <DoodleArrow dir="down" className="absolute -right-2 -top-4 hidden h-9 w-16 text-[#F2B705] lg:block" />
       </div>

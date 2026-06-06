@@ -10,10 +10,11 @@ import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { LINKS, HERO_STATS } from "./tokens"
 import {
-  GoldButton, OutlineButton, YellowHighlight, DoodleArrow, Squiggle, HiveDoodle,
+  GoldButton, OutlineButton, DoodleArrow, Squiggle, HiveDoodle,
   AvatarStack, PhotoFrame, Icon, HoneycombField, Spark, StickerNote, WashiTape,
 } from "./primitives"
 import { EditableImage } from "@/components/site-assets/EditableImage"
+import { EditableText } from "@/components/site-texts/EditableText"
 
 const EASE = [0.16, 1, 0.3, 1] as const
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } } }
@@ -49,19 +50,31 @@ export function HeroSection() {
         {/* Texto */}
         <motion.div initial={reduce ? false : "hidden"} animate="show" variants={container}>
           <motion.h1 variants={item} className="fl-display relative text-[2.9rem] text-[#F5F1E8] sm:text-6xl md:text-[4.4rem]">
-            Venda serviços, cursos, produtos e <YellowHighlight mark>ganhe</YellowHighlight> como afiliado.
+            <EditableText
+              as="span"
+              slot="home_seller_hero_headline"
+              fallback="Venda serviços, cursos, produtos e *ganhe* como afiliado."
+            />
             <Spark className="absolute -right-1 -top-5 hidden h-9 w-9 text-[#F2B705] md:block" />
           </motion.h1>
 
           <motion.p variants={item} className="mt-6 max-w-md text-lg leading-relaxed text-[#C9C2B6]">
-            A Freelandoo conecta quem quer <YellowHighlight className="font-bold">ganhar dinheiro</YellowHighlight> com quem precisa aprender, criar, comprar e empreender. Onde quiser.
+            <EditableText
+              as="span"
+              mark={false}
+              slot="home_seller_hero_subcopy"
+              fallback="A Freelandoo conecta quem quer *ganhar dinheiro* com quem precisa aprender, criar, comprar e empreender. Onde quiser."
+            />
           </motion.p>
 
           <motion.div variants={item} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <GoldButton href={LINKS.cadastro} className="group">
-              Começar agora <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <EditableText as="span" slot="home_seller_hero_cta_primary" fallback="Começar agora" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </GoldButton>
-            <OutlineButton href={LINKS.marketplace}>Conhecer o marketplace</OutlineButton>
+            <OutlineButton href={LINKS.marketplace}>
+              <EditableText as="span" slot="home_seller_hero_cta_secondary" fallback="Conhecer o marketplace" />
+            </OutlineButton>
           </motion.div>
 
           <motion.div variants={item} className="mt-8 flex flex-wrap items-center gap-4">

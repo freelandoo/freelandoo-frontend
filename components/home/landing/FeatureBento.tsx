@@ -7,8 +7,9 @@
 import Image from "next/image"
 import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
 import { BENTO, type BentoItem } from "./tokens"
-import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
+import { Section, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
 import { EditableImage } from "@/components/site-assets/EditableImage"
+import { EditableText } from "@/components/site-texts/EditableText"
 
 const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6: "lg:col-span-6", 12: "lg:col-span-12" }
 
@@ -125,9 +126,11 @@ export function FeatureBento() {
   return (
     <Section id="recursos">
       <div className="relative mb-12 max-w-2xl">
-        <p className="fl-marker mb-1 text-2xl font-bold text-[#F2B705]">tudo num lugar só</p>
+        <p className="fl-marker mb-1 text-2xl font-bold text-[#F2B705]">
+          <EditableText as="span" mark={false} slot="home_seller_bento_eyebrow" fallback="tudo num lugar só" />
+        </p>
         <h2 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl md:text-6xl">
-          Vender, ensinar, <YellowHighlight mark>aprender e ganhar.</YellowHighlight>
+          <EditableText as="span" slot="home_seller_bento_heading" fallback="Vender, ensinar, *aprender e ganhar.*" />
         </h2>
         <DoodleArrow dir="left" className="absolute -right-4 top-2 hidden h-10 w-20 text-[#F2B705] lg:block" />
       </div>
