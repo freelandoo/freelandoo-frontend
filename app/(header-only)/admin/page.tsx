@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Package, Sparkles, Ticket, Wallet, Trophy, Calendar, HandCoins, Hexagon, Crown, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Ticket, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -41,14 +41,9 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/repasses", icon: HandCoins, title: "Repasses", body: "Saldos a pagar via PIX: Loja, Agendamentos e Afiliados num só extrato, com filtro por origem e status." },
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
-  { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/anuidade", icon: Wallet, title: "Ativação do perfil", body: "Configurar valor e status da ativação única cobrada via Stripe." },
-  { section: "Configurações de monetização", hint: "admin-booking-fees", href: "/administracao/taxas-agendamento", icon: Calendar, title: "Agendamento", body: "Configurar a taxa da maquininha (%) e a taxa de serviço fixa exibidas no modal de cadastro de serviço." },
-  { section: "Configurações de monetização", hint: "admin-polens", href: "/admin/polens", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300", title: "Poléns", body: "Configurar moeda interna, rewarded ads, preços e métricas." },
-  { section: "Configurações de monetização", hint: "admin-premium", href: "/admin/premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400", title: "Premium", body: "Destaque por perfil — preço, dias e vagas por cidade." },
-  { section: "Configurações de monetização", hint: "admin-manifestation", href: "/administracao/manifestacao", icon: Sparkles, title: "Manifestação", body: "Cadastro de banners, tags, preços e dashboard de uso." },
+  { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/monetizacao", icon: Wallet, title: "Configurações de monetização", body: "Ativação, Agendamento, Poléns, Premium e Manifestação — preços e taxas em abas, num só lugar." },
 
   // Catálogo & Vitrine
-  { section: "Catálogo & Vitrine", hint: "admin-items", href: "/admin/itens", icon: Package, title: "Itens", body: "Gerenciar itens e preços da plataforma." },
   { section: "Catálogo & Vitrine", hint: "admin-enxames", href: "/administracao/enxames", icon: Sparkles, title: "Controle de Enxames", body: "Ativar/desativar enxames, cores e profissões." },
   { section: "Catálogo & Vitrine", hint: "admin-coupons", href: "/administracao/cupons", icon: Ticket, title: "Cupons", body: "Desconto geral, comissão geral e regras específicas por cupom." },
   { section: "Catálogo & Vitrine", href: "/administracao/loja", icon: Store, title: "Loja", body: "Moderação da Loja, categorias e produtos proibidos." },
