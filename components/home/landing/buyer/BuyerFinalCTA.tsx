@@ -15,7 +15,7 @@ export function BuyerFinalCTA() {
         >
           Encontrar agora
         </Link>
-        <AudienceCrossLink href="/ganhar">
+        <AudienceCrossLink href="/">
           É profissional ou influenciador? Ganhe dinheiro
         </AudienceCrossLink>
       </div>

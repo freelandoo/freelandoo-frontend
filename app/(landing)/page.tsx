@@ -1,18 +1,19 @@
 import type { Metadata } from "next"
-import { LandingHeader, LandingFooter } from "@/components/home/landing"
 import {
-  BuyerHero,
-  BuyerSocialProof,
-  BuyerHowItWorks,
-  BuyerCategories,
-  BuyerTrust,
-  BuyerFinalCTA,
-} from "@/components/home/landing/buyer"
+  LandingHeader,
+  LandingFooter,
+  HeroSection,
+  MoneyPathCards,
+  FeatureCarousel,
+  FeatureBento,
+  FinalCTA,
+} from "@/components/home/landing"
 import { RevealMount } from "@/components/home/landing/RevealMount"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
-const TITLE = "Freelandoo — Encontre profissionais, influenciadores e produtos"
+const TITLE = "Freelandoo — Venda serviços, cursos e produtos, e ganhe como afiliado"
 const DESCRIPTION =
-  "Contrate profissionais, compre de criadores e feche com influenciadores com pagamento protegido e avaliações reais. Encontre perto de você, num lugar só."
+  "A Freelandoo conecta quem quer ganhar dinheiro com quem precisa aprender, criar, comprar e empreender. Ofereça serviços, crie cursos de graça, venda produtos, abra sua lojinha, divulgue como influenciador e ganhe indicando."
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function BuyerHomePage() {
+export default function HomePage() {
   const jsonLdOrg = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -63,18 +64,23 @@ export default function BuyerHomePage() {
 
       <LandingHeader />
       <main className="flex-1 overflow-x-clip">
-        {/* 1 · Hero do comprador + busca */}
-        <BuyerHero />
-        {/* 2 · Prova social (qualitativa, sem números falsos) */}
-        <BuyerSocialProof />
-        {/* 3 · Como funciona em 3 passos */}
-        <BuyerHowItWorks />
-        {/* 4 · Atalho por área (enxames) */}
-        <BuyerCategories />
-        {/* 5 · Confiança / segurança */}
-        <BuyerTrust />
-        {/* 6 · CTA final + cross-link pro lado vendedor */}
-        <BuyerFinalCTA />
+        {/* Banner editável (admin troca clicando) */}
+        <div className="mx-auto w-full max-w-[1100px] px-5 pt-6">
+          <EditableImage
+            slot="home_seller_hero"
+            className="aspect-[16/5] w-full rounded-2xl border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
+          />
+        </div>
+        {/* 1 · Hero principal */}
+        <HeroSection />
+        {/* 2 · Escolha seu caminho (5 caminhos de renda) */}
+        <MoneyPathCards />
+        {/* 3 · Carrossel "tudo que você precisa para ganhar mais" */}
+        <FeatureCarousel />
+        {/* 4 · Grade numerada de recursos 01-13 */}
+        <FeatureBento />
+        {/* 5 · CTA final */}
+        <FinalCTA />
       </main>
       <LandingFooter />
       <RevealMount />

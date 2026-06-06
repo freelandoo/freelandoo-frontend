@@ -1,5 +1,4 @@
 import type { ReactNode } from "react"
-import { AudienceChooserModal } from "@/components/home/landing/AudienceChooserModal"
 import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
 
 /**
@@ -10,16 +9,14 @@ import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
  * o SiteFooter global (a landing tem o seu próprio LandingFooter), evitando
  * rodapé duplicado e mantendo controle total da composição.
  *
- * O AudienceChooserModal (wedge comprador × vendedor) é montado aqui pra cobrir
- * `/` e `/ganhar`; é não-bloqueante (monta pós-hidratação, só na 1ª visita).
+ * O wedge comprador × vendedor está PAUSADO: a `/` é a home do vendedor e a home
+ * do comprador está órfã em `/comprar`. O AudienceChooserModal não é montado por
+ * enquanto (arquivo mantido pra retomar depois).
  */
 export default function LandingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="fl-root fl-paper-texture flex min-h-[100dvh] flex-col font-sans antialiased">
-      <SiteAssetsProvider>
-        {children}
-        <AudienceChooserModal />
-      </SiteAssetsProvider>
+      <SiteAssetsProvider>{children}</SiteAssetsProvider>
     </div>
   )
 }
