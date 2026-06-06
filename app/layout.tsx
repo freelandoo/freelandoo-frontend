@@ -12,6 +12,7 @@ import { AdminAlerts } from "@/components/admin/admin-alerts"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
+import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { IntentModal } from "@/features/intent/IntentModal"
 import { getCountry, getLocale } from "@/lib/i18n/server"
 import { getMessages } from "@/lib/i18n/messages"
@@ -124,7 +125,7 @@ export default async function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         <I18nProvider locale={locale} country={country} messages={messages}>
           <TourProvider>
-            {children}
+            <ConsentProvider>{children}</ConsentProvider>
             <ProfileSidebar />
             <BirthdateGate />
             <IntentModal />
