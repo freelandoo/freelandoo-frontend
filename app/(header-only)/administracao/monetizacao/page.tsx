@@ -10,7 +10,6 @@ import {
   Hexagon,
   Crown,
   Sparkles,
-  ExternalLink,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +17,7 @@ import { AtivacaoConfig } from "@/components/admin/monetizacao/AtivacaoConfig"
 import { AgendamentoConfig } from "@/components/admin/monetizacao/AgendamentoConfig"
 import { PolensConfig } from "@/components/admin/monetizacao/PolensConfig"
 import { PremiumConfig } from "@/components/admin/monetizacao/PremiumConfig"
+import { ManifestacaoConfig } from "@/app/(header-only)/administracao/manifestacao/page"
 
 type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao"
 
@@ -31,23 +31,6 @@ const TABS: { id: TabId; label: string; icon: LucideIcon; iconClass?: string }[]
 
 function isTab(v: string | null): v is TabId {
   return !!v && TABS.some((t) => t.id === v)
-}
-
-// Placeholder para abas ainda não embutidas (Premium/Manifestação) — abre a
-// página completa existente. Serão substituídas por embeds nos próximos slices.
-function ExternalTab({ href, label }: { href: string; label: string }) {
-  const router = useRouter()
-  return (
-    <div className="mx-auto max-w-3xl rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-      <p className="text-sm text-muted-foreground">
-        A configuração de <span className="font-semibold text-foreground">{label}</span> ainda abre em
-        página própria.
-      </p>
-      <Button className="mt-4" onClick={() => router.push(href)}>
-        <ExternalLink className="mr-1.5 h-4 w-4" /> Abrir {label}
-      </Button>
-    </div>
-  )
 }
 
 function MonetizacaoInner() {
@@ -133,9 +116,7 @@ function MonetizacaoInner() {
         {tab === "agendamento" && <AgendamentoConfig />}
         {tab === "polens" && <PolensConfig />}
         {tab === "premium" && <PremiumConfig />}
-        {tab === "manifestacao" && (
-          <ExternalTab href="/administracao/manifestacao" label="Manifestação" />
-        )}
+        {tab === "manifestacao" && <ManifestacaoConfig />}
       </main>
     </div>
   )

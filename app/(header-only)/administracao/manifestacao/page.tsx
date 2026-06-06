@@ -151,10 +151,10 @@ function MetricCard({
   )
 }
 
-export default function AdminManifestationPage() {
+function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter()
-  const [checkingAuth, setCheckingAuth] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(!embedded)
+  const [isAdmin, setIsAdmin] = useState(embedded)
   const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "categories">("dashboard")
 
   const [categories, setCategories] = useState<Category[]>([])
@@ -182,6 +182,7 @@ export default function AdminManifestationPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
   useEffect(() => {
+    if (embedded) return // auth já garantida pelo hub
     if (!token) { router.push("/login"); return }
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
@@ -192,7 +193,7 @@ export default function AdminManifestationPage() {
         setCheckingAuth(false)
       })
       .catch(() => router.push("/"))
-  }, [router, token])
+  }, [router, token, embedded])
 
   const loadCategories = useCallback(async () => {
     if (!token) return
@@ -408,23 +409,25 @@ export default function AdminManifestationPage() {
   }
 
   return (
-    <div className="bg-page-shell-dark min-h-[100dvh]">
-      <main className="container mx-auto px-4 py-8 md:py-12">
+    <div className={embedded ? "" : "bg-page-shell-dark min-h-[100dvh]"}>
+      <main className={embedded ? "" : "container mx-auto px-4 py-8 md:py-12"}>
         <div className="mx-auto max-w-[1200px] space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="mb-2">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Administração
-              </Button>
-              <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" /> Manifestação — Loja
-              </h1>
-              <p className="mt-1 text-sm text-white/55">
-                Gerencie banners, tags e categorias da loja Manifestação.
-              </p>
+          {!embedded && (
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="mb-2">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Administração
+                </Button>
+                <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl flex items-center gap-2">
+                  <Sparkles className="h-6 w-6 text-primary" /> Manifestação — Loja
+                </h1>
+                <p className="mt-1 text-sm text-white/55">
+                  Gerencie banners, tags e categorias da loja Manifestação.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-2 border-b border-white/10">
@@ -906,4 +909,14 @@ export default function AdminManifestationPage() {
       </Dialog>
     </div>
   )
+}
+
+// Versão embutida (sem auth/casca) usada pelo hub /administracao/monetizacao.
+export function ManifestacaoConfig() {
+  return <ManifestationAdminInner embedded />
+}
+
+// Rota legada standalone — mantém auth + casca completos.
+export default function AdminManifestationPage() {
+  return <ManifestationAdminInner />
 }
