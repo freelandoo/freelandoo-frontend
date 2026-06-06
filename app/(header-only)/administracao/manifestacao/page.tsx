@@ -179,6 +179,15 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
   const [prodSaving, setProdSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Alterar preço em massa
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkApplyBrl, setBulkApplyBrl] = useState(true)
+  const [bulkPriceBrl, setBulkPriceBrl] = useState("0,00")
+  const [bulkApplyPolens, setBulkApplyPolens] = useState(true)
+  const [bulkPricePolens, setBulkPricePolens] = useState("500")
+  const [bulkSaving, setBulkSaving] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
+
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
   useEffect(() => {
@@ -363,6 +372,60 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
       alert(e instanceof Error ? e.message : "Erro ao salvar")
     } finally {
       setProdSaving(false)
+    }
+  }
+
+  async function applyBulkPrice() {
+    if (!token) return
+    if (!bulkApplyBrl && !bulkApplyPolens) { alert("Marque ao menos um campo para alterar."); return }
+
+    let cents: number | null = null
+    if (bulkApplyBrl) {
+      const reais = Number(bulkPriceBrl.replace(/\./g, "").replace(",", "."))
+      if (!Number.isFinite(reais) || reais < 0) { alert("Preço em R$ inválido."); return }
+      cents = Math.round(reais * 100)
+    }
+    let polens: number | null = null
+    if (bulkApplyPolens) {
+      const p = Number(bulkPricePolens.replace(/\D/g, ""))
+      if (!Number.isFinite(p) || p < 0) { alert("Preço em Poléns inválido."); return }
+      polens = p
+    }
+
+    if (!window.confirm(`Aplicar o novo preço a TODOS os ${products.length} banner(s)?`)) return
+
+    setBulkSaving(true)
+    setBulkProgress({ done: 0, total: products.length })
+    let done = 0
+    let failed = 0
+    try {
+      // Atualiza em paralelo (patch parcial: só os campos de preço marcados).
+      await Promise.all(
+        products.map(async (p) => {
+          const fd = new FormData()
+          if (cents != null) fd.append("price_cents", String(cents))
+          if (polens != null) fd.append("price_polens", String(polens))
+          try {
+            const res = await fetch(`/api/admin/manifestations/products/${p.id}`, {
+              method: "PUT",
+              headers: { Authorization: `Bearer ${token}` },
+              body: fd,
+            })
+            if (!res.ok) failed++
+          } catch {
+            failed++
+          } finally {
+            done++
+            setBulkProgress({ done, total: products.length })
+          }
+        })
+      )
+      await loadProducts()
+      setBulkOpen(false)
+      if (failed > 0) alert(`Concluído com ${failed} falha(s) de ${products.length}.`)
+    } finally {
+      setBulkSaving(false)
+      setBulkProgress(null)
     }
   }
 
@@ -551,9 +614,18 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
                 <div className="text-sm text-white/55">
                   {products.length} produto(s) cadastrado(s) · {featuredCount} em destaque
                 </div>
-                <Button onClick={openNewProduct} className="bg-primary text-zinc-950 hover:bg-primary/90">
-                  <Plus className="mr-2 h-4 w-4" /> Novo produto
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setBulkOpen(true)}
+                    disabled={products.length === 0}
+                  >
+                    <Coins className="mr-2 h-4 w-4" /> Alterar preço de todos
+                  </Button>
+                  <Button onClick={openNewProduct} className="bg-primary text-zinc-950 hover:bg-primary/90">
+                    <Plus className="mr-2 h-4 w-4" /> Novo produto
+                  </Button>
+                </div>
               </div>
 
               {loadingProds ? (
@@ -674,6 +746,76 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
           )}
         </div>
       </main>
+
+      {/* Bulk price modal */}
+      <Dialog open={bulkOpen} onOpenChange={(o) => { if (!bulkSaving) setBulkOpen(o) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar preço de todos os banners</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-white/55">
+              O novo preço será aplicado aos {products.length} banner(s) cadastrado(s) (ativos e
+              inativos). Marque só o que quiser mudar.
+            </p>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-white/85">
+                <input
+                  type="checkbox"
+                  checked={bulkApplyBrl}
+                  onChange={(e) => setBulkApplyBrl(e.target.checked)}
+                />
+                Alterar preço em R$
+              </label>
+              <Input
+                inputMode="decimal"
+                placeholder="0,00"
+                value={bulkPriceBrl}
+                disabled={!bulkApplyBrl}
+                onChange={(e) => setBulkPriceBrl(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-white/85">
+                <input
+                  type="checkbox"
+                  checked={bulkApplyPolens}
+                  onChange={(e) => setBulkApplyPolens(e.target.checked)}
+                />
+                Alterar preço em Poléns
+              </label>
+              <Input
+                inputMode="numeric"
+                placeholder="500"
+                value={bulkPricePolens}
+                disabled={!bulkApplyPolens}
+                onChange={(e) => setBulkPricePolens(e.target.value.replace(/\D/g, ""))}
+              />
+            </div>
+
+            {bulkProgress && (
+              <p className="text-xs text-white/55">
+                Aplicando… {bulkProgress.done}/{bulkProgress.total}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)} disabled={bulkSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={applyBulkPrice}
+              disabled={bulkSaving}
+              className="bg-primary text-zinc-950 hover:bg-primary/90"
+            >
+              {bulkSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Aplicar a todos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Category modal */}
       <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
