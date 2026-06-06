@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
+import { SiteTextsProvider } from "@/components/site-texts/SiteTextsProvider"
 
 /**
  * Layout do grupo (landing) — homepage editorial em tema light.
@@ -16,7 +17,9 @@ import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
 export default function LandingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="fl-root fl-paper-texture flex min-h-[100dvh] flex-col font-sans antialiased">
-      <SiteAssetsProvider>{children}</SiteAssetsProvider>
+      <SiteAssetsProvider>
+        <SiteTextsProvider>{children}</SiteTextsProvider>
+      </SiteAssetsProvider>
     </div>
   )
 }
