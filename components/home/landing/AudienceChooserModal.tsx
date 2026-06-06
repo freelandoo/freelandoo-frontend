@@ -27,11 +27,25 @@ export function AudienceChooserModal() {
     setOpen(true)
   }, [])
 
+  // Mede o split do wedge. Empurra pro dataLayer (GTM/Consent Mode v2 já existe);
+  // no-op seguro se ausente.
+  function track(choice: "buyer" | "seller") {
+    try {
+      const w = window as unknown as { dataLayer?: Record<string, unknown>[] }
+      w.dataLayer = w.dataLayer || []
+      w.dataLayer.push({ event: "audience_choice", audience: choice })
+    } catch {
+      /* no-op */
+    }
+  }
+
   function chooseBuyer() {
+    track("buyer")
     localStorage.setItem(STORAGE_KEY, "buyer")
     setOpen(false)
   }
   function chooseSeller() {
+    track("seller")
     localStorage.setItem(STORAGE_KEY, "seller")
     setOpen(false)
     router.push("/ganhar")
