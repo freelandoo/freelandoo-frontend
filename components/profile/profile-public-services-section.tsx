@@ -116,7 +116,8 @@ export function ProfilePublicServicesSection({
     setPickedSlot(null)
   }, [])
 
-  const openSchedule = (s: ProfileService) => {
+  const openSchedule = async (s: ProfileService) => {
+    if (!(await ensureConsent("purchase"))) return
     setBookingService(s)
     setScheduleOpen(true)
   }

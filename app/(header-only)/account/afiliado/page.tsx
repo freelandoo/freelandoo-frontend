@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 /* ──────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -145,6 +146,7 @@ export default function MeusFaturamentosPage() {
   const [pixForm, setPixForm] = useState({ pix_key: "", pix_key_type: "", legal_name: "", tax_id: "" })
   const [savingPix, setSavingPix] = useState(false)
   const [pixSaved, setPixSaved] = useState(false)
+  const { ensureConsent } = useActionConsent()
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
@@ -226,6 +228,7 @@ export default function MeusFaturamentosPage() {
 
   const handleSavePix = async () => {
     if (!token) return
+    if (!(await ensureConsent("affiliate"))) return
     setSavingPix(true)
     setPixSaved(false)
     try {

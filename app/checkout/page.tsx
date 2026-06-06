@@ -10,6 +10,7 @@ import { fetchWithLog } from "@/lib/fetch-with-log"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { PageShell, LoadingState, ErrorState, TabloidPageIntro } from "@/components/tabloide"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 const ITEM_ID = "0fe91e60-12f0-4a1c-a297-262d73e5fce5"
 
@@ -108,6 +109,7 @@ function CheckoutContent() {
   const [cupomAplicado, setCupomAplicado] = useState<string | null>(null)
   const [cupomError, setCupomError] = useState<string | null>(null)
   const [isAplicandoCupom, setIsAplicandoCupom] = useState(false)
+  const { ensureConsent } = useActionConsent()
 
   useEffect(() => {
     const fetchCheckout = async () => {
@@ -225,6 +227,7 @@ function CheckoutContent() {
       router.push("/")
       return
     }
+    if (!(await ensureConsent("purchase"))) return
 
     setIsProcessing(true)
     setError(null)

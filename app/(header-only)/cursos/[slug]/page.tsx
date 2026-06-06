@@ -7,6 +7,7 @@ import { ArrowLeft, GraduationCap, ShoppingCart, Settings, Check } from "lucide-
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { useActionConsent } from "@/hooks/use-action-consent"
 import {
   PageShell,
   LoadingState,
@@ -55,6 +56,7 @@ export default function PublicCoursePage() {
   const [myUserId, setMyUserId] = useState<string | null>(null)
   const [buying, setBuying] = useState(false)
   const [buyError, setBuyError] = useState<string | null>(null)
+  const { ensureConsent } = useActionConsent()
 
   const checkoutStatus = search?.get("course_checkout")
 
@@ -100,6 +102,7 @@ export default function PublicCoursePage() {
       router.push("/login")
       return
     }
+    if (!(await ensureConsent("purchase"))) return
     setBuying(true)
     setBuyError(null)
     try {
