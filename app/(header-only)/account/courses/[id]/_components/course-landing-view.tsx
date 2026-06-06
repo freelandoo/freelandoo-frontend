@@ -46,7 +46,7 @@ interface Props {
   courseId: string
 }
 
-type SubProfileOption = { id: string; name: string }
+type SubProfileOption = { id: string; name: string; is_clan: boolean }
 
 interface MeProfileLite {
   profiles?: {
@@ -54,6 +54,14 @@ interface MeProfileLite {
     display_name?: string | null
     is_clan?: boolean
   }[]
+}
+
+type ClanMemberLite = {
+  id_member_profile: string
+  display_name: string
+  avatar_url: string | null
+  username: string
+  role: "owner" | "member"
 }
 
 function getToken(): string | null {
@@ -184,6 +192,12 @@ export function CourseLandingView({ courseId }: Props) {
   } = useCourseModules(courseId)
 
   const [profileOptions, setProfileOptions] = useState<SubProfileOption[]>([])
+  // Quando o curso está vinculado a um clan, carregamos seus membros para o
+  // multi-select de co-autores (quem divide a venda). Cursos de clan são criados
+  // a partir da página de gerenciar do clan, que já vincula o profile_id.
+  const [clanInfo, setClanInfo] = useState<{ id: string; name: string; members: ClanMemberLite[] } | null>(null)
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [savingMembers, setSavingMembers] = useState(false)
   const [isNewModuleOpen, setIsNewModuleOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [studentsOpen, setStudentsOpen] = useState(false)
@@ -285,6 +299,7 @@ export function CourseLandingView({ courseId }: Props) {
           .map((p) => ({
             id: p.id_profile,
             name: p.display_name || "Perfil sem nome",
+            is_clan: false,
           }))
         setProfileOptions(list)
       } catch {
@@ -295,6 +310,78 @@ export function CourseLandingView({ courseId }: Props) {
       cancelled = true
     }
   }, [])
+
+  // Detecta se o perfil vinculado é um clan e carrega membros + co-autores atuais.
+  const courseMemberIdsKey = (course?.member_profile_ids || []).join(",")
+  useEffect(() => {
+    const pid = form.profile_id
+    if (!pid) {
+      setClanInfo(null)
+      setSelectedMembers([])
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetchWithLog("courseLanding:clan", `/api/clans/${pid}`)
+        if (!res.ok) {
+          if (!cancelled) {
+            setClanInfo(null)
+            setSelectedMembers([])
+          }
+          return
+        }
+        const data = (await res.json().catch(() => null)) as
+          | { clan?: { display_name?: string; members?: ClanMemberLite[] } }
+          | null
+        const clan = data?.clan
+        if (cancelled || !clan) return
+        const members = clan.members || []
+        setClanInfo({ id: pid, name: clan.display_name || "Clan", members })
+        const validIds = new Set(members.map((m) => String(m.id_member_profile)))
+        setSelectedMembers(
+          (course?.member_profile_ids || []).filter((id) => validIds.has(String(id))),
+        )
+      } catch {
+        if (!cancelled) {
+          setClanInfo(null)
+          setSelectedMembers([])
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // courseMemberIdsKey sincroniza a seleção quando o curso recarrega.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.profile_id, courseMemberIdsKey])
+
+  const saveMembers = useCallback(
+    async (next: string[]) => {
+      const prev = selectedMembers
+      setSelectedMembers(next) // otimista
+      setSavingMembers(true)
+      try {
+        await updateCourse({ member_profile_ids: next })
+      } catch (err) {
+        setSelectedMembers(prev) // reverte
+        toast.error(err instanceof Error ? err.message : "Falha ao salvar membros")
+      } finally {
+        setSavingMembers(false)
+      }
+    },
+    [selectedMembers, updateCourse],
+  )
+
+  const toggleMember = useCallback(
+    (id: string) => {
+      const next = selectedMembers.includes(id)
+        ? selectedMembers.filter((m) => m !== id)
+        : [...selectedMembers, id]
+      void saveMembers(next)
+    },
+    [selectedMembers, saveMembers],
+  )
 
   const orderedModules = useMemo(
     () => [...modules].sort((a, b) => a.position - b.position),
@@ -511,30 +598,100 @@ export function CourseLandingView({ courseId }: Props) {
                 </p>
               </div>
 
-              {profileOptions.length > 0 && (
+              {(profileOptions.length > 0 || clanInfo) && (
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                     Perfil vinculado
                   </label>
-                  <select
-                    value={form.profile_id}
-                    onChange={(e) => {
-                      const v = e.target.value
-                      setForm((f) => ({ ...f, profile_id: v }))
-                      void saveField("profile_id", v)
-                    }}
-                    className="h-[46px] w-full border-2 border-white/12 bg-[#0E0B06] px-3 text-sm text-white outline-none focus:border-[#F2B705]/40"
-                  >
-                    <option value="">Sem perfil vinculado</option>
-                    {profileOptions.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  {clanInfo ? (
+                    // Curso de clan: o vínculo é fixo (definido ao criar pelo clan).
+                    <div className="flex h-[46px] items-center gap-2 border-2 border-[#F2B705]/30 bg-[#F2B705]/10 px-3 text-sm font-semibold text-[#F2B705]">
+                      <Users className="h-4 w-4" />
+                      Clan: {clanInfo.name}
+                    </div>
+                  ) : (
+                    <select
+                      value={form.profile_id}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setForm((f) => ({ ...f, profile_id: v }))
+                        void saveField("profile_id", v)
+                      }}
+                      className="h-[46px] w-full border-2 border-white/12 bg-[#0E0B06] px-3 text-sm text-white outline-none focus:border-[#F2B705]/40"
+                    >
+                      <option value="">Sem perfil vinculado</option>
+                      {profileOptions.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Multi-select de co-autores — só em curso de clan. */}
+            {clanInfo && (
+              <div className="mt-5 border-2 border-white/12 bg-[#0E0B06] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                    <Users className="h-3.5 w-3.5" />
+                    Membros participantes
+                  </label>
+                  <span className="text-[11px] text-white/45">
+                    {selectedMembers.length} selecionado{selectedMembers.length === 1 ? "" : "s"}
+                    {savingMembers ? " · salvando…" : ""}
+                  </span>
+                </div>
+                <p className="mb-3 text-[11px] leading-relaxed text-white/40">
+                  A venda do curso é dividida igualmente no Saldo de cada membro
+                  anexado (liberação em 8 dias). Anexe pelo menos um para publicar.
+                </p>
+                <div className="space-y-1.5">
+                  {clanInfo.members.map((m) => {
+                    const checked = selectedMembers.includes(m.id_member_profile)
+                    return (
+                      <label
+                        key={m.id_member_profile}
+                        className={`flex cursor-pointer items-center gap-3 border-2 p-2.5 transition-colors ${
+                          checked
+                            ? "border-[#F2B705]/60 bg-[#F2B705]/10"
+                            : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={savingMembers}
+                          onChange={() => toggleMember(m.id_member_profile)}
+                          className="h-4 w-4 accent-[#F2B705]"
+                        />
+                        {m.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={m.avatar_url}
+                            alt={m.display_name}
+                            className="h-7 w-7 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px] text-white/70">
+                            {m.display_name?.slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-white">{m.display_name}</div>
+                          <div className="text-[11px] text-white/45">@{m.username}</div>
+                        </div>
+                        {m.role === "owner" && (
+                          <span className="shrink-0 text-[11px] text-white/45">dono</span>
+                        )}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Opt-in de afiliados — quando ligado, a comissão entra no breakdown */}
             <AffiliateOptInField

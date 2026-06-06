@@ -26,6 +26,8 @@ export interface MyCourse {
   lessons_count: number
   students_count: number
   revenue_cents?: number
+  /** Perfis do clan anexados (co-autores que dividem a venda). Só em curso de clan. */
+  member_profile_ids?: string[]
 }
 
 export interface CourseCreateInput {
@@ -36,6 +38,7 @@ export interface CourseCreateInput {
   price_cents?: number | null
   profile_id?: string | null
   affiliates_allowed?: boolean
+  member_profile_ids?: string[]
 }
 
 export interface CourseUpdateInput extends Partial<CourseCreateInput> {
