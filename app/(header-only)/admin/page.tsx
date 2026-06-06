@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Search, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -53,9 +53,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Conteúdo & Comunidade", href: "/blog", icon: Newspaper, title: "Blog", body: "CMS do blog: criar, editar e publicar guias e conteúdo." },
 
   // Moderação
-  { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/chat-moderation", icon: ShieldAlert, title: "Moderação do Chat", body: "Fila de revisão, mensagens denunciadas, mute e ban de usuários do chat público." },
-  { section: "Moderação", hint: "admin-blocked-terms", href: "/administracao/blocked-terms", icon: ShieldX, title: "Termos bloqueados", body: "Lista própria de palavras/expressões proibidas no chat (categoria, severity, action)." },
-  { section: "Moderação", href: "/administracao/posts", icon: Flag, title: "Posts denunciados", body: "Fila de posts (portfólio/bees) denunciados pelos usuários." },
+  { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },
 
   // Sistema & Dados
   { section: "Sistema & Dados", href: "/administracao/arquitetura", icon: Boxes, title: "Arquitetura", body: "Mapa vivo das funções do app: órfãos, status de git e logs de rota.", badge: "novo" },

@@ -50,7 +50,7 @@ function actionTone(action: string) {
   return "bg-muted/30 text-muted-foreground border-border"
 }
 
-export default function ChatModerationPage() {
+function ChatModerationInner({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter()
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("pending")
   const [items, setItems] = useState<ModerationResult[]>([])
@@ -137,15 +137,17 @@ export default function ChatModerationPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-background px-4 py-8">
-      <div className="mx-auto max-w-7xl">
-        <button
-          type="button"
-          onClick={() => router.push("/admin")}
-          className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Voltar
-        </button>
+    <main className={embedded ? "" : "min-h-[100dvh] bg-background px-4 py-8"}>
+      <div className={embedded ? "" : "mx-auto max-w-7xl"}>
+        {!embedded && (
+          <button
+            type="button"
+            onClick={() => router.push("/admin")}
+            className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Voltar
+          </button>
+        )}
 
         <header className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -260,4 +262,12 @@ export default function ChatModerationPage() {
       </div>
     </main>
   )
+}
+
+export function ChatModerationConfig() {
+  return <ChatModerationInner embedded />
+}
+
+export default function ChatModerationPage() {
+  return <ChatModerationInner />
 }

@@ -43,7 +43,7 @@ function getToken() {
   return localStorage.getItem("token")
 }
 
-export default function BlockedTermsPage() {
+function BlockedTermsInner({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter()
   const [items, setItems] = useState<BlockedTerm[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
@@ -197,15 +197,17 @@ export default function BlockedTermsPage() {
   }, [pendingAdds, q, category, statusFilter])
 
   return (
-    <main className="min-h-[100dvh] bg-background px-4 py-8 pb-28">
-      <div className="mx-auto max-w-6xl">
-        <button
-          type="button"
-          onClick={() => router.push("/admin")}
-          className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Voltar
-        </button>
+    <main className={embedded ? "pb-28" : "min-h-[100dvh] bg-background px-4 py-8 pb-28"}>
+      <div className={embedded ? "" : "mx-auto max-w-6xl"}>
+        {!embedded && (
+          <button
+            type="button"
+            onClick={() => router.push("/admin")}
+            className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Voltar
+          </button>
+        )}
 
         <header className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -455,4 +457,12 @@ export default function BlockedTermsPage() {
       )}
     </main>
   )
+}
+
+export function BlockedTermsConfig() {
+  return <BlockedTermsInner embedded />
+}
+
+export default function BlockedTermsPage() {
+  return <BlockedTermsInner />
 }
