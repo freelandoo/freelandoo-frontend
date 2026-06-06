@@ -52,6 +52,7 @@ import { ProfilePublicServicesSection } from "@/components/profile/profile-publi
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
 import { ProfileOwnerProductsSection } from "@/components/profile/profile-owner-products-section"
 import { ProfilePublicProductsSection } from "@/components/profile/profile-public-products-section"
+import { useActionConsent } from "@/hooks/use-action-consent"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { EngagementPanel } from "@/components/profile/engagement-panel"
 import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
@@ -146,6 +147,7 @@ export default function FreelancerProfileView({
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
+  const { ensureConsent } = useActionConsent()
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
   const searchParams = useSearchParams()
 
@@ -384,8 +386,9 @@ export default function FreelancerProfileView({
     }
   }
 
-  const handleAddPortfolioItem = () => {
+  const handleAddPortfolioItem = async () => {
     if (portfolioTab === "feed" || portfolioTab === "bees") {
+      if (!(await ensureConsent("publish_content"))) return
       setPortfolioError(null)
       setComposerMode(portfolioTab === "bees" ? "bee" : "post")
       return
@@ -405,11 +408,15 @@ export default function FreelancerProfileView({
       if (detail.kind === "post") {
         setPortfolioTab("feed")
         setPortfolioError(null)
-        setComposerMode("post")
+        void ensureConsent("publish_content").then((ok) => {
+          if (ok) setComposerMode("post")
+        })
       } else if (detail.kind === "bees") {
         setPortfolioTab("bees")
         setPortfolioError(null)
-        setComposerMode("bee")
+        void ensureConsent("publish_content").then((ok) => {
+          if (ok) setComposerMode("bee")
+        })
       } else if (detail.kind === "servico") {
         setPortfolioTab("services")
         // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
@@ -422,8 +429,9 @@ export default function FreelancerProfileView({
     }
     window.addEventListener("freelandoo:create-subprofile", onCreate)
     return () => window.removeEventListener("freelandoo:create-subprofile", onCreate)
+    // ensureConsent muda quando os aceites carregam — re-vincula pra não usar closure obsoleto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [ensureConsent])
 
   const handleEditPortfolioItem = (item: PortfolioItem) => {
     setEditingPortfolioItemId(item.id_portfolio_item)

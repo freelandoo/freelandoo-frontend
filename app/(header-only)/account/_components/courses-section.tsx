@@ -45,6 +45,7 @@ import {
   type PurchasedCourse,
 } from "@/hooks/use-purchased-courses"
 import { formatPriceBRL } from "@/lib/courses/format"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 type CoursesTab = "created" | "purchased"
 
@@ -380,6 +381,7 @@ export function CoursesSection(_props: Props) {
     error: purchasedError,
   } = usePurchasedCourses()
 
+  const { ensureConsent } = useActionConsent()
   const [tab, setTab] = useState<CoursesTab>("created")
   const [creating, setCreating] = useState(false)
   const creatingRef = useRef(false)
@@ -392,6 +394,7 @@ export function CoursesSection(_props: Props) {
   // in-place — sem modal de cadastro.
   const createAndGo = useCallback(async () => {
     if (creatingRef.current) return
+    if (!(await ensureConsent("publish_offer"))) return
     creatingRef.current = true
     setCreating(true)
     try {
@@ -402,7 +405,7 @@ export function CoursesSection(_props: Props) {
       creatingRef.current = false
       setCreating(false)
     }
-  }, [createCourse, router])
+  }, [createCourse, router, ensureConsent])
 
   // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
   useEffect(() => {

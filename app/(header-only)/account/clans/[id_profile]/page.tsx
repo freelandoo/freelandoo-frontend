@@ -34,6 +34,7 @@ import {
 } from "@/components/profile/profile-public-services-section"
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
 import { useMyCourses, type MyCourse } from "@/hooks/use-my-courses"
+import { useActionConsent } from "@/hooks/use-action-consent"
 import {
   POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
@@ -161,6 +162,7 @@ export default function ManageClanPage({
 
   // Cursos do clan criados por mim (qualquer membro pode criar)
   const { courses: myCourses, createCourse } = useMyCourses()
+  const { ensureConsent } = useActionConsent()
   const [creatingCourse, setCreatingCourse] = useState(false)
 
   async function loadAll() {
@@ -473,6 +475,7 @@ export default function ManageClanPage({
   }
 
   async function handleCreateCourse() {
+    if (!(await ensureConsent("publish_offer"))) return
     setCreatingCourse(true)
     try {
       const created = await createCourse({

@@ -9,6 +9,7 @@ import {
   type ProfileProductMedia,
 } from "@/components/profile/profile-product-edit-modal"
 import { EmptyState, LoadingState } from "@/components/tabloide"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 interface ProfileOwnerProductsSectionProps {
   profileId: string
@@ -46,6 +47,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   const [productSheet, setProductSheet] = useState<ProfileProduct | "create" | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<number | null>(null)
+  const { ensureConsent } = useActionConsent()
 
   const load = useCallback(async () => {
     setState("loading")
@@ -82,7 +84,8 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
     setFeedbackError(null)
   }
 
-  const openCreate = () => {
+  const openCreate = async () => {
+    if (!(await ensureConsent("publish_offer"))) return
     setProductSheet("create")
     setFeedbackError(null)
   }

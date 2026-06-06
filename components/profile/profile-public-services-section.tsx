@@ -12,6 +12,7 @@ import {
 import { getToken } from "@/lib/auth"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { EmptyState, LoadingState } from "@/components/tabloide"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 interface ProfilePublicServicesSectionProps {
   profileId: string
@@ -73,6 +74,7 @@ export function ProfilePublicServicesSection({
   /** `create` = novo serviço; caso contrário edição do serviço indicado. */
   const [serviceSheet, setServiceSheet] = useState<ProfileService | "create" | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const { ensureConsent } = useActionConsent()
 
   useEffect(() => {
     let cancelled = false
@@ -124,10 +126,11 @@ export function ProfilePublicServicesSection({
     setFeedbackError(null)
   }
 
-  const openCreateService = useCallback(() => {
+  const openCreateService = useCallback(async () => {
+    if (!(await ensureConsent("publish_offer"))) return
     setServiceSheet("create")
     setFeedbackError(null)
-  }, [])
+  }, [ensureConsent])
 
   // Trigger externo (do + no RetractableProfileHeader) abre o modal de criar serviço.
   // Usa ref para não reabrir o modal em remounts (troca de aba e volta).
