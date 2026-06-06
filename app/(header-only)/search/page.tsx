@@ -199,7 +199,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#141009] text-white/60 md:left-[80px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0804] text-white/60 md:left-[80px]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -215,7 +215,8 @@ function SearchPageInner() {
   const { machines } = useMachinesCatalog()
 
   const [selectedEstado, setSelectedEstado] = useState<string | null>(null)
-  const [selectedCity, setSelectedCity] = useState<string | null>(null)
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null)
+  const [selectedRegionName, setSelectedRegionName] = useState<string | null>(null)
   const [idMachine, setIdMachine] = useState<number | null>(null)
   const [idCategory, setIdCategory] = useState<number | null>(null)
   const [premiumOnly, setPremiumOnly] = useState(false)
@@ -284,9 +285,14 @@ function SearchPageInner() {
       if (Number.isFinite(n)) setIdCategory(n)
     }
     const estado = searchParams.get("estado")
-    const municipio = searchParams.get("municipio")
+    const regionId = searchParams.get("id_region")
+    const regionName = searchParams.get("regiao")
     if (estado) setSelectedEstado(estado.toUpperCase().slice(0, 2))
-    if (municipio) setSelectedCity(municipio)
+    if (regionId) {
+      const n = Number(regionId)
+      if (Number.isFinite(n)) setSelectedRegionId(n)
+    }
+    if (regionName) setSelectedRegionName(regionName)
   }, [searchParams, machines, pendingSlug])
 
   const slugAwaitingResolution = !!pendingSlug && idMachine == null
@@ -327,7 +333,7 @@ function SearchPageInner() {
       try {
         const params = new URLSearchParams()
         if (selectedEstado) params.append("estado", selectedEstado)
-        if (selectedCity) params.append("municipio", selectedCity)
+        if (selectedRegionId) params.append("id_region", String(selectedRegionId))
         if (activeMachine) {
           if (activeMachine.id_machine > 0) {
             params.append("id_machine", String(activeMachine.id_machine))
@@ -372,7 +378,7 @@ function SearchPageInner() {
     }
     run()
     return () => { cancelled = true }
-  }, [selectedEstado, selectedCity, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin, t])
+  }, [selectedEstado, selectedRegionId, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin, t])
 
   const isPremium = useCallback((c: Creator) =>
     !!c.is_premium || c.profile_statuses?.some((s) => s.desc_status === "destaque_premium"),
@@ -384,7 +390,8 @@ function SearchPageInner() {
 
   const clearAll = () => {
     setSelectedEstado(null)
-    setSelectedCity(null)
+    setSelectedRegionId(null)
+    setSelectedRegionName(null)
     setIdMachine(null)
     setIdCategory(null)
     setLevelMin(null)
@@ -392,14 +399,15 @@ function SearchPageInner() {
   }
 
   return (
-    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-[#141009] md:left-[80px]">
+    <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-[#0b0804] md:left-[80px]">
       <SearchRetractableHeader
         machines={machines}
         categories={machineCategories}
         selectedMachineId={idMachine}
         selectedCategoryId={idCategory}
         state={selectedEstado}
-        city={selectedCity}
+        regionId={selectedRegionId}
+        regionName={selectedRegionName}
         levelMin={levelMin}
         premiumOnly={premiumOnly}
         accent={accent}
@@ -407,7 +415,7 @@ function SearchPageInner() {
         tab={tab}
         onMachineChange={(id) => { setIdMachine(id); setIdCategory(null) }}
         onCategoryChange={setIdCategory}
-        onLocationChange={({ state, city }) => { setSelectedEstado(state); setSelectedCity(city) }}
+        onLocationChange={({ state, regionId, regionName }) => { setSelectedEstado(state); setSelectedRegionId(regionId); setSelectedRegionName(regionName) }}
         onLevelChange={setLevelMin}
         onPremiumToggle={() => setPremiumOnly((v) => !v)}
         onClearAll={clearAll}
@@ -510,7 +518,7 @@ function SearchPageInner() {
             <ProductsGrid
               categoryId={productCategoryId}
               state={selectedEstado}
-              city={selectedCity}
+              regionId={selectedRegionId}
             />
           </>
         )}

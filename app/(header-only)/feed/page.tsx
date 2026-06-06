@@ -25,7 +25,7 @@ export default function FeedPage() {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#141009] text-white/60 md:left-[80px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0804] text-white/60 md:left-[80px]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -43,7 +43,8 @@ function FeedPageInner() {
 
   const [idMachine, setIdMachine] = useState<number | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
-  const [municipio, setMunicipio] = useState<string | null>(null)
+  const [regionId, setRegionId] = useState<number | null>(null)
+  const [regionName, setRegionName] = useState<string | null>(null)
 
   const [items, setItems] = useState<FeedPost[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
@@ -62,10 +63,12 @@ function FeedPageInner() {
     hydrated.current = true
     const im = searchParams.get("id_machine")
     const e = searchParams.get("estado")
-    const m = searchParams.get("municipio")
+    const ri = searchParams.get("id_region")
+    const rn = searchParams.get("regiao")
     if (im) setIdMachine(Number(im) || null)
     if (e) setEstado(e.toUpperCase().slice(0, 2))
-    if (m) setMunicipio(m)
+    if (ri) setRegionId(Number(ri) || null)
+    if (rn) setRegionName(rn)
   }, [searchParams])
 
   const activeMachine = useMemo(
@@ -87,19 +90,20 @@ function FeedPageInner() {
     const sp = new URLSearchParams()
     if (idMachine != null) sp.set("id_machine", String(idMachine))
     if (estado) sp.set("estado", estado)
-    if (municipio) sp.set("municipio", municipio)
+    if (regionId) sp.set("id_region", String(regionId))
+    if (regionName) sp.set("regiao", regionName)
     const qs = sp.toString()
     router.replace(qs ? `/feed?${qs}` : "/feed", { scroll: false })
-  }, [idMachine, estado, municipio, router])
+  }, [idMachine, estado, regionId, regionName, router])
 
-  const filtersKey = `${idMachine ?? ""}|${estado ?? ""}|${municipio ?? ""}`
+  const filtersKey = `${idMachine ?? ""}|${estado ?? ""}|${regionId ?? ""}`
 
   const fetchPage = useCallback(
     async (nextCursor: string | null, replace: boolean) => {
       const sp = new URLSearchParams()
       if (idMachine != null && idMachine > 0) sp.set("id_machine", String(idMachine))
       if (estado) sp.set("estado", estado)
-      if (municipio) sp.set("municipio", municipio)
+      if (regionId) sp.set("id_region", String(regionId))
       if (nextCursor) sp.set("cursor", nextCursor)
       sp.set("limit", String(PAGE_LIMIT))
 
@@ -118,7 +122,7 @@ function FeedPageInner() {
       setCursor(data.next_cursor)
       setHasMore(!!data.has_more)
     },
-    [idMachine, estado, municipio]
+    [idMachine, estado, regionId]
   )
 
   useEffect(() => {
@@ -175,32 +179,35 @@ function FeedPageInner() {
   const clearAll = () => {
     setIdMachine(null)
     setEstado(null)
-    setMunicipio(null)
+    setRegionId(null)
+    setRegionName(null)
   }
 
-  const hasFilters = !!(idMachine || estado || municipio)
+  const hasFilters = !!(idMachine || estado || regionId)
 
   const filtersForEvents: FeedFilters = {
     id_machine: idMachine,
     id_category: null,
     estado,
-    municipio,
+    municipio: null,
     level_min: null,
   }
 
   return (
-    <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-[#141009] md:left-[80px]">
+    <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-[#0b0804] md:left-[80px]">
       <FeedRetractableHeader
         machines={machines}
         selectedMachineId={idMachine}
         state={estado}
-        city={municipio}
+        regionId={regionId}
+        regionName={regionName}
         accent={accent}
         scrollRef={scrollRef}
         onMachineChange={setIdMachine}
-        onLocationChange={({ state: s, city: c }) => {
+        onLocationChange={({ state: s, regionId: ri, regionName: rn }) => {
           setEstado(s)
-          setMunicipio(c)
+          setRegionId(ri)
+          setRegionName(rn)
         }}
         onClearAll={clearAll}
       />

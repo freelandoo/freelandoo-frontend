@@ -7,7 +7,7 @@ import { NotificationsDropdown } from "@/components/notifications/notifications-
 import type { CatalogCategory, CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "@/components/feed/machine-filter-sheet"
 import { ProfessionFilterSheet } from "@/components/feed/profession-filter-sheet"
-import { CityFilterSheet } from "@/components/feed/city-filter-sheet"
+import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
 import { LevelFilterSheet, LEVEL_FILTER_OPTIONS } from "@/components/feed/level-filter-sheet"
 import { cn } from "@/lib/utils"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
@@ -21,7 +21,8 @@ interface SearchRetractableHeaderProps {
   selectedMachineId: number | null
   selectedCategoryId: number | null
   state: string | null
-  city: string | null
+  regionId: number | null
+  regionName: string | null
   levelMin: number | null
   premiumOnly: boolean
   accent: string
@@ -30,7 +31,7 @@ interface SearchRetractableHeaderProps {
   tab?: HeaderTab
   onMachineChange: (id: number | null) => void
   onCategoryChange: (id: number | null) => void
-  onLocationChange: (next: { state: string | null; city: string | null }) => void
+  onLocationChange: (next: { state: string | null; regionId: number | null; regionName: string | null }) => void
   onLevelChange: (level: number | null) => void
   onPremiumToggle: () => void
   onClearAll: () => void
@@ -42,7 +43,8 @@ export function SearchRetractableHeader({
   selectedMachineId,
   selectedCategoryId,
   state,
-  city,
+  regionId,
+  regionName,
   levelMin,
   premiumOnly,
   accent,
@@ -57,7 +59,7 @@ export function SearchRetractableHeader({
 }: SearchRetractableHeaderProps) {
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const activeCategory = categories.find((c) => c.id_category === selectedCategoryId) || null
-  const hasFilters = !!(activeMachine || activeCategory || state || city || levelMin || premiumOnly)
+  const hasFilters = !!(activeMachine || activeCategory || state || regionId || levelMin || premiumOnly)
 
   // Visibilidade de filtro por aba:
   //  services → enxame, profissão, cidade, nível, premium
@@ -68,7 +70,7 @@ export function SearchRetractableHeader({
   const showCity = tab === "services" || tab === "products"
   const showLevel = tab === "services"
   const showPremium = tab === "services"
-  const locationLabel = city || state || "Cidade"
+  const locationLabel = regionName || state || "Região"
   const levelLabel = LEVEL_FILTER_OPTIONS.find((o) => o.value === levelMin)?.label || "Nível"
 
   const [hidden, setHidden] = useState(false)
@@ -156,16 +158,17 @@ export function SearchRetractableHeader({
             )}
             {showCity && (
               <HoverHint id="search-filter-city" side="bottom" dataTour="search-filter-city">
-                <CityFilterSheet
+                <RegionFilterSheet
                   state={state}
-                  city={city}
+                  regionId={regionId}
+                  regionName={regionName}
                   onChange={onLocationChange}
                   accent={accent}
                   trigger={
                     <Pill
                       label={locationLabel}
-                      active={!!(state || city)}
-                      accent={state || city ? accent : undefined}
+                      active={!!(state || regionId)}
+                      accent={state || regionId ? accent : undefined}
                       icon={<MapPin className="h-3.5 w-3.5" />}
                     />
                   }

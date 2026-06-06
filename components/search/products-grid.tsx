@@ -27,7 +27,7 @@ type ProductItem = {
 interface Props {
   categoryId: number | null
   state: string | null
-  city: string | null
+  regionId: number | null
   q?: string | null
 }
 
@@ -35,7 +35,7 @@ function formatBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export function ProductsGrid({ categoryId, state, city, q }: Props) {
+export function ProductsGrid({ categoryId, state, regionId, q }: Props) {
   const [items, setItems] = useState<ProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +47,7 @@ export function ProductsGrid({ categoryId, state, city, q }: Props) {
     const params = new URLSearchParams()
     if (categoryId) params.set("id_product_category", String(categoryId))
     if (state) params.set("state", state)
-    if (city) params.set("city", city)
+    if (regionId) params.set("id_region", String(regionId))
     if (q) params.set("q", q)
     fetch(`/api/search/products?${params.toString()}`, { cache: "no-store" })
       .then(async (r) => {
@@ -59,7 +59,7 @@ export function ProductsGrid({ categoryId, state, city, q }: Props) {
       .catch((err) => alive && setError(err instanceof Error ? err.message : "Erro ao carregar"))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [categoryId, state, city, q])
+  }, [categoryId, state, regionId, q])
 
   if (loading) {
     return (

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { Bell, ChevronDown, MapPin, X } from "lucide-react"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
-import { CityFilterSheet } from "./city-filter-sheet"
+import { RegionFilterSheet } from "./region-filter-sheet"
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -15,11 +15,12 @@ interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
   selectedMachineId: number | null
   state: string | null
-  city: string | null
+  regionId: number | null
+  regionName: string | null
   accent: string
   scrollRef: React.RefObject<HTMLElement | null>
   onMachineChange: (id: number | null) => void
-  onLocationChange: (next: { state: string | null; city: string | null }) => void
+  onLocationChange: (next: { state: string | null; regionId: number | null; regionName: string | null }) => void
   onClearAll: () => void
 }
 
@@ -31,7 +32,8 @@ export function FeedRetractableHeader({
   machines,
   selectedMachineId,
   state,
-  city,
+  regionId,
+  regionName,
   accent,
   scrollRef,
   onMachineChange,
@@ -40,8 +42,8 @@ export function FeedRetractableHeader({
 }: FeedRetractableHeaderProps) {
   const t = useTranslations("Feed")
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
-  const hasFilters = !!(activeMachine || state || city)
-  const locationLabel = city || state || t("cityLabel", "Cidade")
+  const hasFilters = !!(activeMachine || state || regionId)
+  const locationLabel = regionName || state || t("regionLabel", "Região")
 
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
@@ -105,16 +107,17 @@ export function FeedRetractableHeader({
                 />
               }
             />
-            <CityFilterSheet
+            <RegionFilterSheet
               state={state}
-              city={city}
+              regionId={regionId}
+              regionName={regionName}
               onChange={onLocationChange}
               accent={accent}
               trigger={
                 <Pill
                   label={locationLabel}
-                  active={!!(state || city)}
-                  accent={state || city ? accent : undefined}
+                  active={!!(state || regionId)}
+                  accent={state || regionId ? accent : undefined}
                   icon={<MapPin className="h-3.5 w-3.5" />}
                 />
               }
