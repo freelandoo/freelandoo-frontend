@@ -21,7 +21,7 @@ const container: Variants = { hidden: {}, show: { transition: { staggerChildren:
 const item: Variants = { hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } } }
 const pop: Variants = { hidden: { opacity: 0, scale: 0.92, x: 18 }, show: { opacity: 1, scale: 1, x: 0, transition: { duration: 0.6, ease: EASE } } }
 
-function StatCard({ stat, taped }: { stat: (typeof HERO_STATS)[number]; taped?: boolean }) {
+function StatCard({ stat, taped, slotBase }: { stat: (typeof HERO_STATS)[number]; taped?: boolean; slotBase: string }) {
   return (
     <div className="fl-card fl-hard relative flex items-center gap-3 rounded-xl px-4 py-3">
       {taped && <WashiTape className="-top-3 right-4" rotate={6} />}
@@ -29,9 +29,9 @@ function StatCard({ stat, taped }: { stat: (typeof HERO_STATS)[number]; taped?: 
         <Icon name={stat.icon} className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-black text-[#0B0B0D]">{stat.label}</span>
-        <span className="block text-xs text-[#6B6457]">{stat.line}</span>
-        <span className="mt-0.5 block text-xs font-bold text-[#9a7400]">{stat.value}</span>
+        <EditableText as="span" className="block text-sm font-black text-[#0B0B0D]" slot={`${slotBase}_label`} fallback={stat.label} />
+        <EditableText as="span" className="block text-xs text-[#6B6457]" slot={`${slotBase}_line`} fallback={stat.line} />
+        <EditableText as="span" className="mt-0.5 block text-xs font-bold text-[#9a7400]" slot={`${slotBase}_value`} fallback={stat.value} />
       </span>
     </div>
   )
@@ -81,10 +81,13 @@ export function HeroSection() {
             <div className="flex items-center gap-3">
               <AvatarStack count={5} />
               <span className="text-sm text-[#9A938A]">
-                <span className="font-bold text-[#F5F1E8]">+10 mil pessoas</span> já estão ganhando
+                <EditableText as="span" className="font-bold text-[#F5F1E8]" slot="home_seller_hero_proof_count" fallback="+10 mil pessoas" />{" "}
+                <EditableText as="span" slot="home_seller_hero_proof_text" fallback="já estão ganhando" />
               </span>
             </div>
-            <StickerNote rotate={-4} className="hidden sm:inline-block">comece de graça</StickerNote>
+            <StickerNote rotate={-4} className="hidden sm:inline-block">
+              <EditableText as="span" slot="home_seller_hero_sticker" fallback="comece de graça" />
+            </StickerNote>
           </motion.div>
         </motion.div>
 
@@ -118,7 +121,7 @@ export function HeroSection() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
               {HERO_STATS.map((s, i) => (
                 <motion.div key={s.id} variants={pop} className="sm:fl-float-slow">
-                  <StatCard stat={s} taped={i === 0} />
+                  <StatCard stat={s} taped={i === 0} slotBase={`home_seller_stat_${String(s.id).replace(/[^a-z0-9_]/gi, "")}`} />
                 </motion.div>
               ))}
             </div>
