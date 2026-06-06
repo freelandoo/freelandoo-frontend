@@ -3,7 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search, ShieldCheck, Star } from "lucide-react"
-import { Section, YellowHighlight, GoldButton, AvatarStack } from "@/components/home/landing"
+import { Section, YellowHighlight, AvatarStack } from "@/components/home/landing"
+import { EditableImage } from "@/components/site-assets/EditableImage"
+
+/** CTA sólida com dropshadow amarelo + animação (identidade tabloide). */
+const CTA_CLASS =
+  "inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-6 py-3 text-sm font-bold text-[#1A1505] shadow-[4px_4px_0_0_#0B0B0D] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:translate-y-0 active:shadow-[2px_2px_0_0_#0B0B0D]"
 
 export function BuyerHero() {
   const router = useRouter()
@@ -38,9 +43,9 @@ export function BuyerHero() {
               aria-label="Buscar profissionais, influenciadores ou produtos"
             />
           </div>
-          <GoldButton type="submit" className="shrink-0">
+          <button type="submit" className={`${CTA_CLASS} shrink-0`}>
             Encontrar
-          </GoldButton>
+          </button>
         </form>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-[#3a352c]">
@@ -54,6 +59,14 @@ export function BuyerHero() {
             <AvatarStack count={4} /> Profissionais perto de você
           </span>
         </div>
+      </div>
+
+      {/* Banner editável (admin troca clicando) */}
+      <div className="mx-auto mt-10 max-w-[1100px]">
+        <EditableImage
+          slot="home_buyer_hero"
+          className="aspect-[16/5] w-full rounded-2xl border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
+        />
       </div>
     </Section>
   )

@@ -10,6 +10,7 @@ import {
 } from "@/components/home/landing"
 import { AudienceCrossLink } from "@/components/home/landing/AudienceCrossLink"
 import { RevealMount } from "@/components/home/landing/RevealMount"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
 const TITLE = "Freelandoo — Venda serviços, cursos e produtos, e ganhe como afiliado"
 const DESCRIPTION =
@@ -41,6 +42,13 @@ export default function SellerHomePage() {
     <>
       <LandingHeader />
       <main className="flex-1 overflow-x-clip">
+        {/* Banner editável (admin troca clicando) */}
+        <div className="mx-auto w-full max-w-[1100px] px-5 pt-6">
+          <EditableImage
+            slot="home_seller_hero"
+            className="aspect-[16/5] w-full rounded-2xl border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
+          />
+        </div>
         {/* 1 · Hero principal */}
         <HeroSection />
         {/* 2 · Escolha seu caminho (5 caminhos de renda) */}
