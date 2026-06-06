@@ -1242,14 +1242,15 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: "disc
 }
 
 // ─────────────────────────────── Página raiz ───────────────────────────────
-export default function CouponsAdminPage() {
+function CouponsAdminInner({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter()
   const token = useToken()
-  const [checkingAuth, setCheckingAuth] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(!embedded)
+  const [isAdmin, setIsAdmin] = useState(embedded)
   const [tab, setTab] = useState<Tab>("discount")
 
   useEffect(() => {
+    if (embedded) return // auth garantida pelo hub
     if (!token) { router.push("/login"); return }
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
@@ -1260,7 +1261,7 @@ export default function CouponsAdminPage() {
         setCheckingAuth(false)
       })
       .catch(() => router.push("/"))
-  }, [router, token])
+  }, [router, token, embedded])
 
   if (checkingAuth) {
     return (
@@ -1280,24 +1281,28 @@ export default function CouponsAdminPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <button
-          onClick={() => router.push("/admin")}
-          className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </button>
+    <div className={embedded ? "" : "min-h-screen bg-background"}>
+      <main className={embedded ? "" : "container mx-auto px-4 py-8 max-w-4xl"}>
+        {!embedded && (
+          <>
+            <button
+              onClick={() => router.push("/admin")}
+              className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground mb-6"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+            </button>
 
-        <div className="mb-6 flex items-center gap-3">
-          <Ticket className="h-6 w-6 text-primary" />
-          <div>
-            <h1 className="text-2xl font-semibold">Cupons</h1>
-            <p className="text-sm text-muted-foreground">
-              Desconto geral, comissão geral e regras específicas por cupom.
-            </p>
-          </div>
-        </div>
+            <div className="mb-6 flex items-center gap-3">
+              <Ticket className="h-6 w-6 text-primary" />
+              <div>
+                <h1 className="text-2xl font-semibold">Cupons</h1>
+                <p className="text-sm text-muted-foreground">
+                  Desconto geral, comissão geral e regras específicas por cupom.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="flex gap-2 mb-4 border-b border-border">
           {tabs.map((t) => (
@@ -1324,4 +1329,14 @@ export default function CouponsAdminPage() {
       </main>
     </div>
   )
+}
+
+// Versão embutida (sem auth/casca) usada pelo hub /administracao/monetizacao.
+export function CuponsConfig() {
+  return <CouponsAdminInner embedded />
+}
+
+// Rota legada standalone — auth + casca completos.
+export default function CouponsAdminPage() {
+  return <CouponsAdminInner />
 }

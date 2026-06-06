@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Ticket, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShieldX, ShoppingBag, Newspaper, Flag, Boxes, Search, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -41,11 +41,10 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Repasses", hint: "admin-store-payouts", href: "/administracao/repasses", icon: HandCoins, title: "Repasses", body: "Saldos a pagar via PIX: Loja, Agendamentos e Afiliados num só extrato, com filtro por origem e status." },
 
   // Configurações de monetização — definem preço/taxa (não são extrato financeiro)
-  { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/monetizacao", icon: Wallet, title: "Configurações de monetização", body: "Ativação, Agendamento, Poléns, Premium e Manifestação — preços e taxas em abas, num só lugar." },
+  { section: "Configurações de monetização", hint: "admin-anuidade", href: "/administracao/monetizacao", icon: Wallet, title: "Configurações de monetização", body: "Ativação, Agendamento, Poléns, Premium, Manifestação e Cupons — preços, taxas e descontos em abas." },
 
   // Catálogo & Vitrine
   { section: "Catálogo & Vitrine", hint: "admin-enxames", href: "/administracao/enxames", icon: Sparkles, title: "Controle de Enxames", body: "Ativar/desativar enxames, cores e profissões." },
-  { section: "Catálogo & Vitrine", hint: "admin-coupons", href: "/administracao/cupons", icon: Ticket, title: "Cupons", body: "Desconto geral, comissão geral e regras específicas por cupom." },
   { section: "Catálogo & Vitrine", href: "/administracao/loja", icon: Store, title: "Loja", body: "Moderação da Loja, categorias e produtos proibidos." },
   { section: "Catálogo & Vitrine", href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos. Os participantes são editados na própria página (/acasaviews)." },
 

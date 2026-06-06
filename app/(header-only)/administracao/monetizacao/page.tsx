@@ -10,6 +10,7 @@ import {
   Hexagon,
   Crown,
   Sparkles,
+  Ticket,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,8 +19,9 @@ import { AgendamentoConfig } from "@/components/admin/monetizacao/AgendamentoCon
 import { PolensConfig } from "@/components/admin/monetizacao/PolensConfig"
 import { PremiumConfig } from "@/components/admin/monetizacao/PremiumConfig"
 import { ManifestacaoConfig } from "@/app/(header-only)/administracao/manifestacao/page"
+import { CuponsConfig } from "@/app/(header-only)/administracao/cupons/page"
 
-type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao"
+type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao" | "cupons"
 
 const TABS: { id: TabId; label: string; icon: LucideIcon; iconClass?: string }[] = [
   { id: "ativacao", label: "Ativação", icon: Wallet },
@@ -27,6 +29,7 @@ const TABS: { id: TabId; label: string; icon: LucideIcon; iconClass?: string }[]
   { id: "polens", label: "Poléns", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300" },
   { id: "premium", label: "Premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400" },
   { id: "manifestacao", label: "Manifestação", icon: Sparkles },
+  { id: "cupons", label: "Cupons", icon: Ticket },
 ]
 
 function isTab(v: string | null): v is TabId {
@@ -117,6 +120,7 @@ function MonetizacaoInner() {
         {tab === "polens" && <PolensConfig />}
         {tab === "premium" && <PremiumConfig />}
         {tab === "manifestacao" && <ManifestacaoConfig />}
+        {tab === "cupons" && <CuponsConfig />}
       </main>
     </div>
   )
