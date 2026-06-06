@@ -13,6 +13,7 @@ import {
   GoldButton, OutlineButton, YellowHighlight, DoodleArrow, Squiggle, HiveDoodle,
   AvatarStack, PhotoFrame, Icon, HoneycombField, Spark, StickerNote, WashiTape,
 } from "./primitives"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
 const EASE = [0.16, 1, 0.3, 1] as const
 const container: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } } }
@@ -80,15 +81,22 @@ export function HeroSection() {
         <motion.div initial={reduce ? false : "hidden"} animate="show" variants={container} className="relative">
           <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr] sm:items-start">
             <motion.div variants={pop} className="relative">
-              <PhotoFrame
-                src="/landing/hero.png"
-                alt="Pessoa feliz usando a Freelandoo no celular"
-                icon="star"
-                priority
-                ready
-                torn
-                cut
+              <EditableImage
+                slot="home_seller_hero_main"
+                slotConfig={{ aspectRatio: 4 / 5, outputWidth: 1000, outputHeight: 1250 }}
                 className="aspect-[4/5] w-full"
+                fallback={
+                  <PhotoFrame
+                    src="/landing/hero.png"
+                    alt="Pessoa feliz usando a Freelandoo no celular"
+                    icon="star"
+                    priority
+                    ready
+                    torn
+                    cut
+                    className="h-full w-full"
+                  />
+                }
               />
               <WashiTape className="-left-2 top-6" rotate={-10} />
               <HiveDoodle className="absolute -left-3 -top-3 h-12 w-12 text-[#F2B705]" />

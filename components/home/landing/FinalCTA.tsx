@@ -5,6 +5,7 @@
 import { ArrowRight } from "lucide-react"
 import { LINKS } from "./tokens"
 import { GoldButton, YellowHighlight, PhotoFrame, HiveDoodle, Squiggle, DoodleArrow, HoneycombField, DoodleCrown, Halftone, WashiTape } from "./primitives"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
 export function FinalCTA() {
   return (
@@ -13,7 +14,14 @@ export function FinalCTA() {
       <Halftone className="absolute left-6 top-10 hidden h-24 w-24 opacity-20 lg:block" />
       <div className="relative mx-auto grid w-full max-w-[1180px] items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
         <div data-reveal className="relative">
-          <PhotoFrame src="/landing/cta-grupo.png" alt="Pessoas felizes ganhando com a Freelandoo" ready torn cut className="aspect-[5/4] w-full" />
+          <EditableImage
+            slot="home_seller_cta"
+            slotConfig={{ aspectRatio: 5 / 4, outputWidth: 1250, outputHeight: 1000 }}
+            className="aspect-[5/4] w-full"
+            fallback={
+              <PhotoFrame src="/landing/cta-grupo.png" alt="Pessoas felizes ganhando com a Freelandoo" ready torn cut className="h-full w-full" />
+            }
+          />
           <WashiTape className="-left-2 top-8" rotate={-12} />
           <Squiggle className="absolute -left-3 -top-4 h-8 w-24 text-[#F2B705]" />
           <HiveDoodle className="absolute -bottom-4 -right-3 h-14 w-14 text-[#F2B705]" />

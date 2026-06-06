@@ -8,13 +8,23 @@ import Image from "next/image"
 import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
 import { BENTO, type BentoItem } from "./tokens"
 import { Section, YellowHighlight, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
 const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6: "lg:col-span-6", 12: "lg:col-span-12" }
 
 function BentoVisual({ item }: { item: BentoItem }) {
   switch (item.kind) {
     case "photo":
-      return <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="aspect-[16/10] w-full rounded-xl" />
+      return (
+        <EditableImage
+          slot={`home_seller_bento_${item.n}`}
+          slotConfig={{ aspectRatio: 16 / 10, outputWidth: 1280, outputHeight: 800 }}
+          className="aspect-[16/10] w-full rounded-xl"
+          fallback={
+            <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="h-full w-full rounded-xl" />
+          }
+        />
+      )
     case "saque":
       return (
         <div className="rounded-xl bg-[#FAF7F0] p-3">
@@ -59,7 +69,7 @@ function BentoVisual({ item }: { item: BentoItem }) {
     case "stories":
       if (item.photo) {
         return (
-          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#141009]">
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#0b0804]">
             <Image src={item.photo} alt={item.title} fill sizes="(max-width:768px) 90vw, 360px" className="object-cover" />
           </div>
         )

@@ -5,6 +5,7 @@
  */
 import { MONEY_PATHS } from "./tokens"
 import { Section, YellowHighlight, PhotoFrame, Icon, CardButton, DoodleArrow, Squiggle, Halftone } from "./primitives"
+import { EditableImage } from "@/components/site-assets/EditableImage"
 
 export function MoneyPathCards() {
   return (
@@ -26,7 +27,14 @@ export function MoneyPathCards() {
             className="group mp-card relative flex flex-col overflow-hidden rounded-xl fl-card"
           >
             <div className="relative">
-              <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} ready className="aspect-[3/4] w-full" />
+              <EditableImage
+                slot={`home_seller_path_${String(p.id).replace(/[^a-z0-9_]/gi, "")}`}
+                slotConfig={{ aspectRatio: 3 / 4, outputWidth: 900, outputHeight: 1200 }}
+                className="aspect-[3/4] w-full"
+                fallback={
+                  <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} ready className="h-full w-full" />
+                }
+              />
               <Halftone className="absolute right-2 top-2 h-10 w-10 opacity-30" />
               <span className="absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                 <Icon name={p.icon} className="h-6 w-6" />
