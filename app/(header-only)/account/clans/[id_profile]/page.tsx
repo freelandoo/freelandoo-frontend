@@ -7,26 +7,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   AlertCircle,
   ArrowLeft,
+  Briefcase,
   CalendarDays,
   Crown,
   CreditCard,
+  GraduationCap,
   ImageIcon,
   Lock,
   LogOut,
   MessageSquare,
+  Plus,
   Search,
-  Send,
   Trash2,
   Upload,
   UserPlus,
+  Wallet,
   X,
 } from "lucide-react"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
+import {
+  ProfilePublicServicesSection,
+} from "@/components/profile/profile-public-services-section"
+import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
+import { useMyCourses, type MyCourse } from "@/hooks/use-my-courses"
 import {
   POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
@@ -91,14 +98,16 @@ type PortfolioItem = {
   media: PortfolioMedia[]
 }
 
-type ClanMessage = {
-  id_clan_message: number
-  id_user: string
-  content: string
+type ClanPayout = {
+  id_clan_payout: number
+  id_clan_profile: string
+  source: string
+  source_type: "clan_service" | "clan_course"
+  amount_cents: number
+  status: "aguardando" | "aprovado" | "pago" | "revertido"
+  available_at: string
   created_at: string
-  author_username: string
-  author_display_name: string
-  author_avatar_url: string | null
+  service_name: string | null
 }
 
 type InvitableProfile = {
@@ -147,11 +156,12 @@ export default function ManageClanPage({
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false)
   const [portfolioError, setPortfolioError] = useState("")
 
-  // Messages
-  const [messages, setMessages] = useState<ClanMessage[]>([])
-  const [newMessage, setNewMessage] = useState("")
-  const [sendingMessage, setSendingMessage] = useState(false)
-  const [messageError, setMessageError] = useState("")
+  // Saldo do clan (splits que caíram no meu Saldo via este clan)
+  const [payouts, setPayouts] = useState<ClanPayout[]>([])
+
+  // Cursos do clan criados por mim (qualquer membro pode criar)
+  const { courses: myCourses, createCourse } = useMyCourses()
+  const [creatingCourse, setCreatingCourse] = useState(false)
 
   async function loadAll() {
     const token = localStorage.getItem("token")
@@ -161,18 +171,18 @@ export default function ManageClanPage({
     }
     const auth = { Authorization: `Bearer ${token}` }
     try {
-      const [clanRes, invitesRes, meRes, messagesRes, portfolioRes] =
+      const [clanRes, invitesRes, meRes, payoutsRes, portfolioRes] =
         await Promise.all([
           fetch(`/api/clans/${id_profile}`),
           fetch(`/api/clans/${id_profile}/invites`, { headers: auth }),
           fetch("/api/users/me", { headers: auth }),
-          fetch(`/api/clans/${id_profile}/messages`, { headers: auth }),
+          fetch(`/api/me/booking-payouts`, { headers: auth, cache: "no-store" }),
           fetch(`/api/profile/${id_profile}/portfolio`, { headers: auth }),
         ])
       const clanData = await clanRes.json()
       const invitesData = await invitesRes.json()
       const meData = await meRes.json()
-      const messagesData = await messagesRes.json()
+      const payoutsData = await payoutsRes.json()
       const portfolioData = await portfolioRes.json()
       setPortfolio(portfolioData?.items || [])
 
@@ -183,8 +193,12 @@ export default function ManageClanPage({
       setClan(clanData.clan)
       setInvites(invitesData.invites || [])
       setMe(meData?.user || meData)
-      // backend retorna em ordem desc; inverte para chat-style asc
-      setMessages(((messagesData.messages || []) as ClanMessage[]).slice().reverse())
+      // Só os splits que vieram DESTE clan caem no Saldo do membro logado.
+      setPayouts(
+        ((payoutsData?.items || []) as ClanPayout[]).filter(
+          (p) => p.source === "clan" && String(p.id_clan_profile) === String(id_profile)
+        )
+      )
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(`Erro ao carregar: ${msg}`)
@@ -458,54 +472,18 @@ export default function ManageClanPage({
     }
   }
 
-  async function handleSendMessage() {
-    setMessageError("")
-    const text = newMessage.trim()
-    if (!text) return
-    if (text.length > 2000) {
-      setMessageError("Mensagem deve ter no máximo 2000 caracteres")
-      return
-    }
-    setSendingMessage(true)
+  async function handleCreateCourse() {
+    setCreatingCourse(true)
     try {
-      const token = localStorage.getItem("token")
-      const res = await fetch(`/api/clans/${id_profile}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: text }),
+      const created = await createCourse({
+        title: "Novo curso do clan",
+        profile_id: id_profile,
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setMessageError(data?.error || "Erro ao enviar mensagem")
-        return
-      }
-      setNewMessage("")
-      setMessages((prev) => [...prev, data.message])
+      router.push(`/account/courses/${created.id}`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setMessageError(`Erro: ${msg}`)
-    } finally {
-      setSendingMessage(false)
-    }
-  }
-
-  async function handleDeleteMessage(id_clan_message: number) {
-    if (!confirm("Apagar esta mensagem?")) return
-    const token = localStorage.getItem("token")
-    const res = await fetch(`/api/clans/messages/${id_clan_message}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (res.ok) {
-      setMessages((prev) =>
-        prev.filter((m) => m.id_clan_message !== id_clan_message)
-      )
-    } else {
-      const data = await res.json()
-      alert(data?.error || "Erro ao apagar mensagem")
+      alert(`Erro ao criar curso: ${msg}`)
+      setCreatingCourse(false)
     }
   }
 
@@ -845,104 +823,191 @@ export default function ManageClanPage({
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="size-5" /> Quadro de mensagens
-          </CardTitle>
-          <CardDescription>
-            Recados visíveis apenas para os membros do clan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-            {messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                Nenhuma mensagem ainda. Seja o primeiro a deixar um recado.
-              </p>
-            ) : (
-              messages.map((msg) => {
-                const isMine = me && String(msg.id_user) === String(me.id_user)
-                const canDelete = isMine || isOwner
+      {/* Chat do clan agora é o grupo fixado no /mensagens (não mais mural). */}
+      {myMembership && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="size-5" /> Chat do clan
+            </CardTitle>
+            <CardDescription>
+              O quadro de recados virou um grupo no /mensagens, fixado no topo da
+              sua caixa de entrada.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/mensagens">
+                <MessageSquare className="size-4 mr-1" /> Abrir chat do clan
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Serviços do clan — qualquer membro cria; anexa membros que dividem. */}
+      {myMembership && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="size-5" /> Serviços do clan
+            </CardTitle>
+            <CardDescription>
+              Qualquer membro pode criar um serviço e anexar quem participa. A
+              venda é dividida igualmente no Saldo de cada anexado (liberação em
+              8 dias).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfilePublicServicesSection
+              profileId={id_profile}
+              showOwnerControls
+              allowPublicBooking
+              isClan
+              clanMembers={
+                clan.members.map((m) => ({
+                  id_member_profile: m.id_member_profile,
+                  display_name: m.display_name,
+                  avatar_url: m.avatar_url,
+                  username: m.username,
+                  role: m.role,
+                })) as ProfileServiceEditClanMember[]
+              }
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cursos do clan — qualquer membro cria; anexa membros no editor. */}
+      {myMembership && (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="size-5" /> Cursos do clan
+              </CardTitle>
+              <CardDescription>
+                Crie cursos vinculados ao clan. Anexe os membros participantes no
+                editor — a venda divide igual no Saldo de cada um.
+              </CardDescription>
+            </div>
+            <Button size="sm" onClick={handleCreateCourse} disabled={creatingCourse}>
+              <Plus className="size-4 mr-1" />
+              {creatingCourse ? "Criando..." : "Criar curso"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const clanCourses = (myCourses as MyCourse[]).filter(
+                (c) => String(c.profile_id) === String(id_profile)
+              )
+              if (clanCourses.length === 0) {
                 return (
-                  <div
-                    key={msg.id_clan_message}
-                    className="flex items-start gap-2 group"
-                  >
-                    <Avatar className="size-8">
-                      <AvatarImage src={msg.author_avatar_url || undefined} />
-                      <AvatarFallback>
-                        {msg.author_display_name?.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 bg-muted/50 rounded-md px-3 py-2">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm font-medium">
-                          {msg.author_display_name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          @{msg.author_username} ·{" "}
-                          {new Date(msg.created_at).toLocaleString("pt-BR")}
-                        </span>
-                        {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 ml-auto opacity-0 group-hover:opacity-100"
-                            onClick={() => handleDeleteMessage(msg.id_clan_message)}
-                            title="Apagar"
-                          >
-                            <Trash2 className="size-3" />
-                          </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Você ainda não criou cursos neste clan.
+                  </p>
+                )
+              }
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {clanCourses.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={`/account/courses/${c.id}`}
+                      className="flex items-center gap-3 border rounded-md p-3 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="size-10 shrink-0 rounded bg-muted overflow-hidden">
+                        {c.cover_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.cover_url} alt={c.title} className="size-full object-cover" />
+                        ) : (
+                          <div className="size-full flex items-center justify-center">
+                            <GraduationCap className="size-5 text-muted-foreground" />
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {msg.content}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{c.title}</div>
+                        <div className="text-xs text-muted-foreground capitalize">{c.status}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
-          {myMembership && (
-            <div className="space-y-2 pt-2 border-t">
-              <Textarea
-                placeholder="Deixe um recado..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                rows={2}
-                maxLength={2000}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault()
-                    handleSendMessage()
-                  }
-                }}
-              />
-              {messageError && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="size-4" /> {messageError}
-                </p>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  {newMessage.length}/2000 · Ctrl+Enter envia
-                </span>
-                <Button
-                  size="sm"
-                  onClick={handleSendMessage}
-                  disabled={sendingMessage || !newMessage.trim()}
-                >
-                  <Send className="size-4 mr-1" />
-                  {sendingMessage ? "Enviando..." : "Enviar"}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Saldo gerado pelo clan (splits de serviço/curso no meu Saldo). */}
+      {myMembership && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="size-5" /> Saldo gerado pelo clan
+            </CardTitle>
+            <CardDescription>
+              Sua parte das vendas deste clan. O dinheiro cai no seu Saldo geral —
+              acompanhe e saque em <Link href="/pagamentos" className="underline">Pagamentos</Link>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {payouts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma venda do clan ainda.
+              </p>
+            ) : (
+              <>
+                {(() => {
+                  const sum = (st: ClanPayout["status"]) =>
+                    payouts.filter((p) => p.status === st).reduce((a, p) => a + (p.amount_cents || 0), 0)
+                  const brl = (c: number) => ((c || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                  return (
+                    <div className="mb-4 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-md border p-2">
+                        <div className="text-xs text-muted-foreground">Aguardando</div>
+                        <div className="text-sm font-bold text-amber-600">{brl(sum("aguardando"))}</div>
+                      </div>
+                      <div className="rounded-md border p-2">
+                        <div className="text-xs text-muted-foreground">Liberado</div>
+                        <div className="text-sm font-bold text-emerald-600">{brl(sum("aprovado"))}</div>
+                      </div>
+                      <div className="rounded-md border p-2">
+                        <div className="text-xs text-muted-foreground">Pago</div>
+                        <div className="text-sm font-bold text-[#E0A500]">{brl(sum("pago"))}</div>
+                      </div>
+                    </div>
+                  )
+                })()}
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {payouts.map((p) => (
+                    <div
+                      key={p.id_clan_payout}
+                      className="flex items-center justify-between gap-3 border rounded-md p-2.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {p.source_type === "clan_course" ? "Curso do clan" : "Serviço do clan"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                          {p.status === "aguardando" && ` · libera ${new Date(p.available_at).toLocaleDateString("pt-BR")}`}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-bold tabular-nums">
+                          {((p.amount_cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </div>
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground capitalize">{p.status}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {isOwner && (
         <>
