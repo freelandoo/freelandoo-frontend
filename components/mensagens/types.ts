@@ -16,6 +16,8 @@ export interface ConversationListItem {
   cover_url?: string | null
   owner_profile_id?: string | null
   member_count?: number | null
+  /** Não-nulo quando a conversa de grupo é o chat de um clan (fixada no topo). */
+  id_clan_profile?: string | null
   other_entity_id: string
   last_message_at: string | null
   last_message_preview: string | null

@@ -13,6 +13,7 @@ import {
   Lock,
   Loader2,
   MapPin,
+  Pin,
   MessageCircle,
   MessageSquarePlus,
   Package,
@@ -347,6 +348,13 @@ export default function MensagensClient() {
   const [conversations, setConversations] = useState<ConversationListItem[]>([])
   const [convsLoading, setConvsLoading] = useState(false)
   const [convsError, setConvsError] = useState<string | null>(null)
+
+  // Chat de clan (id_clan_profile != null) fica fixado no topo da inbox,
+  // preservando a ordem por última mensagem dentro de cada grupo.
+  const sortedConversations = useMemo(() => {
+    const isClanPinned = (c: ConversationListItem) => (c.id_clan_profile ? 1 : 0)
+    return [...conversations].sort((a, b) => isClanPinned(b) - isClanPinned(a))
+  }, [conversations])
 
   const [activeConvId, setActiveConvId] = useState<string | null>(initialConvId)
   const [activeDetail, setActiveDetail] = useState<DetailResponse | null>(null)
@@ -1395,8 +1403,9 @@ export default function MensagensClient() {
               <EmptyConversations />
             ) : (
               <ul className="space-y-2.5 p-2.5">
-                {conversations.map((c) => {
+                {sortedConversations.map((c) => {
                   const isGroup = c.kind === "group"
+                  const isClanChat = !!c.id_clan_profile
                   const otherHref = isGroup ? null : entityHref(c.other_entity)
                   const title = isGroup
                     ? (c.name || t("groupFallback", "Grupo"))
@@ -1438,6 +1447,9 @@ export default function MensagensClient() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="fl-display inline-flex items-center gap-1.5 truncate text-lg leading-none text-[#0B0B0D]">
+                            {isClanChat && (
+                              <Pin className="h-3.5 w-3.5 shrink-0 fill-[#F2B705] text-[#0B0B0D]" />
+                            )}
                             {title}
                             {isGroup && c.member_count != null && (
                               <span className="text-[10px] font-bold tabular-nums text-[#9a7400]">· {c.member_count}</span>
