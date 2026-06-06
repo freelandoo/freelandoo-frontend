@@ -251,6 +251,12 @@ export function ProfilePublicServicesSection({
             const img = getServiceCoverUrl(s)
             const { integer, cents } = formatPriceParts(s.price_amount)
             const desc = s.description?.trim()
+            // Co-autoria do clan: perfis anexados que dividem a venda.
+            const coAuthors = isClan
+              ? (s.member_profile_ids || [])
+                  .map((id) => clanMembers.find((m) => m.id_member_profile === id))
+                  .filter((m): m is ProfileServiceEditClanMember => !!m)
+              : []
 
             return (
               <li
@@ -295,6 +301,33 @@ export function ProfilePublicServicesSection({
                       <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-[#5b554b] md:text-[11px]">{desc}</p>
                     ) : null}
                   </div>
+
+                  {coAuthors.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                      {coAuthors.slice(0, 3).map((m) => (
+                        <span
+                          key={m.id_member_profile}
+                          className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] py-0.5 pl-0.5 pr-1.5 text-[9px] font-semibold text-[#0B0B0D]/75 md:text-[10px]"
+                          title={`@${m.username}`}
+                        >
+                          {m.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.avatar_url} alt={m.display_name} className="h-3.5 w-3.5 rounded-full object-cover" />
+                          ) : (
+                            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#0B0B0D]/15 text-[7px]">
+                              {m.display_name?.slice(0, 1).toUpperCase()}
+                            </span>
+                          )}
+                          @{m.username}
+                        </span>
+                      ))}
+                      {coAuthors.length > 3 && (
+                        <span className="text-[9px] font-semibold text-[#0B0B0D]/55 md:text-[10px]">
+                          +{coAuthors.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="mt-auto shrink-0">
                     <div className="mt-2 flex items-center justify-between gap-1.5">

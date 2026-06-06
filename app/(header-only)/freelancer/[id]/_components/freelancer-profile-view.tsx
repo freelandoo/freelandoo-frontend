@@ -858,7 +858,12 @@ export default function FreelancerProfileView({
           )}
 
           {portfolioTab === "courses" && (
-            <ProfileCoursesTab profileId={profileId} isOwnProfile={isOwnProfile} />
+            <ProfileCoursesTab
+              profileId={profileId}
+              isOwnProfile={isOwnProfile}
+              isClan={isClan}
+              clanMembers={isClan ? (members as ProfileServiceEditClanMember[]) : []}
+            />
           )}
 
           {portfolioTab === "shop" && !isClan && (
@@ -1530,14 +1535,19 @@ interface PublicCourseLite {
   status: "draft" | "published" | "paused"
   profile_id: string | null
   price_cents: number
+  member_profile_ids?: string[]
 }
 
 function ProfileCoursesTab({
   profileId,
   isOwnProfile,
+  isClan = false,
+  clanMembers = [],
 }: {
   profileId: string
   isOwnProfile: boolean
+  isClan?: boolean
+  clanMembers?: ProfileServiceEditClanMember[]
 }) {
   // Dono usa o catálogo "meus cursos" (inclui rascunhos/pausados).
   // Visitante busca o endpoint público (só publicados).
@@ -1633,6 +1643,38 @@ function ProfileCoursesTab({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0B0B0D]/85 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-3">
             <p className="text-xs font-bold text-white line-clamp-2">{c.title}</p>
+            {(() => {
+              const coAuthors = isClan
+                ? (c.member_profile_ids || [])
+                    .map((id) => clanMembers.find((m) => m.id_member_profile === id))
+                    .filter((m): m is ProfileServiceEditClanMember => !!m)
+                : []
+              if (coAuthors.length === 0) return null
+              return (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                  {coAuthors.slice(0, 3).map((m) => (
+                    <span
+                      key={m.id_member_profile}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#0B0B0D]/70 py-0.5 pl-0.5 pr-1.5 text-[9px] font-semibold text-[#F1EDE2] backdrop-blur-sm"
+                      title={`@${m.username}`}
+                    >
+                      {m.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.avatar_url} alt={m.display_name} className="h-3.5 w-3.5 rounded-full object-cover" />
+                      ) : (
+                        <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/20 text-[7px]">
+                          {m.display_name?.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      @{m.username}
+                    </span>
+                  ))}
+                  {coAuthors.length > 3 && (
+                    <span className="text-[9px] font-semibold text-white/70">+{coAuthors.length - 3}</span>
+                  )}
+                </div>
+              )
+            })()}
             {isOwnProfile && c.status !== "published" && (
               <span className="mt-1 inline-block rounded-full border border-[#F2B705]/50 bg-[#F2B705]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F2B705]">
                 {c.status === "draft" ? "Rascunho" : "Pausado"}
