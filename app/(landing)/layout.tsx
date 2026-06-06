@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { AudienceChooserModal } from "@/components/home/landing/AudienceChooserModal"
+import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
 
 /**
  * Layout do grupo (landing) — homepage editorial em tema light.
@@ -15,8 +16,10 @@ import { AudienceChooserModal } from "@/components/home/landing/AudienceChooserM
 export default function LandingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="fl-root fl-paper-texture flex min-h-[100dvh] flex-col font-sans antialiased">
-      {children}
-      <AudienceChooserModal />
+      <SiteAssetsProvider>
+        {children}
+        <AudienceChooserModal />
+      </SiteAssetsProvider>
     </div>
   )
 }
