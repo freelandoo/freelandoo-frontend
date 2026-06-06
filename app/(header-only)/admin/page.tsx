@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Search, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Search, ChevronRight, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -99,19 +99,13 @@ export default function AdminPage() {
       .finally(() => setLoading(false))
   }, [router])
 
-  // índice global 01..N para o número em contorno de cada card
-  const indexed = useMemo(
-    () => ADMIN_CARDS.map((c, i) => ({ ...c, n: String(i + 1).padStart(2, "0") })),
-    []
-  )
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return indexed
-    return indexed.filter(
+    if (!q) return ADMIN_CARDS
+    return ADMIN_CARDS.filter(
       (c) => c.title.toLowerCase().includes(q) || c.body.toLowerCase().includes(q) || c.section.toLowerCase().includes(q)
     )
-  }, [query, indexed])
+  }, [query])
 
   const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
 
@@ -183,45 +177,51 @@ export default function AdminPage() {
                     <span className="text-xs font-bold tabular-nums text-muted-foreground">{cards.length}</span>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <ul className="space-y-3">
                     {cards.map((card) => {
                       const Icon = card.icon
-                      const inner = (
-                        <div
+                      const row = (
+                        <button
+                          type="button"
                           onClick={() => router.push(card.href)}
-                          className="group relative flex h-full cursor-pointer flex-col border-2 border-foreground/15 bg-card p-5 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] transition-all duration-200 hover:-translate-x-[3px] hover:-translate-y-[3px] hover:border-primary hover:shadow-[8px_8px_0_0_#f2b705]"
+                          className="group flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 text-left shadow-[4px_4px_0_0_#0B0B0D] transition-transform duration-200 hover:-translate-y-0.5 hover:-rotate-[0.3deg] hover:shadow-[7px_7px_0_0_#F2B705]"
                         >
-                          {/* número em contorno */}
-                          <span
-                            className="fl-display pointer-events-none absolute right-3 top-1 text-5xl text-transparent"
-                            style={{ WebkitTextStroke: "2px rgba(242,183,5,0.22)" }}
+                          {/* caixa do ícone rotacionada (igual avatar das conversas) */}
+                          <div
+                            className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[#0B0B0D]"
+                            style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
                           >
-                            {card.n}
-                          </span>
-                          {/* selo "novo" */}
-                          {card.badge && (
-                            <span className="fl-marker absolute -left-2 -top-3 rotate-[-8deg] bg-primary px-2 py-0.5 text-sm font-bold text-[#1a1505] shadow-[2px_2px_0_0_rgba(0,0,0,0.4)]">
-                              {card.badge}
-                            </span>
-                          )}
-
-                          <Icon className={`mb-3 h-6 w-6 ${card.iconClass ?? "text-primary"}`} />
-                          <h3 className="fl-display text-xl leading-none text-foreground">{card.title}</h3>
-                          <p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground">{card.body}</p>
-                          <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                            Abrir →
-                          </span>
-                        </div>
+                            <div className="flex h-11 w-11 items-center justify-center bg-[#1D1810]">
+                              <Icon className={`h-5 w-5 ${card.iconClass ?? "text-[#F2B705]"}`} />
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="fl-display inline-flex items-center gap-1.5 truncate text-lg leading-none text-[#0B0B0D]">
+                                {card.title}
+                              </span>
+                              {card.badge && (
+                                <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-1.5 text-[10px] font-black uppercase tracking-wide text-[#0B0B0D]">
+                                  {card.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 truncate text-xs font-semibold text-[#6B6457]">{card.body}</p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 shrink-0 text-[#0B0B0D]/30 transition-colors group-hover:text-[#0B0B0D]" />
+                        </button>
                       )
                       return card.hint ? (
-                        <HoverHint key={card.href} id={card.hint} side="top" className="block h-full w-full">
-                          {inner}
-                        </HoverHint>
+                        <li key={card.href}>
+                          <HoverHint id={card.hint} side="top" className="block w-full">
+                            {row}
+                          </HoverHint>
+                        </li>
                       ) : (
-                        <div key={card.href} className="block h-full w-full">{inner}</div>
+                        <li key={card.href}>{row}</li>
                       )
                     })}
-                  </div>
+                  </ul>
                 </section>
               )
             })}
