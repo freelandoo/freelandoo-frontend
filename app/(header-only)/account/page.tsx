@@ -1478,11 +1478,11 @@ export default function PerfilPage() {
           </span>
         </HoverHint>
       </RetractableProfileHeader>
-      <main className="container mx-auto px-0 py-10 md:px-4 md:py-12">
-        <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
+      <main className="container mx-auto px-0 py-10 md:px-4 md:py-12 overflow-x-hidden">
+        <div className="mx-auto grid w-full min-w-0 max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
+            className="min-w-0 overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
           >
             <div className="relative h-40 overflow-hidden bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (

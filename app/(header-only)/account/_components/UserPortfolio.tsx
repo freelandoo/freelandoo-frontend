@@ -543,7 +543,7 @@ export function UserPortfolio({
     }`
 
   return (
-    <section className="-mt-px mb-4">
+    <section className="-mt-px mb-4 min-w-0 max-w-full overflow-x-hidden">
       {/* Tabs grudadas no headcard (sem mb pra colar visualmente) */}
       <div className="flex items-stretch justify-between border-b border-[#F5F1E8]/12 bg-[#1d1810]/50">
         <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
