@@ -1190,7 +1190,7 @@ export default function MensagensClient() {
   }
 
   return (
-    <div className="min-h-[calc(100dvh-72px)]">
+    <div className="min-h-[calc(100dvh-72px)] md:pl-[80px]">
       <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden bg-gradient-to-b from-[#141009] via-[#141009] to-black md:grid-cols-[340px_1fr]">
         {/* Lista (Conversas ou O.S.) */}
         <aside
@@ -1633,6 +1633,7 @@ export default function MensagensClient() {
                 kind="global"
                 pageTitle={t("liveChat", "Chat ao vivo")}
                 pageSubtitle={t("globalChatPageSubtitle", "Sala global — todos os usuários do Freelandoo")}
+                onBack={() => handleSelectTab("conv")}
               />
             </div>
           </section>

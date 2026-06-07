@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  ArrowLeft,
   Flag,
   Loader2,
   Radio,
@@ -73,6 +74,8 @@ interface ChatRoomPanelProps {
   onNeedsMachinePick?: () => void
   pageTitle?: string
   pageSubtitle?: string
+  /** Volta para a lista de conversas (botão no header — útil no mobile). */
+  onBack?: () => void
 }
 
 function authHeaders(): HeadersInit {
@@ -98,6 +101,7 @@ export function ChatRoomPanel({
   onNeedsMachinePick,
   pageTitle,
   pageSubtitle,
+  onBack,
 }: ChatRoomPanelProps) {
   const t = useTranslations("Conversation")
   const locale = useLocale()
@@ -412,6 +416,17 @@ export function ChatRoomPanel({
           </div>
         )}
         <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={t("backToMessages", "Voltar para mensagens")}
+              title={t("backToMessages", "Voltar para mensagens")}
+              className="-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/[0.06] hover:text-white md:hidden"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
           <motion.span
             animate={{ scale: connState === "online" ? [1, 1.15, 1] : 1 }}
             transition={connState === "online" ? { repeat: Infinity, duration: 2.2, ease: "easeInOut" } : { duration: 0.3 }}
