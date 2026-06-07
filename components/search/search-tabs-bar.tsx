@@ -17,10 +17,10 @@ const TABS: { id: SearchTab; label: string; icon: React.ComponentType<{ classNam
   { id: "courses", label: "Cursos", icon: GraduationCap, dataTour: "search-tab-courses" },
 ]
 
-export function SearchTabsBar({ tab, onTabChange, accent = "#fbbf24" }: Props) {
+export function SearchTabsBar({ tab, onTabChange }: Props) {
   return (
-    <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-zinc-950/85 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[640px] items-stretch md:max-w-[760px] lg:max-w-[1080px]">
+    <div className="fl-root sticky top-0 z-30 border-b-2 border-[#0B0B0D] bg-[#0b0804]/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-[640px] items-stretch gap-1.5 px-3 py-2.5 md:max-w-[760px] lg:max-w-[1080px]">
         {TABS.map((t) => {
           const active = t.id === tab
           const Icon = t.icon
@@ -31,20 +31,14 @@ export function SearchTabsBar({ tab, onTabChange, accent = "#fbbf24" }: Props) {
               data-tour={t.dataTour}
               onClick={() => onTabChange(t.id)}
               className={cn(
-                "group relative flex flex-1 items-center justify-center gap-1.5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors",
-                active ? "text-white" : "text-white/45 hover:text-white/80",
+                "group flex flex-1 items-center justify-center gap-1.5 border-2 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-transform hover:-translate-y-0.5",
+                active
+                  ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                  : "border-[#F1EDE2]/20 bg-transparent text-[#C9C2B6] hover:border-[#F1EDE2] hover:text-[#F1EDE2]",
               )}
-              style={{ transition: "color 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
             >
               <Icon className="h-3.5 w-3.5" />
               <span>{t.label}</span>
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-4 bottom-0 h-[2px] rounded-full"
-                  style={{ background: accent, boxShadow: `0 0 12px ${accent}55` }}
-                />
-              )}
             </button>
           )
         })}

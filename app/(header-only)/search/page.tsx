@@ -430,7 +430,7 @@ function SearchPageInner() {
         <SearchTabsBar tab={tab} onTabChange={handleTabChange} accent={accent} />
 
         {tab === "services" && (
-          <div className="border-b border-white/[0.06] bg-black/40 backdrop-blur-sm">
+          <div className="border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm">
             <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
               <StoryBar
                 key={storyBarKey}
@@ -454,13 +454,14 @@ function SearchPageInner() {
         ) : error ? (
           <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
         ) : display.length === 0 ? (
-          <div className="px-4 py-16 text-center">
-            <p className="text-sm text-white/65">{t("noResultsMessage", "Nenhum profissional com esses filtros.")}</p>
+          <div className="fl-root px-4 py-20 text-center">
+            <p className="fl-display text-3xl leading-none text-[#F5F1E8]">
+              {t("noResultsMessage", "Nenhum profissional com esses filtros.")}
+            </p>
             <button
               type="button"
               onClick={clearAll}
-              className="mt-3 text-xs font-semibold underline transition hover:opacity-80"
-              style={{ color: accent }}
+              className="mt-5 inline-flex items-center border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
             >
               {t("clearFiltersButton", "Limpar filtros")}
             </button>
@@ -480,17 +481,17 @@ function SearchPageInner() {
         {tab === "products" && (
           <>
             {/* Barra de filtros de produto: categoria (estado/cidade reusam os do header retrátil) */}
-            <div className="border-b border-white/[0.06] bg-black/30 backdrop-blur-sm">
+            <div className="fl-root border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm">
               <div className="mx-auto flex w-full max-w-[640px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:max-w-[760px] lg:max-w-[1080px] [&::-webkit-scrollbar]:hidden">
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">Categoria</span>
+                <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">Categoria</span>
                 <button
                   type="button"
                   onClick={() => setProductCategoryId(null)}
                   className={cn(
-                    "shrink-0 rounded-full border px-3 py-1 text-[11.5px] font-medium transition",
+                    "shrink-0 border-2 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] transition-transform hover:-translate-y-0.5",
                     productCategoryId == null
-                      ? "border-[#F2B705]/60 bg-[#F2B705]/12 text-[#F2B705]"
-                      : "border-white/10 bg-white/[0.02] text-white/65 hover:border-white/20 hover:text-white",
+                      ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                      : "border-[#F1EDE2]/20 bg-transparent text-[#C9C2B6] hover:border-[#F1EDE2] hover:text-[#F1EDE2]",
                   )}
                 >
                   Todas
@@ -503,10 +504,10 @@ function SearchPageInner() {
                       type="button"
                       onClick={() => setProductCategoryId(cat.id_product_category)}
                       className={cn(
-                        "shrink-0 rounded-full border px-3 py-1 text-[11.5px] font-medium transition",
+                        "shrink-0 border-2 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] transition-transform hover:-translate-y-0.5",
                         active
-                          ? "border-yellow-400/60 bg-yellow-400/10 text-yellow-200"
-                          : "border-white/10 bg-white/[0.02] text-white/65 hover:border-white/20 hover:text-white",
+                          ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                          : "border-[#F1EDE2]/20 bg-transparent text-[#C9C2B6] hover:border-[#F1EDE2] hover:text-[#F1EDE2]",
                       )}
                     >
                       {cat.name}
@@ -555,7 +556,7 @@ function SearchPageInner() {
         type="button"
         data-tour="search-open-chamado"
         onClick={() => setOpenChamadoOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#F2B705] px-4 py-3 text-sm font-bold text-[#1A1505] shadow-[0_12px_40px_-12px_rgba(242,183,5,0.6)] transition hover:bg-[#ffc81f] active:scale-95 sm:bottom-7 sm:right-7"
+        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-extrabold uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 active:translate-x-px active:translate-y-px sm:bottom-7 sm:right-7"
         aria-label="Abrir chamado"
       >
         <MessageSquarePlus className="h-4 w-4" />

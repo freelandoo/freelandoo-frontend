@@ -123,7 +123,6 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "search-4", target: "[data-tour='search-filter-city']", title: "Cidade", content: "Estado ou cidade do profissional. Combinável com Enxame e profissão.", placement: "bottom" },
       { id: "search-5", target: "[data-tour='search-filter-level']", title: "Nível mínimo", content: "Filtra por nível de XP. Quanto maior, mais ativo na plataforma.", placement: "bottom" },
       { id: "search-6", target: "[data-tour='search-filter-premium']", title: "Só Premium", content: "Mostra apenas perfis com destaque Premium ativo.", placement: "bottom" },
-      { id: "search-7", target: "[data-tour='search-bell']", title: "Notificações", content: "Abre o painel com likes, comentários, follows e mensagens novas.", placement: "left" },
       { id: "search-chamado", target: "[data-tour='search-open-chamado']", title: "Abrir chamado", content: "Não achou o que queria? Abra um chamado de serviço, produto ou curso — os profissionais compatíveis respondem na aba Solicitações das suas mensagens.", placement: "left" },
       { id: "search-done", title: "Pronto!", content: "Use as abas e os filtros para encontrar exatamente o que precisa.", placement: "center" },
     ],

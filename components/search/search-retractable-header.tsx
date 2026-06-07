@@ -2,15 +2,13 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Bell, ChevronDown, MapPin, Star, X } from "lucide-react"
-import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
+import { ChevronDown, MapPin, Star, X } from "lucide-react"
 import type { CatalogCategory, CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "@/components/feed/machine-filter-sheet"
 import { ProfessionFilterSheet } from "@/components/feed/profession-filter-sheet"
 import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
 import { LevelFilterSheet, LEVEL_FILTER_OPTIONS } from "@/components/feed/level-filter-sheet"
 import { cn } from "@/lib/utils"
-import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import { HoverHint } from "@/features/tour/HoverHint"
 
 type HeaderTab = "services" | "products" | "courses"
@@ -37,6 +35,11 @@ interface SearchRetractableHeaderProps {
   onClearAll: () => void
 }
 
+/**
+ * Cabeçalho tabloide da vitrine (Enxame) que retrai ao scrollar e reaparece ao
+ * subir. Estilo "papel" do ranking/mensagens: logo fl-display dourado, filtros
+ * de borda dura. Sem sino de notificações (vive na navegação lateral).
+ */
 export function SearchRetractableHeader({
   machines,
   categories,
@@ -75,7 +78,6 @@ export function SearchRetractableHeader({
 
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
-  const navCounts = useNavCounts()
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
@@ -91,36 +93,28 @@ export function SearchRetractableHeader({
     return () => el.removeEventListener("scroll", onScroll)
   }, [scrollRef])
 
-  const unread = navCounts.notificationUnread
-
-  const bellActive = unread > 0
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const bellRef = useRef<HTMLButtonElement | null>(null)
-
   return (
-    <>
     <div
       className={cn(
         "pointer-events-none fixed inset-x-0 top-0 z-40 transition-transform duration-300 will-change-transform md:left-[80px]",
         hidden ? "-translate-y-full" : "translate-y-0"
       )}
     >
-      <div className="pointer-events-auto relative">
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/60 to-transparent backdrop-blur-md"
-        />
-        <div className="relative flex items-center gap-2 px-4 pb-4 pt-3 sm:gap-3 sm:px-6">
+      <div className="fl-root pointer-events-auto relative border-b-2 border-[#0B0B0D] bg-[#0b0804]/95 backdrop-blur-md">
+        {/* faixa dourada inferior — assinatura tabloide */}
+        <div aria-hidden className="absolute inset-x-0 -bottom-[2px] h-[2px] bg-[#F2B705]" />
+
+        <div className="relative flex items-center gap-2 px-4 pb-3 pt-3 sm:gap-3 sm:px-6">
           <Link
             href="/"
-            className="shrink-0 text-lg font-black tracking-tight transition-opacity hover:opacity-80 sm:text-xl"
-            style={{ color: accent, textShadow: `0 1px 12px ${accent}66` }}
+            className="fl-display shrink-0 text-2xl leading-none text-[#F2B705] transition-transform hover:-translate-y-0.5 sm:text-[1.7rem]"
             aria-label="Freelandoo"
           >
             freelandoo
+            <span className="text-[#F1EDE2]">.</span>
           </Link>
 
-          <div className="ml-2 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="ml-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:ml-2">
             {showMachine && (
               <HoverHint id="search-filter-machine" side="bottom" dataTour="search-filter-machine">
                 <MachineFilterSheet
@@ -196,17 +190,12 @@ export function SearchRetractableHeader({
                 <button
                   type="button"
                   onClick={onPremiumToggle}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur transition-all duration-200 hover:border-white/40 hover:text-white active:scale-95"
-                  style={
+                  className={cn(
+                    "inline-flex h-9 shrink-0 items-center gap-1.5 border-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
                     premiumOnly
-                      ? {
-                          color: accent,
-                          borderColor: `${accent}66`,
-                          background: `${accent}22`,
-                          boxShadow: `0 0 0 1px ${accent}22, 0 4px 16px -8px ${accent}55`,
-                        }
-                      : undefined
-                  }
+                      ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                      : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+                  )}
                 >
                   <Star className={cn("h-3.5 w-3.5", premiumOnly && "fill-current")} />
                   Premium
@@ -218,7 +207,7 @@ export function SearchRetractableHeader({
                 <button
                   type="button"
                   onClick={onClearAll}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2.5 py-1.5 text-[11px] text-white/70 backdrop-blur transition hover:border-white/30 hover:text-white"
+                  className="inline-flex h-9 shrink-0 items-center gap-1 border-2 border-[#F1EDE2]/25 bg-transparent px-2.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#C9C2B6] transition-colors hover:border-[#F1EDE2] hover:text-[#F1EDE2]"
                 >
                   <X className="h-3 w-3" />
                   Limpar
@@ -226,45 +215,9 @@ export function SearchRetractableHeader({
               </HoverHint>
             )}
           </div>
-
-          <HoverHint id="search-bell" side="left" dataTour="search-bell">
-          <button
-            type="button"
-            ref={bellRef}
-            onClick={() => setDropdownOpen((v) => !v)}
-            aria-label={bellActive ? `Notificações (${unread} não lidas)` : "Notificações"}
-            aria-expanded={dropdownOpen}
-            className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/35 backdrop-blur transition hover:bg-black/55 active:scale-95"
-            style={bellActive ? { borderColor: `${accent}88`, boxShadow: `0 0 0 1px ${accent}33, 0 6px 24px -10px ${accent}` } : undefined}
-          >
-            <Bell
-              className="h-5 w-5 transition-colors duration-300"
-              style={{ color: bellActive ? accent : "#ffffff" }}
-              strokeWidth={2}
-            />
-            {bellActive && (
-              <span
-                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-black"
-                style={{ background: accent }}
-                aria-hidden
-              >
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-          </button>
-          </HoverHint>
         </div>
       </div>
     </div>
-    <NotificationsDropdown
-      open={dropdownOpen}
-      anchorRef={bellRef}
-      onClose={() => setDropdownOpen(false)}
-      onUnreadCountChange={() => {
-        window.dispatchEvent(new Event("notifications:unread-changed"))
-      }}
-    />
-    </>
   )
 }
 
@@ -276,21 +229,22 @@ interface PillProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 function Pill({ label, active, accent, disabled, icon, ...rest }: PillProps) {
-  const accentStyle: React.CSSProperties = active && accent
-    ? {
-        color: accent,
-        borderColor: `${accent}66`,
-        background: `${accent}22`,
-        boxShadow: `0 0 0 1px ${accent}22, 0 4px 16px -8px ${accent}55`,
-      }
+  const tint = accent || "#F2B705"
+  const activeStyle: React.CSSProperties = active
+    ? { background: tint, borderColor: "#0B0B0D", color: "#0B0B0D" }
     : {}
   return (
     <button
       type="button"
       disabled={disabled}
       {...rest}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur transition-all duration-200 hover:border-white/40 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-      style={accentStyle}
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center gap-1.5 border-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0",
+        active
+          ? "shadow-[3px_3px_0_0_#0B0B0D]"
+          : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+      )}
+      style={activeStyle}
     >
       {icon}
       <span className="max-w-[140px] truncate">{label}</span>
