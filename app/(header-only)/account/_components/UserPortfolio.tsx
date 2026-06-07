@@ -652,7 +652,7 @@ export function UserPortfolio({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-px overflow-hidden w-screen max-w-[100vw] ml-[calc(50%-50vw)] md:ml-0 md:w-auto md:max-w-none">
           {filteredItems.map((item) => {
             const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
             const firstMedia = activeMedias[0]
@@ -1237,7 +1237,7 @@ function SavedSection() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-px overflow-hidden w-screen max-w-[100vw] ml-[calc(50%-50vw)] md:ml-0 md:w-auto md:max-w-none">
           {items.map((it) => {
             const thumb = it.first_media?.thumbnail_url || it.first_media?.url || null
             const isVideo = it.first_media?.type === "video"
