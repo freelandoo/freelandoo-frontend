@@ -57,21 +57,21 @@ interface Props {
 function StatusPill({ status }: { status: ModuleStatus | LessonStatus }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-        <span className="h-1 w-1 rounded-full bg-emerald-300" />
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-emerald-600 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+        <span className="h-1 w-1 rounded-full bg-white/90" />
         Publicado
       </span>
     )
   }
   if (status === "hidden") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-[#0B0B0D]/85 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
         <EyeOff className="h-3 w-3" /> Oculto
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-amber-500 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0B0B0D]">
       Rascunho
     </span>
   )
@@ -84,7 +84,7 @@ function VideoStatePill({
 }) {
   if (status === "ready") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
         <CheckCircle2 className="h-3 w-3" />
         Vídeo
       </span>
@@ -92,7 +92,7 @@ function VideoStatePill({
   }
   if (status === "processing" || status === "uploading") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/30 bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-sky-600 px-2 py-0.5 text-[10px] font-bold text-white">
         <Loader2 className="h-3 w-3 animate-spin" />
         {status === "processing" ? "Processando" : "Enviando"}
       </span>
@@ -100,14 +100,14 @@ function VideoStatePill({
   }
   if (status === "error") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
         <AlertCircle className="h-3 w-3" />
         Erro
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-white/55">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-[#0B0B0D]/85 px-2 py-0.5 text-[10px] font-bold text-white">
       <VideoOff className="h-3 w-3" />
       Sem vídeo
     </span>
@@ -127,7 +127,7 @@ function LessonCard({
   return (
     <Link
       href={`/account/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lesson.id)}`}
-      className="group relative flex flex-col overflow-hidden rounded-[1.25rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_45px_-22px_rgba(230,184,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]"
+      className="group relative flex flex-col overflow-hidden border-2 border-[#0B0B0D] bg-[#1d1810] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-zinc-900">
         {lesson.cover_url ? (
@@ -161,13 +161,13 @@ function LessonCard({
             {lesson.title}
           </p>
           {lesson.description && (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-white/65">
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-white/70">
               {lesson.description}
             </p>
           )}
         </div>
 
-        <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition group-hover:border-primary/45 group-hover:text-primary">
+        <span className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition group-hover:border-primary/45 group-hover:text-primary">
           <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </div>
@@ -269,11 +269,11 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
 
   if (moduleLoading) {
     return (
-      <PageShell className="md:pl-[80px]">
-      <div className="relative z-10 px-4 py-10 text-white md:px-8">
+      <PageShell texture={false} className="fl-paper-card md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-[#0B0B0D] md:px-8">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="h-9 w-32 animate-pulse rounded-full bg-white/[0.04]" />
-          <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-white/[0.05]" />
+          <div className="h-9 w-32 animate-pulse rounded-full bg-[#0B0B0D]/[0.04]" />
+          <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-[#0B0B0D]/[0.05]" />
         </div>
       </div>
       </PageShell>
@@ -282,17 +282,17 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
 
   if (moduleError || !module) {
     return (
-      <PageShell className="md:pl-[80px]">
-      <div className="relative z-10 px-4 py-10 text-white md:px-8">
-        <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
+      <PageShell texture={false} className="fl-paper-card md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-[#0B0B0D] md:px-8">
+        <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-700">
           <AlertCircle className="mb-3 h-5 w-5" />
           <p className="font-medium">Não foi possível carregar o módulo.</p>
-          <p className="mt-1 text-red-200/80">
+          <p className="mt-1 text-red-700/80">
             {moduleError || "Módulo indisponível."}
           </p>
           <Link
             href={`/account/courses/${encodeURIComponent(courseId)}`}
-            className="mt-4 inline-flex rounded-full border border-white/15 px-4 py-2 text-sm text-white/85"
+            className="mt-4 inline-flex rounded-full border border-[#0B0B0D]/20 px-4 py-2 text-sm text-[#0B0B0D]/80"
           >
             Voltar ao curso
           </Link>
@@ -303,7 +303,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
   }
 
   return (
-    <PageShell className="text-white md:pl-[80px]">
+    <PageShell texture={false} className="fl-paper-card text-[#0B0B0D] md:pl-[80px]">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_30%_-10%,rgba(230,184,0,0.14),transparent_55%)]"
@@ -314,7 +314,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link
             href={`/account/courses/${encodeURIComponent(courseId)}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Voltar ao curso
@@ -324,7 +324,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
             <button
               type="button"
               onClick={openEdit}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
             >
               <Settings className="h-3.5 w-3.5" />
               Editar módulo
@@ -337,6 +337,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
           <ImageDropZone
             currentUrl={module.banner_url}
             aspect="21/9"
+            tone="light"
             label="Banner do módulo"
             title="Arraste ou envie uma imagem para o banner do módulo"
             hint="Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB"
@@ -344,31 +345,31 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
             onRemove={module.banner_url ? handleBannerRemove : undefined}
           />
 
-          <div className="relative mt-5 grid gap-3 rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:p-6">
+          <div className="relative mt-5 grid gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 shadow-[4px_4px_0_0_#0B0B0D] md:p-6">
             <div className="flex flex-wrap items-start gap-4">
               <div className="min-w-0 flex-1">
                 <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/85">
                   <Layers className="h-3 w-3" />
                   Módulo
                 </p>
-                <h1 className="mt-2 text-2xl font-semibold leading-tight text-white md:text-3xl">
+                <h1 className="mt-2 text-2xl font-semibold leading-tight text-[#0B0B0D] md:text-3xl">
                   {module.title}
                 </h1>
                 {module.description && (
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#0B0B0D]/65">
                     {module.description}
                   </p>
                 )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[12px] font-semibold text-white/85">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1 text-[12px] font-semibold text-[#0B0B0D]/80">
                   <PlaySquare className="h-3.5 w-3.5 text-primary/85" />
                   {orderedLessons.length} aula
                   {orderedLessons.length === 1 ? "" : "s"}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[12px] font-semibold text-white/85">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300/85" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1 text-[12px] font-semibold text-[#0B0B0D]/80">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   {publishedLessons} publicada
                   {publishedLessons === 1 ? "" : "s"}
                 </span>
@@ -385,10 +386,10 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
                 <PlaySquare className="h-3 w-3" />
                 Aulas do módulo
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-white md:text-2xl">
+              <h2 className="mt-2 text-xl font-semibold text-[#0B0B0D] md:text-2xl">
                 Aulas
               </h2>
-              <p className="mt-1 text-xs text-white/50">
+              <p className="mt-1 text-xs text-[#0B0B0D]/50">
                 Cada aula tem sua landing com vídeo, materiais, questionário e
                 comentários.
               </p>
@@ -410,7 +411,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
                   key={i}
                   className={cn(
                     "aspect-[4/5] animate-pulse rounded-[1.25rem]",
-                    "border border-white/[0.06] bg-white/[0.025]",
+                    "border border-[#0B0B0D]/10 bg-[#0B0B0D]/[0.03]",
                   )}
                 />
               ))}
@@ -418,7 +419,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
           )}
 
           {!lessonsLoading && lessonsError && (
-            <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700">
               <AlertCircle className="h-4 w-4" />
               {lessonsError}
             </div>
@@ -429,10 +430,10 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
               <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                 <PlaySquare className="h-7 w-7 text-primary" />
               </div>
-              <p className="text-sm font-medium text-white/85">
+              <p className="text-sm font-medium text-[#0B0B0D]/80">
                 Nenhuma aula neste módulo
               </p>
-              <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
+              <p className="mx-auto mt-1 max-w-md text-xs text-[#0B0B0D]/55">
                 Crie a primeira aula. Você poderá adicionar vídeo, materiais e
                 questionário pela página dela.
               </p>
