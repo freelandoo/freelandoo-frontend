@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -18,7 +19,11 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
   const [items, setItems] = useState<NotificationItem[]>([])
   const [loading, setLoading] = useState(true)
   const [unread, setUnread] = useState(0)
+  const [mounted, setMounted] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
+
+  // Portal só no cliente (evita mismatch de SSR).
+  useEffect(() => setMounted(true), [])
 
   // Mantém o callback num ref — pais costumam passar arrow inline (referência
   // nova a cada render). Sem isso, depender de onUnreadCountChange no fetch
@@ -116,12 +121,12 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
     } catch { /* silent */ }
   }
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
-  return (
+  return createPortal(
     <div
       ref={panelRef}
-      className="fixed right-4 top-[60px] z-[60] w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#F5F1E8]/10 bg-[#15120E]/95 shadow-2xl backdrop-blur-xl"
+      className="fixed right-4 top-[64px] z-[120] w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[#F5F1E8]/10 bg-[#15120E]/95 shadow-2xl backdrop-blur-xl"
       role="dialog"
       aria-label="Notificações"
     >
@@ -155,6 +160,7 @@ export function NotificationsDropdown({ open, anchorRef, onClose, onUnreadCountC
           Ver todas
         </Link>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
