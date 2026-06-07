@@ -517,6 +517,7 @@ export function CourseLandingView({ courseId }: Props) {
           <ImageDropZone
             currentUrl={course.cover_url}
             aspect="21/9"
+            tone="light"
             label="Banner do curso"
             title="Arraste ou envie uma imagem para o banner do curso"
             hint="Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB"
