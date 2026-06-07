@@ -1483,7 +1483,7 @@ export default function PerfilPage() {
             ref={headcardRef}
             className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
           >
-            <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-40 bg-[#1d1810] md:h-52">
+            <div className="relative h-40 overflow-hidden bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -1495,26 +1495,19 @@ export default function PerfilPage() {
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
 
-              {/* Adesivo Casa Views — leva aos rankings (agora interno: /acasaviews) */}
+              {/* Botão Casa Views (ticket) — lado direito, leva aos rankings */}
               <Link
                 href="/acasaviews/rankings"
                 aria-label="Ver os rankings da Casa Views"
                 title="Rankings da Casa Views"
-                className="group absolute left-4 top-4 z-10 -rotate-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-0"
+                className="group absolute right-4 top-1/2 z-10 -translate-y-1/2 -rotate-3 transition-transform duration-200 hover:rotate-0"
               >
-                {/* fita washi colada no topo do adesivo */}
-                <span
-                  aria-hidden
-                  className="absolute -top-2 left-1/2 h-3.5 w-12 -translate-x-1/2 rotate-2 bg-[#F4D53B]/70 shadow-[1px_2px_3px_rgba(0,0,0,0.35)]"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/casaviews/profile/casa-views-ticket.webp"
+                  alt="Casa Views"
+                  className="w-[140px] select-none drop-shadow-[3px_5px_8px_rgba(0,0,0,0.5)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[170px]"
                 />
-                <span className="relative flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0BC5E0] px-3 py-2 shadow-[3px_3px_0_0_#0B0B0D] transition-[box-shadow] group-hover:shadow-[5px_5px_0_0_#F2B705]">
-                  <Crown className="h-5 w-5 shrink-0 text-[#0B0B0D]" />
-                  <span className="fl-display text-left leading-[0.78]">
-                    <span className="block text-[12px] tracking-tight text-[#0B0B0D]">Casa</span>
-                    <span className="block text-[19px] tracking-tight text-[#E11D48] [-webkit-text-stroke:0.6px_#0B0B0D]">Views</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0 -rotate-45 text-[#0B0B0D] transition-transform group-hover:translate-x-0.5" />
-                </span>
               </Link>
 
               <button
@@ -1523,11 +1516,20 @@ export default function PerfilPage() {
                 aria-label="Abrir menu da conta"
                 aria-haspopup="dialog"
                 aria-expanded={dropsideOpen}
-                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
+                className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
                 title="Abrir configurações"
               >
                 <Settings className="h-4 w-4" />
               </button>
+
+              {/* papel rasgado real cobrindo a emenda capa → corpo creme */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/casaviews/profile/torn-edge-02.webp"
+                alt=""
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-[-2px] z-20 h-12 w-full select-none object-fill md:h-14"
+              />
             </div>
 
             <div className="px-5 pb-6 md:px-7">
