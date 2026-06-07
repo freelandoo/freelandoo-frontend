@@ -337,14 +337,14 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       type="button"
       onClick={() => setAudioMuted((m) => !m)}
       aria-label={audioMuted ? t("unmuteMusic", "Ativar música") : t("muteMusic", "Silenciar música")}
-      className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-medium text-white/90 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-black/60"
+      className="inline-flex max-w-full items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#0B0B0D] px-2.5 py-1 text-[11px] font-semibold text-[#F1EDE2] transition hover:bg-[#1D1810]"
     >
-      <Music className="h-3 w-3 shrink-0 text-amber-300" />
+      <Music className="h-3 w-3 shrink-0 text-[#F2B705]" />
       <span className="truncate">
         {post.audio?.title || t("musicLabel", "Música")}
         {post.audio?.artist ? ` · ${post.audio.artist}` : ""}
       </span>
-      {audioMuted ? <VolumeX className="h-3 w-3 shrink-0" /> : <Volume2 className="h-3 w-3 shrink-0 text-amber-300" />}
+      {audioMuted ? <VolumeX className="h-3 w-3 shrink-0" /> : <Volume2 className="h-3 w-3 shrink-0 text-[#F2B705]" />}
     </button>
   ) : null
 
@@ -356,7 +356,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         "group/post box-border w-full max-w-full",
         paged
           ? "flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15"
-          : "bg-black"
+          : "overflow-hidden border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_#F2B705]"
       )}
       data-post-id={post.post_id}
     >
@@ -370,86 +370,136 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
       )}
 
       {/* Header */}
-      <div className={cn("flex w-full min-w-0 shrink-0 items-center gap-3", paged ? "px-4 py-2" : "px-3 py-2.5")}>
-        <Link
-          href={post.public_profile_url || "#"}
-          onClick={handleProfileClick}
-          className="flex min-w-0 flex-1 items-center gap-3"
-        >
-          <span
-            aria-hidden
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: machineColor }}
-            title={post.machine?.name || ""}
-          />
-          <Avatar
-            className={cn(
-              "shrink-0 ring-1 transition",
-              paged ? "h-10 w-10" : "h-8 w-8"
-            )}
-            style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
+      {paged ? (
+        <div className="flex w-full min-w-0 shrink-0 items-center gap-3 px-4 py-2">
+          <Link
+            href={post.public_profile_url || "#"}
+            onClick={handleProfileClick}
+            className="flex min-w-0 flex-1 items-center gap-3"
           >
-            {post.avatar_url ? (
-              <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} />
-            ) : null}
-            <AvatarFallback className="bg-white/5 text-xs text-white/70">
-              {initials(post.profile_name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-semibold text-white">
-                {post.profile_name || post.username || t("profileLabel", "Perfil")}
-              </span>
-              <MachineTop10Crown
-                profileId={post.profile_id}
-                accentColor={machineColor}
-                iconClassName="h-4 w-4"
-              />
-              {post.is_clan && (
-                <Badge
-                  variant="outline"
-                  className="h-5 px-1.5 text-[10px] uppercase tracking-wide"
-                  style={{ borderColor: `${machineColor}55`, color: machineColor }}
-                >
-                  Clan
-                </Badge>
-              )}
+            <span
+              aria-hidden
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: machineColor }}
+              title={post.machine?.name || ""}
+            />
+            <Avatar
+              className="h-10 w-10 shrink-0 ring-1 transition"
+              style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
+            >
+              {post.avatar_url ? (
+                <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} />
+              ) : null}
+              <AvatarFallback className="bg-white/5 text-xs text-white/70">
+                {initials(post.profile_name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-sm font-semibold text-white">
+                  {post.profile_name || post.username || t("profileLabel", "Perfil")}
+                </span>
+                <MachineTop10Crown profileId={post.profile_id} accentColor={machineColor} iconClassName="h-4 w-4" />
+                {post.is_clan && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 px-1.5 text-[10px] uppercase tracking-wide"
+                    style={{ borderColor: `${machineColor}55`, color: machineColor }}
+                  >
+                    Clan
+                  </Badge>
+                )}
+              </div>
+              <p className="truncate text-[11px] text-white/50">
+                {post.profession?.name && (
+                  <>
+                    <span>{post.profession.name}</span>
+                    {(post.city || post.state) && <span> · </span>}
+                  </>
+                )}
+                {post.city && <span>{post.city}</span>}
+                {post.city && post.state && <span>/</span>}
+                {post.state && <span>{post.state}</span>}
+              </p>
             </div>
-            <p className="truncate text-[11px] text-white/50">
-              {!paged && post.published_at && (
-                <>
-                  <span>{timeAgo(post.published_at, t)}</span>
-                  {(post.city || post.state) && <span> · </span>}
-                </>
-              )}
-              {paged && post.profession?.name && (
-                <>
-                  <span>{post.profession.name}</span>
-                  {(post.city || post.state) && <span> · </span>}
-                </>
-              )}
-              {post.city && <span>{post.city}</span>}
-              {post.city && post.state && <span>/</span>}
-              {post.state && <span>{post.state}</span>}
-            </p>
-          </div>
-        </Link>
+          </Link>
 
-        {paged && post.machine?.name && (
-          <span
-            className="min-w-0 max-w-[38%] shrink truncate rounded-full px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider sm:max-w-[45%]"
-            style={{
-              color: machineColor,
-              background: `${machineColor}14`,
-              border: `1px solid ${machineColor}33`,
-            }}
-            title={post.machine.name}
+          {post.machine?.name && (
+            <span
+              className="min-w-0 max-w-[38%] shrink truncate rounded-full px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider sm:max-w-[45%]"
+              style={{
+                color: machineColor,
+                background: `${machineColor}14`,
+                border: `1px solid ${machineColor}33`,
+              }}
+              title={post.machine.name}
+            >
+              {post.machine.name.replace(/^Enxame de\s+/i, "")}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex w-full min-w-0 shrink-0 items-center gap-2.5 border-b-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5">
+          <Link
+            href={post.public_profile_url || "#"}
+            onClick={handleProfileClick}
+            className="flex min-w-0 flex-1 items-center gap-2.5"
           >
-            {post.machine.name.replace(/^Enxame de\s+/i, "")}
-          </span>
-        )}
-      </div>
+            <span
+              aria-hidden
+              className="h-3 w-3 shrink-0 rotate-45 border-2 border-[#0B0B0D]"
+              style={{ backgroundColor: machineColor }}
+              title={post.machine?.name || ""}
+            />
+            <div
+              className="relative shrink-0 -rotate-2 overflow-hidden border-2 border-[#0B0B0D]"
+              style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
+            >
+              <Avatar className="h-10 w-10 rounded-none">
+                {post.avatar_url ? (
+                  <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
+                  {initials(post.profile_name)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="fl-display truncate text-lg leading-none text-[#0B0B0D]">
+                  {post.profile_name || post.username || t("profileLabel", "Perfil")}
+                </span>
+                <MachineTop10Crown profileId={post.profile_id} accentColor="#E0A500" iconClassName="h-4 w-4" />
+                {post.is_clan && (
+                  <span className="-rotate-2 border border-[#0B0B0D] bg-[#0B0B0D] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2]">
+                    Clan
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-[11px] font-semibold text-[#6B6457]">
+                {post.published_at && (
+                  <>
+                    <span>{timeAgo(post.published_at, t)}</span>
+                    {(post.city || post.state) && <span> · </span>}
+                  </>
+                )}
+                {post.city && <span>{post.city}</span>}
+                {post.city && post.state && <span>/</span>}
+                {post.state && <span>{post.state}</span>}
+              </p>
+            </div>
+          </Link>
+
+          {post.machine?.name && (
+            <span
+              className="hidden min-w-0 max-w-[38%] shrink truncate border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-center text-[9px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] sm:block sm:max-w-[45%]"
+              title={post.machine.name}
+            >
+              {post.machine.name.replace(/^Enxame de\s+/i, "")}
+            </span>
+          )}
+        </div>
+      )}
 
       {paged ? (
         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -607,163 +657,180 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         </div>
       ) : (
         <>
-          <PostMedia
-            media={post.media}
-            glow={null}
-            aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
-          />
+          <div className="bg-[#0b0804]">
+            <PostMedia
+              media={post.media}
+              glow={null}
+              aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
+            />
+          </div>
 
-          {/* Ações: like, comentar, compartilhar */}
-          <div className="flex shrink-0 items-center gap-1 px-2 pt-2">
-            <button
-              type="button"
-              aria-label={liked ? t("unlikeButton", "Descurtir") : t("likeButton", "Curtir")}
-              onClick={handleLike}
-              disabled={likePending}
-              className={cn(
-                "relative rounded-full p-1.5 transition-all duration-200 hover:bg-white/5 active:scale-90 disabled:opacity-60",
-                liked ? "text-yellow-400" : "text-white"
-              )}
-            >
-              <Heart
+          {/* FOOTER tabloide (papel) */}
+          <div className="border-t-2 border-[#0B0B0D] bg-[#F1EDE2]">
+            {/* Ações: like, comentar, compartilhar, salvar, denunciar */}
+            <div className="flex shrink-0 items-center gap-1 px-2 pt-2">
+              <button
+                type="button"
+                aria-label={liked ? t("unlikeButton", "Descurtir") : t("likeButton", "Curtir")}
+                onClick={handleLike}
+                disabled={likePending}
                 className={cn(
-                  "h-6 w-6 transition-all duration-300",
-                  liked && "fill-current scale-110"
+                  "relative rounded-full p-1.5 transition-all duration-200 hover:bg-[#0B0B0D]/10 active:scale-90 disabled:opacity-60",
+                  liked ? "text-[#E0A500]" : "text-[#0B0B0D]"
                 )}
-                strokeWidth={2}
-              />
-              {liked && <LikeTapeSticker />}
-            </button>
-            <button
-              type="button"
-              aria-label={t("commentsButton", "Comentários")}
-              onClick={() => onOpenComments?.(post.post_id)}
-              className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
-            >
-              <MessageSquare className="h-6 w-6" />
-            </button>
-            <button
-              type="button"
-              aria-label={t("shareButton", "Compartilhar")}
-              onClick={handleShare}
-              className="rounded-full p-1.5 text-white/85 transition hover:bg-white/5 hover:text-white active:scale-90"
-            >
-              {copied ? (
-                <Check className="h-6 w-6 text-emerald-400 animate-in zoom-in-50 duration-200" />
-              ) : (
-                <Send className="h-6 w-6" />
-              )}
-            </button>
-            <button
-              type="button"
-              aria-label={bookmarked ? t("removeFromSaved", "Remover dos salvos") : t("saveForLater", "Salvar para depois")}
-              onClick={handleBookmark}
-              disabled={bookmarkPending}
-              className={cn(
-                "ml-auto rounded-full p-1.5 transition hover:bg-white/5 active:scale-90 disabled:opacity-60",
-                bookmarked ? "text-yellow-400" : "text-white/85 hover:text-white"
-              )}
-            >
-              <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
-            </button>
-            <button
-              type="button"
-              aria-label={t("reportPostButton", "Denunciar publicação")}
-              onClick={() => setReportOpen(true)}
-              data-tour="feed-report"
-              className="rounded-full p-1.5 text-white/55 transition hover:bg-white/5 hover:text-amber-300 active:scale-90"
-            >
-              <Flag className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Contador de curtidas */}
-          <div className="px-3 pt-1 text-[13px] font-semibold text-white">
-            {likesCount === 1
-              ? t("likesCountOne", "{n} curtida").replace("{n}", likesCount.toLocaleString("pt-BR"))
-              : t("likesCountMany", "{n} curtidas").replace("{n}", likesCount.toLocaleString("pt-BR"))}
-          </div>
-
-          {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend */}
-          {(post.title || post.caption) && (
-            <div className="shrink-0 px-3 pt-1 text-[14px] leading-snug text-white">
-              {post.title && (
-                <span className="mr-1.5 font-semibold">
-                  {post.profile_name || post.username || t("profileLabel", "Perfil")}
-                </span>
-              )}
-              <PostCaption
-                title={post.title}
-                caption={post.caption}
-                profileLabel={post.profile_name || post.username || t("profileLabel", "Perfil")}
-                onExpand={() =>
-                  sendFeedEvent({
-                    post_id: post.post_id,
-                    event_type: "view_more_caption",
-                    filters,
-                  })
-                }
-              />
+              >
+                <Heart
+                  className={cn(
+                    "h-6 w-6 transition-all duration-300",
+                    liked && "fill-current scale-110"
+                  )}
+                  strokeWidth={2}
+                />
+                {liked && <LikeTapeSticker />}
+              </button>
+              <button
+                type="button"
+                aria-label={t("commentsButton", "Comentários")}
+                onClick={() => onOpenComments?.(post.post_id)}
+                className="rounded-full p-1.5 text-[#0B0B0D] transition hover:bg-[#0B0B0D]/10 active:scale-90"
+              >
+                <MessageSquare className="h-6 w-6" />
+              </button>
+              <button
+                type="button"
+                aria-label={t("shareButton", "Compartilhar")}
+                onClick={handleShare}
+                className="rounded-full p-1.5 text-[#0B0B0D] transition hover:bg-[#0B0B0D]/10 active:scale-90"
+              >
+                {copied ? (
+                  <Check className="h-6 w-6 text-emerald-600 animate-in zoom-in-50 duration-200" />
+                ) : (
+                  <Send className="h-6 w-6" />
+                )}
+              </button>
+              <button
+                type="button"
+                aria-label={bookmarked ? t("removeFromSaved", "Remover dos salvos") : t("saveForLater", "Salvar para depois")}
+                onClick={handleBookmark}
+                disabled={bookmarkPending}
+                className={cn(
+                  "ml-auto rounded-full p-1.5 transition hover:bg-[#0B0B0D]/10 active:scale-90 disabled:opacity-60",
+                  bookmarked ? "text-[#E0A500]" : "text-[#0B0B0D]"
+                )}
+              >
+                <Bookmark className={cn("h-6 w-6", bookmarked && "fill-current")} />
+              </button>
+              <button
+                type="button"
+                aria-label={t("reportPostButton", "Denunciar publicação")}
+                onClick={() => setReportOpen(true)}
+                data-tour="feed-report"
+                className="rounded-full p-1.5 text-[#6B6457] transition hover:bg-[#0B0B0D]/10 hover:text-[#E0A500] active:scale-90"
+              >
+                <Flag className="h-5 w-5" />
+              </button>
             </div>
-          )}
 
-          {/* WhatsApp + links sociais (mantidos do design anterior) */}
-          {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
-            <div className="flex shrink-0 flex-wrap items-center gap-2 px-3 pt-2">
-              {post.whatsapp_url && (
-                <a
-                  href={post.whatsapp_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={handleWhatsappClick}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-500/25"
-                >
-                  <MessageCircle className="h-3 w-3" />
-                  WhatsApp
-                </a>
-              )}
-              {post.social_links && post.social_links.length > 0 && (
-                <SocialLinksSheet
-                  links={post.social_links}
-                  onLinkClick={handleSocialClick}
-                  trigger={
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
-                    >
-                      <Link2 className="h-3 w-3" />
-                      {post.social_links.length === 1
-                        ? t("socialNetworksOne", "{n} rede").replace("{n}", String(post.social_links.length))
-                        : t("socialNetworksMany", "{n} redes").replace("{n}", String(post.social_links.length))}
-                    </button>
+            {/* Contador de curtidas */}
+            <div className="flex items-baseline gap-1.5 px-3 pt-1.5">
+              <span className="fl-display text-xl leading-none text-[#0B0B0D]">
+                {likesCount.toLocaleString("pt-BR")}
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                {likesCount === 1 ? t("likesLabelOne", "curtida") : t("likesLabelMany", "curtidas")}
+              </span>
+            </div>
+
+            {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend */}
+            {(post.title || post.caption) && (
+              <div className="shrink-0 px-3 pt-1 text-[14px] leading-snug text-[#0B0B0D]">
+                {post.title && (
+                  <span className="mr-1.5 font-bold">
+                    {post.profile_name || post.username || t("profileLabel", "Perfil")}
+                  </span>
+                )}
+                <PostCaption
+                  title={post.title}
+                  caption={post.caption}
+                  profileLabel={post.profile_name || post.username || t("profileLabel", "Perfil")}
+                  onExpand={() =>
+                    sendFeedEvent({
+                      post_id: post.post_id,
+                      event_type: "view_more_caption",
+                      filters,
+                    })
                   }
                 />
+              </div>
+            )}
+
+            {/* WhatsApp + links sociais — botões de borda dura */}
+            {(post.whatsapp_url || (post.social_links && post.social_links.length > 0)) && (
+              <div className="flex shrink-0 flex-wrap items-center gap-2 px-3 pt-2.5">
+                {post.whatsapp_url && (
+                  <a
+                    href={post.whatsapp_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={handleWhatsappClick}
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-emerald-400 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0B0B0D] transition-transform hover:-translate-y-0.5"
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    WhatsApp
+                  </a>
+                )}
+                {post.social_links && post.social_links.length > 0 && (
+                  <SocialLinksSheet
+                    links={post.social_links}
+                    onLinkClick={handleSocialClick}
+                    trigger={
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#0B0B0D] transition-colors hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
+                      >
+                        <Link2 className="h-3 w-3" />
+                        {post.social_links.length === 1
+                          ? t("socialNetworksOne", "{n} rede").replace("{n}", String(post.social_links.length))
+                          : t("socialNetworksMany", "{n} redes").replace("{n}", String(post.social_links.length))}
+                      </button>
+                    }
+                  />
+                )}
+              </div>
+            )}
+
+            {musicPill && <div className="px-3 pt-2.5">{musicPill}</div>}
+
+            {/* Ver comentários */}
+            {!!(commentsCount && commentsCount > 0) && (
+              <button
+                type="button"
+                onClick={() => onOpenComments?.(post.post_id)}
+                className="px-3 pt-2 text-left text-[12px] font-semibold text-[#6B6457] transition hover:text-[#0B0B0D]"
+              >
+                {commentsCount === 1
+                  ? t("viewCommentsOne", "Ver {n} comentário").replace("{n}", "1")
+                  : t("viewCommentsMany", "Ver os {n} comentários").replace("{n}", commentsCount.toLocaleString("pt-BR"))}
+              </button>
+            )}
+
+            {/* Rodapé — selo Bee / assinatura tabloide */}
+            <div className="mt-2 flex items-center justify-between border-t border-[#0B0B0D]/15 px-3 py-2">
+              {post.feed_kind === "bees" ? (
+                <span className="inline-flex -rotate-1 items-center gap-1 border border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+                  <Sparkles className="h-3 w-3" /> {t("beeLabel", "Bee")}
+                </span>
+              ) : (
+                <span className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#0B0B0D]/35">
+                  freelandoo
+                </span>
+              )}
+              {post.machine?.name && (
+                <span className="fl-marker max-w-[55%] truncate text-base leading-none text-[#E0A500]">
+                  {post.machine.name.replace(/^Enxame de\s+/i, "")}
+                </span>
               )}
             </div>
-          )}
-
-          {musicPill && <div className="px-3 pt-2">{musicPill}</div>}
-
-          {/* Ver comentários */}
-          {!!(commentsCount && commentsCount > 0) && (
-            <button
-              type="button"
-              onClick={() => onOpenComments?.(post.post_id)}
-              className="px-3 pt-2 text-left text-[13px] text-white/55 transition hover:text-white/80"
-            >
-              {commentsCount === 1
-                ? t("viewCommentsOne", "Ver {n} comentário").replace("{n}", "1")
-                : t("viewCommentsMany", "Ver os {n} comentários").replace("{n}", commentsCount.toLocaleString("pt-BR"))}
-            </button>
-          )}
-
-          {/* Linha discreta no rodapé (separador antes do próximo post) */}
-          <div className="px-3 pb-3 pt-1 text-[10px] uppercase tracking-wider text-white/30">
-            {post.feed_kind === "bees" && (
-              <span className="inline-flex items-center gap-1 text-amber-300/80">
-                <Sparkles className="h-3 w-3" /> {t("beeLabel", "Bee")}
-              </span>
-            )}
           </div>
         </>
       )}
@@ -799,9 +866,9 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
   const visible = expanded || !needsToggle ? text : text.slice(0, PREVIEW).trimEnd()
 
   return (
-    <div className="text-white/85">
+    <div className="text-[#2b2b2e]">
       {!title && (
-        <span className="mr-1.5 font-semibold text-white">{profileLabel}</span>
+        <span className="mr-1.5 font-bold text-[#0B0B0D]">{profileLabel}</span>
       )}
       <MarkdownText className="inline [&_p]:inline">{visible}</MarkdownText>
       {needsToggle && !expanded && (
@@ -813,7 +880,7 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
               setExpanded(true)
               onExpand?.()
             }}
-            className="text-white/55 transition hover:text-white"
+            className="font-semibold text-[#6B6457] transition hover:text-[#0B0B0D]"
           >
             {t("expandButton", "mais")}
           </button>
@@ -825,7 +892,7 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
           <button
             type="button"
             onClick={() => setExpanded(false)}
-            className="text-white/55 transition hover:text-white"
+            className="font-semibold text-[#6B6457] transition hover:text-[#0B0B0D]"
           >
             {t("collapseButton", "menos")}
           </button>
