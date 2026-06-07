@@ -1525,15 +1525,6 @@ export default function PerfilPage() {
             </div>
 
             <div className="relative px-5 pb-6 md:px-7">
-              {/* papel rasgado real: papel creme rasgado cobrindo a base da capa,
-                  ATRÁS do avatar (avatar fica acima com z-10) */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/casaviews/profile/torn-edge-02.webp"
-                alt=""
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 -top-3 z-0 h-16 w-full select-none object-cover object-top md:-top-4 md:h-20"
-              />
               <div className="relative z-10 -mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
                 <button
                   type="button"
