@@ -1,13 +1,20 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, MapPin, X } from "lucide-react"
+import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, Sparkles, UserRound, Users, Crown } from "lucide-react"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { RegionFilterSheet } from "./region-filter-sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
+
+export type FeedCreateKind = "post" | "bees" | "perfil" | "clan" | "curso"
 
 interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -20,6 +27,7 @@ interface FeedRetractableHeaderProps {
   onMachineChange: (id: number | null) => void
   onLocationChange: (next: { state: string | null; regionId: number | null; regionName: string | null }) => void
   onClearAll: () => void
+  onCreate: (kind: FeedCreateKind) => void
 }
 
 /**
@@ -38,6 +46,7 @@ export function FeedRetractableHeader({
   onMachineChange,
   onLocationChange,
   onClearAll,
+  onCreate,
 }: FeedRetractableHeaderProps) {
   const t = useTranslations("Feed")
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
@@ -74,14 +83,39 @@ export function FeedRetractableHeader({
         <div aria-hidden className="absolute inset-x-0 -bottom-[2px] h-[2px] bg-[#F2B705]" />
 
         <div className="relative flex items-center gap-2 px-4 pb-3 pt-3 sm:gap-3 sm:px-6">
-          <Link
-            href="/"
-            className="fl-display shrink-0 text-2xl leading-none text-[#F2B705] transition-transform hover:-translate-y-0.5 sm:text-[1.7rem]"
-            aria-label="Freelandoo"
-          >
-            freelandoo
-            <span className="text-[#F1EDE2]">.</span>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("createLabel", "Criar")}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#ffc81f] active:translate-x-px active:translate-y-px"
+              >
+                <Plus className="h-5 w-5" strokeWidth={2.5} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-44">
+              <DropdownMenuItem onSelect={() => onCreate("post")}>
+                <ImageIcon className="h-4 w-4" />
+                {t("createPost", "Post")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("bees")}>
+                <Sparkles className="h-4 w-4" />
+                Bees
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("perfil")}>
+                <UserRound className="h-4 w-4" />
+                {t("createProfile", "Perfil")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("clan")}>
+                <Users className="h-4 w-4" />
+                Clan
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("curso")}>
+                <Crown className="h-4 w-4" />
+                {t("createCourse", "Curso")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div
             data-tour="feed-filters"

@@ -776,8 +776,8 @@ export default function FreelancerProfileView({
         </section>
 
         {/* PORTFOLIO SECTION — abas retangulares, grudadas no headcard */}
-        <section className="mb-16">
-          <div className="mt-4 flex items-stretch justify-between border-y-2 border-[#F5F1E8]/15">
+        <section className="-mt-px mb-16">
+          <div className="-mx-4 flex items-stretch justify-between border-b border-[#F5F1E8]/12 bg-[#1d1810]/50 md:mx-0">
             <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
@@ -890,16 +890,16 @@ export default function FreelancerProfileView({
                 ? "Nenhum Bees ainda."
                 : "Nenhum item no portfólio ainda."
             return filteredItems.length > 0 ? (
-            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
               {filteredItems.map((item) => {
                 const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
                 return (
-                  <div key={item.id_portfolio_item} className="group relative flex flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]">
+                  <div key={item.id_portfolio_item} className="group relative flex flex-col">
                     {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                     {firstMedia ? (
                       <div
-                        className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden border-b-2 border-[#0B0B0D] ${!isOwnProfile ? "cursor-pointer" : ""}`}
+                        className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
                         onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
                       >
                         {firstMedia.media_type === "video" ? (
@@ -1005,8 +1005,8 @@ export default function FreelancerProfileView({
                         )}
                       </div>
                     ) : (
-                      <div className={`relative ${aspectClass} bg-[#e8e2d4] flex items-center justify-center border-b-2 border-[#0B0B0D]`}>
-                        <ImageIcon className="h-8 w-8 text-[#0B0B0D]/25" />
+                      <div className={`relative ${aspectClass} bg-[#1d1810] flex items-center justify-center`}>
+                        <ImageIcon className="h-8 w-8 text-[#F5F1E8]/25" />
                         {isOwnProfile && (
                           <div className="absolute inset-0 bg-[#0B0B0D]/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                              <label
@@ -1040,14 +1040,14 @@ export default function FreelancerProfileView({
                     )}
 
                     {/* Content below image */}
-                    <div className="flex-1 p-3">
+                    <div className="min-w-0 pt-3 px-2 md:px-0">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-bold text-sm line-clamp-1 text-[#0B0B0D]">{item.title || "Sem título"}</h3>
+                        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{item.title || "Sem título"}</h3>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenPortfolioItemId(item.id_portfolio_item) }}
-                            className={`flex items-center gap-1 text-xs font-bold transition-colors ${item.liked_by_me ? "text-[#E0A500]" : "text-[#0B0B0D]/55 hover:text-[#E0A500]"}`}
+                            className={`flex items-center gap-1 text-xs font-bold transition-colors ${item.liked_by_me ? "text-[#F2B705]" : "text-[#9A938A] hover:text-[#F2B705]"}`}
                             title={item.liked_by_me ? "Remover like" : "Curtir"}
                           >
                             <Heart className={`h-3.5 w-3.5 ${item.liked_by_me ? "fill-current" : ""}`} />
@@ -1056,7 +1056,7 @@ export default function FreelancerProfileView({
                         </div>
                       </div>
                       {item.description && (
-                        <p className="text-xs text-[#5b554b] mt-1 line-clamp-2">{item.description}</p>
+                        <p className="text-xs text-[#9A938A] mt-1 line-clamp-2">{item.description}</p>
                       )}
 
                       {/* Secondary Media Thumbnails (Only visible to owner to manage them) */}

@@ -55,6 +55,7 @@ function FeedPageInner() {
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
   const [storyOpen, setStoryOpen] = useState<{ entries: StoryBarEntry[]; index: number } | null>(null)
   const [creatorOpen, setCreatorOpen] = useState(false)
+  const [composerMode, setComposerMode] = useState<"story" | "post" | "bee">("story")
   const [storyBarKey, setStoryBarKey] = useState(0)
 
   const hydrated = useRef(false)
@@ -210,6 +211,12 @@ function FeedPageInner() {
           setRegionName(rn)
         }}
         onClearAll={clearAll}
+        onCreate={(kind) => {
+          if (kind === "post") { setComposerMode("post"); setCreatorOpen(true) }
+          else if (kind === "bees") { setComposerMode("bee"); setCreatorOpen(true) }
+          else if (kind === "clan") router.push("/account/clans")
+          else router.push("/account")
+        }}
       />
 
       <div
@@ -225,7 +232,7 @@ function FeedPageInner() {
             kind="rest"
             defaultAccent={accent}
             showCreateSlot
-            onCreate={() => setCreatorOpen(true)}
+            onCreate={() => { setComposerMode("story"); setCreatorOpen(true) }}
             onOpenProfile={(entry, all) => {
               const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
               setStoryOpen({ entries: all, index: Math.max(0, idx) })
@@ -326,7 +333,7 @@ function FeedPageInner() {
 
       <MediaComposer
         open={creatorOpen}
-        mode="story"
+        mode={composerMode}
         initialKind="rest"
         onClose={() => setCreatorOpen(false)}
         onPosted={() => setStoryBarKey((k) => k + 1)}
