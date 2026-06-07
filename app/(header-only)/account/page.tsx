@@ -1522,18 +1522,19 @@ export default function PerfilPage() {
                 <Settings className="h-4 w-4" />
               </button>
 
-              {/* papel rasgado real cobrindo a emenda capa → corpo creme */}
+            </div>
+
+            <div className="relative px-5 pb-6 md:px-7">
+              {/* papel rasgado real: papel creme rasgado cobrindo a base da capa,
+                  ATRÁS do avatar (avatar fica acima com z-10) */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/casaviews/profile/torn-edge-02.webp"
                 alt=""
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-[-2px] z-20 h-12 w-full select-none object-fill md:h-14"
+                className="pointer-events-none absolute inset-x-0 -top-9 z-0 h-16 w-full select-none object-cover object-top md:-top-12 md:h-20"
               />
-            </div>
-
-            <div className="px-5 pb-6 md:px-7">
-              <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+              <div className="relative z-10 -mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
                 <button
                   type="button"
                   onClick={() => setIsUploadModalOpen(true)}
