@@ -86,7 +86,7 @@ function StatusBadge({ status }: { status: "draft" | "published" | "paused" }) {
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.05] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#0B0B0D]/65">
+    <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
       Rascunho
     </span>
   )
@@ -125,7 +125,7 @@ function ModuleCard({
   return (
     <Link
       href={`/account/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(module.id)}`}
-      className="group relative flex flex-col overflow-hidden border-2 border-[#0B0B0D] bg-[#F1EDE2] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]"
+      className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.014))] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_45px_-22px_rgba(230,184,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900">
         {module.banner_url ? (
@@ -144,26 +144,26 @@ function ModuleCard({
         <div className="absolute left-3 top-3">
           <ModuleStatusPill status={module.status} />
         </div>
-        <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/15 bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-[#0B0B0D]/80 backdrop-blur-sm">
+        <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full border border-white/12 bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-white/85 backdrop-blur-sm">
           <PlaySquare className="h-3 w-3" />
           {module.lessons_count} aula
           {module.lessons_count === 1 ? "" : "s"}
         </div>
-        <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#0B0B0D]/20 bg-zinc-950/85 text-[#0B0B0D]/80 backdrop-blur-sm transition group-hover:border-primary/45 group-hover:text-primary">
+        <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition group-hover:border-primary/45 group-hover:text-primary">
           <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 px-4 py-4">
-        <p className="line-clamp-1 text-base font-semibold text-[#0B0B0D]">
+        <p className="line-clamp-1 text-base font-semibold text-white">
           {module.title}
         </p>
         {module.description ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-[#0B0B0D]/55">
+          <p className="line-clamp-2 text-xs leading-relaxed text-white/55">
             {module.description}
           </p>
         ) : (
-          <p className="text-xs leading-relaxed text-[#0B0B0D]/40">
+          <p className="text-xs leading-relaxed text-white/35">
             Sem descrição. Abra para editar.
           </p>
         )}
@@ -420,13 +420,13 @@ export function CourseLandingView({ courseId }: Props) {
 
   if (courseLoading) {
     return (
-      <PageShell texture={false} className="fl-paper-card md:pl-[80px]">
-      <div className="relative z-10 px-4 py-10 text-[#0B0B0D] md:px-8">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="h-9 w-32 animate-pulse rounded-full bg-[#0B0B0D]/[0.04]" />
-          <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-[#0B0B0D]/[0.05]" />
-          <div className="mt-6 h-9 w-2/3 animate-pulse rounded-full bg-[#0B0B0D]/[0.05]" />
-          <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-[#0B0B0D]/[0.04]" />
+          <div className="h-9 w-32 animate-pulse rounded-full bg-white/[0.04]" />
+          <div className="mt-6 aspect-[21/9] animate-pulse rounded-[1.5rem] bg-white/[0.05]" />
+          <div className="mt-6 h-9 w-2/3 animate-pulse rounded-full bg-white/[0.05]" />
+          <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-white/[0.04]" />
         </div>
       </div>
       </PageShell>
@@ -435,17 +435,17 @@ export function CourseLandingView({ courseId }: Props) {
 
   if (courseError || !course) {
     return (
-      <PageShell texture={false} className="fl-paper-card md:pl-[80px]">
-      <div className="relative z-10 px-4 py-10 text-[#0B0B0D] md:px-8">
-        <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border-2 border-red-600/40 bg-red-500/10 p-6 text-sm text-red-700">
+      <PageShell className="md:pl-[80px]">
+      <div className="relative z-10 px-4 py-10 text-white md:px-8">
+        <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
           <p className="font-medium">Não foi possível carregar o curso.</p>
-          <p className="mt-1 text-red-700/80">
+          <p className="mt-1 text-red-200/80">
             {courseError || "Curso indisponível."}
           </p>
           <Link
             href="/account"
-            className="mt-4 inline-flex rounded-full border border-[#0B0B0D]/20 px-4 py-2 text-sm text-[#0B0B0D]/80"
+            className="mt-4 inline-flex rounded-full border border-white/15 px-4 py-2 text-sm text-white/85"
           >
             Voltar para Meus Cursos
           </Link>
@@ -456,7 +456,7 @@ export function CourseLandingView({ courseId }: Props) {
   }
 
   return (
-    <PageShell texture={false} className="fl-paper-card text-[#0B0B0D] md:pl-[80px]">
+    <PageShell className="text-white md:pl-[80px]">
       {/* Background ambient */}
       <div
         aria-hidden
@@ -468,7 +468,7 @@ export function CourseLandingView({ courseId }: Props) {
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link
             href="/account"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Meus Cursos
@@ -478,7 +478,7 @@ export function CourseLandingView({ courseId }: Props) {
             <Link
               href={`/cursos/${course.slug}`}
               target="_blank"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
             >
               <Eye className="h-3.5 w-3.5" />
               Página pública
@@ -486,7 +486,7 @@ export function CourseLandingView({ courseId }: Props) {
           )}
 
           {savingField && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#5b554b]">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F2B705]" />
               salvando…
             </span>
@@ -496,7 +496,7 @@ export function CourseLandingView({ courseId }: Props) {
             <button
               type="button"
               onClick={() => setStudentsOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
             >
               <Users className="h-3.5 w-3.5" />
               Alunos
@@ -517,7 +517,6 @@ export function CourseLandingView({ courseId }: Props) {
           <ImageDropZone
             currentUrl={course.cover_url}
             aspect="21/9"
-            tone="light"
             label="Banner do curso"
             title="Arraste ou envie uma imagem para o banner do curso"
             hint="Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB"
@@ -526,7 +525,7 @@ export function CourseLandingView({ courseId }: Props) {
           />
 
           {/* Painel editável (tabloide) — tudo editável in-place pelo dono */}
-          <div className="relative mt-5 border-2 border-[#0B0B0D]/15 bg-[#F1EDE2] p-5 shadow-[6px_6px_0_0_#0B0B0D] md:p-6">
+          <div className="relative mt-5 border-2 border-white/12 bg-[#15100A] p-5 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)] md:p-6">
             <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#F2B705]">
               <Sparkles className="h-3 w-3" />
               Curso Freelandoo · edite tudo aqui
@@ -539,7 +538,7 @@ export function CourseLandingView({ courseId }: Props) {
               onBlur={(e) => saveField("title", e.target.value)}
               placeholder="Nome do curso"
               maxLength={160}
-              className="fl-display mt-2 w-full bg-transparent text-3xl leading-tight text-[#0B0B0D] outline-none placeholder:text-[#0B0B0D]/30 md:text-4xl"
+              className="fl-display mt-2 w-full bg-transparent text-3xl leading-tight text-white outline-none placeholder:text-white/25 md:text-4xl"
             />
 
             {/* Descrição curta */}
@@ -549,7 +548,7 @@ export function CourseLandingView({ courseId }: Props) {
               onBlur={(e) => saveField("short_description", e.target.value)}
               placeholder="Uma frase que resume a proposta do curso (opcional)"
               maxLength={280}
-              className="mt-3 w-full border-b border-[#0B0B0D]/12 bg-transparent pb-1.5 text-sm text-[#0B0B0D]/70 outline-none placeholder:text-[#0B0B0D]/35 focus:border-[#F2B705]/50"
+              className="mt-3 w-full border-b border-white/10 bg-transparent pb-1.5 text-sm text-white/75 outline-none placeholder:text-white/30 focus:border-[#F2B705]/50"
             />
 
             {/* Meta pills (contadores) */}
@@ -564,7 +563,7 @@ export function CourseLandingView({ courseId }: Props) {
 
             {/* Descrição completa */}
             <div className="mt-5">
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                 Descrição completa
               </label>
               <textarea
@@ -573,17 +572,17 @@ export function CourseLandingView({ courseId }: Props) {
                 onBlur={(e) => saveField("description", e.target.value)}
                 rows={4}
                 placeholder="Conte o que o aluno vai aprender, pra quem é o curso, o que ele precisa saber antes…"
-                className="w-full resize-y border-2 border-[#0B0B0D]/12 bg-[#E8E2D4] p-3 text-sm leading-relaxed text-[#0B0B0D]/75 outline-none placeholder:text-[#0B0B0D]/35 focus:border-[#F2B705]/40"
+                className="w-full resize-y border-2 border-white/10 bg-[#0E0B06] p-3 text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/30 focus:border-[#F2B705]/40"
               />
             </div>
 
             {/* Preço + perfil vinculado */}
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                   Preço
                 </label>
-                <div className="flex items-center border-2 border-[#0B0B0D]/15 bg-[#E8E2D4] px-3 focus-within:border-[#F2B705]/50">
+                <div className="flex items-center border-2 border-white/12 bg-[#0E0B06] px-3 focus-within:border-[#F2B705]/50">
                   <span className="fl-display text-lg text-[#F2B705]">R$</span>
                   <input
                     value={form.price_text}
@@ -591,17 +590,17 @@ export function CourseLandingView({ courseId }: Props) {
                     onBlur={() => saveField("price")}
                     inputMode="decimal"
                     placeholder="0,00"
-                    className="fl-display w-full bg-transparent px-2 py-2.5 text-xl text-[#0B0B0D] outline-none placeholder:text-[#0B0B0D]/30"
+                    className="fl-display w-full bg-transparent px-2 py-2.5 text-xl text-white outline-none placeholder:text-white/25"
                   />
                 </div>
-                <p className="mt-1 text-[11px] text-[#5b554b]">
+                <p className="mt-1 text-[11px] text-white/40">
                   Mínimo {formatPriceBRL(COURSE_MIN_PUBLISH_PRICE_CENTS)} para publicar.
                 </p>
               </div>
 
               {(profileOptions.length > 0 || clanInfo) && (
                 <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                     Perfil vinculado
                   </label>
                   {clanInfo ? (
@@ -618,7 +617,7 @@ export function CourseLandingView({ courseId }: Props) {
                         setForm((f) => ({ ...f, profile_id: v }))
                         void saveField("profile_id", v)
                       }}
-                      className="h-[46px] w-full border-2 border-[#0B0B0D]/15 bg-[#E8E2D4] px-3 text-sm text-[#0B0B0D] outline-none focus:border-[#F2B705]/40"
+                      className="h-[46px] w-full border-2 border-white/12 bg-[#0E0B06] px-3 text-sm text-white outline-none focus:border-[#F2B705]/40"
                     >
                       <option value="">Sem perfil vinculado</option>
                       {profileOptions.map((p) => (
@@ -634,18 +633,18 @@ export function CourseLandingView({ courseId }: Props) {
 
             {/* Multi-select de co-autores — só em curso de clan. */}
             {clanInfo && (
-              <div className="mt-5 border-2 border-[#0B0B0D]/15 bg-[#E8E2D4] p-4">
+              <div className="mt-5 border-2 border-white/12 bg-[#0E0B06] p-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                     <Users className="h-3.5 w-3.5" />
                     Membros participantes
                   </label>
-                  <span className="text-[11px] text-[#5b554b]">
+                  <span className="text-[11px] text-white/45">
                     {selectedMembers.length} selecionado{selectedMembers.length === 1 ? "" : "s"}
                     {savingMembers ? " · salvando…" : ""}
                   </span>
                 </div>
-                <p className="mb-3 text-[11px] leading-relaxed text-[#5b554b]">
+                <p className="mb-3 text-[11px] leading-relaxed text-white/40">
                   A venda do curso é dividida igualmente no Saldo de cada membro
                   anexado (liberação em 8 dias). Anexe pelo menos um para publicar.
                 </p>
@@ -658,7 +657,7 @@ export function CourseLandingView({ courseId }: Props) {
                         className={`flex cursor-pointer items-center gap-3 border-2 p-2.5 transition-colors ${
                           checked
                             ? "border-[#F2B705]/60 bg-[#F2B705]/10"
-                            : "border-[#0B0B0D]/12 bg-[#0B0B0D]/[0.03] hover:bg-[#0B0B0D]/[0.05]"
+                            : "border-white/10 bg-white/[0.02] hover:bg-white/[0.05]"
                         }`}
                       >
                         <input
@@ -676,16 +675,16 @@ export function CourseLandingView({ courseId }: Props) {
                             className="h-7 w-7 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0B0B0D]/10 text-[10px] text-[#0B0B0D]/65">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px] text-white/70">
                             {m.display_name?.slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-[#0B0B0D]">{m.display_name}</div>
-                          <div className="text-[11px] text-[#5b554b]">@{m.username}</div>
+                          <div className="truncate text-sm font-semibold text-white">{m.display_name}</div>
+                          <div className="text-[11px] text-white/45">@{m.username}</div>
                         </div>
                         {m.role === "owner" && (
-                          <span className="shrink-0 text-[11px] text-[#5b554b]">dono</span>
+                          <span className="shrink-0 text-[11px] text-white/45">dono</span>
                         )}
                       </label>
                     )
@@ -699,8 +698,7 @@ export function CourseLandingView({ courseId }: Props) {
               allowed={affiliatesAllowed}
               onAllowedChange={(v) => void saveAffiliates(v)}
               disabled={savingField === "affiliates"}
-              variant="light"
-              className="mt-5 rounded-none border-2 border-[#0B0B0D]/15"
+              className="mt-5 rounded-none border-2 border-white/12 bg-[#0E0B06]"
             />
 
             {/* Breakdown: o que você recebe × o que o cliente paga */}
@@ -719,10 +717,10 @@ export function CourseLandingView({ courseId }: Props) {
                 <Layers className="h-3 w-3" />
                 Módulos do curso
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-[#0B0B0D] md:text-2xl">
+              <h2 className="mt-2 text-xl font-semibold text-white md:text-2xl">
                 Organize o conteúdo em módulos
               </h2>
-              <p className="mt-1 text-xs text-[#0B0B0D]/50">
+              <p className="mt-1 text-xs text-white/50">
                 Cada módulo terá sua própria página com banner e aulas.
               </p>
             </div>
@@ -741,14 +739,14 @@ export function CourseLandingView({ courseId }: Props) {
               {Array.from({ length: 2 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-[5/3] animate-pulse rounded-[1.5rem] border border-[#0B0B0D]/10 bg-[#0B0B0D]/[0.03]"
+                  className="aspect-[5/3] animate-pulse rounded-[1.5rem] border border-white/[0.06] bg-white/[0.025]"
                 />
               ))}
             </div>
           )}
 
           {!modulesLoading && modulesError && (
-            <div className="flex items-center gap-2 rounded-2xl border border-red-600/40 bg-red-500/10 p-4 text-sm text-red-700">
+            <div className="flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
               <AlertCircle className="h-4 w-4" />
               {modulesError}
             </div>
@@ -759,10 +757,10 @@ export function CourseLandingView({ courseId }: Props) {
               <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                 <Layers className="h-7 w-7 text-primary" />
               </div>
-              <p className="text-sm font-medium text-[#0B0B0D]/80">
+              <p className="text-sm font-medium text-white/85">
                 Nenhum módulo ainda
               </p>
-              <p className="mx-auto mt-1 max-w-md text-xs text-[#0B0B0D]/55">
+              <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
                 Comece pelo primeiro módulo — pode ser uma introdução curta com
                 boas-vindas. Você adiciona as aulas dentro dele depois.
               </p>
@@ -849,7 +847,7 @@ function MetaPill({
   children: React.ReactNode
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1 text-[12px] font-semibold text-[#0B0B0D]/80">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[12px] font-semibold text-white/85">
       <span className="text-primary/80">{icon}</span>
       {children}
     </span>

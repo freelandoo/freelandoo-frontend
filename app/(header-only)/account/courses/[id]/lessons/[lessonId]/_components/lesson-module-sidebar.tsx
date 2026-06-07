@@ -137,8 +137,8 @@ export function LessonModuleSidebar({
         />
       </div>
 
-      {/* Lista de aulas — cartões de papel estilo /mensagens */}
-      <div className="px-3 pb-4 pt-3 lg:max-h-[calc(100dvh-22rem)] lg:overflow-y-auto">
+      {/* Lista */}
+      <div className="px-2 pb-3 pt-3 lg:max-h-[calc(100dvh-22rem)] lg:overflow-y-auto">
         {filteredLessons.length === 0 ? (
           <p className="px-2 py-4 text-center text-[12px] text-white/45">
             {query.trim()
@@ -146,7 +146,7 @@ export function LessonModuleSidebar({
               : "Sem aulas neste módulo."}
           </p>
         ) : (
-          <ul className="space-y-2.5">
+          <ul className="space-y-1">
             {filteredLessons.map((lesson, idx) => {
               const isCurrent = lesson.id === currentLessonId
               const isPublished = lesson.status === "published"
@@ -156,35 +156,45 @@ export function LessonModuleSidebar({
                   <Link
                     href={`/account/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lesson.id)}`}
                     className={cn(
-                      "group flex w-full items-center gap-2.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2.5 py-2 text-left text-[#0B0B0D] transition-transform duration-200 hover:-translate-y-0.5",
+                      "group grid w-full grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl px-2.5 py-2 text-left transition",
                       isCurrent
-                        ? "-translate-y-0.5 shadow-[5px_5px_0_0_#F2B705]"
-                        : "shadow-[3px_3px_0_0_#0B0B0D] hover:shadow-[5px_5px_0_0_#F2B705]",
+                        ? "bg-primary/15 text-white shadow-[inset_0_0_0_1px_rgba(230,184,0,0.35)]"
+                        : "text-white/70 hover:bg-white/[0.04] hover:text-white",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[#0B0B0D]",
-                        isCurrent ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#F2B705]",
-                      )}
-                    >
-                      {isPublished ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : isHidden ? (
-                        <Lock className="h-3.5 w-3.5" />
-                      ) : (
-                        <Circle className="h-3.5 w-3.5" />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="fl-display block truncate text-[13px] leading-none text-[#0B0B0D]">
+                    {isPublished ? (
+                      <Check
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          isCurrent ? "text-primary" : "text-emerald-300/85",
+                        )}
+                      />
+                    ) : isHidden ? (
+                      <Lock
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          isCurrent ? "text-primary" : "text-white/30",
+                        )}
+                      />
+                    ) : (
+                      <Circle
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0",
+                          isCurrent ? "text-primary" : "text-white/30",
+                        )}
+                      />
+                    )}
+                    <span className="min-w-0">
+                      <span className="line-clamp-1 text-[12px] font-semibold">
                         {String(idx + 1).padStart(2, "0")}. {lesson.title}
                       </span>
-                      <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#6B6457]">
-                        {isPublished ? "Publicada" : isHidden ? "Oculta" : "Rascunho"}
-                      </span>
                     </span>
-                    <PlaySquare className="h-3.5 w-3.5 shrink-0 text-[#0B0B0D]/45" />
+                    <PlaySquare
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0",
+                        isCurrent ? "text-primary" : "text-white/35",
+                      )}
+                    />
                   </Link>
                 </li>
               )

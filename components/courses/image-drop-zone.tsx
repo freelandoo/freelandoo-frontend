@@ -26,8 +26,6 @@ interface Props {
   /** Permite reset/troca. Default true quando há imagem. */
   className?: string
   disabled?: boolean
-  /** "dark" (padrão) para páginas escuras; "light" para o tema claro de cursos. */
-  tone?: "dark" | "light"
 }
 
 export function ImageDropZone({
@@ -40,7 +38,6 @@ export function ImageDropZone({
   onRemove,
   className,
   disabled = false,
-  tone = "dark",
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -111,7 +108,6 @@ export function ImageDropZone({
   }, [onRemove, busy])
 
   const hasImage = !!currentUrl
-  const light = tone === "light"
 
   return (
     <div className={cn("w-full", className)}>
@@ -127,15 +123,10 @@ export function ImageDropZone({
         tabIndex={0}
         aria-disabled={disabled || busy}
         className={cn(
-          "group relative w-full overflow-hidden rounded-[1.5rem] border transition",
-          light
-            ? "border-[#0B0B0D]/15 bg-[#E8E2D4] text-[#0B0B0D]"
-            : "border-white/10 bg-zinc-950 text-white",
+          "group relative w-full overflow-hidden rounded-[1.5rem] border border-white/10 bg-zinc-950 text-white transition",
           hasImage
             ? "cursor-pointer hover:border-primary/40"
-            : light
-              ? "cursor-pointer border-dashed bg-[radial-gradient(circle_at_top,rgba(230,184,0,0.10),transparent_60%),#E8E2D4] hover:border-primary/45 hover:bg-[#0B0B0D]/[0.04]"
-              : "cursor-pointer border-dashed bg-[radial-gradient(circle_at_top,rgba(230,184,0,0.08),transparent_60%),rgba(255,255,255,0.02)] hover:border-primary/40 hover:bg-white/[0.04]",
+            : "cursor-pointer border-dashed bg-[radial-gradient(circle_at_top,rgba(230,184,0,0.08),transparent_60%),rgba(255,255,255,0.02)] hover:border-primary/40 hover:bg-white/[0.04]",
           dragging && "border-primary/55 bg-primary/[0.08]",
           (disabled || busy) && "cursor-not-allowed opacity-80",
         )}
@@ -150,12 +141,7 @@ export function ImageDropZone({
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <span
-              className={cn(
-                "inline-flex h-12 w-12 items-center justify-center rounded-full border",
-                light ? "border-[#0B0B0D]/12 bg-[#0B0B0D]/[0.04]" : "border-white/10 bg-white/[0.04]",
-              )}
-            >
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
               {busy ? (
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               ) : (
@@ -167,8 +153,8 @@ export function ImageDropZone({
                 {label}
               </p>
             )}
-            <p className={cn("text-sm font-semibold", light ? "text-[#0B0B0D]/85" : "text-white/90")}>{title}</p>
-            <p className={cn("text-[11px]", light ? "text-[#5b554b]" : "text-white/45")}>{hint}</p>
+            <p className="text-sm font-semibold text-white/90">{title}</p>
+            <p className="text-[11px] text-white/45">{hint}</p>
           </div>
         )}
 
@@ -224,7 +210,7 @@ export function ImageDropZone({
       </div>
 
       {error && (
-        <p className={cn("mt-2 text-xs font-medium", light ? "text-red-700" : "text-red-300")}>{error}</p>
+        <p className="mt-2 text-xs font-medium text-red-300">{error}</p>
       )}
     </div>
   )

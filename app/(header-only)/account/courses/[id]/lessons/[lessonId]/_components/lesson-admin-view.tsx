@@ -30,21 +30,21 @@ interface Props {
 function LessonStatusPill({ status }: { status: "draft" | "published" | "hidden" }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-emerald-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white">
-        <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
         Publicada
       </span>
     )
   }
   if (status === "hidden") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-[#0B0B0D]/85 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white">
+      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/55">
         Oculta
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[#0B0B0D]/20 bg-amber-500 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[#0B0B0D]">
+    <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
       Rascunho
     </span>
   )
@@ -92,7 +92,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
   const isLoading = loadingLesson || loadingModules || loadingModuleLessons
 
   return (
-    <PageShell texture={false} className="fl-paper-card md:pl-[80px]">
+    <PageShell className="md:pl-[80px]">
     <div className="relative z-10 px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-7xl">
         {/* Header */}
@@ -103,7 +103,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 ? `/account/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(lesson.module_id)}`
                 : `/account/courses/${encodeURIComponent(courseId)}`
             }
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Voltar ao módulo
@@ -118,7 +118,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 router.push(`/account/courses/${courseId}/lessons/${prevLesson.id}`)
               }
               disabled={!prevLesson}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D] disabled:opacity-30"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-30"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Anterior
@@ -130,7 +130,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 router.push(`/account/courses/${courseId}/lessons/${nextLesson.id}`)
               }
               disabled={!nextLesson}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04] px-3 py-1.5 text-[12px] font-medium text-[#0B0B0D]/80 transition hover:border-[#0B0B0D]/35 hover:text-[#0B0B0D] disabled:opacity-30"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-30"
             >
               Próxima
               <ArrowRight className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
 
         {/* Estado: carregando aula */}
         {loadingLesson && (
-          <div className="flex items-center justify-center rounded-[2rem] border border-white/[0.07] bg-[#0B0B0D]/[0.03] py-16 text-[#0B0B0D]/55">
+          <div className="flex items-center justify-center rounded-[2rem] border border-white/[0.07] bg-white/[0.02] py-16 text-white/55">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Carregando aula...
           </div>
@@ -148,14 +148,14 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
 
         {/* Estado: erro */}
         {!loadingLesson && lessonError && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-700">
+          <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <p className="font-medium">Não foi possível carregar a aula</p>
-              <p className="mt-1 text-red-700/80">{lessonError}</p>
+              <p className="mt-1 text-red-200/80">{lessonError}</p>
               <Link
                 href={`/account/courses/${courseId}`}
-                className="mt-3 inline-block text-red-700 underline underline-offset-2 hover:text-[#0B0B0D]"
+                className="mt-3 inline-block text-red-200 underline underline-offset-2 hover:text-white"
               >
                 Voltar para o curso
               </Link>
@@ -167,7 +167,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
         {!loadingLesson && !lessonError && lesson && (
           <>
             {/* Título da aula */}
-            <h1 className="mb-6 inline-flex items-center gap-2 text-xl font-semibold text-[#0B0B0D] md:text-2xl">
+            <h1 className="mb-6 inline-flex items-center gap-2 text-xl font-semibold text-white md:text-2xl">
               <PlaySquare className="h-5 w-5 text-primary" />
               <span className="truncate">{lesson.title}</span>
             </h1>
@@ -202,9 +202,9 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 />
 
                 {/* Dados da aula (editável) */}
-                <section className="border-2 border-[#0B0B0D] bg-[#15120E] p-5 shadow-[4px_4px_0_0_#0B0B0D] md:p-7">
+                <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
                   <header className="mb-4">
-                    <h2 className="text-lg font-semibold text-[#F5F1E8]">
+                    <h2 className="text-lg font-semibold text-white">
                       Dados da aula
                     </h2>
                     <p className="mt-1 text-xs text-white/50">
