@@ -1532,7 +1532,7 @@ export default function PerfilPage() {
                 src="/casaviews/profile/torn-edge-02.webp"
                 alt=""
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 -top-9 z-0 h-16 w-full select-none object-cover object-top md:-top-12 md:h-20"
+                className="pointer-events-none absolute inset-x-0 -top-3 z-0 h-16 w-full select-none object-cover object-top md:-top-4 md:h-20"
               />
               <div className="relative z-10 -mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
                 <button
