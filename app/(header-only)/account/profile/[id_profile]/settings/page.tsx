@@ -385,9 +385,14 @@ export default function ProfileSettingsPage() {
     try {
       let response: Response
 
+      // Faixa de seguidores é opcional: null quando não selecionada.
+      const followerRange = socialForm.id_follower_range
+        ? parseInt(socialForm.id_follower_range)
+        : null
+
       const editBody = isWhatsapp
         ? { phone_number: socialForm.phone_number }
-        : { url: socialForm.url, id_follower_range: parseInt(socialForm.id_follower_range) }
+        : { url: socialForm.url.trim(), id_follower_range: followerRange }
 
       const createBody = isWhatsapp
         ? {
@@ -396,8 +401,8 @@ export default function ProfileSettingsPage() {
           }
         : {
             id_social_media_type: parseInt(socialForm.id_social_media_type),
-            url: socialForm.url,
-            id_follower_range: parseInt(socialForm.id_follower_range),
+            url: socialForm.url.trim(),
+            id_follower_range: followerRange,
           }
 
       if (editingSocial) {
@@ -1006,18 +1011,19 @@ export default function ProfileSettingsPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="social-url">
-                    {editingSocial ? `URL / Usuário (${editingSocial.desc_social_media_type})` : "URL / Usuário"}
+                    {editingSocial ? `Link (${editingSocial.desc_social_media_type})` : "Link do perfil"}
                   </Label>
                   <Input
                     id="social-url"
-                    placeholder="Ex: meuusuario ou https://..."
+                    placeholder="https://instagram.com/seu_usuario"
                     value={socialForm.url}
                     onChange={(e) => setSocialForm((prev) => ({ ...prev, url: e.target.value }))}
                   />
+                  <p className="text-xs text-muted-foreground">Cole o link completo do seu perfil.</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faixa de Seguidores</Label>
+                  <Label>Faixa de Seguidores <span className="text-muted-foreground">(opcional)</span></Label>
                   <Select
                     value={socialForm.id_follower_range}
                     onValueChange={(v) => setSocialForm((prev) => ({ ...prev, id_follower_range: v }))}
@@ -1046,7 +1052,7 @@ export default function ProfileSettingsPage() {
                 disabled={
                   isSubmittingSocial ||
                   (!editingSocial && !socialForm.id_social_media_type) ||
-                  (isWhatsapp ? !socialForm.phone_number : (!socialForm.url || !socialForm.id_follower_range))
+                  (isWhatsapp ? !socialForm.phone_number : !socialForm.url.trim())
                 }
               >
                 {isSubmittingSocial ? "Salvando..." : "Salvar"}
