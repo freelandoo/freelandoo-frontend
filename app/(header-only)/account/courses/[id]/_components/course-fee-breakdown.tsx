@@ -57,7 +57,7 @@ export function CourseFeeBreakdown({
 
   if (!priceCents || priceCents <= 0) {
     return (
-      <p className="mt-2 text-xs text-white/45">
+      <p className="mt-2 text-xs text-[#5b554b]">
         Defina um preço (mín. R$ 5,00 para publicar) e veja aqui o que você
         recebe e o que o cliente paga.
       </p>
@@ -65,12 +65,12 @@ export function CourseFeeBreakdown({
   }
 
   return (
-    <div className="mt-3 border-2 border-white/12 bg-[#15100A] p-4 shadow-[4px_4px_0_0_rgba(0,0,0,0.45)]">
+    <div className="mt-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[4px_4px_0_0_#0B0B0D]">
       <div className="mb-2 flex items-center justify-between">
         <span className="fl-display text-sm uppercase tracking-wide text-[#F2B705]">
           Quem paga o quê
         </span>
-        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-white/40" />}
+        {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#5b554b]" />}
       </div>
 
       {pricing ? (
@@ -81,11 +81,11 @@ export function CourseFeeBreakdown({
           {pricing.affiliate_commission_cents > 0 && (
             <Row label="+ Comissão do afiliado" value={pricing.affiliate_commission_cents} tone="fee" />
           )}
-          <div className="my-1 h-px bg-white/10" />
+          <div className="my-1 h-px bg-[#0B0B0D]/10" />
           <Row label="Cliente paga" value={pricing.display_price_cents} tone="total" />
         </div>
       ) : (
-        !loading && <p className="text-xs text-white/45">Não foi possível calcular as taxas agora.</p>
+        !loading && <p className="text-xs text-[#5b554b]">Não foi possível calcular as taxas agora.</p>
       )}
     </div>
   )
@@ -102,16 +102,16 @@ function Row({
 }) {
   const labelCls =
     tone === "total"
-      ? "fl-display text-base text-white"
+      ? "fl-display text-base text-[#0B0B0D]"
       : tone === "seller"
-        ? "font-bold text-white/90"
-        : "text-white/55"
+        ? "font-bold text-[#0B0B0D]/85"
+        : "text-[#0B0B0D]/55"
   const valueCls =
     tone === "total"
       ? "fl-display text-lg text-[#F2B705]"
       : tone === "seller"
-        ? "font-bold text-emerald-300"
-        : "text-white/55"
+        ? "font-bold text-emerald-600"
+        : "text-[#0B0B0D]/55"
   return (
     <div className="flex items-center justify-between gap-3">
       <span className={labelCls}>{label}</span>

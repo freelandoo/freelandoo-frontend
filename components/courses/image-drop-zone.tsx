@@ -123,10 +123,10 @@ export function ImageDropZone({
         tabIndex={0}
         aria-disabled={disabled || busy}
         className={cn(
-          "group relative w-full overflow-hidden rounded-[1.5rem] border border-white/10 bg-zinc-950 text-white transition",
+          "group relative w-full overflow-hidden rounded-[1.5rem] border border-[#0B0B0D]/12 bg-[#E8E2D4] text-[#0B0B0D] transition",
           hasImage
             ? "cursor-pointer hover:border-primary/40"
-            : "cursor-pointer border-dashed bg-[radial-gradient(circle_at_top,rgba(230,184,0,0.08),transparent_60%),rgba(255,255,255,0.02)] hover:border-primary/40 hover:bg-white/[0.04]",
+            : "cursor-pointer border-dashed bg-[radial-gradient(circle_at_top,rgba(230,184,0,0.08),transparent_60%),rgba(255,255,255,0.02)] hover:border-primary/40 hover:bg-[#0B0B0D]/[0.04]",
           dragging && "border-primary/55 bg-primary/[0.08]",
           (disabled || busy) && "cursor-not-allowed opacity-80",
         )}
@@ -141,7 +141,7 @@ export function ImageDropZone({
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[#0B0B0D]/12 bg-[#0B0B0D]/[0.04]">
               {busy ? (
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               ) : (
@@ -153,8 +153,8 @@ export function ImageDropZone({
                 {label}
               </p>
             )}
-            <p className="text-sm font-semibold text-white/90">{title}</p>
-            <p className="text-[11px] text-white/45">{hint}</p>
+            <p className="text-sm font-semibold text-[#0B0B0D]/85">{title}</p>
+            <p className="text-[11px] text-[#5b554b]">{hint}</p>
           </div>
         )}
 
@@ -164,7 +164,7 @@ export function ImageDropZone({
 
         {hasImage && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 opacity-0 transition group-hover:opacity-100">
-            <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-zinc-950/85 px-3 py-1 text-[11px] font-semibold text-white/85 backdrop-blur-sm">
+            <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-[#0B0B0D]/20 bg-zinc-950/85 px-3 py-1 text-[11px] font-semibold text-[#0B0B0D]/80 backdrop-blur-sm">
               <RefreshCw className="h-3.5 w-3.5" />
               Trocar imagem
             </span>
