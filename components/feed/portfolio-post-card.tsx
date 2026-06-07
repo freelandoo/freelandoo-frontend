@@ -356,7 +356,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         "group/post box-border w-full max-w-full",
         paged
           ? "flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15"
-          : "overflow-hidden border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_#F2B705]"
+          : "overflow-hidden border-b-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]"
       )}
       data-post-id={post.post_id}
     >
