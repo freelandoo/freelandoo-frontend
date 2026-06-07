@@ -1478,11 +1478,11 @@ export default function PerfilPage() {
           </span>
         </HoverHint>
       </RetractableProfileHeader>
-      <main className="container mx-auto px-4 py-10 md:py-12">
+      <main className="container mx-auto px-0 py-10 md:px-4 md:py-12">
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
+            className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
           >
             <div className="relative h-40 overflow-hidden bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (
@@ -1667,7 +1667,7 @@ export default function PerfilPage() {
               <div className="space-y-4">
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-3 gap-px overflow-hidden w-screen max-w-[100vw] ml-[calc(50%-50vw)] md:ml-0 md:w-auto md:max-w-none">
+                <div className="grid grid-cols-3 gap-px">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
@@ -1842,7 +1842,7 @@ export default function PerfilPage() {
                 </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-3 gap-px overflow-hidden w-screen max-w-[100vw] ml-[calc(50%-50vw)] md:ml-0 md:w-auto md:max-w-none">
+                <div className="grid grid-cols-3 gap-px">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false
