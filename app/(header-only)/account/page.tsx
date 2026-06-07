@@ -57,6 +57,11 @@ import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-p
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 import { UserDropside } from "@/components/layout/UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+import { useGSAP } from "@gsap/react"
+import gsap from "gsap"
+import { TornPaperDivider } from "@/components/ui/casaviews/TornPaperDivider"
+import { DoodleAsset } from "@/components/ui/casaviews/DoodleAsset"
+import { ProfileStatsStrip, type ProfileStat } from "@/components/account/ProfileStatsStrip"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -186,6 +191,23 @@ export default function PerfilPage() {
 
   // Ref no headcard pro RetractableProfileHeader observar.
   const headcardRef = useRef<HTMLElement | null>(null)
+
+  // Entrada GSAP do headcard (sticker → avatar → identidade → métricas →
+  // doodles). Sparse e respeita prefers-reduced-motion. Re-roda quando o
+  // perfil carrega (o headcard só monta depois do early-return de loading).
+  useGSAP(
+    () => {
+      if (!headcardRef.current) return
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } })
+      tl.from("[data-cv-sticker]", { y: -20, rotate: -16, autoAlpha: 0, duration: 0.5 })
+        .from("[data-cv-avatar]", { scale: 0.78, autoAlpha: 0, duration: 0.55, clearProps: "opacity,visibility,transform" }, "-=0.2")
+        .from("[data-cv-identity] > *", { y: 14, autoAlpha: 0, duration: 0.45, stagger: 0.07 }, "-=0.3")
+        .from("[data-cv-stats] > *", { y: 16, autoAlpha: 0, duration: 0.4, stagger: 0.05, clearProps: "transform" }, "-=0.2")
+        .from("[data-cv-doodle]", { scale: 0.5, autoAlpha: 0, duration: 0.45, stagger: 0.12, clearProps: "transform" }, "-=0.3")
+    },
+    { scope: headcardRef, dependencies: [Boolean(perfil)] },
+  )
 
   // Deep-link: ?edit=1 abre o modal Editar (dropside da toolbar entra aqui em /account?edit=1)
   const editDeeplinkOpenedRef = useRef(false)
@@ -1375,6 +1397,23 @@ export default function PerfilPage() {
   ).length
   const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
 
+  // Nome forte estilo Casa Views: sobrenome (última palavra) em dourado.
+  const displayName = (perfil.nome || perfil.username || "").trim()
+  const nameWords = displayName.split(/\s+/).filter(Boolean)
+  const nameFirst = nameWords.length > 1 ? nameWords.slice(0, -1).join(" ") : nameWords[0] || ""
+  const nameLast = nameWords.length > 1 ? nameWords[nameWords.length - 1] : ""
+
+  // Faixa de métricas — data-driven, alimentada pelas contagens reais. Pronta
+  // pra ganhar Ranking/Pontos/Views/Saldo quando o backend expuser (não quebra
+  // se vier vazio — ProfileStatsStrip mostra "—").
+  const accountStats: ProfileStat[] = [
+    { key: "profiles", label: "Perfis", value: totalProfiles, icon: UserRound },
+    { key: "visible", label: "Visíveis", value: visibleProfiles, icon: Eye },
+    { key: "clans", label: "Clans", value: totalClans, icon: Crown },
+    { key: "following", label: "Acompanhando", value: followedProfilesCount, icon: Users, highlight: true, onClick: () => setFollowingModalOpen(true) },
+    { key: "messages", label: "Mensagens", value: unreadMessages, icon: MessageCircle, dark: true, href: "/mensagens?tab=conv" },
+  ]
+
   return (
     <div className="fl-root fl-paper-texture min-h-[100dvh]">
       <RetractableProfileHeader
@@ -1481,86 +1520,154 @@ export default function PerfilPage() {
         <div className="mx-auto grid w-full max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]"
+            className="relative overflow-hidden rounded-[22px] fl-paper-card border border-[#0B0B0D]/15 shadow-[0_28px_70px_-28px_rgba(0,0,0,0.9)] ring-1 ring-[#D8A928]/25"
           >
-            <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-40 bg-[#1d1810] md:h-52">
+            {/* textura de papel real cobrindo todo o card */}
+            <div
+              aria-hidden
+              className="cv-grain-paper pointer-events-none absolute inset-0 z-0 opacity-[0.2] mix-blend-multiply"
+            />
+            {/* ── CAPA (banner tabloide Casa Views) ── */}
+            <div className="relative z-[1] h-52 overflow-hidden bg-[#0c0a06] md:h-60">
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={manifestation.active.banner_url}
                   alt=""
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover opacity-80"
                 />
               ) : (
-                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
+                <div className="h-full w-full bg-[radial-gradient(circle_at_18%_18%,rgba(216,169,40,0.22),transparent_40%),linear-gradient(135deg,#1d1810,#0b0805)]" />
               )}
 
-              {/* Adesivo Casa Views — leva aos rankings (agora interno: /acasaviews) */}
+              {/* texturas: grão escuro + vinheta + degradê + brilho dourado */}
+              <div aria-hidden className="cv-grain-dark pointer-events-none absolute inset-0 opacity-[0.3] mix-blend-screen" />
+              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(130%_160%_at_50%_-25%,transparent_38%,rgba(8,7,4,0.92)_100%)]" />
+              <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080704]/90 via-[#080704]/10 to-[#080704]/45" />
+              <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-[#D8A928]/15 blur-3xl" />
+
+              {/* coroas hand-drawn (cantos) */}
+              <span data-cv-doodle aria-hidden className="pointer-events-none absolute left-5 top-3 z-20 -rotate-12 opacity-90">
+                <DoodleAsset name="crown" width={46} />
+              </span>
+              <span data-cv-doodle aria-hidden className="pointer-events-none absolute left-[34%] top-2 z-20 hidden rotate-6 opacity-60 sm:block">
+                <DoodleAsset name="crown" width={30} />
+              </span>
+
+              {/* bloco de marca: ticket CASA VIEWS + tagline + grifo → rankings */}
               <Link
                 href="/acasaviews/rankings"
                 aria-label="Ver os rankings da Casa Views"
                 title="Rankings da Casa Views"
-                className="group absolute left-4 top-4 z-10 -rotate-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-0"
+                data-cv-sticker
+                className="group absolute right-4 top-1/2 z-30 flex -translate-y-1/2 flex-col items-end gap-1"
               >
-                {/* fita washi colada no topo do adesivo */}
-                <span
-                  aria-hidden
-                  className="absolute -top-2 left-1/2 h-3.5 w-12 -translate-x-1/2 rotate-2 bg-[#F4D53B]/70 shadow-[1px_2px_3px_rgba(0,0,0,0.35)]"
+                <DoodleAsset
+                  name="ticket"
+                  width={172}
+                  priority
+                  className="drop-shadow-[3px_5px_8px_rgba(0,0,0,0.5)] transition-transform duration-200 group-hover:-translate-y-0.5"
                 />
-                <span className="relative flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#0BC5E0] px-3 py-2 shadow-[3px_3px_0_0_#0B0B0D] transition-[box-shadow] group-hover:shadow-[5px_5px_0_0_#F2B705]">
-                  <Crown className="h-5 w-5 shrink-0 text-[#0B0B0D]" />
-                  <span className="fl-display text-left leading-[0.78]">
-                    <span className="block text-[12px] tracking-tight text-[#0B0B0D]">Casa</span>
-                    <span className="block text-[19px] tracking-tight text-[#E11D48] [-webkit-text-stroke:0.6px_#0B0B0D]">Views</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0 -rotate-45 text-[#0B0B0D] transition-transform group-hover:translate-x-0.5" />
+                <span className="fl-display text-[10px] tracking-[0.16em] text-[#E6BE4A] md:text-[11px]">
+                  REALITY · OPINIÃO · RESENHA
                 </span>
+                <DoodleAsset name="underline" width={148} className="opacity-90" />
               </Link>
 
+              {/* seta hand-drawn apontando pro bloco de marca */}
+              <span
+                data-cv-doodle
+                aria-hidden
+                className="pointer-events-none absolute right-[202px] top-12 z-20 hidden rotate-[10deg] opacity-80 lg:block"
+              >
+                <DoodleAsset name="arrow" width={92} />
+              </span>
+
+              {/* engrenagem (configurações) */}
               <button
                 type="button"
                 onClick={() => setDropsideOpen(true)}
                 aria-label="Abrir menu da conta"
                 aria-haspopup="dialog"
                 aria-expanded={dropsideOpen}
-                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
                 title="Abrir configurações"
+                className="absolute right-4 top-4 z-40 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D8A928]/40 bg-[#F3EFE3] text-[#080808] shadow-[2px_2px_0_0_rgba(8,8,8,0.55)] transition hover:bg-[#E6BE4A] active:translate-x-px active:translate-y-px"
               >
                 <Settings className="h-4 w-4" />
               </button>
+
+              {/* papel rasgado real cobrindo a emenda capa → corpo creme */}
+              <TornPaperDivider variant="02" className="bottom-[-2px] h-12 md:h-14" />
             </div>
 
-            <div className="px-5 pb-6 md:px-7">
-              <div className="-mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(true)}
-                  aria-label="Trocar foto de perfil"
-                  title="Trocar foto de perfil"
-                  className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
-                >
-                  <Avatar className="h-full w-full rounded-none">
-                    {perfil.avatar && (
-                      <AvatarImage
-                        src={perfil.avatar}
-                        alt={perfil.nome}
-                        className="rounded-none object-cover"
-                      />
-                    )}
-                    <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
-                      {getInitials(perfil.nome)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    <Camera className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
+            <div className="relative z-[1] px-5 pb-6 md:px-7">
+              <div className="-mt-16 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
+                {/* avatar polaroid inclinado (sombra sólida dourada) + coroa */}
+                <div data-cv-avatar className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    aria-label="Trocar foto de perfil"
+                    title="Trocar foto de perfil"
+                    className="cv-avatar-polaroid group relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden md:w-28"
+                  >
+                    <Avatar className="h-full w-full rounded-[10px]">
+                      {perfil.avatar && (
+                        <AvatarImage
+                          src={perfil.avatar}
+                          alt={perfil.nome}
+                          className="rounded-[10px] object-cover"
+                        />
+                      )}
+                      <AvatarFallback className="rounded-[10px] bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
+                        {getInitials(perfil.nome)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#080808]/55 text-[#F3EFE3] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Camera className="h-5 w-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
+                    </span>
+                  </button>
+                  <span
+                    data-cv-doodle
+                    aria-hidden
+                    className="pointer-events-none absolute -right-4 -top-6 z-10 -rotate-[14deg]"
+                  >
+                    <DoodleAsset name="crown" width={50} />
                   </span>
-                </button>
+                  {/* selo social (estilo Instagram) colado no canto do polaroid */}
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-2 -left-2 z-20 inline-flex h-8 w-8 -rotate-[6deg] items-center justify-center rounded-[9px] border-2 border-[#080808] bg-[#F3EFE3] text-[#8A650D] shadow-[2px_2px_0_0_#D8A928]"
+                  >
+                    <Instagram className="h-4 w-4" />
+                  </span>
+                </div>
 
-                <div className="min-w-0 flex-1 pb-1">
-                  {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
+                {/* cluster de identidade: nome forte (sobrenome dourado) + handle */}
+                <div data-cv-identity className="min-w-0 flex-1 pb-1">
+                  {displayName && (
+                    <h1 className="fl-display text-[34px] uppercase leading-[0.86] tracking-[-0.02em] text-[#080808] sm:text-5xl md:text-6xl">
+                      {nameFirst}
+                      {nameLast && (
+                        <>
+                          {" "}
+                          <span className="text-[#D8A928]">{nameLast}</span>
+                        </>
+                      )}
+                    </h1>
+                  )}
                   {perfil.username && (
-                    <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
+                    <div className="relative mt-1 inline-block">
+                      <p className="text-sm font-bold tracking-wide text-[#5b554b]">@{perfil.username}</p>
+                      <span
+                        data-cv-doodle
+                        aria-hidden
+                        className="pointer-events-none absolute -bottom-2.5 left-0 block"
+                      >
+                        <DoodleAsset name="underline" width={118} />
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1578,10 +1685,8 @@ export default function PerfilPage() {
                   </HoverHint>
                 )}
                 {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
-                  <span
-                    key={status.id_status}
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e]"
-                  >
+                  <span key={status.id_status} className="cv-chip">
+                    <BadgeCheck className="h-3 w-3 text-[#8A650D]" />
                     {status.desc_status.replace(/_/g, " ")}
                   </span>
                 ))}
@@ -1599,7 +1704,7 @@ export default function PerfilPage() {
                           : "/account/parental"
                       )
                     }
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
+                    className="cv-chip transition hover:bg-[rgba(216,169,40,0.24)]"
                   >
                     <ShieldCheck className="h-3 w-3" />
                     {perfil.is_minor === true ? "Supervisionada" : "Parental"}
@@ -1610,7 +1715,7 @@ export default function PerfilPage() {
                     <button
                       onClick={() => handleCopyCoupon(perfil.coupon_code!)}
                       data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-[#E0A500]/60 bg-[#F2B705]/12 px-2.5 py-1 font-mono text-[11px] font-bold tracking-widest text-[#8a6d00] transition hover:bg-[#F2B705]/25"
+                      className="cv-chip border-dashed font-mono tracking-widest transition hover:bg-[rgba(216,169,40,0.24)]"
                     >
                       {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       {perfil.coupon_code}
@@ -1623,7 +1728,7 @@ export default function PerfilPage() {
                       onClick={handleGenerateCoupon}
                       disabled={isGeneratingCoupon}
                       data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
+                      className="cv-chip cv-chip-dark transition hover:opacity-90 disabled:opacity-50"
                     >
                       {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
                     </button>
@@ -1631,28 +1736,9 @@ export default function PerfilPage() {
                 )}
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]">
-                <button
-                  type="button"
-                  onClick={() => router.push("/mensagens?tab=os")}
-                  aria-label="Abrir mensagens"
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  title="Mensagens"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFollowingModalOpen(true)}
-                  className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
-                  title="Ver quem você acompanha"
-                >
-                  <span className="font-bold text-[#0B0B0D]">{followedProfilesCount}</span>{" "}
-                  <span className="text-[#5b554b]">acompanhados</span>
-                </button>
+              {/* faixa de métricas — papel creme + bloco preto com número dourado */}
+              <div data-cv-stats className="mt-5">
+                <ProfileStatsStrip stats={accountStats} />
               </div>
             </div>
           </article>

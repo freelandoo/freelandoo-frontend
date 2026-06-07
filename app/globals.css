@@ -640,3 +640,78 @@
 /* Câmera (CameraStudio): oculta a toolbar global enquanto a câmera está ativa */
 body.camera-active [data-app-toolbar] { display: none !important; }
 body.camera-active { overflow: hidden; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   CASA VIEWS — skin premium da /account (colagem editorial dark/gold)
+   Texturas reais (webp em /casaviews/profile) aplicadas como camadas
+   aria-hidden. Reusa os tokens --fl-* do .fl-root. Sem ciano/magenta.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Grão de papel creme — camada multiply sobre o card claro */
+.cv-grain-paper {
+  background-image: url("/casaviews/profile/paper-grain.webp");
+  background-size: 360px 360px;
+  background-repeat: repeat;
+}
+/* Grão escuro com brilho — camada screen sobre a capa */
+.cv-grain-dark {
+  background-image: url("/casaviews/profile/dark-grain.webp");
+  background-size: 520px 520px;
+  background-repeat: repeat;
+}
+
+/* Avatar polaroid inclinado com sombra sólida dourada (spec /account) */
+.cv-avatar-polaroid {
+  border: 6px solid var(--fl-paper);
+  outline: 2px solid #080808;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: -10px 12px 0 0 var(--fl-gold), 0 14px 18px rgba(0, 0, 0, 0.38);
+  transform: rotate(-4deg);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cv-avatar-polaroid:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: -6px 16px 0 0 var(--fl-gold-deep), 0 20px 26px rgba(0, 0, 0, 0.42);
+}
+
+/* Chip de identidade (badge) — dourado translúcido sobre papel */
+.cv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(216, 169, 40, 0.55);
+  background: rgba(216, 169, 40, 0.12);
+  color: #3b2a08;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.cv-chip-dark {
+  border-color: #080808;
+  background: #080808;
+  color: var(--fl-paper);
+}
+
+/* Célula da faixa de métricas */
+.cv-stat {
+  background: rgba(243, 239, 227, 0.86);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.cv-stat-dark {
+  background: #080808;
+  border-color: #080808;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Estado inicial dos reveals GSAP (evita flash antes de animar) */
+.cv-reveal { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .cv-reveal { opacity: 1; }
+  .cv-avatar-polaroid { transition: none !important; }
+}
