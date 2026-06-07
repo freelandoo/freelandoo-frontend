@@ -1190,8 +1190,8 @@ export default function MensagensClient() {
   }
 
   return (
-    <div className="container mx-auto min-h-[calc(100dvh-72px)] px-0 md:px-4 md:py-6">
-      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden border-y border-white/[0.06] bg-gradient-to-b from-[#141009] via-[#141009] to-black md:h-[calc(100dvh-120px)] md:grid-cols-[340px_1fr] md:rounded-2xl md:border md:border-white/10 md:shadow-[0_40px_80px_-30px_rgba(0,0,0,0.6)]">
+    <div className="min-h-[calc(100dvh-72px)]">
+      <div className="grid h-[calc(100dvh-72px)] grid-cols-1 overflow-hidden bg-gradient-to-b from-[#141009] via-[#141009] to-black md:grid-cols-[340px_1fr]">
         {/* Lista (Conversas ou O.S.) */}
         <aside
           className={cn(
@@ -1313,7 +1313,7 @@ export default function MensagensClient() {
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
             {/* Search inline pra encontrar perfis/clans pra começar nova conversa */}
-            <div className="sticky top-0 z-10 border-b-2 border-[#F1EDE2]/10 bg-[#141009]/85 px-3 py-2.5 backdrop-blur">
+            <div className="sticky top-0 z-10 border-b-2 border-[#F1EDE2]/10 bg-[#0b0804]/85 px-3 py-2.5 backdrop-blur">
               <div className="flex items-center gap-2 rounded-[4px] border-2 border-[#F1EDE2]/15 bg-[#1D1810] px-3 py-2 transition-colors focus-within:border-[#F2B705]">
                 <Search className="h-3.5 w-3.5 shrink-0 text-[#8a8275]" />
                 <input
