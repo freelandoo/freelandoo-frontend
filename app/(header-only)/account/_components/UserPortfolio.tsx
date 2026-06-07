@@ -534,18 +534,18 @@ export function UserPortfolio({
     }
   }
 
-  // Abas — fundo preto, aba ativa dourada com sublinhado (identidade Casa Views).
+  // Abas retangulares grudadas no headcard — Portfolio/Bees só ícone, restantes com texto.
   const tabBtn = (active: boolean) =>
-    `inline-flex h-11 items-center justify-center gap-1.5 border-b-2 px-3.5 text-[11px] font-bold uppercase tracking-wide transition ${
+    `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
       active
-        ? "border-[#D8A928] text-[#E6BE4A]"
-        : "border-transparent text-[#9A938A] hover:text-[#F3EFE3]"
+        ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+        : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
     }`
 
   return (
-    <section className="mb-4">
-      {/* Tabs — barra preta arredondada, aba ativa dourada */}
-      <div className="flex items-stretch justify-between rounded-xl border border-[#D8A928]/20 bg-[#080808] px-1 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.8)]">
+    <section className="-mt-px mb-4">
+      {/* Tabs grudadas no headcard (sem mb pra colar visualmente) */}
+      <div className="flex items-stretch justify-between border-b border-[#F5F1E8]/12 bg-[#1d1810]/50">
         <div className="flex items-stretch overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <HoverHint id="account-tab-feed" side="bottom">
             <button
@@ -652,7 +652,7 @@ export function UserPortfolio({
           </button>
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-3 gap-2 md:gap-3">
+        <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
           {filteredItems.map((item) => {
             const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
             const firstMedia = activeMedias[0]
@@ -661,7 +661,7 @@ export function UserPortfolio({
               <div key={item.id_portfolio_item} className="group relative flex flex-col">
                 {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
                 {firstMedia ? (
-                  <div className={`relative ${aspectClass} overflow-hidden rounded-xl border border-[#D8A928]/20 bg-[#0D0B07] shadow-[0_12px_28px_-16px_rgba(0,0,0,0.7)] transition-shadow group-hover:shadow-[0_16px_34px_-14px_rgba(216,169,40,0.35)]`}>
+                  <div className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden`}>
                     {firstMedia.media_type === "video" ? (
                       <video
                         src={firstMedia.media_url}
@@ -738,7 +738,7 @@ export function UserPortfolio({
                   </div>
                 ) : (
                   <div
-                    className={`relative ${aspectClass} flex items-center justify-center rounded-xl border border-dashed border-[#D8A928]/25 bg-[#0D0B07]`}
+                    className={`relative ${aspectClass} bg-[#1d1810] flex items-center justify-center`}
                   >
                     <ImageIcon className="h-8 w-8 text-[#F5F1E8]/25" />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -1237,14 +1237,14 @@ function SavedSection() {
           </p>
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-3 gap-2 md:gap-3">
+        <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
           {items.map((it) => {
             const thumb = it.first_media?.thumbnail_url || it.first_media?.url || null
             const isVideo = it.first_media?.type === "video"
             return (
               <div
                 key={it.id_bookmark}
-                className={`group relative overflow-hidden rounded-xl border border-[#D8A928]/20 bg-[#0D0B07] ${aspectClass}`}
+                className={`group relative overflow-hidden bg-[#1d1810] ${aspectClass}`}
               >
                 <Link
                   href={`/p/${it.post_id}`}
