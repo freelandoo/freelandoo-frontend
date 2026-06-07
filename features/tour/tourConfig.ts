@@ -196,7 +196,7 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "ranking-scope-general", target: "[data-tour='ranking-scope-general']", title: "Ranking Geral", content: "Top 10 de toda a plataforma — todos os Enxames, profissões e cidades juntos.", placement: "bottom" },
       { id: "ranking-scope-machine", target: "[data-tour='ranking-scope-machine']", title: "Por Enxame", content: "Top 10 dentro de uma área (Views, Construção, Saúde & Beleza, etc.).", placement: "bottom" },
       { id: "ranking-scope-profession", target: "[data-tour='ranking-scope-profession']", title: "Por Profissão", content: "Top 10 de uma profissão específica (editor de vídeo, faxineira, eletricista, etc.).", placement: "bottom" },
-      { id: "ranking-scope-city", target: "[data-tour='ranking-scope-city']", title: "Por Cidade", content: "Top 10 de uma cidade ou estado específicos.", placement: "bottom" },
+      { id: "ranking-scope-region", target: "[data-tour='ranking-scope-region']", title: "Por Região", content: "Top 10 de uma região específica (ex.: Capital e Grande São Paulo).", placement: "bottom" },
       { id: "ranking-done", title: "Suba no ranking", content: "Para subir: poste, interaja, ative serviços, complete pedidos. Cada ação rende XP.", placement: "center" },
     ],
   },

@@ -23,7 +23,7 @@ import {
   Trophy,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CityFilterSheet } from "@/components/feed/city-filter-sheet"
+import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
 import {
   Select,
   SelectContent,
@@ -49,7 +49,7 @@ import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
 import { AnimatedNumber } from "./ranking-ui"
 
-type RankingScope = "general" | "machine" | "profession" | "city"
+type RankingScope = "general" | "machine" | "profession" | "region"
 
 type RankingRow = {
   id_profile: string
@@ -103,7 +103,7 @@ const scopeOptions: {
   { key: "general", label: "Geral", icon: Globe2 },
   { key: "machine", label: "Enxame", icon: Building2 },
   { key: "profession", label: "Profissão", icon: Briefcase },
-  { key: "city", label: "Cidade", icon: MapPin },
+  { key: "region", label: "Região", icon: MapPin },
 ]
 
 const numberFormatter = new Intl.NumberFormat("pt-BR")
@@ -190,8 +190,9 @@ export function RankingPageClient() {
   const [scope, setScope] = useState<RankingScope>("general")
   const [machineSlug, setMachineSlug] = useState("views")
   const [professionSlug, setProfessionSlug] = useState("")
-  const [cityState, setCityState] = useState<string | null>("SP")
-  const [city, setCity] = useState<string | null>("São Paulo")
+  const [regionState, setRegionState] = useState<string | null>("SP")
+  const [regionId, setRegionId] = useState<number | null>(null)
+  const [regionName, setRegionName] = useState<string | null>(null)
   const [rankingState, setRankingState] = useState<RankingState>({
     key: "",
     rows: [],
@@ -220,16 +221,15 @@ export function RankingPageClient() {
         selectedProfession.slug
       )}?limit=10`
     }
-    if (scope === "city" && city && cityState) {
+    if (scope === "region" && regionId) {
       const qs = new URLSearchParams({
-        municipio: city,
-        estado: cityState,
+        id_region: String(regionId),
         limit: "10",
       })
-      return `/api/ranking/public/city?${qs.toString()}`
+      return `/api/ranking/public/region?${qs.toString()}`
     }
     return null
-  }, [city, cityState, scope, selectedMachine, selectedProfession])
+  }, [regionId, scope, selectedMachine, selectedProfession])
 
   const requestKey = `${scope}:${rankingUrl ?? "none"}`
   const rows = useMemo(
@@ -243,9 +243,9 @@ export function RankingPageClient() {
     if (scope === "general") return "Brasil"
     if (scope === "machine") return selectedMachine?.name || "Enxame"
     if (scope === "profession") return selectedProfession?.label || "Profissão"
-    if (city && cityState) return `${city}, ${cityState}`
-    return "Cidade"
-  }, [city, cityState, scope, selectedMachine, selectedProfession])
+    if (regionName && regionState) return `${regionName}, ${regionState}`
+    return "Região"
+  }, [regionName, regionState, scope, selectedMachine, selectedProfession])
 
   const rest = rows.slice(3)
 
@@ -352,7 +352,7 @@ export function RankingPageClient() {
                     ? "ranking-scope-machine"
                     : key === "profession"
                       ? "ranking-scope-profession"
-                      : "ranking-scope-city"
+                      : "ranking-scope-region"
               return (
                 <HoverHint key={key} id={hintId} side="bottom" dataTour={hintId}>
                   <button
@@ -412,14 +412,16 @@ export function RankingPageClient() {
             </div>
           )}
 
-          {scope === "city" && (
-            <CityFilterSheet
-              state={cityState}
-              city={city}
+          {scope === "region" && (
+            <RegionFilterSheet
+              state={regionState}
+              regionId={regionId}
+              regionName={regionName}
               accent={theme.accent}
               onChange={(next) => {
-                setCityState(next.state)
-                setCity(next.city)
+                setRegionState(next.state)
+                setRegionId(next.regionId)
+                setRegionName(next.regionName)
               }}
               trigger={
                 <button
@@ -427,7 +429,7 @@ export function RankingPageClient() {
                   className="inline-flex h-11 w-fit items-center gap-2 border-2 border-[#F1EDE2]/25 px-4 text-sm font-extrabold uppercase tracking-[0.1em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
                 >
                   <MapPin className="h-4 w-4 text-[#F2B705]" />
-                  {city && cityState ? `${city}, ${cityState}` : "Cidade"}
+                  {regionName && regionState ? `${regionName}, ${regionState}` : "Região"}
                 </button>
               }
             />

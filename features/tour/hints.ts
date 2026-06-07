@@ -18,7 +18,7 @@ export type HintId =
   | "ranking-scope-general"
   | "ranking-scope-machine"
   | "ranking-scope-profession"
-  | "ranking-scope-city"
+  | "ranking-scope-region"
   // ── /admin — cards ─────────────────────────────────────────────────────
   | "admin-users"
   | "admin-entries"
@@ -365,9 +365,9 @@ export const HINTS: Record<HintId, Hint> = {
     title: "Ranking por profissão",
     text: "Top 10 de uma profissão específica (editor de vídeo, faxineira, eletricista, etc.).",
   },
-  "ranking-scope-city": {
-    title: "Ranking por cidade",
-    text: "Top 10 de uma cidade ou estado específicos.",
+  "ranking-scope-region": {
+    title: "Ranking por região",
+    text: "Top 10 de uma região específica (ex.: Capital e Grande São Paulo).",
   },
 
   // ── /admin — cards principais ──────────────────────────────────────────
