@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3 } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { UserPortfolio } from "./_components/UserPortfolio"
@@ -1642,6 +1642,16 @@ export default function PerfilPage() {
                   {unreadMessages > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/account/xp")}
+                  aria-label="Ver métricas e XP"
+                  title="Métricas"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Métricas
                 </button>
                 <button
                   type="button"

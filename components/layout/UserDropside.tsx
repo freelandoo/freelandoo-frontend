@@ -14,7 +14,7 @@ import {
   Shield,
   LogOut,
   X,
-  Zap,
+  BarChart3,
   Sparkles,
   Package,
   GraduationCap,
@@ -128,8 +128,8 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     },
     {
       href: "/account/xp",
-      label: tAcc("xpLabel", "Meu XP"),
-      icon: Zap,
+      label: tAcc("xpLabel", "Métricas"),
+      icon: BarChart3,
     },
   ]
 
