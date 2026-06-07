@@ -79,21 +79,23 @@ function KpiCard({
   icon: Icon, label, value, hint,
 }: { icon: typeof Eye; label: string; value: string; hint?: string }) {
   return (
-    <div className="border-2 border-[#F5F1E8]/12 bg-[#15100A] p-4 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
-      <div className="flex items-center gap-2 text-[#9A938A]">
-        <Icon className="h-4 w-4 text-[#F2B705]" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em]">{label}</span>
+    <div className="flex aspect-square flex-col justify-between border-2 border-[#F5F1E8]/12 bg-[#15100A] p-3 shadow-[3px_3px_0_0_rgba(0,0,0,0.5)] sm:aspect-auto sm:p-4">
+      <div className="flex items-center gap-1.5 text-[#9A938A]">
+        <Icon className="h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
+        <span className="text-[9px] font-bold uppercase leading-tight tracking-[0.12em] sm:text-[10px] sm:tracking-[0.18em]">{label}</span>
       </div>
-      <p className="fl-display mt-2 text-3xl leading-none text-[#F5F1E8]">{value}</p>
-      {hint && <p className="mt-1 text-xs text-[#9A938A]">{hint}</p>}
+      <div>
+        <p className="fl-display text-2xl leading-none text-[#F5F1E8] sm:text-3xl">{value}</p>
+        {hint && <p className="mt-1 text-[10px] leading-tight text-[#9A938A] sm:text-xs">{hint}</p>}
+      </div>
     </div>
   )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 flex items-center gap-3">
-      <span className="fl-display inline-block -rotate-1 bg-[#F2B705] px-3 py-1 text-lg text-[#1A1505] shadow-[3px_3px_0_0_rgba(0,0,0,0.45)]">
+    <div className="mb-3 flex items-center gap-3">
+      <span className="fl-display inline-block -rotate-1 bg-[#F2B705] px-2.5 py-0.5 text-base text-[#1A1505] shadow-[3px_3px_0_0_rgba(0,0,0,0.45)] sm:px-3 sm:py-1 sm:text-lg">
         {children}
       </span>
       <span className="h-[2px] flex-1 bg-[#F5F1E8]/12" />
@@ -160,12 +162,6 @@ export default function EngagementTab({
 
   useEffect(() => { void load() }, [load])
 
-  const maxChannel = useMemo(() => {
-    if (!data) return 0
-    const c = data.views.by_channel
-    return Math.max(c.story_trampo, c.story_rest, c.bees, c.feed, 1)
-  }, [data])
-
   const maxHour = useMemo(
     () => (data ? Math.max(...data.active_hours.map((h) => h.count), 1) : 1),
     [data],
@@ -194,12 +190,12 @@ export default function EngagementTab({
       {error ? (
         <ErrorState description="Não foi possível carregar o engajamento deste perfil." onRetry={load} />
       ) : loading ? (
-        <div className="space-y-8">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="aspect-square sm:aspect-auto sm:h-24" />)}
           </div>
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
         </div>
       ) : !data ? null : data.views.total === 0 && data.interactions.total === 0 && data.followers.total === 0 ? (
         <EmptyState
@@ -208,9 +204,9 @@ export default function EngagementTab({
           description="Quando seu conteúdo (feed, bees e stories) começar a receber visualizações, curtidas e seguidores, as métricas aparecem aqui."
         />
       ) : (
-        <div className="space-y-10">
-          {/* KPIs */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-6 sm:space-y-8">
+          {/* KPIs — quadrados e compactos no mobile, 2×2; 4 colunas no desktop */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
             <KpiCard icon={Eye} label="Visualizações" value={fmt(data.views.total)}
               hint={`${fmtDuration(data.views.retention_seconds)} assistidos`} />
             <KpiCard icon={Heart} label="Interações" value={fmt(data.interactions.total)}
@@ -220,26 +216,30 @@ export default function EngagementTab({
             <KpiCard icon={MousePointerClick} label="Visitas ao perfil" value={fmt(data.views.profile_visits)} />
           </div>
 
-          {/* Visualizações por canal */}
+          {/* Visualizações por canal — sem moldura, 4 dados lado a lado */}
           <section>
             <SectionTitle>Visualizações por canal</SectionTitle>
-            <div className="space-y-3 border-2 border-[#F5F1E8]/10 bg-[#15100A] p-5 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
-              {(["story_trampo", "story_rest", "bees", "feed"] as const).map((k) => (
-                <BarRow
-                  key={k}
-                  label={CHANNEL_META[k].label}
-                  icon={CHANNEL_META[k].icon}
-                  value={data.views.by_channel[k]}
-                  max={maxChannel}
-                />
-              ))}
+            <div className="grid grid-cols-4 gap-2">
+              {(["story_trampo", "story_rest", "bees", "feed"] as const).map((k) => {
+                const M = CHANNEL_META[k]
+                const Icon = M.icon
+                return (
+                  <div key={k} className="flex flex-col items-center gap-1 text-center">
+                    <Icon className="h-5 w-5 text-[#F2B705]" />
+                    <span className="fl-display text-xl leading-none text-[#F5F1E8] sm:text-2xl">
+                      {fmt(data.views.by_channel[k])}
+                    </span>
+                    <span className="text-[9px] leading-tight text-[#9A938A] sm:text-[10px]">{M.label}</span>
+                  </div>
+                )
+              })}
             </div>
           </section>
 
-          {/* Interações (detalhe) */}
+          {/* Interações — só os ícones com as quantidades */}
           <section>
             <SectionTitle>Interações</SectionTitle>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {[
                 { icon: Heart, label: "Curtidas", value: data.interactions.likes },
                 { icon: MessageCircle, label: "Comentários", value: data.interactions.comments },
@@ -248,41 +248,38 @@ export default function EngagementTab({
                 { icon: Star, label: "Avaliações", value: data.interactions.reviews },
                 { icon: UserPlus, label: "Novos seguidores", value: data.interactions.new_followers },
               ].map((it) => (
-                <div key={it.label} className="flex items-center gap-3 rounded-md border-2 border-[#F5F1E8]/10 bg-[#1D1810] p-3 shadow-[3px_3px_0_0_rgba(0,0,0,0.35)]">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-[#F2B705]/30 bg-[#F2B705]/10 text-[#F2B705]">
-                    <it.icon className="h-5 w-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="fl-display text-2xl leading-none text-[#F5F1E8]">{fmt(it.value)}</p>
-                    <p className="text-xs text-[#9A938A]">{it.label}</p>
-                  </div>
+                <div key={it.label} title={it.label} className="flex items-center justify-center gap-1.5">
+                  <it.icon className="h-5 w-5 shrink-0 text-[#F2B705]" />
+                  <span className="fl-display text-xl leading-none text-[#F5F1E8]">{fmt(it.value)}</span>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Top conteúdo */}
+          {/* Conteúdo principal — tira horizontal com 4 visíveis, sem ocupar vertical */}
           {data.top_content.length > 0 && (
             <section>
               <SectionTitle>Conteúdo principal</SectionTitle>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-6 sm:overflow-visible sm:pb-0">
                 {data.top_content.map((c) => (
-                  <div key={`${c.kind}-${c.id}`} className="group relative overflow-hidden border-2 border-[#F5F1E8]/12 bg-[#1D1810] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)]">
+                  <div
+                    key={`${c.kind}-${c.id}`}
+                    className="group relative w-[23%] min-w-[23%] shrink-0 overflow-hidden border-2 border-[#F5F1E8]/12 bg-[#1D1810] sm:w-auto sm:min-w-0"
+                  >
                     <div className="aspect-[9/12] w-full overflow-hidden bg-[#0E0B06]">
                       {c.thumb_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={c.thumb_url} alt={c.caption || "Conteúdo"} className="h-full w-full object-cover transition group-hover:scale-105" />
                       ) : (
-                        <div className="grid h-full w-full place-items-center text-[#5A554C]"><Film className="h-6 w-6" /></div>
+                        <div className="grid h-full w-full place-items-center text-[#5A554C]"><Film className="h-5 w-5" /></div>
                       )}
                     </div>
-                    <span className="absolute left-1.5 top-1.5 rounded bg-[#1A1505]/85 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F2B705]">
+                    <span className="absolute left-1 top-1 rounded bg-[#1A1505]/85 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-[#F2B705]">
                       {KIND_LABEL[c.kind] || c.kind}
                     </span>
-                    <div className="flex items-center gap-3 px-2 py-1.5 text-[11px] text-[#C9C2B6]">
-                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{fmt(c.views)}</span>
-                      <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{fmt(c.likes)}</span>
-                    </div>
+                    <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded bg-[#1A1505]/85 px-1 py-0.5 text-[8px] font-bold text-[#F2B705]">
+                      <Eye className="h-2.5 w-2.5" />{fmt(c.views)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -321,22 +318,27 @@ export default function EngagementTab({
             </section>
           </div>
 
-          {/* Horários ativos */}
+          {/* Horários ativos — barras retas alinhadas, horários em linha própria abaixo */}
           <section>
             <SectionTitle>Horários mais ativos</SectionTitle>
-            <div className="border-2 border-[#F5F1E8]/10 bg-[#15100A] p-5 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
-              <div className="flex items-end gap-[3px] sm:gap-1.5" style={{ height: 140 }}>
+            <div className="border-2 border-[#F5F1E8]/10 bg-[#15100A] p-4 shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
+              {/* Barras: baseline única (items-end) + altura em % do container */}
+              <div className="flex items-end gap-[2px]" style={{ height: 110 }}>
                 {data.active_hours.map((h) => (
-                  <div key={h.hour} className="flex flex-1 flex-col items-center justify-end">
-                    <div
-                      className="w-full rounded-sm bg-[#F2B705] transition-all duration-700"
-                      style={{ height: `${Math.max(2, (h.count / maxHour) * 120)}px`, opacity: h.count ? 1 : 0.18 }}
-                      title={`${h.hour}h — ${fmt(h.count)} views`}
-                    />
-                    {h.hour % 3 === 0 && (
-                      <span className="mt-1 text-[8px] text-[#9A938A]">{h.hour}h</span>
-                    )}
-                  </div>
+                  <div
+                    key={h.hour}
+                    className="flex-1 bg-[#F2B705]"
+                    style={{ height: `${Math.max(2, (h.count / maxHour) * 100)}%`, opacity: h.count ? 1 : 0.18 }}
+                    title={`${h.hour}h — ${fmt(h.count)} views`}
+                  />
+                ))}
+              </div>
+              {/* Horários alinhados embaixo das barras (a cada 6h) */}
+              <div className="mt-1.5 flex gap-[2px]">
+                {data.active_hours.map((h) => (
+                  <span key={h.hour} className="flex-1 text-center text-[8px] tabular-nums text-[#9A938A]">
+                    {h.hour % 6 === 0 ? `${h.hour}h` : ""}
+                  </span>
                 ))}
               </div>
               <p className="mt-3 flex items-center gap-1.5 text-xs text-[#9A938A]">
