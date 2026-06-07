@@ -287,8 +287,10 @@ function FeedPageInner() {
               </div>
             )}
             {!hasMore && items.length > 0 && (
-              <div className="py-8 text-center text-xs text-[#F5F1E8]/35">
-                {t("feedEndMessage", "Você chegou ao fim do feed.")}
+              <div className="fl-root py-10 text-center">
+                <span className="fl-marker text-2xl text-[#F2B705]">
+                  {t("feedEndMessage", "Você chegou ao fim do feed.")}
+                </span>
               </div>
             )}
           </div>

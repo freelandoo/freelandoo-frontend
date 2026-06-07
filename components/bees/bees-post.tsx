@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Heart, Send, MessageCircle, MessageSquare, Check, ChevronUp } from "lucide-react"
+import { Heart, Send, MessageCircle, MessageSquare, Check, ChevronUp, Bookmark, Flag } from "lucide-react"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { sendFeedEvent } from "@/lib/feed-events"
@@ -11,6 +11,7 @@ import { queueImpression } from "@/lib/feed-impressions"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
+import { ReportPostDialog } from "@/components/feed/report-post-dialog"
 import { BeesVideo } from "./bees-video"
 import { TrackAudio } from "@/components/media/track-audio"
 
@@ -61,6 +62,9 @@ export function BeesPost({
   const [liked, setLiked] = useState(post.viewer_has_liked)
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const [likePending, setLikePending] = useState(false)
+  const [bookmarked, setBookmarked] = useState(!!post.viewer_has_bookmarked)
+  const [bookmarkPending, setBookmarkPending] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [expandCaption, setExpandCaption] = useState(false)
   const { coupon: shareCoupon } = useShareCoupon()
@@ -183,6 +187,50 @@ export function BeesPost({
     }
   }
 
+  const handleBookmark = async () => {
+    const token = getToken()
+    if (!token) {
+      router.push(`/login?next=${encodeURIComponent("/bees")}`)
+      return
+    }
+    if (bookmarkPending) return
+
+    const previous = bookmarked
+    setBookmarked(!previous)
+    setBookmarkPending(true)
+    try {
+      const res = await fetch("/api/me/bookmarks/toggle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ post_id: post.post_id }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setBookmarked(!!data.bookmarked)
+    } catch {
+      setBookmarked(previous)
+    } finally {
+      setBookmarkPending(false)
+    }
+  }
+
+  const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
+    const token = getToken()
+    if (!token) throw new Error("Faça login para denunciar")
+    const res = await fetch(`/api/portfolio/items/${post.post_id}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason_category, reason: reason || null }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data?.error || `Falha ${res.status}`)
+    }
+  }
+
   const handleProfileClick = () => {
     sendFeedEvent({ post_id: post.post_id, event_type: "profile_click", filters })
   }
@@ -282,6 +330,23 @@ export function BeesPost({
               <CounterLabel value={post.shares_count} />
             </ActionButton>
 
+            <ActionButton
+              ariaLabel={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+              onClick={handleBookmark}
+              disabled={bookmarkPending}
+            >
+              <Bookmark
+                className={cn(
+                  "h-7 w-7 transition-transform",
+                  bookmarked ? "fill-current scale-110 text-yellow-400" : ""
+                )}
+              />
+            </ActionButton>
+
+            <ActionButton ariaLabel="Denunciar publicação" onClick={() => setReportOpen(true)}>
+              <Flag className="h-6 w-6 text-white/75" />
+            </ActionButton>
+
             {post.whatsapp_url && (
               <a
                 href={post.whatsapp_url}
@@ -368,6 +433,11 @@ export function BeesPost({
         </div>
       )}
 
+      <ReportPostDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        onSubmit={submitReport}
+      />
     </section>
   )
 }

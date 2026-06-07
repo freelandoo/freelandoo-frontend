@@ -139,7 +139,6 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "feed-1", title: "Seu feed", content: "Aqui aparecem posts dos perfis que você acompanha — fotos, vídeos curtos e atualizações.", placement: "center" },
       { id: "feed-stories", target: "[data-tour='feed-stories-rest']", title: "Rest stories", content: "Stories tipo Rest: postagens curtas (24h) de quem você acompanha — momentos do dia, bastidores, lazer.", placement: "bottom" },
       { id: "feed-2", target: "[data-tour='feed-filters']", title: "Filtros do feed", content: "Filtre por Enxame ou cidade para refinar o que aparece.", placement: "bottom" },
-      { id: "feed-3", target: "[data-tour='feed-bell']", title: "Notificações", content: "Likes, comentários, follows e mensagens novas — tudo aqui.", placement: "left" },
       { id: "feed-report", target: "[data-tour='feed-report']", title: "Denunciar publicação", content: "Conteúdo abusivo, spam ou off-topic? Use a bandeira pra denunciar — a moderação revisa.", placement: "left" },
       { id: "feed-done", title: "Boa rolagem!", content: "Curta, comente e siga perfis pra deixar o feed mais relevante.", placement: "center" },
     ],
