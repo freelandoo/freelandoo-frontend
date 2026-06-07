@@ -72,14 +72,14 @@ export function RetractableProfileHeader({ name, children, progress, addMenu }: 
       )}
       aria-hidden={!show}
     >
-      <div className="pointer-events-auto border-b-2 border-[#F5F1E8]/12 bg-[#141009]/85 backdrop-blur-xl">
+      <div className="pointer-events-auto border-b-2 border-[#F5F1E8]/12 bg-[#0b0804]/85 backdrop-blur-xl">
         <div className="container mx-auto flex items-center gap-2 px-4 py-2.5 md:gap-3">
           {addMenu !== undefined && <div className="shrink-0">{addMenu}</div>}
           <span className="truncate text-sm font-bold text-[#F5F1E8] md:text-base">
             {name}
           </span>
           {children !== undefined && (
-            <div className="ml-auto flex min-w-0 items-center gap-3 text-[11px] text-[#C9C2B6]">
+            <div className="ml-auto flex min-w-0 shrink items-center gap-3 overflow-x-auto text-[11px] text-[#C9C2B6] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {children}
             </div>
           )}

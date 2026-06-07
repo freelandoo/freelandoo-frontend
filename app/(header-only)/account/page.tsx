@@ -1377,7 +1377,7 @@ export default function PerfilPage() {
   const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
 
   return (
-    <div className="fl-root fl-paper-texture min-h-[100dvh]">
+    <div className="fl-root fl-paper-texture min-h-[100dvh] overflow-x-hidden">
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={perfil.nome || perfil.username || ""}
@@ -1667,7 +1667,7 @@ export default function PerfilPage() {
               <div className="space-y-4">
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
+                <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
@@ -1842,7 +1842,7 @@ export default function PerfilPage() {
                 </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="-mx-5 grid grid-cols-3 gap-px md:-mx-7">
+                <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false

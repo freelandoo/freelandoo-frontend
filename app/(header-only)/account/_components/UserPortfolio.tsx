@@ -778,9 +778,9 @@ export function UserPortfolio({
                 )}
 
                 {/* Content below image */}
-                <div className="pt-3 px-2 md:px-0">
+                <div className="min-w-0 pt-3 px-2 md:px-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="line-clamp-1 text-sm font-semibold text-[#F5F1E8]">
+                    <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">
                       {item.title || "Sem título"}
                     </h3>
                     <div className="flex items-center gap-2 shrink-0">
@@ -798,7 +798,7 @@ export function UserPortfolio({
                     </div>
                   </div>
                   {item.description && (
-                    <p className="mt-1 line-clamp-2 text-xs text-[#9A938A]">
+                    <p className="mt-1 line-clamp-2 break-words text-xs text-[#9A938A]">
                       {item.description}
                     </p>
                   )}
