@@ -1667,7 +1667,7 @@ export default function PerfilPage() {
               <div className="space-y-4">
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
-                <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+                <div className="grid grid-cols-3 gap-1">
                   {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
@@ -1842,7 +1842,7 @@ export default function PerfilPage() {
                 </div>
             <div>
               {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
+                <div className="grid grid-cols-3 gap-1">
                   {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
                     const isPaid = !!clan.is_paid
                     const isVisible = clan.is_visible !== false
