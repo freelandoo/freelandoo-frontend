@@ -141,7 +141,10 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         setSelectedProfileId((cur) => {
           if (cur && list.some((p) => p.id_profile === cur)) return cur
           if (initialProfileId && list.some((p) => p.id_profile === initialProfileId)) return initialProfileId
-          return list[0]?.id_profile ?? null
+          // Default: primeiro subperfil (não a conta). A conta fica selecionável,
+          // sempre primeira na lista, mas não é auto-selecionada quando há subperfil.
+          const preferred = list.find((p) => !p.is_user_account) ?? list[0]
+          return preferred?.id_profile ?? null
         })
       })
       .catch(() => { if (!cancelled) setProfiles([]) })
