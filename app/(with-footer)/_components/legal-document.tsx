@@ -36,7 +36,7 @@ export function LegalDocument({
   const t = useTranslations(namespace)
 
   return (
-    <main className="fl-root relative flex-1 bg-[#141009] text-[#C9C2B6]">
+    <main className="fl-root relative flex-1 bg-[#0b0804] text-[#C9C2B6]">
       <div className="container mx-auto max-w-3xl px-4 py-12 md:py-16">
         <header className="border-b-2 border-[#F1EDE2]/12 pb-7">
           <p className="fl-marker mb-1 text-2xl font-bold leading-none text-[#F2B705]">Documento</p>

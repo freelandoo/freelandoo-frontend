@@ -45,7 +45,7 @@ export default async function OfertaPage({ params }: { params: Promise<{ cupom: 
 
   if (!data || !data.valid) {
     return (
-      <main className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#141009] px-4 py-16">
+      <main className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 py-16">
         <div className="w-full max-w-md">
           <div className="fl-card fl-hard rounded-[6px] p-8 text-center sm:p-10">
             <span className="mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[6px] border-2 border-[#0B0B0D] bg-rose-500/15 text-rose-600">
@@ -72,7 +72,7 @@ export default async function OfertaPage({ params }: { params: Promise<{ cupom: 
   }
 
   return (
-    <main className="fl-root relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#141009] px-4 py-12">
+    <main className="fl-root relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#0b0804] px-4 py-12">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top,_black,_transparent_70%)]"

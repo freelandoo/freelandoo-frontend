@@ -245,15 +245,15 @@ export default function AgendaPageClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#141009] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0b0804] flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#6B6354] border-t-[#F2B705]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#141009] text-[#F5F1E8]">
-      <header className="border-b border-[#2A2218] bg-[#141009]/80 backdrop-blur sticky top-0 z-30">
+    <div className="min-h-screen bg-[#0b0804] text-[#F5F1E8]">
+      <header className="border-b border-[#2A2218] bg-[#0b0804]/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center gap-4">
           <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-[#2A2218] transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -313,7 +313,7 @@ export default function AgendaPageClient({
                   <li
                     key={rule.weekday}
                     className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2 transition-colors ${
-                      rule.is_enabled ? "bg-[#1D1810]" : "bg-[#141009]/30"
+                      rule.is_enabled ? "bg-[#1D1810]" : "bg-[#0b0804]/30"
                     }`}
                   >
                     <label
@@ -390,7 +390,7 @@ export default function AgendaPageClient({
                 ))}
               </ul>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-[#2A2218]/70 px-3 py-2.5 bg-[#141009]/40">
+              <div className="flex flex-wrap items-center gap-2 border-t border-[#2A2218]/70 px-3 py-2.5 bg-[#0b0804]/40">
                 <button
                   onClick={saveRules}
                   disabled={saving}

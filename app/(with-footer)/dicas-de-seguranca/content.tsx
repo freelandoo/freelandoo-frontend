@@ -39,7 +39,7 @@ export function DicasDeSegurancaContent() {
   useReveal()
 
   return (
-    <main className="flex-1 bg-[#141009]">
+    <main className="flex-1 bg-[#0b0804]">
       {/* HERO */}
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[350px] w-[700px] rounded-full bg-[#F2B705]/5 blur-[100px]" />

@@ -87,7 +87,7 @@ export default function NotificationsPage() {
 
   return (
     <PageShell className="md:pl-[80px]">
-      <header className="sticky top-0 z-20 border-b border-[#F5F1E8]/8 bg-[#141009]/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-[#F5F1E8]/8 bg-[#0b0804]/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <Link
             href="/account"

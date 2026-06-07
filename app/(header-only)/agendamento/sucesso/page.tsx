@@ -10,7 +10,7 @@ function BookingSuccessContent() {
   const sessionId = searchParams.get("session_id")
 
   return (
-    <div className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#141009] px-4 py-16">
+    <div className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 py-16">
       <div className="w-full max-w-md text-center">
         <div className="fl-card fl-hard rounded-[6px] p-8 sm:p-10">
           <span className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-[6px] border-2 border-[#0B0B0D] bg-green-500/15 text-green-700">
@@ -52,7 +52,7 @@ export default function BookingSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#141009]">
+        <div className="fl-root flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#6B6354] border-t-[#F2B705]" />
         </div>
       }

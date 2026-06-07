@@ -8,7 +8,7 @@ export default function FailurePage() {
   const router = useRouter()
 
   return (
-    <main className="fl-root flex flex-1 items-center justify-center bg-[#141009] px-4 py-12">
+    <main className="fl-root flex flex-1 items-center justify-center bg-[#0b0804] px-4 py-12">
       <div className="w-full max-w-md">
         <div className="fl-card fl-hard rounded-[6px] p-8 text-center sm:p-10">
           <span className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-[6px] border-2 border-[#0B0B0D] bg-red-500/15 text-red-700">

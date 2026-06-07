@@ -47,7 +47,7 @@ export function AnunciarServicosContent() {
   useReveal()
 
   return (
-    <main className="flex-1 bg-[#141009]">
+    <main className="flex-1 bg-[#0b0804]">
       {/* HERO */}
       <section className="relative overflow-hidden py-24 md:py-32">
         <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[800px] rounded-full bg-[#F2B705]/5 blur-[120px]" />

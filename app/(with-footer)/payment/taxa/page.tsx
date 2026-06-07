@@ -115,7 +115,7 @@ function TaxaPageInner() {
   }
 
   return (
-    <main className="fl-root tabloid-account-page relative flex-1 bg-[#141009]">
+    <main className="fl-root tabloid-account-page relative flex-1 bg-[#0b0804]">
       <div className="mx-auto max-w-4xl px-4 py-8 md:py-10">
         <TabloidPageIntro
           size="compact"

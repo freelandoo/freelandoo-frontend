@@ -194,7 +194,7 @@ function LojaPolensContent() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(242,183,5,0.32),transparent_38%),linear-gradient(135deg,#141009,#2a2212)]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-[#141009]/85 via-[#141009]/45 to-[#141009]/10" />
-          <div className="absolute inset-x-5 top-5 rounded-2xl border border-[#F5F1E8]/12 bg-[#141009]/45 p-4 text-[#F5F1E8] backdrop-blur">
+          <div className="absolute inset-x-5 top-5 rounded-2xl border border-[#F5F1E8]/12 bg-[#0b0804]/45 p-4 text-[#F5F1E8] backdrop-blur">
             <div className="flex items-center gap-3">
               <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#F2B705]/25 bg-[#F2B705]/12 text-[#F2B705]">
                 <Hexagon className="h-7 w-7 fill-[#F2B705] text-[#F2B705]" />

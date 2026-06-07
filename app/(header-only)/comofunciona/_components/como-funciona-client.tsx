@@ -299,7 +299,7 @@ export function ComoFuncionaClient() {
   }, [])
 
   // ─── Base styles ───────────────────────────────────────────────────────────
-  const pageBg = { background: "#141009" }
+  const pageBg = { background: "#0b0804" }
   const sectionStyle = { borderTop: "1px solid rgba(255,255,255,0.06)" }
   const dimText = { color: "#C9C2B6" }
   const yellow = "#F2B705"

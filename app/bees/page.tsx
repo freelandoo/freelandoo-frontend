@@ -14,7 +14,7 @@ export default function BeesPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#141009] text-white/60">
+        <div className="flex h-[100dvh] w-full items-center justify-center bg-[#0b0804] text-white/60">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       }
@@ -91,7 +91,7 @@ function BeesPageInner() {
   }
 
   return (
-    <div className="fixed inset-0 z-30 bg-[#141009] md:left-[80px]">
+    <div className="fixed inset-0 z-30 bg-[#0b0804] md:left-[80px]">
       {loadingInitial ? (
         <LoadingState />
       ) : error && items.length === 0 ? (
