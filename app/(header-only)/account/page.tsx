@@ -57,6 +57,7 @@ import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-p
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 import { UserDropside } from "@/components/layout/UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -1510,17 +1511,21 @@ export default function PerfilPage() {
                 />
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setDropsideOpen(true)}
-                aria-label="Abrir menu da conta"
-                aria-haspopup="dialog"
-                aria-expanded={dropsideOpen}
-                className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
-                title="Abrir configurações"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
+              {/* sininho de notificações (só na /account) + configurações */}
+              <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+                <NotificationBell />
+                <button
+                  type="button"
+                  onClick={() => setDropsideOpen(true)}
+                  aria-label="Abrir menu da conta"
+                  aria-haspopup="dialog"
+                  aria-expanded={dropsideOpen}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
+                  title="Abrir configurações"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </div>
 
             </div>
 
