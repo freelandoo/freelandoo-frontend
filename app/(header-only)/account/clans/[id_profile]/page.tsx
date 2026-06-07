@@ -47,8 +47,6 @@ import {
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { LoadingState, PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
-import { DoodleAsset } from "@/components/ui/casaviews/DoodleAsset"
-import { TornPaperDivider } from "@/components/ui/casaviews/TornPaperDivider"
 
 type Member = {
   id_member_profile: string
@@ -538,30 +536,6 @@ export default function ManageClanPage({
   return (
     <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12">
-      {/* faixa de identidade Casa Views (papel rasgado + coroa + ticket) */}
-      <div className="relative -mt-4 overflow-hidden rounded-[18px] border border-[#0B0B0D]/15 bg-[#0c0a06] shadow-[0_22px_50px_-30px_rgba(0,0,0,0.9)] ring-1 ring-[#D8A928]/25">
-        <div className="relative h-24 md:h-28">
-          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(216,169,40,0.22),transparent_45%),linear-gradient(135deg,#1d1810,#0b0805)]" />
-          <div aria-hidden className="cv-grain-dark pointer-events-none absolute inset-0 opacity-[0.3] mix-blend-screen" />
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080704]/85 via-transparent to-transparent" />
-          <span aria-hidden className="pointer-events-none absolute left-4 top-3 z-10 -rotate-12 opacity-90">
-            <DoodleAsset name="crown" width={40} />
-          </span>
-          <Link
-            href="/acasaviews/rankings"
-            aria-label="Ver os rankings da Casa Views"
-            title="Rankings da Casa Views"
-            className="group absolute right-3 top-1/2 z-10 -translate-y-1/2"
-          >
-            <DoodleAsset
-              name="ticket"
-              width={132}
-              className="drop-shadow-[3px_5px_8px_rgba(0,0,0,0.5)] transition-transform duration-200 group-hover:-translate-y-0.5"
-            />
-          </Link>
-          <TornPaperDivider variant="02" className="bottom-[-2px] h-9 md:h-10" />
-        </div>
-      </div>
       <TabloidPageIntro
         eyebrow={isOwner ? "Dono do clan" : "Membro do clan"}
         title="CLAN."

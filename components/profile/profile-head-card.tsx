@@ -27,8 +27,6 @@ import { FollowButton } from "@/components/entity-follow"
 import { EntityFollowModal } from "@/components/entity-follow/entity-follow-modal"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { cn } from "@/lib/utils"
-import { DoodleAsset } from "@/components/ui/casaviews/DoodleAsset"
-import { TornPaperDivider } from "@/components/ui/casaviews/TornPaperDivider"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -265,18 +263,13 @@ export function ProfileHeadCard({
     <>
       <article
         className={cn(
-          "relative overflow-hidden rounded-[22px] border border-[#0B0B0D]/15 bg-[#F1EDE2] text-[#0B0B0D] shadow-[0_28px_70px_-28px_rgba(0,0,0,0.9)] ring-1 ring-[#D8A928]/25",
+          "relative overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]",
           className
         )}
       >
-        {/* textura de papel real cobrindo todo o card */}
-        <div
-          aria-hidden
-          className="cv-grain-paper pointer-events-none absolute inset-0 z-0 opacity-[0.2] mix-blend-multiply"
-        />
-        {/* BANNER (capa tabloide Casa Views) — imagem da manifestação ou gradiente
-            warm, com texturas, marca CASA VIEWS e papel rasgado real na emenda. */}
-        <div className="relative z-[1] h-36 overflow-hidden bg-[#0c0a06] md:h-52">
+        {/* BANNER — imagem da manifestação ou gradiente warm.
+            Borda inferior rasgada (papel) revelando o card creme por baixo. */}
+        <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52">
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -284,41 +277,12 @@ export function ProfileHeadCard({
                 src={profile.manifestation.banner_url}
                 alt=""
                 onError={() => setBannerFailed(true)}
-                className="h-full w-full object-cover opacity-80"
+                className="h-full w-full object-cover"
               />
             </>
           ) : (
-            <div className="h-full w-full bg-[radial-gradient(circle_at_18%_18%,rgba(216,169,40,0.22),transparent_40%),linear-gradient(135deg,#1d1810,#0b0805)]" />
+            <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.30),transparent_38%),linear-gradient(135deg,#2a2212,#141009)]" />
           )}
-
-          {/* texturas: grão escuro + vinheta + degradê + brilho dourado */}
-          <div aria-hidden className="cv-grain-dark pointer-events-none absolute inset-0 opacity-[0.3] mix-blend-screen" />
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(130%_160%_at_50%_-25%,transparent_38%,rgba(8,7,4,0.92)_100%)]" />
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#080704]/90 via-[#080704]/10 to-[#080704]/45" />
-          <div aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 rounded-full bg-[#D8A928]/15 blur-3xl" />
-
-          {/* coroa hand-drawn */}
-          <span aria-hidden className="pointer-events-none absolute left-1/2 top-2 z-20 -translate-x-1/2 -rotate-6 opacity-80">
-            <DoodleAsset name="crown" width={38} />
-          </span>
-
-          {/* marca CASA VIEWS (ticket) + grifo → rankings */}
-          <Link
-            href="/acasaviews/rankings"
-            aria-label="Ver os rankings da Casa Views"
-            title="Rankings da Casa Views"
-            className="group absolute right-3 top-1/2 z-20 flex -translate-y-1/2 flex-col items-end gap-1"
-          >
-            <DoodleAsset
-              name="ticket"
-              width={132}
-              className="drop-shadow-[3px_5px_8px_rgba(0,0,0,0.5)] transition-transform duration-200 group-hover:-translate-y-0.5"
-            />
-            <DoodleAsset name="underline" width={116} className="opacity-90" />
-          </Link>
-
-          {/* papel rasgado real cobrindo a emenda capa → corpo creme */}
-          <TornPaperDivider variant="02" className="bottom-[-2px] h-10 md:h-12" />
           {statusBadge && (
             <div className="absolute right-3 top-3">
               <span
@@ -352,7 +316,7 @@ export function ProfileHeadCard({
                   disabled={uploadingAvatar}
                   aria-label="Trocar foto de perfil"
                   title="Trocar foto de perfil"
-                  className="cv-avatar-polaroid group relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden disabled:opacity-70 md:w-32"
+                  className="group relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70 md:w-32"
                 >
                   {avatarSrc ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -370,7 +334,7 @@ export function ProfileHeadCard({
                   </span>
                 </button>
               ) : (
-                <div className="cv-avatar-polaroid relative flex aspect-[4/5] w-24 items-center justify-center overflow-hidden md:w-32">
+                <div className="relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] md:w-32">
                   {avatarSrc ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
