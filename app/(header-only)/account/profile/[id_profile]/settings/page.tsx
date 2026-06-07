@@ -585,7 +585,7 @@ export default function ProfileSettingsPage() {
                 maxLength={200}
                 value={form.bio}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                className="placeholder:text-muted-foreground border-input w-full min-w-0 resize-none rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
               />
               <div className="text-xs text-muted-foreground text-right">{form.bio.length} / 200</div>
             </div>
