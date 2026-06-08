@@ -11,6 +11,7 @@ import {
   Crown,
   Sparkles,
   Ticket,
+  Radio,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,8 +21,9 @@ import { PolensConfig } from "@/components/admin/monetizacao/PolensConfig"
 import { PremiumConfig } from "@/components/admin/monetizacao/PremiumConfig"
 import { ManifestacaoConfig } from "@/app/(header-only)/administracao/manifestacao/page"
 import { CuponsConfig } from "@/app/(header-only)/administracao/cupons/page"
+import { LivesConfig } from "@/components/admin/monetizacao/LivesConfig"
 
-type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao" | "cupons"
+type TabId = "ativacao" | "agendamento" | "polens" | "premium" | "manifestacao" | "lives" | "cupons"
 
 const TABS: { id: TabId; label: string; icon: LucideIcon; iconClass?: string }[] = [
   { id: "ativacao", label: "Ativação", icon: Wallet },
@@ -29,6 +31,7 @@ const TABS: { id: TabId; label: string; icon: LucideIcon; iconClass?: string }[]
   { id: "polens", label: "Poléns", icon: Hexagon, iconClass: "fill-amber-300 text-amber-300" },
   { id: "premium", label: "Premium", icon: Crown, iconClass: "fill-amber-300 text-amber-400" },
   { id: "manifestacao", label: "Manifestação", icon: Sparkles },
+  { id: "lives", label: "Lives", icon: Radio },
   { id: "cupons", label: "Cupons", icon: Ticket },
 ]
 
@@ -120,6 +123,7 @@ function MonetizacaoInner() {
         {tab === "polens" && <PolensConfig />}
         {tab === "premium" && <PremiumConfig />}
         {tab === "manifestacao" && <ManifestacaoConfig />}
+        {tab === "lives" && <LivesConfig />}
         {tab === "cupons" && <CuponsConfig />}
       </main>
     </div>
