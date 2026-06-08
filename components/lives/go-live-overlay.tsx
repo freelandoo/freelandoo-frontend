@@ -2,20 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { AlertCircle, Loader2, Radio, Mic, MicOff, X } from "lucide-react"
+import { AlertCircle, Loader2, Radio, Mic, MicOff, SwitchCamera, SlidersHorizontal, X } from "lucide-react"
 import {
+  LocalAudioTrack,
   LocalVideoTrack,
   Room,
   RoomEvent,
-  Track,
-  createLocalTracks,
-  type LocalTrack,
 } from "livekit-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { startLive, endLive, fetchOwnedProfiles, type OwnedProfile } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
+import { FilteredCamera } from "@/lib/lives/filtered-camera"
+import { PRESETS } from "@/lib/camera/presets"
 import { LiveSocialLayer } from "./live-social-layer"
 
 const SPRING = { type: "spring" as const, stiffness: 220, damping: 26 }
@@ -41,10 +41,14 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   const [micOn, setMicOn] = useState(true)
   const [live, setLive] = useState<Live | null>(null)
   const [room, setRoom] = useState<Room | null>(null)
+  const [presetId, setPresetId] = useState(PRESETS[0].id)
+  const [showFilters, setShowFilters] = useState(false)
+  const [camReady, setCamReady] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const roomRef = useRef<Room | null>(null)
-  const localTracksRef = useRef<LocalTrack[]>([])
+  const camRef = useRef<FilteredCamera | null>(null)
+  const audioTrackRef = useRef<LocalAudioTrack | null>(null)
 
   // ── Carrega subperfis ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -55,7 +59,9 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
       .then((list) => {
         if (cancelled) return
         setProfiles(list)
-        setSelectedId((prev) => prev || list[0]?.id_profile || null)
+        // Prefere o primeiro perfil pago (único que pode transmitir).
+        const firstPaid = list.find((p) => p.is_paid)
+        setSelectedId((prev) => prev || firstPaid?.id_profile || list[0]?.id_profile || null)
       })
       .catch(() => { if (!cancelled) setProfiles([]) })
       .finally(() => { if (!cancelled) setLoadingProfiles(false) })
@@ -63,8 +69,10 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   }, [open, status, user?.id_user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const teardown = useCallback(async () => {
-    localTracksRef.current.forEach((t) => t.stop())
-    localTracksRef.current = []
+    audioTrackRef.current = null
+    camRef.current?.stop()
+    camRef.current = null
+    setCamReady(false)
     const current = roomRef.current
     roomRef.current = null
     setRoom(null)
@@ -72,6 +80,29 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
       try { await current.disconnect() } catch { /* ignore */ }
     }
   }, [])
+
+  // Abre a câmera (com filtro) assim que o overlay aparece — preview + escolha
+  // de filtro antes de ir ao ar.
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    const cam = new FilteredCamera()
+    cam
+      .start("user")
+      .then(() => {
+        if (cancelled) { cam.stop(); return }
+        camRef.current = cam
+        cam.setPreset(presetId)
+        if (videoRef.current) videoRef.current.srcObject = cam.previewStream
+        setCamReady(true)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : "Não consegui acessar a câmera")
+      })
+    return () => { cancelled = true; cam.stop() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   // Cleanup ao fechar/desmontar.
   useEffect(() => {
@@ -81,51 +112,59 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
       setLive(null)
       setError(null)
       setTitle("")
+      setShowFilters(false)
     }
   }, [open, teardown])
   useEffect(() => () => { teardown() }, [teardown])
 
-  const attachLocalVideo = useCallback((track: LocalVideoTrack) => {
-    if (videoRef.current) {
-      track.attach(videoRef.current)
-    }
+  const handlePreset = useCallback((id: string) => {
+    setPresetId(id)
+    camRef.current?.setPreset(id)
+  }, [])
+
+  const handleSwitchCamera = useCallback(async () => {
+    try { await camRef.current?.switchFacing() } catch { /* ignore */ }
+    // Reaponta o preview (o track publicado segue o mesmo canvas).
+    if (videoRef.current && camRef.current) videoRef.current.srcObject = camRef.current.previewStream
   }, [])
 
   const handleStart = useCallback(async () => {
-    if (!selectedId) return
+    if (!selectedId || !camRef.current) return
     setError(null)
     setPhase("connecting")
     try {
+      const cam = camRef.current
       const session = await startLive({ id_profile: selectedId, title: title.trim() || undefined })
       const room = new Room({ adaptiveStream: true, dynacast: true })
       roomRef.current = room
       room.on(RoomEvent.Disconnected, () => {
-        // Encerramento externo (servidor derrubou a sala).
-        if (roomRef.current === room) {
-          roomRef.current = null
-        }
+        if (roomRef.current === room) roomRef.current = null
       })
       await room.connect(session.ws_url, session.token)
 
-      // Captura câmera + mic e publica.
-      const tracks = await createLocalTracks({ audio: true, video: { facingMode: "user" } })
-      localTracksRef.current = tracks
-      for (const track of tracks) {
-        await room.localParticipant.publishTrack(track)
-        if (track.kind === Track.Kind.Video) {
-          attachLocalVideo(track as LocalVideoTrack)
-        }
+      // Publica o track de vídeo (canvas filtrado) + áudio do mic.
+      const vRaw = cam.videoTrack
+      const aRaw = cam.audioTrack
+      if (vRaw) await room.localParticipant.publishTrack(new LocalVideoTrack(vRaw))
+      if (aRaw) {
+        const aTrack = new LocalAudioTrack(aRaw)
+        audioTrackRef.current = aTrack
+        await room.localParticipant.publishTrack(aTrack)
       }
       setRoom(room)
       setLive(session.live)
       setPhase("live")
       onLiveStarted?.(session.live)
     } catch (err) {
-      await teardown()
+      // Mantém a câmera aberta (só desfaz a conexão) p/ permitir nova tentativa.
+      const current = roomRef.current
+      roomRef.current = null
+      setRoom(null)
+      if (current) { try { await current.disconnect() } catch { /* ignore */ } }
       setPhase("setup")
       setError(err instanceof Error ? err.message : "Falha ao iniciar a live")
     }
-  }, [selectedId, title, attachLocalVideo, teardown, onLiveStarted])
+  }, [selectedId, title, onLiveStarted])
 
   const handleEnd = useCallback(async () => {
     const current = live
@@ -142,12 +181,10 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   const toggleMic = useCallback(() => {
     const next = !micOn
     setMicOn(next)
-    localTracksRef.current.forEach((t) => {
-      if (t.kind === Track.Kind.Audio) {
-        if (next) t.unmute()
-        else t.mute()
-      }
-    })
+    if (audioTrackRef.current) {
+      if (next) audioTrackRef.current.unmute()
+      else audioTrackRef.current.mute()
+    }
   }, [micOn])
 
   if (!open) return null
@@ -178,6 +215,29 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
           <span />
         )}
         <div className="flex items-center gap-2">
+          {camReady && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowFilters((s) => !s)}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition",
+                  showFilters ? "bg-yellow-400 text-black" : "bg-black/50 text-white hover:bg-black/70",
+                )}
+                aria-label="Filtros"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSwitchCamera}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
+                aria-label="Trocar câmera"
+              >
+                <SwitchCamera className="h-4 w-4" />
+              </button>
+            </>
+          )}
           {phase === "live" && (
             <button
               type="button"
@@ -206,6 +266,41 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
           </button>
         </div>
       </div>
+
+      {/* Tira de filtros (mesmos presets das Stories/Bees) */}
+      <AnimatePresence>
+        {showFilters && camReady && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={SPRING}
+            className="relative z-20 mt-3 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handlePreset(p.id)}
+                className={cn(
+                  "flex shrink-0 flex-col items-center gap-1",
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-12 w-12 rounded-2xl ring-2 transition",
+                    presetId === p.id ? "ring-yellow-400" : "ring-white/20",
+                  )}
+                  style={{ background: p.swatch }}
+                />
+                <span className={cn("text-[10px] font-medium", presetId === p.id ? "text-yellow-300" : "text-white/70")}>
+                  {p.label}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Setup (escolha de perfil + título) */}
       <AnimatePresence>
@@ -256,6 +351,14 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
                           </AvatarFallback>
                         </Avatar>
                         <span className="line-clamp-1 text-[10px] font-medium text-white/90">{p.display_name}</span>
+                        <span
+                          className={cn(
+                            "rounded-full px-1.5 py-px text-[8px] font-semibold uppercase tracking-wider",
+                            p.is_paid ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-white/40",
+                          )}
+                        >
+                          {p.is_paid ? "Ativo" : "Sem assinatura"}
+                        </span>
                       </button>
                     )
                   })}
@@ -294,15 +397,15 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
             <button
               type="button"
               onClick={handleStart}
-              disabled={!selectedId || phase === "connecting"}
+              disabled={!selectedId || !selectedProfile?.is_paid || phase === "connecting" || !camReady}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-red-600 text-sm font-bold text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.7)] transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {phase === "connecting" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Radio className="h-5 w-5" />}
-              {phase === "connecting" ? "Conectando…" : "Iniciar transmissão"}
+              {phase === "connecting" ? "Conectando…" : !camReady ? "Preparando câmera…" : "Iniciar transmissão"}
             </button>
-            {selectedProfile?.is_clan && (
-              <p className="text-center text-[11px] text-white/45">
-                Dica: clans podem transmitir, mas só perfis com assinatura ativa entram no ar.
+            {selectedProfile && !selectedProfile.is_paid && (
+              <p className="text-center text-[11px] text-amber-300/80">
+                Só perfis com assinatura ativa entram ao vivo. Ative a assinatura deste perfil para transmitir.
               </p>
             )}
           </motion.div>

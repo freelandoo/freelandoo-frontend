@@ -85,6 +85,7 @@ export interface OwnedProfile {
   avatar_url: string | null
   is_clan: boolean
   is_active: boolean
+  is_paid?: boolean
 }
 
 export async function fetchOwnedProfiles(id_user: string): Promise<OwnedProfile[]> {
