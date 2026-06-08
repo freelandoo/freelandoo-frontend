@@ -11,6 +11,7 @@ import {
 } from "livekit-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/hooks/use-auth"
+import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { startLive, endLive, fetchOwnedProfiles, type OwnedProfile } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
@@ -44,11 +45,15 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   const [presetId, setPresetId] = useState(PRESETS[0].id)
   const [showFilters, setShowFilters] = useState(false)
   const [camReady, setCamReady] = useState(false)
+  const [hasVideo, setHasVideo] = useState(false)
+  const [hasAudio, setHasAudio] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const roomRef = useRef<Room | null>(null)
   const camRef = useRef<FilteredCamera | null>(null)
   const audioTrackRef = useRef<LocalAudioTrack | null>(null)
+  // Live ativa em andamento — usado p/ encerrar se o transmissor sair sem clicar.
+  const activeLiveIdRef = useRef<string | null>(null)
 
   // ── Carrega subperfis ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -94,11 +99,13 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
         camRef.current = cam
         cam.setPreset(presetId)
         if (videoRef.current) videoRef.current.srcObject = cam.previewStream
+        setHasVideo(cam.hasVideo)
+        setHasAudio(cam.hasAudio)
         setCamReady(true)
       })
       .catch((err) => {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : "Não consegui acessar a câmera")
+        setError(err instanceof Error ? err.message : "Não consegui acessar câmera/microfone")
       })
     return () => { cancelled = true; cam.stop() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,9 +120,27 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
       setError(null)
       setTitle("")
       setShowFilters(false)
+      setHasVideo(false)
+      setHasAudio(false)
     }
   }, [open, teardown])
-  useEffect(() => () => { teardown() }, [teardown])
+  useEffect(() => () => {
+    teardown()
+    // Se o transmissor saiu da tela sem encerrar, derruba a live (best-effort,
+    // keepalive sobrevive à navegação/fechamento da aba).
+    const id = activeLiveIdRef.current
+    if (id) {
+      activeLiveIdRef.current = null
+      try {
+        const token = getToken()
+        fetch(`/api/lives/${encodeURIComponent(id)}/end`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token || ""}`, "Content-Type": "application/json" },
+          keepalive: true,
+        }).catch(() => {})
+      } catch { /* ignore */ }
+    }
+  }, [teardown])
 
   const handlePreset = useCallback((id: string) => {
     setPresetId(id)
@@ -151,6 +176,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
         audioTrackRef.current = aTrack
         await room.localParticipant.publishTrack(aTrack)
       }
+      activeLiveIdRef.current = session.live.id_live
       setRoom(room)
       setLive(session.live)
       setPhase("live")
@@ -168,6 +194,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
 
   const handleEnd = useCallback(async () => {
     const current = live
+    activeLiveIdRef.current = null
     await teardown()
     if (current) {
       try { await endLive(current.id_live) } catch { /* best-effort */ }
@@ -204,6 +231,16 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
       {/* Vinheta para legibilidade dos controles */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />
 
+      {/* Sem câmera: explica o preview vazio */}
+      {camReady && !hasVideo && (
+        <div className="pointer-events-none absolute inset-0 z-[1] flex flex-col items-center justify-center gap-2 px-8 text-center text-white/70">
+          <Radio className="h-10 w-10 text-white/40" />
+          <p className="text-sm font-medium">
+            {hasAudio ? "Nenhuma câmera detectada — você vai transmitir só áudio + chat." : "Sem câmera e sem microfone — live só de chat e presentes."}
+          </p>
+        </div>
+      )}
+
       {/* Topo: fechar + selo AO VIVO */}
       <div className="relative z-10 flex items-center justify-between px-4 pt-[max(1rem,env(safe-area-inset-top))]">
         {phase === "live" ? (
@@ -215,7 +252,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
           <span />
         )}
         <div className="flex items-center gap-2">
-          {camReady && (
+          {camReady && hasVideo && (
             <>
               <button
                 type="button"

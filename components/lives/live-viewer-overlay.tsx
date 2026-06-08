@@ -13,7 +13,7 @@ import {
 } from "livekit-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
-import { joinLive } from "@/lib/lives/api"
+import { joinLive, endLive } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
 import { LiveSocialLayer } from "./live-social-layer"
 
@@ -118,6 +118,17 @@ export function LiveViewerOverlay({ liveId, onClose, onEnded }: LiveViewerOverla
     })
   }, [])
 
+  // Dono encerrando a própria live a partir da tela de espectador.
+  const [ending, setEnding] = useState(false)
+  const handleEnd = useCallback(async () => {
+    if (!liveId) return
+    setEnding(true)
+    await teardown()
+    try { await endLive(liveId) } catch { /* best-effort */ }
+    onEnded?.()
+    onClose()
+  }, [liveId, teardown, onEnded, onClose])
+
   if (!liveId) return null
 
   return (
@@ -184,6 +195,17 @@ export function LiveViewerOverlay({ liveId, onClose, onEnded }: LiveViewerOverla
           </AnimatePresence>
         </div>
         <div className="flex items-center gap-2">
+          {live?.is_owner && (
+            <button
+              type="button"
+              onClick={handleEnd}
+              disabled={ending}
+              className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white backdrop-blur transition hover:bg-red-500 disabled:opacity-60"
+            >
+              {ending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              Encerrar
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleMute}
