@@ -64,6 +64,7 @@
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "input-otp": "1.4.1",
+    "livekit-client": "^2.19.2",
     "lucide-react": "^0.454.0",
     "mp4-muxer": "^5.2.2",
     "next": "16.0.10",

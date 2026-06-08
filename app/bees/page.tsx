@@ -1,11 +1,13 @@
 "use client"
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Radio, Sparkles } from "lucide-react"
+import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
 import { CommentsPanel } from "@/components/comments/comments-panel"
+import { LivesView } from "@/components/lives/lives-view"
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
@@ -34,6 +36,9 @@ function BeesPageInner() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [muted, setMuted] = useState(true)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  // Aba Lives dentro do próprio /bees (sem header de site): só um botão flutuante
+  // que troca o conteúdo para a lista de lives.
+  const [view, setView] = useState<"bees" | "lives">("bees")
 
   const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
     const sp = new URLSearchParams()
@@ -90,8 +95,28 @@ function BeesPageInner() {
     level_min: null,
   }
 
+  if (view === "lives") {
+    return (
+      <div className="fixed inset-0 z-30 bg-[#0b0804] md:left-[80px]">
+        <LivesView onBack={() => setView("bees")} />
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-30 bg-[#0b0804] md:left-[80px]">
+      {/* Botão flutuante LIVE — abre a aba Lives dentro do próprio Bees */}
+      <motion.button
+        type="button"
+        onClick={() => setView("lives")}
+        whileTap={{ scale: 0.94 }}
+        transition={{ type: "spring", stiffness: 220, damping: 24 }}
+        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.7)] backdrop-blur transition hover:bg-red-600"
+        aria-label="Ver lives"
+      >
+        <Radio className="h-4 w-4" /> Live
+      </motion.button>
+
       {loadingInitial ? (
         <LoadingState />
       ) : error && items.length === 0 ? (
