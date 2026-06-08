@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { Loader2, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
+import { cn } from "@/lib/utils"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
 import { CommentsPanel } from "@/components/comments/comments-panel"
@@ -39,6 +40,28 @@ function BeesPageInner() {
   // Aba Lives dentro do próprio /bees (sem header de site): só um botão flutuante
   // que troca o conteúdo para a lista de lives.
   const [view, setView] = useState<"bees" | "lives">("bees")
+  const [liveCount, setLiveCount] = useState(0)
+
+  // Conta lives ativas para o selo no botão (poll leve a cada 30s).
+  useEffect(() => {
+    let active = true
+    const token = getToken()
+    if (!token) return
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/lives", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        })
+        if (!res.ok) return
+        const data = (await res.json()) as { items?: unknown[] }
+        if (active) setLiveCount(Array.isArray(data.items) ? data.items.length : 0)
+      } catch { /* silencioso */ }
+    }
+    tick()
+    const id = setInterval(tick, 30_000)
+    return () => { active = false; clearInterval(id) }
+  }, [])
 
   const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
     const sp = new URLSearchParams()
@@ -114,7 +137,12 @@ function BeesPageInner() {
         className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.7)] backdrop-blur transition hover:bg-red-600"
         aria-label="Ver lives"
       >
-        <Radio className="h-4 w-4" /> Live
+        {liveCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-extrabold text-red-600 shadow">
+            {liveCount}
+          </span>
+        )}
+        <Radio className={cn("h-4 w-4", liveCount > 0 && "animate-pulse")} /> Live
       </motion.button>
 
       {loadingInitial ? (

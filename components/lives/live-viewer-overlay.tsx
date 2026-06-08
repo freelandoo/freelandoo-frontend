@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { joinLive } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
+import { LiveSocialLayer } from "./live-social-layer"
 
 const SPRING = { type: "spring" as const, stiffness: 220, damping: 26 }
 
@@ -30,16 +31,18 @@ export function LiveViewerOverlay({ liveId, onClose, onEnded }: LiveViewerOverla
   const [error, setError] = useState<string | null>(null)
   const [muted, setMuted] = useState(false)
   const [hasVideo, setHasVideo] = useState(false)
+  const [room, setRoom] = useState<Room | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const roomRef = useRef<Room | null>(null)
 
   const teardown = useCallback(async () => {
-    const room = roomRef.current
+    const current = roomRef.current
     roomRef.current = null
-    if (room) {
-      try { await room.disconnect() } catch { /* ignore */ }
+    setRoom(null)
+    if (current) {
+      try { await current.disconnect() } catch { /* ignore */ }
     }
     setHasVideo(false)
   }, [])
@@ -86,6 +89,7 @@ export function LiveViewerOverlay({ liveId, onClose, onEnded }: LiveViewerOverla
 
         await room.connect(session.ws_url, session.token)
         if (cancelled) { await room.disconnect(); return }
+        setRoom(room)
 
         // Anexa o que já estava publicado quando entramos.
         room.remoteParticipants.forEach((p: RemoteParticipant) => {
@@ -179,33 +183,31 @@ export function LiveViewerOverlay({ liveId, onClose, onEnded }: LiveViewerOverla
             )}
           </AnimatePresence>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-full bg-black/50 p-2 text-white/90 backdrop-blur transition hover:bg-black/70"
-          aria-label="Sair da live"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleMute}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition",
+              muted ? "bg-black/50 text-white/70" : "bg-black/50 text-white hover:bg-black/70",
+            )}
+            aria-label={muted ? "Ativar som" : "Silenciar"}
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-black/50 p-2 text-white/90 backdrop-blur transition hover:bg-black/70"
+            aria-label="Sair da live"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Título + controles */}
-      <div className="relative z-10 mt-auto flex items-end justify-between gap-3 px-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
-        <div className="min-w-0">
-          {live?.title && <p className="line-clamp-2 max-w-[70vw] text-sm font-medium text-white drop-shadow">{live.title}</p>}
-        </div>
-        <button
-          type="button"
-          onClick={toggleMute}
-          className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full backdrop-blur transition",
-            muted ? "bg-white/15 text-white/70" : "bg-white/20 text-white hover:bg-white/30",
-          )}
-          aria-label={muted ? "Ativar som" : "Silenciar"}
-        >
-          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </button>
-      </div>
+      {/* Camada social: contador + chat + presentes */}
+      {live && <LiveSocialLayer room={room} live={live} role="viewer" />}
     </div>
   )
 }

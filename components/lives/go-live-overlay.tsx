@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { AlertCircle, Loader2, Radio, Mic, MicOff, SwitchCamera, X } from "lucide-react"
+import { AlertCircle, Loader2, Radio, Mic, MicOff, X } from "lucide-react"
 import {
   LocalVideoTrack,
   Room,
@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { startLive, endLive, fetchOwnedProfiles, type OwnedProfile } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
+import { LiveSocialLayer } from "./live-social-layer"
 
 const SPRING = { type: "spring" as const, stiffness: 220, damping: 26 }
 const MAX_TITLE = 120
@@ -39,6 +40,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   const [error, setError] = useState<string | null>(null)
   const [micOn, setMicOn] = useState(true)
   const [live, setLive] = useState<Live | null>(null)
+  const [room, setRoom] = useState<Room | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const roomRef = useRef<Room | null>(null)
@@ -63,10 +65,11 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   const teardown = useCallback(async () => {
     localTracksRef.current.forEach((t) => t.stop())
     localTracksRef.current = []
-    const room = roomRef.current
+    const current = roomRef.current
     roomRef.current = null
-    if (room) {
-      try { await room.disconnect() } catch { /* ignore */ }
+    setRoom(null)
+    if (current) {
+      try { await current.disconnect() } catch { /* ignore */ }
     }
   }, [])
 
@@ -113,6 +116,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
           attachLocalVideo(track as LocalVideoTrack)
         }
       }
+      setRoom(room)
       setLive(session.live)
       setPhase("live")
       onLiveStarted?.(session.live)
@@ -173,14 +177,34 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
         ) : (
           <span />
         )}
-        <button
-          type="button"
-          onClick={phase === "live" ? handleEnd : onClose}
-          className="rounded-full bg-black/50 p-2 text-white/90 backdrop-blur transition hover:bg-black/70"
-          aria-label="Fechar"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {phase === "live" && (
+            <button
+              type="button"
+              onClick={toggleMic}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition",
+                micOn ? "bg-black/50 text-white hover:bg-black/70" : "bg-red-600 text-white",
+              )}
+              aria-label={micOn ? "Desligar microfone" : "Ligar microfone"}
+            >
+              {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={phase === "live" ? handleEnd : onClose}
+            className={cn(
+              "rounded-full p-2 backdrop-blur transition",
+              phase === "live"
+                ? "bg-red-600 text-white hover:bg-red-500"
+                : "bg-black/50 text-white/90 hover:bg-black/70",
+            )}
+            aria-label={phase === "live" ? "Encerrar live" : "Fechar"}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Setup (escolha de perfil + título) */}
@@ -285,37 +309,9 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
         )}
       </AnimatePresence>
 
-      {/* Controles durante a live */}
-      {phase === "live" && (
-        <div className="relative z-10 mt-auto flex items-center justify-center gap-4 px-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
-          <button
-            type="button"
-            onClick={toggleMic}
-            className={cn(
-              "flex h-12 w-12 items-center justify-center rounded-full backdrop-blur transition",
-              micOn ? "bg-white/15 text-white hover:bg-white/25" : "bg-red-600 text-white",
-            )}
-            aria-label={micOn ? "Desligar microfone" : "Ligar microfone"}
-          >
-            {micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
-            onClick={handleEnd}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-red-600 px-6 text-sm font-bold text-white shadow-lg transition hover:bg-red-500"
-          >
-            Encerrar live
-          </button>
-          <button
-            type="button"
-            disabled
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white/40"
-            aria-label="Trocar câmera (em breve)"
-            title="Trocar câmera (em breve)"
-          >
-            <SwitchCamera className="h-5 w-5" />
-          </button>
-        </div>
+      {/* Camada social: contador + chat + presentes (durante a live) */}
+      {phase === "live" && live && (
+        <LiveSocialLayer room={room} live={live} role="broadcaster" />
       )}
     </div>
   )

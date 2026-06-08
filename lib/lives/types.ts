@@ -39,3 +39,18 @@ export interface LiveSession {
   ws_url: string
   role?: "broadcaster" | "viewer"
 }
+
+export interface LiveGift {
+  id_live_gift: string
+  name: string
+  emoji: string
+  color: string
+  animation: string
+  price_polens: number
+}
+
+export interface SendGiftResult {
+  polens_spent: number
+  wallet?: { balance: number }
+  gift: Pick<LiveGift, "id_live_gift" | "name" | "emoji" | "color" | "animation">
+}

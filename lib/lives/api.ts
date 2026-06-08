@@ -1,6 +1,6 @@
 // Cliente das Lives — fala com os proxies /api/lives/*.
 import { getToken } from "@/lib/auth"
-import type { Live, LiveSession } from "./types"
+import type { Live, LiveGift, LiveSession, SendGiftResult } from "./types"
 
 function authHeaders(json = false): Record<string, string> {
   const h: Record<string, string> = {}
@@ -50,6 +50,32 @@ export async function joinLive(id_live: string): Promise<LiveSession> {
     headers: authHeaders(true),
   })
   return parse<LiveSession>(res)
+}
+
+// O transmissor reporta a contagem de espectadores → backend guarda o pico.
+export async function reportViewers(id_live: string, count: number): Promise<void> {
+  try {
+    await fetch(`/api/lives/${encodeURIComponent(id_live)}/viewers`, {
+      method: "POST",
+      headers: authHeaders(true),
+      body: JSON.stringify({ count }),
+    })
+  } catch { /* best-effort, nunca derruba a live */ }
+}
+
+export async function fetchGifts(): Promise<LiveGift[]> {
+  const res = await fetch("/api/lives/gifts", { headers: authHeaders(), cache: "no-store" })
+  const data = await parse<{ gifts: LiveGift[] }>(res)
+  return data.gifts || []
+}
+
+export async function sendGift(id_live: string, id_live_gift: string): Promise<SendGiftResult> {
+  const res = await fetch(`/api/lives/${encodeURIComponent(id_live)}/gift`, {
+    method: "POST",
+    headers: authHeaders(true),
+    body: JSON.stringify({ id_live_gift }),
+  })
+  return parse<SendGiftResult>(res)
 }
 
 // Subperfis do usuário (para escolher de qual perfil transmitir).
