@@ -78,6 +78,13 @@ const RANGES = [
   { key: "30d", label: "30 dias" },
   { key: "90d", label: "90 dias" },
 ]
+const KIND_FILTERS = [
+  { key: "all", label: "Todos" },
+  { key: "product", label: "Loja" },
+  { key: "service", label: "Serviço" },
+  { key: "course", label: "Curso" },
+  { key: "affiliate", label: "Afiliado" },
+]
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export default function WalletPage() {
@@ -86,6 +93,7 @@ export default function WalletPage() {
 
   const [profileId, setProfileId] = useState<string>("")
   const [range, setRange] = useState("30d")
+  const [kind, setKind] = useState("all")
 
   const [agg, setAgg] = useState<Agg | null>(null)
   const [items, setItems] = useState<Earning[]>([])
@@ -104,9 +112,10 @@ export default function WalletPage() {
       if (replace) setLoading(true)
       setError("")
       const pq = profileId ? `&profile=${encodeURIComponent(profileId)}` : ""
+      const kq = kind && kind !== "all" ? `&kind=${kind}` : ""
       try {
         const [eRes, sRes] = await Promise.all([
-          clientFetchWithTimeout(`/api/me/earnings?page=${pg}&per_page=24${pq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000),
+          clientFetchWithTimeout(`/api/me/earnings?page=${pg}&per_page=24${pq}${kq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000),
           replace
             ? clientFetchWithTimeout(`/api/me/earnings/series?range=${range}${pq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000)
             : Promise.resolve(null),
@@ -123,7 +132,7 @@ export default function WalletPage() {
         setLoading(false)
       }
     },
-    [profileId, range]
+    [profileId, range, kind]
   )
 
   useEffect(() => {
@@ -237,9 +246,32 @@ export default function WalletPage() {
 
           {/* Extrato */}
           <div className="mt-10">
-            <div className="relative mb-6">
-              <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">Extrato</h2>
-              <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div className="relative">
+                <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">Extrato</h2>
+                <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {KIND_FILTERS.map((f) => {
+                  const active = kind === f.key
+                  return (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setKind(f.key)}
+                      className={cn(
+                        "border-2 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
+                        active
+                          ? "border-[#0B0B0D] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                          : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+                      )}
+                      style={active ? { background: GREEN } : undefined}
+                    >
+                      {f.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {loading && items.length === 0 ? (
