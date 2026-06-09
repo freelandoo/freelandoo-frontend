@@ -5,7 +5,7 @@
 // estado que alimenta os pills do header retrátil no mobile).
 // Seções mudam por aba: services / products / courses.
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import type { ReactNode } from "react"
 import { ChevronDown, MapPin, Star, X } from "lucide-react"
 import type { CatalogCategory, CatalogMachine } from "@/components/home/machines/use-machines-catalog"
@@ -221,18 +221,21 @@ export function FilterRail(props: FilterRailProps) {
 /* Seção retrátil sem lib: anima grid-template-rows (0fr ⇄ 1fr). */
 function RailSection({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
+  const panelId = useId()
   return (
     <section className="border-b-2 border-[#0B0B0D]/15 last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls={panelId}
         className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-[#0B0B0D]/[0.04]"
       >
         <span className="fl-display text-lg leading-none text-[#0B0B0D]">{title}</span>
         <ChevronDown className={cn("h-4 w-4 text-[#0B0B0D]/60 transition-transform duration-300", open && "rotate-180")} />
       </button>
       <div
+        id={panelId}
         className="grid transition-[grid-template-rows] duration-300 ease-out"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
@@ -251,6 +254,7 @@ function RailOption({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "flex w-full items-center gap-2 border-2 px-3 py-1.5 text-left text-[11px] font-extrabold uppercase tracking-[0.06em] transition-transform hover:-translate-y-0.5",
         active
