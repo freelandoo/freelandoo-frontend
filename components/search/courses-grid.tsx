@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Loader2, GraduationCap } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 type CourseItem = {
   id: string
@@ -28,6 +27,8 @@ interface Props {
   machineId: number | null
   categoryId: number | null
   q?: string | null
+  /** Filtro client-side: cursos com price_cents nulo/0 = gratuitos. */
+  priceFilter?: "all" | "free" | "paid"
 }
 
 function formatBRL(cents: number | null) {
@@ -35,7 +36,7 @@ function formatBRL(cents: number | null) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
-export function CoursesGrid({ machineId, categoryId, q }: Props) {
+export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: Props) {
   const [items, setItems] = useState<CourseItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +61,12 @@ export function CoursesGrid({ machineId, categoryId, q }: Props) {
     return () => { alive = false }
   }, [machineId, categoryId, q])
 
+  const visible = items.filter((c) => {
+    if (priceFilter === "free") return !c.price_cents
+    if (priceFilter === "paid") return !!c.price_cents && c.price_cents > 0
+    return true
+  })
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -70,7 +77,7 @@ export function CoursesGrid({ machineId, categoryId, q }: Props) {
   if (error) {
     return <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
   }
-  if (items.length === 0) {
+  if (visible.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center px-6 py-16 text-center">
         <div className="rounded-full border border-white/[0.08] bg-white/[0.02] p-3">
@@ -85,19 +92,15 @@ export function CoursesGrid({ machineId, categoryId, q }: Props) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[640px] grid-cols-1 gap-3 px-3 pb-8 pt-3 sm:grid-cols-2 md:max-w-[760px] lg:max-w-[1080px] lg:grid-cols-3">
-      {items.map((c) => {
+    <div className="mx-auto grid w-full max-w-[640px] grid-cols-2 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] lg:max-w-none lg:grid-cols-3">
+      {visible.map((c) => {
         const href = c.slug ? `/cursos/${c.slug}` : `/cursos/${c.id}`
         const accent = c.machine_accent || "#fbbf24"
         return (
           <Link
             key={c.id}
             href={href}
-            className={cn(
-              "group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] transition-all",
-              "hover:border-white/20 hover:bg-white/[0.04] active:scale-[0.98]",
-            )}
-            style={{ transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            className="group relative flex flex-col overflow-hidden bg-zinc-900 transition-transform duration-300 active:scale-[0.98]"
           >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-900">
               {c.cover_url ? (
@@ -115,26 +118,21 @@ export function CoursesGrid({ machineId, categoryId, q }: Props) {
               )}
               {c.category_name && (
                 <span
-                  className="absolute left-2 top-2 rounded-full border bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] backdrop-blur"
-                  style={{ color: accent, borderColor: `${accent}55` }}
+                  className="absolute left-2 top-2 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] backdrop-blur"
+                  style={{ color: accent }}
                 >
                   {c.category_name}
                 </span>
               )}
             </div>
-            <div className="flex flex-col gap-1.5 p-3">
-              <p className="line-clamp-2 text-[14px] font-semibold tracking-tight text-white">{c.title}</p>
-              {c.short_description && (
-                <p className="line-clamp-2 text-[12px] text-white/55">{c.short_description}</p>
-              )}
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <p className="text-[14px] font-bold tracking-tight" style={{ color: accent }}>
+            <div className="flex flex-1 flex-col gap-1.5 border-t-2 border-[#0B0B0D] bg-[#F1EDE2] p-3">
+              <p className="line-clamp-2 text-[13px] font-bold leading-tight text-[#0B0B0D]">{c.title}</p>
+              <div className="mt-auto flex items-center justify-between gap-2">
+                <p className="text-[14px] font-black tracking-tight" style={{ color: "#9a7400" }}>
                   {formatBRL(c.price_cents)}
                 </p>
                 {c.profile_display_name && (
-                  <p className="truncate text-[11px] text-white/55">
-                    por <span className="font-medium text-white/75">{c.profile_display_name}</span>
-                  </p>
+                  <p className="truncate text-[10px] font-semibold text-[#6B6457]">{c.profile_display_name}</p>
                 )}
               </div>
             </div>
