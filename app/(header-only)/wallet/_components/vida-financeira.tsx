@@ -145,6 +145,9 @@ export function VidaFinanceira() {
                 : "Você gastou mais do que recebeu este mês. Hora de ajustar."}
             </p>
           </div>
+
+          {/* Gráfico de controle de custos */}
+          <CostChart data={data} />
         </div>
       </div>
 
@@ -176,6 +179,82 @@ function stripEntry(d: MonthData, id: number): MonthData {
   const in_cents = sum(next.recurring_in) + sum(next.oneoff_in)
   const out_cents = sum(next.recurring_out) + sum(next.oneoff_out)
   return { ...d, entries: next, totals: { in_cents, out_cents, net_cents: in_cents - out_cents } }
+}
+
+/* ── Gráfico de controle de custos ────────────────────────────────────────── */
+function CostChart({ data }: { data: MonthData | null }) {
+  const inTotal = data?.totals.in_cents || 0
+  const outTotal = data?.totals.out_cents || 0
+  const max = Math.max(inTotal, outTotal, 1)
+
+  // "Para onde foi": agrega saídas por título.
+  const byCategory = useMemo(() => {
+    const m = new Map<string, number>()
+    const all = [...(data?.entries.recurring_out || []), ...(data?.entries.oneoff_out || [])]
+    for (const e of all) m.set(e.title, (m.get(e.title) || 0) + e.amount_cents)
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6)
+  }, [data])
+
+  const catMax = Math.max(1, ...byCategory.map(([, v]) => v))
+  const empty = inTotal === 0 && outTotal === 0
+
+  return (
+    <div className="mt-5 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
+      <h3 className="mb-4 fl-display text-2xl text-[#0B0B0D]">Controle de custos</h3>
+
+      {empty ? (
+        <p className="py-6 text-center text-xs font-semibold text-[#6B6457]">
+          Lance entradas e saídas para ver o panorama do mês aqui.
+        </p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Entradas x Saídas */}
+          <div>
+            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Entradas × Saídas</p>
+            <CompareBar label="Entrou" value={inTotal} max={max} color={GREEN_DEEP} />
+            <CompareBar label="Saiu" value={outTotal} max={max} color={RED} />
+          </div>
+
+          {/* Para onde foi */}
+          <div>
+            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Para onde foi</p>
+            {byCategory.length === 0 ? (
+              <p className="py-2 text-xs font-semibold text-[#6B6457]">Sem saídas neste mês.</p>
+            ) : (
+              <div className="space-y-2">
+                {byCategory.map(([label, v]) => (
+                  <div key={label}>
+                    <div className="flex items-center justify-between text-[11px] font-bold text-[#0B0B0D]">
+                      <span className="truncate">{label}</span>
+                      <span className="tabular-nums">{brl(v)}</span>
+                    </div>
+                    <div className="mt-0.5 h-2.5 border border-[#0B0B0D] bg-white">
+                      <div className="h-full" style={{ width: `${Math.max(3, Math.round((v / catMax) * 100))}%`, background: RED }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CompareBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const w = Math.max(3, Math.round((value / max) * 100))
+  return (
+    <div className="mb-2">
+      <div className="flex items-center justify-between text-[11px] font-bold text-[#0B0B0D]">
+        <span className="uppercase tracking-wide">{label}</span>
+        <span className="tabular-nums">{brl(value)}</span>
+      </div>
+      <div className="mt-0.5 h-4 border-2 border-[#0B0B0D] bg-white">
+        <div className="h-full transition-all duration-500" style={{ width: `${w}%`, background: color }} />
+      </div>
+    </div>
+  )
 }
 
 /* ── Coluna de meses ──────────────────────────────────────────────────────── */
