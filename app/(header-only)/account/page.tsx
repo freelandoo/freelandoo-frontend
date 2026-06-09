@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3 } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, Wallet } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { UserPortfolio } from "./_components/UserPortfolio"
@@ -1513,6 +1513,16 @@ export default function PerfilPage() {
 
               {/* sininho de notificações (só na /account) + configurações */}
               <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+                {/* Carteira — extrato de ganhos + mercado. Acento teal-verde. */}
+                <Link
+                  href="/wallet"
+                  aria-label="Abrir minha Carteira"
+                  title="Minha Carteira"
+                  className="group inline-flex h-10 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#16B79A] px-3 text-[#06251F] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#3FD9C6] active:translate-x-px active:translate-y-px"
+                >
+                  <Wallet className="h-4 w-4" />
+                  <span className="hidden text-xs font-extrabold uppercase tracking-wider sm:inline">Carteira</span>
+                </Link>
                 <NotificationBell />
                 <button
                   type="button"
