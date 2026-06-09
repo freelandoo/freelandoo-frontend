@@ -452,7 +452,7 @@ function MarketSidebar() {
     <div className="space-y-5">
       <MarketSection title="Ações em alta" icon={<TrendingUp className="h-4 w-4" />}>
         {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
-          <Muted>Cotações indisponíveis no momento.</Muted>
+          <Muted>Sem dados de ações no momento.</Muted>
         ) : (
           data.stocks.map((s) => <QuoteRow key={s.symbol} item={s} />)
         )}
@@ -547,11 +547,17 @@ function MarketSection({ title, icon, children }: { title: string; icon: ReactNo
 function QuoteRow({ item }: { item: MarketItem }) {
   const up = (item.change_pct ?? 0) >= 0
   const isPts = item.currency === "pts"
+  const small = item.price != null && item.price < 1 // ex.: Rublo (~R$ 0,07)
   const price = item.price == null
     ? "—"
     : isPts
       ? item.price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })
-      : item.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      : item.price.toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+          minimumFractionDigits: small ? 4 : 2,
+          maximumFractionDigits: small ? 4 : 2,
+        })
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-[#0B0B0D]/15 bg-white/70 px-2.5 py-1.5">
       <div className="flex min-w-0 items-center gap-2">
