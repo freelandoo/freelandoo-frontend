@@ -1,42 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Analytics } from "@vercel/analytics/next"
-import { track } from "@vercel/analytics"
-
-const CONSENT_KEY = "fl_cookie_consent"
+// Vercel Web Analytics DESLIGADO (2026-06-09) para reduzir consumo na Vercel:
+// cada page view enviava um beacon (1 edge request + 1 evento de Analytics) e o
+// listener global de clique mandava eventos de CTA. As métricas ficam por conta
+// do Google Analytics/AdSense.
+//
+// Para REATIVAR: reverter este arquivo (versão anterior reimporta
+// `Analytics` de "@vercel/analytics/next" e `track` de "@vercel/analytics",
+// renderizando <Analytics /> após o consentimento de cookies).
 
 export function AnalyticsProvider() {
-  const [consented, setConsented] = useState(false)
-
-  useEffect(() => {
-    const check = () => setConsented(localStorage.getItem(CONSENT_KEY) === "accepted")
-    check()
-    window.addEventListener("cookieConsentChanged", check)
-    return () => window.removeEventListener("cookieConsentChanged", check)
-  }, [])
-
-  useEffect(() => {
-    if (!consented) return
-
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null
-      const el = target?.closest<HTMLElement>("[data-cta]")
-      if (!el) return
-      const cta = el.dataset.cta
-      const action = el.dataset.ctaAction
-      if (!cta) return
-      track("cta_click", {
-        cta,
-        action: action ?? "",
-        href: el.getAttribute("href") ?? "",
-      })
-    }
-
-    document.addEventListener("click", onClick, { capture: true })
-    return () => document.removeEventListener("click", onClick, { capture: true })
-  }, [consented])
-
-  if (!consented) return null
-  return <Analytics />
+  return null
 }
