@@ -254,35 +254,6 @@ interface OsChatItem {
 
 interface OsChatsListResponse { chats: OsChatItem[] }
 
-interface ProductBuyerRequest {
-  id_product_request: string
-  title: string
-  description: string
-  city: string | null
-  state: string | null
-  status: string
-  category_name: string | null
-  created_at: string
-  updated_at: string | null
-}
-
-interface ProductSellerResponse {
-  id_response: string
-  id_product_request: string
-  message: string
-  proposed_price_cents: number | null
-  status: string
-  created_at: string
-  updated_at: string | null
-  request_title: string
-  request_description: string
-  request_city: string | null
-  request_state: string | null
-  request_status: string
-  category_name: string | null
-  buyer_username: string | null
-}
-
 interface OsMessageItem {
   id_message: string
   id_response: string
@@ -716,11 +687,11 @@ export default function MensagensClient() {
         jsonFetch<OsChatsListResponse>(`/api/service-requests/me/pro-chats`).catch(() => ({ chats: [] })),
         jsonFetch<OsChatsListResponse>(`/api/course-requests/me/chats`).catch(() => ({ chats: [] })),
         jsonFetch<OsChatsListResponse>(`/api/course-requests/me/pro-chats`).catch(() => ({ chats: [] })),
-        jsonFetch<{ requests?: ProductBuyerRequest[] }>(`/api/product-requests/me`).catch(() => ({ requests: [] })),
-        jsonFetch<{ responses?: ProductSellerResponse[] }>(`/api/product-requests/me/sent`).catch(() => ({ responses: [] })),
+        jsonFetch<OsChatsListResponse>(`/api/product-requests/me/chats`).catch(() => ({ chats: [] })),
+        jsonFetch<OsChatsListResponse>(`/api/product-requests/me/pro-chats`).catch(() => ({ chats: [] })),
       ])
 
-      const tag = (chats: OsChatItem[] | undefined, kind: "service" | "course", side: "user" | "pro") =>
+      const tag = (chats: OsChatItem[] | undefined, kind: "service" | "course" | "product", side: "user" | "pro") =>
         (Array.isArray(chats) ? chats : []).map((c) => ({ ...c, kind, side }))
 
       const serviceUser = tag(svcU?.chats, "service", "user")
@@ -728,57 +699,9 @@ export default function MensagensClient() {
       const courseUser = tag(crsU?.chats, "course", "user")
       const coursePro = tag(crsP?.chats, "course", "pro")
 
-      // Produto — lado comprador (1 item por pedido, read-only)
-      const productBuyer: OsChatItem[] = (Array.isArray(prodU?.requests) ? prodU.requests : []).map((r) => ({
-        id_response: `product-buyer:${r.id_product_request}`,
-        response_status: r.status,
-        response_created_at: r.created_at,
-        last_message: null,
-        last_message_at: r.updated_at || r.created_at,
-        unread_count: 0,
-        kind: "product" as const,
-        side: "user" as const,
-        request: {
-          id_request: r.id_product_request, status: r.status, description: r.description,
-          estado: r.state, municipio: r.city, id_machine: 0, id_category: 0,
-          machine_name: null, category_name: r.category_name, id_response_chosen: null,
-        },
-        profile: {
-          id_profile: "", display_name: r.title, avatar_url: null,
-          sub_profile_slug: null, username: null, is_clan: false,
-        },
-        productInfo: {
-          title: r.title, description: r.description, city: r.city, state: r.state,
-          category_name: r.category_name, status: r.status,
-          seller_message: null, proposed_price_cents: null,
-        },
-      }))
-
-      // Produto — lado vendedor (1 item por resposta enviada, read-only)
-      const productSeller: OsChatItem[] = (Array.isArray(prodP?.responses) ? prodP.responses : []).map((r) => ({
-        id_response: `product-seller:${r.id_response}`,
-        response_status: r.status,
-        response_created_at: r.created_at,
-        last_message: r.message,
-        last_message_at: r.updated_at || r.created_at,
-        unread_count: 0,
-        kind: "product" as const,
-        side: "pro" as const,
-        request: {
-          id_request: r.id_product_request, status: r.request_status, description: r.request_description,
-          estado: r.request_state, municipio: r.request_city, id_machine: 0, id_category: 0,
-          machine_name: null, category_name: r.category_name, id_response_chosen: null,
-        },
-        profile: {
-          id_profile: "", display_name: r.buyer_username || "Comprador", avatar_url: null,
-          sub_profile_slug: null, username: r.buyer_username || null, is_clan: false,
-        },
-        productInfo: {
-          title: r.request_title, description: r.request_description, city: r.request_city,
-          state: r.request_state, category_name: r.category_name, status: r.request_status,
-          seller_message: r.message, proposed_price_cents: r.proposed_price_cents,
-        },
-      }))
+      // Produto — agora chat real (mesma forma de serviço/curso).
+      const productBuyer = tag(prodU?.chats, "product", "user")
+      const productSeller = tag(prodP?.chats, "product", "pro")
 
       const merged = [
         ...serviceUser, ...servicePro, ...courseUser, ...coursePro, ...productBuyer, ...productSeller,
@@ -807,7 +730,9 @@ export default function MensagensClient() {
   }, [osChats])
   const osEndpointBase = useCallback((idResponse: string) => {
     const chat = osChatsRef.current.find((c) => c.id_response === idResponse)
-    return chat?.kind === "course" ? "/api/course-requests" : "/api/service-requests"
+    if (chat?.kind === "course") return "/api/course-requests"
+    if (chat?.kind === "product") return "/api/product-requests"
+    return "/api/service-requests"
   }, [])
 
   useEffect(() => {
@@ -1530,7 +1455,7 @@ export default function MensagensClient() {
                   return (
                   <li key={c.id_response} className="relative">
                     <button
-                      onClick={() => isProduct ? setProductDetail(c) : handleSelectOsChat(c.id_response)}
+                      onClick={() => handleSelectOsChat(c.id_response)}
                       className={cn(
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5",
                         activeOsResponseId === c.id_response && "bg-white/5"
