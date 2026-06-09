@@ -22,6 +22,7 @@ import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
+import { VidaFinanceira } from "./_components/vida-financeira"
 
 /* ── paleta (verde teal no lugar do dourado) ──────────────────────────────── */
 const GREEN = "#16B79A"
@@ -328,6 +329,9 @@ export default function WalletPage() {
 
         <MarketSidebar />
       </section>
+
+      {/* Vida Financeira — orçamento manual mensal */}
+      <VidaFinanceira />
     </main>
   )
 }
