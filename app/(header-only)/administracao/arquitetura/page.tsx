@@ -20,6 +20,8 @@ interface ArchFn {
   fn_key: string
   title: string
   description: string | null
+  description_curated: string | null
+  description_effective: string | null
   area: string | null
   kind: string
   repo: string
@@ -331,7 +333,7 @@ function FuncoesTab() {
                 <button key={fn.id} onClick={() => setSelected(fn)}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/30">
                   <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${st.dot}`} title={st.label} />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 md:flex-none md:w-[240px] lg:w-[280px]">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-foreground">{fn.title}</span>
                       <span className="shrink-0 rounded bg-muted/50 px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">{fn.kind}</span>
@@ -340,7 +342,12 @@ function FuncoesTab() {
                     </div>
                     <p className="truncate text-[11px] text-muted-foreground">{fn.file_path}</p>
                   </div>
-                  <span className="shrink-0 text-[11px] text-muted-foreground hidden md:block">{fn.area}</span>
+                  {/* coluna do meio: narração da função prática */}
+                  <p className="hidden flex-1 min-w-0 text-[12px] leading-snug text-muted-foreground md:line-clamp-2 md:block">
+                    {fn.description_effective || fn.description || <span className="italic opacity-50">sem descrição</span>}
+                    {fn.description_curated && <span className="ml-1 align-middle text-[9px] uppercase text-primary/70">curado</span>}
+                  </p>
+                  <span className="shrink-0 text-[11px] text-muted-foreground hidden xl:block w-20 truncate text-right">{fn.area}</span>
                   <span className={`shrink-0 text-[11px] ${st.text} w-28 text-right`}>{st.label}</span>
                 </button>
               )
@@ -371,15 +378,19 @@ function CurateModal({ fn, onClose, onSaved }: { fn: ArchFn; onClose: () => void
   const [curatedStatus, setCuratedStatus] = useState(fn.curated_status || "")
   const [notes, setNotes] = useState(fn.notes || "")
   const [archived, setArchived] = useState(fn.is_archived)
+  const [descCurated, setDescCurated] = useState(fn.description_curated || "")
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+
+  // texto exibido em destaque = override do admin, ou narração do scan.
+  const effectiveDesc = (descCurated || fn.description || "").trim()
 
   async function save() {
     setSaving(true); setErr(null)
     try {
       const r = await fetch(`/api/admin/architecture/functions/${fn.id}`, {
         method: "PATCH", headers: authHeaders(),
-        body: JSON.stringify({ curated_status: curatedStatus || null, notes: notes || null, is_archived: archived }),
+        body: JSON.stringify({ curated_status: curatedStatus || null, notes: notes || null, is_archived: archived, description_curated: descCurated || null }),
       })
       const d = await r.json()
       if (!r.ok) { setErr(d.error || "Erro ao salvar."); return }
@@ -398,6 +409,14 @@ function CurateModal({ fn, onClose, onSaved }: { fn: ArchFn; onClose: () => void
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
 
+        {/* Narração da função prática — em destaque (fundo amarelo, letras pretas) */}
+        <div className="mb-4 rounded-lg bg-yellow-400 px-4 py-3 text-black">
+          <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wide text-black/60">O que essa função faz</p>
+          <p className="text-sm font-medium leading-snug">
+            {effectiveDesc || <span className="italic opacity-60">Sem descrição — escreva uma abaixo.</span>}
+          </p>
+        </div>
+
         <dl className="mb-4 grid grid-cols-2 gap-2 text-xs">
           <Meta label="Tipo / repo" value={`${fn.kind} · ${fn.repo}`} />
           <Meta label="Área" value={fn.area || "—"} />
@@ -409,6 +428,13 @@ function CurateModal({ fn, onClose, onSaved }: { fn: ArchFn; onClose: () => void
         {fn.last_commit_msg && <p className="mb-4 rounded bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">{fn.last_commit_msg}</p>}
 
         <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Descrição / narração (sobrepõe a do scan)</label>
+            <textarea value={descCurated} onChange={(e) => setDescCurated(e.target.value)} rows={3}
+              placeholder={fn.description || "Explique em uma frase o que essa função faz na prática…"}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none" />
+            <p className="mt-1 text-[10px] text-muted-foreground">Vazio = usa a narração automática do scan. O texto aqui aparece em amarelo acima e na lista.</p>
+          </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Status curado (sobrepõe o scan)</label>
             <Select value={curatedStatus} onChange={setCuratedStatus} full
