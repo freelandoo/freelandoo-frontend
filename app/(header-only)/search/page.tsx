@@ -17,6 +17,7 @@ import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { ProductsGrid } from "@/components/search/products-grid"
 import { CoursesGrid } from "@/components/search/courses-grid"
+import { FilterRail, type CoursePriceFilter } from "@/components/search/filter-rail"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -233,6 +234,7 @@ function SearchPageInner() {
   const [tab, setTab] = useState<SearchTab>("services")
   const [productCategoryId, setProductCategoryId] = useState<number | null>(null)
   const [productCategories, setProductCategories] = useState<{ id_product_category: number; name: string }[]>([])
+  const [coursePrice, setCoursePrice] = useState<CoursePriceFilter>("all")
 
   // URL state sync: ?tab=
   useEffect(() => {
@@ -396,6 +398,8 @@ function SearchPageInner() {
     setIdCategory(null)
     setLevelMin(null)
     setPremiumOnly(false)
+    setProductCategoryId(null)
+    setCoursePrice("all")
   }
 
   return (
@@ -429,6 +433,33 @@ function SearchPageInner() {
 
         <SearchTabsBar tab={tab} onTabChange={handleTabChange} accent={accent} />
 
+        <div className="mx-auto flex w-full items-start lg:max-w-[1380px] lg:gap-5 lg:px-5 lg:pt-4">
+          <FilterRail
+            tab={tab}
+            machines={machines}
+            categories={machineCategories}
+            selectedMachineId={idMachine}
+            selectedCategoryId={idCategory}
+            state={selectedEstado}
+            regionId={selectedRegionId}
+            regionName={selectedRegionName}
+            levelMin={levelMin}
+            premiumOnly={premiumOnly}
+            accent={accent}
+            productCategories={productCategories}
+            productCategoryId={productCategoryId}
+            coursePrice={coursePrice}
+            onMachineChange={(id) => { setIdMachine(id); setIdCategory(null) }}
+            onCategoryChange={setIdCategory}
+            onLocationChange={({ state, regionId, regionName }) => { setSelectedEstado(state); setSelectedRegionId(regionId); setSelectedRegionName(regionName) }}
+            onLevelChange={setLevelMin}
+            onPremiumToggle={() => setPremiumOnly((v) => !v)}
+            onProductCategoryChange={setProductCategoryId}
+            onCoursePriceChange={setCoursePrice}
+            onClearAll={clearAll}
+          />
+
+          <div className="min-w-0 flex-1">
         {tab === "services" && (
           <div className="border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm">
             <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
@@ -467,7 +498,7 @@ function SearchPageInner() {
             </button>
           </div>
         ) : (
-          <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] md:grid-cols-4 lg:max-w-[1080px] lg:grid-cols-5">
+          <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] md:grid-cols-4 lg:max-w-none lg:grid-cols-4">
             {display.map((c) => (
               <FreelancerTile
                 key={c.id_profile}
@@ -481,7 +512,7 @@ function SearchPageInner() {
         {tab === "products" && (
           <>
             {/* Barra de filtros de produto: categoria (estado/cidade reusam os do header retrátil) */}
-            <div className="fl-root border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm">
+            <div className="fl-root border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm lg:hidden">
               <div className="mx-auto flex w-full max-w-[640px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:max-w-[760px] lg:max-w-[1080px] [&::-webkit-scrollbar]:hidden">
                 <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">Categoria</span>
                 <button
@@ -528,8 +559,11 @@ function SearchPageInner() {
           <CoursesGrid
             machineId={idMachine}
             categoryId={idCategory}
+            priceFilter={coursePrice}
           />
         )}
+          </div>
+        </div>
       </div>
 
       {storyOpen && (
