@@ -42,12 +42,14 @@ function BeesPageInner() {
   const [view, setView] = useState<"bees" | "lives">("bees")
   const [liveCount, setLiveCount] = useState(0)
 
-  // Conta lives ativas para o selo no botão (poll leve a cada 30s).
+  // Conta lives ativas para o selo no botão. Poll leve (60s) que SÓ roda com a
+  // aba visível — em segundo plano não bate na API (economia de invocações Vercel).
   useEffect(() => {
     let active = true
     const token = getToken()
     if (!token) return
     const tick = async () => {
+      if (document.visibilityState !== "visible") return
       try {
         const res = await fetch("/api/lives", {
           headers: { Authorization: `Bearer ${token}` },
@@ -59,8 +61,15 @@ function BeesPageInner() {
       } catch { /* silencioso */ }
     }
     tick()
-    const id = setInterval(tick, 30_000)
-    return () => { active = false; clearInterval(id) }
+    const id = setInterval(tick, 60_000)
+    // Ao voltar pra aba, atualiza na hora (sem esperar o intervalo).
+    const onVisibility = () => { if (document.visibilityState === "visible") tick() }
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      active = false
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
   }, [])
 
   const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
