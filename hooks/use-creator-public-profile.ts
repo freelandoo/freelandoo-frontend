@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import type { FreelancerProfile, PortfolioItem } from "@/lib/types/freelancer-profile"
 import { fetchWithLog } from "@/lib/fetch-with-log"
+import { getStoredUser } from "@/lib/auth"
 
 export type ClanMemberSummary = {
   id_member_profile: string
@@ -91,17 +92,10 @@ export function useCreatorPublicProfile(profileId: string, options: Options = {}
         setProfile(p)
 
         if (storedToken && p.id_user) {
-          try {
-            const meResponse = await fetchWithLog("useCreatorPublicProfile:me", `/api/users/me`, {
-              headers: { Authorization: `Bearer ${storedToken}` },
-            })
-            if (meResponse.ok) {
-              const meData = await meResponse.json()
-              setIsOwnProfile(meData.id_user === p.id_user)
-            }
-          } catch {
-            // silencioso
-          }
+          // Dono? O id_user do logado já está no localStorage (preenchido pelo
+          // use-auth). Comparar local evita um /api/users/me por perfil aberto.
+          const me = getStoredUser()
+          if (me?.id_user) setIsOwnProfile(me.id_user === p.id_user)
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao carregar perfil")
