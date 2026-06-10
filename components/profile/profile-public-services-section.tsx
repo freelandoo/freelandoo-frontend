@@ -283,7 +283,7 @@ export function ProfilePublicServicesSection({
                   )}
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element -- URL externa/dinâmica do serviço
-                    <img src={img} alt={s.name} className="h-full w-full object-cover" />
+                    <img src={img} alt={s.name} loading="lazy" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
                       <Scissors className="h-11 w-11 text-[#F2B705]/40 sm:h-12 sm:w-12" aria-hidden />
@@ -316,7 +316,7 @@ export function ProfilePublicServicesSection({
                         >
                           {m.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.avatar_url} alt={m.display_name} className="h-3.5 w-3.5 rounded-full object-cover" />
+                            <img src={m.avatar_url} alt={m.display_name} loading="lazy" className="h-3.5 w-3.5 rounded-full object-cover" />
                           ) : (
                             <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#0B0B0D]/15 text-[7px]">
                               {m.display_name?.slice(0, 1).toUpperCase()}

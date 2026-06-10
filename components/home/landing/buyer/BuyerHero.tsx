@@ -66,6 +66,7 @@ export function BuyerHero() {
         <EditableImage
           slot="home_buyer_hero"
           className="aspect-[16/5] w-full border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
+          sizes="(min-width: 1140px) 1100px, 100vw"
         />
       </div>
     </Section>

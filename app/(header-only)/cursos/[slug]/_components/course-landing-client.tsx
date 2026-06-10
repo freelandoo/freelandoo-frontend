@@ -5,6 +5,7 @@
 // (token no localStorage), checkout, consent e os banners de retorno do Stripe.
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, GraduationCap, ShoppingCart, Settings, Check } from "lucide-react"
@@ -120,11 +121,13 @@ export default function CourseLandingClient({ course }: { course: PublicCourse }
         {/* Cover */}
         <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-[6px] border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[6px_6px_0_0_#0B0B0D]">
           {course.cover_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // next/image: landing pública/SEO, 1 capa por curso (política F3.S6).
+            <Image
               src={course.cover_url}
               alt={course.title}
-              className="h-full w-full object-cover"
+              fill
+              sizes="(min-width: 768px) 736px, 100vw"
+              className="object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">

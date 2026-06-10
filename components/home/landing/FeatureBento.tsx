@@ -21,6 +21,7 @@ function BentoVisual({ item }: { item: BentoItem }) {
           slot={`home_seller_bento_${item.n}`}
           slotConfig={{ aspectRatio: 16 / 10, outputWidth: 1280, outputHeight: 800 }}
           className="aspect-[16/10] w-full"
+          sizes="(min-width: 1024px) 33vw, 100vw"
           fallback={
             <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="h-full w-full" />
           }

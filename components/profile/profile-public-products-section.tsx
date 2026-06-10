@@ -109,7 +109,7 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
                   )}
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={img} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                    <img src={img} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2212] to-[#141009]">
                       <Package className="h-11 w-11 text-[#F2B705]/40 sm:h-12 sm:w-12" aria-hidden />

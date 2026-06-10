@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { Clock } from "lucide-react"
 import { fetchBlogList, type BlogPostCard } from "@/lib/blog"
 import { BlogAdminBar } from "@/components/blog/blog-admin-bar"
@@ -42,12 +43,13 @@ function PostCard({ post, idx }: { post: BlogPostCard; idx: number }) {
     >
       <div className="relative aspect-[16/9] overflow-hidden border-b-2 border-[var(--ink)]">
         {post.cover_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // next/image: página pública/SEO, capas são poucas (política F3.S6).
+          <Image
             src={post.cover_url}
             alt={post.cover_alt || post.title}
-            className="h-full w-full object-cover grayscale-[15%] transition duration-500 group-hover:scale-105"
-            loading="lazy"
+            fill
+            sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+            className="object-cover grayscale-[15%] transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="relative flex h-full w-full items-center justify-center" style={{ background: accent }}>

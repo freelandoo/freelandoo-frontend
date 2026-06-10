@@ -101,6 +101,7 @@ export function HeroSection() {
                 slot="home_seller_hero_main"
                 slotConfig={{ aspectRatio: 4 / 5, outputWidth: 1000, outputHeight: 1250 }}
                 className="aspect-[4/5] w-full"
+                sizes="(min-width: 640px) 55vw, 100vw"
                 fallback={
                   <PhotoFrame
                     src="/landing/hero.png"

@@ -34,6 +34,7 @@ export function MoneyPathCards() {
                 slot={`home_seller_path_${String(p.id).replace(/[^a-z0-9_]/gi, "")}`}
                 slotConfig={{ aspectRatio: 3 / 4, outputWidth: 900, outputHeight: 1200 }}
                 className="aspect-[3/4] w-full"
+                sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, 50vw"
                 fallback={
                   <PhotoFrame src={p.photo} alt={`Caminho ${p.kicker} na Freelandoo`} icon={p.icon} ready className="h-full w-full" />
                 }

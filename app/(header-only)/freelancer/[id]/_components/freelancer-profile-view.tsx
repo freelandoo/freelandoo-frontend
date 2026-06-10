@@ -956,6 +956,7 @@ export default function FreelancerProfileView({
                           <img
                             src={firstMedia.media_url}
                             alt={item.title ?? "Mídia do portfólio"}
+                            loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
@@ -972,6 +973,7 @@ export default function FreelancerProfileView({
                               <img
                                 src={item.author_avatar_url}
                                 alt={item.author_display_name}
+                                loading="lazy"
                                 className="h-5 w-5 rounded-full object-cover"
                               />
                             ) : (
@@ -1686,6 +1688,7 @@ function ProfileCoursesTab({
             <img
               src={c.cover_url}
               alt={c.title}
+              loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
@@ -1713,7 +1716,7 @@ function ProfileCoursesTab({
                     >
                       {m.avatar_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.avatar_url} alt={m.display_name} className="h-3.5 w-3.5 rounded-full object-cover" />
+                        <img src={m.avatar_url} alt={m.display_name} loading="lazy" className="h-3.5 w-3.5 rounded-full object-cover" />
                       ) : (
                         <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/20 text-[7px]">
                           {m.display_name?.slice(0, 1).toUpperCase()}

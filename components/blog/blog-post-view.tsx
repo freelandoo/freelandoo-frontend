@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Clock, ImagePlus, Loader2, Save, Trash2, Eye, Pencil } from "lucide-react"
 import { ContentAd } from "@/components/ads/content-ad"
@@ -258,8 +259,17 @@ export function BlogPostView({
         ) : (
           d.cover_url && (
             <div className="mt-8 overflow-hidden border-2 border-[var(--ink)] shadow-[6px_6px_0_0_var(--ink)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={d.cover_url} alt={d.cover_alt || d.title} className="w-full object-cover" />
+              {/* next/image (política F3.S6): capa pública/SEO. width/height
+                  só reservam o espaço (16:9 do uploader); h-auto segue o
+                  ratio real da imagem servida. Modo edição continua <img>. */}
+              <Image
+                src={d.cover_url}
+                alt={d.cover_alt || d.title}
+                width={1280}
+                height={720}
+                sizes="(min-width: 768px) 720px, 100vw"
+                className="h-auto w-full object-cover"
+              />
             </div>
           )
         )}

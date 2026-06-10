@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { ImagePlus } from "lucide-react"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import { type ProcessedImage } from "@/lib/media/image-processing"
@@ -19,11 +20,14 @@ export function EditableImage({
   className,
   slotConfig,
   fallback,
+  sizes = "100vw",
 }: {
   slot: string
   className?: string
   slotConfig?: Partial<SiteAssetSlot>
   fallback?: React.ReactNode
+  /** Hint de largura renderizada pro next/image (ex.: "(min-width:768px) 33vw, 100vw"). */
+  sizes?: string
 }) {
   const { assets, setAsset } = useSiteAssets()
   const def = slotDef(slot, slotConfig)
@@ -64,8 +68,9 @@ export function EditableImage({
   return (
     <div className={cn("relative overflow-hidden", className)}>
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="" className="h-full w-full object-cover" />
+        // next/image: assets do site são poucos e públicos/SEO (política de
+        // imagem F3.S6) — otimização Vercel compensa aqui.
+        <Image src={url} alt="" fill sizes={sizes} className="object-cover" />
       ) : (
         fallback ?? (
           <div className="flex h-full w-full items-center justify-center bg-[#1D1810]">

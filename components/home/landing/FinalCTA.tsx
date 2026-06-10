@@ -19,6 +19,7 @@ export function FinalCTA() {
             slot="home_seller_cta"
             slotConfig={{ aspectRatio: 5 / 4, outputWidth: 1250, outputHeight: 1000 }}
             className="aspect-[5/4] w-full"
+            sizes="(min-width: 768px) 45vw, 100vw"
             fallback={
               <PhotoFrame src="/landing/cta-grupo.png" alt="Pessoas felizes ganhando com a Freelandoo" ready torn cut className="h-full w-full" />
             }

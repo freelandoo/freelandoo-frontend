@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
@@ -312,15 +313,16 @@ export function ProfileHeadCard({
             Borda inferior rasgada (papel) revelando o card creme por baixo. */}
         <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52">
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={profile.manifestation.banner_url}
-                alt=""
-                onError={() => setBannerFailed(true)}
-                className="h-full w-full object-cover"
-              />
-            </>
+            // next/image (política F3.S6): banner é o LCP do perfil público e
+            // sempre vem do R2. Avatar segue <img> (pode ser blob: de preview).
+            <Image
+              src={profile.manifestation.banner_url}
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 1024px, 100vw"
+              onError={() => setBannerFailed(true)}
+              className="object-cover"
+            />
           ) : (
             <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.30),transparent_38%),linear-gradient(135deg,#2a2212,#141009)]" />
           )}
