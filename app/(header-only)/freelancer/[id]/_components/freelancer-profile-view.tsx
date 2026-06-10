@@ -56,6 +56,7 @@ import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { buildProfileUrl } from "@/lib/slug"
 import type { ComposerMode } from "@/lib/composer/types"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 // F3.S4 — seções de aba e modais fora do bundle inicial da rota (chunk lazy,
 // sem SSR). A rota é a de maior delta do site (+652KB sobre o shell); o maior
@@ -127,6 +128,7 @@ export default function FreelancerProfileView({
 }) {
   const isClan = kind === "clan"
   const entityType = isClan ? "clan" : "profile"
+  const t = useTranslations("Profile")
   const router = useRouter()
   const pathname = usePathname()
   const { profile, portfolioItems, setPortfolioItems, members, loading, error, isOwnProfile } =
@@ -279,10 +281,10 @@ export default function FreelancerProfileView({
         await refetchPortfolio()
       } else {
         const data = await res.json().catch(() => ({}))
-        setPortfolioError(data.error || "Erro ao fazer upload")
+        setPortfolioError(data.error || t("uploadError", "Erro ao fazer upload"))
       }
     } catch {
-      setPortfolioError("Erro ao fazer upload. Tente novamente.")
+      setPortfolioError(t("uploadErrorRetry", "Erro ao fazer upload. Tente novamente."))
     } finally {
       setIsUploadingPortfolio(null)
     }
@@ -309,7 +311,7 @@ export default function FreelancerProfileView({
         outputHeight: POST_IMAGE_OUTPUT.height,
         maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
         mimeType: "image/webp",
-        errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+        errorMessage: t("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
       })
 
       if (mode === "new") {
@@ -319,7 +321,7 @@ export default function FreelancerProfileView({
         await uploadPortfolioFile(itemId, processed.file)
       }
     } catch (err) {
-      setPortfolioError(err instanceof Error ? err.message : "Não foi possível otimizar esse arquivo. Tente outro.")
+      setPortfolioError(err instanceof Error ? err.message : t("optimizeError", "Não foi possível otimizar esse arquivo. Tente outro."))
     } finally {
       setProcessingMedia(false)
     }
@@ -327,17 +329,17 @@ export default function FreelancerProfileView({
 
   const validateBeesVideo = async (file: File): Promise<string | null> => {
     if (!file.type.startsWith("video/")) {
-      return "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM."
+      return t("beesVideoOnly", "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
     }
     const v = validateVideoFile(file)
     if (!v.ok) return v.error
     try {
       const dim = await getVideoDimensions(file)
       if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
-        return "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16)."
+        return t("beesVideoNotVertical", "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16).")
       }
     } catch (err) {
-      return err instanceof Error ? err.message : "Não foi possível validar o vídeo."
+      return err instanceof Error ? err.message : t("videoValidateError", "Não foi possível validar o vídeo.")
     }
     return null
   }
@@ -511,7 +513,7 @@ export default function FreelancerProfileView({
       })
       if (!res.ok) {
         const data = await res.json()
-        setPortfolioError(data.error || (isEditing ? "Erro ao editar item" : "Erro ao criar item"))
+        setPortfolioError(data.error || (isEditing ? t("editItemError", "Erro ao editar item") : t("createItemError", "Erro ao criar item")))
         return
       }
       const created = await res.json()
@@ -533,7 +535,7 @@ export default function FreelancerProfileView({
         })
         if (!uploadRes.ok) {
           const uploadData = await uploadRes.json().catch(() => ({}))
-          setPortfolioError(uploadData.error || "Erro ao fazer upload da mídia")
+          setPortfolioError(uploadData.error || t("mediaUploadError", "Erro ao fazer upload da mídia"))
           return
         }
       }
@@ -542,14 +544,14 @@ export default function FreelancerProfileView({
       setEditingPortfolioItemId(null)
       await refetchPortfolio()
     } catch {
-      setPortfolioError(isEditing ? "Erro ao editar item. Tente novamente." : "Erro ao criar item. Tente novamente.")
+      setPortfolioError(isEditing ? t("editItemErrorRetry", "Erro ao editar item. Tente novamente.") : t("createItemErrorRetry", "Erro ao criar item. Tente novamente."))
     } finally {
       setIsAddingPortfolioItem(false)
     }
   }
 
   const handlePortfolioDeleteMedia = async (itemId: string, mediaId: string) => {
-    if (!confirm("Remover esta mídia do portfólio?")) return
+    if (!confirm(t("confirmRemoveMedia", "Remover esta mídia do portfólio?"))) return
     const currentToken = localStorage.getItem("token")
     if (!currentToken) return
 
@@ -568,15 +570,15 @@ export default function FreelancerProfileView({
         )
       } else {
         const data = await res.json()
-        alert(data.error || "Erro ao remover mídia")
+        alert(data.error || t("removeMediaError", "Erro ao remover mídia"))
       }
     } catch {
-      alert("Erro ao remover mídia. Tente novamente.")
+      alert(t("removeMediaErrorRetry", "Erro ao remover mídia. Tente novamente."))
     }
   }
 
   const handlePortfolioDeleteItem = async (itemId: string) => {
-    if (!confirm("Remover este item do portfólio?")) return
+    if (!confirm(t("confirmRemoveItem", "Remover este item do portfólio?"))) return
     const currentToken = localStorage.getItem("token")
     if (!currentToken) return
 
@@ -589,10 +591,10 @@ export default function FreelancerProfileView({
         setPortfolioItems((prev) => prev.filter((item) => item.id_portfolio_item !== itemId))
       } else {
         const data = await res.json()
-        alert(data.error || "Erro ao remover item")
+        alert(data.error || t("removeItemError", "Erro ao remover item"))
       }
     } catch {
-      alert("Erro ao remover item. Tente novamente.")
+      alert(t("removeItemErrorRetry", "Erro ao remover item. Tente novamente."))
     }
   }
 
@@ -600,7 +602,7 @@ export default function FreelancerProfileView({
   // portfolio do subperfil de origem.
   const handleHideFromClan = async (itemId: string) => {
     if (!isClan || !isOwnProfile) return
-    if (!confirm("Ocultar este post do feed do clan? O post continuará no perfil do membro.")) return
+    if (!confirm(t("confirmHideFromClan", "Ocultar este post do feed do clan? O post continuará no perfil do membro."))) return
     const currentToken = localStorage.getItem("token")
     if (!currentToken) return
     try {
@@ -621,10 +623,10 @@ export default function FreelancerProfileView({
         )
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || "Erro ao ocultar do clan")
+        alert(data.error || t("hideFromClanError", "Erro ao ocultar do clan"))
       }
     } catch {
-      alert("Erro ao ocultar do clan. Tente novamente.")
+      alert(t("hideFromClanErrorRetry", "Erro ao ocultar do clan. Tente novamente."))
     }
   }
 
@@ -669,7 +671,7 @@ export default function FreelancerProfileView({
   }
 
   if (error || !profile) {
-    return <FreelancerProfileError message={error || "Perfil não encontrado"} />
+    return <FreelancerProfileError message={error || t("profileNotFound", "Perfil não encontrado")} />
   }
 
   return (
@@ -684,7 +686,7 @@ export default function FreelancerProfileView({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Criar"
+                  aria-label={t("createAria", "Criar")}
                   className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] transition active:scale-[0.96]"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -719,7 +721,7 @@ export default function FreelancerProfileView({
                   }
                 >
                   <Briefcase className="h-4 w-4" />
-                  Serviço
+                  {t("menuService", "Serviço")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() =>
@@ -729,7 +731,7 @@ export default function FreelancerProfileView({
                   }
                 >
                   <GraduationCap className="h-4 w-4" />
-                  Curso
+                  {t("menuCourse", "Curso")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -754,7 +756,7 @@ export default function FreelancerProfileView({
           className="mb-4 -ml-1 inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-bold text-[#C9C2B6] transition hover:text-[#F5F1E8]"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t("back", "Voltar")}
         </button>
 
         {/* HEADER CARD */}
@@ -783,7 +785,7 @@ export default function FreelancerProfileView({
               clansHref: !isClan ? "/account/clans" : undefined,
               manageHref: isClan ? `/account/clans/${profileId}` : undefined,
             }}
-            visitorScheduleButtonLabel="Serviços"
+            visitorScheduleButtonLabel={t("tabServices", "Serviços")}
             visitorActions={{
               onShowRanking: () => setShowRanking(true),
               onShowMembers: isClan ? () => setShowMembers(true) : undefined,
@@ -822,8 +824,8 @@ export default function FreelancerProfileView({
               <button
                 type="button"
                 onClick={() => setPortfolioTab("feed")}
-                aria-label="Portfólio"
-                title="Portfólio"
+                aria-label={t("tabPortfolio", "Portfólio")}
+                title={t("tabPortfolio", "Portfólio")}
                 className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
                   portfolioTab === "feed"
                     ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
@@ -855,7 +857,7 @@ export default function FreelancerProfileView({
                 }`}
               >
                 <Briefcase className="h-3.5 w-3.5" />
-                Serviços
+                {t("tabServices", "Serviços")}
               </button>
               <button
                 type="button"
@@ -867,7 +869,7 @@ export default function FreelancerProfileView({
                 }`}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                Cursos
+                {t("tabCourses", "Cursos")}
               </button>
               {!isClan && (
                 <button
@@ -880,7 +882,7 @@ export default function FreelancerProfileView({
                   }`}
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
-                  Loja
+                  {t("tabShop", "Loja")}
                 </button>
               )}
             </div>
@@ -927,8 +929,8 @@ export default function FreelancerProfileView({
             const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
             const emptyLabel =
               portfolioTab === "bees"
-                ? "Nenhum Bees ainda."
-                : "Nenhum item no portfólio ainda."
+                ? t("noBeesYet", "Nenhum Bees ainda.")
+                : t("noPortfolioYet", "Nenhum item no portfólio ainda.")
             return filteredItems.length > 0 ? (
             <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">
               {filteredItems.map((item) => {
@@ -955,7 +957,7 @@ export default function FreelancerProfileView({
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={firstMedia.media_url}
-                            alt={item.title ?? "Mídia do portfólio"}
+                            alt={item.title ?? t("portfolioMediaAlt", "Mídia do portfólio")}
                             loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
@@ -993,7 +995,7 @@ export default function FreelancerProfileView({
                           <div className="absolute inset-0 bg-[#0B0B0D]/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                             <label
                               className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full cursor-pointer transition-colors"
-                              title="Adicionar mídia"
+                              title={t("addMedia", "Adicionar mídia")}
                             >
                               <input
                                 type="file"
@@ -1017,10 +1019,10 @@ export default function FreelancerProfileView({
                                   type="button"
                                   onClick={() => handleHideFromClan(item.id_portfolio_item)}
                                   className="flex items-center gap-2 h-10 px-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full transition-colors text-sm font-bold"
-                                  title="Ocultar do clan (não exclui do perfil do membro)"
+                                  title={t("hideFromClanTitle", "Ocultar do clan (não exclui do perfil do membro)")}
                                 >
                                   <EyeOff className="h-4 w-4" />
-                                  Ocultar do clan
+                                  {t("hideFromClan", "Ocultar do clan")}
                                 </button>
                               ) : (
                                 <>
@@ -1028,7 +1030,7 @@ export default function FreelancerProfileView({
                                     type="button"
                                     onClick={() => handleEditPortfolioItem(item)}
                                     className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full transition-colors"
-                                    title="Editar item"
+                                    title={t("editItem", "Editar item")}
                                   >
                                     <Edit2 className="h-5 w-5" />
                                   </button>
@@ -1036,7 +1038,7 @@ export default function FreelancerProfileView({
                                     type="button"
                                     onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
                                     className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-full transition-colors"
-                                    title="Remover item"
+                                    title={t("removeItem", "Remover item")}
                                   >
                                     <Trash2 className="h-5 w-5" />
                                   </button>
@@ -1053,7 +1055,7 @@ export default function FreelancerProfileView({
                           <div className="absolute inset-0 bg-[#0B0B0D]/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                              <label
                               className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full cursor-pointer transition-colors"
-                              title="Adicionar mídia"
+                              title={t("addMedia", "Adicionar mídia")}
                             >
                               <input
                                 type="file"
@@ -1072,7 +1074,7 @@ export default function FreelancerProfileView({
                               type="button"
                               onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
                               className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#dc2626] hover:text-white text-[#0B0B0D] rounded-full transition-colors"
-                              title="Remover item"
+                              title={t("removeItem", "Remover item")}
                             >
                               <Trash2 className="h-5 w-5" />
                             </button>
@@ -1084,13 +1086,13 @@ export default function FreelancerProfileView({
                     {/* Content below image */}
                     <div className="min-w-0 pt-3 px-2 md:px-0">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{item.title || "Sem título"}</h3>
+                        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{item.title || t("untitled", "Sem título")}</h3>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setOpenPortfolioItemId(item.id_portfolio_item) }}
                             className={`flex items-center gap-1 text-xs font-bold transition-colors ${item.liked_by_me ? "text-[#F2B705]" : "text-[#9A938A] hover:text-[#F2B705]"}`}
-                            title={item.liked_by_me ? "Remover like" : "Curtir"}
+                            title={item.liked_by_me ? t("unlike", "Remover like") : t("like", "Curtir")}
                           >
                             <Heart className={`h-3.5 w-3.5 ${item.liked_by_me ? "fill-current" : ""}`} />
                             <span className="tabular-nums">{item.likes_count ?? 0}</span>
@@ -1110,13 +1112,13 @@ export default function FreelancerProfileView({
                                 <video src={media.media_url} className="w-full h-full object-cover" muted playsInline />
                               ) : (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={media.media_url} alt="Mídia" className="w-full h-full object-cover" />
+                                <img src={media.media_url} alt={t("mediaAlt", "Mídia")} className="w-full h-full object-cover" />
                               )}
                               <button
                                 type="button"
                                 onClick={() => handlePortfolioDeleteMedia(item.id_portfolio_item, media.id_portfolio_media)}
                                 className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                aria-label="Remover mídia"
+                                aria-label={t("removeMediaAria", "Remover mídia")}
                               >
                                 <X className="h-3 w-3 text-white" />
                               </button>
@@ -1136,14 +1138,14 @@ export default function FreelancerProfileView({
                 title={emptyLabel}
                 description={
                   isOwnProfile
-                    ? "Publique seu primeiro trabalho para começar a montar seu portfólio."
-                    : "Este perfil ainda não publicou nada por aqui."
+                    ? t("emptyOwnerHint", "Publique seu primeiro trabalho para começar a montar seu portfólio.")
+                    : t("emptyVisitorHint", "Este perfil ainda não publicou nada por aqui.")
                 }
                 action={
                   isOwnProfile ? (
                     <GoldButton onClick={handleAddPortfolioItem} className="px-5 py-2.5 text-sm">
                       <Plus className="h-4 w-4" />
-                      Adicionar o primeiro item
+                      {t("addFirstItem", "Adicionar o primeiro item")}
                     </GoldButton>
                   ) : undefined
                 }
@@ -1164,9 +1166,9 @@ export default function FreelancerProfileView({
         {isOwnProfile && (
           <section id="agenda-section" className="mb-20 scroll-mt-24">
             <div className="mb-6">
-              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Agenda</h2>
+              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("agendaTitle", "Agenda")}</h2>
               <p className="mt-1 text-sm text-[#9A938A]">
-                Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).
+                {t("agendaSubtitle", "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).")}
               </p>
             </div>
             <AgendaBookingsExperience
@@ -1193,17 +1195,17 @@ export default function FreelancerProfileView({
                 <div className="min-w-0">
                   <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
                     {editingPortfolioItemId
-                      ? "Editar item"
+                      ? t("editItem", "Editar item")
                       : portfolioTab === "bees"
-                        ? "Novo Bees"
-                        : "Novo post"}
+                        ? t("newBees", "Novo Bees")
+                        : t("newPost", "Novo post")}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-[#5b554b]">
                     {editingPortfolioItemId
-                      ? "Atualize as informações."
+                      ? t("editItemHint", "Atualize as informações.")
                       : portfolioTab === "bees"
-                        ? "Envie um vídeo vertical 9:16."
-                        : "Mostre seu trabalho com uma imagem 4:5."}
+                        ? t("newBeesHint", "Envie um vídeo vertical 9:16.")
+                        : t("newPostHint", "Mostre seu trabalho com uma imagem 4:5.")}
                   </DialogDescription>
                 </div>
               </div>
@@ -1214,10 +1216,10 @@ export default function FreelancerProfileView({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
-                      {portfolioTab === "bees" ? "Vídeo" : "Imagem"}
+                      {portfolioTab === "bees" ? t("videoLabel", "Vídeo") : t("imageLabel", "Imagem")}
                     </Label>
                     <span className="text-[10px] uppercase tracking-wider text-[#0B0B0D]/40">
-                      {portfolioTab === "bees" ? "9:16 · até 100MB" : "4:5 · até 3MB"}
+                      {portfolioTab === "bees" ? t("videoLimits", "9:16 · até 100MB") : t("imageLimits", "4:5 · até 3MB")}
                     </span>
                   </div>
 
@@ -1245,7 +1247,7 @@ export default function FreelancerProfileView({
                           />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={pendingPreview} alt="Pré-visualização" className="h-full w-full object-cover" />
+                          <img src={pendingPreview} alt={t("previewAlt", "Pré-visualização")} className="h-full w-full object-cover" />
                         )}
                         <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2">
                           {pendingOriginalFile && portfolioTab !== "bees" ? (
@@ -1255,7 +1257,7 @@ export default function FreelancerProfileView({
                               className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-black/90 transition-colors"
                             >
                               <Crop className="h-3 w-3" />
-                              Recortar
+                              {t("crop", "Recortar")}
                             </button>
                           ) : <span />}
                           <button
@@ -1264,7 +1266,7 @@ export default function FreelancerProfileView({
                             className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-red-500/30 hover:text-red-100 transition-colors"
                           >
                             <X className="h-3 w-3" />
-                            Remover
+                            {t("remove", "Remover")}
                           </button>
                         </div>
                       </motion.div>
@@ -1312,15 +1314,15 @@ export default function FreelancerProfileView({
                         </motion.div>
                         <span className="px-6 text-center text-sm font-bold text-[#0B0B0D]">
                           {processingMedia
-                            ? "Otimizando..."
+                            ? t("optimizing", "Otimizando...")
                             : portfolioTab === "bees"
-                              ? "Toque ou arraste seu vídeo 9:16"
-                              : "Toque ou arraste sua imagem"}
+                              ? t("dropVideoHint", "Toque ou arraste seu vídeo 9:16")
+                              : t("dropImageHint", "Toque ou arraste sua imagem")}
                         </span>
                         <span className="mt-1 px-6 text-center text-[11px] text-[#5b554b]">
                           {portfolioTab === "bees"
-                            ? "MP4 ou WebM, vertical"
-                            : "JPG, PNG ou WebP — recortamos pra 4:5"}
+                            ? t("videoFormats", "MP4 ou WebM, vertical")
+                            : t("imageFormats", "JPG, PNG ou WebP — recortamos pra 4:5")}
                         </span>
                       </motion.label>
                     )}
@@ -1331,7 +1333,7 @@ export default function FreelancerProfileView({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="portfolio-title" className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
-                    Título
+                    {t("titleLabel", "Título")}
                   </Label>
                   <span className="text-[10px] tabular-nums text-[#0B0B0D]/40">
                     {portfolioForm.title.length}/120
@@ -1339,7 +1341,7 @@ export default function FreelancerProfileView({
                 </div>
                 <input
                   id="portfolio-title"
-                  placeholder="Campanha de verão, ensaio fotográfico..."
+                  placeholder={t("titlePlaceholder", "Campanha de verão, ensaio fotográfico...")}
                   value={portfolioForm.title}
                   onChange={(e) => setPortfolioForm((prev) => ({ ...prev, title: e.target.value }))}
                   maxLength={120}
@@ -1350,7 +1352,7 @@ export default function FreelancerProfileView({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="portfolio-description" className="text-[11px] font-bold uppercase tracking-wider text-[#0B0B0D]/60">
-                    Descrição
+                    {t("descriptionLabel", "Descrição")}
                   </Label>
                   <span className="text-[10px] tabular-nums text-[#0B0B0D]/40">
                     {portfolioForm.description.length}/500
@@ -1358,7 +1360,7 @@ export default function FreelancerProfileView({
                 </div>
                 <textarea
                   id="portfolio-description"
-                  placeholder="Conte o contexto: cliente, processo, resultado..."
+                  placeholder={t("descriptionPlaceholder", "Conte o contexto: cliente, processo, resultado...")}
                   value={portfolioForm.description}
                   onChange={(e) => setPortfolioForm((prev) => ({ ...prev, description: e.target.value }))}
                   maxLength={500}
@@ -1390,7 +1392,7 @@ export default function FreelancerProfileView({
                 disabled={isAddingPortfolioItem}
                 className="fl-btn-card rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider disabled:opacity-50"
               >
-                Cancelar
+                {t("cancel", "Cancelar")}
               </button>
               <button
                 type="button"
@@ -1401,14 +1403,14 @@ export default function FreelancerProfileView({
                 {isAddingPortfolioItem ? (
                   <>
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    Publicando…
+                    {t("publishing", "Publicando…")}
                   </>
                 ) : editingPortfolioItemId ? (
-                  "Salvar"
+                  t("save", "Salvar")
                 ) : (
                   <>
                     <Sparkles className="mr-1.5 h-4 w-4" />
-                    Publicar
+                    {t("publish", "Publicar")}
                   </>
                 )}
               </button>
@@ -1429,8 +1431,8 @@ export default function FreelancerProfileView({
           outputHeight={POST_IMAGE_OUTPUT.height}
           maxSizeMB={3}
           mediaType="post_image"
-          title="Cortar imagem"
-          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          title={t("cropTitle", "Cortar imagem")}
+          description={t("cropDescription", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
           onCancel={() => setCropTarget(null)}
           onConfirm={handleCropConfirm}
         />
@@ -1490,10 +1492,10 @@ export default function FreelancerProfileView({
                   </Avatar>
                   <div className="min-w-0 flex-1 text-left">
                     <DialogTitle className="fl-display text-xl text-[#0B0B0D] truncate">
-                      Membros de {profile.display_name}
+                      {t("membersOf", "Membros de {name}").replace("{name}", profile.display_name)}
                     </DialogTitle>
                     <DialogDescription className="text-xs text-[#5b554b]">
-                      {members.length} {members.length === 1 ? "membro" : "membros"}
+                      {members.length} {members.length === 1 ? t("memberSingular", "membro") : t("memberPlural", "membros")}
                     </DialogDescription>
                   </div>
                 </div>
@@ -1503,7 +1505,7 @@ export default function FreelancerProfileView({
                     <input
                       value={membersQuery}
                       onChange={(e) => setMembersQuery(e.target.value)}
-                      placeholder="Buscar por nome ou @username"
+                      placeholder={t("searchMembersPlaceholder", "Buscar por nome ou @username")}
                       className="fl-input !pl-9"
                     />
                   </div>
@@ -1513,7 +1515,7 @@ export default function FreelancerProfileView({
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-[#5b554b]">
                     <Users className="h-8 w-8 opacity-40 mb-2" />
-                    <p className="text-sm">Nenhum membro encontrado.</p>
+                    <p className="text-sm">{t("noMembersFound", "Nenhum membro encontrado.")}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -1532,7 +1534,7 @@ export default function FreelancerProfileView({
                           {m.role === "owner" && (
                             <span
                               className="absolute -bottom-1 -right-1 flex items-center justify-center h-6 w-6 rounded-full bg-[#F2B705] text-[#1A1505] border-2 border-[#F1EDE2] shadow-sm"
-                              title="Dono do clan"
+                              title={t("clanOwner", "Dono do clan")}
                             >
                               <Crown className="h-3.5 w-3.5" />
                             </span>
@@ -1606,6 +1608,7 @@ function ProfileCoursesTab({
 }) {
   // Dono usa o catálogo "meus cursos" (inclui rascunhos/pausados).
   // Visitante busca o endpoint público (só publicados).
+  const t = useTranslations("Profile")
   const myCoursesHook = useMyCourses()
   const [publicCourses, setPublicCourses] = useState<PublicCourseLite[]>([])
   const [publicLoading, setPublicLoading] = useState(!isOwnProfile)
@@ -1641,7 +1644,7 @@ function ProfileCoursesTab({
   if (isLoading) {
     return (
       <div className="mt-8">
-        <LoadingState label="Carregando cursos…" />
+        <LoadingState label={t("loadingCourses", "Carregando cursos…")} />
       </div>
     )
   }
@@ -1651,16 +1654,16 @@ function ProfileCoursesTab({
       <div className="mt-8">
         <EmptyState
           icon={<GraduationCap className="h-7 w-7" />}
-          title={isOwnProfile ? "Nenhum curso vinculado" : "Em breve"}
+          title={isOwnProfile ? t("noCoursesLinked", "Nenhum curso vinculado") : t("comingSoon", "Em breve")}
           description={
             isOwnProfile
-              ? "Vincule um curso a este perfil para mostrá-lo aqui."
-              : "Este perfil ainda não publicou cursos."
+              ? t("noCoursesOwnerHint", "Vincule um curso a este perfil para mostrá-lo aqui.")
+              : t("noCoursesVisitorHint", "Este perfil ainda não publicou cursos.")
           }
           action={
             isOwnProfile ? (
               <GoldButton href="/account?tab=courses" className="px-5 py-2.5 text-sm">
-                Criar curso na sua conta
+                {t("createCourseCta", "Criar curso na sua conta")}
               </GoldButton>
             ) : undefined
           }
@@ -1733,7 +1736,7 @@ function ProfileCoursesTab({
             })()}
             {isOwnProfile && c.status !== "published" && (
               <span className="mt-1 inline-block rounded-full border border-[#F2B705]/50 bg-[#F2B705]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#F2B705]">
-                {c.status === "draft" ? "Rascunho" : "Pausado"}
+                {c.status === "draft" ? t("statusDraft", "Rascunho") : t("statusPaused", "Pausado")}
               </span>
             )}
           </div>

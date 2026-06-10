@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { addDays, format, startOfDay } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { ptBR, enUS, es } from "date-fns/locale"
 import {
   Calendar,
   ChevronLeft,
@@ -14,6 +14,9 @@ import {
   X,
 } from "lucide-react"
 import type { ProfileService } from "@/components/calendar/types"
+import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+
+const DATE_FNS_LOCALES = { "pt-BR": ptBR, en: enUS, es } as const
 
 function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
@@ -436,6 +439,9 @@ export function ScheduleBookingModal({
   preferOwnerCalendarWeek = false,
   onContinue,
 }: ScheduleBookingModalProps) {
+  const t = useTranslations("Profile")
+  const locale = useLocale()
+  const dfLocale = DATE_FNS_LOCALES[locale] ?? ptBR
   const [windowStart, setWindowStart] = useState(0)
   const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()))
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -454,16 +460,16 @@ export function ScheduleBookingModal({
 
   const monthTitle = useMemo(
     () =>
-      format(selectedDate, "MMMM yyyy", { locale: ptBR }).replace(/^./, (c) => c.toUpperCase()),
-    [selectedDate],
+      format(selectedDate, "MMMM yyyy", { locale: dfLocale }).replace(/^./, (c) => c.toUpperCase()),
+    [selectedDate, dfLocale],
   )
 
   const selectedDateLong = useMemo(
     () =>
-      format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR }).replace(/^./, (c) =>
+      format(selectedDate, "PPPP", { locale: dfLocale }).replace(/^./, (c) =>
         c.toUpperCase(),
       ),
-    [selectedDate],
+    [selectedDate, dfLocale],
   )
 
   useEffect(() => {
@@ -575,7 +581,7 @@ export function ScheduleBookingModal({
             type="button"
             onClick={onClose}
             className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D]/70 transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -588,7 +594,7 @@ export function ScheduleBookingModal({
               onClick={shiftPrev}
               disabled={!canShiftPrev}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Datas anteriores"
+              aria-label={t("prevDates", "Datas anteriores")}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -596,7 +602,7 @@ export function ScheduleBookingModal({
               {visibleDates.map((d) => {
                 const active =
                   format(d, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd")
-                const dow = format(d, "EEE", { locale: ptBR }).replace(".", "")
+                const dow = format(d, "EEE", { locale: dfLocale }).replace(".", "")
                 const dd = format(d, "dd")
                 return (
                   <button
@@ -623,7 +629,7 @@ export function ScheduleBookingModal({
               onClick={shiftNext}
               disabled={!canShiftNext}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2] disabled:cursor-not-allowed disabled:opacity-30"
-              aria-label="Próximas datas"
+              aria-label={t("nextDates", "Próximas datas")}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -633,14 +639,14 @@ export function ScheduleBookingModal({
             <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-[#E0A500]" aria-hidden />
             <div>
               <p className="text-sm font-bold capitalize text-[#0B0B0D]">{selectedDateLong}</p>
-              <p className="text-xs text-[#5b554b]">Horários disponíveis</p>
+              <p className="text-xs text-[#5b554b]">{t("availableTimes", "Horários disponíveis")}</p>
             </div>
           </div>
 
           <div className="mt-5">
             <div className="mb-3 flex items-center gap-2 text-[#0B0B0D]">
               <Clock className="h-4 w-4 text-[#5b554b]" aria-hidden />
-              <span className="text-sm font-bold">Escolha um horário</span>
+              <span className="text-sm font-bold">{t("chooseTime", "Escolha um horário")}</span>
             </div>
 
             {slotsLoading ? (
@@ -649,9 +655,9 @@ export function ScheduleBookingModal({
               </div>
             ) : apiSlots.length === 0 ? (
               <p className="rounded-xl border-2 border-dashed border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.03] px-4 py-10 text-center text-sm text-[#5b554b]">
-                Nenhum horário disponível nesta data (sem regra para esse dia da semana, dia bloqueado ou já ocupado).
-                Configure em <span className="text-[#0B0B0D] font-bold">Disponibilidade</span> na agenda do perfil ou escolha outra
-                data.
+                {t("noSlotsBefore", "Nenhum horário disponível nesta data (sem regra para esse dia da semana, dia bloqueado ou já ocupado). Configure em")}{" "}
+                <span className="text-[#0B0B0D] font-bold">{t("availabilityWord", "Disponibilidade")}</span>{" "}
+                {t("noSlotsAfter", "na agenda do perfil ou escolha outra data.")}
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -661,11 +667,11 @@ export function ScheduleBookingModal({
                   const statusLabel =
                     status === "available"
                       ? endLabel
-                        ? `Até ${endLabel}`
-                        : "Disponível"
+                        ? t("untilTime", "Até {time}").replace("{time}", endLabel)
+                        : t("slotAvailable", "Disponível")
                       : status === "few"
-                        ? "Poucas vagas"
-                        : "Indisponível"
+                        ? t("slotFew", "Poucas vagas")
+                        : t("slotUnavailable", "Indisponível")
 
                   return (
                     <button
@@ -702,8 +708,7 @@ export function ScheduleBookingModal({
             <div className="mt-4 flex gap-2 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-3 py-2.5">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5b554b]" aria-hidden />
               <p className="text-xs leading-relaxed text-[#5b554b]">
-                Os intervalos vêm das regras semanais da agenda (duração do slot no painel). O pagamento usa o preço do
-                serviço escolhido; o servidor valida sobreposição ao confirmar.
+                {t("bookingInfo", "Os intervalos vêm das regras semanais da agenda (duração do slot no painel). O pagamento usa o preço do serviço escolhido; o servidor valida sobreposição ao confirmar.")}
               </p>
             </div>
           </div>
@@ -716,11 +721,11 @@ export function ScheduleBookingModal({
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wide text-[#5b554b]">
-                Serviço selecionado
+                {t("selectedService", "Serviço selecionado")}
               </p>
               <p className="truncate font-bold text-[#0B0B0D]">{service.name}</p>
               <p className="text-xs text-[#5b554b]">
-                {service.duration_minutes} min • {formatBRL(service.price_amount)}
+                {service.duration_minutes} {t("minShort", "min")} • {formatBRL(service.price_amount)}
               </p>
             </div>
           </div>
@@ -730,7 +735,7 @@ export function ScheduleBookingModal({
             onClick={handleContinue}
             className="fl-btn-gold h-11 shrink-0 rounded-full px-8 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Continuar
+            {t("continue", "Continuar")}
           </button>
         </footer>
       </div>

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Package } from "lucide-react"
 import type { ProfileProduct } from "@/components/profile/profile-product-edit-modal"
 import { EmptyState, LoadingState } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface ProfilePublicProductsSectionProps {
   profileId: string
@@ -29,6 +30,7 @@ function getCoverUrl(product: ProfileProduct) {
 }
 
 export function ProfilePublicProductsSection({ profileId }: ProfilePublicProductsSectionProps) {
+  const t = useTranslations("Profile")
   const [products, setProducts] = useState<ProfileProduct[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
 
@@ -54,7 +56,7 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
   if (state === "loading") {
     return (
       <section id="public-products-section" className="mb-20 scroll-mt-24">
-        <LoadingState label="Carregando loja…" />
+        <LoadingState label={t("loadingShop", "Carregando loja…")} />
       </section>
     )
   }
@@ -64,8 +66,8 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
       <section id="public-products-section" className="mb-20 scroll-mt-24">
         <EmptyState
           icon={<Package className="h-7 w-7" />}
-          title="Loja indisponível"
-          description="Não foi possível carregar a loja agora."
+          title={t("shopUnavailable", "Loja indisponível")}
+          description={t("shopUnavailableDesc", "Não foi possível carregar a loja agora.")}
         />
       </section>
     )
@@ -76,8 +78,8 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
       <section id="public-products-section" className="mb-20 scroll-mt-24">
         <EmptyState
           icon={<Package className="h-7 w-7" />}
-          title="Loja vazia"
-          description="Nenhum produto disponível na loja no momento."
+          title={t("shopEmpty", "Loja vazia")}
+          description={t("shopEmptyDesc", "Nenhum produto disponível na loja no momento.")}
         />
       </section>
     )
@@ -104,7 +106,7 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
                 <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
                   {outOfStock && (
                     <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
-                      Esgotado
+                      {t("outOfStock", "Esgotado")}
                     </span>
                   )}
                   {img ? (
@@ -133,7 +135,7 @@ export function ProfilePublicProductsSection({ profileId }: ProfilePublicProduct
                         <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75 md:text-xs">,{cents}</span>
                       </p>
                       <span className="shrink-0 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-[#1A1505] md:px-3 md:text-[10px]">
-                        Ver
+                        {t("view", "Ver")}
                       </span>
                     </div>
                   </div>

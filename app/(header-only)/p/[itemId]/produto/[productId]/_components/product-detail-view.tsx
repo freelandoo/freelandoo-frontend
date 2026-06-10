@@ -264,22 +264,22 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
           {product.delivery_mode === "local_pickup" ? (
             <div className="mt-8 rounded-2xl border border-border bg-card/40 p-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <Store className="h-4 w-4" aria-hidden /> Retirada combinada com o vendedor
+                <Store className="h-4 w-4" aria-hidden /> {t("localPickupTitle", "Retirada combinada com o vendedor")}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Este produto não usa frete por transportadora. Combine a entrega ou retirada diretamente com o vendedor antes de pagar.
+                {t("localPickupDesc", "Este produto não usa frete por transportadora. Combine a entrega ou retirada diretamente com o vendedor antes de pagar.")}
               </p>
             </div>
           ) : shipping?.exceeded_limits ? (
             <div className="mt-8 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-200">
-                <AlertTriangle className="h-4 w-4" aria-hidden /> Excedeu o limite das transportadoras
+                <AlertTriangle className="h-4 w-4" aria-hidden /> {t("exceededLimitsTitle", "Excedeu o limite das transportadoras")}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {shipping.exceeded_reasons?.includes("weight")
-                  ? "Este produto pesa mais que o aceito por SEDEX/PAC/Jadlog (carga pesada). "
-                  : "As dimensões deste produto passam do limite aceito por SEDEX/PAC/Jadlog. "}
-                Combine retirada ou frete dedicado direto com o vendedor.
+                  ? t("exceededWeight", "Este produto pesa mais que o aceito por SEDEX/PAC/Jadlog (carga pesada). ")
+                  : t("exceededSize", "As dimensões deste produto passam do limite aceito por SEDEX/PAC/Jadlog. ")}
+                {t("exceededLimitsCta", "Combine retirada ou frete dedicado direto com o vendedor.")}
               </p>
             </div>
           ) : (
@@ -367,7 +367,7 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               <MessageCircle className="h-4 w-4" aria-hidden />
-              Falar com vendedor
+              {t("talkToSeller", "Falar com vendedor")}
             </Link>
           ) : (
           <button

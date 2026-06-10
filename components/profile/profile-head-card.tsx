@@ -28,6 +28,8 @@ import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type EntityType = "profile" | "clan"
 
@@ -198,6 +200,8 @@ export function ProfileHeadCard({
   visitorScheduleButtonLabel = "Agendar",
   className,
 }: ProfileHeadCardProps) {
+  const t = useTranslations("Profile")
+  const tx = useTaxonomy()
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
   const [openFollowers, setOpenFollowers] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -234,7 +238,7 @@ export function ProfileHeadCard({
       }
     } catch (err) {
       console.error("[clan avatar] upload error", err)
-      alert("Não foi possível enviar a foto. Tente novamente.")
+      alert(t("avatarUploadError", "Não foi possível enviar a foto. Tente novamente."))
     } finally {
       setUploadingAvatar(false)
     }
@@ -289,16 +293,16 @@ export function ProfileHeadCard({
   const statusBadge = useMemo(() => {
     if (!isOwnProfile) return null
     if (isPublished)
-      return { label: "ativo", className: "bg-[#16683f] text-[#ECFDF3]" }
+      return { label: t("statusActive", "ativo"), className: "bg-[#16683f] text-[#ECFDF3]" }
     if (profile.is_paid && !profile.is_visible)
-      return { label: "rascunho", className: "bg-[#0B0B0D] text-[#F1EDE2]" }
-    return { label: "não publicado", className: "bg-[#F2B705] text-[#1A1505]" }
-  }, [isOwnProfile, isPublished, profile.is_paid, profile.is_visible])
+      return { label: t("statusDraftBadge", "rascunho"), className: "bg-[#0B0B0D] text-[#F1EDE2]" }
+    return { label: t("statusUnpublished", "não publicado"), className: "bg-[#F2B705] text-[#1A1505]" }
+  }, [isOwnProfile, isPublished, profile.is_paid, profile.is_visible, t])
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
-  const displayName = profile.display_name || "Sem nome"
+  const displayName = profile.display_name || t("noName", "Sem nome")
   const canUploadAvatar = isOwnProfile
 
   return (
@@ -357,8 +361,8 @@ export function ProfileHeadCard({
                   type="button"
                   onClick={handleAvatarSelect}
                   disabled={uploadingAvatar}
-                  aria-label="Trocar foto de perfil"
-                  title="Trocar foto de perfil"
+                  aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                  title={t("changeAvatar", "Trocar foto de perfil")}
                   className="group relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70 md:w-32"
                 >
                   {avatarSrc ? (
@@ -372,7 +376,7 @@ export function ProfileHeadCard({
                   <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <Camera className="h-5 w-5" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">
-                      {uploadingAvatar ? "Enviando…" : "Trocar"}
+                      {uploadingAvatar ? t("sending", "Enviando…") : t("change", "Trocar")}
                     </span>
                   </span>
                 </button>
@@ -410,7 +414,7 @@ export function ProfileHeadCard({
                     {portfolioCount}
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                    Posts
+                    {t("postsLabel", "Posts")}
                   </span>
                 </div>
                 <span className="text-[#0B0B0D]/20">|</span>
@@ -418,13 +422,13 @@ export function ProfileHeadCard({
                   type="button"
                   onClick={() => setOpenFollowers(true)}
                   className="flex items-baseline gap-1.5 transition hover:opacity-70"
-                  aria-label="Ver quem acompanha"
+                  aria-label={t("seeFollowersAria", "Ver quem acompanha")}
                 >
                   <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
                     {counts.followers_count}
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                    Acomp.
+                    {t("followersShort", "Acomp.")}
                   </span>
                 </button>
               </div>
@@ -432,19 +436,19 @@ export function ProfileHeadCard({
               {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
                 <div className="mt-2 flex flex-col gap-1">
                   {profile.machine_name && (
-                    <HeadInfo icon={Megaphone} value={profile.machine_name} />
+                    <HeadInfo icon={Megaphone} value={tx.enxameFull(null, profile.machine_name)} />
                   )}
                   {profile.desc_category && (
                     <HeadInfo
                       icon={isClan ? Users : UserRound}
-                      value={profile.desc_category}
+                      value={tx.profession(profile.desc_category)}
                     />
                   )}
                   {location && <HeadInfo icon={MapPin} value={location} />}
                   {isClan && typeof profile.members_count === "number" && (
                     <HeadInfo
                       icon={Users}
-                      value={`${profile.members_count} ${profile.members_count === 1 ? "perfil" : "perfis"}`}
+                      value={`${profile.members_count} ${profile.members_count === 1 ? t("profileSingular", "perfil") : t("profilePlural", "perfis")}`}
                     />
                   )}
                 </div>
@@ -462,6 +466,8 @@ export function ProfileHeadCard({
               {isOwnProfile && ownerActions?.onShowMural && (
                 <MuralPill
                   onClick={ownerActions.onShowMural}
+                  label={t("mural", "Mural")}
+                  ariaLabel={t("openMural", "Abrir Mural")}
                   hasNew={
                     !!(
                       ownerActions.muralBadge?.has_new ||
@@ -470,7 +476,7 @@ export function ProfileHeadCard({
                   }
                 />
               )}
-              <SocialIcons socials={socials} />
+              <SocialIcons socials={socials} socialFallback={t("socialNetwork", "Rede social")} />
             </div>
           )}
 
@@ -492,7 +498,8 @@ export function ProfileHeadCard({
                 <IconAction
                   onClick={handleSettingsClick}
                   icon={Settings}
-                  label={menuOpen ? "Fechar" : "Configurações"}
+                  label={menuOpen ? t("close", "Fechar") : t("settings", "Configurações")}
+                  hint="headcard-settings"
                   accent
                   ariaExpanded={menuOpen}
                 />
@@ -500,53 +507,61 @@ export function ProfileHeadCard({
                   <IconAction
                     onClick={handleEditClick}
                     icon={Pencil}
-                    label={isClan ? "Editar clan" : "Editar perfil"}
+                    label={isClan ? t("editClan", "Editar clan") : t("editProfile", "Editar perfil")}
+                    hint={isClan ? "headcard-edit-clan" : "headcard-edit-profile"}
                   />
                   <IconAction
                     href={"/mensagens"}
                     icon={MessageCircle}
-                    label="Minhas mensagens"
+                    label={t("myMessages", "Minhas mensagens")}
+                    hint="headcard-messages"
                   />
                   {!isClan && ownerActions.clansHref && (
                     <IconAction
                       href={ownerActions.clansHref}
                       icon={Users}
-                      label="Clans"
+                      label={t("clans", "Clans")}
+                      hint="headcard-clans"
                     />
                   )}
                   {isClan && ownerActions.onShowMembers && (
                     <IconAction
                       onClick={ownerActions.onShowMembers}
                       icon={Users}
-                      label="Membros"
+                      label={t("members", "Membros")}
+                      hint="headcard-members"
                     />
                   )}
                   {isClan && ownerActions.manageHref && (
                     <IconAction
                       href={ownerActions.manageHref}
                       icon={Cog}
-                      label="Gerenciar"
+                      label={t("manage", "Gerenciar")}
+                      hint="headcard-manage"
                     />
                   )}
                   {ownerActions.onShowEngagement && (
                     <IconAction
                       onClick={ownerActions.onShowEngagement}
                       icon={BarChart2}
-                      label="Engajamento"
+                      label={t("engagement", "Engajamento")}
+                      hint="headcard-engagement"
                     />
                   )}
                   {ownerActions.onShowRanking && (
                     <IconAction
                       onClick={ownerActions.onShowRanking}
                       icon={Trophy}
-                      label="Ranking"
+                      label={t("ranking", "Ranking")}
+                      hint="headcard-ranking"
                     />
                   )}
                   {ownerActions.agendaHref && (
                     <IconAction
                       href={ownerActions.agendaHref}
                       icon={CalendarDays}
-                      label="Agenda"
+                      label={t("agenda", "Agenda")}
+                      hint="headcard-agenda"
                     />
                   )}
                 </RetractableIcons>
@@ -563,20 +578,23 @@ export function ProfileHeadCard({
                 <IconAction
                   href={`/mensagens?with=${encodeURIComponent(profileId)}`}
                   icon={MessageCircle}
-                  label="Enviar mensagem"
+                  label={t("sendMessage", "Enviar mensagem")}
+                  hint="headcard-visit-message"
                 />
                 {isClan && visitorActions?.onShowMembers && (
                   <IconAction
                     onClick={visitorActions.onShowMembers}
                     icon={Users}
-                    label="Ver membros"
+                    label={t("viewMembers", "Ver membros")}
+                    hint="headcard-view-members"
                   />
                 )}
                 {visitorActions?.onShowRanking && (
                   <IconAction
                     onClick={visitorActions.onShowRanking}
                     icon={Trophy}
-                    label="Ranking"
+                    label={t("ranking", "Ranking")}
+                    hint="headcard-ranking"
                   />
                 )}
                 {visitorActions?.shareButton}
@@ -590,7 +608,7 @@ export function ProfileHeadCard({
               className="fl-btn-gold mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full px-4 text-[12px] font-bold uppercase tracking-wider"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Ative sua conta
+              {t("activateAccount", "Ative sua conta")}
             </Link>
           )}
         </div>
@@ -627,6 +645,7 @@ function IconAction({
   onClick,
   icon: Icon,
   label,
+  hint,
   badge,
   accent,
   ariaExpanded,
@@ -635,6 +654,8 @@ function IconAction({
   onClick?: () => void
   icon: typeof Users
   label: string
+  /** Id da dica de hover (passado explícito porque o label agora é traduzido). */
+  hint?: HintId
   badge?: boolean
   accent?: boolean
   ariaExpanded?: boolean
@@ -653,25 +674,9 @@ function IconAction({
       )}
     </>
   )
-  // Mapeia o label do botão para o id da dica de hover. Os ícones da toolbar
-  // do headcard são pequenos e sem texto visível — esse é o caso de mais valor
-  // para uma dica explicativa.
-  const hintMap: Record<string, HintId> = {
-    "Configurações": "headcard-settings",
-    Fechar: "headcard-settings",
-    "Editar perfil": "headcard-edit-profile",
-    "Editar clan": "headcard-edit-clan",
-    "Minhas mensagens": "headcard-messages",
-    "Enviar mensagem": "headcard-visit-message",
-    Clans: "headcard-clans",
-    Membros: "headcard-members",
-    "Ver membros": "headcard-view-members",
-    Gerenciar: "headcard-manage",
-    Engajamento: "headcard-engagement",
-    Ranking: "headcard-ranking",
-    Agenda: "headcard-agenda",
-  }
-  const hintId = hintMap[label]
+  // O id da dica chega como prop `hint` — antes era derivado do label PT, que
+  // agora é traduzido (o mapa por texto quebraria em en/es).
+  const hintId = hint
   const trigger = href ? (
     <Link
       href={href}
@@ -727,7 +732,7 @@ function RetractableIcons({ open, children }: { open: boolean; children: React.R
 // Stickers das redes sociais — estilo tabloide (quadrado arredondado, contorno
 // preto grosso, papel creme, glifo dourado e sombra dura). Aparecem ao lado do
 // botão Mural no headcard.
-function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
+function SocialIcons({ socials, socialFallback }: { socials: ProfileSocialLink[]; socialFallback: string }) {
   if (socials.length === 0) return null
 
   return (
@@ -738,8 +743,8 @@ function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
           href={social.profile_url}
           target="_blank"
           rel="noopener noreferrer"
-          title={social.desc_social_media_type || "Rede social"}
-          aria-label={social.desc_social_media_type || "Rede social"}
+          title={social.desc_social_media_type || socialFallback}
+          aria-label={social.desc_social_media_type || socialFallback}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#E0A500] shadow-[2px_2px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:bg-[#0B0B0D] hover:text-[#F2B705] hover:shadow-[3px_3px_0_0_#0B0B0D]"
         >
           {getSocialIcon(social.icon)}
@@ -749,16 +754,16 @@ function SocialIcons({ socials }: { socials: ProfileSocialLink[] }) {
   )
 }
 
-function MuralPill({ onClick, hasNew }: { onClick: () => void; hasNew: boolean }) {
+function MuralPill({ onClick, hasNew, label, ariaLabel }: { onClick: () => void; hasNew: boolean; label: string; ariaLabel: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="group relative inline-flex items-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
-      aria-label="Abrir Mural"
+      aria-label={ariaLabel}
     >
       <Megaphone className="h-3.5 w-3.5 text-[#E0A500] group-hover:text-[#F2B705]" />
-      <span>Mural</span>
+      <span>{label}</span>
       {hasNew && (
         <span className="ml-0.5 inline-flex h-2 w-2 rounded-full bg-[#F2B705] shadow-[0_0_0_2px_#F1EDE2]" />
       )}

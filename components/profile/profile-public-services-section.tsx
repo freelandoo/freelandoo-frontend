@@ -13,6 +13,7 @@ import { getToken } from "@/lib/auth"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { EmptyState, LoadingState } from "@/components/tabloide"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface ProfilePublicServicesSectionProps {
   profileId: string
@@ -63,6 +64,7 @@ export function ProfilePublicServicesSection({
   clanMembers = [],
   openCreateTrigger,
 }: ProfilePublicServicesSectionProps) {
+  const t = useTranslations("Profile")
   const [services, setServices] = useState<ProfileService[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
 
@@ -156,7 +158,7 @@ export function ProfilePublicServicesSection({
   ) => {
     if (!pickedSlot) return
     const token = getToken()
-    if (!token) throw new Error("Faça login para agendar")
+    if (!token) throw new Error(t("loginToBook", "Faça login para agendar"))
     const sharedCoupon = getCapturedCoupon()
     const res = await fetch(`/api/public/profile/${profileId}/bookings`, {
       method: "POST",
@@ -173,7 +175,7 @@ export function ProfilePublicServicesSection({
     if (res.ok && d.checkout_url) {
       window.location.href = d.checkout_url
     } else {
-      throw new Error(d.error || "Erro ao agendar")
+      throw new Error(d.error || t("bookError", "Erro ao agendar"))
     }
   }
 
@@ -194,8 +196,8 @@ export function ProfilePublicServicesSection({
       <section id="services-section" className="mb-20 scroll-mt-24">
         <EmptyState
           icon={<Briefcase className="h-7 w-7" />}
-          title="Serviços indisponíveis"
-          description="Não foi possível carregar os serviços agora. Tente novamente mais tarde."
+          title={t("servicesUnavailable", "Serviços indisponíveis")}
+          description={t("servicesUnavailableDesc", "Não foi possível carregar os serviços agora. Tente novamente mais tarde.")}
         />
       </section>
     )
@@ -210,9 +212,9 @@ export function ProfilePublicServicesSection({
       {showOwnerControls && (
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Serviços</h2>
+            <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("tabServices", "Serviços")}</h2>
             <p className="text-[11px] text-[#9A938A]">
-              Serviços públicos oferecidos por este subperfil.
+              {t("servicesOwnerSubtitle", "Serviços públicos oferecidos por este subperfil.")}
             </p>
           </div>
           <button
@@ -221,7 +223,7 @@ export function ProfilePublicServicesSection({
             className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
           >
             <Plus className="h-3.5 w-3.5" />
-            Serviço
+            {t("menuService", "Serviço")}
           </button>
         </div>
       )}
@@ -230,7 +232,7 @@ export function ProfilePublicServicesSection({
         <div className="mb-4 space-y-2">
           {!allowPublicBooking ? (
             <p className="text-center text-xs text-[#9A938A] md:text-left">
-              Agendamento online está desativado para este perfil — use mensagens ou outro canal de contato.
+              {t("bookingDisabled", "Agendamento online está desativado para este perfil — use mensagens ou outro canal de contato.")}
             </p>
           ) : null}
           {feedbackError ? (
@@ -240,12 +242,12 @@ export function ProfilePublicServicesSection({
       )}
 
       {state === "loading" ? (
-        <LoadingState label="Carregando serviços…" />
+        <LoadingState label={t("loadingServices", "Carregando serviços…")} />
       ) : visibleServices.length === 0 ? (
         <EmptyState
           icon={<Briefcase className="h-7 w-7" />}
-          title="Nenhum serviço"
-          description="Nenhum serviço público disponível no momento."
+          title={t("noServices", "Nenhum serviço")}
+          description={t("noServicesDesc", "Nenhum serviço público disponível no momento.")}
         />
       ) : (
         <>
@@ -276,7 +278,7 @@ export function ProfilePublicServicesSection({
                         e.stopPropagation()
                         openEdit(s)
                       }}
-                      aria-label={`Editar serviço: ${s.name}`}
+                      aria-label={t("editServiceAria", "Editar serviço: {name}").replace("{name}", s.name)}
                     >
                       <Cog className="h-4 w-4" aria-hidden />
                     </button>
@@ -296,7 +298,7 @@ export function ProfilePublicServicesSection({
                     <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-[#0B0B0D] md:text-sm">{s.name}</h3>
                     <div className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-[#E0A500] md:text-[11px]">
                       <Clock className="h-3 w-3" aria-hidden />
-                      <span className="tabular-nums">{s.duration_minutes} min</span>
+                      <span className="tabular-nums">{s.duration_minutes} {t("minShort", "min")}</span>
                     </div>
                   </div>
 
@@ -345,9 +347,9 @@ export function ProfilePublicServicesSection({
                           type="button"
                           className="fl-btn-gold shrink-0 rounded-full px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider md:px-3 md:text-[10px]"
                           onClick={() => openSchedule(s)}
-                          aria-label={`Agendar: ${s.name}`}
+                          aria-label={t("bookAria", "Agendar: {name}").replace("{name}", s.name)}
                         >
-                          Agendar
+                          {t("book", "Agendar")}
                         </button>
                       ) : null}
                     </div>
