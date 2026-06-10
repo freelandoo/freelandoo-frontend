@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/alert"
 
 import React, { useRef } from "react"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
@@ -27,9 +28,6 @@ import {
 import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3 } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
-import { UserPortfolio } from "./_components/UserPortfolio"
-import { FollowingModal } from "@/components/profile/following-modal"
-import { PremiumProfileModal } from "@/components/premium/PremiumProfileModal"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
 import {
@@ -40,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
   AVATAR_IMAGE_ASPECT_RATIO,
   AVATAR_IMAGE_MAX_SIZE_BYTES,
@@ -55,9 +52,37 @@ import {
 } from "@/lib/media/media-validation"
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
-import { UserDropside } from "@/components/layout/UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import { NotificationBell } from "@/components/notifications/notification-bell"
+
+// F3.S2 — pedaços pesados fora do bundle inicial da rota (chunk lazy, sem SSR).
+// Modais só custam download quando abrem; o portfólio (52KB de fonte + players)
+// chega logo após a hidratação com skeleton no lugar.
+const UserPortfolio = dynamic(
+  () => import("./_components/UserPortfolio").then((m) => m.UserPortfolio),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-48 w-full animate-pulse rounded-xl bg-white/5" aria-hidden />
+    ),
+  }
+)
+const UserDropside = dynamic(
+  () => import("@/components/layout/UserDropside").then((m) => m.UserDropside),
+  { ssr: false }
+)
+const FollowingModal = dynamic(
+  () => import("@/components/profile/following-modal").then((m) => m.FollowingModal),
+  { ssr: false }
+)
+const PremiumProfileModal = dynamic(
+  () => import("@/components/premium/PremiumProfileModal").then((m) => m.PremiumProfileModal),
+  { ssr: false }
+)
+const MediaCropModal = dynamic(
+  () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
+  { ssr: false }
+)
 
 export default function PerfilPage() {
   const router = useRouter()

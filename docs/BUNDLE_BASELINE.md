@@ -41,6 +41,18 @@ Next 16.2.9 · build de produção local · valores em KB.
 
 Teto: 250KB raw · rotas acima: 13/13
 
+## Pós-F3.S2 (2026-06-10) — `/account` quebrado com next/dynamic
+
+UserPortfolio, UserDropside, FollowingModal, PremiumProfileModal e
+MediaCropModal viraram chunks lazy (`ssr:false`) em `account/page.tsx`.
+
+| Rota | First Load JS raw (KB) | gzip (KB) | Δ vs baseline |
+|------|----------------------:|----------:|---------------|
+| `/account` | 1271 ⚠️ | 394 | **−225KB raw / −64KB gzip** |
+
+O delta específico da rota (acima do shell ~1.170KB) caiu de ~326KB para
+~100KB. O resto do ganho depende de emagrecer o shell compartilhado.
+
 ## Como atualizar
 
 ```bash
