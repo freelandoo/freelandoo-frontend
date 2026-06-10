@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Loader2, MessageSquarePlus } from "lucide-react"
+import { Loader2, MessageSquarePlus, SlidersHorizontal } from "lucide-react"
 import {
   useMachinesCatalog,
   type CatalogMachine,
@@ -17,7 +17,15 @@ import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { ProductsGrid } from "@/components/search/products-grid"
 import { CoursesGrid } from "@/components/search/courses-grid"
-import { FilterRail, type CoursePriceFilter } from "@/components/search/filter-rail"
+import { FilterRail, type CoursePriceFilter, type ProductCategoryEntry } from "@/components/search/filter-rail"
+import {
+  ProductSubfilterPanel,
+  buildSubfilterParams,
+  emptySubfilters,
+  hasActiveSubfilters,
+  type ProductSubfilterState,
+} from "@/components/search/product-subfilters"
+import { getAttributeSchema } from "@/lib/product-attributes"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -233,8 +241,17 @@ function SearchPageInner() {
   const [storyBarKey, setStoryBarKey] = useState(0)
   const [tab, setTab] = useState<SearchTab>("services")
   const [productCategoryId, setProductCategoryId] = useState<number | null>(null)
-  const [productCategories, setProductCategories] = useState<{ id_product_category: number; name: string }[]>([])
+  const [productCategories, setProductCategories] = useState<ProductCategoryEntry[]>([])
+  const [productSubfilters, setProductSubfilters] = useState<ProductSubfilterState>(emptySubfilters())
+  const [productFilterSheetOpen, setProductFilterSheetOpen] = useState(false)
   const [coursePrice, setCoursePrice] = useState<CoursePriceFilter>("all")
+
+  // Troca de categoria de produto zera os subfiltros (são por categoria).
+  const handleProductCategoryChange = useCallback((id: number | null) => {
+    setProductCategoryId(id)
+    setProductSubfilters(emptySubfilters())
+    setProductFilterSheetOpen(false)
+  }, [])
 
   // URL state sync: ?tab=
   useEffect(() => {
@@ -399,8 +416,20 @@ function SearchPageInner() {
     setLevelMin(null)
     setPremiumOnly(false)
     setProductCategoryId(null)
+    setProductSubfilters(emptySubfilters())
+    setProductFilterSheetOpen(false)
     setCoursePrice("all")
   }
+
+  const activeProductCategory = useMemo(
+    () => productCategories.find((c) => c.id_product_category === productCategoryId) ?? null,
+    [productCategories, productCategoryId]
+  )
+
+  const productExtraParams = useMemo(
+    () => buildSubfilterParams(productSubfilters, activeProductCategory?.slug),
+    [productSubfilters, activeProductCategory]
+  )
 
   return (
     <div data-tour="search-root" className="fixed inset-0 z-30 flex flex-col bg-[#0b0804] md:left-[80px]">
@@ -448,13 +477,15 @@ function SearchPageInner() {
             accent={accent}
             productCategories={productCategories}
             productCategoryId={productCategoryId}
+            productSubfilters={productSubfilters}
             coursePrice={coursePrice}
             onMachineChange={(id) => { setIdMachine(id); setIdCategory(null) }}
             onCategoryChange={setIdCategory}
             onLocationChange={({ state, regionId, regionName }) => { setSelectedEstado(state); setSelectedRegionId(regionId); setSelectedRegionName(regionName) }}
             onLevelChange={setLevelMin}
             onPremiumToggle={() => setPremiumOnly((v) => !v)}
-            onProductCategoryChange={setProductCategoryId}
+            onProductCategoryChange={handleProductCategoryChange}
+            onProductSubfiltersChange={setProductSubfilters}
             onCoursePriceChange={setCoursePrice}
             onClearAll={clearAll}
           />
@@ -515,9 +546,24 @@ function SearchPageInner() {
             <div className="fl-root border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm lg:hidden">
               <div className="mx-auto flex w-full max-w-[640px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:max-w-[760px] lg:max-w-[1080px] [&::-webkit-scrollbar]:hidden">
                 <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">Categoria</span>
+                {activeProductCategory && getAttributeSchema(activeProductCategory.slug).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setProductFilterSheetOpen(true)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 border-2 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] transition-transform hover:-translate-y-0.5",
+                      hasActiveSubfilters(productSubfilters)
+                        ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                        : "border-[#F1EDE2]/40 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]",
+                    )}
+                  >
+                    <SlidersHorizontal className="h-3 w-3" />
+                    Filtros
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setProductCategoryId(null)}
+                  onClick={() => handleProductCategoryChange(null)}
                   className={cn(
                     "shrink-0 border-2 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] transition-transform hover:-translate-y-0.5",
                     productCategoryId == null
@@ -533,7 +579,15 @@ function SearchPageInner() {
                     <button
                       key={cat.id_product_category}
                       type="button"
-                      onClick={() => setProductCategoryId(cat.id_product_category)}
+                      onClick={() => {
+                        if (active) {
+                          // re-toque abre os subfiltros da categoria já ativa
+                          if (getAttributeSchema(cat.slug).length > 0) setProductFilterSheetOpen(true)
+                          return
+                        }
+                        handleProductCategoryChange(cat.id_product_category)
+                        if (getAttributeSchema(cat.slug).length > 0) setProductFilterSheetOpen(true)
+                      }}
                       className={cn(
                         "shrink-0 border-2 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] transition-transform hover:-translate-y-0.5",
                         active
@@ -551,7 +605,33 @@ function SearchPageInner() {
               categoryId={productCategoryId}
               state={selectedEstado}
               regionId={selectedRegionId}
+              extraParams={productExtraParams}
             />
+
+            {/* Sheet mobile de subfiltros da categoria (a coluna lateral só existe em lg+) */}
+            {productFilterSheetOpen && activeProductCategory && (
+              <div
+                className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 lg:hidden"
+                onClick={() => setProductFilterSheetOpen(false)}
+              >
+                <div
+                  className="fl-root fl-paper-card max-h-[80dvh] w-full max-w-[560px] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_0_0_#0B0B0D]"
+                  onClick={(e) => e.stopPropagation()}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={`Filtros de ${activeProductCategory.name}`}
+                >
+                  <ProductSubfilterPanel
+                    categoryName={activeProductCategory.name}
+                    categorySlug={activeProductCategory.slug || ""}
+                    accent={accent}
+                    state={productSubfilters}
+                    onChange={setProductSubfilters}
+                    onBack={() => setProductFilterSheetOpen(false)}
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
 

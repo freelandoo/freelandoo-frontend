@@ -26,6 +26,13 @@ function detectPreset(h: string, w: string, l: string): string {
   return match?.id || "custom"
 }
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
+import {
+  COLOR_SWATCHES,
+  getAttributeSchema,
+  rangeValues,
+  type AttrField,
+  type ProductAttributes,
+} from "@/lib/product-attributes"
 import { compressImageToMaxSize } from "@/lib/media/image-processing"
 import {
   POST_IMAGE_MAX_SIZE_BYTES,
@@ -50,6 +57,7 @@ export interface ProfileProduct {
   id_product_category: number | null
   affiliates_allowed?: boolean
   delivery_mode?: "shipping" | "local_pickup"
+  attributes?: ProductAttributes | null
   created_at?: string
   updated_at?: string
   media?: ProfileProductMedia[]
@@ -228,6 +236,7 @@ export function ProfileProductEditModal({
     affiliates_allowed: false,
     delivery_mode: "shipping" as "shipping" | "local_pickup",
   })
+  const [attrs, setAttrs] = useState<ProductAttributes>({})
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<ProductCategoryOption[]>([])
   const [pricingPreview, setPricingPreview] = useState<{
@@ -278,6 +287,7 @@ export function ProfileProductEditModal({
       affiliates_allowed: false,
       delivery_mode: "shipping",
     })
+    setAttrs({})
   }, [open, product])
 
   useEffect(() => {
@@ -299,6 +309,7 @@ export function ProfileProductEditModal({
       affiliates_allowed: product.affiliates_allowed ?? false,
       delivery_mode: product.delivery_mode === "local_pickup" ? "local_pickup" : "shipping",
     })
+    setAttrs(product.attributes && typeof product.attributes === "object" ? product.attributes : {})
   }, [open, product])
 
   useEffect(() => {
@@ -529,6 +540,7 @@ export function ProfileProductEditModal({
       id_product_category: categoryId,
       affiliates_allowed: form.affiliates_allowed,
       delivery_mode: form.delivery_mode,
+      attributes: attrs,
     }
     try {
       const url = product
@@ -619,7 +631,18 @@ export function ProfileProductEditModal({
             <label className="fl-label">Categoria</label>
             <select
               value={form.id_product_category}
-              onChange={(e) => setForm((f) => ({ ...f, id_product_category: e.target.value }))}
+              onChange={(e) => {
+                const next = e.target.value
+                setForm((f) => ({ ...f, id_product_category: next }))
+                // Poda atributos que não existem no schema da nova categoria.
+                const slug = categories.find((c) => String(c.id_product_category) === next)?.slug
+                const validKeys = new Set(getAttributeSchema(slug).map((fld) => fld.key))
+                setAttrs((prev) => {
+                  const out: ProductAttributes = {}
+                  for (const [k, v] of Object.entries(prev)) if (validKeys.has(k)) out[k] = v
+                  return out
+                })
+              }}
               className="fl-input"
             >
               <option value="">Selecione uma categoria…</option>
@@ -630,6 +653,14 @@ export function ProfileProductEditModal({
               ))}
             </select>
           </div>
+
+          <AttributeFieldsEditor
+            schema={getAttributeSchema(
+              categories.find((c) => String(c.id_product_category) === form.id_product_category)?.slug
+            )}
+            value={attrs}
+            onChange={setAttrs}
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -948,6 +979,135 @@ export function ProfileProductEditModal({
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// Campos dinâmicos de atributos por categoria (lib/product-attributes.ts).
+// chips/range → multi-select; colors → swatches; brand → texto com sugestões.
+// Esses valores viram os subfiltros da aba Produtos no /search.
+// =============================================================================
+function AttributeFieldsEditor({
+  schema,
+  value,
+  onChange,
+}: {
+  schema: AttrField[]
+  value: ProductAttributes
+  onChange: (next: ProductAttributes) => void
+}) {
+  if (schema.length === 0) return null
+
+  const toggleMulti = (key: string, option: string) => {
+    const current = Array.isArray(value[key]) ? (value[key] as string[]) : []
+    const next = current.includes(option)
+      ? current.filter((v) => v !== option)
+      : [...current, option]
+    const out = { ...value }
+    if (next.length === 0) delete out[key]
+    else out[key] = next
+    onChange(out)
+  }
+
+  const setText = (key: string, text: string) => {
+    const out = { ...value }
+    if (!text.trim()) delete out[key]
+    else out[key] = text
+    onChange(out)
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[#5b554b]">
+        Detalhes pro comprador filtrar
+      </p>
+      {schema.map((field) => {
+        if (field.type === "brand") {
+          const listId = `attr-brand-${field.key}`
+          return (
+            <div key={field.key}>
+              <label className="fl-label">{field.label}</label>
+              <input
+                type="text"
+                list={field.suggestions?.length ? listId : undefined}
+                value={typeof value[field.key] === "string" ? (value[field.key] as string) : ""}
+                onChange={(e) => setText(field.key, e.target.value)}
+                maxLength={80}
+                placeholder="Ex.: marca do produto"
+                className="fl-input"
+              />
+              {field.suggestions?.length ? (
+                <datalist id={listId}>
+                  {field.suggestions.map((s) => <option key={s} value={s} />)}
+                </datalist>
+              ) : null}
+            </div>
+          )
+        }
+
+        if (field.type === "colors") {
+          const selected = Array.isArray(value[field.key]) ? (value[field.key] as string[]) : []
+          return (
+            <div key={field.key}>
+              <label className="fl-label">{field.label}</label>
+              <div className="flex flex-wrap gap-1.5">
+                {COLOR_SWATCHES.map((c) => {
+                  const active = selected.includes(c.name)
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => toggleMulti(field.key, c.name)}
+                      aria-pressed={active}
+                      title={c.name}
+                      className={
+                        "h-7 w-7 rounded-full border-2 transition-transform hover:-translate-y-0.5 " +
+                        (active ? "border-[#0B0B0D] ring-2 ring-[#E0A500]" : "border-[#0B0B0D]/25")
+                      }
+                      style={
+                        c.hex
+                          ? { background: c.hex }
+                          : { background: "conic-gradient(#E0312D,#F2B705,#2E9E44,#2E62D9,#7B3FE4,#E0312D)" }
+                      }
+                    />
+                  )
+                })}
+              </div>
+            </div>
+          )
+        }
+
+        // chips e range (vendedor marca os valores disponíveis; a régua é só no filtro do comprador)
+        const options = field.type === "range" ? rangeValues(field) : field.options ?? []
+        const selected = Array.isArray(value[field.key]) ? (value[field.key] as string[]) : []
+        return (
+          <div key={field.key}>
+            <label className="fl-label">{field.label}</label>
+            <div className="flex flex-wrap gap-1.5">
+              {options.map((opt) => {
+                const active = selected.includes(opt)
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => toggleMulti(field.key, opt)}
+                    aria-pressed={active}
+                    className={
+                      "border-2 px-2.5 py-1 text-[11px] font-bold transition-transform hover:-translate-y-0.5 " +
+                      (active
+                        ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                        : "border-[#0B0B0D]/25 bg-white/50 text-[#3a352c] hover:border-[#0B0B0D]")
+                    }
+                  >
+                    {opt}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

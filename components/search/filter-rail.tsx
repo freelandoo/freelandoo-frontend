@@ -13,9 +13,20 @@ import { MACHINES } from "@/components/home/machines/tokens"
 import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
 import { LEVEL_FILTER_OPTIONS } from "@/components/feed/level-filter-sheet"
 import type { SearchTab } from "@/components/search/search-tabs-bar"
+import {
+  ProductSubfilterPanel,
+  type ProductSubfilterState,
+} from "@/components/search/product-subfilters"
+import { getAttributeSchema } from "@/lib/product-attributes"
 import { cn } from "@/lib/utils"
 
 export type CoursePriceFilter = "all" | "free" | "paid"
+
+export interface ProductCategoryEntry {
+  id_product_category: number
+  name: string
+  slug?: string
+}
 
 interface FilterRailProps {
   tab: SearchTab
@@ -29,8 +40,9 @@ interface FilterRailProps {
   levelMin: number | null
   premiumOnly: boolean
   accent: string
-  productCategories: { id_product_category: number; name: string }[]
+  productCategories: ProductCategoryEntry[]
   productCategoryId: number | null
+  productSubfilters: ProductSubfilterState
   coursePrice: CoursePriceFilter
   onMachineChange: (id: number | null) => void
   onCategoryChange: (id: number | null) => void
@@ -38,6 +50,7 @@ interface FilterRailProps {
   onLevelChange: (level: number | null) => void
   onPremiumToggle: () => void
   onProductCategoryChange: (id: number | null) => void
+  onProductSubfiltersChange: (next: ProductSubfilterState) => void
   onCoursePriceChange: (v: CoursePriceFilter) => void
   onClearAll: () => void
 }
@@ -51,10 +64,18 @@ export function FilterRail(props: FilterRailProps) {
   const {
     tab, machines, categories, selectedMachineId, selectedCategoryId,
     state, regionId, regionName, levelMin, premiumOnly, accent,
-    productCategories, productCategoryId, coursePrice,
+    productCategories, productCategoryId, productSubfilters, coursePrice,
     onMachineChange, onCategoryChange, onLocationChange, onLevelChange,
-    onPremiumToggle, onProductCategoryChange, onCoursePriceChange, onClearAll,
+    onPremiumToggle, onProductCategoryChange, onProductSubfiltersChange,
+    onCoursePriceChange, onClearAll,
   } = props
+
+  // Drill-in da aba Produtos: categoria clicada vira painel de subfiltros.
+  const [productDrill, setProductDrill] = useState(false)
+  const activeProductCategory =
+    productCategories.find((c) => c.id_product_category === productCategoryId) || null
+  const drillSchema = getAttributeSchema(activeProductCategory?.slug)
+  const showDrill = tab === "products" && productDrill && !!activeProductCategory && drillSchema.length > 0
 
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const hasFilters =
@@ -81,16 +102,31 @@ export function FilterRail(props: FilterRailProps) {
           )}
         </div>
 
-        {tab === "products" && (
+        {tab === "products" && showDrill && activeProductCategory && (
+          <ProductSubfilterPanel
+            categoryName={activeProductCategory.name}
+            categorySlug={activeProductCategory.slug || ""}
+            accent={accent}
+            state={productSubfilters}
+            onChange={onProductSubfiltersChange}
+            onBack={() => setProductDrill(false)}
+          />
+        )}
+
+        {tab === "products" && !showDrill && (
           <RailSection title="Categoria" defaultOpen>
-            <RailOption label="Todas" active={productCategoryId == null} accent={accent} onClick={() => onProductCategoryChange(null)} />
+            <RailOption label="Todas" active={productCategoryId == null} accent={accent} onClick={() => { onProductCategoryChange(null); setProductDrill(false) }} />
             {productCategories.map((c) => (
               <RailOption
                 key={c.id_product_category}
                 label={c.name}
                 active={c.id_product_category === productCategoryId}
                 accent={accent}
-                onClick={() => onProductCategoryChange(c.id_product_category)}
+                onClick={() => {
+                  onProductCategoryChange(c.id_product_category)
+                  // Abre o painel de subfiltros se a categoria tiver schema.
+                  if (getAttributeSchema(c.slug).length > 0) setProductDrill(true)
+                }}
               />
             ))}
           </RailSection>

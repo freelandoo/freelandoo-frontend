@@ -27,12 +27,15 @@ interface Props {
   state: string | null
   regionId: number | null
   q?: string | null
+  /** Subfiltros por categoria já normalizados (attr_*, price_min/max). */
+  extraParams?: Record<string, string>
 }
 
-export function ProductsGrid({ categoryId, state, regionId, q }: Props) {
+export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Props) {
   const [items, setItems] = useState<ProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const extraKey = JSON.stringify(extraParams ?? {})
 
   useEffect(() => {
     let alive = true
@@ -43,6 +46,9 @@ export function ProductsGrid({ categoryId, state, regionId, q }: Props) {
     if (state) params.set("state", state)
     if (regionId) params.set("id_region", String(regionId))
     if (q) params.set("q", q)
+    for (const [k, v] of Object.entries(JSON.parse(extraKey) as Record<string, string>)) {
+      params.set(k, v)
+    }
     fetch(`/api/search/products?${params.toString()}`, { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) throw new Error(`Falha ${r.status}`)
@@ -53,7 +59,7 @@ export function ProductsGrid({ categoryId, state, regionId, q }: Props) {
       .catch((err) => alive && setError(err instanceof Error ? err.message : "Erro ao carregar"))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [categoryId, state, regionId, q])
+  }, [categoryId, state, regionId, q, extraKey])
 
   if (loading) {
     return (
