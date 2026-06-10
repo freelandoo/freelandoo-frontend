@@ -1542,7 +1542,21 @@ export default function PerfilPage() {
                     </span>
                   </button>
 
-                  <div className="min-w-0 pb-1">
+                  <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
+                    {/* Carteira — em cima do @username, ao lado da foto */}
+                    <Link
+                      href="/wallet"
+                      aria-label="Abrir minha Carteira"
+                      title="Minha Carteira"
+                      className="group rotate-2 transition-transform duration-200 hover:rotate-0"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/wallet/carteira-card.webp"
+                        alt="Carteira"
+                        className="w-[84px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[92px]"
+                      />
+                    </Link>
                     {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
                     {perfil.username && (
                       <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
@@ -1550,8 +1564,8 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* Pilha Casa Views + Carteira — lado direito, mesma dimensão */}
-                <div className="flex shrink-0 flex-col items-center gap-2 pb-1">
+                {/* Casa Views (ticket) — lado direito */}
+                <div className="flex shrink-0 flex-col items-center pb-1">
                   <Link
                     href="/acasaviews/rankings"
                     aria-label="Ver os rankings da Casa Views"
@@ -1562,20 +1576,7 @@ export default function PerfilPage() {
                     <img
                       src="/casaviews/profile/casa-views-ticket.webp"
                       alt="Casa Views"
-                      className="aspect-[560/358] w-[112px] select-none object-contain drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
-                    />
-                  </Link>
-                  <Link
-                    href="/wallet"
-                    aria-label="Abrir minha Carteira"
-                    title="Minha Carteira"
-                    className="group rotate-2 transition-transform duration-200 hover:rotate-0"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/wallet/carteira-card.webp"
-                      alt="Carteira"
-                      className="aspect-[560/358] w-[112px] select-none object-contain drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
+                      className="w-[112px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
                     />
                   </Link>
                 </div>
