@@ -114,7 +114,7 @@ export function SearchRetractableHeader({
             <span className="text-[#F1EDE2]">.</span>
           </Link>
 
-          <div className="ml-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:ml-2">
+          <div className="ml-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:ml-2 lg:hidden">
             {showMachine && (
               <HoverHint id="search-filter-machine" side="bottom" dataTour="search-filter-machine">
                 <MachineFilterSheet
