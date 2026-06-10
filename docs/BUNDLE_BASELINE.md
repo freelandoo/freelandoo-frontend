@@ -70,6 +70,47 @@ Ganho menor que o do `/account`: o grosso do delta da rota é o próprio
 continua no bundle inicial — quebrá-lo de verdade exigiria extrair as
 seções inline, fora do escopo deste slice.
 
+## Pós-F3.S4 (2026-06-10) — `freelancer-profile-view` quebrado com next/dynamic
+
+Seções de aba (serviços, loja owner/público, agenda) e modais (mural,
+engajamento, ranking, portfolio item, crop) viraram chunks lazy. O maior
+peso era o **MediaComposer (52KB de fonte), que arrasta o módulo de câmera
+inteiro** (CameraStudio + filtros WebGL + renderer) — agora montado só
+quando o dono abre o composer (fechado ele retornava `null` com hardReset,
+então desmontar é equivalente); visitante nunca baixa esse chunk.
+ProfileHeadCard ficou estático (conteúdo above-the-fold, LCP).
+
+O componente serve 4 rotas — o ganho replica em `/freelancer/[id]`,
+`/clans/[id]`, `/account/profile/[id]` e `/[profession]/[city]/[handle]`.
+
+| Rota | First Load JS raw (KB) | gzip (KB) | Δ vs baseline |
+|------|----------------------:|----------:|---------------|
+| `/freelancer/1` | 1448 ⚠️ | 449 | **−374KB raw / −109KB gzip** |
+| `/account/profile/1` | 1448 ⚠️ | 449 | (mesmo shell) |
+
+Delta da rota sobre o shell (~1.170KB) caiu de +652KB para +278KB. Tabela
+completa pós-Sessão 3:
+
+| Rota | HTTP | First Load JS raw (KB) | gzip (KB) |
+|------|------|----------------------:|----------:|
+| `/bees` | 200 | 1738 ⚠️ | 518 |
+| `/feed` | 200 | 1555 ⚠️ | 484 |
+| `/freelancer/1` | 200 | 1448 ⚠️ | 449 |
+| `/search` | 200 | 1403 ⚠️ | 436 |
+| `/enxame/1` | 200 | 1403 ⚠️ | 436 |
+| `/mensagens` | 200 | 1376 ⚠️ | 426 |
+| `/ranking` | 200 | 1278 ⚠️ | 404 |
+| `/account` | 200 | 1271 ⚠️ | 394 |
+| `/` | 200 | 1226 ⚠️ | 387 |
+| `/wallet` | 200 | 1207 ⚠️ | 376 |
+| `/loja-polens` | 200 | 1201 ⚠️ | 375 |
+| `/blog` | 200 | 1174 ⚠️ | 368 |
+| `/cursos` | 200 | 1171 ⚠️ | 367 |
+
+Próximos alvos por delta: `/bees` (+568KB), `/feed` (+385KB), e o **shell
+compartilhado (~1.170KB)** — maior ganho individual restante, candidato a
+slice próprio na Sessão 4.
+
 ## Como atualizar
 
 ```bash

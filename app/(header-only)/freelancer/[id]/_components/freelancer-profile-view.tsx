@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
@@ -47,24 +48,63 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
-import { ProfilePublicServicesSection } from "@/components/profile/profile-public-services-section"
 import type { ProfileServiceEditClanMember } from "@/components/profile/profile-service-edit-modal"
-import { ProfileOwnerProductsSection } from "@/components/profile/profile-owner-products-section"
-import { ProfilePublicProductsSection } from "@/components/profile/profile-public-products-section"
 import { useActionConsent } from "@/hooks/use-action-consent"
 import { profileAllowsPublicBooking } from "@/lib/booking-public"
-import { EngagementPanel } from "@/components/profile/engagement-panel"
-import { RankingBadgeModal } from "@/components/profile/ranking-badge-modal"
-import { PortfolioItemModal } from "@/components/profile/portfolio-item-modal"
 import { RateProfile } from "@/components/profile/rate-profile"
-import { MuralModal } from "@/components/profile/mural-modal"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { buildProfileUrl } from "@/lib/slug"
-import { MediaComposer } from "@/components/composer/MediaComposer"
 import type { ComposerMode } from "@/lib/composer/types"
-import { MediaCropModal } from "@/components/media/media-crop-modal"
+
+// F3.S4 — seções de aba e modais fora do bundle inicial da rota (chunk lazy,
+// sem SSR). A rota é a de maior delta do site (+652KB sobre o shell); o maior
+// peso é o MediaComposer, que arrasta o módulo de câmera inteiro (CameraStudio
+// + filtros WebGL + renderer) — agora só baixa quando o dono abre o composer.
+// ProfileHeadCard fica estático: é o conteúdo above-the-fold (LCP).
+const sectionSkeleton = () => (
+  <div className="mt-8 h-48 w-full animate-pulse rounded-xl bg-white/5" aria-hidden />
+)
+const ProfilePublicServicesSection = dynamic(
+  () => import("@/components/profile/profile-public-services-section").then((m) => m.ProfilePublicServicesSection),
+  { ssr: false, loading: sectionSkeleton }
+)
+const ProfileOwnerProductsSection = dynamic(
+  () => import("@/components/profile/profile-owner-products-section").then((m) => m.ProfileOwnerProductsSection),
+  { ssr: false, loading: sectionSkeleton }
+)
+const ProfilePublicProductsSection = dynamic(
+  () => import("@/components/profile/profile-public-products-section").then((m) => m.ProfilePublicProductsSection),
+  { ssr: false, loading: sectionSkeleton }
+)
+const AgendaBookingsExperience = dynamic(
+  () => import("@/components/agenda/AgendaBookingsExperience").then((m) => m.AgendaBookingsExperience),
+  { ssr: false, loading: sectionSkeleton }
+)
+const EngagementPanel = dynamic(
+  () => import("@/components/profile/engagement-panel").then((m) => m.EngagementPanel),
+  { ssr: false }
+)
+const RankingBadgeModal = dynamic(
+  () => import("@/components/profile/ranking-badge-modal").then((m) => m.RankingBadgeModal),
+  { ssr: false }
+)
+const PortfolioItemModal = dynamic(
+  () => import("@/components/profile/portfolio-item-modal").then((m) => m.PortfolioItemModal),
+  { ssr: false }
+)
+const MuralModal = dynamic(
+  () => import("@/components/profile/mural-modal").then((m) => m.MuralModal),
+  { ssr: false }
+)
+const MediaCropModal = dynamic(
+  () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
+  { ssr: false }
+)
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
 import {
   BEES_VIDEO_ASPECT_RATIO_MAX,
   POST_IMAGE_ASPECT_RATIO,
@@ -1521,16 +1561,21 @@ export default function FreelancerProfileView({
         />
       )}
 
-      <MediaComposer
-        open={composerMode !== null}
-        mode={composerMode ?? "post"}
-        initialProfileId={profileId}
-        onClose={() => setComposerMode(null)}
-        onPosted={() => {
-          setComposerMode(null)
-          void refetchPortfolio()
-        }}
-      />
+      {/* Montado só quando aberto: fechado ele retorna null e faz hardReset,
+          então desmontar é equivalente — e o visitante nunca baixa o chunk
+          do módulo de câmera. */}
+      {composerMode !== null && (
+        <MediaComposer
+          open
+          mode={composerMode}
+          initialProfileId={profileId}
+          onClose={() => setComposerMode(null)}
+          onPosted={() => {
+            setComposerMode(null)
+            void refetchPortfolio()
+          }}
+        />
+      )}
     </div>
   )
 }
