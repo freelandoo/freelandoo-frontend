@@ -464,7 +464,7 @@ function MarketSidebar() {
   useEffect(() => {
     if (fetched.current) return
     fetched.current = true
-    clientFetchWithTimeout("/api/market/snapshot", {}, 9000)
+    clientFetchWithTimeout("/api/market/snapshot", { cache: "no-store" }, 9000)
       .then((r) => r.json())
       .then((d) => setData({ stocks: d.stocks || [], quotes: d.quotes || [], news: d.news || [] }))
       .catch(() => setErr(true))
