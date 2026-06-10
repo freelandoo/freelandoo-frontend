@@ -29,7 +29,7 @@ export function BuyerTrust() {
         {ITEMS.map((it) => (
           <div
             key={it.title}
-            className="rounded-2xl border-2 border-[#0B0B0D] bg-[#F2B705]/15 p-6"
+            className="border-2 border-[#0B0B0D] bg-[#F2B705]/15 p-6"
           >
             <it.icon className="h-7 w-7 text-[#0B0B0D]" />
             <h3 className="mt-3 text-lg font-bold text-[#0B0B0D]">{it.title}</h3>

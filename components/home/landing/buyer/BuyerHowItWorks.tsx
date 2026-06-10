@@ -29,7 +29,7 @@ export function BuyerHowItWorks() {
         {STEPS.map((s, i) => (
           <div
             key={s.title}
-            className="relative rounded-2xl border-2 border-[#0B0B0D] bg-white p-6 shadow-[6px_6px_0_0_#0B0B0D]"
+            className="relative border-2 border-[#0B0B0D] bg-white p-6 shadow-[6px_6px_0_0_#0B0B0D]"
           >
             <BigNumber n={i + 1} className="text-3xl" />
             <s.icon className="mt-3 h-7 w-7 text-[#0B0B0D]" />

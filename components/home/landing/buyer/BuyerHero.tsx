@@ -8,7 +8,7 @@ import { EditableImage } from "@/components/site-assets/EditableImage"
 
 /** CTA sólida com dropshadow amarelo + animação (identidade tabloide). */
 const CTA_CLASS =
-  "inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-6 py-3 text-sm font-bold text-[#1A1505] shadow-[4px_4px_0_0_#0B0B0D] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:translate-y-0 active:shadow-[2px_2px_0_0_#0B0B0D]"
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-6 py-3 text-sm font-bold text-[#1A1505] shadow-[4px_4px_0_0_#0B0B0D] transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:translate-y-0 active:shadow-[2px_2px_0_0_#0B0B0D]"
 
 export function BuyerHero() {
   const router = useRouter()
@@ -33,7 +33,7 @@ export function BuyerHero() {
         </p>
 
         <form onSubmit={submit} className="mx-auto mt-8 flex max-w-[560px] items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-white px-4 py-3 shadow-[4px_4px_0_0_#0B0B0D]">
+          <div className="flex flex-1 items-center gap-2 border-2 border-[#0B0B0D] bg-white px-4 py-3 shadow-[4px_4px_0_0_#0B0B0D]">
             <Search className="h-5 w-5 shrink-0 text-[#0B0B0D]/60" />
             <input
               value={q}
@@ -65,7 +65,7 @@ export function BuyerHero() {
       <div className="mx-auto mt-10 max-w-[1100px]">
         <EditableImage
           slot="home_buyer_hero"
-          className="aspect-[16/5] w-full rounded-2xl border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
+          className="aspect-[16/5] w-full border-2 border-[#0B0B0D] shadow-[6px_6px_0_0_#F2B705]"
         />
       </div>
     </Section>

@@ -40,7 +40,7 @@ export async function BuyerCategories() {
           <Link
             key={e.slug}
             href={`/enxame/${e.slug}`}
-            className="rounded-full border-2 border-[#0B0B0D] bg-white px-4 py-2 text-sm font-bold text-[#0B0B0D] transition hover:bg-[#F2B705] hover:shadow-[3px_3px_0_0_#0B0B0D]"
+            className="border-2 border-[#0B0B0D] bg-white px-4 py-2 text-sm font-bold text-[#0B0B0D] transition hover:bg-[#F2B705] hover:shadow-[3px_3px_0_0_#0B0B0D]"
           >
             {e.name || e.desc_machine || e.slug}
           </Link>

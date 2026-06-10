@@ -67,7 +67,7 @@ export function AudienceChooserModal() {
           role="presentation"
         >
           <motion.div
-            className="fl-root fl-paper-card relative w-full max-w-2xl rounded-2xl border-2 border-[#0B0B0D] p-8 shadow-[10px_10px_0_0_#0B0B0D] sm:p-10"
+            className="fl-root fl-paper-card relative w-full max-w-2xl border-2 border-[#0B0B0D] p-8 shadow-[10px_10px_0_0_#0B0B0D] sm:p-10"
             initial={reduceMotion ? { opacity: 0 } : { scale: 0.92, y: 20, opacity: 0 }}
             animate={reduceMotion ? { opacity: 1 } : { scale: 1, y: 0, opacity: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
@@ -80,7 +80,7 @@ export function AudienceChooserModal() {
             <button
               type="button"
               onClick={dismiss}
-              className="absolute right-4 top-4 rounded-full p-1.5 text-[#0B0B0D]/50 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
+              className="absolute right-4 top-4 p-1.5 text-[#0B0B0D]/50 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
               aria-label="Fechar"
             >
               <X className="h-5 w-5" />
@@ -108,9 +108,9 @@ export function AudienceChooserModal() {
               <button
                 type="button"
                 onClick={chooseBuyer}
-                className="group flex flex-col items-start gap-3 rounded-xl border-2 border-[#0B0B0D] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
+                className="group flex flex-col items-start gap-3 border-2 border-[#0B0B0D] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705]">
+                <span className="inline-flex h-11 w-11 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705]">
                   <Search className="h-5 w-5 text-[#0B0B0D]" />
                 </span>
                 <span className="text-lg font-bold leading-snug text-[#0B0B0D]">
@@ -122,9 +122,9 @@ export function AudienceChooserModal() {
               <button
                 type="button"
                 onClick={chooseSeller}
-                className="group flex flex-col items-start gap-3 rounded-xl border-2 border-[#0B0B0D] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
+                className="group flex flex-col items-start gap-3 border-2 border-[#0B0B0D] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B0B0D]"
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D]">
+                <span className="inline-flex h-11 w-11 items-center justify-center border-2 border-[#0B0B0D] bg-[#0B0B0D]">
                   <Sparkles className="h-5 w-5 text-[#F2B705]" />
                 </span>
                 <span className="text-lg font-bold leading-snug text-[#0B0B0D]">

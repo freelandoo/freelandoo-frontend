@@ -37,13 +37,13 @@ export function LandingHeader() {
 
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 lg:ml-0">
             {isLoggedIn ? (
-              <Link href="/account" className="inline-flex items-center gap-2 rounded-full border border-[#F5F1E8]/20 px-4 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/40">
+              <Link href="/account" className="inline-flex items-center gap-2 border border-[#F5F1E8]/20 px-4 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/40">
                 <User className="h-4 w-4" />
                 <span className="hidden max-w-[120px] truncate sm:inline">{user.nome}</span>
               </Link>
             ) : (
               <>
-                <Link href={LINKS.login} className="hidden rounded-full border border-[#F5F1E8]/25 px-5 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/50 sm:inline-flex">
+                <Link href={LINKS.login} className="hidden border border-[#F5F1E8]/25 px-5 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/50 sm:inline-flex">
                   Entrar
                 </Link>
                 <GoldButton href={LINKS.cadastro} className="px-5 py-2.5 text-sm">
@@ -56,7 +56,7 @@ export function LandingHeader() {
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Fechar menu" : "Abrir menu"}
               aria-expanded={open}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F5F1E8]/20 text-[#F5F1E8] lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center border border-[#F5F1E8]/20 text-[#F5F1E8] lg:hidden"
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>

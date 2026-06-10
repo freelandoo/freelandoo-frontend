@@ -93,7 +93,7 @@ export function LandingFooter() {
             <div className="mt-4 flex flex-wrap gap-2">
               <a
                 href="https://www.instagram.com/printtei_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram @printtei_"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
+                className="inline-flex h-9 w-9 items-center justify-center border border-[#F5F1E8]/15 text-[#C9C2B6] transition hover:border-[#F2B705] hover:text-[#F2B705]"
               >
                 <Instagram className="h-4 w-4" />
               </a>
@@ -112,7 +112,7 @@ export function LandingFooter() {
               </li>
             </ul>
             <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-[#F2B705]">Baixe o app</h3>
-            <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#F5F1E8]/15 px-3 py-2 text-sm text-[#C9C2B6]">
+            <div className="mt-3 inline-flex items-center gap-2 border border-[#F5F1E8]/15 px-3 py-2 text-sm text-[#C9C2B6]">
               <Smartphone className="h-4 w-4 text-[#F2B705]" /> Acesse pelo navegador ou instale como app (PWA)
             </div>
           </div>

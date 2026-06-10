@@ -48,14 +48,14 @@ export function FeatureCarousel() {
       {/* Card de slides — full-bleed no mobile (cancela o padding da Section),
           setas sobrepostas e transparentes por cima do carrossel. */}
       <div className="relative -mx-2 sm:mx-0">
-        <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
+        <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
             {CAROUSEL_SLIDES.map((s) => (
               <div key={s.n} className="min-w-0 flex-[0_0_100%]">
                 <Link
                   href={s.href}
                   aria-label={s.alt}
-                  className="relative block aspect-[2/1] w-full overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)] sm:aspect-[18/7]"
+                  className="relative block aspect-[2/1] w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)] sm:aspect-[18/7]"
                 >
                   <Image
                     src={s.img}
@@ -73,14 +73,14 @@ export function FeatureCarousel() {
 
         <button
           type="button" onClick={prev} aria-label="Banner anterior"
-          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:left-4 sm:h-12 sm:w-12"
+          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:left-4 sm:h-12 sm:w-12"
         >
           <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
         <button
           type="button" onClick={next} aria-label="Próximo banner"
-          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:right-4 sm:h-12 sm:w-12"
+          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:right-4 sm:h-12 sm:w-12"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
@@ -92,7 +92,7 @@ export function FeatureCarousel() {
           <button
             key={s.n} type="button" onClick={() => goTo(i)} aria-label={`Ir para o banner ${i + 1}`}
             aria-current={i === selected}
-            className={`h-2 rounded-full transition-all ${i === selected ? "w-6 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/25 hover:bg-[#F5F1E8]/50"}`}
+            className={`h-2 transition-all ${i === selected ? "w-6 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/25 hover:bg-[#F5F1E8]/50"}`}
           />
         ))}
       </div>

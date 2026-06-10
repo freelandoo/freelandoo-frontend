@@ -23,9 +23,9 @@ const pop: Variants = { hidden: { opacity: 0, scale: 0.92, x: 18 }, show: { opac
 
 function StatCard({ stat, taped, slotBase }: { stat: (typeof HERO_STATS)[number]; taped?: boolean; slotBase: string }) {
   return (
-    <div className="fl-card fl-hard relative flex items-center gap-3 rounded-xl px-4 py-3">
+    <div className="fl-card fl-hard relative flex items-center gap-3 px-4 py-3">
       {taped && <WashiTape className="-top-3 right-4" rotate={6} />}
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
         <Icon name={stat.icon} className="h-5 w-5" />
       </span>
       <span className="min-w-0">

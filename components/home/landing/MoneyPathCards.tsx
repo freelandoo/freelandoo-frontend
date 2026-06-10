@@ -27,7 +27,7 @@ export function MoneyPathCards() {
           <div
             key={p.id}
             data-card
-            className="group mp-card relative flex flex-col overflow-hidden rounded-xl fl-card"
+            className="group mp-card relative flex flex-col overflow-hidden fl-card"
           >
             <div className="relative">
               <EditableImage
@@ -39,7 +39,7 @@ export function MoneyPathCards() {
                 }
               />
               <Halftone className="absolute right-2 top-2 h-10 w-10 opacity-30" />
-              <span className="absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
+              <span className="absolute -bottom-5 left-4 flex h-12 w-12 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]">
                 <Icon name={p.icon} className="h-6 w-6" />
               </span>
             </div>

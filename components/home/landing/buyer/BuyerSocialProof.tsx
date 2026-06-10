@@ -14,7 +14,7 @@ export function BuyerSocialProof() {
         {STATS.map((s) => (
           <div
             key={s.value}
-            className="rounded-xl border-2 border-[#0B0B0D] bg-white px-5 py-4 text-center shadow-[4px_4px_0_0_#0B0B0D]"
+            className="border-2 border-[#0B0B0D] bg-white px-5 py-4 text-center shadow-[4px_4px_0_0_#0B0B0D]"
           >
             <div className="fl-display text-2xl text-[#0B0B0D]">{s.value}</div>
             <div className="text-xs font-semibold text-[#3a352c]">{s.label}</div>

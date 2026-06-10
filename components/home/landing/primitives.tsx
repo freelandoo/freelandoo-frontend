@@ -202,7 +202,7 @@ export function AvatarStack({ count = 5, className }: { count?: number; classNam
       {Array.from({ length: count }).map((_, i) => (
         <span
           key={i}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#15120E] text-[11px] font-bold text-[#15120E]"
+          className="inline-flex h-8 w-8 items-center justify-center border-2 border-[#15120E] text-[11px] font-bold text-[#15120E]"
           style={{ background: tints[i % tints.length] }}
         >
           {String.fromCharCode(65 + i)}
@@ -230,7 +230,7 @@ export function FloatingUICard({
 }: { children: ReactNode; className?: string; float?: "fl-float" | "fl-float-slow" | false; rotate?: number; style?: CSSProperties }) {
   return (
     <div className={cn(float || "")} style={{ transform: rotate ? `rotate(${rotate}deg)` : undefined }}>
-      <div className={cn("fl-card rounded-2xl px-4 py-3 text-left", className)} style={style}>{children}</div>
+      <div className={cn("fl-card px-4 py-3 text-left", className)} style={style}>{children}</div>
     </div>
   )
 }
@@ -246,7 +246,7 @@ export function Badge({
     outline: "border border-[#F5F1E8]/25 text-[#F5F1E8]",
   }
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]", tones[tone], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em]", tones[tone], className)}>
       {children}
     </span>
   )
@@ -255,7 +255,7 @@ export function Badge({
 export function Sticker({ children, className, rotate = -6 }: { children: ReactNode; className?: string; rotate?: number }) {
   return (
     <span
-      className={cn("inline-flex items-center justify-center rounded-full bg-[#F2B705] px-3 py-1 text-sm font-black text-[#1A1505] shadow-[0_6px_16px_-8px_rgba(242,183,5,0.9)]", className)}
+      className={cn("inline-flex items-center justify-center bg-[#F2B705] px-3 py-1 text-sm font-black text-[#1A1505] shadow-[0_6px_16px_-8px_rgba(242,183,5,0.9)]", className)}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
       {children}
@@ -283,7 +283,7 @@ type BtnProps = { href?: string; children: ReactNode; className?: string; onClic
 
 function makeButton(base: string) {
   return function Btn({ href, children, className, onClick, type, ...rest }: BtnProps) {
-    const cls = cn(base, "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold", className)
+    const cls = cn(base, "inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold", className)
     if (href) return <Link href={href} className={cls} {...rest}>{children}</Link>
     return <button type={type ?? "button"} onClick={onClick} className={cls} {...rest}>{children}</button>
   }

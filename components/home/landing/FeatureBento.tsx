@@ -20,15 +20,15 @@ function BentoVisual({ item }: { item: BentoItem }) {
         <EditableImage
           slot={`home_seller_bento_${item.n}`}
           slotConfig={{ aspectRatio: 16 / 10, outputWidth: 1280, outputHeight: 800 }}
-          className="aspect-[16/10] w-full rounded-xl"
+          className="aspect-[16/10] w-full"
           fallback={
-            <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="h-full w-full rounded-xl" />
+            <PhotoFrame src={item.photo} ready alt={item.title} icon={item.n === 11 ? "star" : "briefcase"} className="h-full w-full" />
           }
         />
       )
     case "saque":
       return (
-        <div className="rounded-xl bg-[#FAF7F0] p-3">
+        <div className="bg-[#FAF7F0] p-3">
           <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Saldo disponível</div>
           <div className="mt-1 text-xl font-black text-[#14110B]">R$ 24.820,00</div>
           <div className="text-[11px] font-bold text-emerald-600">+12% no mês</div>
@@ -36,7 +36,7 @@ function BentoVisual({ item }: { item: BentoItem }) {
       )
     case "faturamento":
       return (
-        <div className="rounded-xl bg-[#FAF7F0] p-3">
+        <div className="bg-[#FAF7F0] p-3">
           <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Faturamento aprovado</div>
           <div className="mt-1 flex items-center gap-1.5 text-2xl font-black text-[#14110B]">
             784.321 <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -46,31 +46,31 @@ function BentoVisual({ item }: { item: BentoItem }) {
       )
     case "comissao":
       return (
-        <div className="flex items-center justify-between rounded-xl bg-[#14110B] px-3 py-3 text-[#FAF7F0]">
+        <div className="flex items-center justify-between bg-[#14110B] px-3 py-3 text-[#FAF7F0]">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wide text-[#F2B705]">Seja um afiliado</div>
             <div className="text-sm font-black">FREELANDOO!</div>
           </div>
-          <span className="rounded-full bg-[#F2B705] px-2.5 py-1 text-[11px] font-black text-[#1A1505]">até 70%</span>
+          <span className="bg-[#F2B705] px-2.5 py-1 text-[11px] font-black text-[#1A1505]">até 70%</span>
         </div>
       )
     case "video":
       return (
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-gradient-to-br from-[#241f18] to-[#0EA5E9]/30">
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-[#241f18] to-[#0EA5E9]/30">
           {item.photo && (
             <Image src={item.photo} alt={item.title} fill sizes="(max-width:768px) 90vw, 360px" className="object-cover" />
           )}
           <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90">
+          <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-white/90">
             <Play className="h-5 w-5 translate-x-0.5 fill-[#14110B] text-[#14110B]" />
           </span>
-          <span className="absolute bottom-2 right-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">0:45</span>
+          <span className="absolute bottom-2 right-2 bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">0:45</span>
         </div>
       )
     case "stories":
       if (item.photo) {
         return (
-          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#0b0804]">
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0b0804]">
             <Image src={item.photo} alt={item.title} fill sizes="(max-width:768px) 90vw, 360px" className="object-cover" />
           </div>
         )
@@ -78,26 +78,26 @@ function BentoVisual({ item }: { item: BentoItem }) {
       return (
         <div className="flex gap-2">
           {["#F2B705", "#EC4899", "#10B981"].map((c, i) => (
-            <div key={i} className="aspect-[9/16] flex-1 rounded-lg p-[2px]" style={{ background: `linear-gradient(135deg, ${c}, #E0A500)` }}>
-              <div className="h-full w-full rounded-md" style={{ background: "linear-gradient(160deg,#241f18,#15120e)" }} />
+            <div key={i} className="aspect-[9/16] flex-1 p-[2px]" style={{ background: `linear-gradient(135deg, ${c}, #E0A500)` }}>
+              <div className="h-full w-full" style={{ background: "linear-gradient(160deg,#241f18,#15120e)" }} />
             </div>
           ))}
         </div>
       )
     case "avatars":
       return (
-        <div className="flex items-center gap-3 rounded-xl bg-[#FAF7F0] px-3 py-3">
+        <div className="flex items-center gap-3 bg-[#FAF7F0] px-3 py-3">
           <AvatarStack count={4} className="[&>*]:!border-[#FAF7F0]" />
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#14110B] text-[#FAF7F0]"><Plus className="h-4 w-4" /></span>
+          <span className="flex h-8 w-8 items-center justify-center bg-[#14110B] text-[#FAF7F0]"><Plus className="h-4 w-4" /></span>
           <span className="text-xs font-semibold text-[#6B6457]">+999 criadores</span>
         </div>
       )
     case "search":
       return (
-        <div className="rounded-xl bg-[#FAF7F0] p-3">
+        <div className="bg-[#FAF7F0] p-3">
           <div className="space-y-1.5">
             {["Marketing", "Saúde, fitness", "Cripto, investimentos"].map((t) => (
-              <div key={t} className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#14110B]">
+              <div key={t} className="flex items-center gap-2 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#14110B]">
                 <Search className="h-3 w-3 text-[#9a8f7a]" /> {t}
               </div>
             ))}
@@ -111,8 +111,8 @@ function BentoVisual({ item }: { item: BentoItem }) {
     case "metrics":
     default:
       return (
-        <div className="flex items-center gap-3 rounded-xl bg-[#FAF7F0] px-3 py-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F2B705]/15 text-[#E0A500]">
+        <div className="flex items-center gap-3 bg-[#FAF7F0] px-3 py-3">
+          <span className="flex h-10 w-10 items-center justify-center bg-[#F2B705]/15 text-[#E0A500]">
             <Icon name={item.icon ?? "star"} className="h-5 w-5" />
           </span>
           <Star className="h-4 w-4 text-[#F2B705]" />
@@ -142,7 +142,7 @@ export function FeatureBento() {
             <article
               key={item.n}
               data-card
-              className={`relative flex flex-col overflow-hidden rounded-xl fl-card fl-hard p-5 ${SPAN[item.span] ?? "lg:col-span-4"}`}
+              className={`relative flex flex-col overflow-hidden fl-card fl-hard p-5 ${SPAN[item.span] ?? "lg:col-span-4"}`}
             >
               <Halftone className="absolute -bottom-2 -right-2 h-14 w-14 opacity-[0.14]" ink />
               {item.n % 3 === 0 && <WashiTape className="-right-3 top-5" off rotate={12} />}
