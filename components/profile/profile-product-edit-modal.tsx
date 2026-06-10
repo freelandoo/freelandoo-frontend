@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
+import { Camera, GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Caixas padrão Correios/Melhor Envio — escolher uma preenche as dimensões.
 // Valores em cm. O peso fica separado porque varia por produto mesmo dentro
@@ -255,12 +256,20 @@ export function ProfileProductEditModal({
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Foto escolhida ANTES de salvar (modo criação): fica pendente local e sobe
+  // logo após o POST criar o produto.
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null)
+  // Caixa de envio: força "Personalizada" mesmo se as dimensões baterem com um preset.
+  const [forceCustomBox, setForceCustomBox] = useState(false)
+
   const previewCoverUrl = useMemo(() => {
+    if (pendingPreviewUrl) return pendingPreviewUrl
     const cover =
       mediaList.find((m) => m.media_type === "image" || m.mime_type?.startsWith("image/")) ||
       mediaList[0]
     return cover?.url || cover?.media_url || cover?.thumbnail_url || null
-  }, [mediaList])
+  }, [mediaList, pendingPreviewUrl])
   const previewPriceCents = useMemo(() => {
     const cents = parsePriceReais(form.price_reais)
     return cents < 0 ? 0 : cents
@@ -288,6 +297,12 @@ export function ProfileProductEditModal({
       delivery_mode: "shipping",
     })
     setAttrs({})
+    setForceCustomBox(false)
+    setPendingFile(null)
+    setPendingPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
   }, [open, product])
 
   useEffect(() => {
@@ -310,6 +325,19 @@ export function ProfileProductEditModal({
       delivery_mode: product.delivery_mode === "local_pickup" ? "local_pickup" : "shipping",
     })
     setAttrs(product.attributes && typeof product.attributes === "object" ? product.attributes : {})
+    setForceCustomBox(
+      product.delivery_mode !== "local_pickup" &&
+      detectPreset(
+        String(product.height_cm ?? 0).replace(".", ","),
+        String(product.width_cm ?? 0).replace(".", ","),
+        String(product.length_cm ?? 0).replace(".", ","),
+      ) === "custom"
+    )
+    setPendingFile(null)
+    setPendingPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
   }, [open, product])
 
   useEffect(() => {
@@ -348,6 +376,15 @@ export function ProfileProductEditModal({
   const mediaUrl = (pid: number) =>
     `/api/profile/${profileId}/products/${pid}/media`
 
+  // Fluxo em etapas: categoria primeiro; o resto só aparece depois dela.
+  const showRest = form.id_product_category !== ""
+  const activeSchema = getAttributeSchema(
+    categories.find((c) => String(c.id_product_category) === form.id_product_category)?.slug
+  )
+  const boxPresetId = forceCustomBox
+    ? "custom"
+    : detectPreset(form.height_cm, form.width_cm, form.length_cm)
+
   const fetchMedia = useCallback(async () => {
     if (!product) return []
     setMediaLoading(true)
@@ -377,10 +414,42 @@ export function ProfileProductEditModal({
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (e.target) e.target.value = ""
-    if (!file || !product) return
+    if (!file) return
 
     const isImage = file.type.startsWith("image/")
     const isVideo = file.type.startsWith("video/")
+
+    // Modo criação: produto ainda não existe — guarda a foto pendente e mostra
+    // no preview; o upload real acontece logo depois do salvar.
+    if (!product) {
+      if (!isImage) {
+        onError?.("Antes de salvar, só dá pra escolher uma foto. Vídeos podem ser adicionados depois, editando o produto.")
+        return
+      }
+      const validation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
+      if (!validation.ok) { onError?.(validation.error); return }
+      setUploading(true)
+      try {
+        const processed = await compressImageToMaxSize(file, {
+          outputWidth: POST_IMAGE_OUTPUT.width,
+          outputHeight: POST_IMAGE_OUTPUT.height,
+          maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
+          mimeType: "image/webp",
+          errorMessage: "A foto do produto precisa ter no máximo 3MB após otimização.",
+        })
+        setPendingFile(processed.file)
+        setPendingPreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev)
+          return processed.previewUrl
+        })
+      } catch (err) {
+        onError?.(err instanceof Error ? err.message : "Erro ao processar a foto")
+      } finally {
+        setUploading(false)
+      }
+      return
+    }
+
     const validation = isImage
       ? validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
       : isVideo
@@ -553,7 +622,25 @@ export function ProfileProductEditModal({
       })
       const d = await res.json()
       if (res.ok && d.product) {
-        onSaved(d.product as ProfileProduct)
+        const saved = d.product as ProfileProduct
+        // Foto escolhida antes de salvar (modo criação): sobe agora.
+        if (!product && pendingFile) {
+          try {
+            const fd = new FormData()
+            fd.append("file", pendingFile)
+            const up = await fetch(mediaUrl(saved.id_profile_product), {
+              method: "POST",
+              headers: { Authorization: `Bearer ${getToken()}` },
+              body: fd,
+            })
+            if (!up.ok) {
+              onError?.("Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo.")
+            }
+          } catch {
+            onError?.("Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo.")
+          }
+        }
+        onSaved(saved)
         onClose()
       } else {
         onError?.(d.error || "Erro ao salvar")
@@ -592,101 +679,134 @@ export function ProfileProductEditModal({
 
         <div className="border-b-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-6 py-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#5b554b]">
-            Pré-visualização na vitrine
+            Pré-visualização na vitrine — toque no cartão pra {previewCoverUrl ? "trocar" : "escolher"} a foto
           </p>
-          <div className="mx-auto w-[180px] overflow-hidden rounded-xl">
-            <ProductCardPreview
-              name={form.name}
-              description={form.description}
-              priceCents={previewPriceCents}
-              stockQty={previewStock}
-              coverUrl={previewCoverUrl}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            aria-label={previewCoverUrl ? "Trocar a foto do produto" : "Escolher a foto do produto"}
+            className="group/preview mx-auto block w-[180px] overflow-hidden rounded-xl text-left transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+          >
+            <div className="relative">
+              <ProductCardPreview
+                name={form.name}
+                description={form.description}
+                priceCents={previewPriceCents}
+                stockQty={previewStock}
+                coverUrl={previewCoverUrl}
+              />
+              <span className="pointer-events-none absolute left-1/2 top-[28%] z-10 inline-flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2]/95 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition group-hover/preview:bg-[#F2B705]">
+                {uploading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Camera className="h-3 w-3" />
+                )}
+                {previewCoverUrl ? "Trocar foto" : "Escolher foto"}
+              </span>
+            </div>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={isEdit ? ALLOWED_MIME_TYPES.join(",") : "image/jpeg,image/png,image/webp"}
+            className="hidden"
+            onChange={handleFileUpload}
+          />
         </div>
 
-        <div className="space-y-4 p-6">
-          <div>
-            <label className="fl-label">Nome</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              maxLength={160}
-              placeholder="Ex: Camiseta oversized"
-              className="fl-input"
-            />
-          </div>
-          <div>
-            <label className="fl-label">Descrição (opcional)</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              rows={3}
-              className="fl-input resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="fl-label">Categoria</label>
-            <select
-              value={form.id_product_category}
-              onChange={(e) => {
-                const next = e.target.value
-                setForm((f) => ({ ...f, id_product_category: next }))
-                // Poda atributos que não existem no schema da nova categoria.
-                const slug = categories.find((c) => String(c.id_product_category) === next)?.slug
-                const validKeys = new Set(getAttributeSchema(slug).map((fld) => fld.key))
-                setAttrs((prev) => {
-                  const out: ProductAttributes = {}
-                  for (const [k, v] of Object.entries(prev)) if (validKeys.has(k)) out[k] = v
-                  return out
-                })
-              }}
-              className="fl-input"
-            >
-              <option value="">Selecione uma categoria…</option>
+        <div className="space-y-5 p-6">
+          {/* ── 1 · Categoria — botões, como no filtro do enxame ───────────── */}
+          <section>
+            <StepTitle n={1} title="Categoria" />
+            <div className="flex flex-wrap gap-1.5">
+              {categories.length === 0 && (
+                <span className="text-xs text-[#8a8275]">Carregando categorias…</span>
+              )}
               {categories.map((c) => (
-                <option key={c.id_product_category} value={c.id_product_category}>
-                  {c.name}
-                </option>
+                <OptionChip
+                  key={c.id_product_category}
+                  label={c.name}
+                  active={String(c.id_product_category) === form.id_product_category}
+                  onClick={() => {
+                    const next = String(c.id_product_category)
+                    setForm((f) => ({ ...f, id_product_category: next }))
+                    // Poda atributos que não existem no schema da nova categoria.
+                    const validKeys = new Set(getAttributeSchema(c.slug).map((fld) => fld.key))
+                    setAttrs((prev) => {
+                      const out: ProductAttributes = {}
+                      for (const [k, v] of Object.entries(prev)) if (validKeys.has(k)) out[k] = v
+                      return out
+                    })
+                  }}
+                />
               ))}
-            </select>
-          </div>
-
-          <AttributeFieldsEditor
-            schema={getAttributeSchema(
-              categories.find((c) => String(c.id_product_category) === form.id_product_category)?.slug
-            )}
-            value={attrs}
-            onChange={setAttrs}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="fl-label">Preço (R$) — você recebe</label>
-              <input
-                type="text"
-                value={form.price_reais}
-                onChange={(e) => setForm((f) => ({ ...f, price_reais: e.target.value }))}
-                placeholder="0,00"
-                className="fl-input font-mono"
-              />
             </div>
-            <div>
-              <label className="fl-label">Estoque (unidades)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={form.stock_quantity}
-                onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value.replace(/\D/g, "") }))}
-                placeholder="0"
-                className="fl-input font-mono"
-              />
-            </div>
-          </div>
+          </section>
 
-          {pricingPreview && pricingPreview.display_price_cents > 0 && (
+          {showRest && (
+            <>
+              {/* ── 2 · Modelo — atributos da categoria (viram filtro na busca) ── */}
+              <section>
+                <StepTitle n={2} title="Modelo" hint="o comprador filtra por isso na busca" />
+                {activeSchema.length > 0 ? (
+                  <AttributeFieldsEditor schema={activeSchema} value={attrs} onChange={setAttrs} />
+                ) : (
+                  <p className="text-xs text-[#8a8275]">Essa categoria não tem detalhes extras.</p>
+                )}
+              </section>
+
+              {/* ── 3 · Valor e descrição ───────────────────────────────────── */}
+              <section className="space-y-3">
+                <StepTitle n={3} title="Valor e descrição" />
+                <div>
+                  <label className="fl-label">Nome</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    maxLength={160}
+                    placeholder="Ex: Camiseta oversized"
+                    className="fl-input"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="fl-label">Preço (R$) — você recebe</label>
+                    <input
+                      type="text"
+                      value={form.price_reais}
+                      onChange={(e) => setForm((f) => ({ ...f, price_reais: e.target.value }))}
+                      placeholder="0,00"
+                      className="fl-input font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="fl-label">Estoque (unidades)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={form.stock_quantity}
+                      onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value.replace(/\D/g, "") }))}
+                      placeholder="0"
+                      className="fl-input font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="fl-label">Descrição (opcional)</label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    rows={3}
+                    className="fl-input resize-none"
+                  />
+                </div>
+              </section>
+            </>
+          )}
+
+          {showRest && pricingPreview && pricingPreview.display_price_cents > 0 && (
             <div className="rounded-lg border-2 border-[#E0A500]/40 bg-[#F2B705]/10 px-3 py-2">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#b8860b]">
                 Preço final ao comprador (com taxas)
@@ -711,150 +831,44 @@ export function ProfileProductEditModal({
             </div>
           )}
 
-          {/* Entrega — 1 select unificado: Retirar comigo | 6 caixas padrão | Personalizada.
-              Local pickup → esconde tudo. Caixa padrão → auto-preenche e esconde campos.
-              Personalizada → mostra dimensões/peso/CEP pra digitar à mão. */}
-          <div>
-            <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Entrega</p>
-            <select
-              value={
-                form.delivery_mode === "local_pickup"
-                  ? "local_pickup"
-                  : detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm))
-              }
-              onChange={(e) => {
-                const v = e.target.value
-                if (v === "local_pickup") {
-                  setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))
-                  return
-                }
-                if (v === "custom") {
-                  setForm((f) => ({ ...f, delivery_mode: "shipping" }))
-                  return
-                }
-                const preset = BOX_PRESETS.find((p) => p.id === v)
-                if (!preset) return
-                setForm((f) => ({
-                  ...f,
-                  delivery_mode: "shipping",
-                  height_cm: String(preset.h).replace(".", ","),
-                  width_cm: String(preset.w).replace(".", ","),
-                  length_cm: String(preset.l).replace(".", ","),
-                }))
-              }}
-              className="fl-input"
-            >
-              <option value="local_pickup">🤝 Retirar comigo (sem frete)</option>
-              <optgroup label="Caixas padrão (Correios / Melhor Envio)">
-                {BOX_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}{p.hint ? ` — ${p.hint}` : ""}
-                  </option>
-                ))}
-              </optgroup>
-              <option value="custom">Personalizada (digitar dimensões à mão)</option>
-            </select>
-            <p className="mt-1 text-[10px] text-[#8a8275]">
-              Escolha a caixa em que vai embalar. Se nenhuma serve, use &quot;Personalizada&quot;.
-            </p>
-          </div>
-
-          {form.delivery_mode === "local_pickup" ? (
-            <div className="rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3 text-xs text-[#5b554b]">
-              Sem frete por transportadora. O comprador vai ver o botão &quot;Falar com vendedor&quot;
-              no produto, que abre uma conversa direta com você no Mensagens.
-            </div>
-          ) : detectPreset(String(form.height_cm), String(form.width_cm), String(form.length_cm)) === "custom" ? (
-          <>
-          <div>
-            <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Dimensões e peso (personalizadas)</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="fl-label">Peso (g)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={form.weight_grams}
-                  onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
-                  placeholder="0"
-                  className="fl-input font-mono"
-                />
-              </div>
-              <div>
-                <label className="fl-label">Altura (cm)</label>
-                <input
-                  type="text"
-                  value={form.height_cm}
-                  onChange={(e) => setForm((f) => ({ ...f, height_cm: e.target.value }))}
-                  placeholder="0,00"
-                  className="fl-input font-mono"
-                />
-              </div>
-              <div>
-                <label className="fl-label">Largura (cm)</label>
-                <input
-                  type="text"
-                  value={form.width_cm}
-                  onChange={(e) => setForm((f) => ({ ...f, width_cm: e.target.value }))}
-                  placeholder="0,00"
-                  className="fl-input font-mono"
-                />
-              </div>
-              <div>
-                <label className="fl-label">Comprimento (cm)</label>
-                <input
-                  type="text"
-                  value={form.length_cm}
-                  onChange={(e) => setForm((f) => ({ ...f, length_cm: e.target.value }))}
-                  placeholder="0,00"
-                  className="fl-input font-mono"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="fl-label">CEP de origem deste produto (opcional)</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={9}
-              value={form.origin_zipcode_override}
-              onChange={(e) => setForm((f) => ({ ...f, origin_zipcode_override: formatZip(e.target.value) }))}
-              placeholder="00000-000"
-              className="fl-input font-mono"
-            />
-            <p className="mt-1 text-[10px] text-[#8a8275]">
-              Sobrescreve o CEP padrão do subperfil para este produto.
-            </p>
-          </div>
-          </>
-          ) : (
-            <div>
-              {/* Caixa padrão escolhida — peso é o único campo que ainda precisa do vendedor. */}
-              <label className="fl-label">Peso (g)</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={form.weight_grams}
-                onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
-                placeholder="0"
-                className="fl-input max-w-[200px] font-mono"
+          {/* ── 4 · Foto ─────────────────────────────────────────────────── */}
+          {showRest && (
+            <section>
+              <StepTitle
+                n={4}
+                title={isEdit ? "Fotos e vídeos" : "Foto"}
+                hint={isEdit ? "arraste pra reordenar" : "ou toque no cartão de pré-visualização lá em cima"}
               />
-              <p className="mt-1 text-[10px] text-[#8a8275]">
-                Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.
-              </p>
-            </div>
-          )}
-
-          {isEdit && (
-            <div>
-              <label className="mb-2 flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
-                <ImagePlus className="h-3.5 w-3.5" />
-                Fotos e vídeos do produto
-              </label>
-
-              {mediaLoading ? (
+              {!isEdit ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={cn(
+                    "flex w-full items-center gap-3 border-2 px-3 py-2.5 text-left transition-transform hover:-translate-y-0.5 disabled:opacity-60",
+                    pendingFile
+                      ? "border-[#0B0B0D] bg-[#F2B705]/15 shadow-[2px_2px_0_0_#0B0B0D]"
+                      : "border-dashed border-[#0B0B0D]/30 bg-white/50 hover:border-[#0B0B0D]",
+                  )}
+                >
+                  {pendingPreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={pendingPreviewUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border-2 border-[#0B0B0D] object-cover" />
+                  ) : (
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-[#0B0B0D]/30 text-[#5b554b]">
+                      {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <span className="block text-xs font-bold text-[#0B0B0D]">
+                      {pendingFile ? "Foto escolhida — toque pra trocar" : "Escolher a foto do produto"}
+                    </span>
+                    <span className="block text-[10px] text-[#8a8275]">
+                      Sobe junto quando você salvar. Mais fotos e vídeos: edite o produto depois.
+                    </span>
+                  </span>
+                </button>
+              ) : mediaLoading ? (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="h-5 w-5 animate-spin text-[#0B0B0D]/40" />
                 </div>
@@ -919,28 +933,179 @@ export function ProfileProductEditModal({
                       </button>
                     )}
                   </div>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={ALLOWED_MIME_TYPES.join(",")}
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-
                   <p className="mt-1.5 text-[10px] text-[#8a8275]">
                     JPG, PNG, WebP, MP4, WebM ou MOV · Até {MAX_PRODUCT_MEDIA} arquivos.
                     {mediaList.length > 1 && " Arraste para reordenar."}
                   </p>
                 </>
               )}
-            </div>
+            </section>
           )}
 
-          {!isEdit && (
-            <p className="text-[11px] text-[#8a8275]">
-              Após salvar, abra o produto novamente para enviar fotos e vídeos.
-            </p>
+          {/* ── 5 · Entrega — tudo em botões ─────────────────────────────── */}
+          {showRest && (
+            <section className="space-y-3">
+              <StepTitle n={5} title="Entrega" />
+              <div className="flex flex-wrap gap-1.5">
+                <OptionChip
+                  label="🤝 Retirar comigo"
+                  active={form.delivery_mode === "local_pickup"}
+                  onClick={() => setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))}
+                />
+                <OptionChip
+                  label="📦 Enviar com frete"
+                  active={form.delivery_mode === "shipping"}
+                  onClick={() => setForm((f) => ({ ...f, delivery_mode: "shipping" }))}
+                />
+              </div>
+
+              {form.delivery_mode === "local_pickup" ? (
+                <div className="rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3 text-xs text-[#5b554b]">
+                  Sem frete por transportadora. O comprador vai ver o botão &quot;Falar com vendedor&quot;
+                  no produto, que abre uma conversa direta com você no Mensagens.
+                </div>
+              ) : (
+                <>
+                  <p className="text-[10px] text-[#8a8275]">
+                    Escolha a caixa em que vai embalar (Correios / Melhor Envio). Se nenhuma serve, use Personalizada.
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {BOX_PRESETS.map((p) => {
+                      const active = boxPresetId === p.id
+                      const name = p.label.replace(/\s*\(.*$/, "")
+                      const dims = p.label.match(/\((.*)\)/)?.[1] ?? ""
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => {
+                            setForceCustomBox(false)
+                            setForm((f) => ({
+                              ...f,
+                              delivery_mode: "shipping",
+                              height_cm: String(p.h).replace(".", ","),
+                              width_cm: String(p.w).replace(".", ","),
+                              length_cm: String(p.l).replace(".", ","),
+                            }))
+                          }}
+                          className={cn(
+                            "border-2 px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5",
+                            active
+                              ? "border-[#0B0B0D] bg-[#F2B705] shadow-[2px_2px_0_0_#0B0B0D]"
+                              : "border-[#0B0B0D]/25 bg-white/50 hover:border-[#0B0B0D]",
+                          )}
+                        >
+                          <span className="block text-[11px] font-extrabold text-[#0B0B0D]">{name}</span>
+                          <span className={cn("block text-[10px]", active ? "text-[#0B0B0D]/75" : "text-[#8a8275]")}>
+                            {dims}{p.hint ? ` · ${p.hint}` : ""}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    <button
+                      type="button"
+                      aria-pressed={boxPresetId === "custom"}
+                      onClick={() => setForceCustomBox(true)}
+                      className={cn(
+                        "border-2 px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5",
+                        boxPresetId === "custom"
+                          ? "border-[#0B0B0D] bg-[#F2B705] shadow-[2px_2px_0_0_#0B0B0D]"
+                          : "border-dashed border-[#0B0B0D]/30 bg-white/50 hover:border-[#0B0B0D]",
+                      )}
+                    >
+                      <span className="block text-[11px] font-extrabold text-[#0B0B0D]">Personalizada</span>
+                      <span className={cn("block text-[10px]", boxPresetId === "custom" ? "text-[#0B0B0D]/75" : "text-[#8a8275]")}>
+                        digitar dimensões à mão
+                      </span>
+                    </button>
+                  </div>
+
+                  {boxPresetId === "custom" ? (
+                    <>
+                      <div>
+                        <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Dimensões e peso (personalizadas)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="fl-label">Peso (g)</label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={form.weight_grams}
+                              onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
+                              placeholder="0"
+                              className="fl-input font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="fl-label">Altura (cm)</label>
+                            <input
+                              type="text"
+                              value={form.height_cm}
+                              onChange={(e) => setForm((f) => ({ ...f, height_cm: e.target.value }))}
+                              placeholder="0,00"
+                              className="fl-input font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="fl-label">Largura (cm)</label>
+                            <input
+                              type="text"
+                              value={form.width_cm}
+                              onChange={(e) => setForm((f) => ({ ...f, width_cm: e.target.value }))}
+                              placeholder="0,00"
+                              className="fl-input font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="fl-label">Comprimento (cm)</label>
+                            <input
+                              type="text"
+                              value={form.length_cm}
+                              onChange={(e) => setForm((f) => ({ ...f, length_cm: e.target.value }))}
+                              placeholder="0,00"
+                              className="fl-input font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="fl-label">CEP de origem deste produto (opcional)</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={9}
+                          value={form.origin_zipcode_override}
+                          onChange={(e) => setForm((f) => ({ ...f, origin_zipcode_override: formatZip(e.target.value) }))}
+                          placeholder="00000-000"
+                          className="fl-input font-mono"
+                        />
+                        <p className="mt-1 text-[10px] text-[#8a8275]">
+                          Sobrescreve o CEP padrão do subperfil para este produto.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      {/* Caixa padrão escolhida — peso é o único campo que ainda precisa do vendedor. */}
+                      <label className="fl-label">Peso (g)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={form.weight_grams}
+                        onChange={(e) => setForm((f) => ({ ...f, weight_grams: e.target.value.replace(/\D/g, "") }))}
+                        placeholder="0"
+                        className="fl-input max-w-[200px] font-mono"
+                      />
+                      <p className="mt-1 text-[10px] text-[#8a8275]">
+                        Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
           )}
 
           <label className="flex cursor-pointer items-center gap-2">
@@ -1019,9 +1184,6 @@ function AttributeFieldsEditor({
 
   return (
     <div className="space-y-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[#5b554b]">
-        Detalhes pro comprador filtrar
-      </p>
       {schema.map((field) => {
         if (field.type === "brand") {
           const listId = `attr-brand-${field.key}`
@@ -1109,5 +1271,36 @@ function AttributeFieldsEditor({
         )
       })}
     </div>
+  )
+}
+
+// ─── Helpers do fluxo em etapas ──────────────────────────────────────────────
+function StepTitle({ n, title, hint }: { n: number; title: string; hint?: string }) {
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[11px] font-extrabold text-[#0B0B0D] shadow-[1px_1px_0_0_#0B0B0D]">
+        {n}
+      </span>
+      <span className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]">{title}</span>
+      {hint && <span className="text-[10px] text-[#8a8275]">{hint}</span>}
+    </div>
+  )
+}
+
+function OptionChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "border-2 px-2.5 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.04em] transition-transform hover:-translate-y-0.5",
+        active
+          ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+          : "border-[#0B0B0D]/25 bg-white/50 text-[#3a352c] hover:border-[#0B0B0D]",
+      )}
+    >
+      {label}
+    </button>
   )
 }
