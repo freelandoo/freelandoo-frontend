@@ -3,7 +3,15 @@ import { notFound } from "next/navigation"
 import { BlogPostView } from "@/components/blog/blog-post-view"
 import { fetchBlogPost } from "@/lib/blog"
 
-export const dynamic = "force-dynamic"
+// ISR: post renderizado sob demanda e cacheado por 5 min (F3.S5). Publicação/
+// edição aparece em até 5 min — mesmo prazo do índice /blog.
+export const revalidate = 300
+
+// Sem isto o Next trata a rota como 100% dinâmica; vazio = nada prerenderizado
+// no build, mas cada slug visitado entra no cache ISR (dynamicParams default).
+export function generateStaticParams(): { slug: string }[] {
+  return []
+}
 
 const BASE_URL = "https://www.freelandoo.com.br"
 

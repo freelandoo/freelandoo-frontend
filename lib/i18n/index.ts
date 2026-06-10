@@ -1,6 +1,7 @@
 // lib/i18n/index.ts
-// Re-exports neutros (browser + server). Para helpers server-only, importe de
-// "@/lib/i18n/server"; para server actions, de "@/lib/i18n/actions".
+// Re-exports neutros (browser + server). Locale/país são resolvidos no CLIENTE
+// pelo I18nProvider (cookie lido pós-mount) — NÃO criar helpers server que leem
+// cookies(): isso força renderização dinâmica em todas as rotas (ver F3.S5).
 
 export * from "./config"
-export { getMessages, MESSAGES, type MessageDict } from "./messages"
+export { type MessageDict } from "./messages"

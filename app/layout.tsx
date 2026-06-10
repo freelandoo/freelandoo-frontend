@@ -14,8 +14,6 @@ import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { IntentModal } from "@/features/intent/IntentModal"
-import { getCountry, getLocale } from "@/lib/i18n/server"
-import { getMessages } from "@/lib/i18n/messages"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
@@ -79,14 +77,14 @@ export const viewport: Viewport = {
   themeColor: "#FFC600",
 }
 
-export default async function RootLayout({
+// IMPORTANTE (F3.S5): este layout NÃO pode ler cookies()/headers() — isso
+// forçaria TODAS as rotas a renderização dinâmica e mataria static/ISR no
+// site inteiro. Locale/país são resolvidos no cliente pelo I18nProvider.
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getLocale()
-  const country = await getCountry()
-  const messages = getMessages(locale)
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -115,7 +113,7 @@ export default async function RootLayout({
 
   return (
     <html
-      lang={locale}
+      lang="pt-BR"
       className={`dark ${geistSans.variable} ${geistMono.variable} ${anton.variable} ${archivo.variable} ${caveat.variable}`}
       suppressHydrationWarning
     >
@@ -123,7 +121,7 @@ export default async function RootLayout({
         {/* JSON-LD no body evita conflito de ordem/atributos com scripts gerenciados pelo Next no <head>. */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
-        <I18nProvider locale={locale} country={country} messages={messages}>
+        <I18nProvider>
           <TourProvider>
             <ConsentProvider>{children}</ConsentProvider>
             <ProfileSidebar />

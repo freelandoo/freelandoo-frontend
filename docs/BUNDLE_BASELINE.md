@@ -111,6 +111,40 @@ Próximos alvos por delta: `/bees` (+568KB), `/feed` (+385KB), e o **shell
 compartilhado (~1.170KB)** — maior ganho individual restante, candidato a
 slice próprio na Sessão 4.
 
+## Pós-F3.S5 (2026-06-10) — aquisição em static/ISR (layout raiz sem cookies)
+
+O bloqueador era o **layout raiz lendo `cookies()`** (locale/país do i18n):
+isso forçava TODAS as rotas a renderização dinâmica — zero `X-Vercel-Cache:
+HIT` no site, lambda invocada em cada pageview. Mudanças:
+
+- Layout raiz virou síncrono (`lang="pt-BR"` fixo); locale/país agora são
+  resolvidos no **cliente** pelo `I18nProvider` (cookie lido pós-mount).
+- Dicionários de tradução viraram **chunks lazy** (`import()` por locale) —
+  o dict ativo (~51KB) não é mais serializado no HTML de toda página
+  (home: 229KB → 178KB de HTML).
+- `/blog/[slug]` saiu de `force-dynamic` para ISR (`revalidate=300` +
+  `generateStaticParams` vazio).
+- `/cursos/[slug]` (landing de curso) saiu de client-only/no-store para
+  **RSC + ISR** com metadata real (SEO/OG) e ilha client pra compra.
+
+Resultado no build (`npm run build`):
+
+| Rota | Antes | Depois |
+|------|-------|--------|
+| `/` (home landing) | ƒ dynamic | **○ static** |
+| `/comprar` | ƒ | **○ static** |
+| `/cursos` | ƒ | **○ static** |
+| `/cursos/[slug]` | ƒ (client fetch no-store) | **● ISR 5min** |
+| `/blog/[slug]` | ƒ (force-dynamic) | **● ISR 5min** |
+| `/blog` | ƒ | ƒ (searchParams de paginação; data cache 300s) |
+| +40 rotas (login, cadastro, legais, ranking, search, feed, wallet…) | ƒ | **○ static** |
+
+First Load JS não muda (slice de renderização, não de bundle). O ganho é de
+custo/latência: páginas estáticas saem do CDN sem invocar função.
+
+⚠️ **Regra nova:** o layout raiz NÃO pode voltar a ler `cookies()`/`headers()`
+— isso re-dinamiza o site inteiro silenciosamente. Locale é client-side.
+
 ## Como atualizar
 
 ```bash

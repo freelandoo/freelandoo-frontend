@@ -1,7 +1,6 @@
 "use client"
 
 import { useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { Globe } from "lucide-react"
 import {
   DropdownMenu,
@@ -12,11 +11,10 @@ import {
 import {
   LOCALE_FLAGS,
   LOCALE_LABELS,
-  LOCALE_COOKIE,
   SUPPORTED_LOCALES,
   type Locale,
 } from "@/lib/i18n/config"
-import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useI18n, useTranslations } from "@/components/i18n/I18nProvider"
 
 interface LanguageSwitcherProps {
   variant?: "compact" | "full"
@@ -24,16 +22,16 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ variant = "compact", className }: LanguageSwitcherProps) {
-  const router = useRouter()
-  const locale = useLocale()
+  const { locale, setLocale } = useI18n()
   const t = useTranslations("Common")
   const [pending, startTransition] = useTransition()
 
   const handleSelect = (next: Locale) => {
     if (next === locale || pending) return
     startTransition(async () => {
-      // 1. Cookie (sempre)
-      document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`
+      // 1. Cookie + estado do provider (a troca é client-side; o layout raiz
+      //    não lê mais cookie de locale — F3.S5).
+      setLocale(next)
 
       // 2. Sync backend se autenticado (best-effort, não bloqueia UX)
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -47,8 +45,6 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
           body: JSON.stringify({ locale: next }),
         }).catch(() => {})
       }
-
-      router.refresh()
     })
   }
 

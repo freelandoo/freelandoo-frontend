@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { MapPin } from "lucide-react"
 import {
   DropdownMenu,
@@ -10,9 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { COUNTRY_COOKIE } from "@/lib/i18n/config"
 import {
-  useCountry,
+  useI18n,
   useLocale,
   useTranslations,
 } from "@/components/i18n/I18nProvider"
@@ -58,8 +56,7 @@ export function CountrySwitcher({
   className,
   showAllOption = false,
 }: CountrySwitcherProps) {
-  const router = useRouter()
-  const country = useCountry()
+  const { country, setCountry } = useI18n()
   const locale = useLocale()
   const t = useTranslations("Countries")
   const [countries, setCountries] = useState<Country[]>([])
@@ -81,7 +78,9 @@ export function CountrySwitcher({
   const handleSelect = (iso2: string) => {
     if (iso2 === country || pending) return
     startTransition(async () => {
-      document.cookie = `${COUNTRY_COOKIE}=${iso2}; path=/; max-age=31536000; SameSite=Lax`
+      // Cookie + estado do provider (troca client-side; o layout raiz não lê
+      // mais cookie de país — F3.S5). "ALL" normaliza pra BR, como antes.
+      setCountry(iso2)
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
       if (token && iso2 !== "ALL") {
         fetch("/api/users/me/country", {
@@ -93,7 +92,6 @@ export function CountrySwitcher({
           body: JSON.stringify({ country: iso2 }),
         }).catch(() => {})
       }
-      router.refresh()
     })
   }
 
