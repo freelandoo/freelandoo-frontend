@@ -18,6 +18,8 @@ import {
   type ProductSubfilterState,
 } from "@/components/search/product-subfilters"
 import { getAttributeSchema } from "@/lib/product-attributes"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 
 export type CoursePriceFilter = "all" | "free" | "paid"
@@ -70,6 +72,9 @@ export function FilterRail(props: FilterRailProps) {
     onCoursePriceChange, onClearAll,
   } = props
 
+  const t = useTranslations("Search")
+  const tx = useTaxonomy()
+
   // Drill-in da aba Produtos: categoria clicada vira painel de subfiltros.
   const [productDrill, setProductDrill] = useState(false)
   const activeProductCategory =
@@ -90,14 +95,14 @@ export function FilterRail(props: FilterRailProps) {
     <aside className="hidden w-[270px] shrink-0 lg:block">
       <div className="sticky top-[76px] max-h-[calc(100dvh-92px)] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] shadow-[5px_5px_0_0_#0B0B0D] [scrollbar-width:thin]">
         <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#0B0B0D] px-4 py-3">
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F1EDE2]">Filtros</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F1EDE2]">{t("filtersButton", "Filtros")}</span>
           {hasFilters && (
             <button
               type="button"
               onClick={onClearAll}
               className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#F2B705] transition hover:text-[#F1EDE2]"
             >
-              <X className="h-3 w-3" /> Limpar
+              <X className="h-3 w-3" /> {t("clearButton", "Limpar")}
             </button>
           )}
         </div>
@@ -114,12 +119,12 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {tab === "products" && !showDrill && (
-          <RailSection title="Categoria" defaultOpen>
-            <RailOption label="Todas" active={productCategoryId == null} accent={accent} onClick={() => { onProductCategoryChange(null); setProductDrill(false) }} />
+          <RailSection title={t("categoryLabel", "Categoria")} defaultOpen>
+            <RailOption label={t("allFemale", "Todas")} active={productCategoryId == null} accent={accent} onClick={() => { onProductCategoryChange(null); setProductDrill(false) }} />
             {productCategories.map((c) => (
               <RailOption
                 key={c.id_product_category}
-                label={c.name}
+                label={tx.productCategory(c.slug, c.name)}
                 active={c.id_product_category === productCategoryId}
                 accent={accent}
                 onClick={() => {
@@ -133,15 +138,15 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {showEnxame && (
-          <RailSection title="Enxames" defaultOpen>
-            <RailOption label="Todos" active={selectedMachineId == null} accent="#F2B705" onClick={() => { onMachineChange(null); onCategoryChange(null) }} />
+          <RailSection title={t("enxamesSection", "Enxames")} defaultOpen>
+            <RailOption label={t("allMale", "Todos")} active={selectedMachineId == null} accent="#F2B705" onClick={() => { onMachineChange(null); onCategoryChange(null) }} />
             {machines.map((m) => {
               const tint = machineAccent(m)
               const active = m.id_machine === selectedMachineId
               return (
                 <RailOption
                   key={m.id_machine}
-                  label={m.name.replace(/^Enxame de\s+/i, "")}
+                  label={tx.enxame(m.slug, m.name)}
                   active={active}
                   accent={tint}
                   dot={tint}
@@ -153,16 +158,16 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {showProfession && (
-          <RailSection title="Profissão" defaultOpen={!!activeMachine}>
+          <RailSection title={t("professionFilterLabel", "Profissão")} defaultOpen={!!activeMachine}>
             {!activeMachine ? (
-              <p className="px-1 py-1 text-[11px] font-semibold text-[#6B6457]">Escolha um enxame primeiro.</p>
+              <p className="px-1 py-1 text-[11px] font-semibold text-[#6B6457]">{t("selectMachineFirst", "Escolha um enxame primeiro.")}</p>
             ) : (
               <>
-                <RailOption label="Todas" active={selectedCategoryId == null} accent={accent} onClick={() => onCategoryChange(null)} />
+                <RailOption label={t("allFemale", "Todas")} active={selectedCategoryId == null} accent={accent} onClick={() => onCategoryChange(null)} />
                 {categories.map((c) => (
                   <RailOption
                     key={c.id_category}
-                    label={c.desc_category}
+                    label={tx.profession(c.desc_category)}
                     active={c.id_category === selectedCategoryId}
                     accent={accent}
                     onClick={() => onCategoryChange(c.id_category === selectedCategoryId ? null : c.id_category)}
@@ -174,7 +179,7 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {showRegion && (
-          <RailSection title="Região" defaultOpen={false}>
+          <RailSection title={t("regionFilterLabel", "Região")} defaultOpen={false}>
             <RegionFilterSheet
               state={state}
               regionId={regionId}
@@ -193,7 +198,7 @@ export function FilterRail(props: FilterRailProps) {
                   style={state || regionId ? { background: accent } : undefined}
                 >
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{regionName || state || "Escolher região"}</span>
+                  <span className="truncate">{regionName || state || t("chooseRegion", "Escolher região")}</span>
                 </button>
               }
             />
@@ -203,19 +208,19 @@ export function FilterRail(props: FilterRailProps) {
                 onClick={() => onLocationChange({ state: null, regionId: null, regionName: null })}
                 className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#6B6457] hover:text-[#0B0B0D]"
               >
-                <X className="h-3 w-3" /> Remover região
+                <X className="h-3 w-3" /> {t("removeRegion", "Remover região")}
               </button>
             )}
           </RailSection>
         )}
 
         {tab === "services" && (
-          <RailSection title="Nível" defaultOpen={false}>
-            <RailOption label="Qualquer" active={levelMin == null} accent={accent} onClick={() => onLevelChange(null)} />
+          <RailSection title={t("levelFilterLabel", "Nível")} defaultOpen={false}>
+            <RailOption label={t("anyLevel", "Qualquer")} active={levelMin == null} accent={accent} onClick={() => onLevelChange(null)} />
             {LEVEL_FILTER_OPTIONS.filter((o) => o.value != null).map((o) => (
               <RailOption
                 key={String(o.value)}
-                label={o.label}
+                label={t(`level${o.value}Plus`, o.label)}
                 active={levelMin === o.value}
                 accent={accent}
                 onClick={() => onLevelChange(levelMin === o.value ? null : o.value)}
@@ -225,7 +230,7 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {tab === "services" && (
-          <RailSection title="Premium" defaultOpen={false}>
+          <RailSection title={t("premiumButtonLabel", "Premium")} defaultOpen={false}>
             <button
               type="button"
               onClick={onPremiumToggle}
@@ -237,16 +242,16 @@ export function FilterRail(props: FilterRailProps) {
               )}
             >
               <Star className={cn("h-3.5 w-3.5", premiumOnly && "fill-current")} />
-              Só perfis Premium
+              {t("premiumOnlyLabel", "Só perfis Premium")}
             </button>
           </RailSection>
         )}
 
         {tab === "courses" && (
-          <RailSection title="Preço" defaultOpen={false}>
-            <RailOption label="Todos" active={coursePrice === "all"} accent={accent} onClick={() => onCoursePriceChange("all")} />
-            <RailOption label="Gratuitos" active={coursePrice === "free"} accent={accent} onClick={() => onCoursePriceChange("free")} />
-            <RailOption label="Pagos" active={coursePrice === "paid"} accent={accent} onClick={() => onCoursePriceChange("paid")} />
+          <RailSection title={t("priceSection", "Preço")} defaultOpen={false}>
+            <RailOption label={t("allMale", "Todos")} active={coursePrice === "all"} accent={accent} onClick={() => onCoursePriceChange("all")} />
+            <RailOption label={t("freeCoursesLabel", "Gratuitos")} active={coursePrice === "free"} accent={accent} onClick={() => onCoursePriceChange("free")} />
+            <RailOption label={t("paidCoursesLabel", "Pagos")} active={coursePrice === "paid"} accent={accent} onClick={() => onCoursePriceChange("paid")} />
           </RailSection>
         )}
       </div>

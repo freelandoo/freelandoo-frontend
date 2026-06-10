@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Loader2, GraduationCap } from "lucide-react"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type CourseItem = {
   id: string
@@ -31,12 +33,14 @@ interface Props {
   priceFilter?: "all" | "free" | "paid"
 }
 
-function formatBRL(cents: number | null) {
-  if (cents == null) return "Gratuito"
+function formatBRL(cents: number | null, freeLabel: string) {
+  if (cents == null) return freeLabel
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
 export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: Props) {
+  const t = useTranslations("Search")
+  const tx = useTaxonomy()
   const [items, setItems] = useState<CourseItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,10 +60,10 @@ export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: P
         if (!alive) return
         setItems(Array.isArray(d?.items) ? d.items : [])
       })
-      .catch((err) => alive && setError(err instanceof Error ? err.message : "Erro ao carregar"))
+      .catch((err) => alive && setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar")))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [machineId, categoryId, q])
+  }, [machineId, categoryId, q, t])
 
   const visible = items.filter((c) => {
     if (priceFilter === "free") return !c.price_cents
@@ -83,9 +87,9 @@ export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: P
         <div className="rounded-full border border-white/[0.08] bg-white/[0.02] p-3">
           <GraduationCap className="h-5 w-5 text-white/55" />
         </div>
-        <p className="mt-4 text-sm font-semibold tracking-tight text-white">Nenhum curso encontrado</p>
+        <p className="mt-4 text-sm font-semibold tracking-tight text-white">{t("noCoursesTitle", "Nenhum curso encontrado")}</p>
         <p className="mt-1 text-[13px] text-white/55">
-          Tente outro filtro ou abra um chamado pra avisar os instrutores.
+          {t("noCoursesHint", "Tente outro filtro ou abra um chamado pra avisar os instrutores.")}
         </p>
       </div>
     )
@@ -121,7 +125,7 @@ export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: P
                   className="absolute left-2 top-2 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] backdrop-blur"
                   style={{ color: accent }}
                 >
-                  {c.category_name}
+                  {tx.profession(c.category_name)}
                 </span>
               )}
             </div>
@@ -129,7 +133,7 @@ export function CoursesGrid({ machineId, categoryId, q, priceFilter = "all" }: P
               <p className="line-clamp-2 text-[13px] font-bold leading-tight text-[#0B0B0D]">{c.title}</p>
               <div className="mt-auto flex items-center justify-between gap-2">
                 <p className="text-[14px] font-black tracking-tight" style={{ color: "#9a7400" }}>
-                  {formatBRL(c.price_cents)}
+                  {formatBRL(c.price_cents, t("freeLabel", "Gratuito"))}
                 </p>
                 {c.profile_display_name && (
                   <p className="truncate text-[10px] font-semibold text-[#6B6457]">{c.profile_display_name}</p>

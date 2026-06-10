@@ -8,6 +8,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Package } from "lucide-react"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 export type ProductTileItem = {
   id_profile_product: number
@@ -27,6 +28,7 @@ function formatBRL(cents: number) {
 }
 
 export function ProductTile({ p }: { p: ProductTileItem }) {
+  const tx = useTaxonomy()
   const href = p.sub_profile_slug ? `/p/${p.sub_profile_slug}` : p.username ? `/${p.username}` : "#"
   return (
     <Link
@@ -49,7 +51,7 @@ export function ProductTile({ p }: { p: ProductTileItem }) {
 
       {p.category_name && (
         <span className="absolute left-2 top-2 z-10 bg-[#0B0B0D]/80 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#F1EDE2]">
-          {p.category_name}
+          {tx.productCategory(null, p.category_name)}
         </span>
       )}
 

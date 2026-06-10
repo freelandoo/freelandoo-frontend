@@ -13,6 +13,8 @@ import {
   getAttributeSchema,
   type AttrField,
 } from "@/lib/product-attributes"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 
 export interface ProductSubfilterState {
@@ -86,7 +88,10 @@ interface PanelProps {
 export function ProductSubfilterPanel({
   categoryName, categorySlug, accent, state, onChange, onBack,
 }: PanelProps) {
+  const t = useTranslations("Search")
+  const tx = useTaxonomy()
   const schema = getAttributeSchema(categorySlug)
+  const displayName = tx.productCategory(categorySlug, categoryName)
 
   const toggleAttr = (key: string, option: string) => {
     const current = state.attrs[key] ?? []
@@ -110,13 +115,13 @@ export function ProductSubfilterPanel({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Voltar pras categorias"
+          aria-label={t("backToCategories", "Voltar pras categorias")}
           className="inline-flex h-7 w-7 items-center justify-center border-2 border-[#0B0B0D] bg-white/60 text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
         <span className="fl-display min-w-0 truncate text-xl leading-none text-[#0B0B0D]">
-          {categoryName}
+          {displayName}
         </span>
       </div>
 
@@ -136,7 +141,7 @@ export function ProductSubfilterPanel({
         {/* Preço — sempre presente, em R$ */}
         <div>
           <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-            Preço (R$)
+            {t("priceBRL", "Preço (R$)")}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -144,16 +149,16 @@ export function ProductSubfilterPanel({
               inputMode="decimal"
               value={state.priceMin}
               onChange={(e) => onChange({ ...state, priceMin: e.target.value })}
-              placeholder="mín"
+              placeholder={t("minPlaceholder", "mín")}
               className="w-full min-w-0 border-2 border-[#0B0B0D]/30 bg-white/60 px-2 py-1.5 font-mono text-xs text-[#0B0B0D] outline-none placeholder:text-[#6B6457] focus:border-[#0B0B0D]"
             />
-            <span className="text-[10px] font-bold text-[#6B6457]">a</span>
+            <span className="text-[10px] font-bold text-[#6B6457]">{t("toConnector", "a")}</span>
             <input
               type="text"
               inputMode="decimal"
               value={state.priceMax}
               onChange={(e) => onChange({ ...state, priceMax: e.target.value })}
-              placeholder="máx"
+              placeholder={t("maxPlaceholder", "máx")}
               className="w-full min-w-0 border-2 border-[#0B0B0D]/30 bg-white/60 px-2 py-1.5 font-mono text-xs text-[#0B0B0D] outline-none placeholder:text-[#6B6457] focus:border-[#0B0B0D]"
             />
           </div>
@@ -165,7 +170,7 @@ export function ProductSubfilterPanel({
             onClick={() => onChange(emptySubfilters())}
             className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#6B6457] transition hover:text-[#0B0B0D]"
           >
-            <X className="h-3 w-3" /> Limpar filtros de {categoryName}
+            <X className="h-3 w-3" /> {t("clearCategoryFilters", "Limpar filtros de {name}").replace("{name}", displayName)}
           </button>
         )}
       </div>
@@ -183,6 +188,8 @@ function SubfilterField({
   onRange: (key: string, value: [number, number]) => void
   onBrand: (v: string) => void
 }) {
+  const t = useTranslations("Search")
+  const tx = useTaxonomy()
   if (field.type === "range") {
     const min = field.min ?? 0
     const max = field.max ?? 0
@@ -191,10 +198,10 @@ function SubfilterField({
       <div>
         <div className="mb-1.5 flex items-baseline justify-between">
           <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-            {field.label}
+            {tx.attrLabel(field.label)}
           </p>
           <span className="border border-[#0B0B0D]/30 bg-white/70 px-1.5 py-0.5 font-mono text-[11px] font-bold tabular-nums text-[#0B0B0D]">
-            {lo === min && hi === max ? "todos" : lo === hi ? lo : `${lo} – ${hi}`}
+            {lo === min && hi === max ? t("allRange", "todos") : lo === hi ? lo : `${lo} – ${hi}`}
           </span>
         </div>
         <RangeRuler
@@ -214,7 +221,7 @@ function SubfilterField({
     return (
       <div>
         <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-          {field.label}
+          {tx.attrLabel(field.label)}
         </p>
         <div className="flex flex-wrap gap-1.5">
           {COLOR_SWATCHES.map((c) => {
@@ -225,7 +232,7 @@ function SubfilterField({
                 type="button"
                 onClick={() => onToggle(field.key, c.name)}
                 aria-pressed={active}
-                title={c.name}
+                title={tx.colorName(c.name)}
                 className={cn(
                   "h-6 w-6 rounded-full border-2 transition-transform hover:-translate-y-0.5",
                   active ? "border-[#0B0B0D] ring-2 ring-offset-1" : "border-[#0B0B0D]/30",
@@ -246,14 +253,14 @@ function SubfilterField({
     return (
       <div>
         <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-          {field.label}
+          {tx.attrLabel(field.label)}
         </p>
         <input
           type="text"
           value={state.brand}
           onChange={(e) => onBrand(e.target.value)}
           maxLength={80}
-          placeholder="Buscar marca…"
+          placeholder={t("searchBrandPlaceholder", "Buscar marca…")}
           className="w-full border-2 border-[#0B0B0D]/30 bg-white/60 px-2 py-1.5 text-xs text-[#0B0B0D] outline-none placeholder:text-[#6B6457] focus:border-[#0B0B0D]"
         />
         {field.suggestions?.length ? (
@@ -289,7 +296,7 @@ function SubfilterField({
   return (
     <div>
       <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-        {field.label}
+        {tx.attrLabel(field.label)}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {(field.options ?? []).map((opt) => {
@@ -308,7 +315,7 @@ function SubfilterField({
               )}
               style={active ? { background: accent } : undefined}
             >
-              {opt}
+              {tx.attrOption(opt)}
             </button>
           )
         })}
@@ -328,6 +335,7 @@ function RangeRuler({
   accent: string
   onChange: (v: [number, number]) => void
 }) {
+  const t = useTranslations("Search")
   const [lo, hi] = value
   const span = max - min || 1
   const loPct = ((lo - min) / span) * 100
@@ -350,7 +358,7 @@ function RangeRuler({
           max={max}
           step={step}
           value={lo}
-          aria-label="Mínimo"
+          aria-label={t("minAria", "Mínimo")}
           onChange={(e) => {
             const v = Math.min(Number(e.target.value), hi)
             onChange([v, hi])
@@ -363,7 +371,7 @@ function RangeRuler({
           max={max}
           step={step}
           value={hi}
-          aria-label="Máximo"
+          aria-label={t("maxAria", "Máximo")}
           onChange={(e) => {
             const v = Math.max(Number(e.target.value), lo)
             onChange([lo, v])

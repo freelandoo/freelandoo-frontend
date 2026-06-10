@@ -28,6 +28,7 @@ import {
 import { getAttributeSchema } from "@/lib/product-attributes"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 /**
  * Bridge map: real DB categories → machine slugs.
@@ -220,6 +221,7 @@ export default function SearchPage() {
 
 function SearchPageInner() {
   const t = useTranslations("Search")
+  const tx = useTaxonomy()
   const searchParams = useSearchParams()
   const { machines } = useMachinesCatalog()
 
@@ -545,7 +547,7 @@ function SearchPageInner() {
             {/* Barra de filtros de produto: categoria (estado/cidade reusam os do header retrátil) */}
             <div className="fl-root border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm lg:hidden">
               <div className="mx-auto flex w-full max-w-[640px] items-center gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none] md:max-w-[760px] lg:max-w-[1080px] [&::-webkit-scrollbar]:hidden">
-                <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">Categoria</span>
+                <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">{t("categoryLabel", "Categoria")}</span>
                 {activeProductCategory && getAttributeSchema(activeProductCategory.slug).length > 0 && (
                   <button
                     type="button"
@@ -558,7 +560,7 @@ function SearchPageInner() {
                     )}
                   >
                     <SlidersHorizontal className="h-3 w-3" />
-                    Filtros
+                    {t("filtersButton", "Filtros")}
                   </button>
                 )}
                 <button
@@ -571,7 +573,7 @@ function SearchPageInner() {
                       : "border-[#F1EDE2]/20 bg-transparent text-[#C9C2B6] hover:border-[#F1EDE2] hover:text-[#F1EDE2]",
                   )}
                 >
-                  Todas
+                  {t("allFemale", "Todas")}
                 </button>
                 {productCategories.map((cat) => {
                   const active = cat.id_product_category === productCategoryId
@@ -595,7 +597,7 @@ function SearchPageInner() {
                           : "border-[#F1EDE2]/20 bg-transparent text-[#C9C2B6] hover:border-[#F1EDE2] hover:text-[#F1EDE2]",
                       )}
                     >
-                      {cat.name}
+                      {tx.productCategory(cat.slug, cat.name)}
                     </button>
                   )
                 })}
@@ -619,7 +621,7 @@ function SearchPageInner() {
                   onClick={(e) => e.stopPropagation()}
                   role="dialog"
                   aria-modal="true"
-                  aria-label={`Filtros de ${activeProductCategory.name}`}
+                  aria-label={t("filtersOf", "Filtros de {name}").replace("{name}", tx.productCategory(activeProductCategory.slug, activeProductCategory.name))}
                 >
                   <ProductSubfilterPanel
                     categoryName={activeProductCategory.name}
@@ -671,10 +673,10 @@ function SearchPageInner() {
         data-tour="search-open-chamado"
         onClick={() => setOpenChamadoOpen(true)}
         className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-extrabold uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 active:translate-x-px active:translate-y-px sm:bottom-7 sm:right-7"
-        aria-label="Abrir chamado"
+        aria-label={t("openTicket", "Abrir chamado")}
       >
         <MessageSquarePlus className="h-4 w-4" />
-        <span className="hidden sm:inline">Abrir chamado</span>
+        <span className="hidden sm:inline">{t("openTicket", "Abrir chamado")}</span>
       </button>
 
       <OpenChamadoModal

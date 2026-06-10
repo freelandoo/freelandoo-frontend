@@ -7,7 +7,9 @@ import type { CatalogCategory, CatalogMachine } from "@/components/home/machines
 import { MachineFilterSheet } from "@/components/feed/machine-filter-sheet"
 import { ProfessionFilterSheet } from "@/components/feed/profession-filter-sheet"
 import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
-import { LevelFilterSheet, LEVEL_FILTER_OPTIONS } from "@/components/feed/level-filter-sheet"
+import { LevelFilterSheet } from "@/components/feed/level-filter-sheet"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 
@@ -60,6 +62,8 @@ export function SearchRetractableHeader({
   onPremiumToggle,
   onClearAll,
 }: SearchRetractableHeaderProps) {
+  const t = useTranslations("Search")
+  const tx = useTaxonomy()
   const activeMachine = machines.find((m) => m.id_machine === selectedMachineId) || null
   const activeCategory = categories.find((c) => c.id_category === selectedCategoryId) || null
   const hasFilters = !!(activeMachine || activeCategory || state || regionId || levelMin || premiumOnly)
@@ -73,8 +77,11 @@ export function SearchRetractableHeader({
   const showCity = tab === "services" || tab === "products"
   const showLevel = tab === "services"
   const showPremium = tab === "services"
-  const locationLabel = regionName || state || "Região"
-  const levelLabel = LEVEL_FILTER_OPTIONS.find((o) => o.value === levelMin)?.label || "Nível"
+  const locationLabel = regionName || state || t("regionFilterLabel", "Região")
+  const levelLabel =
+    levelMin != null
+      ? t(`level${levelMin}Plus`, `Nível ${levelMin}+`)
+      : t("levelFilterLabel", "Nível")
 
   const [hidden, setHidden] = useState(false)
   const lastScrollY = useRef(0)
@@ -123,7 +130,7 @@ export function SearchRetractableHeader({
                   onChange={(id) => { onMachineChange(id); onCategoryChange(null) }}
                   trigger={
                     <Pill
-                      label={activeMachine?.name?.replace(/^Enxame de\s+/i, "") || "Enxame"}
+                      label={activeMachine ? tx.enxame(activeMachine.slug, activeMachine.name) : t("machineFilterLabel", "Enxame")}
                       active={!!activeMachine}
                       accent={activeMachine?.color_accent || undefined}
                     />
@@ -141,7 +148,7 @@ export function SearchRetractableHeader({
                   accent={accent}
                   trigger={
                     <Pill
-                      label={activeCategory?.desc_category || "Profissão"}
+                      label={activeCategory ? tx.profession(activeCategory.desc_category) : t("professionFilterLabel", "Profissão")}
                       active={!!activeCategory}
                       accent={activeCategory ? accent : undefined}
                       disabled={!activeMachine}
@@ -177,7 +184,7 @@ export function SearchRetractableHeader({
                   accent={accent}
                   trigger={
                     <Pill
-                      label={levelMin != null ? levelLabel : "Nível"}
+                      label={levelLabel}
                       active={levelMin != null}
                       accent={levelMin != null ? accent : undefined}
                     />
@@ -198,7 +205,7 @@ export function SearchRetractableHeader({
                   )}
                 >
                   <Star className={cn("h-3.5 w-3.5", premiumOnly && "fill-current")} />
-                  Premium
+                  {t("premiumButtonLabel", "Premium")}
                 </button>
               </HoverHint>
             )}
@@ -210,7 +217,7 @@ export function SearchRetractableHeader({
                   className="inline-flex h-9 shrink-0 items-center gap-1 border-2 border-[#F1EDE2]/25 bg-transparent px-2.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#C9C2B6] transition-colors hover:border-[#F1EDE2] hover:text-[#F1EDE2]"
                 >
                   <X className="h-3 w-3" />
-                  Limpar
+                  {t("clearButton", "Limpar")}
                 </button>
               </HoverHint>
             )}

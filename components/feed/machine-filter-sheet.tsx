@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 
 interface MachineFilterSheetProps {
@@ -24,6 +25,7 @@ export function MachineFilterSheet({
   trigger,
 }: MachineFilterSheetProps) {
   const t = useTranslations("Feed")
+  const tx = useTaxonomy()
   const active = machines.filter((m) => m.is_active)
   return (
     <DropdownMenu>
@@ -43,7 +45,7 @@ export function MachineFilterSheet({
           return (
             <Option
               key={m.id_machine}
-              label={m.name}
+              label={tx.enxameFull(m.slug, m.name)}
               accent={accent}
               selected={selectedId === m.id_machine}
               onClick={() => onChange(m.id_machine)}

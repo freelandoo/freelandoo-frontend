@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 export type ChamadoMode = "service" | "product" | "course"
 
 type Machine = {
   id_machine: number
   name: string
+  slug?: string | null
   color_accent?: string | null
 }
 
@@ -42,13 +45,25 @@ interface Props {
   defaultMachineId?: number | null
 }
 
-const MODE_LABELS: Record<ChamadoMode, { title: string; verb: string; description: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
-  service: { title: "Abrir chamado de serviço", verb: "profissionais", description: "responderão pela aba O.S. das suas mensagens", icon: Briefcase },
-  product: { title: "Abrir chamado de produto", verb: "vendedores", description: "responderão pela aba O.S. das suas mensagens", icon: Package },
-  course:  { title: "Abrir chamado de curso", verb: "instrutores", description: "responderão pela aba O.S. das suas mensagens", icon: GraduationCap },
+// Chaves i18n por modo (namespace "Chamado"); os fallbacks pt vivem nos pontos de uso.
+const MODE_LABELS: Record<ChamadoMode, { titleKey: string; titlePt: string; verbKey: string; verbPt: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
+  service: { titleKey: "titleService", titlePt: "Abrir chamado de serviço", verbKey: "verbService", verbPt: "profissionais", icon: Briefcase },
+  product: { titleKey: "titleProduct", titlePt: "Abrir chamado de produto", verbKey: "verbProduct", verbPt: "vendedores", icon: Package },
+  course:  { titleKey: "titleCourse", titlePt: "Abrir chamado de curso", verbKey: "verbCourse", verbPt: "instrutores", icon: GraduationCap },
+}
+
+/** Renderiza um template "… {x} …" com os valores em <strong>. */
+function renderTemplate(template: string, values: Record<string, React.ReactNode>) {
+  return template.split(/(\{\w+\})/g).map((part, i) => {
+    const m = part.match(/^\{(\w+)\}$/)
+    if (m) return <strong key={i} className="text-white">{values[m[1]] ?? ""}</strong>
+    return <span key={i}>{part}</span>
+  })
 }
 
 export function OpenChamadoModal({ open, onOpenChange, mode = "service", defaultMachineId }: Props) {
+  const t = useTranslations("Chamado")
+  const tx = useTaxonomy()
   // ---------- estado base ----------
   const initialStep: Step = useMemo(() => {
     if (mode === "product") return "productCat"
@@ -173,7 +188,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
     [productCategories, selectedProductCategoryId],
   )
 
-  const trimmedMachine = (selectedMachine?.name || "").replace(/^Enxame de\s+/i, "")
+  const trimmedMachine = selectedMachine ? tx.enxame(selectedMachine.slug, selectedMachine.name) : ""
   const accent = selectedMachine?.color_accent || "#fbbf24"
   const ModeIcon = MODE_LABELS[mode].icon
 
@@ -187,12 +202,12 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
   const handleSend = async () => {
     const desc = description.trim()
     if (desc.length < 5) {
-      setError("Descreva com pelo menos 5 caracteres.")
+      setError(t("errMinDescription", "Descreva com pelo menos 5 caracteres."))
       return
     }
     const token = getToken()
     if (!token) {
-      setError("Faça login para abrir um chamado.")
+      setError(t("errLoginRequired", "Faça login para abrir um chamado."))
       return
     }
 
@@ -202,7 +217,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
 
     if (mode === "service") {
       if (!selectedMachineId || !selectedProfessionId) {
-        setError("Escolha Enxame e profissão.")
+        setError(t("errChooseMachineProfession", "Escolha Enxame e profissão."))
         return
       }
       endpoint = "/api/service-requests"
@@ -215,7 +230,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
       if (municipio) payload.municipio = municipio
     } else if (mode === "course") {
       if (!selectedMachineId || !selectedProfessionId) {
-        setError("Escolha Enxame e profissão.")
+        setError(t("errChooseMachineProfession", "Escolha Enxame e profissão."))
         return
       }
       endpoint = "/api/course-requests"
@@ -228,11 +243,11 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
       // product
       const title = productTitle.trim()
       if (title.length < 3) {
-        setError("Título obrigatório (mín. 3 caracteres).")
+        setError(t("errTitleRequired", "Título obrigatório (mín. 3 caracteres)."))
         return
       }
       if (!selectedProductCategoryId) {
-        setError("Escolha uma categoria de produto.")
+        setError(t("errChooseProductCategory", "Escolha uma categoria de produto."))
         return
       }
       endpoint = "/api/product-requests"
@@ -271,38 +286,42 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
       }
       setStep("success")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao abrir chamado")
+      setError(err instanceof Error ? err.message : t("errOpenFailed", "Erro ao abrir chamado"))
     } finally {
       setSending(false)
     }
   }
 
   // ---------- textos por mode ----------
+  const professionName = tx.profession(selectedProfession?.desc_category)
+  const productCategoryName = tx.productCategory(null, selectedProductCategory?.name)
   const composeIntroNode = (() => {
     if (mode === "service") {
+      const template = cityLine
+        ? t("introServiceCity", "Profissionais de {profession} no enxame {machine} em {city} receberão sua mensagem e responderão pela aba {os}")
+        : t("introService", "Profissionais de {profession} no enxame {machine} receberão sua mensagem e responderão pela aba {os}")
       return (
         <p className="mt-3 text-[12.5px] leading-relaxed text-white/70">
-          Profissionais de <strong className="text-white">{selectedProfession?.desc_category}</strong> no enxame{" "}
-          <strong className="text-white">{trimmedMachine}</strong>
-          {cityLine ? <> em <strong className="text-white">{cityLine}</strong></> : null} receberão sua mensagem
-          e responderão pela aba <strong className="text-white">O.S.</strong>
+          {renderTemplate(template, { profession: professionName, machine: trimmedMachine, city: cityLine, os: "O.S." })}
         </p>
       )
     }
     if (mode === "course") {
       return (
         <p className="mt-3 text-[12.5px] leading-relaxed text-white/70">
-          Instrutores de <strong className="text-white">{selectedProfession?.desc_category}</strong> no enxame{" "}
-          <strong className="text-white">{trimmedMachine}</strong> que já têm curso publicado receberão sua mensagem
-          e responderão pela aba <strong className="text-white">O.S.</strong>
+          {renderTemplate(
+            t("introCourse", "Instrutores de {profession} no enxame {machine} que já têm curso publicado receberão sua mensagem e responderão pela aba {os}"),
+            { profession: professionName, machine: trimmedMachine, os: "O.S." }
+          )}
         </p>
       )
     }
+    const template = cityLine
+      ? t("introProductCity", "Vendedores da loja de {category} em {city} receberão seu pedido e responderão pela aba {os}")
+      : t("introProduct", "Vendedores da loja de {category} receberão seu pedido e responderão pela aba {os}")
     return (
       <p className="mt-3 text-[12.5px] leading-relaxed text-white/70">
-        Vendedores da loja de <strong className="text-white">{selectedProductCategory?.name}</strong>
-        {cityLine ? <> em <strong className="text-white">{cityLine}</strong></> : null} receberão seu pedido
-        e responderão pela aba <strong className="text-white">O.S.</strong>
+        {renderTemplate(template, { category: productCategoryName, city: cityLine, os: "O.S." })}
       </p>
     )
   })()
@@ -314,14 +333,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
           <div className="flex items-center gap-2">
             <ModeIcon className="h-4 w-4" style={{ color: accent }} />
             <DialogTitle className="text-sm font-semibold tracking-tight text-white">
-              {MODE_LABELS[mode].title}
+              {t(MODE_LABELS[mode].titleKey, MODE_LABELS[mode].titlePt)}
             </DialogTitle>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="rounded-full p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white"
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -330,13 +349,13 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
         {/* ---------- step: machine (service/course) ---------- */}
         {step === "machine" && (
           <div className="px-5 py-5">
-            <p className="text-sm text-white/75">Escolha o Enxame que vai receber sua mensagem:</p>
+            <p className="text-sm text-white/75">{t("chooseMachine", "Escolha o Enxame que vai receber sua mensagem:")}</p>
             {loadingMachines ? (
               <div className="mt-6 flex items-center justify-center text-white/40">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             ) : machines.length === 0 ? (
-              <p className="mt-4 text-xs text-white/45">Nenhum enxame disponível.</p>
+              <p className="mt-4 text-xs text-white/45">{t("noMachines", "Nenhum enxame disponível.")}</p>
             ) : (
               <div className="mt-4 grid max-h-[50vh] grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
                 {machines.map((m) => {
@@ -354,7 +373,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                       )}
                       style={isActive ? { borderColor: `${m.color_accent || "#fbbf24"}88` } : undefined}
                     >
-                      <span className="truncate font-medium">{m.name.replace(/^Enxame de\s+/i, "")}</span>
+                      <span className="truncate font-medium">{tx.enxame(m.slug, m.name)}</span>
                       {isActive && <Check className="h-4 w-4 shrink-0" style={{ color: m.color_accent || "#fbbf24" }} />}
                     </button>
                   )
@@ -363,14 +382,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             )}
             <div className="mt-5 flex items-center justify-between gap-2">
               <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </Button>
               <Button
                 onClick={() => setStep("profession")}
                 disabled={!selectedMachineId}
                 className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
               >
-                Continuar
+                {t("continue", "Continuar")}
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
@@ -381,18 +400,18 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
         {step === "profession" && (
           <div className="px-5 py-5">
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">Enxame</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">{t("machineLabel", "Enxame")}</p>
               <p className="mt-0.5 text-sm font-semibold" style={{ color: accent }}>
                 {trimmedMachine}
               </p>
             </div>
-            <p className="mt-4 text-sm text-white/75">Escolha a profissão dentro do enxame:</p>
+            <p className="mt-4 text-sm text-white/75">{t("chooseProfession", "Escolha a profissão dentro do enxame:")}</p>
             {loadingProfessions ? (
               <div className="mt-6 flex items-center justify-center text-white/40">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             ) : professions.length === 0 ? (
-              <p className="mt-4 text-xs text-white/45">Nenhuma profissão cadastrada neste enxame.</p>
+              <p className="mt-4 text-xs text-white/45">{t("noProfessions", "Nenhuma profissão cadastrada neste enxame.")}</p>
             ) : (
               <div className="mt-3 grid max-h-[40vh] grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
                 {professions.map((p) => {
@@ -410,7 +429,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                       )}
                       style={isActive ? { borderColor: `${accent}88` } : undefined}
                     >
-                      <span className="truncate">{p.desc_category}</span>
+                      <span className="truncate">{tx.profession(p.desc_category)}</span>
                       {isActive && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />}
                     </button>
                   )
@@ -422,14 +441,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 variant="ghost"
                 onClick={() => (defaultMachineId ? onOpenChange(false) : setStep("machine"))}
               >
-                {defaultMachineId ? "Cancelar" : "Voltar"}
+                {defaultMachineId ? t("cancel", "Cancelar") : t("back", "Voltar")}
               </Button>
               <Button
                 onClick={() => setStep("compose")}
                 disabled={!selectedProfessionId}
                 className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
               >
-                Continuar
+                {t("continue", "Continuar")}
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
@@ -439,13 +458,13 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
         {/* ---------- step: productCat ---------- */}
         {step === "productCat" && (
           <div className="px-5 py-5">
-            <p className="text-sm text-white/75">Escolha a categoria do produto:</p>
+            <p className="text-sm text-white/75">{t("chooseProductCategory", "Escolha a categoria do produto:")}</p>
             {loadingProductCategories ? (
               <div className="mt-6 flex items-center justify-center text-white/40">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             ) : productCategories.length === 0 ? (
-              <p className="mt-4 text-xs text-white/45">Nenhuma categoria de produto disponível.</p>
+              <p className="mt-4 text-xs text-white/45">{t("noProductCategories", "Nenhuma categoria de produto disponível.")}</p>
             ) : (
               <div className="mt-4 grid max-h-[50vh] grid-cols-1 gap-1.5 overflow-y-auto sm:grid-cols-2">
                 {productCategories.map((p) => {
@@ -463,7 +482,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                       )}
                       style={isActive ? { borderColor: `${accent}88` } : undefined}
                     >
-                      <span className="truncate font-medium">{p.name}</span>
+                      <span className="truncate font-medium">{tx.productCategory(null, p.name)}</span>
                       {isActive && <Check className="h-4 w-4 shrink-0" style={{ color: accent }} />}
                     </button>
                   )
@@ -472,14 +491,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             )}
             <div className="mt-5 flex items-center justify-between gap-2">
               <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </Button>
               <Button
                 onClick={() => setStep("compose")}
                 disabled={!selectedProductCategoryId}
                 className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
               >
-                Continuar
+                {t("continue", "Continuar")}
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
@@ -494,22 +513,22 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 {mode !== "product" ? (
                   <>
-                    <span className="text-white/45">Enxame</span>
+                    <span className="text-white/45">{t("machineLabel", "Enxame")}</span>
                     <span className="font-semibold tracking-tight" style={{ color: accent }}>{trimmedMachine}</span>
                     <span className="text-white/20">·</span>
-                    <span className="text-white/45">Profissão</span>
-                    <span className="font-semibold tracking-tight text-white">{selectedProfession?.desc_category}</span>
+                    <span className="text-white/45">{t("professionLabel", "Profissão")}</span>
+                    <span className="font-semibold tracking-tight text-white">{professionName}</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-white/45">Categoria</span>
-                    <span className="font-semibold tracking-tight text-white">{selectedProductCategory?.name}</span>
+                    <span className="text-white/45">{t("categoryLabel", "Categoria")}</span>
+                    <span className="font-semibold tracking-tight text-white">{productCategoryName}</span>
                   </>
                 )}
                 {cityLine && (
                   <>
                     <span className="text-white/20">·</span>
-                    <span className="text-white/45">Local</span>
+                    <span className="text-white/45">{t("locationLabel", "Local")}</span>
                     <span className="font-semibold tracking-tight text-white">{cityLine}</span>
                   </>
                 )}
@@ -521,13 +540,13 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             {mode === "product" && (
               <>
                 <label className="mt-4 mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                  Título do produto
+                  {t("productTitleLabel", "Título do produto")}
                 </label>
                 <input
                   type="text"
                   value={productTitle}
                   onChange={(e) => setProductTitle(e.target.value)}
-                  placeholder="Ex: Tênis de corrida número 42"
+                  placeholder={t("productTitlePlaceholder", "Ex: Tênis de corrida número 42")}
                   maxLength={160}
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
                 />
@@ -539,14 +558,14 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Estado <span className="normal-case text-white/30">(opcional)</span>
+                    {t("stateLabel", "Estado")} <span className="normal-case text-white/30">{t("optionalSuffix", "(opcional)")}</span>
                   </label>
                   <select
                     value={estadoUf}
                     onChange={(e) => { setEstadoUf(e.target.value); setMunicipio("") }}
                     className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
-                    <option value="">Todos</option>
+                    <option value="">{t("allStates", "Todos")}</option>
                     {ESTADOS_BRASIL.map((e) => (
                       <option key={e.uf} value={e.uf}>{e.nome} ({e.uf})</option>
                     ))}
@@ -554,7 +573,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 </div>
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Cidade <span className="normal-case text-white/30">(opcional)</span>
+                    {t("cityLabel", "Cidade")} <span className="normal-case text-white/30">{t("optionalSuffix", "(opcional)")}</span>
                   </label>
                   <select
                     value={municipio}
@@ -562,7 +581,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     disabled={!estadoUf || loadingMunicipios}
                     className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none disabled:opacity-40 [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
-                    <option value="">{!estadoUf ? "Escolha estado" : loadingMunicipios ? "Carregando…" : "Todas"}</option>
+                    <option value="">{!estadoUf ? t("chooseStateFirst", "Escolha estado") : loadingMunicipios ? t("loading", "Carregando…") : t("allCities", "Todas")}</option>
                     {municipios.map((m) => (
                       <option key={m.id} value={m.nome}>{m.nome}</option>
                     ))}
@@ -576,7 +595,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Preço mínimo <span className="normal-case text-white/30">(R$, opcional)</span>
+                    {t("minPriceLabel", "Preço mínimo")} <span className="normal-case text-white/30">{t("brlOptionalSuffix", "(R$, opcional)")}</span>
                   </label>
                   <input
                     type="number"
@@ -590,7 +609,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 </div>
                 <div>
                   <label className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-                    Preço máximo <span className="normal-case text-white/30">(R$, opcional)</span>
+                    {t("maxPriceLabel", "Preço máximo")} <span className="normal-case text-white/30">{t("brlOptionalSuffix", "(R$, opcional)")}</span>
                   </label>
                   <input
                     type="number"
@@ -607,18 +626,18 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
 
             {/* Descrição */}
             <label className="mt-4 mb-1 block text-[10px] uppercase tracking-[0.14em] text-white/45">
-              Mensagem do chamado
+              {t("messageLabel", "Mensagem do chamado")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o que você precisa…"
+              placeholder={t("messagePlaceholder", "Descreva o que você precisa…")}
               rows={5}
               maxLength={4000}
               className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
             />
             <div className="mt-1 flex items-center justify-between text-[11px] text-white/45">
-              <span>Mínimo 5 caracteres.</span>
+              <span>{t("minChars", "Mínimo 5 caracteres.")}</span>
               <span>{description.length}/4000</span>
             </div>
             {error && (
@@ -631,7 +650,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 onClick={() => setStep(mode === "product" ? "productCat" : "profession")}
                 disabled={sending}
               >
-                Voltar
+                {t("back", "Voltar")}
               </Button>
               <Button
                 onClick={handleSend}
@@ -641,10 +660,10 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 {sending ? (
                   <>
                     <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    Enviando…
+                    {t("sending", "Enviando…")}
                   </>
                 ) : (
-                  "Enviar chamado"
+                  t("send", "Enviar chamado")
                 )}
               </Button>
             </div>
@@ -660,13 +679,15 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             >
               <Check className="h-6 w-6" style={{ color: accent }} />
             </div>
-            <p className="mt-3 text-base font-semibold tracking-tight text-white">Chamado aberto!</p>
+            <p className="mt-3 text-base font-semibold tracking-tight text-white">{t("successTitle", "Chamado aberto!")}</p>
             <p className="mt-1 text-sm text-white/65">
-              Os {MODE_LABELS[mode].verb} compatíveis receberão sua mensagem no mural.
-              As respostas chegam em <strong className="text-white">Mensagens → O.S.</strong>
+              {renderTemplate(
+                t("successBody", "Os {verb} compatíveis receberão sua mensagem no mural. As respostas chegam em {dest}"),
+                { verb: t(MODE_LABELS[mode].verbKey, MODE_LABELS[mode].verbPt), dest: "Mensagens → O.S." }
+              )}
             </p>
             <Button onClick={() => onOpenChange(false)} className="mt-5 bg-yellow-400 text-zinc-950 hover:bg-yellow-300">
-              Fechar
+              {t("close", "Fechar")}
             </Button>
           </div>
         )}

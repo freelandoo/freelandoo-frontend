@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Loader2, Package } from "lucide-react"
 import { ProductTile } from "@/components/search/product-tile"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type ProductItem = {
   id_profile_product: number
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Props) {
+  const t = useTranslations("Search")
   const [items, setItems] = useState<ProductItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,10 +58,10 @@ export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Pr
         if (!alive) return
         setItems(Array.isArray(d?.items) ? d.items : [])
       })
-      .catch((err) => alive && setError(err instanceof Error ? err.message : "Erro ao carregar"))
+      .catch((err) => alive && setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar")))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [categoryId, state, regionId, q, extraKey])
+  }, [categoryId, state, regionId, q, extraKey, t])
 
   if (loading) {
     return (
@@ -77,9 +79,9 @@ export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Pr
         <div className="rounded-full border border-white/[0.08] bg-white/[0.02] p-3">
           <Package className="h-5 w-5 text-white/55" />
         </div>
-        <p className="mt-4 text-sm font-semibold tracking-tight text-white">Nenhum produto encontrado</p>
+        <p className="mt-4 text-sm font-semibold tracking-tight text-white">{t("noProductsTitle", "Nenhum produto encontrado")}</p>
         <p className="mt-1 text-[13px] text-white/55">
-          Tente outro filtro ou abra um chamado pra avisar os vendedores.
+          {t("noProductsHint", "Tente outro filtro ou abra um chamado pra avisar os vendedores.")}
         </p>
       </div>
     )

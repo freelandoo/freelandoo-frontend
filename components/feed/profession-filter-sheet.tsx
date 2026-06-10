@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { CatalogCategory } from "@/components/home/machines/use-machines-catalog"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 
 interface ProfessionFilterSheetProps {
@@ -28,6 +29,7 @@ export function ProfessionFilterSheet({
   accent,
 }: ProfessionFilterSheetProps) {
   const t = useTranslations("Feed")
+  const tx = useTaxonomy()
   const list = categories.filter((c) => c.is_active)
   return (
     <DropdownMenu>
@@ -50,7 +52,7 @@ export function ProfessionFilterSheet({
         {list.map((c) => (
           <Option
             key={c.id_category}
-            label={c.desc_category}
+            label={tx.profession(c.desc_category)}
             accent={accent}
             selected={selectedId === c.id_category}
             onClick={() => onChange(c.id_category)}

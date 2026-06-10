@@ -6,6 +6,7 @@ import { CheckCircle2, Crown } from "lucide-react"
 import { MACHINES } from "@/components/home/machines/tokens"
 import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { buildProfileUrl } from "@/lib/slug"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 
 interface ProfileStatus {
@@ -68,6 +69,7 @@ function initials(name: string) {
  */
 export function FreelancerTile({ creator, featured = false }: FreelancerTileProps) {
   const router = useRouter()
+  const tx = useTaxonomy()
   const isPremium = featured || !!creator.is_premium
   const colors = getMachineColors(creator.machine_slug)
   const accent = colors?.accent || "#fbbf24"
@@ -160,7 +162,7 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
         >
           {creator.is_clan
             ? `Clan${creator.members_count ? ` · ${creator.members_count}` : ""}`
-            : creator.category}
+            : tx.profession(creator.category)}
         </p>
         <p className="line-clamp-1 text-[10px] text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
           {creator.municipio}{creator.estado ? `, ${creator.estado}` : ""}
