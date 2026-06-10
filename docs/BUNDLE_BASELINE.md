@@ -53,6 +53,23 @@ MediaCropModal viraram chunks lazy (`ssr:false`) em `account/page.tsx`.
 O delta específico da rota (acima do shell ~1.170KB) caiu de ~326KB para
 ~100KB. O resto do ganho depende de emagrecer o shell compartilhado.
 
+## Pós-F3.S3 (2026-06-10) — `/mensagens` quebrado com next/dynamic
+
+ChatRoomPanel (27KB + ReportMessageDialog), OpenChamadoModal (29KB),
+AudioRecorder/AudioMessage (19KB), CreateGroupModal (13KB) e
+OfferingPickerButton (11KB) viraram chunks lazy (`ssr:false`) em
+`MensagensClient.tsx`. EmojiPickerButton ficou estático (picker já é lazy
+por dentro).
+
+| Rota | First Load JS raw (KB) | gzip (KB) | Δ vs baseline |
+|------|----------------------:|----------:|---------------|
+| `/mensagens` | 1376 ⚠️ | 426 | **−43KB raw / −11KB gzip** |
+
+Ganho menor que o do `/account`: o grosso do delta da rota é o próprio
+`MensagensClient.tsx` (104KB de fonte, lista + thread + O.S. inline), que
+continua no bundle inicial — quebrá-lo de verdade exigiria extrair as
+seções inline, fora do escopo deste slice.
+
 ## Como atualizar
 
 ```bash

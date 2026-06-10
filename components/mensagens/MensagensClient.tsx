@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
@@ -26,12 +27,9 @@ import {
   Users,
   X,
 } from "lucide-react"
-import { ChatRoomPanel, type ChatMachine } from "@/components/mensagens/ChatRoomPanel"
-import { CreateGroupModal } from "@/components/mensagens/CreateGroupModal"
-import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
+import type { ChatMachine } from "@/components/mensagens/ChatRoomPanel"
+import type { ChamadoMode } from "@/components/search/open-chamado-modal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
-import { OfferingPickerButton } from "@/components/mensagens/OfferingPickerButton"
-import { AudioMessage, AudioRecorder } from "@/components/mensagens/AudioRecorder"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -56,6 +54,46 @@ import type {
   MensagensActor,
   MessageItem,
 } from "./types"
+
+// F3.S3 — pedaços pesados fora do bundle inicial da rota (chunk lazy, sem SSR).
+// Salas de chat ao vivo e modais só custam download quando entram em cena;
+// recorder/player de áudio chegam pós-hidratação. Mesmos render sites e
+// props — só o import muda. EmojiPickerButton fica estático: o picker em si
+// já é lazy por dentro.
+const ChatRoomPanel = dynamic(
+  () => import("@/components/mensagens/ChatRoomPanel").then((m) => m.ChatRoomPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 animate-pulse bg-white/[0.02]" aria-hidden />
+    ),
+  }
+)
+const CreateGroupModal = dynamic(
+  () => import("@/components/mensagens/CreateGroupModal").then((m) => m.CreateGroupModal),
+  { ssr: false }
+)
+const OpenChamadoModal = dynamic(
+  () => import("@/components/search/open-chamado-modal").then((m) => m.OpenChamadoModal),
+  { ssr: false }
+)
+const OfferingPickerButton = dynamic(
+  () => import("@/components/mensagens/OfferingPickerButton").then((m) => m.OfferingPickerButton),
+  { ssr: false }
+)
+const AudioMessage = dynamic(
+  () => import("@/components/mensagens/AudioRecorder").then((m) => m.AudioMessage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-11 w-52 max-w-full animate-pulse rounded-3xl bg-white/[0.06]" aria-hidden />
+    ),
+  }
+)
+const AudioRecorder = dynamic(
+  () => import("@/components/mensagens/AudioRecorder").then((m) => m.AudioRecorder),
+  { ssr: false }
+)
 
 const ACTOR_STORAGE_KEY = "mensagens:active_actor"
 // Realtime (WS) cobre o caso comum: conversation:message empurra updates
