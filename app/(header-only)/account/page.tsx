@@ -1515,23 +1515,8 @@ export default function PerfilPage() {
             </div>
 
             <div className="relative px-5 pb-6 md:px-7">
-              <div className="relative z-10 -mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <div className="flex w-full items-end justify-center gap-3 md:w-auto md:justify-start md:gap-4">
-                  {/* Casa Views (ticket) — flanco esquerdo da foto, leva aos rankings */}
-                  <Link
-                    href="/acasaviews/rankings"
-                    aria-label="Ver os rankings da Casa Views"
-                    title="Rankings da Casa Views"
-                    className="group shrink-0 -rotate-3 pb-1 transition-transform duration-200 hover:rotate-0"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/casaviews/profile/casa-views-ticket.webp"
-                      alt="Casa Views"
-                      className="w-[104px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[120px]"
-                    />
-                  </Link>
-
+              <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
+                <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
                   <button
                     type="button"
                     onClick={() => setIsUploadModalOpen(true)}
@@ -1557,27 +1542,42 @@ export default function PerfilPage() {
                     </span>
                   </button>
 
-                  {/* Carteira — flanco direito da foto, extrato de ganhos + mercado */}
+                  <div className="min-w-0 pb-1">
+                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
+                    {perfil.username && (
+                      <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pilha Casa Views + Carteira — lado direito, mesma dimensão */}
+                <div className="flex shrink-0 flex-col items-center gap-2 pb-1">
+                  <Link
+                    href="/acasaviews/rankings"
+                    aria-label="Ver os rankings da Casa Views"
+                    title="Rankings da Casa Views"
+                    className="group -rotate-2 transition-transform duration-200 hover:rotate-0"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/casaviews/profile/casa-views-ticket.webp"
+                      alt="Casa Views"
+                      className="aspect-[560/358] w-[112px] select-none object-contain drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
+                    />
+                  </Link>
                   <Link
                     href="/wallet"
                     aria-label="Abrir minha Carteira"
                     title="Minha Carteira"
-                    className="group shrink-0 rotate-3 pb-1 transition-transform duration-200 hover:rotate-0"
+                    className="group rotate-2 transition-transform duration-200 hover:rotate-0"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/wallet/carteira-card.webp"
                       alt="Carteira"
-                      className="w-[104px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[120px]"
+                      className="aspect-[560/358] w-[112px] select-none object-contain drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
                     />
                   </Link>
-                </div>
-
-                <div className="min-w-0 flex-1 pb-1">
-                  {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
-                  {perfil.username && (
-                    <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
-                  )}
                 </div>
               </div>
 
