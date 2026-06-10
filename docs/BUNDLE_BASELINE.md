@@ -145,6 +145,38 @@ custo/latência: páginas estáticas saem do CDN sem invocar função.
 ⚠️ **Regra nova:** o layout raiz NÃO pode voltar a ler `cookies()`/`headers()`
 — isso re-dinamiza o site inteiro silenciosamente. Locale é client-side.
 
+## Pós-F3.S7 (2026-06-10) — shell compartilhado −259KB raw
+
+Investigação com `node scripts/chunk-dump.mjs /rota` (novo: lista cada chunk
+do First Load com tamanho). Composição do shell antigo (~1.172KB):
+
+- Framework (react-dom 221 + RSC runtime 134 + app-router 53+43 + turbopack
+  10) ≈ 461KB — intocável.
+- **Polyfills 110KB são `noModule`** — browsers modernos NÃO baixam; a tabela
+  inteira carrega esse offset (shell efetivo ≈ raw − 110KB).
+- App: framer-motion 131KB (via IntentModal + ActionConsentModal globais),
+  gsap 69KB (IntentModal), socket.io 42KB (lib/realtime via use-nav-counts
+  do sidebar), UserDropside ~81KB (sidebar), Radix/lucide/Tour/etc.
+
+Mudanças (todas next/dynamic ssr:false com latch pra animação de saída):
+IntentModal → gate leve + IntentModalView lazy; ActionConsentModal lazy no
+ConsentProvider; socket.io-client via import() dinâmico em lib/realtime
+(anônimo nunca baixa); UserDropside lazy no ProfileSidebar.
+
+| Rota | antes (raw) | depois (raw) | gzip |
+|------|------------:|-------------:|-----:|
+| `/cursos` (≈ shell) | 1172 | **913** | 367→280 |
+| `/` | 1227 | **1100** | 388→344 |
+| `/account` | 1271 | **1011** | 394→306 |
+| `/bees` | 1738 | **1616** | 518→476 |
+| `/feed` | 1555 | **1433** | 484→442 |
+| `/freelancer/1` | 1448 | **1323** | 449→407 |
+| `/mensagens` | 1376 | **1251** | 426→383 |
+
+Shell efetivo (browsers modernos, sem polyfill noModule): ≈ **803KB**, sendo
+~461KB framework. Próximos alvos: deltas de `/bees` (+703KB) e `/feed`
+(+520KB) sobre o shell novo.
+
 ## Como atualizar
 
 ```bash

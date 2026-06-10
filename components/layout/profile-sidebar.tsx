@@ -10,9 +10,17 @@ import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { useTour } from "@/features/tour/useTour"
+import dynamic from "next/dynamic"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
-import { UserDropside } from "./UserDropside"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+
+// F3.S7 (shell): o sidebar é global (layout raiz) e o UserDropside é pesado —
+// import estático colocava ele no First Load de TODAS as rotas. O chunk baixa
+// na primeira abertura; depois fica montado (latch) pra animação de fechar.
+const UserDropside = dynamic(
+  () => import("./UserDropside").then((m) => m.UserDropside),
+  { ssr: false },
+)
 
 interface SidebarItem {
   href: string
@@ -113,6 +121,7 @@ export function ProfileSidebar() {
   const router = useRouter()
   const active = useActiveContext()
   const [dropsideOpen, setDropsideOpen] = useState(false)
+  const [dropsideEverOpened, setDropsideEverOpened] = useState(false)
   const navCounts = useNavCounts()
   const { registerAction } = useTour()
 
@@ -124,6 +133,12 @@ export function ProfileSidebar() {
       unregClose()
     }
   }, [registerAction])
+
+  // Latch do chunk lazy: primeira abertura monta o UserDropside e ele segue
+  // montado (open=false) pra animação de fechar funcionar nas próximas.
+  useEffect(() => {
+    if (dropsideOpen) setDropsideEverOpened(true)
+  }, [dropsideOpen])
 
   // Rede de segurança: a câmera adiciona `body.camera-active` (que faz
   // display:none na toolbar). O cleanup dela já remove a classe, mas se vazar
@@ -228,13 +243,15 @@ export function ProfileSidebar() {
         ))}
       </nav>
 
-      <UserDropside
-        open={dropsideOpen}
-        onClose={() => setDropsideOpen(false)}
-        user={user}
-        unreadServiceRequest={unreadSR}
-        onLogout={logout}
-      />
+      {dropsideEverOpened && (
+        <UserDropside
+          open={dropsideOpen}
+          onClose={() => setDropsideOpen(false)}
+          user={user}
+          unreadServiceRequest={unreadSR}
+          onLogout={logout}
+        />
+      )}
     </>
   )
 }

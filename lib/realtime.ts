@@ -1,6 +1,12 @@
 "use client"
 
-import { io, Socket } from "socket.io-client"
+// F3.S7 (shell): socket.io-client é carregado por import() dinâmico — o módulo
+// é importado por use-nav-counts (sidebar global), então um import estático
+// colocaria ~42KB no First Load de TODAS as rotas. A API pública continua
+// síncrona: emits feitos antes do chunk carregar entram na fila (ordem
+// preservada — todos encadeiam na mesma promise de load).
+
+import type { Socket } from "socket.io-client"
 import { getToken } from "@/lib/auth"
 
 const DEFAULT_BACKEND = "https://freelandoo-backend-production.up.railway.app"
@@ -21,6 +27,7 @@ function getRealtimeUrl(): string {
 let socket: Socket | null = null
 let currentToken: string | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
+let ioLoader: Promise<typeof import("socket.io-client")> | null = null
 
 type Listener = (payload: unknown) => void
 const handlers = new Map<string, Set<Listener>>()
@@ -55,7 +62,12 @@ function dispatch(event: string, payload: unknown) {
   }
 }
 
-function ensureSocket(): Socket | null {
+function loadIo() {
+  if (!ioLoader) ioLoader = import("socket.io-client")
+  return ioLoader
+}
+
+async function ensureSocket(): Promise<Socket | null> {
   if (typeof window === "undefined") return null
   const token = getToken()
   if (!token) {
@@ -75,6 +87,10 @@ function ensureSocket(): Socket | null {
     socket = null
   }
   if (socket) return socket
+
+  const { io } = await loadIo()
+  // Outra chamada pode ter criado a socket enquanto o chunk carregava.
+  if (socket && currentToken === token) return socket
 
   currentToken = token
   socket = io(getRealtimeUrl(), {
@@ -115,12 +131,8 @@ function ensureSocket(): Socket | null {
   return socket
 }
 
-export function getRealtimeSocket(): Socket | null {
-  return ensureSocket()
-}
-
 export function onRealtime(event: string, listener: Listener): () => void {
-  ensureSocket()
+  void ensureSocket()
   let set = handlers.get(event)
   if (!set) {
     set = new Set()
@@ -139,21 +151,9 @@ export function emitRealtime(event: string, payload?: unknown) {
   } else if (UNSUBSCRIBE_OF[event]) {
     subscriptions.delete(subscriptionKey(UNSUBSCRIBE_OF[event], payload))
   }
-  const s = ensureSocket()
-  if (s) s.emit(event, payload)
-}
-
-export function disconnectRealtime() {
-  if (socket) {
-    socket.disconnect()
-    socket = null
-    currentToken = null
-  }
-  if (idleTimer) {
-    clearTimeout(idleTimer)
-    idleTimer = null
-  }
-  subscriptions.clear()
+  void ensureSocket().then((s) => {
+    if (s) s.emit(event, payload)
+  })
 }
 
 // ─── Visibility-aware idle disconnect ─────────────────────────────────────
@@ -187,7 +187,7 @@ function handleVisibilityChange() {
     if (socket && !socket.connected) {
       socket.connect()
     } else if (!socket) {
-      ensureSocket()
+      void ensureSocket()
     }
   }
 }
@@ -201,7 +201,7 @@ if (typeof window !== "undefined") {
     }
     clearIdleTimer()
     subscriptions.clear()
-    ensureSocket()
+    void ensureSocket()
   })
   document.addEventListener("visibilitychange", handleVisibilityChange)
 }

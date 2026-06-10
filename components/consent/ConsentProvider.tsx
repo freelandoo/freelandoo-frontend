@@ -1,8 +1,16 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { CONSENT_ACTIONS, type ConsentActionKey } from "@/lib/action-consents"
-import { ActionConsentModal } from "./ActionConsentModal"
+
+// F3.S7 (shell): o modal usa framer-motion (~131KB) e este provider envolve o
+// app inteiro no layout raiz — import estático colocaria framer no First Load
+// de TODAS as rotas. O chunk só baixa na primeira ação que exige consent.
+const ActionConsentModal = dynamic(
+  () => import("./ActionConsentModal").then((m) => m.ActionConsentModal),
+  { ssr: false },
+)
 
 const CACHE_KEY = "fl_consents"
 
@@ -23,6 +31,9 @@ export function useConsentContext() {
 export function ConsentProvider({ children }: { children: React.ReactNode }) {
   const [consents, setConsents] = useState<ConsentMap>({})
   const [pending, setPending] = useState<ConsentActionKey | null>(null)
+  // Latch: depois do primeiro pedido de consent o modal fica montado (com
+  // actionKey=null fica invisível) pra AnimatePresence animar a saída.
+  const [modalEverNeeded, setModalEverNeeded] = useState(false)
   const resolverRef = useRef<((ok: boolean) => void) | null>(null)
 
   // Carrega aceites 1x (cache local só pra não piscar).
@@ -59,6 +70,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
           return
         }
         resolverRef.current = resolve
+        setModalEverNeeded(true)
         setPending(key)
       }),
     [consents],
@@ -98,11 +110,13 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
   return (
     <ConsentContext.Provider value={{ ensureConsent }}>
       {children}
-      <ActionConsentModal
-        actionKey={pending}
-        onAccept={handleAccept}
-        onDecline={() => finish(false)}
-      />
+      {modalEverNeeded && (
+        <ActionConsentModal
+          actionKey={pending}
+          onAccept={handleAccept}
+          onDecline={() => finish(false)}
+        />
+      )}
     </ConsentContext.Provider>
   )
 }

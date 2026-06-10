@@ -44,7 +44,7 @@ async function isAgeGateResolved(): Promise<boolean> {
   }
 }
 
-interface UseIntentResult {
+export interface UseIntentResult {
   status: IntentStatus | null
   shouldShow: boolean
   working: boolean
