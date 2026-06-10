@@ -1,0 +1,41 @@
+# F5.S2 — smoke pós-deploy: após push na main, espera o deploy da Vercel
+# propagar e confere 5 rotas chave em produção. Falha = e-mail do GitHub.
+name: smoke-pos-deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Espera o deploy e valida rotas chave
+        env:
+          BASE: https://www.freelandoo.com.br
+        run: |
+          set -u
+          echo "aguardando 120s pro build da Vercel…"
+          sleep 120
+
+          check () {
+            local route="$1"
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 -L "$BASE$route" || echo 000)
+              if [ "$code" = "200" ]; then
+                echo "OK  $route ($code)"
+                return 0
+              fi
+              echo "…  $route ($code) tentativa $i/30"
+              sleep 10
+            done
+            echo "FALHOU $route"
+            return 1
+          }
+
+          check /
+          check /login
+          check /blog
+          check /cursos
+          check /search
