@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, Wallet } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3 } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { UserPortfolio } from "./_components/UserPortfolio"
@@ -1496,33 +1496,8 @@ export default function PerfilPage() {
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
 
-              {/* Botão Casa Views (ticket) — lado direito, leva aos rankings */}
-              <Link
-                href="/acasaviews/rankings"
-                aria-label="Ver os rankings da Casa Views"
-                title="Rankings da Casa Views"
-                className="group absolute right-4 top-1/2 z-10 -translate-y-1/2 -rotate-3 transition-transform duration-200 hover:rotate-0"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/casaviews/profile/casa-views-ticket.webp"
-                  alt="Casa Views"
-                  className="w-[140px] select-none drop-shadow-[3px_5px_8px_rgba(0,0,0,0.5)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[170px]"
-                />
-              </Link>
-
               {/* sininho de notificações (só na /account) + configurações */}
               <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-                {/* Carteira — extrato de ganhos + mercado. Acento teal-verde. */}
-                <Link
-                  href="/wallet"
-                  aria-label="Abrir minha Carteira"
-                  title="Minha Carteira"
-                  className="group inline-flex h-10 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#16B79A] px-3 text-[#06251F] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#3FD9C6] active:translate-x-px active:translate-y-px"
-                >
-                  <Wallet className="h-4 w-4" />
-                  <span className="hidden text-xs font-extrabold uppercase tracking-wider sm:inline">Carteira</span>
-                </Link>
                 <NotificationBell />
                 <button
                   type="button"
@@ -1541,30 +1516,62 @@ export default function PerfilPage() {
 
             <div className="relative px-5 pb-6 md:px-7">
               <div className="relative z-10 -mt-12 flex flex-col items-center gap-4 text-center md:flex-row md:items-end md:gap-6 md:text-left">
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(true)}
-                  aria-label="Trocar foto de perfil"
-                  title="Trocar foto de perfil"
-                  className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
-                >
-                  <Avatar className="h-full w-full rounded-none">
-                    {perfil.avatar && (
-                      <AvatarImage
-                        src={perfil.avatar}
-                        alt={perfil.nome}
-                        className="rounded-none object-cover"
-                      />
-                    )}
-                    <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
-                      {getInitials(perfil.nome)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    <Camera className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
-                  </span>
-                </button>
+                <div className="flex w-full items-end justify-center gap-3 md:w-auto md:justify-start md:gap-4">
+                  {/* Casa Views (ticket) — flanco esquerdo da foto, leva aos rankings */}
+                  <Link
+                    href="/acasaviews/rankings"
+                    aria-label="Ver os rankings da Casa Views"
+                    title="Rankings da Casa Views"
+                    className="group shrink-0 -rotate-3 pb-1 transition-transform duration-200 hover:rotate-0"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/casaviews/profile/casa-views-ticket.webp"
+                      alt="Casa Views"
+                      className="w-[104px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[120px]"
+                    />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    aria-label="Trocar foto de perfil"
+                    title="Trocar foto de perfil"
+                    className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
+                  >
+                    <Avatar className="h-full w-full rounded-none">
+                      {perfil.avatar && (
+                        <AvatarImage
+                          src={perfil.avatar}
+                          alt={perfil.nome}
+                          className="rounded-none object-cover"
+                        />
+                      )}
+                      <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
+                        {getInitials(perfil.nome)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Camera className="h-5 w-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
+                    </span>
+                  </button>
+
+                  {/* Carteira — flanco direito da foto, extrato de ganhos + mercado */}
+                  <Link
+                    href="/wallet"
+                    aria-label="Abrir minha Carteira"
+                    title="Minha Carteira"
+                    className="group shrink-0 rotate-3 pb-1 transition-transform duration-200 hover:rotate-0"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/wallet/carteira-card.webp"
+                      alt="Carteira"
+                      className="w-[104px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[120px]"
+                    />
+                  </Link>
+                </div>
 
                 <div className="min-w-0 flex-1 pb-1">
                   {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
