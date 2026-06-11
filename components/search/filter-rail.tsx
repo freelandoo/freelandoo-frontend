@@ -208,22 +208,25 @@ export function FilterRail(props: FilterRailProps) {
         )}
 
         {tab === "products" && !showDrill && (
-          <RailSection title={t("categoryLabel", "Categoria")} defaultOpen>
-            <RailOption label={t("allFemale", "Todas")} active={productCategoryId == null} accent={accent} onClick={() => { onProductCategoryChange(null); setProductDrill(false) }} />
-            {productCategories.map((c) => (
-              <RailOption
-                key={c.id_product_category}
-                label={tx.productCategory(c.slug, c.name)}
-                active={c.id_product_category === productCategoryId}
-                accent={accent}
-                onClick={() => {
-                  onProductCategoryChange(c.id_product_category)
-                  // Abre o painel de subfiltros se a categoria tiver schema.
-                  if (getAttributeSchema(c.slug).length > 0) setProductDrill(true)
-                }}
-              />
-            ))}
-          </RailSection>
+          <>
+            <RailSection title={t("categoryLabel", "Categoria")} defaultOpen>
+              <RailOption label={t("allFemale", "Todas")} active={productCategoryId == null} accent={accent} onClick={() => { onProductCategoryChange(null); setProductDrill(false) }} />
+              {productCategories.map((c) => (
+                <RailOption
+                  key={c.id_product_category}
+                  label={tx.productCategory(c.slug, c.name)}
+                  active={c.id_product_category === productCategoryId}
+                  accent={accent}
+                  onClick={() => {
+                    onProductCategoryChange(c.id_product_category)
+                    // Abre o painel de subfiltros se a categoria tiver schema.
+                    if (getAttributeSchema(c.slug).length > 0) setProductDrill(true)
+                  }}
+                />
+              ))}
+            </RailSection>
+            {regionSection}
+          </>
         )}
 
         {/* Drill-in de enxame (Serviços/Cursos): profissões do enxame + Nível/
