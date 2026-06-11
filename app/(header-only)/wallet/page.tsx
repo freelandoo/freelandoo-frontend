@@ -22,6 +22,7 @@ import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { VidaFinanceira } from "./_components/vida-financeira"
 
 /* ── paleta (verde teal no lugar do dourado) ──────────────────────────────── */
@@ -30,34 +31,36 @@ const GREEN_DEEP = "#00876B"
 const INK = "#0B0B0D"
 const PAPER = "#F1EDE2"
 
+type TFn = (key: string, fallback?: string) => string
+
 /* ── helpers ──────────────────────────────────────────────────────────────── */
-function brl(cents?: number | null) {
-  return ((Number(cents) || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function brl(cents?: number | null, locale = "pt-BR") {
+  return ((Number(cents) || 0) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 function pct(n?: number | null) {
   const v = Number(n)
   if (!Number.isFinite(v)) return "—"
   return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`
 }
-function shortDay(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+function shortDay(iso: string, locale = "pt-BR") {
+  return new Date(iso + "T00:00:00").toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
 }
-function fmtDate(iso?: string | null) {
+function fmtDate(iso?: string | null, locale = "pt-BR") {
   if (!iso) return "—"
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+  return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })
 }
 
-const KIND_META: Record<string, { label: string; Icon: typeof ShoppingBag }> = {
-  product: { label: "Loja", Icon: ShoppingBag },
-  service: { label: "Serviço", Icon: Briefcase },
-  course: { label: "Curso", Icon: GraduationCap },
-  affiliate: { label: "Afiliado", Icon: Percent },
+const KIND_META: Record<string, { label: string; labelKey: string; Icon: typeof ShoppingBag }> = {
+  product: { label: "Loja", labelKey: "kindStore", Icon: ShoppingBag },
+  service: { label: "Serviço", labelKey: "kindService", Icon: Briefcase },
+  course: { label: "Curso", labelKey: "kindCourse", Icon: GraduationCap },
+  affiliate: { label: "Afiliado", labelKey: "kindAffiliate", Icon: Percent },
 }
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  paid: { label: "Recebido", cls: "bg-[#00876B] text-white" },
-  available: { label: "Disponível", cls: "bg-[#16B79A] text-[#06251F]" },
-  pending: { label: "Aguardando", cls: "bg-[#0B0B0D] text-[#F1EDE2]" },
-  reversed: { label: "Revertido", cls: "bg-[#9A3412] text-white" },
+const STATUS_META: Record<string, { label: string; labelKey: string; cls: string }> = {
+  paid: { label: "Recebido", labelKey: "statusReceived", cls: "bg-[#00876B] text-white" },
+  available: { label: "Disponível", labelKey: "statusAvailable", cls: "bg-[#16B79A] text-[#06251F]" },
+  pending: { label: "Aguardando", labelKey: "statusPending", cls: "bg-[#0B0B0D] text-[#F1EDE2]" },
+  reversed: { label: "Revertido", labelKey: "statusReverted", cls: "bg-[#9A3412] text-white" },
 }
 
 /* ── tipos ────────────────────────────────────────────────────────────────── */
@@ -75,20 +78,22 @@ type MarketItem = {
 type NewsItem = { id: number; source?: string; category: string; title: string; url: string; thumb_url?: string | null; published_at?: string | null }
 
 const RANGES = [
-  { key: "7d", label: "7 dias" },
-  { key: "30d", label: "30 dias" },
-  { key: "90d", label: "90 dias" },
+  { key: "7d", label: "7 dias", labelKey: "range7d" },
+  { key: "30d", label: "30 dias", labelKey: "range30d" },
+  { key: "90d", label: "90 dias", labelKey: "range90d" },
 ]
 const KIND_FILTERS = [
-  { key: "all", label: "Todos" },
-  { key: "product", label: "Loja" },
-  { key: "service", label: "Serviço" },
-  { key: "course", label: "Curso" },
-  { key: "affiliate", label: "Afiliado" },
+  { key: "all", label: "Todos", labelKey: "filterAll" },
+  { key: "product", label: "Loja", labelKey: "kindStore" },
+  { key: "service", label: "Serviço", labelKey: "kindService" },
+  { key: "course", label: "Curso", labelKey: "kindCourse" },
+  { key: "affiliate", label: "Afiliado", labelKey: "kindAffiliate" },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export default function WalletPage() {
+  const tr = useTranslations("Wallet")
+  const locale = useLocale()
   const { perfil, isLoading: perfilLoading } = useMeProfile()
   const subprofiles = useMemo(() => (perfil?.profiles || []).filter((p) => !p.is_clan), [perfil])
 
@@ -121,19 +126,19 @@ export default function WalletPage() {
             ? clientFetchWithTimeout(`/api/me/earnings/series?range=${range}${pq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000)
             : Promise.resolve(null),
         ])
-        if (!eRes.ok) throw new Error("Falha ao carregar extrato")
+        if (!eRes.ok) throw new Error(tr("loadStatementError", "Falha ao carregar extrato"))
         const eData = await eRes.json()
         setAgg(eData.aggregates || null)
         setTotalPages(eData.pagination?.total_pages || 1)
         setItems((prev) => (replace ? eData.items || [] : [...prev, ...(eData.items || [])]))
         if (sRes && sRes.ok) setSeries((await sRes.json()).series || [])
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Erro ao carregar")
+        setError(e instanceof Error ? e.message : tr("loadError", "Erro ao carregar"))
       } finally {
         setLoading(false)
       }
     },
-    [profileId, range, kind]
+    [profileId, range, kind, tr]
   )
 
   useEffect(() => {
@@ -154,7 +159,7 @@ export default function WalletPage() {
             href="/account"
             className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6] transition hover:text-[#F1EDE2]"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+            <ArrowLeft className="h-3.5 w-3.5" /> {tr("back", "Voltar")}
           </Link>
           {perfil?.username && (
             <span className="inline-flex items-center gap-2 bg-[#0B0B0D] px-3 py-1.5 text-[#F1EDE2]">
@@ -164,10 +169,10 @@ export default function WalletPage() {
           )}
         </div>
 
-        <p className="fl-marker text-2xl" style={{ color: GREEN }}>a sua grana</p>
+        <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("heroEyebrow", "a sua grana")}</p>
         <h1 className="relative">
           <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
-            Carteira<span style={{ color: GREEN }}>.</span>
+            {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
           </span>
           <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
         </h1>
@@ -177,7 +182,7 @@ export default function WalletPage() {
       <section className="mx-auto w-full max-w-6xl px-5 md:px-8">
         <div className="mt-10 flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">Período</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">{tr("period", "Período")}</span>
             <div className="flex gap-1.5">
               {RANGES.map((r) => {
                 const active = range === r.key
@@ -194,7 +199,7 @@ export default function WalletPage() {
                     )}
                     style={active ? { background: GREEN } : undefined}
                   >
-                    {r.label}
+                    {tr(r.labelKey, r.label)}
                   </button>
                 )
               })}
@@ -209,7 +214,7 @@ export default function WalletPage() {
               disabled={perfilLoading}
               className="h-11 w-full appearance-none border-2 border-[#F1EDE2]/25 bg-transparent px-4 pr-10 text-sm font-bold uppercase tracking-wide text-[#F1EDE2] outline-none transition focus:border-[#16B79A] sm:min-w-[240px]"
             >
-              <option value="" className="bg-[#1D1810]">Todos os subperfis</option>
+              <option value="" className="bg-[#1D1810]">{tr("allSubprofiles", "Todos os subperfis")}</option>
               {subprofiles.map((p) => (
                 <option key={p.id_profile} value={p.id_profile} className="bg-[#1D1810]">
                   {p.display_name}
@@ -221,7 +226,7 @@ export default function WalletPage() {
         </div>
         {profileId && (
           <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
-            Curso e Afiliado são por conta — não filtram por subperfil.
+            {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por subperfil.")}
           </p>
         )}
       </section>
@@ -231,16 +236,16 @@ export default function WalletPage() {
         <div className="min-w-0">
           {/* KPIs */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Kpi label="Recebido" value={brl(totals.received)} accent />
-            <Kpi label="Disponível" value={brl(totals.available)} />
-            <Kpi label="Aguardando" value={brl(totals.pending)} />
-            <Kpi label="Lançamentos" value={String(totals.count || 0)} />
+            <Kpi label={tr("kpiReceived", "Recebido")} value={brl(totals.received, locale)} accent />
+            <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
+            <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
+            <Kpi label={tr("kpiEntries", "Lançamentos")} value={String(totals.count || 0)} />
           </div>
 
           {/* Gráfico */}
           <div className="mt-6 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
             <h2 className="mb-4 flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
-              <BarChart3 className="h-5 w-5" /> Ganhos por dia
+              <BarChart3 className="h-5 w-5" /> {tr("earningsPerDay", "Ganhos por dia")}
             </h2>
             <EarningsBars series={series} loading={loading} />
           </div>
@@ -249,7 +254,7 @@ export default function WalletPage() {
           <div className="mt-10">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
               <div className="relative">
-                <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">Extrato</h2>
+                <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">{tr("statement", "Extrato")}</h2>
                 <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -268,7 +273,7 @@ export default function WalletPage() {
                       )}
                       style={active ? { background: GREEN } : undefined}
                     >
-                      {f.label}
+                      {tr(f.labelKey, f.label)}
                     </button>
                   )
                 })}
@@ -280,7 +285,7 @@ export default function WalletPage() {
             ) : error ? (
               <StateBox
                 icon={<AlertCircle className="h-6 w-6" />}
-                title="Não deu pra carregar."
+                title={tr("loadFailedTitle", "Não deu pra carregar.")}
                 desc={error}
                 action={
                   <button
@@ -289,15 +294,15 @@ export default function WalletPage() {
                     className="border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
                     style={{ background: GREEN }}
                   >
-                    Tentar de novo
+                    {tr("tryAgain", "Tentar de novo")}
                   </button>
                 }
               />
             ) : items.length === 0 ? (
               <StateBox
                 icon={<Inbox className="h-6 w-6" />}
-                title="Nenhum ganho ainda."
-                desc="Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui."
+                title={tr("emptyTitle", "Nenhum ganho ainda.")}
+                desc={tr("emptyDesc", "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.")}
               />
             ) : (
               <>
@@ -318,7 +323,7 @@ export default function WalletPage() {
                       className="inline-flex items-center gap-2 border-2 border-[#F1EDE2]/25 px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
                     >
                       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      Carregar mais
+                      {tr("loadMore", "Carregar mais")}
                     </button>
                   </div>
                 )}
@@ -358,6 +363,8 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent?: 
 
 /* ── Gráfico de barras ────────────────────────────────────────────────────── */
 function EarningsBars({ series, loading }: { series: SeriesPoint[]; loading: boolean }) {
+  const tr = useTranslations("Wallet")
+  const locale = useLocale()
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(false)
@@ -380,7 +387,7 @@ function EarningsBars({ series, loading }: { series: SeriesPoint[]; loading: boo
           return (
             <div key={p.day} className="flex flex-1 items-end justify-center">
               <div
-                title={`${shortDay(p.day)} · ${brl(p.net_cents)}`}
+                title={`${shortDay(p.day, locale)} · ${brl(p.net_cents, locale)}`}
                 className="w-full origin-bottom border border-[#0B0B0D] transition-transform duration-500 ease-out"
                 style={{
                   height: `${h}%`,
@@ -396,19 +403,21 @@ function EarningsBars({ series, loading }: { series: SeriesPoint[]; loading: boo
       <div className="mt-2 flex justify-between text-[10px] font-bold uppercase tracking-wide text-[#6B6457]">
         {series.map((p, i) => (
           <span key={p.day} className="flex-1 text-center">
-            {i % step === 0 ? shortDay(p.day) : ""}
+            {i % step === 0 ? shortDay(p.day, locale) : ""}
           </span>
         ))}
       </div>
-      {!hasData && <p className="mt-3 text-center text-xs font-semibold text-[#6B6457]">Sem movimento neste período.</p>}
+      {!hasData && <p className="mt-3 text-center text-xs font-semibold text-[#6B6457]">{tr("noMovement", "Sem movimento neste período.")}</p>}
     </div>
   )
 }
 
 /* ── Linha do extrato (card de papel reto, sombra dura) ───────────────────── */
 function ExtratoRow({ it }: { it: Earning }) {
-  const km = KIND_META[it.kind] || { label: it.kind, Icon: Wallet }
-  const sm = STATUS_META[it.status] || { label: it.status, cls: "bg-[#0B0B0D] text-[#F1EDE2]" }
+  const tr = useTranslations("Wallet")
+  const locale = useLocale()
+  const km = KIND_META[it.kind] || { label: it.kind, labelKey: "", Icon: Wallet }
+  const sm = STATUS_META[it.status] || { label: it.status, labelKey: "", cls: "bg-[#0B0B0D] text-[#F1EDE2]" }
   const date = it.paid_at || it.available_at || it.created_at
   return (
     <div className="group flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 shadow-[5px_5px_0_0_#0B0B0D] transition-transform duration-200 hover:-translate-y-1 hover:-rotate-[0.4deg] hover:shadow-[8px_8px_0_0_#16B79A] md:px-4">
@@ -419,14 +428,14 @@ function ExtratoRow({ it }: { it: Earning }) {
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="fl-display truncate text-lg leading-none text-[#0B0B0D] md:text-xl">{it.title}</h4>
           <span className="-rotate-1 bg-[#0B0B0D] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2]">
-            {km.label}
+            {km.labelKey ? tr(km.labelKey, km.label) : km.label}
           </span>
         </div>
-        <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDate(date)}</p>
+        <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDate(date, locale)}</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="fl-display text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>{brl(it.net_cents)}</span>
-        <span className={cn("px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em]", sm.cls)}>{sm.label}</span>
+        <span className="fl-display text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>{brl(it.net_cents, locale)}</span>
+        <span className={cn("px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em]", sm.cls)}>{sm.labelKey ? tr(sm.labelKey, sm.label) : sm.label}</span>
       </div>
     </div>
   )
@@ -455,6 +464,7 @@ function ExtratoSkeleton() {
 
 /* ═══ Sidebar de mercado ══════════════════════════════════════════════════════ */
 function MarketSidebar() {
+  const tr = useTranslations("Wallet")
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<{ stocks: MarketItem[]; quotes: MarketItem[]; news: NewsItem[] } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -473,25 +483,25 @@ function MarketSidebar() {
 
   const body = (
     <div className="space-y-5">
-      <MarketSection title="Ações em alta" icon={<TrendingUp className="h-4 w-4" />}>
+      <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
         {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
-          <Muted>Sem dados de ações no momento.</Muted>
+          <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
         ) : (
           data.stocks.map((s) => <QuoteRow key={s.symbol} item={s} />)
         )}
       </MarketSection>
-      <MarketSection title="Cotações" icon={<LineChart className="h-4 w-4" />}>
+      <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
         {loading ? <RowsSkeleton n={4} /> : err || !data?.quotes.length ? (
-          <Muted>Cotações indisponíveis no momento.</Muted>
+          <Muted>{tr("noQuotes", "Cotações indisponíveis no momento.")}</Muted>
         ) : (
           data.quotes.map((q) => <QuoteRow key={q.symbol} item={q} />)
         )}
       </MarketSection>
-      <MarketSection title="Mercado & política" icon={<Newspaper className="h-4 w-4" />}>
+      <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
         {loading ? <RowsSkeleton n={2} /> : data?.news?.length ? (
           data.news.map((n) => <NewsRow key={n.id} item={n} />)
         ) : (
-          <Muted>Sem manchetes por enquanto.</Muted>
+          <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
         )}
       </MarketSection>
     </div>
@@ -503,7 +513,7 @@ function MarketSidebar() {
         <span className="inline-flex h-7 w-7 items-center justify-center border-2 border-[#0B0B0D]" style={{ background: GREEN }}>
           <BarChart3 className="h-3.5 w-3.5 text-[#06251F]" />
         </span>
-        Mercado
+        {tr("market", "Mercado")}
       </h2>
       {body}
     </div>
@@ -522,7 +532,7 @@ function MarketSidebar() {
         className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#06251F] shadow-[4px_4px_0_0_#0B0B0D] lg:hidden"
         style={{ background: GREEN }}
       >
-        <BarChart3 className="h-4 w-4" /> Mercado
+        <BarChart3 className="h-4 w-4" /> {tr("market", "Mercado")}
       </button>
       <div className={cn("fixed inset-0 z-40 lg:hidden", !open && "pointer-events-none")} aria-hidden={!open}>
         <div
@@ -534,11 +544,11 @@ function MarketSidebar() {
           style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
         >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="fl-display text-2xl text-[#F1EDE2]">Mercado</h2>
+            <h2 className="fl-display text-2xl text-[#F1EDE2]">{tr("market", "Mercado")}</h2>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              aria-label="Fechar"
+              aria-label={tr("close", "Fechar")}
               className="inline-flex h-9 w-9 items-center justify-center border-2 border-[#F1EDE2]/25 text-[#F1EDE2]"
             >
               <X className="h-4 w-4" />
@@ -562,14 +572,15 @@ function MarketSection({ title, icon, children }: { title: string; icon: ReactNo
   )
 }
 function QuoteRow({ item }: { item: MarketItem }) {
+  const locale = useLocale()
   const up = (item.change_pct ?? 0) >= 0
   const isPts = item.currency === "pts"
   const small = item.price != null && item.price < 1
   const price = item.price == null
     ? "—"
     : isPts
-      ? item.price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })
-      : item.price.toLocaleString("pt-BR", {
+      ? item.price.toLocaleString(locale, { maximumFractionDigits: 0 })
+      : item.price.toLocaleString(locale, {
           style: "currency", currency: "BRL",
           minimumFractionDigits: small ? 4 : 2, maximumFractionDigits: small ? 4 : 2,
         })

@@ -14,6 +14,9 @@ import {
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { cn } from "@/lib/utils"
 import { Underline } from "@/components/home/landing/primitives"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+
+type TFn = (key: string, fallback?: string) => string
 
 const GREEN = "#16B79A"
 const GREEN_DEEP = "#00876B"
@@ -31,11 +34,17 @@ type MonthData = {
   entries: { recurring_in: Entry[]; oneoff_in: Entry[]; recurring_out: Entry[]; oneoff_out: Entry[] }
 }
 
-const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
-const MONTHS_FULL = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+function monthShort(i: number, locale = "pt-BR") {
+  const s = new Date(2021, i, 1).toLocaleDateString(locale, { month: "short" }).replace(".", "")
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+function monthFull(i: number, locale = "pt-BR") {
+  const s = new Date(2021, i, 1).toLocaleDateString(locale, { month: "long" })
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 
-function brl(cents?: number | null) {
-  return ((Number(cents) || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function brl(cents?: number | null, locale = "pt-BR") {
+  return ((Number(cents) || 0) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 function currentYm() {
   const d = new Date()
@@ -44,15 +53,17 @@ function currentYm() {
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
-function fmtDay(e: Entry) {
-  if (e.recurrence === "recurring") return `todo dia ${e.due_day ?? 1}`
+function fmtDay(e: Entry, t: TFn) {
+  if (e.recurrence === "recurring") return t("everyDay", "todo dia {day}").replace("{day}", String(e.due_day ?? 1))
   if (!e.entry_date) return ""
   const d = new Date(e.entry_date + "T00:00:00")
-  return `dia ${String(d.getDate()).padStart(2, "0")}`
+  return t("onDay", "dia {day}").replace("{day}", String(d.getDate()).padStart(2, "0"))
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export function VidaFinanceira() {
+  const tr = useTranslations("Wallet")
+  const locale = useLocale()
   const [ym, setYm] = useState(currentYm())
   const [data, setData] = useState<MonthData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,17 +107,17 @@ export function VidaFinanceira() {
   return (
     <section className="mx-auto mt-16 w-full max-w-6xl px-5 md:px-8">
       <div className="relative mb-8">
-        <p className="fl-marker text-2xl" style={{ color: GREEN }}>controle de verdade</p>
-        <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">Vida Financeira</h2>
+        <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
+        <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>
         <Underline className="absolute -bottom-2 left-0 h-3.5 w-48" style={{ color: GREEN }} />
         <p className="mt-4 max-w-xl text-sm font-medium text-[#C9C2B6]">
-          Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.
+          {tr("financeIntro", "Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.")}
         </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[160px_minmax(0,1fr)]">
         {/* Coluna de meses */}
-        <MonthRail year={year} month={month} onPick={(y, m) => setYm(y * 100 + m)} />
+        <MonthRail year={year} month={month} onPick={(y, m) => setYm(y * 100 + m)} tr={tr} locale={locale} />
 
         <div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -116,6 +127,8 @@ export function VidaFinanceira() {
               loading={loading}
               onAdd={(recurrence, prefill) => setModal({ direction: "in", recurrence, prefill })}
               onDelete={del}
+              tr={tr}
+              locale={locale}
             />
             <Column
               dir="out"
@@ -123,6 +136,8 @@ export function VidaFinanceira() {
               loading={loading}
               onAdd={(recurrence, prefill) => setModal({ direction: "out", recurrence, prefill })}
               onDelete={del}
+              tr={tr}
+              locale={locale}
             />
           </div>
 
@@ -133,21 +148,21 @@ export function VidaFinanceira() {
           >
             <div>
               <p className="text-[11px] font-extrabold uppercase tracking-[0.18em]" style={{ color: positive ? "#06251F" : "#fff" }}>
-                Fechamento de {MONTHS_FULL[month - 1]}
+                {tr("monthClose", "Fechamento de {month}").replace("{month}", monthFull(month - 1, locale))}
               </p>
               <p className="fl-display text-3xl leading-none md:text-4xl" style={{ color: positive ? "#06251F" : "#fff" }}>
-                {positive ? "" : "− "}{brl(Math.abs(totals.net_cents))}
+                {positive ? "" : "− "}{brl(Math.abs(totals.net_cents), locale)}
               </p>
             </div>
             <p className="max-w-xs text-sm font-bold leading-snug" style={{ color: positive ? "#06251F" : "#fff" }}>
               {positive
-                ? "Parabéns! Você gastou menos do que recebeu este mês. Continue assim."
-                : "Você gastou mais do que recebeu este mês. Hora de ajustar."}
+                ? tr("monthPositive", "Parabéns! Você gastou menos do que recebeu este mês. Continue assim.")
+                : tr("monthNegative", "Você gastou mais do que recebeu este mês. Hora de ajustar.")}
             </p>
           </div>
 
           {/* Gráfico de controle de custos */}
-          <CostChart data={data} />
+          <CostChart data={data} tr={tr} locale={locale} />
         </div>
       </div>
 
@@ -157,6 +172,7 @@ export function VidaFinanceira() {
           recurrence={modal.recurrence}
           ym={ym}
           prefill={modal.prefill}
+          tr={tr}
           onClose={() => setModal(null)}
           onCreated={() => {
             setModal(null)
@@ -182,7 +198,7 @@ function stripEntry(d: MonthData, id: number): MonthData {
 }
 
 /* ── Gráfico de controle de custos ────────────────────────────────────────── */
-function CostChart({ data }: { data: MonthData | null }) {
+function CostChart({ data, tr, locale }: { data: MonthData | null; tr: TFn; locale: string }) {
   const inTotal = data?.totals.in_cents || 0
   const outTotal = data?.totals.out_cents || 0
   const max = Math.max(inTotal, outTotal, 1)
@@ -200,33 +216,33 @@ function CostChart({ data }: { data: MonthData | null }) {
 
   return (
     <div className="mt-5 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
-      <h3 className="mb-4 fl-display text-2xl text-[#0B0B0D]">Controle de custos</h3>
+      <h3 className="mb-4 fl-display text-2xl text-[#0B0B0D]">{tr("costControl", "Controle de custos")}</h3>
 
       {empty ? (
         <p className="py-6 text-center text-xs font-semibold text-[#6B6457]">
-          Lance entradas e saídas para ver o panorama do mês aqui.
+          {tr("costEmpty", "Lance entradas e saídas para ver o panorama do mês aqui.")}
         </p>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {/* Entradas x Saídas */}
           <div>
-            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Entradas × Saídas</p>
-            <CompareBar label="Entrou" value={inTotal} max={max} color={GREEN_DEEP} />
-            <CompareBar label="Saiu" value={outTotal} max={max} color={RED} />
+            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("inVsOut", "Entradas × Saídas")}</p>
+            <CompareBar label={tr("cameIn", "Entrou")} value={inTotal} max={max} color={GREEN_DEEP} locale={locale} />
+            <CompareBar label={tr("wentOut", "Saiu")} value={outTotal} max={max} color={RED} locale={locale} />
           </div>
 
           {/* Para onde foi */}
           <div>
-            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Para onde foi</p>
+            <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("whereItWent", "Para onde foi")}</p>
             {byCategory.length === 0 ? (
-              <p className="py-2 text-xs font-semibold text-[#6B6457]">Sem saídas neste mês.</p>
+              <p className="py-2 text-xs font-semibold text-[#6B6457]">{tr("noExpenses", "Sem saídas neste mês.")}</p>
             ) : (
               <div className="space-y-2">
                 {byCategory.map(([label, v]) => (
                   <div key={label}>
                     <div className="flex items-center justify-between text-[11px] font-bold text-[#0B0B0D]">
                       <span className="truncate">{label}</span>
-                      <span className="tabular-nums">{brl(v)}</span>
+                      <span className="tabular-nums">{brl(v, locale)}</span>
                     </div>
                     <div className="mt-0.5 h-2.5 border border-[#0B0B0D] bg-white">
                       <div className="h-full" style={{ width: `${Math.max(3, Math.round((v / catMax) * 100))}%`, background: RED }} />
@@ -242,13 +258,13 @@ function CostChart({ data }: { data: MonthData | null }) {
   )
 }
 
-function CompareBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+function CompareBar({ label, value, max, color, locale }: { label: string; value: number; max: number; color: string; locale: string }) {
   const w = Math.max(3, Math.round((value / max) * 100))
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between text-[11px] font-bold text-[#0B0B0D]">
         <span className="uppercase tracking-wide">{label}</span>
-        <span className="tabular-nums">{brl(value)}</span>
+        <span className="tabular-nums">{brl(value, locale)}</span>
       </div>
       <div className="mt-0.5 h-4 border-2 border-[#0B0B0D] bg-white">
         <div className="h-full transition-all duration-500" style={{ width: `${w}%`, background: color }} />
@@ -258,24 +274,24 @@ function CompareBar({ label, value, max, color }: { label: string; value: number
 }
 
 /* ── Coluna de meses ──────────────────────────────────────────────────────── */
-function MonthRail({ year, month, onPick }: { year: number; month: number; onPick: (y: number, m: number) => void }) {
+function MonthRail({ year, month, onPick, tr, locale }: { year: number; month: number; onPick: (y: number, m: number) => void; tr: TFn; locale: string }) {
   return (
     <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-2 shadow-[5px_5px_0_0_#0B0B0D]">
       <div className="mb-2 flex items-center justify-between px-1">
-        <button type="button" aria-label="Ano anterior" onClick={() => onPick(year - 1, month)} className="text-[#C9C2B6] hover:text-[#F1EDE2]">
+        <button type="button" aria-label={tr("prevYear", "Ano anterior")} onClick={() => onPick(year - 1, month)} className="text-[#C9C2B6] hover:text-[#F1EDE2]">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="fl-display text-xl text-[#F1EDE2]">{year}</span>
-        <button type="button" aria-label="Próximo ano" onClick={() => onPick(year + 1, month)} className="text-[#C9C2B6] hover:text-[#F1EDE2]">
+        <button type="button" aria-label={tr("nextYear", "Próximo ano")} onClick={() => onPick(year + 1, month)} className="text-[#C9C2B6] hover:text-[#F1EDE2]">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
       <div className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
-        {MONTHS.map((m, i) => {
+        {Array.from({ length: 12 }).map((_, i) => {
           const active = month === i + 1
           return (
             <button
-              key={m}
+              key={i}
               type="button"
               onClick={() => onPick(year, i + 1)}
               className={cn(
@@ -284,7 +300,7 @@ function MonthRail({ year, month, onPick }: { year: number; month: number; onPic
               )}
               style={active ? { background: GREEN } : undefined}
             >
-              {m}
+              {monthShort(i, locale)}
             </button>
           )
         })}
@@ -295,13 +311,15 @@ function MonthRail({ year, month, onPick }: { year: number; month: number; onPic
 
 /* ── Coluna Entradas / Saídas ─────────────────────────────────────────────── */
 function Column({
-  dir, data, loading, onAdd, onDelete,
+  dir, data, loading, onAdd, onDelete, tr, locale,
 }: {
   dir: Dir
   data: MonthData | null
   loading: boolean
   onAdd: (recurrence: Rec, prefill?: string) => void
   onDelete: (id: number) => void
+  tr: TFn
+  locale: string
 }) {
   const isIn = dir === "in"
   const accent = isIn ? GREEN : RED
@@ -325,19 +343,19 @@ function Column({
       <div className="mb-3 flex items-center justify-between">
         <h3 className="flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
           {isIn ? <PiggyBank className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-          {isIn ? "Entradas" : "Saídas"}
+          {isIn ? tr("income", "Entradas") : tr("expenses", "Saídas")}
         </h3>
         <span className="fl-display text-2xl leading-none" style={{ color: isIn ? GREEN_DEEP : RED }}>
-          {brl(total)}
+          {brl(total, locale)}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <ActionBtn accent={accent} onClick={() => onAdd("recurring")} icon={isIn ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}>
-          {isIn ? "Recebo todo mês" : "Gasto todo mês"}
+          {isIn ? tr("receiveMonthly", "Recebo todo mês") : tr("spendMonthly", "Gasto todo mês")}
         </ActionBtn>
         <ActionBtn accent={accent} onClick={() => onAdd("oneoff")} icon={isIn ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}>
-          {isIn ? "Recebi hoje" : "Gastei hoje"}
+          {isIn ? tr("receivedToday", "Recebi hoje") : tr("spentToday", "Gastei hoje")}
         </ActionBtn>
       </div>
 
@@ -361,11 +379,11 @@ function Column({
           <RowSkeleton />
         ) : (
           <>
-            <Group title="Fixos do mês" entries={recurring} accent={accent} onDelete={onDelete} />
-            <Group title="No dia" entries={oneoff} accent={accent} onDelete={onDelete} />
+            <Group title={tr("fixedMonthly", "Fixos do mês")} entries={recurring} accent={accent} onDelete={onDelete} tr={tr} locale={locale} />
+            <Group title={tr("onTheDay", "No dia")} entries={oneoff} accent={accent} onDelete={onDelete} tr={tr} locale={locale} />
             {(recurring?.length || 0) + (oneoff?.length || 0) === 0 && (
               <p className="py-4 text-center text-xs font-semibold text-[#6B6457]">
-                Nada lançado ainda. Use os botões acima.
+                {tr("nothingYet", "Nada lançado ainda. Use os botões acima.")}
               </p>
             )}
           </>
@@ -375,7 +393,7 @@ function Column({
   )
 }
 
-function Group({ title, entries, accent, onDelete }: { title: string; entries?: Entry[]; accent: string; onDelete: (id: number) => void }) {
+function Group({ title, entries, accent, onDelete, tr, locale }: { title: string; entries?: Entry[]; accent: string; onDelete: (id: number) => void; tr: TFn; locale: string }) {
   if (!entries || entries.length === 0) return null
   return (
     <div>
@@ -386,12 +404,12 @@ function Group({ title, entries, accent, onDelete }: { title: string; entries?: 
             <span className="h-2 w-2 shrink-0" style={{ background: accent }} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-bold text-[#0B0B0D]">{e.title}</p>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDay(e)}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDay(e, tr)}</p>
             </div>
-            <span className="shrink-0 text-xs font-black tabular-nums text-[#0B0B0D]">{brl(e.amount_cents)}</span>
+            <span className="shrink-0 text-xs font-black tabular-nums text-[#0B0B0D]">{brl(e.amount_cents, locale)}</span>
             <button
               type="button"
-              aria-label="Excluir"
+              aria-label={tr("delete", "Excluir")}
               onClick={() => onDelete(e.id)}
               className="shrink-0 text-[#6B6457] opacity-60 transition hover:text-[#C0392B] hover:opacity-100"
             >
@@ -430,9 +448,9 @@ function RowSkeleton() {
 
 /* ── Modal de lançamento ──────────────────────────────────────────────────── */
 function EntryModal({
-  direction, recurrence, ym, prefill, onClose, onCreated,
+  direction, recurrence, ym, prefill, tr, onClose, onCreated,
 }: {
-  direction: Dir; recurrence: Rec; ym: number; prefill?: string
+  direction: Dir; recurrence: Rec; ym: number; prefill?: string; tr: TFn
   onClose: () => void; onCreated: () => void
 }) {
   const isIn = direction === "in"
@@ -453,8 +471,8 @@ function EntryModal({
   const amountRef = useRef<HTMLInputElement | null>(null)
 
   const heading = isIn
-    ? recurrence === "recurring" ? "Recebo todo mês" : "Recebi hoje"
-    : recurrence === "recurring" ? "Gasto todo mês" : "Gastei hoje"
+    ? recurrence === "recurring" ? tr("receiveMonthly", "Recebo todo mês") : tr("receivedToday", "Recebi hoje")
+    : recurrence === "recurring" ? tr("spendMonthly", "Gasto todo mês") : tr("spentToday", "Gastei hoje")
 
   const loadCats = useCallback(async () => {
     const t = token()
@@ -496,8 +514,8 @@ function EntryModal({
     setErr("")
     const reais = Number(String(amount).replace(",", "."))
     const amount_cents = Math.round(reais * 100)
-    if (!title.trim()) return setErr("Escolha ou digite uma categoria.")
-    if (!Number.isFinite(amount_cents) || amount_cents <= 0) return setErr("Informe um valor válido.")
+    if (!title.trim()) return setErr(tr("errPickCategory", "Escolha ou digite uma categoria."))
+    if (!Number.isFinite(amount_cents) || amount_cents <= 0) return setErr(tr("errValidAmount", "Informe um valor válido."))
     const t = token()
     if (!t) return
     setSaving(true)
@@ -514,11 +532,11 @@ function EntryModal({
       }, 9000)
       if (!r.ok) {
         const d = await r.json().catch(() => null)
-        throw new Error(d?.error || "Não deu pra salvar")
+        throw new Error(d?.error || tr("errCouldNotSave", "Não deu pra salvar"))
       }
       onCreated()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Erro ao salvar")
+      setErr(e instanceof Error ? e.message : tr("errSaving", "Erro ao salvar"))
     } finally {
       setSaving(false)
     }
@@ -544,13 +562,13 @@ function EntryModal({
             </span>
             {heading}
           </h3>
-          <button type="button" aria-label="Fechar" onClick={onClose} className="text-[#6B6457] hover:text-[#0B0B0D]">
+          <button type="button" aria-label={tr("close", "Fechar")} onClick={onClose} className="text-[#6B6457] hover:text-[#0B0B0D]">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Categorias */}
-        <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Categoria</p>
+        <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("category", "Categoria")}</p>
         <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
           {chips.map((c) => (
             <button
@@ -573,10 +591,10 @@ function EntryModal({
                 value={newCat}
                 onChange={(e) => setNewCat(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void addCategory() }}
-                placeholder="Nova"
+                placeholder={tr("newCategory", "Nova")}
                 className="w-24 border-2 border-[#0B0B0D] bg-white px-2 py-1 text-[11px] text-[#0B0B0D] outline-none"
               />
-              <button type="button" onClick={addCategory} className="border-2 border-[#0B0B0D] px-2 py-1 text-[11px] font-bold" style={{ background: accent }}>ok</button>
+              <button type="button" onClick={addCategory} className="border-2 border-[#0B0B0D] px-2 py-1 text-[11px] font-bold" style={{ background: accent }}>{tr("ok", "ok")}</button>
             </span>
           ) : (
             <button
@@ -584,7 +602,7 @@ function EntryModal({
               onClick={() => setAdding(true)}
               className="inline-flex items-center gap-1 border-2 border-dashed border-[#0B0B0D]/40 px-2 py-1 text-[11px] font-bold uppercase text-[#0B0B0D] hover:border-[#0B0B0D]"
             >
-              <Plus className="h-3 w-3" /> Categoria
+              <Plus className="h-3 w-3" /> {tr("category", "Categoria")}
             </button>
           )}
         </div>
@@ -593,14 +611,14 @@ function EntryModal({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Título do lançamento"
+          placeholder={tr("entryTitlePlaceholder", "Título do lançamento")}
           className="mt-3 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm font-bold text-[#0B0B0D] outline-none focus:shadow-[3px_3px_0_0_#0B0B0D]"
         />
 
         {/* Valor + (dia ou data) */}
         <div className="mt-3 grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Valor (R$)</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("amountBRL", "Valor (R$)")}</span>
             <input
               ref={amountRef}
               inputMode="decimal"
@@ -612,7 +630,7 @@ function EntryModal({
           </label>
           {recurrence === "recurring" ? (
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Dia do mês</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("dayOfMonth", "Dia do mês")}</span>
               <input
                 type="number" min={1} max={31}
                 value={dueDay}
@@ -622,7 +640,7 @@ function EntryModal({
             </label>
           ) : (
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">Data</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("date", "Data")}</span>
               <input
                 type="date"
                 value={date}
@@ -643,7 +661,7 @@ function EntryModal({
           style={{ background: accent }}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-          {recurrence === "recurring" ? "Salvar fixo do mês" : "Lançar"}
+          {recurrence === "recurring" ? tr("saveFixed", "Salvar fixo do mês") : tr("post", "Lançar")}
         </button>
       </div>
     </div>

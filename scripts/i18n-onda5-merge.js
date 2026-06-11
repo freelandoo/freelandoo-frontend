@@ -142,7 +142,123 @@ const PAYMENTS = {
   itemPlural: ["itens", "items", "ítems"],
 }
 
-const GROUPS = { Checkout: CHECKOUT, Payments: PAYMENTS }
+// Namespace "Wallet" — S3 (carteira: extrato + mercado + vida financeira).
+const WALLET = {
+  // Tipos de ganho / filtros
+  kindStore: ["Loja", "Store", "Tienda"],
+  kindService: ["Serviço", "Service", "Servicio"],
+  kindCourse: ["Curso", "Course", "Curso"],
+  kindAffiliate: ["Afiliado", "Affiliate", "Afiliado"],
+  filterAll: ["Todos", "All", "Todos"],
+  // Status de lançamento
+  statusReceived: ["Recebido", "Received", "Recibido"],
+  statusAvailable: ["Disponível", "Available", "Disponible"],
+  statusPending: ["Aguardando", "Pending", "En espera"],
+  statusReverted: ["Revertido", "Reverted", "Revertido"],
+  // Intervalos
+  range7d: ["7 dias", "7 days", "7 días"],
+  range30d: ["30 dias", "30 days", "30 días"],
+  range90d: ["90 dias", "90 days", "90 días"],
+  // Hero / controles
+  back: ["Voltar", "Back", "Volver"],
+  heroEyebrow: ["a sua grana", "your money", "tu dinero"],
+  heroTitle: ["Carteira", "Wallet", "Cartera"],
+  period: ["Período", "Period", "Período"],
+  allSubprofiles: ["Todos os subperfis", "All subprofiles", "Todos los subperfiles"],
+  courseAffiliateNote: [
+    "Curso e Afiliado são por conta — não filtram por subperfil.",
+    "Course and Affiliate are account-wide — they don't filter by subprofile.",
+    "Curso y Afiliado son por cuenta — no filtran por subperfil.",
+  ],
+  // KPIs / gráfico
+  kpiReceived: ["Recebido", "Received", "Recibido"],
+  kpiAvailable: ["Disponível", "Available", "Disponible"],
+  kpiPending: ["Aguardando", "Pending", "En espera"],
+  kpiEntries: ["Lançamentos", "Entries", "Movimientos"],
+  earningsPerDay: ["Ganhos por dia", "Earnings per day", "Ganancias por día"],
+  noMovement: ["Sem movimento neste período.", "No movement in this period.", "Sin movimiento en este período."],
+  // Extrato
+  statement: ["Extrato", "Statement", "Extracto"],
+  loadStatementError: ["Falha ao carregar extrato", "Failed to load statement", "Error al cargar el extracto"],
+  loadError: ["Erro ao carregar", "Loading error", "Error al cargar"],
+  loadFailedTitle: ["Não deu pra carregar.", "Couldn't load.", "No se pudo cargar."],
+  tryAgain: ["Tentar de novo", "Try again", "Intentar de nuevo"],
+  emptyTitle: ["Nenhum ganho ainda.", "No earnings yet.", "Aún no hay ganancias."],
+  emptyDesc: [
+    "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.",
+    "When you sell in the Store, close a booking, sell a course or receive affiliate commission, it shows up here.",
+    "Cuando vendas en la Tienda, cierres una reserva, vendas un curso o recibas comisión de afiliado, aparecerá aquí.",
+  ],
+  loadMore: ["Carregar mais", "Load more", "Cargar más"],
+  // Mercado
+  market: ["Mercado", "Market", "Mercado"],
+  close: ["Fechar", "Close", "Cerrar"],
+  stocksUp: ["Ações em alta", "Stocks up", "Acciones en alza"],
+  noStocks: ["Sem dados de ações no momento.", "No stock data right now.", "Sin datos de acciones por ahora."],
+  quotes: ["Cotações", "Quotes", "Cotizaciones"],
+  noQuotes: ["Cotações indisponíveis no momento.", "Quotes unavailable right now.", "Cotizaciones no disponibles por ahora."],
+  marketPolitics: ["Mercado & política", "Market & politics", "Mercado y política"],
+  noHeadlines: ["Sem manchetes por enquanto.", "No headlines for now.", "Sin titulares por ahora."],
+  // Vida Financeira
+  financeEyebrow: ["controle de verdade", "real control", "control de verdad"],
+  financeTitle: ["Vida Financeira", "Financial Life", "Vida Financiera"],
+  financeIntro: [
+    "Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.",
+    "Add up what comes in and goes out outside the platform. Fixed costs come in by themselves every month; the rest you log in one click.",
+    "Suma lo que entra y sale fuera de la plataforma. Los costos fijos entran solos cada mes; el resto lo registras con un clic.",
+  ],
+  monthClose: ["Fechamento de {month}", "{month} closing", "Cierre de {month}"],
+  monthPositive: [
+    "Parabéns! Você gastou menos do que recebeu este mês. Continue assim.",
+    "Congrats! You spent less than you earned this month. Keep it up.",
+    "¡Felicidades! Gastaste menos de lo que recibiste este mes. Sigue así.",
+  ],
+  monthNegative: [
+    "Você gastou mais do que recebeu este mês. Hora de ajustar.",
+    "You spent more than you earned this month. Time to adjust.",
+    "Gastaste más de lo que recibiste este mes. Hora de ajustar.",
+  ],
+  costControl: ["Controle de custos", "Cost control", "Control de costos"],
+  costEmpty: [
+    "Lance entradas e saídas para ver o panorama do mês aqui.",
+    "Log income and expenses to see the month's overview here.",
+    "Registra ingresos y gastos para ver el panorama del mes aquí.",
+  ],
+  inVsOut: ["Entradas × Saídas", "Income × Expenses", "Ingresos × Gastos"],
+  cameIn: ["Entrou", "Came in", "Entró"],
+  wentOut: ["Saiu", "Went out", "Salió"],
+  whereItWent: ["Para onde foi", "Where it went", "A dónde fue"],
+  noExpenses: ["Sem saídas neste mês.", "No expenses this month.", "Sin gastos este mes."],
+  prevYear: ["Ano anterior", "Previous year", "Año anterior"],
+  nextYear: ["Próximo ano", "Next year", "Año siguiente"],
+  income: ["Entradas", "Income", "Ingresos"],
+  expenses: ["Saídas", "Expenses", "Gastos"],
+  receiveMonthly: ["Recebo todo mês", "I receive monthly", "Recibo cada mes"],
+  spendMonthly: ["Gasto todo mês", "I spend monthly", "Gasto cada mes"],
+  receivedToday: ["Recebi hoje", "Received today", "Recibí hoy"],
+  spentToday: ["Gastei hoje", "Spent today", "Gasté hoy"],
+  fixedMonthly: ["Fixos do mês", "Monthly fixed", "Fijos del mes"],
+  onTheDay: ["No dia", "On the day", "En el día"],
+  nothingYet: ["Nada lançado ainda. Use os botões acima.", "Nothing logged yet. Use the buttons above.", "Nada registrado aún. Usa los botones de arriba."],
+  everyDay: ["todo dia {day}", "every day {day}", "cada día {day}"],
+  onDay: ["dia {day}", "day {day}", "día {day}"],
+  delete: ["Excluir", "Delete", "Eliminar"],
+  category: ["Categoria", "Category", "Categoría"],
+  newCategory: ["Nova", "New", "Nueva"],
+  ok: ["ok", "ok", "ok"],
+  entryTitlePlaceholder: ["Título do lançamento", "Entry title", "Título del movimiento"],
+  amountBRL: ["Valor (R$)", "Amount (R$)", "Importe (R$)"],
+  dayOfMonth: ["Dia do mês", "Day of month", "Día del mes"],
+  date: ["Data", "Date", "Fecha"],
+  saveFixed: ["Salvar fixo do mês", "Save monthly fixed", "Guardar fijo del mes"],
+  post: ["Lançar", "Log", "Registrar"],
+  errPickCategory: ["Escolha ou digite uma categoria.", "Pick or type a category.", "Elige o escribe una categoría."],
+  errValidAmount: ["Informe um valor válido.", "Enter a valid amount.", "Ingresa un importe válido."],
+  errCouldNotSave: ["Não deu pra salvar", "Couldn't save", "No se pudo guardar"],
+  errSaving: ["Erro ao salvar", "Error saving", "Error al guardar"],
+}
+
+const GROUPS = { Checkout: CHECKOUT, Payments: PAYMENTS, Wallet: WALLET }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))
