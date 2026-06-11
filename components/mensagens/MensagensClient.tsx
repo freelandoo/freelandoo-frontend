@@ -1475,14 +1475,14 @@ export default function MensagensClient() {
               <ul className="divide-y divide-white/5">
                 {visibleOsChats.map((c) => {
                   const isProduct = c.kind === "product"
-                  const kindLabel = c.kind === "course" ? "Curso" : c.kind === "product" ? "Produto" : "Serviço"
+                  const kindLabel = c.kind === "course" ? t("chamadoModeCourse", "Curso") : c.kind === "product" ? t("chamadoModeProduct", "Produto") : t("chamadoModeService", "Serviço")
                   const kindColor =
                     c.kind === "course" ? "bg-sky-500/15 text-sky-300"
                     : c.kind === "product" ? "bg-emerald-500/15 text-emerald-300"
                     : "bg-amber-500/15 text-amber-300"
-                  const sideLabel = c.side === "pro" ? "Respondi" : "Pedi"
+                  const sideLabel = c.side === "pro" ? t("sideLabelResponded", "Respondi") : t("sideLabelRequested", "Pedi")
                   const titleText = isProduct
-                    ? (c.productInfo?.title || "Pedido de produto")
+                    ? (c.productInfo?.title || t("productRequestFallback", "Pedido de produto"))
                     : (c.profile.display_name || t("professionalFallback", "Profissional"))
                   const profHref = !isProduct ? entityHref({
                     type: "profile",
@@ -2128,16 +2128,16 @@ export default function MensagensClient() {
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <div className="flex items-center gap-2">
                 <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
-                  Produto
+                  {t("chamadoModeProduct", "Produto")}
                 </span>
                 <h3 className="text-sm font-semibold tracking-tight">
-                  {productDetail.side === "pro" ? "Pedido que você respondeu" : "Seu pedido de produto"}
+                  {productDetail.side === "pro" ? t("productDetailTitlePro", "Pedido que você respondeu") : t("productDetailTitleOwn", "Seu pedido de produto")}
                 </h3>
               </div>
               <button
                 onClick={() => setProductDetail(null)}
                 className="rounded-full p-1.5 text-white/50 hover:bg-white/[0.05] hover:text-white"
-                aria-label="Fechar"
+                aria-label={t("closeAriaLabel", "Fechar")}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2146,18 +2146,18 @@ export default function MensagensClient() {
               <div>
                 <p className="text-base font-semibold tracking-tight text-white">{productDetail.productInfo.title}</p>
                 <p className="mt-0.5 text-[11px] text-white/45">
-                  {productDetail.productInfo.category_name || "Sem categoria"}
+                  {productDetail.productInfo.category_name || t("noCategory", "Sem categoria")}
                   {productDetail.productInfo.city ? ` · ${productDetail.productInfo.city}` : ""}
                   {productDetail.productInfo.state ? `/${productDetail.productInfo.state}` : ""}
                 </p>
               </div>
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-white/40">Descrição</p>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/40">{t("descriptionLabel", "Descrição")}</p>
                 <p className="mt-1 text-xs leading-relaxed text-white/70">{productDetail.productInfo.description}</p>
               </div>
               {productDetail.productInfo.seller_message && (
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-3">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-300/70">Sua resposta</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-emerald-300/70">{t("yourResponse", "Sua resposta")}</p>
                   <p className="mt-1 text-xs leading-relaxed text-white/80">{productDetail.productInfo.seller_message}</p>
                   {productDetail.productInfo.proposed_price_cents != null && (
                     <p className="mt-1.5 text-sm font-bold tracking-tight text-emerald-300">
@@ -2167,10 +2167,10 @@ export default function MensagensClient() {
                 </div>
               )}
               <p className="text-[11px] text-white/45">
-                Status: <span className="font-medium text-white/70">{productDetail.productInfo.status}</span>
+                {t("statusLabel", "Status")}: <span className="font-medium text-white/70">{productDetail.productInfo.status}</span>
               </p>
               <p className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[11px] text-white/50">
-                Pedidos de produto não têm chat contínuo. A negociação acontece pelos contatos trocados na resposta.
+                {t("productNoChatNote", "Pedidos de produto não têm chat contínuo. A negociação acontece pelos contatos trocados na resposta.")}
               </p>
             </div>
           </div>
