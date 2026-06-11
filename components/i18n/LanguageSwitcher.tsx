@@ -17,7 +17,7 @@ import {
 import { useI18n, useTranslations } from "@/components/i18n/I18nProvider"
 
 interface LanguageSwitcherProps {
-  variant?: "compact" | "full"
+  variant?: "compact" | "full" | "icon"
   className?: string
 }
 
@@ -53,14 +53,18 @@ export function LanguageSwitcher({ variant = "compact", className }: LanguageSwi
       <DropdownMenuTrigger
         type="button"
         className={
-          "inline-flex h-9 min-w-16 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-xs font-semibold text-white/85 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50 " +
+          (variant === "icon"
+            ? "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-white/85 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50 "
+            : "inline-flex h-9 min-w-16 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-xs font-semibold text-white/85 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50 ") +
           (className ?? "")
         }
         disabled={pending}
         aria-label={t("language", "Idioma")}
       >
         <Globe className="h-4 w-4" />
-        <span aria-hidden="true" className="font-mono text-[11px] leading-none">{LOCALE_FLAGS[locale]}</span>
+        {variant !== "icon" && (
+          <span aria-hidden="true" className="font-mono text-[11px] leading-none">{LOCALE_FLAGS[locale]}</span>
+        )}
         {variant === "full" && <span>{LOCALE_LABELS[locale]}</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[120] min-w-[160px]">

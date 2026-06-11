@@ -35,12 +35,13 @@ export const LINKS = {
   influenciadores: "/search?enxame=influencer",
 } as const
 
+// `k` = chave i18n no namespace "Home" (fallback = label pt).
 export const NAV = [
-  { label: "Como funciona", href: LINKS.comoFunciona },
-  { label: "Recursos", href: "#recursos" },
-  { label: "Para quem é", href: "#caminhos" },
-  { label: "Depoimentos", href: "#caminhos" },
-  { label: "Preços", href: LINKS.precos },
+  { label: "Como funciona", href: LINKS.comoFunciona, k: "navComoFunciona" },
+  { label: "Recursos", href: "#recursos", k: "navRecursos" },
+  { label: "Para quem é", href: "#caminhos", k: "navParaQuemE" },
+  { label: "Depoimentos", href: "#caminhos", k: "navDepoimentos" },
+  { label: "Preços", href: LINKS.precos, k: "navPrecos" },
 ] as const
 
 /** Cards de estatística flutuantes do hero (brancos). Números ilustrativos. */

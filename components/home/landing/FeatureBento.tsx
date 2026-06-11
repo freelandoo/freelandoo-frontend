@@ -1,8 +1,11 @@
+"use client"
+
 /**
  * FeatureBento — grade numerada 01-13 de cards brancos sobre o canvas dark.
  * Cada card: número dourado, título, descrição, CTA opcional e um visual
  * conforme `kind` (foto, saque, faturamento, comissão, vídeo, stories,
- * avatars, busca, métricas). Server component puro; entrada via data-stagger.
+ * avatars, busca, métricas). Client component (i18n via useTranslations);
+ * entrada via data-stagger (RevealMount).
  */
 import Image from "next/image"
 import { Play, Search, TrendingUp, Plus, Star } from "lucide-react"
@@ -10,10 +13,13 @@ import { BENTO, type BentoItem } from "./tokens"
 import { Section, PhotoFrame, CardButton, AvatarStack, Icon, DoodleArrow, Halftone, WashiTape } from "./primitives"
 import { EditableImage } from "@/components/site-assets/EditableImage"
 import { EditableText } from "@/components/site-texts/EditableText"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const SPAN: Record<number, string> = { 3: "lg:col-span-3", 4: "lg:col-span-4", 6: "lg:col-span-6", 12: "lg:col-span-12" }
 
-function BentoVisual({ item }: { item: BentoItem }) {
+type T = ReturnType<typeof useTranslations>
+
+function BentoVisual({ item, t }: { item: BentoItem; t: T }) {
   switch (item.kind) {
     case "photo":
       return (
@@ -30,29 +36,29 @@ function BentoVisual({ item }: { item: BentoItem }) {
     case "saque":
       return (
         <div className="bg-[#FAF7F0] p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Saldo disponível</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">{t("bentoVSaldo", "Saldo disponível")}</div>
           <div className="mt-1 text-xl font-black text-[#14110B]">R$ 24.820,00</div>
-          <div className="text-[11px] font-bold text-emerald-600">+12% no mês</div>
+          <div className="text-[11px] font-bold text-emerald-600">{t("bentoVMonth", "+12% no mês")}</div>
         </div>
       )
     case "faturamento":
       return (
         <div className="bg-[#FAF7F0] p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">Faturamento aprovado</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#9a8f7a]">{t("bentoVFaturamento", "Faturamento aprovado")}</div>
           <div className="mt-1 flex items-center gap-1.5 text-2xl font-black text-[#14110B]">
             784.321 <TrendingUp className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="text-[11px] text-[#9a8f7a]">Em análise</div>
+          <div className="text-[11px] text-[#9a8f7a]">{t("bentoVAnalise", "Em análise")}</div>
         </div>
       )
     case "comissao":
       return (
         <div className="flex items-center justify-between bg-[#14110B] px-3 py-3 text-[#FAF7F0]">
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wide text-[#F2B705]">Seja um afiliado</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-[#F2B705]">{t("bentoVSejaAfiliado", "Seja um afiliado")}</div>
             <div className="text-sm font-black">FREELANDOO!</div>
           </div>
-          <span className="bg-[#F2B705] px-2.5 py-1 text-[11px] font-black text-[#1A1505]">até 70%</span>
+          <span className="bg-[#F2B705] px-2.5 py-1 text-[11px] font-black text-[#1A1505]">{t("bentoVAte70", "até 70%")}</span>
         </div>
       )
     case "video":
@@ -90,21 +96,25 @@ function BentoVisual({ item }: { item: BentoItem }) {
         <div className="flex items-center gap-3 bg-[#FAF7F0] px-3 py-3">
           <AvatarStack count={4} className="[&>*]:!border-[#FAF7F0]" />
           <span className="flex h-8 w-8 items-center justify-center bg-[#14110B] text-[#FAF7F0]"><Plus className="h-4 w-4" /></span>
-          <span className="text-xs font-semibold text-[#6B6457]">+999 criadores</span>
+          <span className="text-xs font-semibold text-[#6B6457]">{t("bentoVCriadores", "+999 criadores")}</span>
         </div>
       )
     case "search":
       return (
         <div className="bg-[#FAF7F0] p-3">
           <div className="space-y-1.5">
-            {["Marketing", "Saúde, fitness", "Cripto, investimentos"].map((t) => (
-              <div key={t} className="flex items-center gap-2 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#14110B]">
-                <Search className="h-3 w-3 text-[#9a8f7a]" /> {t}
+            {[
+              t("bentoVSearchMarketing", "Marketing"),
+              t("bentoVSearchSaude", "Saúde, fitness"),
+              t("bentoVSearchCripto", "Cripto, investimentos"),
+            ].map((term) => (
+              <div key={term} className="flex items-center gap-2 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#14110B]">
+                <Search className="h-3 w-3 text-[#9a8f7a]" /> {term}
               </div>
             ))}
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[11px] text-[#9a8f7a]">+999 resultados</span>
+            <span className="text-[11px] text-[#9a8f7a]">{t("bentoVResultados", "+999 resultados")}</span>
             <AvatarStack count={3} className="[&>*]:!border-[#FAF7F0] [&>*]:!h-6 [&>*]:!w-6" />
           </div>
         </div>
@@ -117,13 +127,14 @@ function BentoVisual({ item }: { item: BentoItem }) {
             <Icon name={item.icon ?? "star"} className="h-5 w-5" />
           </span>
           <Star className="h-4 w-4 text-[#F2B705]" />
-          <span className="text-xs font-semibold text-[#6B6457]">Pronto para usar</span>
+          <span className="text-xs font-semibold text-[#6B6457]">{t("bentoVPronto", "Pronto para usar")}</span>
         </div>
       )
   }
 }
 
 export function FeatureBento() {
+  const t = useTranslations("Home")
   return (
     <Section id="recursos">
       <div className="relative mb-12 max-w-2xl">
@@ -147,16 +158,16 @@ export function FeatureBento() {
             >
               <Halftone className="absolute -bottom-2 -right-2 h-14 w-14 opacity-[0.14]" ink />
               {item.n % 3 === 0 && <WashiTape className="-right-3 top-5" off rotate={12} />}
-              {isPhoto && <div className="relative mb-4"><BentoVisual item={item} /></div>}
+              {isPhoto && <div className="relative mb-4"><BentoVisual item={item} t={t} /></div>}
               <div className="relative flex items-start gap-3">
                 <span className="fl-display shrink-0 text-4xl text-[#F2B705]">{String(item.n).padStart(2, "0")}</span>
                 <div>
-                  <h3 className="text-base font-black uppercase tracking-wide text-[#0B0B0D]">{item.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[#6B6457]">{item.desc}</p>
+                  <h3 className="text-base font-black uppercase tracking-wide text-[#0B0B0D]">{t(`bento${item.n}Title`, item.title)}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[#6B6457]">{t(`bento${item.n}Desc`, item.desc)}</p>
                 </div>
               </div>
-              {!isPhoto && <div className="relative mt-4"><BentoVisual item={item} /></div>}
-              {item.cta && <CardButton href={item.href} className="relative mt-4 self-start">{item.cta}</CardButton>}
+              {!isPhoto && <div className="relative mt-4"><BentoVisual item={item} t={t} /></div>}
+              {item.cta && <CardButton href={item.href} className="relative mt-4 self-start">{t(`bento${item.n}Cta`, item.cta)}</CardButton>}
             </article>
           )
         })}

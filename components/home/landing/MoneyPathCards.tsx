@@ -59,7 +59,9 @@ export function MoneyPathCards() {
                   fallback={p.desc}
                 />
               </p>
-              <CardButton href={p.href} className="mt-4 self-start">Começar</CardButton>
+              <CardButton href={p.href} className="mt-4 self-start">
+                <EditableText as="span" slot="home_seller_path_cta" fallback="Começar" />
+              </CardButton>
             </div>
           </div>
         ))}

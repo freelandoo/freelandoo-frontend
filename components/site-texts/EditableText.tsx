@@ -3,6 +3,7 @@
 import { createElement, type ElementType } from "react"
 import { renderMarkedText } from "@/lib/marked-text"
 import { useSiteTexts } from "./SiteTextsProvider"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 /**
@@ -10,6 +11,12 @@ import { cn } from "@/lib/utils"
  * sempre passando por renderMarkedText (*destaque* -> amarelo). Quando o admin liga
  * o "Editar textos" (editMode no provider), o elemento ganha contorno tracejado e,
  * ao clicar, abre o modal de edição do provider.
+ *
+ * i18n (F6.i18n Onda 7): o fallback é resolvido por locale via t("Home", slot,
+ * fallback) — cada slot vira locale-aware sem mexer nas call-sites. Precedência:
+ * override do admin (texts[slot]) > tradução do dicionário (Home[slot]) > fallback
+ * pt inline. Ou seja, texto custom de admin NÃO é traduzido (é tratado como
+ * conteúdo, igual nomes custom de taxonomia).
  */
 export function EditableText({
   slot,
@@ -25,7 +32,8 @@ export function EditableText({
   mark?: boolean
 }) {
   const { texts, admin, editMode, requestEdit } = useSiteTexts()
-  const value = texts[slot] ?? fallback
+  const t = useTranslations("Home")
+  const value = texts[slot] ?? t(slot, fallback)
   const content = renderMarkedText(value, mark)
 
   if (!admin || !editMode) {

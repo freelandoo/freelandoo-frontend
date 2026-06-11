@@ -10,6 +10,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { Menu, X, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { LINKS, NAV } from "./tokens"
 import { GoldButton } from "./primitives"
 
@@ -17,12 +19,13 @@ export function LandingHeader() {
   const { user, status } = useAuth()
   const isLoggedIn = status === "authenticated" && !!user
   const [open, setOpen] = useState(false)
+  const t = useTranslations("Home")
 
   return (
     <header className="sticky top-0 z-50 w-full">
       <div className="border-b border-[#F5F1E8]/8 bg-[#15120E]/85 backdrop-blur-md supports-[backdrop-filter]:bg-[#15120E]/65">
         <div className="mx-auto flex w-full max-w-[1180px] items-center gap-4 px-5 py-3.5 sm:px-8">
-          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Freelandoo, página inicial">
+          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={t("headerHomeAria", "Freelandoo, página inicial")}>
             <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto sm:h-8" priority />
             <span className="text-lg font-black tracking-tight text-[#F5F1E8]">freelandoo</span>
           </Link>
@@ -30,12 +33,13 @@ export function LandingHeader() {
           <nav className="mx-auto hidden items-center gap-7 lg:flex">
             {NAV.map((n) => (
               <Link key={n.label} href={n.href} className="text-sm font-semibold text-[#F5F1E8]/75 transition hover:text-[#F5F1E8]">
-                {n.label}
+                {t(n.k, n.label)}
               </Link>
             ))}
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 lg:ml-0">
+            <LanguageSwitcher variant="icon" />
             {isLoggedIn ? (
               <Link href="/account" className="inline-flex items-center gap-2 border border-[#F5F1E8]/20 px-4 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/40">
                 <User className="h-4 w-4" />
@@ -44,17 +48,17 @@ export function LandingHeader() {
             ) : (
               <>
                 <Link href={LINKS.login} className="hidden border border-[#F5F1E8]/25 px-5 py-2 text-sm font-bold text-[#F5F1E8] transition hover:border-[#F5F1E8]/50 sm:inline-flex">
-                  Entrar
+                  {t("headerEntrar", "Entrar")}
                 </Link>
                 <GoldButton href={LINKS.cadastro} className="px-5 py-2.5 text-sm">
-                  Comece agora <ArrowRight className="h-4 w-4" />
+                  {t("headerComeceAgora", "Comece agora")} <ArrowRight className="h-4 w-4" />
                 </GoldButton>
               </>
             )}
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              aria-label={open ? "Fechar menu" : "Abrir menu"}
+              aria-label={open ? t("headerCloseMenu", "Fechar menu") : t("headerOpenMenu", "Abrir menu")}
               aria-expanded={open}
               className="inline-flex h-10 w-10 items-center justify-center border border-[#F5F1E8]/20 text-[#F5F1E8] lg:hidden"
             >
@@ -68,12 +72,12 @@ export function LandingHeader() {
             <nav className="mx-auto flex w-full max-w-[1180px] flex-col px-5 py-3 sm:px-8">
               {NAV.map((n) => (
                 <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="border-b border-[#F5F1E8]/8 py-3 text-base font-semibold text-[#F5F1E8] last:border-0">
-                  {n.label}
+                  {t(n.k, n.label)}
                 </Link>
               ))}
               {!isLoggedIn && (
                 <Link href={LINKS.login} onClick={() => setOpen(false)} className="py-3 text-base font-semibold text-[#F5F1E8]">
-                  Entrar
+                  {t("headerEntrar", "Entrar")}
                 </Link>
               )}
             </nav>

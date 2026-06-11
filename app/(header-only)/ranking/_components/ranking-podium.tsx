@@ -14,6 +14,7 @@ import { useGSAP } from "@gsap/react"
 import { Star, Eye, Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DoodleCrown } from "@/components/home/landing/primitives"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AnimatedNumber } from "./ranking-ui"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
@@ -52,10 +53,11 @@ function getInitials(name: string | null | undefined) {
 }
 
 function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3; rowHref: (r: PodiumRow) => string }) {
+  const t = useTranslations("Ranking")
   const isFirst = rank === 1
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
-  const tag = row.specialty || row.machine_name || location || (row.is_clan ? "Clan" : "Perfil")
+  const tag = row.specialty || row.machine_name || location || (row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil"))
 
   const order = rank === 1 ? "order-2" : rank === 2 ? "order-1" : "order-3"
   const width = isFirst ? "w-[40%]" : "w-[30%]"
@@ -101,7 +103,7 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
         {/* Nome + score */}
         <div className="fl-card relative mt-2 p-2 text-center md:mt-3 md:p-3">
           <span className={cn("inline-block -rotate-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em]", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
-            {row.is_clan ? "Clan" : "Perfil"}
+            {row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
           </span>
           <Link href={rowHref(row)} className="block">
             <h3 className={cn("fl-display mt-1.5 leading-none text-[#0B0B0D] hover:text-[#9a7400] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>
@@ -115,7 +117,7 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
               <AnimatedNumber value={points} compact={points >= 100000} />
             </span>
           </div>
-          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">pontos</p>
+          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">{t("pontos", "pontos")}</p>
 
           <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-[#0B0B0D]/10 pt-2 md:mt-3 md:gap-3">
             <Meta icon={<Star className="h-3 w-3 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />

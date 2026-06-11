@@ -13,10 +13,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { CAROUSEL_SLIDES } from "./tokens"
 import { Section, DoodleArrow } from "./primitives"
 import { EditableText } from "@/components/site-texts/EditableText"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export function FeatureCarousel() {
+  const t = useTranslations("Home")
   const [emblaRef, embla] = useEmblaCarousel({ loop: true, align: "center" })
   const [selected, setSelected] = useState(0)
+  // Texto alternativo de cada banner traduzido por slide (fallback = pt do token).
+  const slideAlt = (n: number, fallback: string) => t(`carouselAlt${n}`, fallback)
 
   const onSelect = useCallback(() => embla && setSelected(embla.selectedScrollSnap()), [embla])
   useEffect(() => {
@@ -54,12 +58,12 @@ export function FeatureCarousel() {
               <div key={s.n} className="min-w-0 flex-[0_0_100%]">
                 <Link
                   href={s.href}
-                  aria-label={s.alt}
+                  aria-label={slideAlt(s.n, s.alt)}
                   className="relative block aspect-[2/1] w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[0_18px_40px_-20px_rgba(0,0,0,0.85)] sm:aspect-[18/7]"
                 >
                   <Image
                     src={s.img}
-                    alt={s.alt}
+                    alt={slideAlt(s.n, s.alt)}
                     fill
                     sizes="(max-width:640px) 100vw, (max-width:1024px) 92vw, 1000px"
                     className="object-cover object-left"
@@ -72,14 +76,14 @@ export function FeatureCarousel() {
         </div>
 
         <button
-          type="button" onClick={prev} aria-label="Banner anterior"
+          type="button" onClick={prev} aria-label={t("carouselPrev", "Banner anterior")}
           className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:left-4 sm:h-12 sm:w-12"
         >
           <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
         <button
-          type="button" onClick={next} aria-label="Próximo banner"
+          type="button" onClick={next} aria-label={t("carouselNext", "Próximo banner")}
           className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-black/30 text-[#F5F1E8] backdrop-blur-sm transition hover:bg-black/50 hover:text-[#F2B705] sm:right-4 sm:h-12 sm:w-12"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -90,7 +94,7 @@ export function FeatureCarousel() {
       <div className="mt-6 flex items-center justify-center gap-2">
         {CAROUSEL_SLIDES.map((s, i) => (
           <button
-            key={s.n} type="button" onClick={() => goTo(i)} aria-label={`Ir para o banner ${i + 1}`}
+            key={s.n} type="button" onClick={() => goTo(i)} aria-label={t("carouselGoTo", "Ir para o banner {n}").replace("{n}", String(i + 1))}
             aria-current={i === selected}
             className={`h-2 transition-all ${i === selected ? "w-6 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/25 hover:bg-[#F5F1E8]/50"}`}
           />

@@ -44,6 +44,8 @@ import {
 } from "@/components/home/landing/primitives"
 import { buildProfileUrl, slugify } from "@/lib/slug"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
@@ -97,13 +99,14 @@ type RankingState = {
 
 const scopeOptions: {
   key: RankingScope
+  labelKey: string
   label: string
   icon: ComponentType<{ className?: string }>
 }[] = [
-  { key: "general", label: "Geral", icon: Globe2 },
-  { key: "machine", label: "Enxame", icon: Building2 },
-  { key: "profession", label: "Profissão", icon: Briefcase },
-  { key: "region", label: "Região", icon: MapPin },
+  { key: "general", labelKey: "scopeGeral", label: "Geral", icon: Globe2 },
+  { key: "machine", labelKey: "scopeEnxame", label: "Enxame", icon: Building2 },
+  { key: "profession", labelKey: "scopeProfissao", label: "Profissão", icon: Briefcase },
+  { key: "region", labelKey: "scopeRegiao", label: "Região", icon: MapPin },
 ]
 
 const numberFormatter = new Intl.NumberFormat("pt-BR")
@@ -172,6 +175,8 @@ function normalizeRows(data: unknown): RankingRow[] {
 }
 
 export function RankingPageClient() {
+  const t = useTranslations("Ranking")
+  const tx = useTaxonomy()
   const rootRef = useRef<HTMLElement | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
   const { machines } = useMachinesCatalog()
@@ -240,12 +245,12 @@ export function RankingPageClient() {
   const loading = !!rankingUrl && rankingState.key !== requestKey
 
   const scopeLabel = useMemo(() => {
-    if (scope === "general") return "Brasil"
-    if (scope === "machine") return selectedMachine?.name || "Enxame"
-    if (scope === "profession") return selectedProfession?.label || "Profissão"
+    if (scope === "general") return t("scopeBrasil", "Brasil")
+    if (scope === "machine") return selectedMachine ? tx.enxame(selectedMachine.slug, selectedMachine.name) : t("scopeEnxame", "Enxame")
+    if (scope === "profession") return selectedProfession ? tx.profession(selectedProfession.label) : t("scopeProfissao", "Profissão")
     if (regionName && regionState) return `${regionName}, ${regionState}`
-    return "Região"
-  }, [regionName, regionState, scope, selectedMachine, selectedProfession])
+    return t("scopeRegiao", "Região")
+  }, [regionName, regionState, scope, selectedMachine, selectedProfession, t, tx])
 
   const rest = rows.slice(3)
 
@@ -270,7 +275,7 @@ export function RankingPageClient() {
           const message =
             data && typeof data === "object" && "error" in data
               ? String((data as { error?: unknown }).error)
-              : "Erro ao carregar ranking"
+              : t("loadError", "Erro ao carregar ranking")
           throw new Error(message)
         }
         return normalizeRows(data)
@@ -283,14 +288,14 @@ export function RankingPageClient() {
           setRankingState({
             key: requestKey,
             rows: [],
-            error: err instanceof Error ? err.message : "Erro ao carregar ranking",
+            error: err instanceof Error ? err.message : t("loadError", "Erro ao carregar ranking"),
           })
         }
       })
     return () => {
       cancelled = true
     }
-  }, [rankingUrl, requestKey])
+  }, [rankingUrl, requestKey, t])
 
   useEffect(() => {
     if (!listRef.current || loading || error) return
@@ -315,25 +320,24 @@ export function RankingPageClient() {
           <div data-ranking-hero className="mb-4 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 bg-[#0B0B0D] px-3 py-1.5 text-[#F1EDE2]">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#F2B705]" />
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">Ranking Freelandoo</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">{t("badgeRanking", "Ranking Freelandoo")}</span>
             </span>
-            <span className="fl-marker text-2xl text-[#F2B705]">atualiza a cada 2h</span>
+            <span className="fl-marker text-2xl text-[#F2B705]">{t("updatesEvery2h", "atualiza a cada 2h")}</span>
           </div>
 
           <h1 className="relative">
             <span data-ranking-hero className="fl-display block text-[13vw] leading-[0.88] text-[#F1EDE2] sm:text-[9vw] lg:text-[5.5rem]">
-              Os líderes
+              {t("heroLine1", "Os líderes")}
             </span>
             <span data-ranking-hero className="fl-display relative z-10 block text-[13vw] leading-[0.88] text-[#F2B705] sm:text-[9vw] lg:text-[5.5rem]">
-              do momento.
+              {t("heroLine2", "do momento.")}
               <Underline className="absolute -bottom-3 left-0 h-5 w-[58%] text-[#F2B705]" />
             </span>
             <Spark className="absolute -left-1 -top-5 h-9 w-9 text-[#F2B705] md:-left-7" />
           </h1>
 
           <p data-ranking-hero className="mt-7 max-w-xl text-pretty text-base font-medium leading-relaxed text-[#C9C2B6] md:text-lg">
-            Na Freelandoo, <YellowHighlight mark>aparecer é subir.</YellowHighlight>{" "}
-            Pontos, avaliações e presença definem quem domina o ranking. Inspire-se e suba mais.
+            {t("heroParaPre", "Na Freelandoo, ")}<YellowHighlight mark>{t("heroParaHighlight", "aparecer é subir.")}</YellowHighlight>{t("heroParaPost", " Pontos, avaliações e presença definem quem domina o ranking. Inspire-se e suba mais.")}
           </p>
         </div>
 
@@ -343,7 +347,7 @@ export function RankingPageClient() {
       <section data-ranking-filter className="mx-auto w-full max-w-6xl px-5 md:px-8">
         <div className="flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-5">
           <div className="flex flex-wrap gap-2">
-            {scopeOptions.map(({ key, label, icon: Icon }) => {
+            {scopeOptions.map(({ key, labelKey, label, icon: Icon }) => {
               const active = scope === key
               const hintId: HintId =
                 key === "general"
@@ -366,7 +370,7 @@ export function RankingPageClient() {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    {label}
+                    {t(labelKey, label)}
                   </button>
                 </HoverHint>
               )
@@ -387,7 +391,7 @@ export function RankingPageClient() {
                       active ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#F1EDE2]/20 text-[#C9C2B6] hover:border-[#F1EDE2]/50"
                     )}
                   >
-                    {machine.name.replace("Enxame de ", "")}
+                    {tx.enxame(machine.slug, machine.name)}
                   </button>
                 )
               })}
@@ -398,17 +402,17 @@ export function RankingPageClient() {
             <div className="flex flex-col gap-2 sm:max-w-md">
               <Select value={selectedProfession?.slug} onValueChange={setProfessionSlug} disabled={!professions.length}>
                 <SelectTrigger className="h-11 w-full border-2 border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2]">
-                  <SelectValue placeholder="Profissão" />
+                  <SelectValue placeholder={t("professionPlaceholder", "Profissão")} />
                 </SelectTrigger>
                 <SelectContent className="border-[#F1EDE2]/15 bg-[#1D1810] text-[#F1EDE2]">
                   {professions.map((profession) => (
                     <SelectItem key={profession.slug} value={profession.slug}>
-                      {profession.label}
+                      {tx.profession(profession.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {selectedProfession && <span className="text-xs text-[#C9C2B6]/70">{selectedProfession.machineName}</span>}
+              {selectedProfession && <span className="text-xs text-[#C9C2B6]/70">{tx.enxame(null, selectedProfession.machineName)}</span>}
             </div>
           )}
 
@@ -429,7 +433,7 @@ export function RankingPageClient() {
                   className="inline-flex h-11 w-fit items-center gap-2 border-2 border-[#F1EDE2]/25 px-4 text-sm font-extrabold uppercase tracking-[0.1em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
                 >
                   <MapPin className="h-4 w-4 text-[#F2B705]" />
-                  {regionName && regionState ? `${regionName}, ${regionState}` : "Região"}
+                  {regionName && regionState ? `${regionName}, ${regionState}` : t("regionPlaceholder", "Região")}
                 </button>
               }
             />
@@ -441,10 +445,10 @@ export function RankingPageClient() {
       <section className="mx-auto w-full max-w-6xl px-5 pt-20 md:px-8 md:pt-24">
         <div className="relative mb-4 flex items-end justify-between">
           <div className="relative">
-            <p className="fl-marker text-2xl text-[#F2B705]">o topo da temporada</p>
-            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">O pódio.</h2>
+            <p className="fl-marker text-2xl text-[#F2B705]">{t("podiumEyebrow", "o topo da temporada")}</p>
+            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">{t("podiumHeading", "O pódio.")}</h2>
           </div>
-          <span className="hidden text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50 sm:block">Top 3 · {scopeLabel}</span>
+          <span className="hidden text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50 sm:block">{t("top3", "Top 3")} · {scopeLabel}</span>
         </div>
         <RankingPodium rows={rows} rowHref={(row) => rowHref(row as RankingRow)} loading={loading} />
       </section>
@@ -453,11 +457,11 @@ export function RankingPageClient() {
       <section ref={listRef} className="mx-auto w-full max-w-4xl px-5 py-14 md:px-8">
         <div className="mb-7 flex items-end justify-between">
           <div className="relative">
-            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">A lista inteira</h2>
+            <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{t("listHeading", "A lista inteira")}</h2>
             <p className="mt-2 fl-marker text-2xl text-[#C9C2B6]/80">{scopeLabel}</p>
             <Underline className="absolute -bottom-3 left-0 h-4 w-44 text-[#F2B705]" />
           </div>
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50">Top 10</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50">{t("top10", "Top 10")}</span>
         </div>
 
         <div className="flex min-h-[300px] flex-col gap-4">
@@ -468,7 +472,7 @@ export function RankingPageClient() {
             <RankingRowCard key={row.id_profile} row={row} rank={index + 4} />
           ))}
           {!loading && !error && rows.length > 0 && rest.length === 0 && (
-            <p className="text-center text-sm text-[#C9C2B6]/60">O pódio já mostra todos os colocados.</p>
+            <p className="text-center text-sm text-[#C9C2B6]/60">{t("allShownOnPodium", "O pódio já mostra todos os colocados.")}</p>
           )}
         </div>
       </section>
@@ -477,11 +481,12 @@ export function RankingPageClient() {
 }
 
 function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
+  const t = useTranslations("Ranking")
   const initials = getInitials(row.display_name)
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
   const level = Number(row.level ?? row.xp_level ?? 0)
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
-  const meta = [row.specialty, row.machine_name, location].filter(Boolean).join(" · ") || "Perfil Freelandoo"
+  const meta = [row.specialty, row.machine_name, location].filter(Boolean).join(" · ") || t("metaFallback", "Perfil Freelandoo")
 
   return (
     <Link
@@ -504,11 +509,11 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="fl-display truncate text-xl leading-none text-[#0B0B0D] md:text-2xl">{row.display_name}</h4>
           <span className={cn("hidden -rotate-1 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
-            {row.is_clan ? "Clan" : "Perfil"}
+            {row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
           </span>
           {level > 0 && (
             <span className="hidden border border-[#0B0B0D]/30 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.1em] text-[#9a7400] md:inline-block">
-              Lv. {level}
+              {t("levelPrefix", "Lv.")} {level}
             </span>
           )}
         </div>
@@ -523,7 +528,7 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
       <div className="flex shrink-0 flex-col items-end">
         <div className="fl-display text-2xl leading-none text-[#E0A500] md:text-4xl">{numberFormatter.format(Math.round(points))}</div>
         <div className="mt-1 flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.14em] text-[#6B6457]">
-          pontos
+          {t("pontos", "pontos")}
           <ArrowUpRight className="h-3.5 w-3.5 text-[#0B0B0D]/40 transition group-hover:text-[#E0A500]" />
         </div>
       </div>
@@ -551,24 +556,26 @@ function RankingSkeleton() {
 }
 
 function RankingEmpty() {
+  const t = useTranslations("Ranking")
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-[#F1EDE2]/15 text-center">
       <div className="flex h-12 w-12 items-center justify-center bg-[#F2B705] text-[#0B0B0D]">
         <Trophy className="h-6 w-6" />
       </div>
-      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">Ninguém no ranking ainda.</p>
-      <p className="mt-1 max-w-sm text-xs leading-5 text-[#C9C2B6]/60">Assim que houver dados suficientes, o top 10 aparece aqui.</p>
+      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">{t("emptyTitle", "Ninguém no ranking ainda.")}</p>
+      <p className="mt-1 max-w-sm text-xs leading-5 text-[#C9C2B6]/60">{t("emptyDesc", "Assim que houver dados suficientes, o top 10 aparece aqui.")}</p>
     </div>
   )
 }
 
 function RankingError({ error }: { error: string }) {
+  const t = useTranslations("Ranking")
   return (
     <div className="flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed border-red-400/30 text-center">
       <div className="flex h-12 w-12 items-center justify-center bg-red-500/15 text-red-300">
         <Loader2 className="h-5 w-5" />
       </div>
-      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">Não deu pra carregar.</p>
+      <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">{t("errorTitle", "Não deu pra carregar.")}</p>
       <p className="mt-1 max-w-sm text-xs leading-5 text-[#C9C2B6]/60">{error}</p>
     </div>
   )
