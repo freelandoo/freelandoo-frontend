@@ -20,8 +20,11 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TabloidPageIntro } from "@/components/tabloide"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { SellerBalanceSection } from "./_components/seller-balance-section"
 import { BookingPayoutsSection } from "./_components/booking-payouts-section"
+
+type TFn = (key: string, fallback?: string) => string
 
 interface Subscription {
   id_subscription: string
@@ -63,6 +66,7 @@ interface ManifestationHistory {
 const STATUS_CONFIG = {
   refunded: {
     label: "Reembolsado",
+    labelKey: "statusRefundedMale",
     icon: RotateCcw,
     color: "text-rose-600",
     bg: "bg-[#2A2218]/60",
@@ -72,6 +76,7 @@ const STATUS_CONFIG = {
   },
   active: {
     label: "Ativa",
+    labelKey: "statusActive",
     icon: CheckCircle2,
     color: "text-emerald-600",
     bg: "bg-emerald-50 dark:bg-emerald-950/30",
@@ -81,6 +86,7 @@ const STATUS_CONFIG = {
   },
   pending: {
     label: "Pendente",
+    labelKey: "statusPending",
     icon: Clock,
     color: "text-amber-600",
     bg: "bg-amber-50 dark:bg-amber-950/30",
@@ -90,6 +96,7 @@ const STATUS_CONFIG = {
   },
   past_due: {
     label: "Pagamento atrasado",
+    labelKey: "statusPastDue",
     icon: AlertTriangle,
     color: "text-orange-600",
     bg: "bg-orange-50 dark:bg-orange-950/30",
@@ -99,6 +106,7 @@ const STATUS_CONFIG = {
   },
   canceled: {
     label: "Cancelada",
+    labelKey: "statusCanceled",
     icon: XCircle,
     color: "text-rose-600",
     bg: "bg-rose-50 dark:bg-rose-950/30",
@@ -108,6 +116,7 @@ const STATUS_CONFIG = {
   },
   expired: {
     label: "Reembolsada",
+    labelKey: "statusRefundedFemale",
     icon: RotateCcw,
     color: "text-rose-600",
     bg: "bg-[#2A2218]/60",
@@ -117,6 +126,7 @@ const STATUS_CONFIG = {
   },
   failed: {
     label: "Falhou",
+    labelKey: "statusFailed",
     icon: XCircle,
     color: "text-rose-600",
     bg: "bg-rose-50 dark:bg-rose-950/30",
@@ -126,6 +136,7 @@ const STATUS_CONFIG = {
   },
   incomplete: {
     label: "Incompleta",
+    labelKey: "statusIncomplete",
     icon: XCircle,
     color: "text-rose-600",
     bg: "bg-rose-50 dark:bg-rose-950/30",
@@ -135,20 +146,20 @@ const STATUS_CONFIG = {
   },
 } as const
 
-function formatarValor(cents: number, currency = "BRL") {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency })
+function formatarValor(cents: number, currency = "BRL", locale = "pt-BR") {
+  return (cents / 100).toLocaleString(locale, { style: "currency", currency })
 }
 
-function formatarDataCurta(d: string) {
-  return new Date(d).toLocaleDateString("pt-BR", {
+function formatarDataCurta(d: string, locale = "pt-BR") {
+  return new Date(d).toLocaleDateString(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   })
 }
 
-function formatarData(d: string) {
-  return new Date(d).toLocaleDateString("pt-BR", {
+function formatarData(d: string, locale = "pt-BR") {
+  return new Date(d).toLocaleDateString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -158,7 +169,7 @@ function formatarData(d: string) {
 }
 
 /* ── Bloco com ID copiável ── */
-function CopyableId({ label, value }: { label: string; value: string }) {
+function CopyableId({ label, value, t }: { label: string; value: string; t: TFn }) {
   const [copied, setCopied] = useState(false)
   const handleCopy = async () => {
     try {
@@ -180,7 +191,7 @@ function CopyableId({ label, value }: { label: string; value: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        aria-label="Copiar"
+        aria-label={t("copy", "Copiar")}
         className="shrink-0 rounded-md p-1.5 text-[#9A938A] hover:text-[#F5F1E8] hover:bg-[#2A2218] transition-colors"
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
@@ -208,9 +219,9 @@ function isWithin7Days(dateStr: string | null): boolean {
   return Date.now() - new Date(dateStr).getTime() < 7 * 24 * 60 * 60 * 1000
 }
 
-function refundDeadline(paidAt: string): string {
+function refundDeadline(paidAt: string, locale = "pt-BR"): string {
   const d = new Date(new Date(paidAt).getTime() + 7 * 24 * 60 * 60 * 1000)
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return d.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
 /* ── Drawer de reembolso ── */
@@ -218,10 +229,14 @@ function RefundDrawer({
   sub,
   onConfirm,
   loading,
+  t,
+  locale,
 }: {
   sub: Subscription
   onConfirm: () => void
   loading: boolean
+  t: TFn
+  locale: string
 }) {
   const [open, setOpen] = useState(false)
 
@@ -229,7 +244,7 @@ function RefundDrawer({
     <Drawer.Root open={open} onOpenChange={setOpen}>
       <Drawer.Trigger asChild>
         <button className="text-xs text-[#9A938A] hover:text-amber-500 transition-colors underline underline-offset-4 mt-1">
-          Solicitar reembolso
+          {t("requestRefund", "Solicitar reembolso")}
         </button>
       </Drawer.Trigger>
       <Drawer.Portal>
@@ -242,17 +257,17 @@ function RefundDrawer({
             </div>
             <div>
               <Drawer.Title className="font-semibold text-base text-[#F5F1E8]">
-                Solicitar reembolso integral?
+                {t("refundFullTitle", "Solicitar reembolso integral?")}
               </Drawer.Title>
               <Drawer.Description className="text-sm text-[#9A938A] mt-1">
-                O valor de{" "}
+                {t("refundAmountPrefix", "O valor de")}{" "}
                 <span className="font-medium text-[#F5F1E8]">
-                  {formatarValor(sub.amount_cents, sub.currency)}
+                  {formatarValor(sub.amount_cents, sub.currency, locale)}
                 </span>{" "}
-                será devolvido ao seu método de pagamento. Seu perfil será desativado imediatamente.
+                {t("refundAmountSuffix", "será devolvido ao seu método de pagamento. Seu perfil será desativado imediatamente.")}
               </Drawer.Description>
               <p className="text-xs text-[#9A938A] mt-2">
-                Disponível por 7 dias após o pagamento. Esta ação não pode ser desfeita.
+                {t("refundAvailableNote", "Disponível por 7 dias após o pagamento. Esta ação não pode ser desfeita.")}
               </p>
             </div>
           </div>
@@ -264,13 +279,13 @@ function RefundDrawer({
               onClick={onConfirm}
             >
               {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Processando...</>
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />{t("processing", "Processando...")}</>
               ) : (
-                <><RotateCcw className="h-4 w-4 mr-2" />Confirmar reembolso</>
+                <><RotateCcw className="h-4 w-4 mr-2" />{t("confirmRefund", "Confirmar reembolso")}</>
               )}
             </Button>
             <Button variant="ghost" className="flex-1 h-11" onClick={() => setOpen(false)}>
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
           </div>
         </Drawer.Content>
@@ -301,7 +316,7 @@ function LoadingState() {
 }
 
 /* ── Estado vazio ── */
-function EmptyState({ onActivate }: { onActivate: () => void }) {
+function EmptyState({ onActivate, t }: { onActivate: () => void; t: TFn }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -317,16 +332,16 @@ function EmptyState({ onActivate }: { onActivate: () => void }) {
         <Sparkles className="h-10 w-10 text-[#9A938A]" />
       </motion.div>
       <h2 className="text-2xl font-semibold tracking-tight text-[#F5F1E8] mb-2">
-        Nenhuma ativação ativa
+        {t("emptyTitle", "Nenhuma ativação ativa")}
       </h2>
       <p className="text-[#9A938A] max-w-xs mb-8 text-sm leading-relaxed">
-        Ative seu perfil para aparecer nas buscas e receber propostas de trabalho.
+        {t("emptyDescription", "Ative seu perfil para aparecer nas buscas e receber propostas de trabalho.")}
       </p>
       <Button
         onClick={onActivate}
         className="h-11 px-7 gap-2 text-sm font-medium"
       >
-        Ativar perfil
+        {t("activateProfile", "Ativar perfil")}
         <ChevronRight className="h-4 w-4" />
       </Button>
     </motion.div>
@@ -339,11 +354,15 @@ function SubscriptionCard({
   onRefund,
   refunding,
   isRefunded,
+  t,
+  locale,
 }: {
   sub: Subscription
   onRefund: (id: string) => void
   refunding: string | null
   isRefunded: boolean
+  t: TFn
+  locale: string
 }) {
   const cfg = isRefunded
     ? STATUS_CONFIG.refunded
@@ -362,11 +381,11 @@ function SubscriptionCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-1">
-            Ativação do perfil
+            {t("profileActivation", "Ativação do perfil")}
           </p>
           <p className="text-3xl font-bold tracking-tight text-[#F5F1E8]">
-            {formatarValor(sub.amount_cents, sub.currency)}
-            <span className="text-sm font-normal text-[#9A938A] ml-1">único</span>
+            {formatarValor(sub.amount_cents, sub.currency, locale)}
+            <span className="text-sm font-normal text-[#9A938A] ml-1">{t("oneTime", "único")}</span>
           </p>
           {sub.profile_name && (
             <p className="text-sm text-[#9A938A] mt-0.5">{sub.profile_name}</p>
@@ -378,7 +397,7 @@ function SubscriptionCard({
           style={isRefunded ? { filter: "none", opacity: 1 } : undefined}
         >
           {isPulsing ? <PulseDot color={cfg.dot} /> : <StatusIcon className="h-3.5 w-3.5" />}
-          {cfg.label}
+          {t(cfg.labelKey, cfg.label)}
         </span>
       </div>
 
@@ -386,13 +405,13 @@ function SubscriptionCard({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
         <div className="flex items-center gap-2 text-[#9A938A]">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
-          <span>Ativo desde: <span className="text-[#F5F1E8] font-medium">{formatarDataCurta(sub.paid_at || sub.created_at)}</span></span>
+          <span>{t("activeSince", "Ativo desde:")} <span className="text-[#F5F1E8] font-medium">{formatarDataCurta(sub.paid_at || sub.created_at, locale)}</span></span>
         </div>
 
         {sub.id_coupon && (
           <div className="flex items-center gap-2 text-[#9A938A]">
             <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-            <span>Cupom aplicado: <span className="text-emerald-600 font-medium">Sim</span></span>
+            <span>{t("couponApplied", "Cupom aplicado:")} <span className="text-emerald-600 font-medium">{t("yes", "Sim")}</span></span>
           </div>
         )}
 
@@ -401,13 +420,12 @@ function SubscriptionCard({
       {/* Detalhes do reembolso */}
       {isRefunded && sub.stripe_refund_id && (
         <div className="space-y-2" style={{ filter: "none", opacity: 1 }}>
-          <CopyableId label="Stripe Refund ID" value={sub.stripe_refund_id} />
+          <CopyableId label="Stripe Refund ID" value={sub.stripe_refund_id} t={t} />
           {sub.stripe_charge_id && (
-            <CopyableId label="Stripe Charge ID" value={sub.stripe_charge_id} />
+            <CopyableId label="Stripe Charge ID" value={sub.stripe_charge_id} t={t} />
           )}
           <p className="text-[11px] text-[#9A938A] leading-relaxed pt-1">
-            Use estes IDs em qualquer suporte com a Stripe para rastrear o reembolso.
-            O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.
+            {t("refundIdsNote", "Use estes IDs em qualquer suporte com a Stripe para rastrear o reembolso. O valor pode levar de 5 a 10 dias úteis para aparecer na fatura.")}
           </p>
         </div>
       )}
@@ -421,13 +439,15 @@ function SubscriptionCard({
                 sub={sub}
                 onConfirm={() => onRefund(sub.id_subscription)}
                 loading={refunding === sub.id_subscription}
+                t={t}
+                locale={locale}
               />
             )}
           </div>
           {sub.paid_at && isWithin7Days(sub.paid_at) && (
             <p className="text-xs text-[#9A938A]">
-              Reembolso disponível até{" "}
-              <span className="font-medium text-[#F5F1E8]">{refundDeadline(sub.paid_at)}</span>
+              {t("refundAvailableUntil", "Reembolso disponível até")}{" "}
+              <span className="font-medium text-[#F5F1E8]">{refundDeadline(sub.paid_at, locale)}</span>
             </p>
           )}
         </div>
@@ -436,7 +456,7 @@ function SubscriptionCard({
       {sub.status === "pending" && (
         <div className="pt-1">
           <p className="text-xs text-amber-600 mb-2">
-            Pagamento em processamento. Não concluiu? Finalize abaixo.
+            {t("pendingProcessingNote", "Pagamento em processamento. Não concluiu? Finalize abaixo.")}
           </p>
           <Button
             size="sm"
@@ -444,7 +464,7 @@ function SubscriptionCard({
             className="border-amber-300 text-amber-800 hover:bg-amber-100"
             onClick={() => window.location.href = "/payment/taxa"}
           >
-            Finalizar ativação
+            {t("finishActivation", "Finalizar ativação")}
           </Button>
         </div>
       )}
@@ -457,15 +477,19 @@ function HistoryTimeline({
   entries,
   selectedId,
   onSelect,
+  t,
+  locale,
 }: {
   entries: Subscription[]
   selectedId: string | null
   onSelect: (id: string) => void
+  t: TFn
+  locale: string
 }) {
   if (entries.length === 0) {
     return (
       <p className="text-sm text-[#9A938A] py-6 text-center">
-        Nenhum pagamento confirmado ainda.
+        {t("noConfirmedPayments", "Nenhum pagamento confirmado ainda.")}
       </p>
     )
   }
@@ -500,15 +524,15 @@ function HistoryTimeline({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-[#F5F1E8] truncate">
-                {s.profile_name || "Ativação do perfil"}
+                {s.profile_name || t("profileActivation", "Ativação do perfil")}
               </p>
               <p className="text-xs text-[#9A938A] mt-0.5">
-                {formatarData(s.paid_at || s.created_at)}
+                {formatarData(s.paid_at || s.created_at, locale)}
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-sm font-semibold text-[#F5F1E8]">
-                {formatarValor(s.amount_cents, s.currency)}
+                {formatarValor(s.amount_cents, s.currency, locale)}
               </span>
               <ChevronRight
                 className={`h-4 w-4 transition-transform ${
@@ -526,6 +550,8 @@ function HistoryTimeline({
 /* ── Página principal ── */
 export default function PagamentosPage() {
   const router = useRouter()
+  const t = useTranslations("Payments")
+  const locale = useLocale()
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -554,7 +580,7 @@ export default function PagamentosPage() {
         })
         if (!res.ok) {
           if (res.status === 401) { router.push("/login"); return }
-          throw new Error(`Erro ${res.status}`)
+          throw new Error(`${t("error", "Erro")} ${res.status}`)
         }
         const data = await res.json()
         setSubscriptions(data.subscriptions || [])
@@ -566,14 +592,14 @@ export default function PagamentosPage() {
           setManifestationHistory(manifestationData.history || [])
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar pagamentos.")
+        setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar pagamentos."))
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchSubscriptions()
-  }, [router])
+  }, [router, t])
 
   const handleRefund = async (id_subscription: string) => {
     const token = localStorage.getItem("token")
@@ -586,7 +612,7 @@ export default function PagamentosPage() {
         body: JSON.stringify({ id_subscription }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Erro ao processar reembolso")
+      if (!res.ok) throw new Error(data.error || t("refundError", "Erro ao processar reembolso"))
       const nowIso = new Date().toISOString()
       setSubscriptions((prev) =>
         prev.map((s) =>
@@ -601,7 +627,7 @@ export default function PagamentosPage() {
         )
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao processar reembolso")
+      setError(err instanceof Error ? err.message : t("refundError", "Erro ao processar reembolso"))
     } finally {
       setRefundingId(null)
     }
@@ -633,9 +659,9 @@ export default function PagamentosPage() {
         {/* Header */}
         <TabloidPageIntro
           size="compact"
-          eyebrow="Ativação"
-          title="PAGAMENTOS."
-          subtitle="Assinaturas, ativações e saldo de vendas em um painel só."
+          eyebrow={t("eyebrow", "Ativação")}
+          title={t("title", "PAGAMENTOS.")}
+          subtitle={t("subtitle", "Assinaturas, ativações e saldo de vendas em um painel só.")}
         />
 
         {/* Erro */}
@@ -656,7 +682,7 @@ export default function PagamentosPage() {
         {isLoading ? (
           <LoadingState />
         ) : subscriptions.length === 0 ? (
-          <EmptyState onActivate={() => router.push("/payment/taxa")} />
+          <EmptyState onActivate={() => router.push("/payment/taxa")} t={t} />
         ) : (
           <div className="space-y-6">
             <AnimatePresence mode="wait">
@@ -673,6 +699,8 @@ export default function PagamentosPage() {
                     onRefund={handleRefund}
                     refunding={refundingId}
                     isRefunded={!!selectedSubscription.refunded_at || selectedSubscription.status === "expired"}
+                    t={t}
+                    locale={locale}
                   />
                 </motion.div>
               )}
@@ -686,11 +714,13 @@ export default function PagamentosPage() {
                 transition={{ duration: 0.45, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               >
                 <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-3">
-                  Suas ativações
+                  {t("yourActivations", "Suas ativações")}
                 </p>
                 <HistoryTimeline
                   entries={paidEntries}
                   selectedId={selectedSubscription?.id_subscription || null}
+                  t={t}
+                  locale={locale}
                   onSelect={(id) => {
                     setSelectedId(id)
                     if (typeof window !== "undefined") {
@@ -709,7 +739,7 @@ export default function PagamentosPage() {
                 className="rounded-2xl border border-[#2A2218] bg-[#1D1810] p-5"
               >
                 <p className="text-xs font-medium uppercase tracking-widest text-[#9A938A] mb-3">
-                  Manifestacao
+                  {t("manifestation", "Manifestação")}
                 </p>
                 <div className="divide-y divide-[#2A2218]/70">
                   {manifestationHistory.map((item) => (
@@ -717,16 +747,16 @@ export default function PagamentosPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-[#F5F1E8]">{item.name}</p>
                         <p className="mt-0.5 text-xs text-[#9A938A]">
-                          {formatarDataCurta(item.acquired_at)} ate {formatarDataCurta(item.expires_at)}
+                          {formatarDataCurta(item.acquired_at, locale)} {t("dateRangeTo", "até")} {formatarDataCurta(item.expires_at, locale)}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-[#F5F1E8]">
                           {item.payment_method === "polens"
-                            ? `${Math.abs(item.amount_polens || 0).toLocaleString("pt-BR")} Polens`
-                            : formatarValor(item.amount_cents || 0)}
+                            ? `${Math.abs(item.amount_polens || 0).toLocaleString(locale)} ${t("polens", "Poléns")}`
+                            : formatarValor(item.amount_cents || 0, "BRL", locale)}
                         </p>
-                        <p className="text-xs text-[#9A938A]">{item.is_active ? "Ativa" : "Encerrada"}</p>
+                        <p className="text-xs text-[#9A938A]">{item.is_active ? t("statusActive", "Ativa") : t("statusEnded", "Encerrada")}</p>
                       </div>
                     </div>
                   ))}
