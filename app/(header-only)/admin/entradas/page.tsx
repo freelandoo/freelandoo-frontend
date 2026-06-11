@@ -18,6 +18,7 @@ type Tipo =
   | "assinatura"
   | "taxa_agenda"
   | "comissao_loja"
+  | "comissao_curso"
   | "venda_polens"
   | "premium"
   | "manifestacao"
@@ -47,6 +48,10 @@ const TIPO_META: Record<Tipo, { label: string; badge: string }> = {
     label: "Comissão Loja",
     badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   },
+  comissao_curso: {
+    label: "Comissão Cursos",
+    badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  },
   venda_polens: {
     label: "Venda Poléns",
     badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
@@ -65,6 +70,7 @@ const TIPO_ORDER: Tipo[] = [
   "assinatura",
   "taxa_agenda",
   "comissao_loja",
+  "comissao_curso",
   "venda_polens",
   "premium",
   "manifestacao",
@@ -241,7 +247,7 @@ export default function AdminEntradasPage() {
         </Card>
 
         {/* Per-type totals */}
-        <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-7">
           {TIPO_ORDER.map((tipo) => (
             <button
               key={tipo}
