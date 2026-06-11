@@ -22,6 +22,7 @@ import {
   Bookmark,
 } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { MediaComposer } from "@/components/composer/MediaComposer"
 import type { ComposerMode } from "@/lib/composer/types"
@@ -117,6 +118,7 @@ export function UserPortfolio({
   myProfilesSlot,
   myClansSlot,
 }: UserPortfolioProps = {}) {
+  const tr = useTranslations("Account")
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
@@ -170,14 +172,14 @@ export function UserPortfolio({
         cache: "no-store",
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Erro ao carregar portfólio")
+      if (!res.ok) throw new Error(data.error || tr("loadPortfolioError", "Erro ao carregar portfólio"))
       setItems(Array.isArray(data) ? data : data.items || [])
     } catch (err) {
-      setListError(err instanceof Error ? err.message : "Erro ao carregar portfólio")
+      setListError(err instanceof Error ? err.message : tr("loadPortfolioError", "Erro ao carregar portfólio"))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tr])
 
   useEffect(() => {
     void fetchItems()
@@ -215,7 +217,7 @@ export function UserPortfolio({
   )
   const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
   const emptyLabel =
-    portfolioTab === "bees" ? "Nenhum Bees ainda." : "Nenhum item no portfólio ainda."
+    portfolioTab === "bees" ? tr("noBeesYet", "Nenhum Bees ainda.") : tr("noPortfolioYet", "Nenhum item no portfólio ainda.")
 
   const handleAddItem = () => {
     if (portfolioTab === "feed" || portfolioTab === "bees") {
@@ -243,20 +245,20 @@ export function UserPortfolio({
 
   const validateBeesVideo = useCallback(async (file: File): Promise<string | null> => {
     if (!file.type.startsWith("video/")) {
-      return "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM."
+      return tr("beesVideoOnly", "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
     }
     const v = validateVideoFile(file)
     if (!v.ok) return v.error
     try {
       const dim = await getVideoDimensions(file)
       if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
-        return "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16)."
+        return tr("beesVideoNotVertical", "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16).")
       }
     } catch (err) {
-      return err instanceof Error ? err.message : "Não foi possível validar o vídeo."
+      return err instanceof Error ? err.message : tr("videoValidateError", "Não foi possível validar o vídeo.")
     }
     return null
-  }, [])
+  }, [tr])
 
   const preparePostImage = useCallback(
     async (file: File, mode: "new" | "existing", itemId?: string) => {
@@ -278,7 +280,7 @@ export function UserPortfolio({
           outputHeight: POST_IMAGE_OUTPUT.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
-          errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+          errorMessage: tr("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
         })
         if (mode === "new") {
           setPendingProcessedImage(processed, file)
@@ -290,7 +292,7 @@ export function UserPortfolio({
         setPortfolioError(
           err instanceof Error
             ? err.message
-            : "Não foi possível otimizar esse arquivo. Tente outro.",
+            : tr("optimizeFileError", "Não foi possível otimizar esse arquivo. Tente outro."),
         )
       } finally {
         setProcessingMedia(false)
@@ -374,12 +376,12 @@ export function UserPortfolio({
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setPortfolioError(data.error || "Erro ao fazer upload da mídia")
+        setPortfolioError(data.error || tr("mediaUploadError", "Erro ao fazer upload da mídia"))
         return
       }
       await fetchItems()
     } catch {
-      setPortfolioError("Erro ao fazer upload da mídia. Tente novamente.")
+      setPortfolioError(tr("mediaUploadErrorRetry", "Erro ao fazer upload da mídia. Tente novamente."))
     } finally {
       setUploadingForItem(null)
     }
@@ -466,7 +468,7 @@ export function UserPortfolio({
         })
         if (!uploadRes.ok) {
           const uploadData = await uploadRes.json().catch(() => ({}))
-          setPortfolioError(uploadData.error || "Erro ao fazer upload da mídia")
+          setPortfolioError(uploadData.error || tr("mediaUploadError", "Erro ao fazer upload da mídia"))
           return
         }
       }
@@ -489,7 +491,7 @@ export function UserPortfolio({
   }
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm("Remover este item do portfólio?")) return
+    if (!confirm(tr("confirmRemoveItem", "Remover este item do portfólio?"))) return
     const t = token()
     if (!t) return
     try {
@@ -501,15 +503,15 @@ export function UserPortfolio({
         setItems((prev) => prev.filter((it) => it.id_portfolio_item !== itemId))
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || "Erro ao remover item")
+        alert(data.error || tr("removeItemError", "Erro ao remover item"))
       }
     } catch {
-      alert("Erro ao remover item. Tente novamente.")
+      alert(tr("removeItemErrorRetry", "Erro ao remover item. Tente novamente."))
     }
   }
 
   const handleDeleteMedia = async (itemId: string, mediaId: string) => {
-    if (!confirm("Remover esta mídia?")) return
+    if (!confirm(tr("confirmRemoveMedia", "Remover esta mídia?"))) return
     const t = token()
     if (!t) return
     try {
@@ -527,10 +529,10 @@ export function UserPortfolio({
         )
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || "Erro ao remover mídia")
+        alert(data.error || tr("removeMediaError", "Erro ao remover mídia"))
       }
     } catch {
-      alert("Erro ao remover mídia. Tente novamente.")
+      alert(tr("removeMediaErrorRetry", "Erro ao remover mídia. Tente novamente."))
     }
   }
 
@@ -551,7 +553,7 @@ export function UserPortfolio({
             <button
               type="button"
               onClick={() => setPortfolioTab("feed")}
-              aria-label="Portfólio"
+              aria-label={tr("tabPortfolio", "Portfólio")}
               className={tabBtn(portfolioTab === "feed") + " w-10 px-0"}
             >
               <ImageIcon className="h-4 w-4" />
@@ -561,7 +563,7 @@ export function UserPortfolio({
             <button
               type="button"
               onClick={() => setPortfolioTab("bees")}
-              aria-label="Bees"
+              aria-label={tr("menuBees", "Bees")}
               className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
             >
               <Hexagon className="h-4 w-4" />
@@ -574,7 +576,7 @@ export function UserPortfolio({
               className={tabBtn(portfolioTab === "courses")}
             >
               <GraduationCap className="h-3.5 w-3.5" />
-              Cursos
+              {tr("tabCourses", "Cursos")}
             </button>
           </HoverHint>
           <HoverHint id="account-tab-saved" side="bottom">
@@ -584,7 +586,7 @@ export function UserPortfolio({
               className={tabBtn(portfolioTab === "saved")}
             >
               <Bookmark className="h-3.5 w-3.5" />
-              Salvos
+              {tr("tabSaved", "Salvos")}
             </button>
           </HoverHint>
           {myProfilesSlot !== undefined && (
@@ -595,7 +597,7 @@ export function UserPortfolio({
                 className={tabBtn(portfolioTab === "profiles")}
               >
                 <UserRound className="h-3.5 w-3.5" />
-                Perfis
+                {tr("tabProfiles", "Perfis")}
               </button>
             </HoverHint>
           )}
@@ -607,7 +609,7 @@ export function UserPortfolio({
                 className={tabBtn(portfolioTab === "clans")}
               >
                 <Users className="h-3.5 w-3.5" />
-                Clans
+                {tr("tabClans", "Clans")}
               </button>
             </HoverHint>
           )}
@@ -639,7 +641,7 @@ export function UserPortfolio({
       {loading && items.length === 0 ? (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#9A938A]">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Carregando portfólio…
+          {tr("loadingPortfolio", "Carregando portfólio…")}
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#F5F1E8]/15 py-20 text-[#9A938A]">
@@ -648,7 +650,7 @@ export function UserPortfolio({
           </div>
           <p className="text-sm font-medium">{emptyLabel}</p>
           <button type="button" onClick={handleAddItem} className="mt-2 text-sm font-bold text-[#F2B705] hover:underline">
-            Adicionar o primeiro item
+            {tr("addFirstItem", "Adicionar o primeiro item")}
           </button>
         </div>
       ) : (
@@ -680,7 +682,7 @@ export function UserPortfolio({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={firstMedia.media_url}
-                        alt={item.title ?? "Mídia do portfólio"}
+                        alt={item.title ?? tr("portfolioMediaAlt", "Mídia do portfólio")}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     )}
@@ -695,7 +697,7 @@ export function UserPortfolio({
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
                       <label
                         className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm cursor-pointer transition-colors"
-                        title="Adicionar mídia"
+                        title={tr("addMedia", "Adicionar mídia")}
                       >
                         <input
                           type="file"
@@ -721,7 +723,7 @@ export function UserPortfolio({
                           type="button"
                           onClick={() => handleEditItem(item)}
                           className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
-                          title="Editar item"
+                          title={tr("editItem", "Editar item")}
                         >
                           <Edit2 className="h-5 w-5" />
                         </button>
@@ -729,7 +731,7 @@ export function UserPortfolio({
                           type="button"
                           onClick={() => handleDeleteItem(item.id_portfolio_item)}
                           className="flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
-                          title="Remover item"
+                          title={tr("removeItem", "Remover item")}
                         >
                           <Trash2 className="h-5 w-5" />
                         </button>
@@ -744,7 +746,7 @@ export function UserPortfolio({
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <label
                         className="flex items-center justify-center h-10 w-10 bg-[#F5F1E8]/15 border border-[#F5F1E8]/20 shadow-sm hover:bg-[#F5F1E8]/25 text-[#F5F1E8] rounded-full cursor-pointer transition-colors"
-                        title="Adicionar mídia"
+                        title={tr("addMedia", "Adicionar mídia")}
                       >
                         <input
                           type="file"
@@ -769,7 +771,7 @@ export function UserPortfolio({
                         type="button"
                         onClick={() => handleDeleteItem(item.id_portfolio_item)}
                         className="flex items-center justify-center h-10 w-10 bg-[#F5F1E8]/15 border border-[#F5F1E8]/20 shadow-sm hover:bg-[#b91c1c] hover:text-white text-[#F5F1E8] rounded-full transition-colors"
-                        title="Remover item"
+                        title={tr("removeItem", "Remover item")}
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -781,7 +783,7 @@ export function UserPortfolio({
                 <div className="min-w-0 pt-3 px-2 md:px-0">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">
-                      {item.title || "Sem título"}
+                      {item.title || tr("untitled", "Sem título")}
                     </h3>
                     <div className="flex items-center gap-2 shrink-0">
                       <span
@@ -821,7 +823,7 @@ export function UserPortfolio({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={media.media_url}
-                              alt="Mídia"
+                              alt={tr("mediaAlt", "Mídia")}
                               className="w-full h-full object-cover"
                             />
                           )}
@@ -831,7 +833,7 @@ export function UserPortfolio({
                               handleDeleteMedia(item.id_portfolio_item, media.id_portfolio_media)
                             }
                             className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                            aria-label="Remover mídia"
+                            aria-label={tr("removeMediaAria", "Remover mídia")}
                           >
                             <X className="h-3 w-3 text-white" />
                           </button>
@@ -870,17 +872,17 @@ export function UserPortfolio({
                 <div className="min-w-0">
                   <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
                     {editingItemId
-                      ? "Editar item"
+                      ? tr("editItem", "Editar item")
                       : portfolioTab === "bees"
-                        ? "Novo Bees"
-                        : "Novo post"}
+                        ? tr("newBees", "Novo Bees")
+                        : tr("newPost", "Novo post")}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-[#5b554b]">
                     {editingItemId
-                      ? "Atualize as informações."
+                      ? tr("editItemHint", "Atualize as informações.")
                       : portfolioTab === "bees"
-                        ? "Envie um vídeo vertical 9:16."
-                        : "Mostre seu trabalho com uma imagem 4:5."}
+                        ? tr("newBeesHint", "Envie um vídeo vertical 9:16.")
+                        : tr("newPostHint", "Mostre seu trabalho com uma imagem 4:5.")}
                   </DialogDescription>
                 </div>
               </div>
@@ -892,10 +894,10 @@ export function UserPortfolio({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
-                      {portfolioTab === "bees" ? "Vídeo" : "Imagem"}
+                      {portfolioTab === "bees" ? tr("videoLabel", "Vídeo") : tr("imageLabel", "Imagem")}
                     </span>
                     <span className="text-[10px] uppercase tracking-wider text-[#8a8275]">
-                      {portfolioTab === "bees" ? "9:16 · até 100MB" : "4:5 · até 3MB"}
+                      {portfolioTab === "bees" ? tr("videoLimits", "9:16 · até 100MB") : tr("imageLimits", "4:5 · até 3MB")}
                     </span>
                   </div>
 
@@ -925,7 +927,7 @@ export function UserPortfolio({
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={pendingPreview}
-                            alt="Pré-visualização"
+                            alt={tr("previewAlt", "Pré-visualização")}
                             className="h-full w-full object-cover"
                           />
                         )}
@@ -939,7 +941,7 @@ export function UserPortfolio({
                               className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-black/90 transition-colors"
                             >
                               <Crop className="h-3 w-3" />
-                              Recortar
+                              {tr("crop", "Recortar")}
                             </button>
                           ) : <span />}
                           <button
@@ -948,7 +950,7 @@ export function UserPortfolio({
                             className="inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur hover:bg-red-500/30 hover:text-red-100 transition-colors"
                           >
                             <X className="h-3 w-3" />
-                            Remover
+                            {tr("remove", "Remover")}
                           </button>
                         </div>
                       </motion.div>
@@ -996,15 +998,15 @@ export function UserPortfolio({
                         </motion.div>
                         <span className="px-6 text-center text-sm font-bold text-[#0B0B0D]">
                           {processingMedia
-                            ? "Otimizando..."
+                            ? tr("optimizing", "Otimizando...")
                             : portfolioTab === "bees"
-                              ? "Toque ou arraste seu vídeo 9:16"
-                              : "Toque ou arraste sua imagem"}
+                              ? tr("dropVideoHint", "Toque ou arraste seu vídeo 9:16")
+                              : tr("dropImageHint", "Toque ou arraste sua imagem")}
                         </span>
                         <span className="mt-1 px-6 text-center text-[11px] text-[#5b554b]">
                           {portfolioTab === "bees"
-                            ? "MP4 ou WebM, vertical"
-                            : "JPG, PNG ou WebP — recortamos pra 4:5"}
+                            ? tr("videoFormats", "MP4 ou WebM, vertical")
+                            : tr("imageFormats", "JPG, PNG ou WebP — recortamos pra 4:5")}
                         </span>
                       </motion.label>
                     )}
@@ -1016,7 +1018,7 @@ export function UserPortfolio({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label htmlFor="up-title" className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
-                    Título
+                    {tr("titleLabel", "Título")}
                   </label>
                   <span className="text-[10px] tabular-nums text-[#8a8275]">
                     {form.title.length}/120
@@ -1024,7 +1026,7 @@ export function UserPortfolio({
                 </div>
                 <input
                   id="up-title"
-                  placeholder="Trabalho que fiz ontem..."
+                  placeholder={tr("workTitlePlaceholder", "Trabalho que fiz ontem...")}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   maxLength={120}
@@ -1036,7 +1038,7 @@ export function UserPortfolio({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label htmlFor="up-desc" className="text-[11px] font-bold uppercase tracking-wider text-[#5b554b]">
-                    Descrição
+                    {tr("descriptionLabel", "Descrição")}
                   </label>
                   <span className="text-[10px] tabular-nums text-[#8a8275]">
                     {form.description.length}/500
@@ -1044,7 +1046,7 @@ export function UserPortfolio({
                 </div>
                 <textarea
                   id="up-desc"
-                  placeholder="Conte o contexto: cliente, processo, resultado..."
+                  placeholder={tr("contextPlaceholder", "Conte o contexto: cliente, processo, resultado...")}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   maxLength={500}
@@ -1076,7 +1078,7 @@ export function UserPortfolio({
                 disabled={isAddingItem}
                 className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
               >
-                Cancelar
+                {tr("cancel", "Cancelar")}
               </button>
               <button
                 type="button"
@@ -1087,14 +1089,14 @@ export function UserPortfolio({
                 {isAddingItem ? (
                   <>
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    Publicando…
+                    {tr("publishing", "Publicando…")}
                   </>
                 ) : editingItemId ? (
-                  "Salvar"
+                  tr("save", "Salvar")
                 ) : (
                   <>
                     <Sparkles className="mr-1.5 h-4 w-4" />
-                    Publicar
+                    {tr("publish", "Publicar")}
                   </>
                 )}
               </button>
@@ -1112,8 +1114,8 @@ export function UserPortfolio({
           outputHeight={POST_IMAGE_OUTPUT.height}
           maxSizeMB={3}
           mediaType="post_image"
-          title="Cortar imagem"
-          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          title={tr("cropImage", "Cortar imagem")}
+          description={tr("cropImageDesc", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
           onCancel={() => setCropTarget(null)}
           onConfirm={handleCropConfirm}
         />
@@ -1135,6 +1137,7 @@ export function UserPortfolio({
 export default UserPortfolio
 
 function SavedSection() {
+  const tr = useTranslations("Account")
   const [savedKind, setSavedKind] = useState<SavedKind>("feed")
   const [items, setItems] = useState<SavedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -1144,7 +1147,7 @@ function SavedSection() {
   const load = useCallback(async (kind: SavedKind) => {
     const tk = token()
     if (!tk) {
-      setError("Faça login para ver seus salvos.")
+      setError(tr("loginToSeeSaved", "Faça login para ver seus salvos."))
       setLoading(false)
       return
     }
@@ -1158,11 +1161,11 @@ function SavedSection() {
       const data = await res.json()
       setItems(Array.isArray(data.items) ? data.items : [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar salvos")
+      setError(e instanceof Error ? e.message : tr("loadSavedError", "Erro ao carregar salvos"))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tr])
 
   useEffect(() => { load(savedKind) }, [savedKind, load])
 
@@ -1203,7 +1206,7 @@ function SavedSection() {
           }`}
         >
           <ImageIcon className="h-3.5 w-3.5" />
-          Posts
+          {tr("postsLabel", "Posts")}
         </button>
         <button
           type="button"
@@ -1215,7 +1218,7 @@ function SavedSection() {
           }`}
         >
           <Hexagon className="h-3.5 w-3.5" />
-          Bees
+          {tr("menuBees", "Bees")}
         </button>
       </div>
 
@@ -1226,14 +1229,14 @@ function SavedSection() {
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#9A938A]">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Carregando salvos…
+          {tr("loadingSaved", "Carregando salvos…")}
         </div>
       ) : items.length === 0 ? (
         <div className="mx-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-[#F5F1E8]/12 py-16 text-center text-[#9A938A]">
           <Bookmark className="mb-3 h-7 w-7 opacity-60" />
-          <p className="text-sm font-medium text-[#F5F1E8]">Você ainda não salvou nada por aqui</p>
+          <p className="text-sm font-medium text-[#F5F1E8]">{tr("nothingSavedYet", "Você ainda não salvou nada por aqui")}</p>
           <p className="mt-1 text-xs text-[#9A938A]">
-            Toque no marcador em qualquer post pra salvar pra depois.
+            {tr("nothingSavedHint", "Toque no marcador em qualquer post pra salvar pra depois.")}
           </p>
         </div>
       ) : (
@@ -1248,14 +1251,14 @@ function SavedSection() {
               >
                 <Link
                   href={`/p/${it.post_id}`}
-                  aria-label={it.title || it.display_name || "Abrir post"}
+                  aria-label={it.title || it.display_name || tr("openPost", "Abrir post")}
                   className="absolute inset-0 z-0"
                 >
                   {thumb ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={isVideo ? (it.first_media?.thumbnail_url || "") : thumb}
-                      alt={it.title || it.display_name || "Salvo"}
+                      alt={it.title || it.display_name || tr("savedAlt", "Salvo")}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -1278,8 +1281,8 @@ function SavedSection() {
                   type="button"
                   onClick={() => handleRemove(it.post_id)}
                   disabled={!!removing[it.post_id]}
-                  aria-label="Remover dos salvos"
-                  title="Remover dos salvos"
+                  aria-label={tr("removeFromSaved", "Remover dos salvos")}
+                  title={tr("removeFromSaved", "Remover dos salvos")}
                   className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:border-rose-400/40 hover:text-rose-300 disabled:opacity-40"
                 >
                   {removing[it.post_id] ? (
@@ -1291,7 +1294,7 @@ function SavedSection() {
 
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
                   <p className="truncate font-medium">
-                    {it.display_name || it.username || "Perfil"}
+                    {it.display_name || it.username || tr("menuProfile", "Perfil")}
                   </p>
                   {it.title && (
                     <p className="truncate text-white/75">{it.title}</p>
