@@ -1204,6 +1204,45 @@ Object.assign(ACCOUNT, {
   unitsAbbr: ["un", "un", "un"],
 })
 
+// S14c — profile-service-edit-modal
+Object.assign(ACCOUNT, {
+  unsupportedFormat: ["Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV.", "Unsupported format. Upload JPG, PNG, WebP, MP4, WebM or MOV.", "Formato no admitido. Sube JPG, PNG, WebP, MP4, WebM o MOV."],
+  maxFilesPre: ["Máximo de", "Maximum of", "Máximo de"],
+  maxFilesPost: ["arquivos por serviço.", "files per service.", "archivos por servicio."],
+  photoMax3mb: ["A foto do serviço precisa ter no máximo 3MB após otimização.", "The service photo must be at most 3MB after optimization.", "La foto del servicio debe pesar como máximo 3MB tras la optimización."],
+  uploadFileError: ["Erro ao enviar arquivo", "Error uploading file", "Error al subir el archivo"],
+  uploadFileConnError: ["Erro de conexão ao enviar arquivo", "Connection error while uploading file", "Error de conexión al subir el archivo"],
+  removeFileError: ["Erro ao remover arquivo", "Error removing file", "Error al quitar el archivo"],
+  removeFileConnError: ["Erro de conexão ao remover arquivo", "Connection error while removing file", "Error de conexión al quitar el archivo"],
+  enterServiceName: ["Informe o nome do serviço", "Enter the service name", "Ingresa el nombre del servicio"],
+  invalidDuration: ["Duração inválida", "Invalid duration", "Duración no válida"],
+  invalidValue: ["Valor inválido", "Invalid value", "Valor no válido"],
+  loadingBookingFees: ["Carregando taxas de agendamento. Tente novamente em instantes.", "Loading booking fees. Try again in a moment.", "Cargando tarifas de reserva. Inténtalo de nuevo en un momento."],
+  editService: ["Editar serviço", "Edit service", "Editar servicio"],
+  newService: ["Novo serviço", "New service", "Nuevo servicio"],
+  serviceNamePlaceholder: ["Ex: Sessão de fotos", "E.g.: Photo session", "Ej.: Sesión de fotos"],
+  descriptionOptional: ["Descrição (opcional)", "Description (optional)", "Descripción (opcional)"],
+  durationLabel: ["Duração", "Duration", "Duración"],
+  priceYouWantLabel: ["Valor que você quer receber (R$)", "Amount you want to receive (R$)", "Monto que quieres recibir (R$)"],
+  valueSummary: ["Resumo do valor", "Price summary", "Resumen del valor"],
+  youReceive: ["Você recebe", "You receive", "Tú recibes"],
+  cardFee: ["Taxa da maquininha", "Card processing fee", "Tarifa del datáfono"],
+  serviceFeeFixed: ["Taxa de serviço (fixo)", "Service fee (fixed)", "Tarifa de servicio (fija)"],
+  affiliateCommission: ["Comissão de afiliado", "Affiliate commission", "Comisión de afiliado"],
+  clientWillPay: ["Cliente pagará", "Client will pay", "El cliente pagará"],
+  all: ["Todos", "All", "Todos"],
+  memberLower: ["membro", "member", "miembro"],
+  dividedAmongPre: ["dividido entre todos os", "split among all", "dividido entre todos los"],
+  membersLower: ["membros", "members", "miembros"],
+  servicePhotosFiles: ["Fotos e arquivos do serviço", "Service photos and files", "Fotos y archivos del servicio"],
+  dragToReorder: ["Arrastar para reordenar", "Drag to reorder", "Arrastra para reordenar"],
+  removeFile: ["Remover arquivo", "Remove file", "Quitar archivo"],
+  serviceMediaHintPre: ["JPG, PNG, WebP, MP4, WebM ou MOV · Fotos em 4:5 até 3MB após otimização · Até", "JPG, PNG, WebP, MP4, WebM or MOV · Photos in 4:5 up to 3MB after optimization · Up to", "JPG, PNG, WebP, MP4, WebM o MOV · Fotos en 4:5 hasta 3MB tras la optimización · Hasta"],
+  filesWord: ["arquivos.", "files.", "archivos."],
+  dragToReorderHint: ["Arraste para reordenar.", "Drag to reorder.", "Arrastra para reordenar."],
+  activeVisibleToClients: ["Ativo (visível para clientes)", "Active (visible to clients)", "Activo (visible para clientes)"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {

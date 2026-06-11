@@ -16,6 +16,7 @@ import {
   validateImageFile,
   validateVideoFile,
 } from "@/lib/media/media-validation"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface ServiceMedia {
   id_service_media: number
@@ -98,6 +99,7 @@ export function ProfileServiceEditModal({
   onMediaChanged,
   onError,
 }: ProfileServiceEditModalProps) {
+  const t = useTranslations("Account")
   const [serviceForm, setServiceForm] = useState({
     name: "",
     description: "",
@@ -247,14 +249,14 @@ export function ProfileServiceEditModal({
       ? validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
       : isVideo
         ? validateVideoFile(file)
-        : { ok: false as const, error: "Formato nao suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV." }
+        : { ok: false as const, error: t("unsupportedFormat", "Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV.") }
 
     if (!validation.ok) {
       onError?.(validation.error)
       return
     }
     if (mediaList.length >= MAX_SERVICE_MEDIA) {
-      onError?.(`Maximo de ${MAX_SERVICE_MEDIA} arquivos por servico.`)
+      onError?.(`${t("maxFilesPre", "Máximo de")} ${MAX_SERVICE_MEDIA} ${t("maxFilesPost", "arquivos por serviço.")}`)
       return
     }
 
@@ -268,7 +270,7 @@ export function ProfileServiceEditModal({
           outputHeight: POST_IMAGE_OUTPUT.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
-          errorMessage: "A foto do servico precisa ter no maximo 3MB apos otimizacao.",
+          errorMessage: t("photoMax3mb", "A foto do serviço precisa ter no máximo 3MB após otimização."),
         })
         uploadFile = processed.file
         previewUrlToRevoke = processed.previewUrl
@@ -286,10 +288,10 @@ export function ProfileServiceEditModal({
         onMediaChanged?.(service.id_profile_service, nextMedia)
       } else {
         const d = await res.json().catch(() => ({}))
-        onError?.(d.error || "Erro ao enviar arquivo")
+        onError?.(d.error || t("uploadFileError", "Erro ao enviar arquivo"))
       }
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : "Erro de conexao ao enviar arquivo")
+      onError?.(err instanceof Error ? err.message : t("uploadFileConnError", "Erro de conexão ao enviar arquivo"))
     } finally {
       if (previewUrlToRevoke) URL.revokeObjectURL(previewUrlToRevoke)
       setUploading(false)
@@ -312,10 +314,10 @@ export function ProfileServiceEditModal({
         })
       } else {
         const d = await res.json().catch(() => ({}))
-        onError?.(d.error || "Erro ao remover arquivo")
+        onError?.(d.error || t("removeFileError", "Erro ao remover arquivo"))
       }
     } catch {
-      onError?.("Erro de conexão ao remover arquivo")
+      onError?.(t("removeFileConnError", "Erro de conexão ao remover arquivo"))
     }
     setDeletingMedia(null)
   }
@@ -386,19 +388,19 @@ export function ProfileServiceEditModal({
   async function saveService() {
     const price = parsePriceReais(serviceForm.price_reais)
     if (!serviceForm.name.trim()) {
-      onError?.("Informe o nome do serviço")
+      onError?.(t("enterServiceName", "Informe o nome do serviço"))
       return
     }
     if (!serviceForm.duration_minutes || serviceForm.duration_minutes <= 0) {
-      onError?.("Duração inválida")
+      onError?.(t("invalidDuration", "Duração inválida"))
       return
     }
     if (price < 0) {
-      onError?.("Valor inválido")
+      onError?.(t("invalidValue", "Valor inválido"))
       return
     }
     if (!bookingFeesReady) {
-      onError?.("Carregando taxas de agendamento. Tente novamente em instantes.")
+      onError?.(t("loadingBookingFees", "Carregando taxas de agendamento. Tente novamente em instantes."))
       return
     }
     const price_amount = clientTotalCentsFromFreelancerNet(
@@ -430,10 +432,10 @@ export function ProfileServiceEditModal({
         onSaved(d.service as ProfileService)
         onClose()
       } else {
-        onError?.(d.error || "Erro ao salvar")
+        onError?.(d.error || t("saveError", "Erro ao salvar"))
       }
     } catch {
-      onError?.("Erro de conexão")
+      onError?.(t("connectionErrorShort", "Erro de conexão"))
     }
     setSaving(false)
   }
@@ -455,30 +457,30 @@ export function ProfileServiceEditModal({
       >
         <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 p-6">
           <h2 id="profile-service-edit-title" className="fl-display text-2xl text-[#0B0B0D]">
-            {isEdit ? "Editar serviço" : "Novo serviço"}
+            {isEdit ? t("editService", "Editar serviço") : t("newService", "Novo serviço")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="space-y-4 p-6">
           <div>
-            <label className="fl-label">Nome</label>
+            <label className="fl-label">{t("nameLabel", "Nome")}</label>
             <input
               type="text"
               value={serviceForm.name}
               onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Ex: Sessão de fotos"
+              placeholder={t("serviceNamePlaceholder", "Ex: Sessão de fotos")}
               className="fl-input"
             />
           </div>
           <div>
-            <label className="fl-label">Descrição (opcional)</label>
+            <label className="fl-label">{t("descriptionOptional", "Descrição (opcional)")}</label>
             <textarea
               value={serviceForm.description}
               onChange={(e) => setServiceForm((f) => ({ ...f, description: e.target.value }))}
@@ -488,7 +490,7 @@ export function ProfileServiceEditModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="fl-label">Duração</label>
+              <label className="fl-label">{t("durationLabel", "Duração")}</label>
               <select
                 value={serviceForm.duration_minutes}
                 onChange={(e) =>
@@ -504,7 +506,7 @@ export function ProfileServiceEditModal({
               </select>
             </div>
             <div>
-              <label className="fl-label">Valor que você quer receber (R$)</label>
+              <label className="fl-label">{t("priceYouWantLabel", "Valor que você quer receber (R$)")}</label>
               <input
                 type="text"
                 value={serviceForm.price_reais}
@@ -531,27 +533,27 @@ export function ProfileServiceEditModal({
             const clientPays = clientTotal + affiliateFee
             return (
               <div className="space-y-2 rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4 text-xs">
-                <p className="mb-3 font-bold text-[#5b554b]">Resumo do valor</p>
+                <p className="mb-3 font-bold text-[#5b554b]">{t("valueSummary", "Resumo do valor")}</p>
                 <div className="flex justify-between text-[#2b2b2e]">
-                  <span>Você recebe</span>
+                  <span>{t("youReceive", "Você recebe")}</span>
                   <span className="font-mono">{centsToReais(baseCents)}</span>
                 </div>
                 <div className="flex justify-between text-[#5b554b]">
-                  <span>Taxa da maquininha ({bookingFees.stripe_fee_percent}%)</span>
+                  <span>{t("cardFee", "Taxa da maquininha")} ({bookingFees.stripe_fee_percent}%)</span>
                   <span className="font-mono text-[#b8860b]">+ {centsToReais(stripeFee)}</span>
                 </div>
                 <div className="flex justify-between text-[#5b554b]">
-                  <span>Taxa de serviço (fixo)</span>
+                  <span>{t("serviceFeeFixed", "Taxa de serviço (fixo)")}</span>
                   <span className="font-mono text-[#b8860b]">+ {centsToReais(serviceFee)}</span>
                 </div>
                 {affiliateFee > 0 && (
                   <div className="flex justify-between text-[#5b554b]">
-                    <span>Comissão de afiliado ({affiliatePct}%)</span>
+                    <span>{t("affiliateCommission", "Comissão de afiliado")} ({affiliatePct}%)</span>
                     <span className="font-mono text-[#b8860b]">+ {centsToReais(affiliateFee)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t-2 border-[#0B0B0D]/15 pt-2 text-sm font-bold">
-                  <span className="text-[#0B0B0D]">Cliente pagará</span>
+                  <span className="text-[#0B0B0D]">{t("clientWillPay", "Cliente pagará")}</span>
                   <span className="font-mono text-[#E0A500]">{centsToReais(clientPays)}</span>
                 </div>
               </div>
@@ -563,10 +565,12 @@ export function ProfileServiceEditModal({
               <div className="mb-2 flex items-center justify-between">
                 <label className="flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
                   <Users className="h-3.5 w-3.5" />
-                  Membros participantes
+                  {t("participatingMembers", "Membros participantes")}
                 </label>
                 <span className="text-xs text-[#5b554b]">
-                  {selectedCount === 0 ? "Todos" : `${selectedCount} selecionado${selectedCount !== 1 ? "s" : ""}`}
+                  {selectedCount === 0
+                    ? t("all", "Todos")
+                    : `${selectedCount} ${selectedCount !== 1 ? t("selectedPlural", "selecionados") : t("selectedSingular", "selecionado")}`}
                 </span>
               </div>
               <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
@@ -598,7 +602,7 @@ export function ProfileServiceEditModal({
                         <div className="text-xs text-[#5b554b]">@{m.username}</div>
                       </div>
                       {m.role === "owner" && (
-                        <span className="shrink-0 text-xs text-[#5b554b]">dono</span>
+                        <span className="shrink-0 text-xs text-[#5b554b]">{t("ownerLower", "dono")}</span>
                       )}
                     </label>
                   )
@@ -606,11 +610,11 @@ export function ProfileServiceEditModal({
               </div>
               {pricePerMember !== null && effectiveCount > 0 && (
                 <p className="mt-2 text-xs text-[#5b554b]">
-                  {centsToReais(pricePerMember)}/membro
+                  {centsToReais(pricePerMember)}/{t("memberLower", "membro")}
                   {selectedCount === 0 && (
                     <span className="text-[#8a8275]">
                       {" "}
-                      (dividido entre todos os {clanMembers.length} membros)
+                      ({t("dividedAmongPre", "dividido entre todos os")} {clanMembers.length} {t("membersLower", "membros")})
                     </span>
                   )}
                 </p>
@@ -622,7 +626,7 @@ export function ProfileServiceEditModal({
             <div>
               <label className="mb-2 flex items-center gap-1 text-xs font-bold text-[#0B0B0D]/60">
                 <ImagePlus className="h-3.5 w-3.5" />
-                Fotos e arquivos do serviço
+                {t("servicePhotosFiles", "Fotos e arquivos do serviço")}
               </label>
 
               {mediaLoading ? (
@@ -651,7 +655,7 @@ export function ProfileServiceEditModal({
                           <button
                             type="button"
                             className="m-1 cursor-grab rounded p-0.5 text-white/70 hover:text-white active:cursor-grabbing"
-                            aria-label="Arrastar para reordenar"
+                            aria-label={t("dragToReorder", "Arrastar para reordenar")}
                           >
                             <GripVertical className="h-4 w-4" />
                           </button>
@@ -660,7 +664,7 @@ export function ProfileServiceEditModal({
                             onClick={() => handleDeleteMedia(media.id_service_media)}
                             disabled={deletingMedia === media.id_service_media}
                             className="m-1 rounded bg-red-600/80 p-1 text-white hover:bg-red-600 disabled:opacity-50"
-                            aria-label="Remover arquivo"
+                            aria-label={t("removeFile", "Remover arquivo")}
                           >
                             {deletingMedia === media.id_service_media ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -684,7 +688,7 @@ export function ProfileServiceEditModal({
                         ) : (
                           <>
                             <ImagePlus className="h-5 w-5" />
-                            <span className="text-[10px]">Adicionar</span>
+                            <span className="text-[10px]">{t("add", "Adicionar")}</span>
                           </>
                         )}
                       </button>
@@ -700,8 +704,8 @@ export function ProfileServiceEditModal({
                   />
 
                   <p className="mt-1.5 text-[10px] text-[#8a8275]">
-                    JPG, PNG, WebP, MP4, WebM ou MOV · Fotos em 4:5 até 3MB após otimização · Até {MAX_SERVICE_MEDIA} arquivos.
-                    {mediaList.length > 1 && " Arraste para reordenar."}
+                    {t("serviceMediaHintPre", "JPG, PNG, WebP, MP4, WebM ou MOV · Fotos em 4:5 até 3MB após otimização · Até")} {MAX_SERVICE_MEDIA} {t("filesWord", "arquivos.")}
+                    {mediaList.length > 1 && ` ${t("dragToReorderHint", "Arraste para reordenar.")}`}
                   </p>
                 </>
               )}
@@ -715,7 +719,7 @@ export function ProfileServiceEditModal({
               onChange={(e) => setServiceForm((f) => ({ ...f, is_active: e.target.checked }))}
               className="h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
             />
-            <span className="text-sm font-medium text-[#0B0B0D]">Ativo (visível para clientes)</span>
+            <span className="text-sm font-medium text-[#0B0B0D]">{t("activeVisibleToClients", "Ativo (visível para clientes)")}</span>
           </label>
 
           <AffiliateOptInField
@@ -731,7 +735,7 @@ export function ProfileServiceEditModal({
             onClick={onClose}
             className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold"
           >
-            Cancelar
+            {t("cancel", "Cancelar")}
           </button>
           <button
             type="button"
@@ -740,7 +744,7 @@ export function ProfileServiceEditModal({
             className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Salvando..." : "Salvar"}
+            {saving ? t("saving", "Salvando...") : t("save", "Salvar")}
           </button>
         </div>
       </div>
