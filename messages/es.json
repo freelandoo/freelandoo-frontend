@@ -3766,5 +3766,17 @@
     "emptyTitle": "Nadie en el ranking todavía.",
     "emptyDesc": "En cuanto haya datos suficientes, el top 10 aparecerá aquí.",
     "errorTitle": "No se pudo cargar."
+  },
+  "Lives": {
+    "soonTitle": "Estamos construyendo",
+    "soonSubtitle": "Muy pronto.",
+    "soonClose": "Cerrar",
+    "loadError": "Error al cargar las lives",
+    "backToBees": "Volver a Bees",
+    "refresh": "Actualizar",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Ninguna live al aire ahora",
+    "emptyDesc": "Sé el primero en transmitir. Toca “Ir en vivo” y muestra tu trabajo en tiempo real.",
+    "goLive": "Ir en vivo"
   }
 }

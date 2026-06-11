@@ -3786,5 +3786,17 @@
     "emptyTitle": "Nobody in the ranking yet.",
     "emptyDesc": "As soon as there's enough data, the top 10 shows up here.",
     "errorTitle": "Couldn't load."
+  },
+  "Lives": {
+    "soonTitle": "We're building this",
+    "soonSubtitle": "Coming soon.",
+    "soonClose": "Close",
+    "loadError": "Error loading lives",
+    "backToBees": "Back to Bees",
+    "refresh": "Refresh",
+    "retry": "Try again",
+    "emptyTitle": "No live on air right now",
+    "emptyDesc": "Be the first to broadcast. Tap “Go live” and show your work in real time.",
+    "goLive": "Go live"
   }
 }

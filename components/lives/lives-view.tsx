@@ -1,11 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { ChevronLeft, Loader2, Radio, RefreshCw, Users } from "lucide-react"
+import { ChevronLeft, Hammer, Loader2, Radio, RefreshCw, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { fetchActiveLives } from "@/lib/lives/api"
 import type { Live } from "@/lib/lives/types"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { GoLiveOverlay } from "./go-live-overlay"
 import { LiveViewerOverlay } from "./live-viewer-overlay"
 
@@ -17,6 +19,8 @@ interface LivesViewProps {
 }
 
 export function LivesView({ onBack }: LivesViewProps) {
+  const t = useTranslations("Lives")
+  const router = useRouter()
   const [lives, setLives] = useState<Live[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,23 +33,51 @@ export function LivesView({ onBack }: LivesViewProps) {
     try {
       setLives(await fetchActiveLives())
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar lives")
+      setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar lives"))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => { load() }, [load])
 
   return (
     <div className="absolute inset-0 z-40 flex flex-col bg-[#0b0804]">
+      {/* Modal "em construção": Lives ainda não está liberada — bloqueia a tela
+          e o Fechar leva pra conta do usuário. */}
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 14 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={SPRING}
+          role="dialog"
+          aria-modal="true"
+          className="w-full max-w-sm rounded-2xl border border-white/10 bg-gradient-to-b from-[#141009] to-black p-6 text-center"
+        >
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-500/15">
+            <Hammer className="h-7 w-7 text-red-400" />
+          </span>
+          <h2 className="mt-4 text-lg font-bold tracking-tight text-white">
+            {t("soonTitle", "Estamos construindo")}
+          </h2>
+          <p className="mt-1 text-sm text-white/65">{t("soonSubtitle", "Em breve.")}</p>
+          <button
+            type="button"
+            onClick={() => router.push("/account")}
+            className="mt-5 w-full rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-zinc-950 transition hover:bg-yellow-300"
+          >
+            {t("soonClose", "Fechar")}
+          </button>
+        </motion.div>
+      </div>
+
       {/* Barra mínima (sem header de site): voltar + título + atualizar */}
       <div className="flex items-center gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
         <button
           type="button"
           onClick={onBack}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-          aria-label="Voltar para Bees"
+          aria-label={t("backToBees", "Voltar para Bees")}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -56,7 +88,7 @@ export function LivesView({ onBack }: LivesViewProps) {
           type="button"
           onClick={load}
           className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20"
-          aria-label="Atualizar"
+          aria-label={t("refresh", "Atualizar")}
         >
           <RefreshCw className="h-4 w-4" />
         </button>
@@ -76,7 +108,7 @@ export function LivesView({ onBack }: LivesViewProps) {
               onClick={load}
               className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
             >
-              Tentar de novo
+              {t("retry", "Tentar de novo")}
             </button>
           </div>
         ) : lives.length === 0 ? (
@@ -84,9 +116,9 @@ export function LivesView({ onBack }: LivesViewProps) {
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
               <Radio className="h-8 w-8 text-red-400" />
             </span>
-            <p className="text-base font-semibold">Nenhuma live no ar agora</p>
+            <p className="text-base font-semibold">{t("emptyTitle", "Nenhuma live no ar agora")}</p>
             <p className="max-w-xs text-sm text-white/55">
-              Seja o primeiro a transmitir. Toque em “Ir ao vivo” e mostre o seu trampo em tempo real.
+              {t("emptyDesc", "Seja o primeiro a transmitir. Toque em “Ir ao vivo” e mostre o seu trampo em tempo real.")}
             </p>
           </div>
         ) : (
@@ -107,7 +139,7 @@ export function LivesView({ onBack }: LivesViewProps) {
           transition={SPRING}
           className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3.5 text-sm font-bold text-white shadow-[0_12px_32px_-8px_rgba(220,38,38,0.7)] transition hover:bg-red-500"
         >
-          <Radio className="h-5 w-5" /> Ir ao vivo
+          <Radio className="h-5 w-5" /> {t("goLive", "Ir ao vivo")}
         </motion.button>
       </div>
 

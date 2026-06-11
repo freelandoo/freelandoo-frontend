@@ -3200,5 +3200,17 @@
     "emptyTitle": "Ninguém no ranking ainda.",
     "emptyDesc": "Assim que houver dados suficientes, o top 10 aparece aqui.",
     "errorTitle": "Não deu pra carregar."
+  },
+  "Lives": {
+    "soonTitle": "Estamos construindo",
+    "soonSubtitle": "Em breve.",
+    "soonClose": "Fechar",
+    "loadError": "Erro ao carregar lives",
+    "backToBees": "Voltar para Bees",
+    "refresh": "Atualizar",
+    "retry": "Tentar de novo",
+    "emptyTitle": "Nenhuma live no ar agora",
+    "emptyDesc": "Seja o primeiro a transmitir. Toque em “Ir ao vivo” e mostre o seu trampo em tempo real.",
+    "goLive": "Ir ao vivo"
   }
 }
