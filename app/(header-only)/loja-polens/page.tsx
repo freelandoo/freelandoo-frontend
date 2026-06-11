@@ -6,6 +6,7 @@ import { CheckCircle2, CreditCard, Hexagon, Loader2, Search, Sparkles, XCircle }
 import { cn } from "@/lib/utils"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 type Product = {
   id: string
@@ -19,12 +20,12 @@ type Product = {
 
 type Wallet = { balance: number; lifetime_earned?: number; lifetime_spent?: number }
 
-function fmtBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((cents || 0) / 100)
+function fmtBRL(cents: number, locale = "pt-BR") {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format((cents || 0) / 100)
 }
 
-function fmtNumber(n: number) {
-  return n.toLocaleString("pt-BR")
+function fmtNumber(n: number, locale = "pt-BR") {
+  return n.toLocaleString(locale)
 }
 
 export default function LojaPolensPage() {
@@ -36,6 +37,8 @@ export default function LojaPolensPage() {
 }
 
 function LojaPolensContent() {
+  const t = useTranslations("Polens")
+  const locale = useLocale()
   const params = useSearchParams()
   const checkout = params.get("polens_checkout")
 
@@ -69,14 +72,14 @@ function LojaPolensContent() {
     try {
       const res = await fetch("/api/polens/products", { cache: "no-store" })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Não foi possível carregar a loja")
+      if (!res.ok) throw new Error(data.error || t("loadStoreError", "Não foi possível carregar a loja"))
       setProducts(data.products || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar")
+      setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar"))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void loadProducts()
@@ -87,8 +90,8 @@ function LojaPolensContent() {
     if (checkout === "success") {
       setFeedback({
         kind: "success",
-        title: "Pagamento confirmado",
-        message: "Seus Poléns foram creditados na sua carteira. O saldo aparece em instantes.",
+        title: t("paymentConfirmed", "Pagamento confirmado"),
+        message: t("paymentConfirmedMsg", "Seus Poléns foram creditados na sua carteira. O saldo aparece em instantes."),
       })
       // Recarrega o saldo periodicamente até refletir o crédito (webhook async).
       let attempts = 0
@@ -102,11 +105,11 @@ function LojaPolensContent() {
     if (checkout === "cancel") {
       setFeedback({
         kind: "cancel",
-        title: "Compra cancelada",
-        message: "Você voltou sem concluir o pagamento. Tente novamente quando quiser.",
+        title: t("purchaseCanceled", "Compra cancelada"),
+        message: t("purchaseCanceledMsg", "Você voltou sem concluir o pagamento. Tente novamente quando quiser."),
       })
     }
-  }, [checkout, loadWallet])
+  }, [checkout, loadWallet, t])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -134,13 +137,13 @@ function LojaPolensContent() {
         body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
-      if (!res.ok || !data.checkout_url) throw new Error(data.error || "Não foi possível abrir o checkout")
+      if (!res.ok || !data.checkout_url) throw new Error(data.error || t("openCheckoutError", "Não foi possível abrir o checkout"))
       window.location.href = data.checkout_url
     } catch (err) {
       setFeedback({
         kind: "error",
-        title: "Compra não concluída",
-        message: err instanceof Error ? err.message : "Erro ao abrir checkout",
+        title: t("purchaseNotCompleted", "Compra não concluída"),
+        message: err instanceof Error ? err.message : t("openCheckoutErrorShort", "Erro ao abrir checkout"),
       })
       setBuyingId(null)
     }
@@ -153,31 +156,31 @@ function LojaPolensContent() {
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
               <Sparkles className="h-3.5 w-3.5" />
-              Pacotes de Poléns
+              {t("eyebrow", "Pacotes de Poléns")}
             </div>
             <h1 className="fl-display mt-5 text-5xl leading-[0.95] text-[#F5F1E8] md:text-7xl">
-              Loja de Polén
+              {t("storeTitle", "Loja de Polén")}
             </h1>
             <p className="mt-5 max-w-[58ch] text-base leading-relaxed text-[#C9C2B6]">
-              Compre Poléns para usar dentro da Freelandoo: ative perfis, destaque-se na vitrine e adquira recursos exclusivos.
+              {t("storeIntro", "Compre Poléns para usar dentro da Freelandoo: ative perfis, destaque-se na vitrine e adquira recursos exclusivos.")}
             </p>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#1D1810] p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">Saldo atual</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">{t("currentBalance", "Saldo atual")}</p>
               <div className="mt-2 flex items-baseline gap-2">
                 <Hexagon className="h-5 w-5 fill-[#F2B705] text-[#F2B705]" />
                 <span className="text-3xl font-black tabular-nums tracking-tight text-[#F5F1E8]">
-                  {wallet ? fmtNumber(wallet.balance) : "—"}
+                  {wallet ? fmtNumber(wallet.balance, locale) : "—"}
                 </span>
-                <span className="text-sm text-[#9A938A]">Poléns</span>
+                <span className="text-sm text-[#9A938A]">{t("polens", "Poléns")}</span>
               </div>
             </div>
             <div className="rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#1D1810] p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">Pacotes ativos</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">{t("activePackages", "Pacotes ativos")}</p>
               <p className="mt-2 text-3xl font-black tabular-nums tracking-tight text-[#F5F1E8]">{products.length}</p>
-              <p className="mt-1 text-xs text-[#9A938A]">Disponíveis para compra agora.</p>
+              <p className="mt-1 text-xs text-[#9A938A]">{t("availableNow", "Disponíveis para compra agora.")}</p>
             </div>
           </div>
         </div>
@@ -200,9 +203,9 @@ function LojaPolensContent() {
                 <Hexagon className="h-7 w-7 fill-[#F2B705] text-[#F2B705]" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-lg font-bold">{featured?.name || "Pacote em destaque"}</p>
+                <p className="truncate text-lg font-bold">{featured?.name || t("featuredPackage", "Pacote em destaque")}</p>
                 <p className="text-xs text-[#C9C2B6]">
-                  {featured ? `${fmtNumber(featured.polens_amount + featured.bonus_polens)} Poléns no total` : "Selecione um pacote"}
+                  {featured ? t("totalPolens", "{n} Poléns no total").replace("{n}", fmtNumber(featured.polens_amount + featured.bonus_polens, locale)) : t("selectPackage", "Selecione um pacote")}
                 </p>
               </div>
             </div>
@@ -216,14 +219,14 @@ function LojaPolensContent() {
                 </span>
                 <h2 className="fl-display mt-3 text-3xl text-[#F5F1E8]">{featured.name}</h2>
                 <p className="mt-1 max-w-[40ch] text-sm text-[#C9C2B6]">
-                  {featured.description || "Pague com cartão e receba os Poléns na carteira em segundos."}
+                  {featured.description || t("featuredDesc", "Pague com cartão e receba os Poléns na carteira em segundos.")}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="fl-display text-3xl text-[#F5F1E8]">Sem pacotes no momento</h2>
+                <h2 className="fl-display text-3xl text-[#F5F1E8]">{t("noPackagesNow", "Sem pacotes no momento")}</h2>
                 <p className="mt-1 max-w-[40ch] text-sm text-[#C9C2B6]">
-                  Volte em breve. Novos pacotes aparecem aqui assim que forem cadastrados.
+                  {t("noPackagesNowDesc", "Volte em breve. Novos pacotes aparecem aqui assim que forem cadastrados.")}
                 </p>
               </>
             )}
@@ -238,12 +241,12 @@ function LojaPolensContent() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar pacote"
+              placeholder={t("searchPackage", "Buscar pacote")}
               className="h-11 w-full rounded-full border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
             />
           </div>
           <p className="text-xs text-[#9A938A]">
-            Pagamento seguro via Stripe. Os Poléns são creditados automaticamente após a confirmação.
+            {t("securePaymentNote", "Pagamento seguro via Stripe. Os Poléns são creditados automaticamente após a confirmação.")}
           </p>
         </div>
 
@@ -261,11 +264,11 @@ function LojaPolensContent() {
           <div className="py-16">
             <EmptyState
               icon={<Hexagon className="h-6 w-6" />}
-              title={products.length === 0 ? "Sem pacotes ainda" : "Nada encontrado"}
+              title={products.length === 0 ? t("noPackagesYet", "Sem pacotes ainda") : t("nothingFound", "Nada encontrado")}
               description={
                 products.length === 0
-                  ? "Nenhum pacote disponível ainda. Volte em breve."
-                  : "Nenhum pacote corresponde à busca."
+                  ? t("noPackagesYetDesc", "Nenhum pacote disponível ainda. Volte em breve.")
+                  : t("noMatch", "Nenhum pacote corresponde à busca.")
               }
             />
           </div>
@@ -304,7 +307,7 @@ function LojaPolensContent() {
                   {p.bonus_polens > 0 && (
                     <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-[#F2B705]/50 bg-[#F2B705] px-2.5 py-1 text-xs font-bold text-[#1A1505] shadow-sm">
                       <Sparkles className="h-3 w-3" />
-                      +{fmtNumber(p.bonus_polens)} bônus
+                      +{fmtNumber(p.bonus_polens, locale)} {t("bonus", "bônus")}
                     </span>
                   )}
 
@@ -313,19 +316,19 @@ function LojaPolensContent() {
                       <div className="min-w-0">
                         <h3 className="truncate text-lg font-bold tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{p.name}</h3>
                         <p className="mt-1 line-clamp-2 text-xs text-[#F5F1E8]/75">
-                          {p.description || "Receba os Poléns direto na sua carteira."}
+                          {p.description || t("cardDefaultDesc", "Receba os Poléns direto na sua carteira.")}
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="flex items-center gap-1 text-[#F2B705]">
                           <Hexagon className="h-4 w-4 fill-[#F2B705] text-[#F2B705]" />
-                          <span className="text-base font-black tabular-nums tracking-tight">{fmtNumber(total)}</span>
+                          <span className="text-base font-black tabular-nums tracking-tight">{fmtNumber(total, locale)}</span>
                         </div>
-                        <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[#F5F1E8]/60">Poléns</p>
+                        <p className="mt-0.5 text-[10px] uppercase tracking-wide text-[#F5F1E8]/60">{t("polens", "Poléns")}</p>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-2">
-                      <span className="text-base font-black tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{fmtBRL(p.price_cents)}</span>
+                      <span className="text-base font-black tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{fmtBRL(p.price_cents, locale)}</span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -341,7 +344,7 @@ function LojaPolensContent() {
                         ) : (
                           <CreditCard className="mr-1.5 h-4 w-4" />
                         )}
-                        Comprar
+                        {t("buy", "Comprar")}
                       </button>
                     </div>
                   </div>
@@ -371,7 +374,7 @@ function LojaPolensContent() {
                 onClick={() => setFeedback(null)}
                 className="fl-btn-gold inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold"
               >
-                Entendi
+                {t("gotIt", "Entendi")}
               </button>
             </div>
           </div>

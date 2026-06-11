@@ -258,7 +258,67 @@ const WALLET = {
   errSaving: ["Erro ao salvar", "Error saving", "Error al guardar"],
 }
 
-const GROUPS = { Checkout: CHECKOUT, Payments: PAYMENTS, Wallet: WALLET }
+// Namespace "Polens" — S4 (loja de poléns pública).
+const POLENS = {
+  eyebrow: ["Pacotes de Poléns", "Polen packages", "Paquetes de Polen"],
+  storeTitle: ["Loja de Polén", "Polen Store", "Tienda de Polen"],
+  storeIntro: [
+    "Compre Poléns para usar dentro da Freelandoo: ative perfis, destaque-se na vitrine e adquira recursos exclusivos.",
+    "Buy Polens to use inside Freelandoo: activate profiles, stand out in the showcase and unlock exclusive features.",
+    "Compra Polens para usar dentro de Freelandoo: activa perfiles, destácate en la vitrina y adquiere recursos exclusivos.",
+  ],
+  currentBalance: ["Saldo atual", "Current balance", "Saldo actual"],
+  polens: ["Poléns", "Polens", "Polens"],
+  activePackages: ["Pacotes ativos", "Active packages", "Paquetes activos"],
+  availableNow: ["Disponíveis para compra agora.", "Available to buy now.", "Disponibles para comprar ahora."],
+  featuredPackage: ["Pacote em destaque", "Featured package", "Paquete destacado"],
+  totalPolens: ["{n} Poléns no total", "{n} Polens in total", "{n} Polens en total"],
+  selectPackage: ["Selecione um pacote", "Select a package", "Selecciona un paquete"],
+  featuredDesc: [
+    "Pague com cartão e receba os Poléns na carteira em segundos.",
+    "Pay by card and get the Polens in your wallet in seconds.",
+    "Paga con tarjeta y recibe los Polens en tu cartera en segundos.",
+  ],
+  noPackagesNow: ["Sem pacotes no momento", "No packages right now", "Sin paquetes por ahora"],
+  noPackagesNowDesc: [
+    "Volte em breve. Novos pacotes aparecem aqui assim que forem cadastrados.",
+    "Check back soon. New packages show up here as soon as they're created.",
+    "Vuelve pronto. Los nuevos paquetes aparecen aquí en cuanto se registren.",
+  ],
+  searchPackage: ["Buscar pacote", "Search package", "Buscar paquete"],
+  securePaymentNote: [
+    "Pagamento seguro via Stripe. Os Poléns são creditados automaticamente após a confirmação.",
+    "Secure payment via Stripe. Polens are credited automatically after confirmation.",
+    "Pago seguro vía Stripe. Los Polens se acreditan automáticamente tras la confirmación.",
+  ],
+  noPackagesYet: ["Sem pacotes ainda", "No packages yet", "Aún sin paquetes"],
+  nothingFound: ["Nada encontrado", "Nothing found", "Nada encontrado"],
+  noPackagesYetDesc: ["Nenhum pacote disponível ainda. Volte em breve.", "No packages available yet. Check back soon.", "Aún no hay paquetes disponibles. Vuelve pronto."],
+  noMatch: ["Nenhum pacote corresponde à busca.", "No package matches your search.", "Ningún paquete coincide con la búsqueda."],
+  bonus: ["bônus", "bonus", "bono"],
+  cardDefaultDesc: ["Receba os Poléns direto na sua carteira.", "Get the Polens straight to your wallet.", "Recibe los Polens directo en tu cartera."],
+  buy: ["Comprar", "Buy", "Comprar"],
+  gotIt: ["Entendi", "Got it", "Entendido"],
+  paymentConfirmed: ["Pagamento confirmado", "Payment confirmed", "Pago confirmado"],
+  paymentConfirmedMsg: [
+    "Seus Poléns foram creditados na sua carteira. O saldo aparece em instantes.",
+    "Your Polens have been credited to your wallet. The balance appears in moments.",
+    "Tus Polens se acreditaron en tu cartera. El saldo aparece en instantes.",
+  ],
+  purchaseCanceled: ["Compra cancelada", "Purchase canceled", "Compra cancelada"],
+  purchaseCanceledMsg: [
+    "Você voltou sem concluir o pagamento. Tente novamente quando quiser.",
+    "You came back without finishing the payment. Try again whenever you like.",
+    "Volviste sin completar el pago. Inténtalo de nuevo cuando quieras.",
+  ],
+  purchaseNotCompleted: ["Compra não concluída", "Purchase not completed", "Compra no completada"],
+  openCheckoutError: ["Não foi possível abrir o checkout", "Couldn't open checkout", "No se pudo abrir el checkout"],
+  openCheckoutErrorShort: ["Erro ao abrir checkout", "Error opening checkout", "Error al abrir el checkout"],
+  loadStoreError: ["Não foi possível carregar a loja", "Couldn't load the store", "No se pudo cargar la tienda"],
+  loadError: ["Erro ao carregar", "Loading error", "Error al cargar"],
+}
+
+const GROUPS = { Checkout: CHECKOUT, Payments: PAYMENTS, Wallet: WALLET, Polens: POLENS }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))
