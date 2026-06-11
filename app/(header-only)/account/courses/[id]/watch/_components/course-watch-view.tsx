@@ -19,13 +19,16 @@ import { Button } from "@/components/ui/button"
 import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
 import { PageShell } from "@/components/tabloide"
 import { useCoursePlayer, type PlayerLesson } from "@/hooks/use-course-player"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+
+type Translator = (key: string, fallback: string) => string
 
 interface Props {
   courseId: string
 }
 
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return "Sem duração"
+function formatDuration(seconds: number | null, t: Translator): string {
+  if (!seconds) return t("noDuration", "Sem duração")
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}:${String(s).padStart(2, "0")}`
@@ -51,6 +54,7 @@ function LessonRow({
   active: boolean
   onSelect: () => void
 }) {
+  const t = useTranslations("Account")
   return (
     <button
       type="button"
@@ -68,13 +72,14 @@ function LessonRow({
       )}
       <span className="truncate text-[13px] font-medium">{lesson.title}</span>
       <span className="font-mono text-[10px] text-white/40">
-        {formatDuration(lesson.duration_seconds)}
+        {formatDuration(lesson.duration_seconds, t)}
       </span>
     </button>
   )
 }
 
 export function CourseWatchView({ courseId }: Props) {
+  const t = useTranslations("Account")
   const {
     data,
     setLessonId,
@@ -103,16 +108,18 @@ export function CourseWatchView({ courseId }: Props) {
     try {
       await setLessonCompleted(activeLesson.id, !wasCompleted)
       if (!wasCompleted && nextLesson) {
-        toast.success("Aula concluída. Indo para a próxima…")
+        toast.success(t("lessonDoneNext", "Aula concluída. Indo para a próxima…"))
         setLessonId(nextLesson.id)
       } else {
         toast.success(
-          wasCompleted ? "Aula marcada como pendente." : "Aula concluída.",
+          wasCompleted
+            ? t("lessonMarkedPending", "Aula marcada como pendente.")
+            : t("lessonDone", "Aula concluída."),
         )
       }
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao atualizar progresso",
+        err instanceof Error ? err.message : t("progressUpdateFailed", "Falha ao atualizar progresso"),
       )
     } finally {
       setSavingProgress(false)
@@ -141,15 +148,15 @@ export function CourseWatchView({ courseId }: Props) {
       <div className="relative z-10 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
-          <p className="font-medium">Não foi possível abrir o curso</p>
+          <p className="font-medium">{t("courseOpenError", "Não foi possível abrir o curso")}</p>
           <p className="mt-1 text-sm text-red-200/80">
-            {error || "Curso indisponível."}
+            {error || t("courseUnavailable", "Curso indisponível.")}
           </p>
           <Link
             href="/account"
             className="mt-4 inline-flex rounded-full border border-white/15 px-4 py-2 text-sm text-white/85"
           >
-            Voltar para meus cursos
+            {t("backToMyCourses", "Voltar para meus cursos")}
           </Link>
         </div>
       </div>
@@ -167,19 +174,19 @@ export function CourseWatchView({ courseId }: Props) {
             className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Meus Cursos
+            {t("myCourses", "Meus Cursos")}
           </Link>
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold md:text-xl">
               {data.course.title}
             </h1>
             <p className="text-xs text-white/45">
-              {completedLessons}/{totalLessons} aulas concluídas
+              {completedLessons}/{totalLessons} {t("lessonsCompletedLabel", "aulas concluídas")}
             </p>
           </div>
           <div className="ml-auto w-full max-w-xs md:w-64">
             <div className="mb-1 flex items-center justify-between text-[11px] text-white/45">
-              <span>Progresso</span>
+              <span>{t("progress", "Progresso")}</span>
               <span className="font-mono">{progress}%</span>
             </div>
             <ProgressBar value={progress} />
@@ -201,12 +208,12 @@ export function CourseWatchView({ courseId }: Props) {
                   {activeLesson ? (
                     <>
                       <Video className="h-10 w-10" />
-                      <p className="text-sm">Vídeo ainda não disponível.</p>
+                      <p className="text-sm">{t("videoNotAvailableYet", "Vídeo ainda não disponível.")}</p>
                     </>
                   ) : (
                     <>
                       <Lock className="h-10 w-10" />
-                      <p className="text-sm">Nenhuma aula publicada.</p>
+                      <p className="text-sm">{t("noPublishedLessons", "Nenhuma aula publicada.")}</p>
                     </>
                   )}
                 </div>
@@ -244,8 +251,8 @@ export function CourseWatchView({ courseId }: Props) {
                       <Circle className="mr-2 h-4 w-4" />
                     )}
                     {activeLesson.is_completed
-                      ? "Concluída"
-                      : "Marcar concluída"}
+                      ? t("completedFem", "Concluída")
+                      : t("markCompleted", "Marcar concluída")}
                   </Button>
                 </div>
 
@@ -256,7 +263,7 @@ export function CourseWatchView({ courseId }: Props) {
                     className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/75 transition hover:border-white/25 hover:text-white"
                   >
                     <PlayCircle className="h-3.5 w-3.5" />
-                    Próxima aula
+                    {t("nextLessonBtn", "Próxima aula")}
                   </button>
                 )}
               </section>
@@ -267,7 +274,7 @@ export function CourseWatchView({ courseId }: Props) {
                 <section className="rounded-[1.25rem] border border-white/[0.08] bg-white/[0.025] p-4">
                   <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
                     <FileText className="h-4 w-4 text-primary" />
-                    Materiais
+                    {t("materialsShort", "Materiais")}
                   </h3>
                   {data.materials.length > 0 ? (
                     <ul className="space-y-2">
@@ -286,7 +293,7 @@ export function CourseWatchView({ courseId }: Props) {
                     </ul>
                   ) : (
                     <p className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-3 py-5 text-center text-sm text-white/50">
-                      Esta aula não tem material de apoio.
+                      {t("noLessonMaterials", "Esta aula não tem material de apoio.")}
                     </p>
                   )}
                 </section>
@@ -294,7 +301,7 @@ export function CourseWatchView({ courseId }: Props) {
                 <section className="rounded-[1.25rem] border border-white/[0.08] bg-white/[0.025] p-4">
                   <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold">
                     <HelpCircle className="h-4 w-4 text-primary" />
-                    Questionário
+                    {t("quizTitle", "Questionário")}
                   </h3>
                   {data.questions.length > 0 ? (
                     <div className="space-y-3">
@@ -321,7 +328,7 @@ export function CourseWatchView({ courseId }: Props) {
                     </div>
                   ) : (
                     <p className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-3 py-5 text-center text-sm text-white/50">
-                      Esta aula não tem questionário.
+                      {t("noLessonQuiz", "Esta aula não tem questionário.")}
                     </p>
                   )}
                 </section>
@@ -339,7 +346,7 @@ export function CourseWatchView({ courseId }: Props) {
 
           <aside className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
             <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-              Aulas publicadas
+              {t("publishedLessonsLabel", "Aulas publicadas")}
             </p>
             <div className="space-y-3">
               {data.modules.map((module) => {
@@ -377,7 +384,7 @@ export function CourseWatchView({ courseId }: Props) {
               })}
               {data.modules.length === 0 && (
                 <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-white/45">
-                  Este curso ainda não tem aulas publicadas.
+                  {t("noPublishedLessonsYet", "Este curso ainda não tem aulas publicadas.")}
                 </p>
               )}
             </div>

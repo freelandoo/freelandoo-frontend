@@ -917,6 +917,27 @@ Object.assign(ACCOUNT, {
   removeQuestionDesc: ["A pergunta e suas opções serão removidas desta aula. Esta ação não pode ser desfeita.", "The question and its options will be removed from this lesson. This action cannot be undone.", "La pregunta y sus opciones se eliminarán de esta clase. Esta acción no se puede deshacer."],
 })
 
+// S11 — player do aluno (course-watch-view)
+Object.assign(ACCOUNT, {
+  noDuration: ["Sem duração", "No duration", "Sin duración"],
+  lessonDoneNext: ["Aula concluída. Indo para a próxima…", "Lesson completed. Moving to the next…", "Clase completada. Pasando a la siguiente…"],
+  lessonMarkedPending: ["Aula marcada como pendente.", "Lesson marked as pending.", "Clase marcada como pendiente."],
+  lessonDone: ["Aula concluída.", "Lesson completed.", "Clase completada."],
+  progressUpdateFailed: ["Falha ao atualizar progresso", "Failed to update progress", "Error al actualizar el progreso"],
+  courseOpenError: ["Não foi possível abrir o curso", "Couldn't open the course", "No se pudo abrir el curso"],
+  lessonsCompletedLabel: ["aulas concluídas", "lessons completed", "clases completadas"],
+  videoNotAvailableYet: ["Vídeo ainda não disponível.", "Video not available yet.", "Video aún no disponible."],
+  noPublishedLessons: ["Nenhuma aula publicada.", "No published lessons.", "Ninguna clase publicada."],
+  completedFem: ["Concluída", "Completed", "Completada"],
+  markCompleted: ["Marcar concluída", "Mark completed", "Marcar completada"],
+  nextLessonBtn: ["Próxima aula", "Next lesson", "Siguiente clase"],
+  materialsShort: ["Materiais", "Materials", "Materiales"],
+  noLessonMaterials: ["Esta aula não tem material de apoio.", "This lesson has no support materials.", "Esta clase no tiene materiales de apoyo."],
+  noLessonQuiz: ["Esta aula não tem questionário.", "This lesson has no quiz.", "Esta clase no tiene cuestionario."],
+  publishedLessonsLabel: ["Aulas publicadas", "Published lessons", "Clases publicadas"],
+  noPublishedLessonsYet: ["Este curso ainda não tem aulas publicadas.", "This course has no published lessons yet.", "Este curso aún no tiene clases publicadas."],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {
