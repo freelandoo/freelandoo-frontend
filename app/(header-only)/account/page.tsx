@@ -54,6 +54,8 @@ import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-p
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import { NotificationBell } from "@/components/notifications/notification-bell"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 // F3.S2 — pedaços pesados fora do bundle inicial da rota (chunk lazy, sem SSR).
 // Modais só custam download quando abrem; o portfólio (52KB de fonte + players)
@@ -85,6 +87,8 @@ const MediaCropModal = dynamic(
 )
 
 export default function PerfilPage() {
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
   const router = useRouter()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
   const navCounts = useNavCounts()
@@ -249,7 +253,7 @@ export default function PerfilPage() {
   }
 
   if (error || !perfil) {
-    return <AccountError message={error || "Erro ao carregar perfil"} />
+    return <AccountError message={error || t("loadProfileError", "Erro ao carregar perfil")} />
   }
 
   const handleGenerateCoupon = async () => {
@@ -334,10 +338,10 @@ export default function PerfilPage() {
         if (updated.ok) setPerfil(await updated.json())
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || "Não foi possível alterar a visibilidade.")
+        alert(data.error || t("visibilityError", "Não foi possível alterar a visibilidade."))
       }
     } catch {
-      alert("Erro ao alterar visibilidade.")
+      alert(t("visibilityErrorRetry", "Erro ao alterar visibilidade."))
     } finally {
       setTogglingVisibility(null)
     }
@@ -347,7 +351,7 @@ export default function PerfilPage() {
     const token = localStorage.getItem("token")
     if (!token) return
     const ok = window.confirm(
-      "Tem certeza que deseja excluir este perfil? Ele não aparecerá mais para você nem para o público. O histórico de pagamentos é preservado para auditoria."
+      t("deleteProfileConfirm", "Tem certeza que deseja excluir este perfil? Ele não aparecerá mais para você nem para o público. O histórico de pagamentos é preservado para auditoria.")
     )
     if (!ok) return
     setDeletingProfile(id_profile)
@@ -361,10 +365,10 @@ export default function PerfilPage() {
         if (updated.ok) setPerfil(await updated.json())
       } else {
         const data = await res.json().catch(() => ({}))
-        alert(data.error || "Não foi possível excluir o perfil.")
+        alert(data.error || t("deleteProfileError", "Não foi possível excluir o perfil."))
       }
     } catch {
-      alert("Erro ao excluir o perfil.")
+      alert(t("deleteProfileErrorRetry", "Erro ao excluir o perfil."))
     } finally {
       setDeletingProfile(null)
     }
@@ -380,10 +384,10 @@ export default function PerfilPage() {
         body: JSON.stringify({ enabled }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Nao foi possivel aplicar")
+      if (!res.ok) throw new Error(data.error || t("manifestApplyError", "Nao foi possivel aplicar"))
       setManifestation((prev) => prev ? { ...prev, applied_profile_ids: data.applied_profile_ids || [] } : prev)
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Erro ao aplicar Manifestacao")
+      alert(err instanceof Error ? err.message : t("manifestApplyErrorGeneric", "Erro ao aplicar Manifestacao"))
     }
   }
 
@@ -418,15 +422,15 @@ export default function PerfilPage() {
 
   const handleCreateProfile = async () => {
     if (!newProfileForm.display_name.trim()) {
-      setNewProfileError("O nome de exibição é obrigatório.")
+      setNewProfileError(t("displayNameRequired", "O nome de exibição é obrigatório."))
       return
     }
     if (!newProfileForm.id_machine) {
-      setNewProfileError("Selecione um enxame.")
+      setNewProfileError(t("selectMachine", "Selecione um enxame."))
       return
     }
     if (!newProfileForm.id_category) {
-      setNewProfileError("Selecione uma profissão.")
+      setNewProfileError(t("selectProfession", "Selecione uma profissão."))
       return
     }
     const token = localStorage.getItem("token")
@@ -461,10 +465,10 @@ export default function PerfilPage() {
         const updated = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
         if (updated.ok) setPerfil(await updated.json())
       } else {
-        setNewProfileError(resData.error || resData.message || "Erro ao criar perfil. Tente novamente.")
+        setNewProfileError(resData.error || resData.message || t("createProfileError", "Erro ao criar perfil. Tente novamente."))
       }
     } catch {
-      setNewProfileError("Erro ao criar perfil. Tente novamente.")
+      setNewProfileError(t("createProfileError", "Erro ao criar perfil. Tente novamente."))
     } finally {
       setIsCreatingProfile(false)
     }
@@ -477,11 +481,11 @@ export default function PerfilPage() {
   }
 
   const formatarSexo = (sexo: string | null | undefined) => {
-    if (!sexo) return "Não informado"
+    if (!sexo) return t("notInformed", "Não informado")
     const sexoUpper = sexo.toUpperCase()
-    if (sexoUpper === "M") return "Masculino"
-    if (sexoUpper === "F") return "Feminino"
-    return "Outros"
+    if (sexoUpper === "M") return t("genderMale", "Masculino")
+    if (sexoUpper === "F") return t("genderFemale", "Feminino")
+    return t("genderOther", "Outros")
   }
 
   const renderRedeSocial = (rede: RedeSocial & { id?: string }) => {
@@ -574,7 +578,7 @@ export default function PerfilPage() {
 
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -589,7 +593,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao deletar rede social")
+        throw new Error(errorData.error || t("deleteSocialError", "Erro ao deletar rede social"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -604,7 +608,7 @@ export default function PerfilPage() {
       }
     } catch (error) {
       console.error("Erro ao deletar rede social:", error)
-      alert(error instanceof Error ? error.message : "Erro ao deletar rede social")
+      alert(error instanceof Error ? error.message : t("deleteSocialError", "Erro ao deletar rede social"))
     }
   }
 
@@ -613,7 +617,7 @@ export default function PerfilPage() {
 
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -632,7 +636,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao atualizar avatar")
+        throw new Error(errorData.error || t("updateAvatarError", "Erro ao atualizar avatar"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -654,7 +658,7 @@ export default function PerfilPage() {
       setZoom(1)
     } catch (error) {
       console.error("Erro ao fazer upload do avatar:", error)
-      alert(error instanceof Error ? error.message : "Erro ao atualizar avatar")
+      alert(error instanceof Error ? error.message : t("updateAvatarError", "Erro ao atualizar avatar"))
     } finally {
       setIsUploadingAvatar(false)
     }
@@ -801,7 +805,7 @@ export default function PerfilPage() {
 
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -823,7 +827,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao atualizar avatar")
+        throw new Error(errorData.error || t("updateAvatarError", "Erro ao atualizar avatar"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -845,7 +849,7 @@ export default function PerfilPage() {
       setZoom(1)
     } catch (error) {
       console.error("Erro ao fazer upload do avatar:", error)
-      alert(error instanceof Error ? error.message : "Erro ao atualizar avatar")
+      alert(error instanceof Error ? error.message : t("updateAvatarError", "Erro ao atualizar avatar"))
     } finally {
       setIsUploadingAvatar(false)
     }
@@ -869,7 +873,7 @@ export default function PerfilPage() {
     }
     if (u.length < 3) {
       setEditUsernameStatus("invalid")
-      setEditUsernameMsg("Mínimo 3 caracteres")
+      setEditUsernameMsg(t("usernameMin", "Mínimo 3 caracteres"))
       return
     }
     setEditUsernameStatus("checking")
@@ -878,10 +882,10 @@ export default function PerfilPage() {
       const data = await res.json()
       if (data.available) {
         setEditUsernameStatus("available")
-        setEditUsernameMsg("Disponível ✓")
+        setEditUsernameMsg(t("usernameAvailable", "Disponível ✓"))
       } else {
         setEditUsernameStatus("taken")
-        setEditUsernameMsg("Este nome já está em uso")
+        setEditUsernameMsg(t("usernameTaken", "Este nome já está em uso"))
       }
     } catch {
       setEditUsernameStatus("idle")
@@ -953,7 +957,7 @@ export default function PerfilPage() {
 
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -981,7 +985,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao salvar perfil")
+        throw new Error(errorData.error || t("saveProfileError", "Erro ao salvar perfil"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -998,7 +1002,7 @@ export default function PerfilPage() {
       setIsEditModalOpen(false)
     } catch (error) {
       console.error("Erro ao salvar perfil:", error)
-      alert(error instanceof Error ? error.message : "Erro ao salvar perfil")
+      alert(error instanceof Error ? error.message : t("saveProfileError", "Erro ao salvar perfil"))
     } finally {
       setIsSaving(false)
     }
@@ -1006,13 +1010,13 @@ export default function PerfilPage() {
 
   const handleAdicionarRede = async () => {
     if (!novaRede.platform || !novaRede.account || !novaRede.followers_range) {
-      alert("Preencha todos os campos")
+      alert(t("fillAllFields", "Preencha todos os campos"))
       return
     }
 
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Token não encontrado")
+      alert(t("tokenNotFound", "Token não encontrado"))
       return
     }
 
@@ -1038,7 +1042,7 @@ export default function PerfilPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao salvar rede social")
+        throw new Error(errorData.error || t("saveSocialError", "Erro ao salvar rede social"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -1057,7 +1061,7 @@ export default function PerfilPage() {
       setIsModalOpen(false)
     } catch (error) {
       console.error("Erro ao salvar rede social:", error)
-      alert(error instanceof Error ? error.message : "Erro ao salvar rede social")
+      alert(error instanceof Error ? error.message : t("saveSocialError", "Erro ao salvar rede social"))
     }
   }
 
@@ -1136,11 +1140,11 @@ export default function PerfilPage() {
         outputHeight: POST_IMAGE_OUTPUT.height,
         maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
         mimeType: "image/webp",
-        errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+        errorMessage: t("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
       })
       setProcessedUploadImage(processed, file)
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Nao foi possivel otimizar esse arquivo. Tente outro.")
+      alert(error instanceof Error ? error.message : t("optimizeFileError", "Nao foi possivel otimizar esse arquivo. Tente outro."))
     } finally {
       setIsProcessingUploadMedia(false)
     }
@@ -1161,7 +1165,7 @@ export default function PerfilPage() {
     const isVideo = file.type.startsWith("video/")
 
     if (!isImage && !isVideo) {
-      alert("Por favor, selecione uma imagem ou vídeo válido")
+      alert(t("selectValidMedia", "Por favor, selecione uma imagem ou vídeo válido"))
       return
     }
 
@@ -1177,7 +1181,7 @@ export default function PerfilPage() {
     }
 
     if (file.size > 100 * 1024 * 1024) {
-      alert("O arquivo deve ter no máximo 100MB")
+      alert(t("fileTooBig100", "O arquivo deve ter no máximo 100MB"))
       return
     }
 
@@ -1194,7 +1198,7 @@ export default function PerfilPage() {
     const token = localStorage.getItem("token")
 
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -1217,9 +1221,9 @@ export default function PerfilPage() {
         try {
           errorData = JSON.parse(text)
         } catch {
-          errorData = { error: text || "Erro ao fazer upload da mídia" }
+          errorData = { error: text || t("mediaUploadError", "Erro ao fazer upload da mídia") }
         }
-        throw new Error(errorData.error || `Erro ao fazer upload (Status ${uploadResponse.status})`)
+        throw new Error(errorData.error || t("uploadStatusError", "Erro ao fazer upload (Status {status})").replace("{status}", String(uploadResponse.status)))
       }
 
       const uploadedMedia = await uploadResponse.json()
@@ -1246,7 +1250,7 @@ export default function PerfilPage() {
 
       if (!mediaResponse.ok) {
         const errorData = await mediaResponse.json()
-        throw new Error(errorData.error || "Erro ao criar item do portfólio")
+        throw new Error(errorData.error || t("createPortfolioItemError", "Erro ao criar item do portfólio"))
       }
 
       const getResponse = await fetch("/api/users/me", {
@@ -1285,7 +1289,7 @@ export default function PerfilPage() {
       setMediaUploadProgress("idle")
     } catch (error) {
       console.error("Erro ao fazer upload da mídia:", error)
-      alert(error instanceof Error ? error.message : "Erro ao fazer upload da mídia")
+      alert(error instanceof Error ? error.message : t("mediaUploadError", "Erro ao fazer upload da mídia"))
       setMediaUploadProgress("idle")
     }
   }
@@ -1306,7 +1310,7 @@ export default function PerfilPage() {
     setIsSavingMedia(true)
     const token = localStorage.getItem("token")
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.")
+      alert(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       router.push("/login")
       return
     }
@@ -1328,7 +1332,7 @@ export default function PerfilPage() {
       })
 
       if (!response.ok) {
-        throw new Error("Erro ao atualizar mídia")
+        throw new Error(t("updateMediaError", "Erro ao atualizar mídia"))
       }
 
       if (perfil) {
@@ -1344,7 +1348,7 @@ export default function PerfilPage() {
       setEditingMedia(null)
     } catch (error) {
       console.error("Erro ao atualizar mídia:", error)
-      alert("Erro ao atualizar mídia")
+      alert(t("updateMediaError", "Erro ao atualizar mídia"))
     } finally {
       setIsSavingMedia(false)
     }
@@ -1353,7 +1357,7 @@ export default function PerfilPage() {
   const handleDeleteMedia = async () => {
     if (!editingMedia) return
 
-    if (!confirm("Tem certeza que deseja deletar esta mídia?")) return
+    if (!confirm(t("deleteMediaConfirm", "Tem certeza que deseja deletar esta mídia?"))) return
 
     setIsSavingMedia(true)
     const token = localStorage.getItem("token")
@@ -1370,7 +1374,7 @@ export default function PerfilPage() {
       })
 
       if (!response.ok) {
-        throw new Error("Erro ao deletar mídia")
+        throw new Error(t("deleteMediaError", "Erro ao deletar mídia"))
       }
 
       if (perfil) {
@@ -1384,7 +1388,7 @@ export default function PerfilPage() {
       setEditingMedia(null)
     } catch (error) {
       console.error("Erro ao deletar mídia:", error)
-      alert("Erro ao deletar mídia")
+      alert(t("deleteMediaError", "Erro ao deletar mídia"))
     } finally {
       setIsSavingMedia(false)
     }
@@ -1411,7 +1415,7 @@ export default function PerfilPage() {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="Criar"
+                aria-label={t("create", "Criar")}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_1px_0_rgba(255,255,255,0.22)_inset,0_8px_18px_-12px_rgba(242,196,9,0.65)] transition active:scale-[0.96]"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -1426,7 +1430,7 @@ export default function PerfilPage() {
                 }
               >
                 <ImageIcon className="h-4 w-4" />
-                Post
+                {t("menuPost", "Post")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() =>
@@ -1436,7 +1440,7 @@ export default function PerfilPage() {
                 }
               >
                 <Sparkles className="h-4 w-4" />
-                Bees
+                {t("menuBees", "Bees")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
@@ -1448,11 +1452,11 @@ export default function PerfilPage() {
                 }}
               >
                 <UserRound className="h-4 w-4" />
-                Perfil
+                {t("menuProfile", "Perfil")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push("/account/clans")}>
                 <Users className="h-4 w-4" />
-                Clan
+                {t("menuClan", "Clan")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() =>
@@ -1462,7 +1466,7 @@ export default function PerfilPage() {
                 }
               >
                 <Crown className="h-4 w-4" />
-                Curso
+                {t("menuCourse", "Curso")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1470,31 +1474,31 @@ export default function PerfilPage() {
       >
         <HoverHint id="account-counter-profiles" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">Perfis</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countProfiles", "Perfis")}</span>
             <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalProfiles}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-visible" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">Visíveis</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countVisible", "Visíveis")}</span>
             <span className="font-semibold tabular-nums text-[#F5F1E8]">{visibleProfiles}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-clans" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">Clans</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countClans", "Clans")}</span>
             <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalClans}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-following" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">Acompanhando</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countFollowing", "Acompanhando")}</span>
             <span className="font-semibold tabular-nums text-[#F5F1E8]">{followedProfilesCount}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-unread" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">Não lidas</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countUnread", "Não lidas")}</span>
             <span
               className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-[#F2B705]" : "text-[#F5F1E8]"}`}
             >
@@ -1527,11 +1531,11 @@ export default function PerfilPage() {
                 <button
                   type="button"
                   onClick={() => setDropsideOpen(true)}
-                  aria-label="Abrir menu da conta"
+                  aria-label={t("openAccountMenu", "Abrir menu da conta")}
                   aria-haspopup="dialog"
                   aria-expanded={dropsideOpen}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
-                  title="Abrir configurações"
+                  title={t("openSettings", "Abrir configurações")}
                 >
                   <Settings className="h-4 w-4" />
                 </button>
@@ -1545,8 +1549,8 @@ export default function PerfilPage() {
                   <button
                     type="button"
                     onClick={() => setIsUploadModalOpen(true)}
-                    aria-label="Trocar foto de perfil"
-                    title="Trocar foto de perfil"
+                    aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                    title={t("changeAvatar", "Trocar foto de perfil")}
                     className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
                   >
                     <Avatar className="h-full w-full rounded-none">
@@ -1563,7 +1567,7 @@ export default function PerfilPage() {
                     </Avatar>
                     <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                       <Camera className="h-5 w-5" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Trocar foto</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{t("changePhoto", "Trocar foto")}</span>
                     </span>
                   </button>
 
@@ -1571,14 +1575,14 @@ export default function PerfilPage() {
                     {/* Carteira — em cima do @username, ao lado da foto */}
                     <Link
                       href="/wallet"
-                      aria-label="Abrir minha Carteira"
-                      title="Minha Carteira"
+                      aria-label={t("openWallet", "Abrir minha Carteira")}
+                      title={t("myWallet", "Minha Carteira")}
                       className="group rotate-2 transition-transform duration-200 hover:rotate-0"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src="/wallet/carteira-card.webp"
-                        alt="Carteira"
+                        alt={t("wallet", "Carteira")}
                         className="w-[84px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[92px]"
                       />
                     </Link>
@@ -1593,8 +1597,8 @@ export default function PerfilPage() {
                 <div className="flex shrink-0 flex-col items-center pb-1">
                   <Link
                     href="/acasaviews/rankings"
-                    aria-label="Ver os rankings da Casa Views"
-                    title="Rankings da Casa Views"
+                    aria-label={t("casaViewsRankingsAria", "Ver os rankings da Casa Views")}
+                    title={t("casaViewsRankings", "Rankings da Casa Views")}
                     className="group -rotate-2 transition-transform duration-200 hover:rotate-0"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1644,7 +1648,7 @@ export default function PerfilPage() {
                     className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
                   >
                     <ShieldCheck className="h-3 w-3" />
-                    {perfil.is_minor === true ? "Supervisionada" : "Parental"}
+                    {perfil.is_minor === true ? t("supervised", "Supervisionada") : t("parental", "Parental")}
                   </button>
                 </HoverHint>
                 {perfil.coupon_code ? (
@@ -1667,7 +1671,7 @@ export default function PerfilPage() {
                       data-tour="account-coupon"
                       className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
                     >
-                      {isGeneratingCoupon ? "Gerando..." : "Gerar cupom"}
+                      {isGeneratingCoupon ? t("generating", "Gerando...") : t("generateCoupon", "Gerar cupom")}
                     </button>
                   </HoverHint>
                 )}
@@ -1677,9 +1681,9 @@ export default function PerfilPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/mensagens?tab=os")}
-                  aria-label="Abrir mensagens"
+                  aria-label={t("openMessages", "Abrir mensagens")}
                   className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  title="Mensagens"
+                  title={t("messages", "Mensagens")}
                 >
                   <MessageCircle className="h-4 w-4" />
                   {unreadMessages > 0 && (
@@ -1689,21 +1693,21 @@ export default function PerfilPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/account/xp")}
-                  aria-label="Ver métricas e XP"
-                  title="Métricas"
+                  aria-label={t("viewMetricsAria", "Ver métricas e XP")}
+                  title={t("metrics", "Métricas")}
                   className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  Métricas
+                  {t("metrics", "Métricas")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setFollowingModalOpen(true)}
                   className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
-                  title="Ver quem você acompanha"
+                  title={t("seeWhoYouFollow", "Ver quem você acompanha")}
                 >
                   <span className="font-bold text-[#0B0B0D]">{followedProfilesCount}</span>{" "}
-                  <span className="text-[#5b554b]">acompanhados</span>
+                  <span className="text-[#5b554b]">{t("followingLabel", "acompanhados")}</span>
                 </button>
               </div>
             </div>
@@ -1714,7 +1718,7 @@ export default function PerfilPage() {
               .filter((p) => !p.is_clan)
               .map((p) => ({
                 id: p.id_profile,
-                name: p.display_name || "Perfil sem nome",
+                name: p.display_name || t("unnamedProfile", "Perfil sem nome"),
               }))}
             myProfilesSlot={
               <div className="space-y-4">
@@ -1739,7 +1743,7 @@ export default function PerfilPage() {
                               ? "animate-pulse ring-2 ring-red-500"
                               : ""
                           }`}
-                          aria-label={`Abrir perfil ${profile.display_name}`}
+                          aria-label={t("openProfileAria", "Abrir perfil {name}").replace("{name}", profile.display_name)}
                         >
                           {imgSrc ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -1760,7 +1764,7 @@ export default function PerfilPage() {
                           {manifestationApplied && (
                             <span className="pointer-events-none absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200 backdrop-blur-sm">
                               <Sparkles className="h-3 w-3" />
-                              Manifestacao
+                              {t("manifestationWord", "Manifestacao")}
                             </span>
                           )}
                         </button>
@@ -1771,7 +1775,7 @@ export default function PerfilPage() {
                             <button
                               type="button"
                               className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
-                              aria-label="Ações do perfil"
+                              aria-label={t("profileActions", "Ações do perfil")}
                             >
                               <Settings className="h-3.5 w-3.5" />
                             </button>
@@ -1779,16 +1783,16 @@ export default function PerfilPage() {
                           <DropdownMenuContent align="start" className="w-52">
                             <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}`)}>
                               <Edit className="h-4 w-4 mr-2" />
-                              Gerenciar perfil
+                              {t("manageProfile", "Gerenciar perfil")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}>
                               <CalendarDays className="h-4 w-4 mr-2" />
-                              Agenda
+                              {t("agenda", "Agenda")}
                             </DropdownMenuItem>
                             {!isPaid && (
                               <DropdownMenuItem onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}>
                                 <Briefcase className="h-4 w-4 mr-2" />
-                                Ativar perfil
+                                {t("activateProfile", "Ativar perfil")}
                               </DropdownMenuItem>
                             )}
                             {isPaid && (
@@ -1797,9 +1801,9 @@ export default function PerfilPage() {
                                 onClick={() => handleToggleVisibility(profile.id_profile, !isVisible)}
                               >
                                 {isVisible ? (
-                                  <><EyeOff className="h-4 w-4 mr-2" /> Deixar invisível</>
+                                  <><EyeOff className="h-4 w-4 mr-2" /> {t("makeInvisible", "Deixar invisível")}</>
                                 ) : (
-                                  <><Eye className="h-4 w-4 mr-2" /> Tornar visível</>
+                                  <><Eye className="h-4 w-4 mr-2" /> {t("makeVisible", "Tornar visível")}</>
                                 )}
                               </DropdownMenuItem>
                             )}
@@ -1808,7 +1812,7 @@ export default function PerfilPage() {
                                 onClick={() => handleToggleManifestationProfile(profile.id_profile, !manifestationApplied)}
                               >
                                 <Sparkles className="h-4 w-4 mr-2" />
-                                {manifestationApplied ? "Remover Manifestacao" : "Aplicar Manifestacao"}
+                                {manifestationApplied ? t("removeManifestation", "Remover Manifestacao") : t("applyManifestation", "Aplicar Manifestacao")}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -1818,7 +1822,7 @@ export default function PerfilPage() {
                               onClick={() => handleDeleteProfile(profile.id_profile)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
+                              {t("delete", "Excluir")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1829,8 +1833,8 @@ export default function PerfilPage() {
                             type="button"
                             onClick={() => setPremiumProfile({ id: profile.id_profile, name: profile.display_name || undefined })}
                             className="absolute top-2 left-12 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-300/95 text-zinc-900 backdrop-blur-sm transition hover:bg-amber-200 shadow-[0_4px_12px_-2px_rgba(251,191,36,0.55)]"
-                            aria-label="Tornar perfil premium"
-                            title="Tornar perfil premium"
+                            aria-label={t("makePremium", "Tornar perfil premium")}
+                            title={t("makePremium", "Tornar perfil premium")}
                           >
                             <Crown className="h-3.5 w-3.5 fill-zinc-900" />
                           </button>
@@ -1840,16 +1844,16 @@ export default function PerfilPage() {
                         <div className="absolute top-2 right-2 pointer-events-none">
                           {!isPaid ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
-                              Aguardando
+                              {t("statusWaiting", "Aguardando")}
                             </span>
                           ) : isPublished ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                              Visível
+                              {t("statusVisible", "Visível")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
-                              Invisível
+                              {t("statusInvisible", "Invisível")}
                             </span>
                           )}
                         </div>
@@ -1867,15 +1871,15 @@ export default function PerfilPage() {
                   <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F2B705]/15">
                     <User className="h-8 w-8 text-[#F2B705]" />
                   </div>
-                  <p className="fl-display text-xl text-[#F5F1E8]">Nenhum perfil criado</p>
-                  <p className="mt-1 mb-5 text-sm text-[#9A938A]">Crie seu primeiro perfil para começar</p>
+                  <p className="fl-display text-xl text-[#F5F1E8]">{t("noProfileCreated", "Nenhum perfil criado")}</p>
+                  <p className="mt-1 mb-5 text-sm text-[#9A938A]">{t("createFirstProfile", "Crie seu primeiro perfil para começar")}</p>
                   <button
                     type="button"
                     onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
                     className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
                   >
                     <Plus className="h-4 w-4" />
-                    Criar Perfil
+                    {t("createProfile", "Criar Perfil")}
                   </button>
                 </div>
               )}
@@ -1889,7 +1893,7 @@ export default function PerfilPage() {
                     href="/account/clans"
                     className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#F5F1E8]/25 px-4 py-2 text-[13px] font-bold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
                   >
-                    Gerenciar clans
+                    {t("manageClans", "Gerenciar clans")}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
@@ -1907,7 +1911,7 @@ export default function PerfilPage() {
                           type="button"
                           onClick={() => router.push(`/clans/${clan.id_profile}`)}
                           className="relative block aspect-[4/5] w-full overflow-hidden border border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] transition"
-                          aria-label={`Abrir clan ${clan.display_name}`}
+                          aria-label={t("openClanAria", "Abrir clan {name}").replace("{name}", clan.display_name)}
                         >
                           {imgSrc ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -1939,7 +1943,7 @@ export default function PerfilPage() {
                             <button
                               type="button"
                               className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
-                              aria-label="Ações do clan"
+                              aria-label={t("clanActions", "Ações do clan")}
                             >
                               <Settings className="h-3.5 w-3.5" />
                             </button>
@@ -1947,15 +1951,15 @@ export default function PerfilPage() {
                           <DropdownMenuContent align="start" className="w-52">
                             <DropdownMenuItem onClick={() => router.push(`/clans/${clan.id_profile}`)}>
                               <ArrowRight className="h-4 w-4 mr-2" />
-                              Ver clan
+                              {t("viewClan", "Ver clan")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}`)}>
                               <Edit className="h-4 w-4 mr-2" />
-                              Gerenciar clan
+                              {t("manageClan", "Gerenciar clan")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}/agenda`)}>
                               <CalendarDays className="h-4 w-4 mr-2" />
-                              Agenda
+                              {t("agenda", "Agenda")}
                             </DropdownMenuItem>
                             {isPaid && (
                               <DropdownMenuItem
@@ -1963,9 +1967,9 @@ export default function PerfilPage() {
                                 onClick={() => handleToggleVisibility(clan.id_profile, !isVisible)}
                               >
                                 {isVisible ? (
-                                  <><EyeOff className="h-4 w-4 mr-2" /> Deixar invisível</>
+                                  <><EyeOff className="h-4 w-4 mr-2" /> {t("makeInvisible", "Deixar invisível")}</>
                                 ) : (
-                                  <><Eye className="h-4 w-4 mr-2" /> Tornar visível</>
+                                  <><Eye className="h-4 w-4 mr-2" /> {t("makeVisible", "Tornar visível")}</>
                                 )}
                               </DropdownMenuItem>
                             )}
@@ -1976,7 +1980,7 @@ export default function PerfilPage() {
                               onClick={() => handleDeleteProfile(clan.id_profile)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
+                              {t("delete", "Excluir")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1985,16 +1989,16 @@ export default function PerfilPage() {
                         <div className="absolute top-2 right-2 pointer-events-none">
                           {!isPaid ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
-                              Aguardando
+                              {t("statusWaiting", "Aguardando")}
                             </span>
                           ) : isPublished ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                              Visível
+                              {t("statusVisible", "Visível")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
-                              Invisível
+                              {t("statusInvisible", "Invisível")}
                             </span>
                           )}
                         </div>
@@ -2011,10 +2015,10 @@ export default function PerfilPage() {
                 <div className="rounded-2xl border-2 border-dashed border-[#F5F1E8]/15 bg-[#F5F1E8]/[0.02] p-8 text-center">
                   <Users className="mx-auto mb-2 h-8 w-8 text-[#9A938A]" />
                   <p className="text-sm text-[#9A938A]">
-                    Você ainda não tem clans criados.
+                    {t("noClansYet", "Você ainda não tem clans criados.")}
                   </p>
                   <Link href="/account/clans" className="mt-2 inline-block text-sm font-bold text-[#F2B705] hover:underline">
-                    Criar ou entrar em um clan
+                    {t("createOrJoinClan", "Criar ou entrar em um clan")}
                   </Link>
                 </div>
               )}
@@ -2038,25 +2042,24 @@ export default function PerfilPage() {
       <Dialog open={isNewProfileModalOpen} onOpenChange={(open) => { if (!open) setNewProfileError(null); setIsNewProfileModalOpen(open) }}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Criar novo perfil</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("createNewProfile", "Criar novo perfil")}</DialogTitle>
             <DialogDescription className="text-[#5b554b]">
-              O perfil é criado como <strong className="text-[#0B0B0D]">Aguardando ativação</strong>. Ele só
-              aparece nos classificados após você ativar esse perfil.
+              {t("createProfileDescBefore", "O perfil é criado como")} <strong className="text-[#0B0B0D]">{t("awaitingActivation", "Aguardando ativação")}</strong>. {t("createProfileDescAfter", "Ele só aparece nos classificados após você ativar esse perfil.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label htmlFor="np-display-name" className="fl-label">Nome de exibição <span className="text-[#b91c1c]">*</span></label>
+              <label htmlFor="np-display-name" className="fl-label">{t("displayNameLabel", "Nome de exibição")} <span className="text-[#b91c1c]">*</span></label>
               <input
                 id="np-display-name"
                 className="fl-input"
-                placeholder="Como você quer ser chamado..."
+                placeholder={t("displayNamePlaceholder", "Como você quer ser chamado...")}
                 value={newProfileForm.display_name}
                 onChange={(e) => setNewProfileForm((prev) => ({ ...prev, display_name: e.target.value }))}
               />
             </div>
             <div>
-              <label htmlFor="np-machine" className="fl-label">Enxame <span className="text-[#b91c1c]">*</span></label>
+              <label htmlFor="np-machine" className="fl-label">{t("machineLabel", "Enxame")} <span className="text-[#b91c1c]">*</span></label>
               <select
                 id="np-machine"
                 className="fl-input"
@@ -2064,14 +2067,14 @@ export default function PerfilPage() {
                 onChange={(e) => handleNewProfileMachineChange(e.target.value)}
                 disabled={loadingMachines}
               >
-                <option value="" disabled>{loadingMachines ? "Carregando..." : "Selecione um enxame"}</option>
+                <option value="" disabled>{loadingMachines ? t("loading", "Carregando...") : t("selectMachine", "Selecione um enxame")}</option>
                 {machines.map((m) => (
-                  <option key={m.id_machine} value={String(m.id_machine)}>{m.name}</option>
+                  <option key={m.id_machine} value={String(m.id_machine)}>{tx.enxame(m.slug, m.name)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="np-profession" className="fl-label">Profissão <span className="text-[#b91c1c]">*</span></label>
+              <label htmlFor="np-profession" className="fl-label">{t("professionLabel", "Profissão")} <span className="text-[#b91c1c]">*</span></label>
               <select
                 id="np-profession"
                 className="fl-input"
@@ -2081,21 +2084,21 @@ export default function PerfilPage() {
               >
                 <option value="" disabled>
                   {!newProfileForm.id_machine
-                    ? "Selecione um enxame primeiro"
+                    ? t("selectMachineFirst", "Selecione um enxame primeiro")
                     : loadingProfessions
-                      ? "Carregando..."
-                      : "Selecione uma profissão"}
+                      ? t("loading", "Carregando...")
+                      : t("selectProfession", "Selecione uma profissão")}
                 </option>
                 {professions.map((p) => (
-                  <option key={p.id_category} value={String(p.id_category)}>{p.desc_category}</option>
+                  <option key={p.id_category} value={String(p.id_category)}>{tx.profession(p.desc_category)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="np-bio" className="fl-label">Bio</label>
+              <label htmlFor="np-bio" className="fl-label">{t("bioLabel", "Bio")}</label>
               <textarea
                 id="np-bio"
-                placeholder="Fale um pouco sobre você..."
+                placeholder={t("bioPlaceholderShort", "Fale um pouco sobre você...")}
                 value={newProfileForm.bio}
                 onChange={(e) => setNewProfileForm((prev) => ({ ...prev, bio: e.target.value }))}
                 rows={3}
@@ -2105,21 +2108,21 @@ export default function PerfilPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="np-estado" className="fl-label">Estado</label>
+                <label htmlFor="np-estado" className="fl-label">{t("stateLabel", "Estado")}</label>
                 <select
                   id="np-estado"
                   className="fl-input"
                   value={newProfileForm.estado}
                   onChange={(e) => handleNewProfileEstadoChange(e.target.value)}
                 >
-                  <option value="" disabled>Selecione</option>
+                  <option value="" disabled>{t("select", "Selecione")}</option>
                   {estados.map((e) => (
                     <option key={e.uf} value={e.uf}>{e.nome}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="np-municipio" className="fl-label">Município</label>
+                <label htmlFor="np-municipio" className="fl-label">{t("cityLabel", "Município")}</label>
                 <select
                   id="np-municipio"
                   className="fl-input"
@@ -2127,7 +2130,7 @@ export default function PerfilPage() {
                   onChange={(e) => setNewProfileForm((prev) => ({ ...prev, municipio: e.target.value }))}
                   disabled={!newProfileForm.estado || loadingNewProfileMunicipios}
                 >
-                  <option value="" disabled>{loadingNewProfileMunicipios ? "Carregando..." : "Selecione"}</option>
+                  <option value="" disabled>{loadingNewProfileMunicipios ? t("loading", "Carregando...") : t("select", "Selecione")}</option>
                   {newProfileMunicipios.map((m) => (
                     <option key={m.id} value={m.nome}>{m.nome}</option>
                   ))}
@@ -2139,10 +2142,10 @@ export default function PerfilPage() {
             )}
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={() => setIsNewProfileModalOpen(false)} disabled={isCreatingProfile}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </button>
               <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleCreateProfile} disabled={isCreatingProfile}>
-                {isCreatingProfile ? "Criando..." : "Criar perfil"}
+                {isCreatingProfile ? t("creating", "Criando...") : t("createProfileButton", "Criar perfil")}
               </button>
             </div>
           </div>
@@ -2159,19 +2162,19 @@ export default function PerfilPage() {
       }}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{isEditing ? "Editar rede social" : "Adicionar rede social"}</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{isEditing ? t("editSocial", "Editar rede social") : t("addSocial", "Adicionar rede social")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="platform" className="fl-label">Plataforma</label>
+              <label htmlFor="platform" className="fl-label">{t("platformLabel", "Plataforma")}</label>
               <select
                 id="platform"
                 className="fl-input"
                 value={novaRede.platform}
                 onChange={(e) => setNovaRede({ ...novaRede, platform: e.target.value })}
               >
-                <option value="" disabled>Selecione a plataforma</option>
+                <option value="" disabled>{t("selectPlatform", "Selecione a plataforma")}</option>
                 <option value="instagram">Instagram</option>
                 <option value="youtube">YouTube</option>
                 <option value="tiktok">TikTok</option>
@@ -2179,25 +2182,25 @@ export default function PerfilPage() {
             </div>
 
             <div>
-              <label htmlFor="account" className="fl-label">Usuário/Handle</label>
+              <label htmlFor="account" className="fl-label">{t("handleLabel", "Usuário/Handle")}</label>
               <input
                 id="account"
                 className="fl-input"
-                placeholder="@usuario"
+                placeholder={t("handlePlaceholder", "@usuario")}
                 value={novaRede.account}
                 onChange={(e) => setNovaRede({ ...novaRede, account: e.target.value })}
               />
             </div>
 
             <div>
-              <label htmlFor="followers" className="fl-label">Seguidores</label>
+              <label htmlFor="followers" className="fl-label">{t("followersLabel", "Seguidores")}</label>
               <select
                 id="followers"
                 className="fl-input"
                 value={novaRede.followers_range}
                 onChange={(e) => setNovaRede({ ...novaRede, followers_range: e.target.value })}
               >
-                <option value="" disabled>Selecione a faixa de seguidores</option>
+                <option value="" disabled>{t("selectFollowersRange", "Selecione a faixa de seguidores")}</option>
                 <option value="0-10k">0 - 10k</option>
                 <option value="10k-50k">10k - 50k</option>
                 <option value="50k-200k">50k - 200k</option>
@@ -2213,10 +2216,10 @@ export default function PerfilPage() {
               setIsEditing(false)
               setIsModalOpen(false)
             }}>
-              Cancelar
+              {t("cancel", "Cancelar")}
             </button>
             <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold" onClick={handleAdicionarRede}>
-              {isEditing ? "Atualizar" : "Adicionar"}
+              {isEditing ? t("update", "Atualizar") : t("add", "Adicionar")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -2226,7 +2229,7 @@ export default function PerfilPage() {
       <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Alterar avatar</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("changeAvatarTitle", "Alterar avatar")}</DialogTitle>
           </DialogHeader>
 
           {!fotoTemp ? (
@@ -2245,12 +2248,12 @@ export default function PerfilPage() {
                     <span className="text-5xl font-bold text-[#F5F1E8]">{getInitials(perfil?.nome || "")}</span>
                   )}
                 </div>
-                <p className="text-center text-sm text-[#5b554b]">Avatar atual</p>
+                <p className="text-center text-sm text-[#5b554b]">{t("currentAvatar", "Avatar atual")}</p>
               </div>
 
               {/* Input de Arquivo */}
               <div className="space-y-3">
-                <label htmlFor="avatar-input" className="fl-label">Selecionar nova imagem</label>
+                <label htmlFor="avatar-input" className="fl-label">{t("selectNewImage", "Selecionar nova imagem")}</label>
                 <input
                   id="avatar-input"
                   type="file"
@@ -2271,7 +2274,7 @@ export default function PerfilPage() {
                     input?.click()
                   }}
                 >
-                  Escolher arquivo
+                  {t("chooseFile", "Escolher arquivo")}
                 </button>
               </div>
             </div>
@@ -2293,14 +2296,14 @@ export default function PerfilPage() {
                   <img
                     ref={imageRef}
                     src={fotoTemp || "/placeholder.svg"}
-                    alt="Preview"
+                    alt={t("preview", "Preview")}
                     className="w-full h-full object-cover"
                     style={{
                       transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoom})`,
                     }}
                   />
                 </div>
-                <p className="text-center text-xs text-[#5b554b]">Arraste para posicionar</p>
+                <p className="text-center text-xs text-[#5b554b]">{t("dragToPosition", "Arraste para posicionar")}</p>
               </div>
 
               {/* Zoom Slider */}
@@ -2324,16 +2327,16 @@ export default function PerfilPage() {
           <DialogFooter className="flex gap-2 sm:gap-3">
             {fotoTemp && (
               <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold" onClick={handleCancelUpload}>
-                Voltar
+                {t("back", "Voltar")}
               </button>
             )}
             {fotoTemp ? (
               <button type="button" className="fl-btn-gold flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={handleConfirmUpload} disabled={isUploadingAvatar}>
-                {isUploadingAvatar ? "Salvando..." : "Salvar avatar"}
+                {isUploadingAvatar ? t("saving", "Salvando...") : t("saveAvatar", "Salvar avatar")}
               </button>
             ) : (
               <button type="button" className="fl-btn-card flex-1 rounded-full px-4 py-2 text-sm font-bold sm:flex-none" onClick={() => setIsUploadModalOpen(false)}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </button>
             )}
           </DialogFooter>
@@ -2348,8 +2351,8 @@ export default function PerfilPage() {
           outputHeight={AVATAR_IMAGE_OUTPUT.height}
           maxSizeMB={2}
           mediaType="profile_avatar"
-          title="Ajustar foto de perfil"
-          description="Ajuste sua foto de perfil."
+          title={t("adjustAvatarTitle", "Ajustar foto de perfil")}
+          description={t("adjustAvatarDesc", "Ajuste sua foto de perfil.")}
           onCancel={() => setAvatarFile(null)}
           onConfirm={handleUserAvatarCropConfirm}
         />
@@ -2359,9 +2362,9 @@ export default function PerfilPage() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="fl-root max-h-[90vh] overflow-y-auto fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar perfil</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("editProfileTitle", "Editar perfil")}</DialogTitle>
             <DialogDescription className="text-[#5b554b]">
-              Atualize seus dados pessoais e veja o status da sua conta.
+              {t("editProfileDesc", "Atualize seus dados pessoais e veja o status da sua conta.")}
             </DialogDescription>
           </DialogHeader>
 
@@ -2370,23 +2373,23 @@ export default function PerfilPage() {
             <div className="space-y-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
-                  Conta & Verificação
+                  {t("accountVerification", "Conta & Verificação")}
                 </div>
                 {emailVerified ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-emerald-700/30 bg-emerald-600/10 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
                     <BadgeCheck className="h-3 w-3" />
-                    Email verificado
+                    {t("emailVerified", "Email verificado")}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/40 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00]">
                     <AlertCircle className="h-3 w-3" />
-                    Não verificado
+                    {t("emailNotVerified", "Não verificado")}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div>
-                  <label htmlFor="edit-email" className="fl-label">Email</label>
+                  <label htmlFor="edit-email" className="fl-label">{t("emailLabel", "Email")}</label>
                   <input
                     id="edit-email"
                     type="email"
@@ -2401,32 +2404,32 @@ export default function PerfilPage() {
                     href="/verificar-email"
                     className="fl-btn-gold inline-flex h-11 items-center justify-center rounded-xl px-4 text-[12px] font-bold"
                   >
-                    Verificar agora
+                    {t("verifyNow", "Verificar agora")}
                   </Link>
                 )}
               </div>
               <p className="text-[11px] text-[#8a8275]">
-                O email é usado para login e não pode ser alterado por aqui.
+                {t("emailLoginNote", "O email é usado para login e não pode ser alterado por aqui.")}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="edit-nome" className="fl-label">Nome</label>
+                <label htmlFor="edit-nome" className="fl-label">{t("nameLabel", "Nome")}</label>
                 <input
                   id="edit-nome"
                   className="fl-input"
-                  placeholder="Seu nome completo"
+                  placeholder={t("fullNamePlaceholder", "Seu nome completo")}
                   value={editForm.nome}
                   onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-username" className="fl-label">Nome de usuário</label>
+                <label htmlFor="edit-username" className="fl-label">{t("usernameLabel", "Nome de usuário")}</label>
                 <input
                   id="edit-username"
-                  placeholder="ex: joao.silva"
+                  placeholder={t("usernamePlaceholder", "ex: joao.silva")}
                   value={editForm.username}
                   onChange={(e) => handleEditUsernameChange(e.target.value)}
                   maxLength={30}
@@ -2440,7 +2443,7 @@ export default function PerfilPage() {
                       ? "text-emerald-700"
                       : "text-[#5b554b]"
                   }`}>
-                    {editUsernameStatus === "checking" ? "Verificando..." : editUsernameMsg}
+                    {editUsernameStatus === "checking" ? t("checking", "Verificando...") : editUsernameMsg}
                   </p>
                 )}
               </div>
@@ -2448,7 +2451,7 @@ export default function PerfilPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="data_nascimento" className="fl-label">Data de nascimento</label>
+                <label htmlFor="data_nascimento" className="fl-label">{t("birthDateLabel", "Data de nascimento")}</label>
                 <input
                   id="data_nascimento"
                   type="date"
@@ -2459,27 +2462,27 @@ export default function PerfilPage() {
               </div>
 
               <div>
-                <label htmlFor="sexo" className="fl-label">Sexo</label>
+                <label htmlFor="sexo" className="fl-label">{t("genderLabel", "Sexo")}</label>
                 <select
                   id="sexo"
                   className="fl-input"
                   value={editForm.sexo}
                   onChange={(e) => setEditForm({ ...editForm, sexo: e.target.value })}
                 >
-                  <option value="" disabled>Selecione</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Feminino</option>
-                  <option value="O">Outros</option>
+                  <option value="" disabled>{t("select", "Selecione")}</option>
+                  <option value="M">{t("genderMale", "Masculino")}</option>
+                  <option value="F">{t("genderFemale", "Feminino")}</option>
+                  <option value="O">{t("genderOther", "Outros")}</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label htmlFor="telefone" className="fl-label">Telefone</label>
+              <label htmlFor="telefone" className="fl-label">{t("phoneLabel", "Telefone")}</label>
               <input
                 id="telefone"
                 className="fl-input"
-                placeholder="Seu telefone"
+                placeholder={t("phonePlaceholder", "Seu telefone")}
                 value={editForm.telefone}
                 onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
               />
@@ -2487,14 +2490,14 @@ export default function PerfilPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="estado" className="fl-label">Estado</label>
+                <label htmlFor="estado" className="fl-label">{t("stateLabel", "Estado")}</label>
                 <select
                   id="estado"
                   className="fl-input"
                   value={editForm.estado}
                   onChange={(e) => handleEstadoChange(e.target.value)}
                 >
-                  <option value="" disabled>Selecione</option>
+                  <option value="" disabled>{t("select", "Selecione")}</option>
                   {estados.map((estado) => (
                     <option key={estado.uf} value={estado.uf}>{estado.nome}</option>
                   ))}
@@ -2502,7 +2505,7 @@ export default function PerfilPage() {
               </div>
 
               <div>
-                <label htmlFor="municipio" className="fl-label">Município</label>
+                <label htmlFor="municipio" className="fl-label">{t("cityLabel", "Município")}</label>
                 <select
                   id="municipio"
                   className="fl-input"
@@ -2510,7 +2513,7 @@ export default function PerfilPage() {
                   onChange={(e) => setEditForm({ ...editForm, municipio: e.target.value })}
                   disabled={loadingMunicipios}
                 >
-                  <option value="" disabled>Selecione</option>
+                  <option value="" disabled>{t("select", "Selecione")}</option>
                   {municipios.map((municipio) => (
                     <option key={municipio.id} value={municipio.nome}>{municipio.nome}</option>
                   ))}
@@ -2519,11 +2522,11 @@ export default function PerfilPage() {
             </div>
 
             <div>
-              <label htmlFor="bio" className="fl-label">Bio</label>
+              <label htmlFor="bio" className="fl-label">{t("bioLabel", "Bio")}</label>
               <textarea
                 id="bio"
                 className="fl-input min-h-[80px] resize-none"
-                placeholder="Fale sobre você..."
+                placeholder={t("bioPlaceholder", "Fale sobre você...")}
                 value={editForm.bio}
                 onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
               />
@@ -2532,10 +2535,10 @@ export default function PerfilPage() {
 
           <DialogFooter>
             <button type="button" className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold" onClick={() => setIsEditModalOpen(false)}>
-              Cancelar
+              {t("cancel", "Cancelar")}
             </button>
             <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleSaveProfile} disabled={isSaving}>
-              {isSaving ? "Salvando..." : "Salvar"}
+              {isSaving ? t("saving", "Salvando...") : t("save", "Salvar")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -2545,15 +2548,15 @@ export default function PerfilPage() {
       <Dialog open={isPortfolioModalOpen} onOpenChange={setIsPortfolioModalOpen}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Adicionar mídia ao portfólio</DialogTitle>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("addPortfolioMedia", "Adicionar mídia ao portfólio")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {!uploadingMedia ? (
               <div className="cursor-pointer rounded-xl border-2 border-dashed border-[#0B0B0D]/30 p-8 text-center transition-colors hover:border-[#E0A500] hover:bg-[#F2B705]/[0.06]" onClick={() => document.getElementById("media-input")?.click()}>
                 <Upload className="mx-auto mb-2 h-8 w-8 text-[#8a6d00]" />
-                <p className="font-bold text-[#0B0B0D]">Clique para adicionar ou arraste uma imagem/vídeo</p>
-                <p className="text-sm text-[#5b554b]">Máximo 100MB</p>
+                <p className="font-bold text-[#0B0B0D]">{t("clickOrDragMedia", "Clique para adicionar ou arraste uma imagem/vídeo")}</p>
+                <p className="text-sm text-[#5b554b]">{t("maxMediaSize", "Máximo 100MB")}</p>
                 <input id="media-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" onChange={handleMediaSelect} className="hidden" />
               </div>
             ) : (
@@ -2562,14 +2565,14 @@ export default function PerfilPage() {
                   {selectedMediaType === "image" ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={uploadingMedia.preview || "/placeholder.svg"} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={uploadingMedia.preview || "/placeholder.svg"} alt={t("preview", "Preview")} className="w-full h-full object-cover" />
                       {originalUploadImage && (
                         <button
                           type="button"
                           onClick={() => setMediaCropFile(originalUploadImage)}
                           className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
                         >
-                          Cortar imagem
+                          {t("cropImage", "Cortar imagem")}
                         </button>
                       )}
                     </>
@@ -2579,33 +2582,33 @@ export default function PerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="media-title" className="fl-label">Título</label>
+                  <label htmlFor="media-title" className="fl-label">{t("titleLabel", "Título")}</label>
                   <input
                     id="media-title"
                     className="fl-input"
-                    placeholder="Título do projeto"
+                    placeholder={t("projectTitlePlaceholder", "Título do projeto")}
                     value={portfolioForm.title}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, title: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="media-description" className="fl-label">Descrição</label>
+                  <label htmlFor="media-description" className="fl-label">{t("descriptionLabel", "Descrição")}</label>
                   <textarea
                     id="media-description"
                     className="fl-input min-h-[80px] resize-none"
-                    placeholder="Descreva seu projeto..."
+                    placeholder={t("projectDescriptionPlaceholder", "Descreva seu projeto...")}
                     value={portfolioForm.description}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="media-link" className="fl-label">Link externo (opcional)</label>
+                  <label htmlFor="media-link" className="fl-label">{t("externalLinkLabel", "Link externo (opcional)")}</label>
                   <input
                     id="media-link"
                     className="fl-input"
-                    placeholder="https://exemplo.com"
+                    placeholder={t("externalLinkPlaceholder", "https://exemplo.com")}
                     value={portfolioForm.external_link}
                     onChange={(e) => setPortfolioForm({ ...portfolioForm, external_link: e.target.value })}
                   />
@@ -2625,13 +2628,13 @@ export default function PerfilPage() {
               }}
               disabled={mediaUploadProgress !== "idle"}
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </button>
             {!uploadingMedia ? (
-              <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold opacity-50" disabled>Próximo</button>
+              <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold opacity-50" disabled>{t("next", "Próximo")}</button>
             ) : (
               <button type="button" className="fl-btn-gold rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50" onClick={handleUploadMedia} disabled={mediaUploadProgress !== "idle"}>
-                {mediaUploadProgress === "idle" ? "Enviar" : mediaUploadProgress === "uploading" ? "Enviando..." : "Processando..."}
+                {mediaUploadProgress === "idle" ? t("send", "Enviar") : mediaUploadProgress === "uploading" ? t("uploading", "Enviando...") : t("processing", "Processando...")}
               </button>
             )}
           </DialogFooter>
@@ -2646,8 +2649,8 @@ export default function PerfilPage() {
           outputHeight={POST_IMAGE_OUTPUT.height}
           maxSizeMB={3}
           mediaType="post_image"
-          title="Cortar imagem"
-          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          title={t("cropImage", "Cortar imagem")}
+          description={t("cropImageDesc", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
           onCancel={() => setMediaCropFile(null)}
           onConfirm={handleUploadCropConfirm}
         />
@@ -2657,8 +2660,8 @@ export default function PerfilPage() {
       <Dialog open={isEditMediaModalOpen} onOpenChange={setIsEditMediaModalOpen}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Editar mídia</DialogTitle>
-            <DialogDescription className="text-[#5b554b]">Edite as informações da sua mídia ou remova do portfólio.</DialogDescription>
+            <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("editMediaTitle", "Editar mídia")}</DialogTitle>
+            <DialogDescription className="text-[#5b554b]">{t("editMediaDesc", "Edite as informações da sua mídia ou remova do portfólio.")}</DialogDescription>
           </DialogHeader>
 
           {editingMedia && (
@@ -2666,40 +2669,40 @@ export default function PerfilPage() {
               <div className="relative aspect-video overflow-hidden rounded-xl border-2 border-[#0B0B0D]/15 bg-[#1d1810]">
                 {editingMedia.media_type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={editingMedia.media_url || "/placeholder.svg"} alt={editingMedia.title || "Preview"} className="w-full h-full object-cover" />
+                  <img src={editingMedia.media_url || "/placeholder.svg"} alt={editingMedia.title || t("preview", "Preview")} className="w-full h-full object-cover" />
                 ) : (
                   <video src={editingMedia.media_url} className="w-full h-full object-cover" controls />
                 )}
               </div>
 
               <div>
-                <label htmlFor="edit-title" className="fl-label">Título</label>
+                <label htmlFor="edit-title" className="fl-label">{t("titleLabel", "Título")}</label>
                 <input
                   id="edit-title"
                   className="fl-input"
-                  placeholder="Título do projeto"
+                  placeholder={t("projectTitlePlaceholder", "Título do projeto")}
                   value={editMediaForm.title}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, title: e.target.value })}
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-description" className="fl-label">Descrição</label>
+                <label htmlFor="edit-description" className="fl-label">{t("descriptionLabel", "Descrição")}</label>
                 <textarea
                   id="edit-description"
                   className="fl-input min-h-[80px] resize-none"
-                  placeholder="Descreva seu projeto..."
+                  placeholder={t("projectDescriptionPlaceholder", "Descreva seu projeto...")}
                   value={editMediaForm.description}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, description: e.target.value })}
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-link" className="fl-label">Link externo (opcional)</label>
+                <label htmlFor="edit-link" className="fl-label">{t("externalLinkLabel", "Link externo (opcional)")}</label>
                 <input
                   id="edit-link"
                   className="fl-input"
-                  placeholder="https://exemplo.com"
+                  placeholder={t("externalLinkPlaceholder", "https://exemplo.com")}
                   value={editMediaForm.external_link}
                   onChange={(e) => setEditMediaForm({ ...editMediaForm, external_link: e.target.value })}
                 />
@@ -2710,14 +2713,14 @@ export default function PerfilPage() {
           <DialogFooter className="flex-col gap-2 sm:flex-row">
             <button type="button" onClick={handleDeleteMedia} disabled={isSavingMedia} className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#b91c1c] bg-[#b91c1c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#a01818] disabled:opacity-50 sm:w-auto">
               <Trash2 className="h-4 w-4" />
-              Deletar
+              {t("delete", "Deletar")}
             </button>
             <div className="flex w-full gap-2 sm:w-auto">
               <button type="button" className="fl-btn-card flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={() => setIsEditMediaModalOpen(false)} disabled={isSavingMedia}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </button>
               <button type="button" className="fl-btn-gold flex-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 sm:flex-none" onClick={handleUpdateMedia} disabled={isSavingMedia}>
-                {isSavingMedia ? "Salvando..." : "Salvar"}
+                {isSavingMedia ? t("saving", "Salvando...") : t("save", "Salvar")}
               </button>
             </div>
           </DialogFooter>
