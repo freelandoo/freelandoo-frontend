@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Trophy, MapPin, Briefcase, Globe, X, Loader2, Star, Eye, Heart } from "lucide-react"
 import { buildProfileUrl } from "@/lib/slug"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type ProfileMeta = {
   position_general: number | null
@@ -46,11 +47,11 @@ type TopRow = {
 
 type TabKey = "machine" | "city" | "general" | "profession"
 
-const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: "machine", label: "No enxame", icon: Briefcase },
-  { key: "city", label: "Na cidade", icon: MapPin },
-  { key: "general", label: "Geral", icon: Globe },
-  { key: "profession", label: "Profissão", icon: Trophy },
+const TABS: { key: TabKey; labelKey: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "machine", labelKey: "rankTabSwarm", label: "No enxame", icon: Briefcase },
+  { key: "city", labelKey: "rankTabCity", label: "Na cidade", icon: MapPin },
+  { key: "general", labelKey: "rankGeneral", label: "Geral", icon: Globe },
+  { key: "profession", labelKey: "rankProfession", label: "Profissão", icon: Trophy },
 ]
 
 type Props = {
@@ -156,6 +157,7 @@ function TopList({ rows, loading, empty }: { rows: TopRow[]; loading: boolean; e
 }
 
 export function RankingBadgeModal({ profileId, onClose }: Props) {
+  const t = useTranslations("Account")
   const [meta, setMeta] = useState<ProfileMeta | null>(null)
   const [metaLoading, setMetaLoading] = useState(true)
   const [metaError, setMetaError] = useState<string | null>(null)
@@ -178,14 +180,14 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
     let cancelled = false
     fetch(`/api/ranking/public/profile/${profileId}`)
       .then(async (r) => {
-        if (!r.ok) throw new Error("Posição indisponível")
+        if (!r.ok) throw new Error(t("positionUnavailable", "Posição indisponível"))
         return r.json()
       })
       .then((d) => { if (!cancelled) setMeta(d) })
       .catch((e) => { if (!cancelled) setMetaError(e.message) })
       .finally(() => { if (!cancelled) setMetaLoading(false) })
     return () => { cancelled = true }
-  }, [profileId])
+  }, [profileId, t])
 
   const tabUrl = useMemo<Record<TabKey, string | null>>(() => {
     if (!meta) return { machine: null, city: null, general: null, profession: null }
@@ -237,7 +239,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
   const tabSubtitle: Record<TabKey, string | null> = {
     machine: meta?.machine_name ?? meta?.specialty ?? null,
     city: meta?.municipio && meta?.estado ? `${meta.municipio}, ${meta.estado}` : null,
-    general: "Todos os perfis",
+    general: t("allProfiles", "Todos os perfis"),
     profession: meta?.specialty ?? null,
   }
 
@@ -254,12 +256,12 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#0B0B0D]/15">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-[#E0A500]" />
-            <h2 className="fl-display text-xl text-[#0B0B0D]">Ranking — Top 10</h2>
+            <h2 className="fl-display text-xl text-[#0B0B0D]">{t("rankingTop10", "Ranking — Top 10")}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
           >
             <X className="h-4 w-4" />
@@ -280,7 +282,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
           <>
             {/* Tabs */}
             <div className="flex flex-wrap gap-1.5 border-b-2 border-[#0B0B0D]/15 px-4 py-3">
-              {TABS.map(({ key, label, icon: Icon }) => {
+              {TABS.map(({ key, labelKey, label, icon: Icon }) => {
                 const active = tab === key
                 const pos = myPosition[key]
                 return (
@@ -294,7 +296,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    <span>{label}</span>
+                    <span>{t(labelKey, label)}</span>
                     {pos && (
                       <span
                         className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${
@@ -312,7 +314,7 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
             {/* Subtitle */}
             {tabSubtitle[tab] && (
               <p className="px-6 pt-3 text-xs text-[#5b554b]">
-                {TABS.find((t) => t.key === tab)?.label} ·{" "}
+                {(() => { const tb = TABS.find((x) => x.key === tab); return tb ? t(tb.labelKey, tb.label) : "" })()} ·{" "}
                 <span className="text-[#0B0B0D]/70">{tabSubtitle[tab]}</span>
               </p>
             )}
@@ -324,8 +326,8 @@ export function RankingBadgeModal({ profileId, onClose }: Props) {
                 loading={tabLoading[tab] || tops[tab] === null}
                 empty={
                   tabUrl[tab] === null
-                    ? "Sem dados disponíveis pra este perfil."
-                    : "Nenhum profissional no ranking ainda."
+                    ? t("noDataForProfile", "Sem dados disponíveis pra este perfil.")
+                    : t("noProsInRanking", "Nenhum profissional no ranking ainda.")
                 }
               />
             </div>

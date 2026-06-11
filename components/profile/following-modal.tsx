@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Users, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type FollowedProfile = {
   id_profile: string
@@ -32,6 +33,7 @@ function initials(name: string | null | undefined): string {
 
 /** Lista os perfis que o usuário logado acompanha. */
 export function FollowingModal({ open, onClose }: FollowingModalProps) {
+  const t = useTranslations("Account")
   const router = useRouter()
   const [items, setItems] = useState<FollowedProfile[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +44,7 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null
     if (!token) {
-      setError("Sessão expirada. Faça login novamente.")
+      setError(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       setLoading(false)
       return
     }
@@ -57,12 +59,12 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
         const data = (await r.json().catch(() => null)) as
           | { items?: FollowedProfile[]; error?: string }
           | null
-        if (!r.ok) throw new Error(data?.error || "Não foi possível carregar")
+        if (!r.ok) throw new Error(data?.error || t("loadFailed", "Não foi possível carregar"))
         if (!cancelled) setItems(Array.isArray(data?.items) ? data.items : [])
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro ao carregar")
+          setError(err instanceof Error ? err.message : t("loadFailed", "Erro ao carregar"))
         }
       })
       .finally(() => {
@@ -71,7 +73,7 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [open, t])
 
   useEffect(() => {
     if (!open) return
@@ -102,13 +104,13 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Perfis que você acompanha"
+        aria-label={t("followingAria", "Perfis que você acompanha")}
       >
         <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 px-5 py-4">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-[#E0A500]" />
             <h2 className="fl-display text-xl tracking-tight text-[#0B0B0D]">
-              Acompanhando
+              {t("countFollowing", "Acompanhando")}
               {!loading && !error && items.length > 0 && (
                 <span className="ml-1.5 text-sm font-normal text-[#5b554b]">
                   {items.length}
@@ -120,7 +122,7 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-[#0B0B0D]/55 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -139,10 +141,10 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
             <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
               <Users className="mb-3 h-9 w-9 text-[#0B0B0D]/20" />
               <p className="text-sm font-bold text-[#0B0B0D]">
-                Você ainda não acompanha ninguém
+                {t("notFollowingAnyone", "Você ainda não acompanha ninguém")}
               </p>
               <p className="mt-1 text-xs text-[#5b554b]">
-                Acompanhe perfis e clans para vê-los aqui.
+                {t("followToSeeHere", "Acompanhe perfis e clans para vê-los aqui.")}
               </p>
             </div>
           ) : (
@@ -162,7 +164,7 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-[#0B0B0D]">
-                        {p.display_name || "Perfil sem nome"}
+                        {p.display_name || t("unnamedProfile", "Perfil sem nome")}
                       </p>
                       {p.username && (
                         <p className="truncate text-xs text-[#5b554b]">
@@ -172,7 +174,7 @@ export function FollowingModal({ open, onClose }: FollowingModalProps) {
                     </div>
                     {p.is_clan && (
                       <span className="shrink-0 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1A1505]">
-                        Clan
+                        {t("clanLabel", "Clan")}
                       </span>
                     )}
                   </button>

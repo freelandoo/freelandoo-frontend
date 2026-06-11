@@ -1103,6 +1103,65 @@ Object.assign(ACCOUNT, {
   followersThisProfile: ["Seguidores deste perfil", "Followers of this profile", "Seguidores de este perfil"],
 })
 
+// S14a — modais owner de components/profile/* (following, portfolio-item, engagement, ranking-badge)
+Object.assign(ACCOUNT, {
+  close: ["Fechar", "Close", "Cerrar"],
+  // following-modal
+  followingAria: ["Perfis que você acompanha", "Profiles you follow", "Perfiles que sigues"],
+  notFollowingAnyone: ["Você ainda não acompanha ninguém", "You don't follow anyone yet", "Aún no sigues a nadie"],
+  followToSeeHere: ["Acompanhe perfis e clans para vê-los aqui.", "Follow profiles and clans to see them here.", "Sigue perfiles y clanes para verlos aquí."],
+  clanLabel: ["Clan", "Clan", "Clan"],
+  // portfolio-item-modal
+  loginToLike: ["Faça login para curtir.", "Log in to like.", "Inicia sesión para dar me gusta."],
+  likeFailed: ["Falha ao curtir", "Failed to like", "Error al dar me gusta"],
+  likeErrorRetry: ["Erro ao registrar like. Tente novamente.", "Error registering like. Try again.", "Error al registrar el me gusta. Inténtalo de nuevo."],
+  portfolioItemDefault: ["Item de portfólio", "Portfolio item", "Elemento del portafolio"],
+  noMedia: ["Sem mídia", "No media", "Sin medios"],
+  mediaWord: ["Mídia", "Media", "Medio"],
+  noTitle: ["Sem título", "No title", "Sin título"],
+  noDescriptionDot: ["Sem descrição.", "No description.", "Sin descripción."],
+  viewProject: ["Ver projeto", "View project", "Ver proyecto"],
+  likeSingular: ["like", "like", "me gusta"],
+  likePlural: ["likes", "likes", "me gusta"],
+  copied: ["Copiado", "Copied", "Copiado"],
+  // engagement-panel
+  loadDataFailed: ["Não foi possível carregar os dados.", "Couldn't load the data.", "No se pudieron cargar los datos."],
+  unknownError: ["Erro desconhecido", "Unknown error", "Error desconocido"],
+  profileEngagement: ["Engajamento do Perfil", "Profile Engagement", "Participación del perfil"],
+  season: ["Temporada", "Season", "Temporada"],
+  updatedAt: ["Atualizado:", "Updated:", "Actualizado:"],
+  resetsOn: ["zera em", "resets on", "se reinicia el"],
+  refresh: ["Atualizar", "Refresh", "Actualizar"],
+  portfolioLikes: ["Likes no portfólio", "Portfolio likes", "Me gusta del portafolio"],
+  avgRating: ["Avaliação média", "Average rating", "Calificación promedio"],
+  reviewsLower: ["avaliações", "reviews", "reseñas"],
+  xpForLoginToday: ["XP por logar hoje", "XP for logging in today", "XP por ingresar hoy"],
+  capWord: ["teto", "cap", "tope"],
+  scoreWord: ["Pontuação", "Score", "Puntuación"],
+  seasonScore: ["Pontuação da temporada", "Season score", "Puntuación de la temporada"],
+  rankingPositions: ["Posições no ranking", "Ranking positions", "Posiciones en el ranking"],
+  rankGeneral: ["Geral", "Overall", "General"],
+  rankSwarm: ["Enxame", "Swarm", "Enjambre"],
+  rankCity: ["Cidade", "City", "Ciudad"],
+  rankProfession: ["Profissão", "Profession", "Profesión"],
+  howScoreCalculated: ["Como é calculada a pontuação?", "How is the score calculated?", "¿Cómo se calcula la puntuación?"],
+  scoreExplainPre: ["XP e ranking usam", "XP and ranking use", "El XP y el ranking usan"],
+  sameScore: ["a mesma pontuação", "the same score", "la misma puntuación"],
+  scoreExplainPost: ["— os pesos por ação estão no painel admin (XP/curtidas/visitas/avaliações/posts/tempo online etc.).", "— the per-action weights are in the admin panel (XP/likes/visits/reviews/posts/online time etc.).", "— los pesos por acción están en el panel de administración (XP/me gusta/visitas/reseñas/publicaciones/tiempo en línea, etc.)."],
+  xpLevelPre: ["XP/nível: acumula", "XP/level: accumulates", "XP/nivel: se acumula"],
+  forever: ["para sempre", "forever", "para siempre"],
+  rankingSeasonNote: ["Ranking: soma só a temporada atual e zera ao virar.", "Ranking: counts only the current season and resets when it turns over.", "Ranking: suma solo la temporada actual y se reinicia al cambiar."],
+  onlineTimeNote: ["Tempo online conta em qualquer página enquanto a aba estiver visível, até o teto diário.", "Online time counts on any page while the tab is visible, up to the daily cap.", "El tiempo en línea cuenta en cualquier página mientras la pestaña esté visible, hasta el tope diario."],
+  // ranking-badge-modal
+  rankTabSwarm: ["No enxame", "In the swarm", "En el enjambre"],
+  rankTabCity: ["Na cidade", "In the city", "En la ciudad"],
+  positionUnavailable: ["Posição indisponível", "Position unavailable", "Posición no disponible"],
+  allProfiles: ["Todos os perfis", "All profiles", "Todos los perfiles"],
+  rankingTop10: ["Ranking — Top 10", "Ranking — Top 10", "Ranking — Top 10"],
+  noDataForProfile: ["Sem dados disponíveis pra este perfil.", "No data available for this profile.", "No hay datos disponibles para este perfil."],
+  noProsInRanking: ["Nenhum profissional no ranking ainda.", "No professionals in the ranking yet.", "Aún no hay profesionales en el ranking."],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Eye, Heart, Star, Clock, Trophy, Globe, X, RefreshCw } from "lucide-react"
+import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+
+const INTL_TAG: Record<string, string> = { "pt-BR": "pt-BR", en: "en-US", es: "es-ES" }
 
 type EngagementData = {
   total_points: number
@@ -63,6 +66,8 @@ function Metric({
   sub?: string
   highlight?: boolean
 }) {
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
   return (
     <div
       className={`flex flex-col gap-1 rounded-xl p-4 ${
@@ -74,7 +79,7 @@ function Metric({
         {label}
       </div>
       <span className="text-2xl font-bold tabular-nums text-[#0B0B0D]">
-        {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
+        {typeof value === "number" ? value.toLocaleString(intlTag) : value}
       </span>
       {sub && <span className="text-[11px] text-[#5b554b]">{sub}</span>}
     </div>
@@ -96,16 +101,19 @@ function RankBadge({ pos, label }: { pos: number | null; label: string }) {
   )
 }
 
-function seasonEndsAt(started: string | null | undefined, periodDays: number | null | undefined): string | null {
+function seasonEndsAt(started: string | null | undefined, periodDays: number | null | undefined, intlTag: string): string | null {
   if (!started || !periodDays) return null
-  const t = new Date(started).getTime()
-  if (Number.isNaN(t)) return null
-  return new Date(t + periodDays * 86_400_000).toLocaleDateString("pt-BR", {
+  const ms = new Date(started).getTime()
+  if (Number.isNaN(ms)) return null
+  return new Date(ms + periodDays * 86_400_000).toLocaleDateString(intlTag, {
     day: "2-digit", month: "2-digit", year: "numeric",
   })
 }
 
 export function EngagementPanel({ profileId, onClose }: Props) {
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
   const [data, setData] = useState<EngagementData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,10 +126,10 @@ export function EngagementPanel({ profileId, onClose }: Props) {
       const res = await fetch(`/api/ranking/engagement/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) throw new Error("Não foi possível carregar os dados.")
+      if (!res.ok) throw new Error(t("loadDataFailed", "Não foi possível carregar os dados."))
       setData(await res.json())
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro desconhecido")
+      setError(e instanceof Error ? e.message : t("unknownError", "Erro desconhecido"))
     } finally {
       setLoading(false)
     }
@@ -139,7 +147,7 @@ export function EngagementPanel({ profileId, onClose }: Props) {
   const maxOnline = Number(data?.max_online_minutes ?? 0)
   const onlineMinutes = Number(data?.online_minutes ?? 0)
   const onlinePointsToday = Math.min(onlineMinutes, maxOnline || onlineMinutes) * onlineMinXp
-  const endsAt = seasonEndsAt(data?.season_started_at ?? null, data?.period_days ?? null)
+  const endsAt = seasonEndsAt(data?.season_started_at ?? null, data?.period_days ?? null, intlTag)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -148,17 +156,17 @@ export function EngagementPanel({ profileId, onClose }: Props) {
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#0B0B0D]/15">
           <div>
             <h2 className="fl-display text-xl text-[#0B0B0D]">
-              Engajamento do Perfil
+              {t("profileEngagement", "Engajamento do Perfil")}
               {data?.season_number != null && (
                 <span className="ml-2 inline-flex items-center gap-1 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[11px] font-bold text-[#1A1505] align-middle">
-                  Temporada {data.season_number}
+                  {t("season", "Temporada")} {data.season_number}
                 </span>
               )}
             </h2>
             {data?.updated_at && (
               <p className="text-xs text-[#5b554b] mt-0.5">
-                Atualizado: {new Date(data.updated_at).toLocaleDateString("pt-BR")}
-                {endsAt && <> · zera em {endsAt}</>}
+                {t("updatedAt", "Atualizado:")} {new Date(data.updated_at).toLocaleDateString(intlTag)}
+                {endsAt && <> · {t("resetsOn", "zera em")} {endsAt}</>}
               </p>
             )}
           </div>
@@ -167,7 +175,7 @@ export function EngagementPanel({ profileId, onClose }: Props) {
               type="button"
               onClick={fetchEngagement}
               disabled={loading}
-              aria-label="Atualizar"
+              aria-label={t("refresh", "Atualizar")}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D] disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -175,7 +183,7 @@ export function EngagementPanel({ profileId, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fechar"
+              aria-label={t("close", "Fechar")}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
             >
               <X className="h-4 w-4" />
@@ -201,15 +209,15 @@ export function EngagementPanel({ profileId, onClose }: Props) {
             <>
               {/* Métricas principais */}
               <div className="grid grid-cols-2 gap-3">
-                <Metric icon={Eye} label="Visitas ao perfil" value={data.visits_count} />
-                <Metric icon={Heart} label="Likes no portfólio" value={data.likes_count} />
+                <Metric icon={Eye} label={t("profileVisitsLabel", "Visitas ao perfil")} value={data.visits_count} />
+                <Metric icon={Heart} label={t("portfolioLikes", "Likes no portfólio")} value={data.likes_count} />
                 <div className="col-span-2 flex flex-col gap-1 rounded-xl bg-[#0B0B0D]/[0.04] ring-1 ring-[#0B0B0D]/10 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[#5b554b] text-xs font-bold">
                       <Star className="h-3.5 w-3.5" />
-                      Avaliação média
+                      {t("avgRating", "Avaliação média")}
                     </div>
-                    <span className="text-xs text-[#5b554b]">{data.ratings_count} avaliações</span>
+                    <span className="text-xs text-[#5b554b]">{data.ratings_count} {t("reviewsLower", "avaliações")}</span>
                   </div>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-2xl font-bold text-[#0B0B0D]">
@@ -220,17 +228,17 @@ export function EngagementPanel({ profileId, onClose }: Props) {
                 </div>
                 <Metric
                   icon={Clock}
-                  label="XP por logar hoje"
+                  label={t("xpForLoginToday", "XP por logar hoje")}
                   value={Math.round(onlinePointsToday)}
                   sub={
                     onlineMinXp > 0
-                      ? `${onlineMinutes} min online (${onlineMinXp} XP/min${maxOnline ? `, teto ${maxOnline} min/dia` : ""})`
-                      : `${onlineMinutes} min online`
+                      ? `${onlineMinutes} min ${t("online", "online")} (${onlineMinXp} XP/min${maxOnline ? `, ${t("capWord", "teto")} ${maxOnline} min/dia` : ""})`
+                      : `${onlineMinutes} min ${t("online", "online")}`
                   }
                 />
                 <Metric
                   icon={Trophy}
-                  label={data.season_number != null ? `Pontuação — Temporada ${data.season_number}` : "Pontuação da temporada"}
+                  label={data.season_number != null ? `${t("scoreWord", "Pontuação")} — ${t("season", "Temporada")} ${data.season_number}` : t("seasonScore", "Pontuação da temporada")}
                   value={Number(data.total_points).toFixed(0)}
                   highlight
                 />
@@ -239,26 +247,25 @@ export function EngagementPanel({ profileId, onClose }: Props) {
               {/* Posições no ranking */}
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-[#5b554b] mb-3">
-                  Posições no ranking
+                  {t("rankingPositions", "Posições no ranking")}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <RankBadge pos={data.position_general} label="Geral" />
-                  <RankBadge pos={data.position_machine} label="Enxame" />
-                  <RankBadge pos={data.position_city} label="Cidade" />
-                  <RankBadge pos={data.position_profession} label="Profissão" />
+                  <RankBadge pos={data.position_general} label={t("rankGeneral", "Geral")} />
+                  <RankBadge pos={data.position_machine} label={t("rankSwarm", "Enxame")} />
+                  <RankBadge pos={data.position_city} label={t("rankCity", "Cidade")} />
+                  <RankBadge pos={data.position_profession} label={t("rankProfession", "Profissão")} />
                 </div>
               </div>
 
               {/* Legenda — uma só pontuação (XP = Ranking) */}
               <div className="rounded-xl bg-[#0B0B0D]/[0.04] ring-1 ring-[#0B0B0D]/10 p-4 text-xs text-[#5b554b] space-y-1.5">
-                <p className="font-bold text-[#0B0B0D] mb-1">Como é calculada a pontuação?</p>
+                <p className="font-bold text-[#0B0B0D] mb-1">{t("howScoreCalculated", "Como é calculada a pontuação?")}</p>
                 <p>
-                  XP e ranking usam <strong className="text-[#0B0B0D]">a mesma pontuação</strong> — os pesos por ação
-                  estão no painel admin (XP/curtidas/visitas/avaliações/posts/tempo online etc.).
+                  {t("scoreExplainPre", "XP e ranking usam")} <strong className="text-[#0B0B0D]">{t("sameScore", "a mesma pontuação")}</strong> {t("scoreExplainPost", "— os pesos por ação estão no painel admin (XP/curtidas/visitas/avaliações/posts/tempo online etc.).")}
                 </p>
-                <div className="flex items-center gap-2"><Trophy className="h-3 w-3 shrink-0" /><span>XP/nível: acumula <strong className="text-[#0B0B0D]">para sempre</strong>.</span></div>
-                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>Ranking: soma só a temporada atual e zera ao virar.</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>Tempo online conta em qualquer página enquanto a aba estiver visível, até o teto diário.</span></div>
+                <div className="flex items-center gap-2"><Trophy className="h-3 w-3 shrink-0" /><span>{t("xpLevelPre", "XP/nível: acumula")} <strong className="text-[#0B0B0D]">{t("forever", "para sempre")}</strong>.</span></div>
+                <div className="flex items-center gap-2"><Globe className="h-3 w-3 shrink-0" /><span>{t("rankingSeasonNote", "Ranking: soma só a temporada atual e zera ao virar.")}</span></div>
+                <div className="flex items-center gap-2"><Clock className="h-3 w-3 shrink-0" /><span>{t("onlineTimeNote", "Tempo online conta em qualquer página enquanto a aba estiver visível, até o teto diário.")}</span></div>
               </div>
             </>
           )}
