@@ -31,6 +31,9 @@ import {
   useLessonMaterials,
   type LessonMaterial,
 } from "@/hooks/use-lesson-materials"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+
+type Translator = (key: string, fallback: string) => string
 
 interface Props {
   courseId: string
@@ -48,12 +51,12 @@ const ALLOWED_MIMES = new Set([
   "image/gif",
 ])
 
-function validateFile(file: File): string | null {
+function validateFile(file: File, t: Translator): string | null {
   if (!ALLOWED_MIMES.has(file.type.toLowerCase())) {
-    return "Formato não aceito. Envie PDF, JPG, PNG, WebP ou GIF."
+    return t("materialFileRejected", "Formato não aceito. Envie PDF, JPG, PNG, WebP ou GIF.")
   }
   if (file.size > MAX_BYTES) {
-    return "Arquivo maior que 25MB."
+    return t("materialTooLarge", "Arquivo maior que 25MB.")
   }
   return null
 }
@@ -76,6 +79,7 @@ function materialIcon(material: LessonMaterial) {
 }
 
 export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
+  const t = useTranslations("Account")
   const {
     materials,
     isLoading,
@@ -111,7 +115,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
   // -------------------------------------------------------------------------
   const startUpload = useCallback(
     async (file: File) => {
-      const err = validateFile(file)
+      const err = validateFile(file, t)
       if (err) {
         toast.error(err)
         return
@@ -120,15 +124,15 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       setProgress(0)
       try {
         await uploadFile(file, (ratio) => setProgress(ratio))
-        toast.success("Material adicionado.")
+        toast.success(t("materialAdded", "Material adicionado."))
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha no envio")
+        toast.error(e instanceof Error ? e.message : t("uploadFailed", "Falha no envio"))
       } finally {
         setUploadingName(null)
         setProgress(0)
       }
     },
-    [uploadFile],
+    [uploadFile, t],
   )
 
   const handleDrop = useCallback(
@@ -157,25 +161,25 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
     const title = linkForm.title.trim()
     const url = linkForm.link_url.trim()
     if (!title) {
-      toast.error("Informe um título.")
+      toast.error(t("enterTitle", "Informe um título."))
       return
     }
     if (!url) {
-      toast.error("Informe uma URL.")
+      toast.error(t("enterUrl", "Informe uma URL."))
       return
     }
     setLinkSaving(true)
     try {
       await createLink({ title, link_url: url })
-      toast.success("Link adicionado.")
+      toast.success(t("linkAdded", "Link adicionado."))
       setLinkForm({ title: "", link_url: "" })
       setLinkModalOpen(false)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao adicionar link")
+      toast.error(e instanceof Error ? e.message : t("addLinkFailed", "Falha ao adicionar link"))
     } finally {
       setLinkSaving(false)
     }
-  }, [linkForm, createLink])
+  }, [linkForm, createLink, t])
 
   // -------------------------------------------------------------------------
   // Rename / editar URL (modal rápido — preserva contexto)
@@ -189,7 +193,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
     if (!renameTarget) return
     const title = renameForm.title.trim()
     if (!title) {
-      toast.error("Informe um título.")
+      toast.error(t("enterTitle", "Informe um título."))
       return
     }
     setRenameSaving(true)
@@ -198,21 +202,21 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       if (renameTarget.kind === "link") {
         const url = renameForm.link_url.trim()
         if (!url) {
-          toast.error("Informe uma URL.")
+          toast.error(t("enterUrl", "Informe uma URL."))
           setRenameSaving(false)
           return
         }
         patch.link_url = url
       }
       await updateMaterial(renameTarget.id, patch)
-      toast.success("Atualizado.")
+      toast.success(t("materialUpdated", "Atualizado."))
       setRenameTarget(null)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao atualizar")
+      toast.error(e instanceof Error ? e.message : t("updateFailed", "Falha ao atualizar"))
     } finally {
       setRenameSaving(false)
     }
-  }, [renameTarget, renameForm, updateMaterial])
+  }, [renameTarget, renameForm, updateMaterial, t])
 
   // -------------------------------------------------------------------------
   // Delete
@@ -222,14 +226,14 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
     setDeleting(true)
     try {
       await deleteMaterial(deleteTarget.id)
-      toast.success("Material removido.")
+      toast.success(t("materialRemoved", "Material removido."))
       setDeleteTarget(null)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao remover")
+      toast.error(e instanceof Error ? e.message : t("removeFailed", "Falha ao remover"))
     } finally {
       setDeleting(false)
     }
-  }, [deleteTarget, deleteMaterial])
+  }, [deleteTarget, deleteMaterial, t])
 
   // -------------------------------------------------------------------------
   // Reorder por botões (mesmo padrão do section-modules)
@@ -245,10 +249,10 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       try {
         await reorderMaterials(order)
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao reordenar")
+        toast.error(e instanceof Error ? e.message : t("reorderFailed", "Falha ao reordenar"))
       }
     },
-    [materials, reorderMaterials],
+    [materials, reorderMaterials, t],
   )
 
   // -------------------------------------------------------------------------
@@ -260,11 +264,13 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
             <Paperclip className="h-4 w-4 text-primary" />
-            Materiais de apoio
+            {t("materialsTitle", "Materiais de apoio")}
           </h2>
           <p className="mt-1 text-xs text-white/50">
-            Anexe PDFs, imagens ou links que o aluno baixa/abre junto com a
-            aula.
+            {t(
+              "materialsDesc",
+              "Anexe PDFs, imagens ou links que o aluno baixa/abre junto com a aula.",
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -276,7 +282,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
             onClick={() => setLinkModalOpen(true)}
           >
             <LinkIcon className="mr-1.5 h-3.5 w-3.5" />
-            Adicionar link
+            {t("addLink", "Adicionar link")}
           </Button>
           <Button
             type="button"
@@ -286,7 +292,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
             disabled={!!uploadingName}
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Enviar arquivo
+            {t("uploadFileBtn", "Enviar arquivo")}
           </Button>
         </div>
       </header>
@@ -310,7 +316,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
           <>
             <UploadCloud className="h-5 w-5 animate-pulse text-sky-300" />
             <p className="text-xs font-medium text-white">
-              Enviando {uploadingName}... {Math.round(progress * 100)}%
+              {t("uploadingPrefix", "Enviando")} {uploadingName}... {Math.round(progress * 100)}%
             </p>
             <div className="h-1 w-44 overflow-hidden rounded-full bg-white/10">
               <div
@@ -325,10 +331,10 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               className={`h-5 w-5 ${isDragging ? "text-primary" : "text-white/45"}`}
             />
             <p className="text-xs font-medium text-white/85">
-              Arraste o arquivo aqui ou clique para selecionar
+              {t("dragFileHere", "Arraste o arquivo aqui ou clique para selecionar")}
             </p>
             <p className="text-[11px] text-white/45">
-              PDF, JPG, PNG, WebP ou GIF · até 25MB
+              {t("materialFormatsHint", "PDF, JPG, PNG, WebP ou GIF · até 25MB")}
             </p>
           </>
         )}
@@ -345,7 +351,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       {isLoading && (
         <div className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.02] py-6 text-xs text-white/55">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Carregando materiais...
+          {t("loadingMaterials", "Carregando materiais...")}
         </div>
       )}
 
@@ -357,7 +363,10 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
 
       {!isLoading && !error && materials.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-4 py-6 text-center text-xs text-white/50">
-          Nenhum material ainda. Anexe um PDF, imagem ou link para complementar a aula.
+          {t(
+            "noMaterialsYet",
+            "Nenhum material ainda. Anexe um PDF, imagem ou link para complementar a aula.",
+          )}
         </div>
       )}
 
@@ -385,7 +394,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                 <p className="mt-0.5 truncate text-[11px] text-white/45">
                   {m.kind === "link"
                     ? m.link_url
-                    : `${(m.mime || "").split("/")[1]?.toUpperCase() || "arquivo"} · ${formatBytes(m.file_size_bytes)}`}
+                    : `${(m.mime || "").split("/")[1]?.toUpperCase() || t("fileGeneric", "arquivo")} · ${formatBytes(m.file_size_bytes)}`}
                 </p>
               </div>
 
@@ -395,7 +404,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                   onClick={() => moveItem(m.id, -1)}
                   disabled={idx === 0}
                   className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                  aria-label="Mover para cima"
+                  aria-label={t("moveUp", "Mover para cima")}
                 >
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
@@ -404,7 +413,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                   onClick={() => moveItem(m.id, 1)}
                   disabled={idx === materials.length - 1}
                   className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                  aria-label="Mover para baixo"
+                  aria-label={t("moveDown", "Mover para baixo")}
                 >
                   <ArrowDown className="h-3.5 w-3.5" />
                 </button>
@@ -412,7 +421,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                   type="button"
                   onClick={() => openRename(m)}
                   className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white"
-                  aria-label="Editar"
+                  aria-label={t("editLabel", "Editar")}
                 >
                   <Edit className="h-3.5 w-3.5" />
                 </button>
@@ -420,7 +429,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
                   type="button"
                   onClick={() => setDeleteTarget(m)}
                   className="rounded-md p-1.5 text-red-300/70 transition hover:bg-red-500/10 hover:text-red-200"
-                  aria-label="Excluir"
+                  aria-label={t("deleteLabel", "Excluir")}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -434,21 +443,21 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
         <DialogContent className="border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Adicionar link</DialogTitle>
+            <DialogTitle>{t("addLink", "Adicionar link")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              Aponte para um recurso externo (Drive, YouTube, Notion, etc).
+              {t("addLinkDesc", "Aponte para um recurso externo (Drive, YouTube, Notion, etc).")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="link-title">Título</Label>
+              <Label htmlFor="link-title">{t("titleLabel", "Título")}</Label>
               <Input
                 id="link-title"
                 value={linkForm.title}
                 onChange={(e) =>
                   setLinkForm((s) => ({ ...s, title: e.target.value }))
                 }
-                placeholder="Ex.: Slides da aula"
+                placeholder={t("linkTitlePlaceholder", "Ex.: Slides da aula")}
                 className="border-white/10 bg-zinc-900 text-white"
               />
             </div>
@@ -473,7 +482,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               disabled={linkSaving}
               className="text-white/70 hover:bg-white/[0.05] hover:text-white"
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button
               type="button"
@@ -484,7 +493,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               {linkSaving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : null}
-              Adicionar
+              {t("add", "Adicionar")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -497,15 +506,16 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       >
         <DialogContent className="border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Editar material</DialogTitle>
+            <DialogTitle>{t("editMaterial", "Editar material")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              Atualize o título{renameTarget?.kind === "link" ? " e a URL" : ""}.
-              Para trocar o arquivo, exclua e envie outro.
+              {renameTarget?.kind === "link"
+                ? t("editMaterialDescLink", "Atualize o título e a URL. Para trocar o arquivo, exclua e envie outro.")
+                : t("editMaterialDescFile", "Atualize o título. Para trocar o arquivo, exclua e envie outro.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="rename-title">Título</Label>
+              <Label htmlFor="rename-title">{t("titleLabel", "Título")}</Label>
               <Input
                 id="rename-title"
                 value={renameForm.title}
@@ -537,7 +547,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               disabled={renameSaving}
               className="text-white/70 hover:bg-white/[0.05] hover:text-white"
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button
               type="button"
@@ -548,7 +558,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               {renameSaving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : null}
-              Salvar
+              {t("save", "Salvar")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -561,10 +571,13 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
       >
         <DialogContent className="border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Remover material?</DialogTitle>
+            <DialogTitle>{t("removeMaterialTitle", "Remover material?")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              {deleteTarget?.title} será removido desta aula. Esta ação não pode
-              ser desfeita.
+              {deleteTarget?.title}{" "}
+              {t(
+                "willBeRemovedFromLesson",
+                "será removido desta aula. Esta ação não pode ser desfeita.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -575,7 +588,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               disabled={deleting}
               className="text-white/70 hover:bg-white/[0.05] hover:text-white"
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button
               type="button"
@@ -586,7 +599,7 @@ export function LessonMaterialsBlock({ courseId, moduleId, lessonId }: Props) {
               {deleting ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : null}
-              Remover
+              {t("remove", "Remover")}
             </Button>
           </DialogFooter>
         </DialogContent>

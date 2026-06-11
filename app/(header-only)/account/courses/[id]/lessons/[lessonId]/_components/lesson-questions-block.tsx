@@ -31,6 +31,9 @@ import {
   type LessonQuestion,
   type QuestionOptionInput,
 } from "@/hooks/use-lesson-questions"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+
+type Translator = (key: string, fallback: string) => string
 
 interface Props {
   courseId: string
@@ -69,19 +72,22 @@ function draftFromQuestion(q: LessonQuestion): {
   }
 }
 
-function validateDraft(draft: {
-  prompt: string
-  options: DraftOption[]
-}): string | null {
-  if (!draft.prompt.trim()) return "Escreva o enunciado da pergunta."
+function validateDraft(
+  draft: {
+    prompt: string
+    options: DraftOption[]
+  },
+  t: Translator,
+): string | null {
+  if (!draft.prompt.trim()) return t("enterQuestionPrompt", "Escreva o enunciado da pergunta.")
   if (draft.options.length < MIN_OPTIONS) {
-    return `Adicione pelo menos ${MIN_OPTIONS} opções.`
+    return `${t("addAtLeastPrefix", "Adicione pelo menos")} ${MIN_OPTIONS} ${t("optionsLower", "opções")}.`
   }
   if (draft.options.some((o) => !o.label.trim())) {
-    return "Preencha o texto de todas as opções."
+    return t("fillAllOptions", "Preencha o texto de todas as opções.")
   }
   const correctCount = draft.options.filter((o) => o.is_correct).length
-  if (correctCount !== 1) return "Marque exatamente 1 opção como correta."
+  if (correctCount !== 1) return t("markOneCorrect", "Marque exatamente 1 opção como correta.")
   return null
 }
 
@@ -115,6 +121,7 @@ function QuestionEditor({
   onSubmit,
   onCancel,
 }: QuestionEditorProps) {
+  const t = useTranslations("Account")
   const [draft, setDraft] = useState(initial)
 
   useEffect(() => {
@@ -173,26 +180,26 @@ function QuestionEditor({
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    const err = validateDraft(draft)
+    const err = validateDraft(draft, t)
     if (err) {
       toast.error(err)
       return
     }
     await onSubmit(toInput(draft))
-  }, [draft, onSubmit])
+  }, [draft, onSubmit, t])
 
   return (
     <div className="space-y-3">
       <div>
         <Label htmlFor="question-prompt" className="text-white/80">
-          Enunciado
+          {t("promptLabel", "Enunciado")}
         </Label>
         <Textarea
           id="question-prompt"
           value={draft.prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={2}
-          placeholder="Ex.: Qual é a melhor prática para nomear variáveis em JS?"
+          placeholder={t("promptPlaceholder", "Ex.: Qual é a melhor prática para nomear variáveis em JS?")}
           className="mt-1 min-h-[68px] border-white/10 bg-zinc-900 text-white"
         />
       </div>
@@ -200,7 +207,7 @@ function QuestionEditor({
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <Label className="text-white/80">
-            Opções (marque a correta)
+            {t("optionsMarkCorrect", "Opções (marque a correta)")}
           </Label>
           <button
             type="button"
@@ -209,7 +216,7 @@ function QuestionEditor({
             className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-white/80 transition hover:border-white/25 hover:text-white disabled:opacity-30"
           >
             <Plus className="h-3 w-3" />
-            Adicionar opção
+            {t("addOption", "Adicionar opção")}
           </button>
         </div>
         <ul className="space-y-2">
@@ -228,8 +235,8 @@ function QuestionEditor({
                 className="shrink-0"
                 aria-label={
                   opt.is_correct
-                    ? "Opção correta"
-                    : "Marcar como opção correta"
+                    ? t("correctOption", "Opção correta")
+                    : t("markAsCorrect", "Marcar como opção correta")
                 }
               >
                 {opt.is_correct ? (
@@ -241,7 +248,7 @@ function QuestionEditor({
               <Input
                 value={opt.label}
                 onChange={(e) => setOptionLabel(idx, e.target.value)}
-                placeholder={`Opção ${idx + 1}`}
+                placeholder={`${t("optionWord", "Opção")} ${idx + 1}`}
                 className="flex-1 border-white/10 bg-zinc-900 text-white"
               />
               <button
@@ -249,7 +256,7 @@ function QuestionEditor({
                 onClick={() => moveOption(idx, -1)}
                 disabled={idx === 0}
                 className="rounded-md p-1.5 text-white/45 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                aria-label="Mover opção para cima"
+                aria-label={t("moveOptionUp", "Mover opção para cima")}
               >
                 <ArrowUp className="h-3.5 w-3.5" />
               </button>
@@ -258,7 +265,7 @@ function QuestionEditor({
                 onClick={() => moveOption(idx, 1)}
                 disabled={idx === draft.options.length - 1}
                 className="rounded-md p-1.5 text-white/45 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                aria-label="Mover opção para baixo"
+                aria-label={t("moveOptionDown", "Mover opção para baixo")}
               >
                 <ArrowDown className="h-3.5 w-3.5" />
               </button>
@@ -267,7 +274,7 @@ function QuestionEditor({
                 onClick={() => removeOption(idx)}
                 disabled={draft.options.length <= MIN_OPTIONS}
                 className="rounded-md p-1.5 text-white/45 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                aria-label="Remover opção"
+                aria-label={t("removeOption", "Remover opção")}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -284,7 +291,7 @@ function QuestionEditor({
           disabled={busy}
           className="text-white/70 hover:bg-white/[0.05] hover:text-white"
         >
-          Cancelar
+          {t("cancel", "Cancelar")}
         </Button>
         <Button
           type="button"
@@ -301,6 +308,7 @@ function QuestionEditor({
 }
 
 export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
+  const t = useTranslations("Account")
   const {
     questions,
     isLoading,
@@ -331,15 +339,15 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       setCreating(true)
       try {
         await createQuestion(value)
-        toast.success("Pergunta adicionada.")
+        toast.success(t("questionAdded", "Pergunta adicionada."))
         setCreateOpen(false)
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao adicionar")
+        toast.error(e instanceof Error ? e.message : t("addFailed", "Falha ao adicionar"))
       } finally {
         setCreating(false)
       }
     },
-    [createQuestion],
+    [createQuestion, t],
   )
 
   const submitEdit = useCallback(
@@ -348,15 +356,15 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       setEditSaving(true)
       try {
         await updateQuestion(editTarget.id, value)
-        toast.success("Pergunta atualizada.")
+        toast.success(t("questionUpdated", "Pergunta atualizada."))
         setEditTarget(null)
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao atualizar")
+        toast.error(e instanceof Error ? e.message : t("updateFailed", "Falha ao atualizar"))
       } finally {
         setEditSaving(false)
       }
     },
-    [editTarget, updateQuestion],
+    [editTarget, updateQuestion, t],
   )
 
   const submitDelete = useCallback(async () => {
@@ -364,14 +372,14 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
     setDeleting(true)
     try {
       await deleteQuestion(deleteTarget.id)
-      toast.success("Pergunta removida.")
+      toast.success(t("questionRemoved", "Pergunta removida."))
       setDeleteTarget(null)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao remover")
+      toast.error(e instanceof Error ? e.message : t("removeFailed", "Falha ao remover"))
     } finally {
       setDeleting(false)
     }
-  }, [deleteTarget, deleteQuestion])
+  }, [deleteTarget, deleteQuestion, t])
 
   const moveItem = useCallback(
     async (id: string, dir: -1 | 1) => {
@@ -384,10 +392,10 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       try {
         await reorderQuestions(order)
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao reordenar")
+        toast.error(e instanceof Error ? e.message : t("reorderFailed", "Falha ao reordenar"))
       }
     },
-    [questions, reorderQuestions],
+    [questions, reorderQuestions, t],
   )
 
   return (
@@ -396,11 +404,11 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
         <div>
           <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
             <HelpCircle className="h-4 w-4 text-primary" />
-            Questionário
+            {t("quizTitle", "Questionário")}
           </h2>
           <p className="mt-1 text-xs text-white/50">
-            Cada pergunta tem 2–{MAX_OPTIONS} opções e exatamente 1 marcada como
-            correta.
+            {t("quizHintPrefix", "Cada pergunta tem")} 2–{MAX_OPTIONS}{" "}
+            {t("quizHintSuffix", "opções e exatamente 1 marcada como correta.")}
           </p>
         </div>
         <Button
@@ -410,14 +418,14 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
           onClick={openCreate}
         >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Adicionar pergunta
+          {t("addQuestion", "Adicionar pergunta")}
         </Button>
       </header>
 
       {isLoading && (
         <div className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.02] py-6 text-xs text-white/55">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Carregando perguntas...
+          {t("loadingQuestions", "Carregando perguntas...")}
         </div>
       )}
 
@@ -429,7 +437,10 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
 
       {!isLoading && !error && questions.length === 0 && (
         <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.018] px-4 py-6 text-center text-xs text-white/50">
-          Nenhuma pergunta ainda. Crie uma checagem rápida para reforçar o aprendizado.
+          {t(
+            "noQuestionsYet",
+            "Nenhuma pergunta ainda. Crie uma checagem rápida para reforçar o aprendizado.",
+          )}
         </div>
       )}
 
@@ -453,7 +464,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
                     onClick={() => moveItem(q.id, -1)}
                     disabled={idx === 0}
                     className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                    aria-label="Mover para cima"
+                    aria-label={t("moveUp", "Mover para cima")}
                   >
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
@@ -462,7 +473,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
                     onClick={() => moveItem(q.id, 1)}
                     disabled={idx === questions.length - 1}
                     className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-30"
-                    aria-label="Mover para baixo"
+                    aria-label={t("moveDown", "Mover para baixo")}
                   >
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
@@ -470,7 +481,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
                     type="button"
                     onClick={() => setEditTarget(q)}
                     className="rounded-md p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white"
-                    aria-label="Editar"
+                    aria-label={t("editLabel", "Editar")}
                   >
                     <Edit className="h-3.5 w-3.5" />
                   </button>
@@ -478,7 +489,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
                     type="button"
                     onClick={() => setDeleteTarget(q)}
                     className="rounded-md p-1.5 text-red-300/70 transition hover:bg-red-500/10 hover:text-red-200"
-                    aria-label="Excluir"
+                    aria-label={t("deleteLabel", "Excluir")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -513,15 +524,15 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Nova pergunta</DialogTitle>
+            <DialogTitle>{t("newQuestion", "Nova pergunta")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              Adicione um enunciado e as alternativas. Marque qual é a correta.
+              {t("newQuestionDesc", "Adicione um enunciado e as alternativas. Marque qual é a correta.")}
             </DialogDescription>
           </DialogHeader>
           <QuestionEditor
             initial={createDraft}
             busy={creating}
-            submitLabel="Adicionar"
+            submitLabel={t("add", "Adicionar")}
             onSubmit={submitCreate}
             onCancel={() => setCreateOpen(false)}
           />
@@ -535,16 +546,16 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       >
         <DialogContent className="max-w-lg border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Editar pergunta</DialogTitle>
+            <DialogTitle>{t("editQuestion", "Editar pergunta")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              Edite o enunciado, opções e qual é a correta.
+              {t("editQuestionDesc", "Edite o enunciado, opções e qual é a correta.")}
             </DialogDescription>
           </DialogHeader>
           {editTarget && (
             <QuestionEditor
               initial={draftFromQuestion(editTarget)}
               busy={editSaving}
-              submitLabel="Salvar"
+              submitLabel={t("save", "Salvar")}
               onSubmit={submitEdit}
               onCancel={() => setEditTarget(null)}
             />
@@ -559,10 +570,12 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
       >
         <DialogContent className="border-white/10 bg-zinc-950 text-white">
           <DialogHeader>
-            <DialogTitle>Remover pergunta?</DialogTitle>
+            <DialogTitle>{t("removeQuestionTitle", "Remover pergunta?")}</DialogTitle>
             <DialogDescription className="text-white/55">
-              A pergunta e suas opções serão removidas desta aula. Esta ação
-              não pode ser desfeita.
+              {t(
+                "removeQuestionDesc",
+                "A pergunta e suas opções serão removidas desta aula. Esta ação não pode ser desfeita.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -573,7 +586,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
               disabled={deleting}
               className="text-white/70 hover:bg-white/[0.05] hover:text-white"
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button
               type="button"
@@ -584,7 +597,7 @@ export function LessonQuestionsBlock({ courseId, moduleId, lessonId }: Props) {
               {deleting ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : null}
-              Remover
+              {t("remove", "Remover")}
             </Button>
           </DialogFooter>
         </DialogContent>
