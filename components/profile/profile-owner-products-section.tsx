@@ -10,6 +10,9 @@ import {
 } from "@/components/profile/profile-product-edit-modal"
 import { EmptyState, LoadingState } from "@/components/tabloide"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+
+const INTL_TAG: Record<string, string> = { "pt-BR": "pt-BR", en: "en-US", es: "es-ES" }
 
 interface ProfileOwnerProductsSectionProps {
   profileId: string
@@ -21,12 +24,12 @@ function authHeaders(): HeadersInit | undefined {
   return token ? { Authorization: `Bearer ${token}` } : undefined
 }
 
-function formatPriceParts(cents: number) {
+function formatPriceParts(cents: number, intlTag: string) {
   const safe = Math.max(0, Math.round(Number.isFinite(cents) ? cents : 0))
   const intPart = Math.floor(safe / 100)
   const frac = safe % 100
   return {
-    integer: intPart.toLocaleString("pt-BR"),
+    integer: intPart.toLocaleString(intlTag),
     cents: frac.toString().padStart(2, "0"),
   }
 }
@@ -40,6 +43,9 @@ function getCoverUrl(product: ProfileProduct) {
 }
 
 export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsSectionProps) {
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
   const [products, setProducts] = useState<ProfileProduct[]>([])
   const [profileIsPaid, setProfileIsPaid] = useState<boolean | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
@@ -55,14 +61,14 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
     try {
       const ah = authHeaders()
       if (!ah) {
-        setLoadError("Você precisa estar logado para gerenciar a loja.")
+        setLoadError(t("loginToManageStore", "Você precisa estar logado para gerenciar a loja."))
         setState("error")
         return
       }
       const res = await fetch(`/api/profile/${profileId}/products`, { headers: ah })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setLoadError(d?.error || `Erro HTTP ${res.status}`)
+        setLoadError(d?.error || `${t("httpError", "Erro HTTP")} ${res.status}`)
         setState("error")
         return
       }
@@ -70,10 +76,10 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       setProfileIsPaid(!!d.profile_is_paid)
       setState("loaded")
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Erro de conexão")
+      setLoadError(err instanceof Error ? err.message : t("connectionErrorShort", "Erro de conexão"))
       setState("error")
     }
-  }, [profileId])
+  }, [profileId, t])
 
   useEffect(() => {
     load()
@@ -111,7 +117,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   }
 
   const handleDelete = async (product: ProfileProduct) => {
-    if (!confirm(`Remover "${product.name}" da loja?`)) return
+    if (!confirm(`${t("removeFromStorePre", "Remover")} "${product.name}" ${t("removeFromStorePost", "da loja?")}`)) return
     setDeleting(product.id_profile_product)
     try {
       const ah = authHeaders()
@@ -123,10 +129,10 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         setProducts((prev) => prev.filter((p) => p.id_profile_product !== product.id_profile_product))
       } else {
         const d = await res.json().catch(() => ({}))
-        setFeedbackError(d.error || "Erro ao remover produto")
+        setFeedbackError(d.error || t("removeProductError", "Erro ao remover produto"))
       }
     } catch {
-      setFeedbackError("Erro de conexão ao remover produto")
+      setFeedbackError(t("removeProductConnError", "Erro de conexão ao remover produto"))
     } finally {
       setDeleting(null)
     }
@@ -135,7 +141,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
   if (state === "loading") {
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
-        <LoadingState label="Carregando produtos…" />
+        <LoadingState label={t("loadingProductsEllipsis", "Carregando produtos…")} />
       </section>
     )
   }
@@ -144,7 +150,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
     return (
       <section id="products-section" className="mb-20 scroll-mt-24">
         <div className="mx-auto max-w-md space-y-4 rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] px-6 py-10 text-center text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
-          <p className="fl-display text-xl text-[#0B0B0D]">Não foi possível carregar os produtos.</p>
+          <p className="fl-display text-xl text-[#0B0B0D]">{t("loadProductsError", "Não foi possível carregar os produtos.")}</p>
           {loadError && (
             <p className="text-xs text-[#b91c1c] break-words">{loadError}</p>
           )}
@@ -155,7 +161,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
               className="fl-btn-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              Tentar novamente
+              {t("tryAgain", "Tentar novamente")}
             </button>
             <button
               type="button"
@@ -163,7 +169,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
               className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
             >
               <Plus className="h-3.5 w-3.5" />
-              Produto
+              {t("productWord", "Produto")}
             </button>
           </div>
         </div>
@@ -194,15 +200,15 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       <section id="products-section" className="mb-20 scroll-mt-24">
         <div className="mx-auto max-w-md rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] px-6 py-12 text-center text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
           <Lock className="mx-auto mb-3 h-10 w-10 text-[#0B0B0D]/40" aria-hidden />
-          <h3 className="fl-display mb-1 text-xl text-[#0B0B0D]">Loja só para subperfis pagos</h3>
+          <h3 className="fl-display mb-1 text-xl text-[#0B0B0D]">{t("storePaidOnly", "Loja só para subperfis pagos")}</h3>
           <p className="mb-5 text-sm text-[#5b554b]">
-            Ative este subperfil para começar a vender produtos.
+            {t("activateToSell", "Ative este subperfil para começar a vender produtos.")}
           </p>
           <Link
             href={`/payment/taxa?profile_id=${profileId}`}
             className="fl-btn-gold inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-bold"
           >
-            Ativar subperfil pago
+            {t("activatePaidSubprofile", "Ativar subperfil pago")}
           </Link>
         </div>
       </section>
@@ -213,9 +219,9 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
     <section id="products-section" className="mb-20 scroll-mt-24">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Loja</h2>
+          <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("storeTitle", "Loja")}</h2>
           <p className="text-[11px] text-[#9A938A]">
-            Produtos físicos vendidos por este subperfil.
+            {t("physicalProductsBy", "Produtos físicos vendidos por este subperfil.")}
           </p>
         </div>
         <button
@@ -224,7 +230,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
           className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
         >
           <Plus className="h-3.5 w-3.5" />
-          Produto
+          {t("productWord", "Produto")}
         </button>
       </div>
 
@@ -237,14 +243,14 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       {products.length === 0 ? (
         <EmptyState
           icon={<Package className="h-7 w-7" />}
-          title="Loja vazia"
-          description="Nenhum produto na loja ainda. Crie o primeiro para começar a vender."
+          title={t("emptyStore", "Loja vazia")}
+          description={t("emptyStoreDesc", "Nenhum produto na loja ainda. Crie o primeiro para começar a vender.")}
         />
       ) : (
         <ul className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-3">
           {products.map((p) => {
             const img = getCoverUrl(p)
-            const { integer, cents } = formatPriceParts(p.price_amount)
+            const { integer, cents } = formatPriceParts(p.price_amount, intlTag)
             const desc = p.description?.trim()
             const lowStock = p.stock_quantity <= 0
 
@@ -258,7 +264,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                     type="button"
                     className="absolute right-2 top-2 z-10 cursor-pointer rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#0B0B0D] transition hover:bg-[#F2B705]"
                     onClick={(e) => { e.stopPropagation(); openEdit(p) }}
-                    aria-label={`Editar produto: ${p.name}`}
+                    aria-label={`${t("editProductAria", "Editar produto:")} ${p.name}`}
                   >
                     <Cog className="h-4 w-4" aria-hidden />
                   </button>
@@ -267,7 +273,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                     className="absolute right-2 top-12 z-10 cursor-pointer rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#b91c1c] transition hover:bg-[#dc2626] hover:text-white disabled:opacity-50"
                     onClick={(e) => { e.stopPropagation(); handleDelete(p) }}
                     disabled={deleting === p.id_profile_product}
-                    aria-label={`Remover produto: ${p.name}`}
+                    aria-label={`${t("removeProductAria", "Remover produto:")} ${p.name}`}
                   >
                     {deleting === p.id_profile_product ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -278,7 +284,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
 
                   {!p.is_active && (
                     <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
-                      Inativo
+                      {t("inactive", "Inativo")}
                     </span>
                   )}
 
@@ -296,7 +302,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="min-w-0 flex-1 truncate text-xs font-bold leading-snug text-[#0B0B0D] md:text-sm">{p.name}</h3>
                     <div className={`flex shrink-0 items-center gap-0.5 text-[10px] font-bold md:text-[11px] ${lowStock ? "text-[#b91c1c]" : "text-[#E0A500]"}`}>
-                      <span className="tabular-nums">{p.stock_quantity} un</span>
+                      <span className="tabular-nums">{p.stock_quantity} {t("unitsAbbr", "un")}</span>
                     </div>
                   </div>
 
@@ -317,7 +323,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
                         onClick={() => openEdit(p)}
                         className="fl-btn-gold shrink-0 rounded-full px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider md:px-3 md:text-[10px]"
                       >
-                        Editar
+                        {t("editLabel", "Editar")}
                       </button>
                     </div>
                   </div>

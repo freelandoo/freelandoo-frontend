@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2, MessageCircle, Clock, Megaphone, Package, Sparkles, MapPin, GraduationCap } from "lucide-react"
+import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+
+const INTL_TAG: Record<string, string> = { "pt-BR": "pt-BR", en: "en-US", es: "es-ES" }
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -57,9 +60,9 @@ interface Props {
   profileId: string
 }
 
-function formatPrice(cents: number | null) {
+function formatPrice(cents: number | null, intlTag: string) {
   if (cents == null) return "—"
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+  return (cents / 100).toLocaleString(intlTag, { style: "currency", currency: "BRL" })
 }
 
 /* ------------------------------------------------------------------ */
@@ -83,6 +86,9 @@ type ReqKind = "service" | "product" | "course"
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 export function MuralModal({ open, onOpenChange, profileId }: Props) {
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
   const router = useRouter()
   const [tab, setTab] = useState<"services" | "products" | "courses">("services")
   const [muralItems, setMuralItems] = useState<MuralRequest[]>([])
@@ -129,19 +135,19 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
         const res = await fetch(url, { method: "POST", headers: headers(token), body: JSON.stringify(body) })
         const data = await res.json().catch(() => ({}))
         if (!res.ok) {
-          setError(data?.error || "Não foi possível abrir a conversa")
+          setError(data?.error || t("cantOpenConversation", "Não foi possível abrir a conversa"))
           return
         }
         const idResponse = data?.response?.id_response || data?.id_response || null
         onOpenChange(false)
         router.push(idResponse ? `/mensagens?tab=os&response=${encodeURIComponent(idResponse)}` : `/mensagens?tab=os`)
       } catch {
-        setError("Erro de conexão")
+        setError(t("connectionErrorShort", "Erro de conexão"))
       } finally {
         setOpening(null)
       }
     },
-    [profileId, onOpenChange, router],
+    [profileId, onOpenChange, router, t],
   )
 
   // Fetch services mural
@@ -225,9 +231,9 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
               <Megaphone className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">Mural</DialogTitle>
+              <DialogTitle className="fl-display text-2xl text-[#0B0B0D]">{t("muralTitle", "Mural")}</DialogTitle>
               <DialogDescription className="text-xs text-[#5b554b]">
-                Solicitações compatíveis com seu perfil. Ao responder, a conversa abre em <span className="font-bold text-[#E0A500]">Mensagens → O.S.</span>
+                {t("muralDescPre", "Solicitações compatíveis com seu perfil. Ao responder, a conversa abre em")} <span className="font-bold text-[#E0A500]">{t("muralDescHighlight", "Mensagens → O.S.")}</span>
               </DialogDescription>
             </div>
           </div>
@@ -236,9 +242,9 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
         {/* Segmented tabs */}
         <div className="px-6 pt-4">
           <div className="inline-flex rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-1">
-            <SegmentButton active={tab === "services"} onClick={() => setTab("services")} icon={<Sparkles className="h-3.5 w-3.5" />} label="Serviços" count={muralItems.length} />
-            <SegmentButton active={tab === "products"} onClick={() => setTab("products")} icon={<Package className="h-3.5 w-3.5" />} label="Produtos" count={productItems.length || undefined} />
-            <SegmentButton active={tab === "courses"} onClick={() => setTab("courses")} icon={<GraduationCap className="h-3.5 w-3.5" />} label="Cursos" count={courseItems.length || undefined} />
+            <SegmentButton active={tab === "services"} onClick={() => setTab("services")} icon={<Sparkles className="h-3.5 w-3.5" />} label={t("servicesTab", "Serviços")} count={muralItems.length} />
+            <SegmentButton active={tab === "products"} onClick={() => setTab("products")} icon={<Package className="h-3.5 w-3.5" />} label={t("productsTab", "Produtos")} count={productItems.length || undefined} />
+            <SegmentButton active={tab === "courses"} onClick={() => setTab("courses")} icon={<GraduationCap className="h-3.5 w-3.5" />} label={t("tabCourses", "Cursos")} count={courseItems.length || undefined} />
           </div>
         </div>
 
@@ -253,7 +259,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 {loading ? (
                   <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" /></div>
                 ) : muralItems.length === 0 ? (
-                  <EmptyState icon={<Megaphone className="h-8 w-8" />} title="Nenhuma solicitação nova" hint="Quando alguém pedir um serviço compatível, ela aparece aqui em tempo real." />
+                  <EmptyState icon={<Megaphone className="h-8 w-8" />} title={t("noNewRequests", "Nenhuma solicitação nova")} hint={t("noNewRequestsHint", "Quando alguém pedir um serviço compatível, ela aparece aqui em tempo real.")} />
                 ) : (
                   muralItems.map((req) => (
                     <motion.button
@@ -271,8 +277,8 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-[#0B0B0D]">{req.user_name || "Usuário"}</span>
-                          <span className="text-[10px] text-[#8a8275]">{new Date(req.created_at).toLocaleDateString("pt-BR")}</span>
+                          <span className="text-sm font-bold text-[#0B0B0D]">{req.user_name || t("userFallback", "Usuário")}</span>
+                          <span className="text-[10px] text-[#8a8275]">{new Date(req.created_at).toLocaleDateString(intlTag)}</span>
                         </div>
                         <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                           {req.machine_name && <Badge className="border-2 border-[#0B0B0D]/15 bg-[#F1EDE2] text-[10px] text-[#0B0B0D] h-5 py-0">{req.machine_name}</Badge>}
@@ -295,7 +301,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 {loadingCourses ? (
                   <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" /></div>
                 ) : courseItems.length === 0 ? (
-                  <EmptyState icon={<GraduationCap className="h-8 w-8" />} title="Nenhum pedido de curso" hint="Pedidos chegam quando alguém busca aula na sua profissão — e você precisa ter ao menos um curso publicado." />
+                  <EmptyState icon={<GraduationCap className="h-8 w-8" />} title={t("noCourseRequests", "Nenhum pedido de curso")} hint={t("noCourseRequestsHint", "Pedidos chegam quando alguém busca aula na sua profissão — e você precisa ter ao menos um curso publicado.")} />
                 ) : (
                   courseItems.map((item) => (
                     <motion.div key={item.id_course_request} whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 400, damping: 28 }} className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3.5 transition-all hover:border-[#0B0B0D] hover:bg-[#F2B705]/10">
@@ -303,8 +309,8 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.04]"><GraduationCap className="h-5 w-5 text-[#E0A500]" /></div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-bold text-[#0B0B0D]">{item.user_name || "Usuário"}</span>
-                            <span className="text-[10px] text-[#8a8275]">{new Date(item.created_at).toLocaleDateString("pt-BR")}</span>
+                            <span className="text-sm font-bold text-[#0B0B0D]">{item.user_name || t("userFallback", "Usuário")}</span>
+                            <span className="text-[10px] text-[#8a8275]">{new Date(item.created_at).toLocaleDateString(intlTag)}</span>
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             {item.machine_name && <Badge className="border-2 border-[#0B0B0D]/15 bg-[#F1EDE2] text-[10px] text-[#0B0B0D] h-5 py-0">{item.machine_name}</Badge>}
@@ -316,7 +322,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                       <div className="mt-3 flex justify-end">
                         <button type="button" onClick={() => respond("course", item.id_course_request)} disabled={opening === item.id_course_request} className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-60">
                           {opening === item.id_course_request ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                          Responder
+                          {t("respond", "Responder")}
                         </button>
                       </div>
                     </motion.div>
@@ -330,7 +336,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                 {loadingProducts ? (
                   <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[#E0A500]" /></div>
                 ) : productItems.length === 0 ? (
-                  <EmptyState icon={<Package className="h-8 w-8" />} title="Nenhum pedido de produto" hint="Pedidos aparecem se sua loja tem produto ativo na categoria e cidade do comprador." />
+                  <EmptyState icon={<Package className="h-8 w-8" />} title={t("noProductRequests", "Nenhum pedido de produto")} hint={t("noProductRequestsHint", "Pedidos aparecem se sua loja tem produto ativo na categoria e cidade do comprador.")} />
                 ) : (
                   productItems.map((item) => (
                     <motion.div key={item.id_product_request} whileHover={{ y: -1 }} transition={{ type: "spring", stiffness: 400, damping: 28 }} className="rounded-2xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3.5 transition-all hover:border-[#0B0B0D] hover:bg-[#F2B705]/10">
@@ -349,9 +355,9 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                           <p className="mt-1 text-[11px] text-[#5b554b]">
                             <MapPin className="h-2.5 w-2.5 inline mr-0.5" />{item.city}/{item.state}
                             {(item.min_price_cents != null || item.max_price_cents != null) && (
-                              <> · <span className="tabular-nums font-bold text-[#0B0B0D]">{formatPrice(item.min_price_cents)} — {formatPrice(item.max_price_cents)}</span></>
+                              <> · <span className="tabular-nums font-bold text-[#0B0B0D]">{formatPrice(item.min_price_cents, intlTag)} — {formatPrice(item.max_price_cents, intlTag)}</span></>
                             )}
-                            {" · "}<Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                            {" · "}<Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString(intlTag)}
                           </p>
                           <p className="mt-1.5 text-xs text-[#5b554b] line-clamp-2">{item.description}</p>
                         </div>
@@ -359,7 +365,7 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                       <div className="mt-3 flex justify-end">
                         <button type="button" onClick={() => respond("product", item.id_product_request)} disabled={opening === item.id_product_request} className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold disabled:opacity-60">
                           {opening === item.id_product_request ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                          Responder
+                          {t("respond", "Responder")}
                         </button>
                       </div>
                     </motion.div>

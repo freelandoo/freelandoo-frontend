@@ -1162,6 +1162,48 @@ Object.assign(ACCOUNT, {
   noProsInRanking: ["Nenhum profissional no ranking ainda.", "No professionals in the ranking yet.", "Aún no hay profesionales en el ranking."],
 })
 
+// S14b — mural-modal + profile-owner-products-section
+Object.assign(ACCOUNT, {
+  // mural-modal
+  cantOpenConversation: ["Não foi possível abrir a conversa", "Couldn't open the conversation", "No se pudo abrir la conversación"],
+  connectionErrorShort: ["Erro de conexão", "Connection error", "Error de conexión"],
+  muralTitle: ["Mural", "Board", "Tablón"],
+  muralDescPre: ["Solicitações compatíveis com seu perfil. Ao responder, a conversa abre em", "Requests matching your profile. When you respond, the conversation opens in", "Solicitudes compatibles con tu perfil. Al responder, la conversación se abre en"],
+  muralDescHighlight: ["Mensagens → O.S.", "Messages → Work Orders", "Mensajes → O.T."],
+  servicesTab: ["Serviços", "Services", "Servicios"],
+  productsTab: ["Produtos", "Products", "Productos"],
+  noNewRequests: ["Nenhuma solicitação nova", "No new requests", "Ninguna solicitud nueva"],
+  noNewRequestsHint: ["Quando alguém pedir um serviço compatível, ela aparece aqui em tempo real.", "When someone requests a matching service, it shows up here in real time.", "Cuando alguien pida un servicio compatible, aparecerá aquí en tiempo real."],
+  noCourseRequests: ["Nenhum pedido de curso", "No course requests", "Ninguna solicitud de curso"],
+  noCourseRequestsHint: ["Pedidos chegam quando alguém busca aula na sua profissão — e você precisa ter ao menos um curso publicado.", "Requests arrive when someone looks for a class in your profession — and you need at least one published course.", "Las solicitudes llegan cuando alguien busca una clase en tu profesión — y necesitas al menos un curso publicado."],
+  noProductRequests: ["Nenhum pedido de produto", "No product requests", "Ninguna solicitud de producto"],
+  noProductRequestsHint: ["Pedidos aparecem se sua loja tem produto ativo na categoria e cidade do comprador.", "Requests appear if your store has an active product in the buyer's category and city.", "Las solicitudes aparecen si tu tienda tiene un producto activo en la categoría y ciudad del comprador."],
+  userFallback: ["Usuário", "User", "Usuario"],
+  respond: ["Responder", "Respond", "Responder"],
+  // profile-owner-products-section
+  loginToManageStore: ["Você precisa estar logado para gerenciar a loja.", "You must be logged in to manage the store.", "Debes iniciar sesión para gestionar la tienda."],
+  httpError: ["Erro HTTP", "HTTP error", "Error HTTP"],
+  loadingProductsEllipsis: ["Carregando produtos…", "Loading products…", "Cargando productos…"],
+  loadProductsError: ["Não foi possível carregar os produtos.", "Couldn't load the products.", "No se pudieron cargar los productos."],
+  tryAgain: ["Tentar novamente", "Try again", "Intentar de nuevo"],
+  productWord: ["Produto", "Product", "Producto"],
+  removeFromStorePre: ["Remover", "Remove", "Quitar"],
+  removeFromStorePost: ["da loja?", "from the store?", "de la tienda?"],
+  removeProductError: ["Erro ao remover produto", "Error removing product", "Error al quitar el producto"],
+  removeProductConnError: ["Erro de conexão ao remover produto", "Connection error while removing product", "Error de conexión al quitar el producto"],
+  storePaidOnly: ["Loja só para subperfis pagos", "Store is for paid subprofiles only", "Tienda solo para subperfiles pagos"],
+  activateToSell: ["Ative este subperfil para começar a vender produtos.", "Activate this subprofile to start selling products.", "Activa este subperfil para empezar a vender productos."],
+  activatePaidSubprofile: ["Ativar subperfil pago", "Activate paid subprofile", "Activar subperfil pago"],
+  storeTitle: ["Loja", "Store", "Tienda"],
+  physicalProductsBy: ["Produtos físicos vendidos por este subperfil.", "Physical products sold by this subprofile.", "Productos físicos vendidos por este subperfil."],
+  emptyStore: ["Loja vazia", "Empty store", "Tienda vacía"],
+  emptyStoreDesc: ["Nenhum produto na loja ainda. Crie o primeiro para começar a vender.", "No products in the store yet. Create the first one to start selling.", "Aún no hay productos en la tienda. Crea el primero para empezar a vender."],
+  editProductAria: ["Editar produto:", "Edit product:", "Editar producto:"],
+  removeProductAria: ["Remover produto:", "Remove product:", "Quitar producto:"],
+  inactive: ["Inativo", "Inactive", "Inactivo"],
+  unitsAbbr: ["un", "un", "un"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {
