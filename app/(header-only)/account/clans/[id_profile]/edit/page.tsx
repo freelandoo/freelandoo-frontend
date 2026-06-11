@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
+import { LoadingState, PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
@@ -27,6 +27,8 @@ import {
   validateImageFile,
 } from "@/lib/media/media-validation"
 import type { ProcessedImage } from "@/lib/media/image-processing"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type Clan = {
   id_profile: string
@@ -47,6 +49,8 @@ export default function EditClanPage({
 }) {
   const { id_profile } = use(params)
   const router = useRouter()
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
 
   const [clan, setClan] = useState<Clan | null>(null)
   const [loading, setLoading] = useState(true)
@@ -76,7 +80,7 @@ export default function EditClanPage({
         const res = await fetch(`/api/clans/${id_profile}`)
         const data = await res.json()
         if (!res.ok) {
-          setError(data?.error || "Clan não encontrado")
+          setError(data?.error || t("clanNotFound", "Clan não encontrado"))
           return
         }
         const c: Clan = data.clan
@@ -88,12 +92,12 @@ export default function EditClanPage({
           municipio: c.municipio || "",
         })
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar clan")
+        setError(err instanceof Error ? err.message : t("loadClanError", "Erro ao carregar clan"))
       } finally {
         setLoading(false)
       }
     })()
-  }, [id_profile, router])
+  }, [id_profile, router, t])
 
   useEffect(() => {
     if (!form.estado) {
@@ -127,14 +131,14 @@ export default function EditClanPage({
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data?.error || "Erro ao enviar avatar")
+        setError(data?.error || t("uploadAvatarError", "Erro ao enviar avatar"))
         return
       }
       const newUrl =
         data?.avatar_url || data?.profile?.avatar_url || data?.url || null
       if (newUrl && clan) setClan({ ...clan, avatar_url: newUrl })
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar avatar")
+      setError(err instanceof Error ? err.message : t("uploadAvatarError", "Erro ao enviar avatar"))
     } finally {
       setUploadingAvatar(false)
     }
@@ -165,11 +169,11 @@ export default function EditClanPage({
     setSuccess("")
     const name = form.display_name.trim()
     if (!name) {
-      setError("Dê um nome ao clan")
+      setError(t("clanNameRequired", "Dê um nome ao clan"))
       return
     }
     if (form.bio.length > BIO_LIMIT) {
-      setError(`A bio deve ter no máximo ${BIO_LIMIT} caracteres`)
+      setError(t("bioMaxChars", "A bio deve ter no máximo {limit} caracteres").replace("{limit}", String(BIO_LIMIT)))
       return
     }
     const token = localStorage.getItem("token")
@@ -194,12 +198,12 @@ export default function EditClanPage({
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data?.error || "Erro ao salvar")
+        setError(data?.error || t("saveError", "Erro ao salvar"))
         return
       }
-      setSuccess("Salvo com sucesso")
+      setSuccess(t("savedSuccessfully", "Salvo com sucesso"))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar")
+      setError(err instanceof Error ? err.message : t("saveError", "Erro ao salvar"))
     } finally {
       setSaving(false)
     }
@@ -209,7 +213,7 @@ export default function EditClanPage({
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-        <p className="text-muted-foreground">Carregando…</p>
+          <LoadingState label={t("loading", "Carregando...")} />
         </div>
       </PageShell>
     )
@@ -223,7 +227,7 @@ export default function EditClanPage({
           href="/account/clans"
           className="inline-flex items-center gap-1 mt-4 text-sm text-primary hover:underline"
         >
-          <ArrowLeft className="size-4" /> Voltar
+          <ArrowLeft className="size-4" /> {t("back", "Voltar")}
         </Link>
       </div>
     )
@@ -235,15 +239,15 @@ export default function EditClanPage({
     <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
       <TabloidPageIntro
-        eyebrow="Clan"
-        title="EDITAR."
-        subtitle="Ajuste avatar, bio e localização do clan mantendo a vitrine com energia de manchete."
-        back={<TabloidBackLink href={`/clans/${id_profile}`}>Voltar para o clan</TabloidBackLink>}
+        eyebrow={t("clanWord", "Clan")}
+        title={t("editTitle", "EDITAR.")}
+        subtitle={t("editClanSubtitle", "Ajuste avatar, bio e localização do clan mantendo a vitrine com energia de manchete.")}
+        back={<TabloidBackLink href={`/clans/${id_profile}`}>{t("backToClan", "Voltar para o clan")}</TabloidBackLink>}
       />
 
       <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         <CardHeader>
-          <CardTitle>Editar perfil do clan</CardTitle>
+          <CardTitle>{t("editClanProfile", "Editar perfil do clan")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
@@ -276,14 +280,14 @@ export default function EditClanPage({
                   ) : (
                     <Upload className="h-4 w-4 mr-1" />
                   )}
-                  Trocar avatar
+                  {t("changeAvatar", "Trocar avatar")}
                 </span>
               </Button>
             </label>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="display_name">Nome do clan</Label>
+            <Label htmlFor="display_name">{t("clanNameLabel", "Nome do clan")}</Label>
             <Input
               id="display_name"
               value={form.display_name}
@@ -295,7 +299,7 @@ export default function EditClanPage({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="bio">{t("bioLabel", "Bio")}</Label>
             <Textarea
               id="bio"
               value={form.bio}
@@ -311,17 +315,17 @@ export default function EditClanPage({
 
           {clan.machine_name && (
             <div className="space-y-2">
-              <Label>Enxame de divulgação</Label>
-              <Input value={clan.machine_name} disabled />
+              <Label>{t("disclosureEnxame", "Enxame de divulgação")}</Label>
+              <Input value={tx.enxame(null, clan.machine_name)} disabled />
               <p className="text-xs text-muted-foreground">
-                O enxame é definido na criação e não pode ser alterado.
+                {t("clanEnxameFixedHint", "O enxame é definido na criação e não pode ser alterado.")}
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Estado</Label>
+              <Label>{t("stateLabel", "Estado")}</Label>
               <Select
                 value={form.estado}
                 onValueChange={(val) =>
@@ -329,7 +333,7 @@ export default function EditClanPage({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t("select", "Selecione")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ESTADOS_BRASIL.map((e) => (
@@ -342,7 +346,7 @@ export default function EditClanPage({
             </div>
 
             <div className="space-y-2">
-              <Label>Cidade</Label>
+              <Label>{t("cityLabel", "Município")}</Label>
               <Select
                 value={form.municipio}
                 onValueChange={(val) =>
@@ -351,7 +355,7 @@ export default function EditClanPage({
                 disabled={!form.estado || loadingMunicipios}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={loadingMunicipios ? "Carregando…" : "Selecione"} />
+                  <SelectValue placeholder={loadingMunicipios ? t("loading", "Carregando...") : t("select", "Selecione")} />
                 </SelectTrigger>
                 <SelectContent>
                   {municipios.map((m) => (
@@ -374,16 +378,16 @@ export default function EditClanPage({
               onClick={() => router.push(`/clans/${id_profile}`)}
               disabled={saving}
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button type="button" onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  Salvando…
+                  {t("saving", "Salvando...")}
                 </>
               ) : (
-                "Salvar"
+                t("save", "Salvar")
               )}
             </Button>
           </div>
@@ -398,8 +402,8 @@ export default function EditClanPage({
           outputHeight={AVATAR_IMAGE_OUTPUT.height}
           maxSizeMB={2}
           mediaType="profile_avatar"
-          title="Ajustar foto de perfil"
-          description="Ajuste sua foto de perfil."
+          title={t("adjustAvatarTitle", "Ajustar foto de perfil")}
+          description={t("adjustAvatarDesc", "Ajuste sua foto de perfil.")}
           onCancel={() => setAvatarCropFile(null)}
           onConfirm={handleAvatarCropConfirm}
         />

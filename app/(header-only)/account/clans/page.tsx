@@ -34,6 +34,8 @@ import {
   TabloidPageIntro,
   TABLOID_ACTION_CLASSES,
 } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -70,6 +72,8 @@ type ClanListItem = {
 
 export default function MyClansPage() {
   const router = useRouter()
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [clans, setClans] = useState<ClanListItem[]>([])
@@ -159,12 +163,12 @@ export default function MyClansPage() {
         setSubProfiles(profiles)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        setError(`Erro ao carregar clans: ${msg}`)
+        setError(`${t("clansLoadErrorPrefix", "Erro ao carregar clans:")} ${msg}`)
       } finally {
         setLoading(false)
       }
     })()
-  }, [router])
+  }, [router, t])
 
   async function respondInvite(id: number, action: "accept" | "decline") {
     setInviteActionId(id)
@@ -180,7 +184,7 @@ export default function MyClansPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data?.error || "Erro ao responder convite")
+        alert(data?.error || t("clanInviteRespondError", "Erro ao responder convite"))
         return
       }
       // Refresh
@@ -198,9 +202,9 @@ export default function MyClansPage() {
 
   async function handleCreate() {
     setFormError("")
-    if (!form.id_profile_owner) return setFormError("Escolha o sub-perfil que vai criar o clan")
-    if (!form.id_machine) return setFormError("Escolha o enxame do clan")
-    if (!form.display_name.trim()) return setFormError("Dê um nome ao clan")
+    if (!form.id_profile_owner) return setFormError(t("clanChooseOwnerProfile", "Escolha o sub-perfil que vai criar o clan"))
+    if (!form.id_machine) return setFormError(t("clanChooseEnxame", "Escolha o enxame do clan"))
+    if (!form.display_name.trim()) return setFormError(t("clanNameRequired", "Dê um nome ao clan"))
 
     setSaving(true)
     try {
@@ -223,7 +227,7 @@ export default function MyClansPage() {
 
       const data = await res.json()
       if (!res.ok) {
-        setFormError(data?.error || "Erro ao criar clan")
+        setFormError(data?.error || t("clanCreateError", "Erro ao criar clan"))
         return
       }
 
@@ -245,7 +249,7 @@ export default function MyClansPage() {
       setClans(refreshedData.clans || [])
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setFormError(`Erro ao criar clan: ${msg}`)
+      setFormError(`${t("clanCreateErrorPrefix", "Erro ao criar clan:")} ${msg}`)
     } finally {
       setSaving(false)
     }
@@ -255,7 +259,7 @@ export default function MyClansPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <LoadingState label="Carregando seus clans..." />
+          <LoadingState label={t("loadingClans", "Carregando seus clans...")} />
         </div>
       </PageShell>
     )
@@ -265,7 +269,7 @@ export default function MyClansPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <ErrorState title="Clans indisponíveis" description={error} />
+          <ErrorState title={t("clansUnavailable", "Clans indisponíveis")} description={error} />
         </div>
       </PageShell>
     )
@@ -274,26 +278,28 @@ export default function MyClansPage() {
   const eligible = !!eligibility?.eligible
   const currentH = Math.floor((eligibility?.current_minutes || 0) / 60)
   const currentM = (eligibility?.current_minutes || 0) % 60
+  const missingClanHours = Math.max(0, 10 - currentH)
+  const missingClanTime = `${missingClanHours}h${missingClanHours === 0 ? `${60 - currentM}m` : ""}`
   const eligibleSubProfiles = subProfiles
 
   return (
     <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
       <TabloidPageIntro
-        eyebrow="Equipes"
-        title="MEUS CLANS."
-        subtitle="Crie ou participe de clans com até 6 sub-perfis. As métricas do clan somam likes, horas e engajamento de todos os membros."
-        back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+        eyebrow={t("teamsEyebrow", "Equipes")}
+        title={t("myClansTitle", "MEUS CLANS.")}
+        subtitle={t("myClansSubtitle", "Crie ou participe de clans com até 6 sub-perfis. As métricas do clan somam likes, horas e engajamento de todos os membros.")}
+        back={<TabloidBackLink href="/account">{t("back", "Voltar")}</TabloidBackLink>}
         actions={
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
             disabled={!eligible}
-            title={eligible ? "Criar um novo clan" : "Você precisa de 10h online para criar um clan"}
+            title={eligible ? t("createNewClan", "Criar um novo clan") : t("clanNeeds10h", "Você precisa de 10h online para criar um clan")}
             className={TABLOID_ACTION_CLASSES}
           >
             {eligible ? <Plus className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-            Criar Clan
+            {t("createClan", "Criar Clan")}
           </button>
         }
       />
@@ -301,12 +307,11 @@ export default function MyClansPage() {
       {!eligible && eligibility && (
         <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardContent className="pt-6">
-            <p className="font-medium">Ainda não desbloqueou criação de clans</p>
+            <p className="font-medium">{t("clanCreationLocked", "Ainda não desbloqueou criação de clans")}</p>
             <p className="mt-1 text-sm text-[#5b554b]">
-              Você tem {currentH}h{currentM}m online. Faltam{" "}
-              {Math.max(0, 10 - currentH)}h
-              {Math.max(0, 10 - currentH) === 0 ? `${60 - currentM}m` : ""} para
-              destravar a criação.
+              {t("clanCreationProgress", "Você tem {current} online. Faltam {remaining} para destravar a criação.")
+                .replace("{current}", `${currentH}h${currentM}m`)
+                .replace("{remaining}", missingClanTime)}
             </p>
           </CardContent>
         </Card>
@@ -316,10 +321,10 @@ export default function MyClansPage() {
         <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
             <CardTitle className="text-base">
-              Convites pendentes ({pendingInvites.length})
+              {t("pendingInvites", "Convites pendentes")} ({pendingInvites.length})
             </CardTitle>
             <CardDescription>
-              Você foi convidado para os clans abaixo.
+              {t("clanInvitesDesc", "Você foi convidado para os clans abaixo.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
@@ -331,7 +336,7 @@ export default function MyClansPage() {
                 <div className="flex-1">
                   <div className="text-sm font-medium">{inv.clan_display_name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {inv.clan_machine_name || "—"} · convite para{" "}
+                    {inv.clan_machine_name ? tx.enxame(null, inv.clan_machine_name) : "—"} · {t("inviteFor", "convite para")}{" "}
                     <strong>{inv.invited_display_name}</strong>
                   </div>
                 </div>
@@ -341,14 +346,14 @@ export default function MyClansPage() {
                   onClick={() => respondInvite(inv.id_clan_invite, "decline")}
                   disabled={inviteActionId === inv.id_clan_invite}
                 >
-                  <X className="size-4 mr-1" /> Recusar
+                  <X className="size-4 mr-1" /> {t("decline", "Recusar")}
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => respondInvite(inv.id_clan_invite, "accept")}
                   disabled={inviteActionId === inv.id_clan_invite}
                 >
-                  <Check className="size-4 mr-1" /> Aceitar
+                  <Check className="size-4 mr-1" /> {t("accept", "Aceitar")}
                 </Button>
               </div>
             ))}
@@ -359,7 +364,7 @@ export default function MyClansPage() {
       {clans.length === 0 ? (
         <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardContent className="pt-6 text-center text-muted-foreground">
-            Você ainda não participa de nenhum clan.
+            {t("noClanMemberships", "Você ainda não participa de nenhum clan.")}
           </CardContent>
         </Card>
       ) : (
@@ -370,12 +375,12 @@ export default function MyClansPage() {
                 <CardTitle className="flex items-center justify-between gap-2">
                   <span>{c.display_name}</span>
                   <Badge variant={c.my_role === "owner" ? "default" : "secondary"}>
-                    {c.my_role === "owner" ? "Dono" : "Membro"}
+                    {c.my_role === "owner" ? t("ownerRole", "Dono") : t("memberRole", "Membro")}
                   </Badge>
                 </CardTitle>
                 <CardDescription>
-                  {c.machine_name || "—"} ·{" "}
-                  {c.members_count}/{c.max_slots ?? 3} membros
+                  {c.machine_name ? tx.enxame(c.machine_slug, c.machine_name) : "—"} ·{" "}
+                  {c.members_count}/{c.max_slots ?? 3} {t("membersWord", "membros")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-between gap-2">
@@ -383,14 +388,14 @@ export default function MyClansPage() {
                   href={`/account/clans/${c.id_profile}`}
                   className="text-sm text-primary hover:underline"
                 >
-                  Gerenciar clan →
+                  {t("manageClanArrow", "Gerenciar clan →")}
                 </Link>
                 {c.my_role === "owner" && (
                   <Link
                     href={`/account/profile/${c.id_profile}/agenda`}
                     className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                   >
-                    <CalendarDays className="size-3.5" /> Agenda
+                    <CalendarDays className="size-3.5" /> {t("agenda", "Agenda")}
                   </Link>
                 )}
               </CardContent>
@@ -402,56 +407,54 @@ export default function MyClansPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="fl-root max-h-[90vh] overflow-y-auto fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Criar novo clan</DialogTitle>
+            <DialogTitle>{t("createNewClan", "Criar novo clan")}</DialogTitle>
             <DialogDescription>
-              O sub-perfil escolhido vira dono do clan e ocupa 1 das 6 vagas.
-              3 vagas grátis, mais 3 disponíveis a R$39 cada.
+              {t("createClanDesc", "O sub-perfil escolhido vira dono do clan e ocupa 1 das 6 vagas. 3 vagas grátis, mais 3 disponíveis a R$39 cada.")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label>Sub-perfil que cria o clan</Label>
+              <Label>{t("clanOwnerProfileLabel", "Sub-perfil que cria o clan")}</Label>
               <Select
                 value={form.id_profile_owner}
                 onValueChange={(v) => setForm({ ...form, id_profile_owner: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um sub-perfil" />
+                  <SelectValue placeholder={t("selectSubprofile", "Selecione um sub-perfil")} />
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleSubProfiles.length === 0 && (
                     <SelectItem value="__none__" disabled>
-                      Nenhum sub-perfil disponível
+                      {t("noSubprofileAvailable", "Nenhum sub-perfil disponível")}
                     </SelectItem>
                   )}
                   {eligibleSubProfiles.map((p) => (
                     <SelectItem key={p.id_profile} value={p.id_profile}>
                       {p.display_name}
-                      {p.is_paid === false ? " (sem ativação)" : ""}
+                      {p.is_paid === false ? ` ${t("withoutActivationParen", "(sem ativação)")}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Apenas subperfis ativados podem criar clan, e cada
-                sub-perfil só pode estar em 1 clan.
+                {t("clanOwnerProfileHint", "Apenas subperfis ativados podem criar clan, e cada sub-perfil só pode estar em 1 clan.")}
               </p>
             </div>
 
             <div>
-              <Label>Enxame</Label>
+              <Label>{t("enxameLabel", "Enxame")}</Label>
               <Select
                 value={form.id_machine}
                 onValueChange={(v) => setForm({ ...form, id_machine: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Em qual enxame o clan atua?" />
+                  <SelectValue placeholder={t("clanEnxamePlaceholder", "Em qual enxame o clan atua?")} />
                 </SelectTrigger>
                 <SelectContent>
                   {machines.map((m) => (
                     <SelectItem key={m.id_machine} value={String(m.id_machine)}>
-                      {m.name}
+                      {tx.enxame(m.slug, m.name)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -459,32 +462,32 @@ export default function MyClansPage() {
             </div>
 
             <div>
-              <Label>Nome do clan</Label>
+              <Label>{t("clanNameLabel", "Nome do clan")}</Label>
               <Input
                 value={form.display_name}
                 onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-                placeholder="Ex: Estúdio Pixel"
+                placeholder={t("clanNamePlaceholder", "Ex: Estúdio Pixel")}
                 maxLength={120}
               />
             </div>
 
             <div>
-              <Label>Bio (opcional)</Label>
+              <Label>{t("bioOptional", "Bio (opcional)")}</Label>
               <Textarea
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                placeholder="Conte em poucas palavras o que o clan faz"
+                placeholder={t("clanBioPlaceholder", "Conte em poucas palavras o que o clan faz")}
                 maxLength={200}
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {form.bio.length}/200 caracteres
+                {form.bio.length}/200 {t("charactersWord", "caracteres")}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Estado (opcional)</Label>
+                <Label>{t("stateOptional", "Estado (opcional)")}</Label>
                 <Select
                   value={form.estado}
                   onValueChange={(v) =>
@@ -504,7 +507,7 @@ export default function MyClansPage() {
                 </Select>
               </div>
               <div>
-                <Label>Município (opcional)</Label>
+                <Label>{t("cityOptional", "Município (opcional)")}</Label>
                 <Select
                   value={form.municipio}
                   onValueChange={(v) => setForm({ ...form, municipio: v })}
@@ -512,7 +515,7 @@ export default function MyClansPage() {
                 >
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={loadingMunicipios ? "Carregando..." : "Cidade"}
+                      placeholder={loadingMunicipios ? t("loading", "Carregando...") : t("cityPlaceholder", "Cidade")}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -536,10 +539,10 @@ export default function MyClansPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={saving}>
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button onClick={handleCreate} disabled={saving}>
-              {saving ? "Criando..." : "Criar clan"}
+              {saving ? t("creating", "Criando...") : t("createClanLower", "Criar clan")}
             </Button>
           </DialogFooter>
         </DialogContent>

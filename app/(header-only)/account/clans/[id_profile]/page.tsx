@@ -47,6 +47,8 @@ import {
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { LoadingState, PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type Member = {
   id_member_profile: string
@@ -130,6 +132,9 @@ export default function ManageClanPage({
 }) {
   const { id_profile } = use(params)
   const router = useRouter()
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const tx = useTaxonomy()
   const [clan, setClan] = useState<Clan | null>(null)
   const [invites, setInvites] = useState<Invite[]>([])
   const [loading, setLoading] = useState(true)
@@ -189,7 +194,7 @@ export default function ManageClanPage({
       setPortfolio(portfolioData?.items || [])
 
       if (!clanRes.ok) {
-        setError(clanData?.error || "Clan não encontrado")
+        setError(clanData?.error || t("clanNotFound", "Clan não encontrado"))
         return
       }
       setClan(clanData.clan)
@@ -203,7 +208,7 @@ export default function ManageClanPage({
       )
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setError(`Erro ao carregar: ${msg}`)
+      setError(`${t("loadErrorPrefix", "Erro ao carregar:")} ${msg}`)
     } finally {
       setLoading(false)
     }
@@ -227,13 +232,13 @@ export default function ManageClanPage({
       )
       const data = await res.json()
       if (!res.ok) {
-        setInviteError(data?.error || "Erro na busca")
+        setInviteError(data?.error || t("searchError", "Erro na busca"))
         return
       }
       setSearchResults(data.profiles || [])
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setInviteError(`Erro na busca: ${msg}`)
+      setInviteError(`${t("searchErrorPrefix", "Erro na busca:")} ${msg}`)
     } finally {
       setSearching(false)
     }
@@ -254,7 +259,7 @@ export default function ManageClanPage({
       })
       const data = await res.json()
       if (!res.ok) {
-        setInviteError(data?.error || "Erro ao convidar")
+        setInviteError(data?.error || t("inviteProfileError", "Erro ao convidar"))
         return
       }
       setSearch("")
@@ -262,14 +267,14 @@ export default function ManageClanPage({
       await loadAll()
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setInviteError(`Erro: ${msg}`)
+      setInviteError(`${t("genericErrorPrefix", "Erro:")} ${msg}`)
     } finally {
       setActionLoading(false)
     }
   }
 
   async function handleCancelInvite(id_clan_invite: number) {
-    if (!confirm("Cancelar este convite?")) return
+    if (!confirm(t("cancelInviteConfirm", "Cancelar este convite?"))) return
     const token = localStorage.getItem("token")
     setActionLoading(true)
     await fetch(`/api/clans/invites/${id_clan_invite}`, {
@@ -282,8 +287,8 @@ export default function ManageClanPage({
 
   async function handleRemove(id_member_profile: string, isSelf: boolean) {
     const msg = isSelf
-      ? "Tem certeza que quer sair do clan?"
-      : "Remover este membro do clan?"
+      ? t("leaveClanConfirm", "Tem certeza que quer sair do clan?")
+      : t("removeMemberConfirm", "Remover este membro do clan?")
     if (!confirm(msg)) return
     const token = localStorage.getItem("token")
     setActionLoading(true)
@@ -293,7 +298,7 @@ export default function ManageClanPage({
     )
     const data = await res.json()
     if (!res.ok) {
-      alert(data?.error || "Erro ao remover")
+      alert(data?.error || t("removeError", "Erro ao remover"))
     } else if (isSelf) {
       router.push("/account/clans")
       return
@@ -340,11 +345,11 @@ export default function ManageClanPage({
           outputHeight: POST_IMAGE_OUTPUT.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
-          errorMessage: "A imagem do post precisa ter no máximo 3MB.",
+          errorMessage: t("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
         })
         setProcessedPortfolioImage(processed, file)
       } catch (err) {
-        setPortfolioError(err instanceof Error ? err.message : "Não foi possível otimizar esse arquivo. Tente outro.")
+        setPortfolioError(err instanceof Error ? err.message : t("optimizeFileError", "Não foi possível otimizar esse arquivo. Tente outro."))
       } finally {
         setProcessingPortfolioMedia(false)
       }
@@ -379,8 +384,8 @@ export default function ManageClanPage({
   async function handleAddPortfolioItem() {
     setPortfolioError("")
     const title = newItemTitle.trim()
-    if (!title) return setPortfolioError("Dê um título ao item")
-    if (!newItemFile) return setPortfolioError("Selecione um arquivo")
+    if (!title) return setPortfolioError(t("portfolioItemTitleRequired", "Dê um título ao item"))
+    if (!newItemFile) return setPortfolioError(t("selectFile", "Selecione um arquivo"))
 
     setUploadingPortfolio(true)
     try {
@@ -395,12 +400,12 @@ export default function ManageClanPage({
       })
       const createData = await createRes.json()
       if (!createRes.ok) {
-        setPortfolioError(createData?.error || "Erro ao criar item")
+        setPortfolioError(createData?.error || t("createPortfolioItemError", "Erro ao criar item do portfólio"))
         return
       }
       const itemId = createData?.item?.id_portfolio_item
       if (!itemId) {
-        setPortfolioError("Resposta inesperada do backend")
+        setPortfolioError(t("unexpectedBackendResponse", "Resposta inesperada do backend"))
         return
       }
 
@@ -413,7 +418,7 @@ export default function ManageClanPage({
       )
       const upData = await upRes.json()
       if (!upRes.ok) {
-        setPortfolioError(upData?.error || "Item criado, mas upload falhou")
+        setPortfolioError(upData?.error || t("itemCreatedUploadFailed", "Item criado, mas upload falhou"))
       }
 
       // Reset + reload
@@ -426,14 +431,14 @@ export default function ManageClanPage({
       setPortfolio(refreshedData?.items || [])
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setPortfolioError(`Erro: ${msg}`)
+      setPortfolioError(`${t("genericErrorPrefix", "Erro:")} ${msg}`)
     } finally {
       setUploadingPortfolio(false)
     }
   }
 
   async function handleDeletePortfolioItem(id_portfolio_item: string) {
-    if (!confirm("Apagar este item do portfólio?")) return
+    if (!confirm(t("deletePortfolioItemConfirm", "Apagar este item do portfólio?"))) return
     const token = localStorage.getItem("token")
     const res = await fetch(
       `/api/profile/${id_profile}/portfolio/${id_portfolio_item}`,
@@ -445,12 +450,13 @@ export default function ManageClanPage({
       )
     } else {
       const data = await res.json()
-      alert(data?.error || "Erro ao apagar item")
+      alert(data?.error || t("deletePortfolioItemError", "Erro ao apagar item"))
     }
   }
 
   async function handleBuySlot() {
-    if (!confirm("Comprar uma vaga adicional por R$39? Você será redirecionado ao pagamento.")) return
+    const price = ((clan?.settings?.slot_price_cents ?? 3900) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
+    if (!confirm(t("buyClanSlotConfirm", "Comprar uma vaga adicional por {price}? Você será redirecionado ao pagamento.").replace("{price}", price))) return
     setBuyingSlot(true)
     try {
       const token = localStorage.getItem("token")
@@ -462,14 +468,14 @@ export default function ManageClanPage({
       })
       const data = await res.json()
       if (!res.ok || !data?.checkout_url) {
-        alert(data?.error || "Erro ao iniciar checkout")
+        alert(data?.error || t("checkoutStartError", "Erro ao iniciar checkout"))
         setBuyingSlot(false)
         return
       }
       window.location.href = data.checkout_url
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      alert(`Erro: ${msg}`)
+      alert(`${t("genericErrorPrefix", "Erro:")} ${msg}`)
       setBuyingSlot(false)
     }
   }
@@ -479,13 +485,13 @@ export default function ManageClanPage({
     setCreatingCourse(true)
     try {
       const created = await createCourse({
-        title: "Novo curso do clan",
+        title: t("newClanCourseDefaultTitle", "Novo curso do clan"),
         profile_id: id_profile,
       })
       router.push(`/account/courses/${created.id}`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      alert(`Erro ao criar curso: ${msg}`)
+      alert(`${t("createClanCourseErrorPrefix", "Erro ao criar curso:")} ${msg}`)
       setCreatingCourse(false)
     }
   }
@@ -494,7 +500,7 @@ export default function ManageClanPage({
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <LoadingState label="Carregando clan..." />
+          <LoadingState label={t("loadingClan", "Carregando clan...")} />
         </div>
       </PageShell>
     )
@@ -507,14 +513,14 @@ export default function ManageClanPage({
         <Card>
           <CardContent className="pt-6 flex items-center gap-2 text-red-600">
             <AlertCircle className="size-5" />
-            {error || "Clan não encontrado"}
+            {error || t("clanNotFound", "Clan não encontrado")}
           </CardContent>
         </Card>
         <Link
           href="/account/clans"
           className="inline-flex items-center gap-1 mt-4 text-sm text-primary hover:underline"
         >
-          <ArrowLeft className="size-4" /> Voltar
+          <ArrowLeft className="size-4" /> {t("back", "Voltar")}
         </Link>
       </div>
       </PageShell>
@@ -531,22 +537,31 @@ export default function ManageClanPage({
   const totalUnlocked = freeSlots + paidSlots
   const slotsAvailable = totalUnlocked - occupied
   const lockedSlots = 6 - totalUnlocked
-  const slotPrice = ((clan.settings?.slot_price_cents ?? 3900) / 100).toFixed(2)
+  const formatMoney = (cents: number) =>
+    ((cents || 0) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
+  const formatDate = (value: string) => new Date(value).toLocaleDateString(locale)
+  const slotPrice = formatMoney(clan.settings?.slot_price_cents ?? 3900)
+  const payoutStatusLabel = (status: ClanPayout["status"]) => {
+    if (status === "aguardando") return t("payoutStatusWaiting", "Aguardando")
+    if (status === "aprovado") return t("payoutStatusReleased", "Liberado")
+    if (status === "pago") return t("payoutStatusPaid", "Pago")
+    return t("payoutStatusReversed", "Revertido")
+  }
 
   return (
     <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12">
       <TabloidPageIntro
-        eyebrow={isOwner ? "Dono do clan" : "Membro do clan"}
-        title="CLAN."
-        subtitle={`${clan.display_name} em modo operacional: membros, vagas, mural, convites e permissões em cards de papel.`}
-        back={<TabloidBackLink href={`/clans/${id_profile}`}>Voltar para o clan</TabloidBackLink>}
+        eyebrow={isOwner ? t("clanOwnerEyebrow", "Dono do clan") : t("clanMemberEyebrow", "Membro do clan")}
+        title={t("clanTitle", "CLAN.")}
+        subtitle={`${clan.display_name} ${t("clanManageSubtitleSuffix", "em modo operacional: membros, vagas, mural, convites e permissões em cards de papel.")}`}
+        back={<TabloidBackLink href={`/clans/${id_profile}`}>{t("backToClan", "Voltar para o clan")}</TabloidBackLink>}
         actions={
           <>
             {isOwner && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/account/profile/${id_profile}/agenda`}>
-                  <CalendarDays className="size-4 mr-1" /> Agenda
+                  <CalendarDays className="size-4 mr-1" /> {t("agenda", "Agenda")}
                 </Link>
               </Button>
             )}
@@ -557,7 +572,7 @@ export default function ManageClanPage({
                 onClick={() => handleRemove(myMembership.id_member_profile, true)}
                 disabled={actionLoading}
               >
-                <LogOut className="size-4 mr-1" /> Sair do clan
+                <LogOut className="size-4 mr-1" /> {t("leaveClan", "Sair do clan")}
               </Button>
             )}
           </>
@@ -570,12 +585,12 @@ export default function ManageClanPage({
             {clan.display_name}
             {isOwner && (
               <Badge variant="default" className="ml-2">
-                <Crown className="size-3 mr-1" /> Você é o dono
+                <Crown className="size-3 mr-1" /> {t("youAreOwner", "Você é o dono")}
               </Badge>
             )}
           </CardTitle>
           <CardDescription>
-            {clan.machine_name || "—"} · {clan.members_count}/{clan.max_slots ?? 3} membros
+            {clan.machine_name ? tx.enxame(null, clan.machine_name) : "—"} · {clan.members_count}/{clan.max_slots ?? 3} {t("membersWord", "membros")}
             {clan.bio ? ` · ${clan.bio}` : ""}
           </CardDescription>
         </CardHeader>
@@ -607,7 +622,7 @@ export default function ManageClanPage({
                     size="icon"
                     onClick={() => handleRemove(m.id_member_profile, false)}
                     disabled={actionLoading}
-                    title="Remover do clan"
+                    title={t("removeFromClan", "Remover do clan")}
                   >
                     <X className="size-4" />
                   </Button>
@@ -620,11 +635,14 @@ export default function ManageClanPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Vagas do clan</CardTitle>
+          <CardTitle>{t("clanSlots", "Vagas do clan")}</CardTitle>
           <CardDescription>
-            {freeSlots} vaga(s) grátis + {paidSlots} paga(s) ·{" "}
-            {occupied}/{totalUnlocked} ocupadas
-            {lockedSlots > 0 && ` · ${lockedSlots} bloqueada(s)`}
+            {t("clanSlotsSummary", "{free} vaga(s) grátis + {paid} paga(s) · {occupied}/{total} ocupadas")
+              .replace("{free}", String(freeSlots))
+              .replace("{paid}", String(paidSlots))
+              .replace("{occupied}", String(occupied))
+              .replace("{total}", String(totalUnlocked))}
+            {lockedSlots > 0 && ` · ${t("lockedSlotsCount", "{count} bloqueada(s)").replace("{count}", String(lockedSlots))}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -662,17 +680,17 @@ export default function ManageClanPage({
                   ) : !isUnlocked ? (
                     <>
                       <Lock className="size-5" />
-                      <span className="text-xs">Bloqueada</span>
+                      <span className="text-xs">{t("lockedSlot", "Bloqueada")}</span>
                     </>
                   ) : hasPendingInvite ? (
                     <>
                       <UserPlus className="size-5 text-amber-600" />
-                      <span className="text-xs text-amber-700">Convite enviado</span>
+                      <span className="text-xs text-amber-700">{t("inviteSent", "Convite enviado")}</span>
                     </>
                   ) : (
                     <>
                       <UserPlus className="size-5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Vaga aberta</span>
+                      <span className="text-xs text-muted-foreground">{t("openSlot", "Vaga aberta")}</span>
                     </>
                   )}
                 </div>
@@ -683,15 +701,14 @@ export default function ManageClanPage({
           {isOwner && lockedSlots > 0 && (
             <div className="mt-4 flex items-center justify-between gap-3 border rounded-md p-3 bg-muted/30">
               <div className="text-sm">
-                <div className="font-medium">Liberar mais 1 vaga</div>
+                <div className="font-medium">{t("unlockOneMoreSlot", "Liberar mais 1 vaga")}</div>
                 <div className="text-xs text-muted-foreground">
-                  R$ {slotPrice} · pagamento único · libera 1 vaga adicional
-                  permanentemente.
+                  {t("unlockSlotDesc", "{price} · pagamento único · libera 1 vaga adicional permanentemente.").replace("{price}", slotPrice)}
                 </div>
               </div>
               <Button onClick={handleBuySlot} disabled={buyingSlot}>
                 <CreditCard className="size-4 mr-1" />
-                {buyingSlot ? "Redirecionando..." : `Comprar vaga`}
+                {buyingSlot ? t("redirecting", "Redirecionando...") : t("buySlot", "Comprar vaga")}
               </Button>
             </div>
           )}
@@ -702,16 +719,16 @@ export default function ManageClanPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="size-5" /> Portfólio do clan
+              <ImageIcon className="size-5" /> {t("clanPortfolio", "Portfólio do clan")}
             </CardTitle>
             <CardDescription>
-              Qualquer membro pode adicionar itens. {isOwner ? "Como dono, você pode remover qualquer item." : "Apenas o dono pode remover itens."}
+              {t("clanPortfolioDesc", "Qualquer membro pode adicionar itens.")} {isOwner ? t("clanOwnerCanRemoveItems", "Como dono, você pode remover qualquer item.") : t("onlyOwnerCanRemoveItems", "Apenas o dono pode remover itens.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {portfolio.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nenhum item ainda. Adicione abaixo.
+                {t("noClanPortfolioItems", "Nenhum item ainda. Adicione abaixo.")}
               </p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -740,7 +757,7 @@ export default function ManageClanPage({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                            {cover?.media_type || "vazio"}
+                            {cover?.media_type || t("emptyWord", "vazio")}
                           </div>
                         )}
                       </div>
@@ -753,7 +770,7 @@ export default function ManageClanPage({
                           onClick={() =>
                             handleDeletePortfolioItem(item.id_portfolio_item)
                           }
-                          title="Remover item"
+                          title={t("removeItem", "Remover item")}
                         >
                           <Trash2 className="size-3" />
                         </Button>
@@ -765,9 +782,9 @@ export default function ManageClanPage({
             )}
 
             <div className="border-t pt-4 space-y-2">
-              <div className="text-sm font-medium">Adicionar item</div>
+              <div className="text-sm font-medium">{t("addItem", "Adicionar item")}</div>
               <Input
-                placeholder="Título do item"
+                placeholder={t("itemTitlePlaceholder", "Título do item")}
                 value={newItemTitle}
                 onChange={(e) => setNewItemTitle(e.target.value)}
                 maxLength={160}
@@ -782,14 +799,14 @@ export default function ManageClanPage({
                   {newItemFile?.type.startsWith("image/") ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={newItemPreview} alt="Preview" className="h-full w-full object-cover" />
+                      <img src={newItemPreview} alt={t("previewAlt", "Pré-visualização")} className="h-full w-full object-cover" />
                       {newItemOriginalImage && (
                         <button
                           type="button"
                           onClick={() => setNewItemCropFile(newItemOriginalImage)}
                           className="absolute bottom-2 left-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:bg-black/85"
                         >
-                          Cortar imagem
+                          {t("cropImage", "Cortar imagem")}
                         </button>
                       )}
                     </>
@@ -800,7 +817,7 @@ export default function ManageClanPage({
                     type="button"
                     onClick={clearNewPortfolioMedia}
                     className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white backdrop-blur transition-colors hover:bg-black/85"
-                    aria-label="Remover mídia"
+                    aria-label={t("removeMediaAria", "Remover mídia")}
                   >
                     <X className="size-4" />
                   </button>
@@ -818,7 +835,7 @@ export default function ManageClanPage({
                   disabled={uploadingPortfolio || processingPortfolioMedia || !newItemFile || !newItemTitle.trim()}
                 >
                   <Upload className="size-4 mr-1" />
-                  {uploadingPortfolio ? "Enviando..." : processingPortfolioMedia ? "Otimizando..." : "Adicionar"}
+                  {uploadingPortfolio ? t("uploading", "Enviando...") : processingPortfolioMedia ? t("optimizing", "Otimizando...") : t("add", "Adicionar")}
                 </Button>
               </div>
             </div>
@@ -831,17 +848,16 @@ export default function ManageClanPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="size-5" /> Chat do clan
+              <MessageSquare className="size-5" /> {t("clanChat", "Chat do clan")}
             </CardTitle>
             <CardDescription>
-              O quadro de recados virou um grupo no /mensagens, fixado no topo da
-              sua caixa de entrada.
+              {t("clanChatDesc", "O quadro de recados virou um grupo no /mensagens, fixado no topo da sua caixa de entrada.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline" size="sm">
               <Link href="/mensagens">
-                <MessageSquare className="size-4 mr-1" /> Abrir chat do clan
+                <MessageSquare className="size-4 mr-1" /> {t("openClanChat", "Abrir chat do clan")}
               </Link>
             </Button>
           </CardContent>
@@ -853,12 +869,10 @@ export default function ManageClanPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Briefcase className="size-5" /> Serviços do clan
+              <Briefcase className="size-5" /> {t("clanServices", "Serviços do clan")}
             </CardTitle>
             <CardDescription>
-              Qualquer membro pode criar um serviço e anexar quem participa. A
-              venda é dividida igualmente no Saldo de cada anexado (liberação em
-              8 dias).
+              {t("clanServicesDesc", "Qualquer membro pode criar um serviço e anexar quem participa. A venda é dividida igualmente no Saldo de cada anexado (liberação em 8 dias).")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -887,16 +901,15 @@ export default function ManageClanPage({
           <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="size-5" /> Cursos do clan
+                <GraduationCap className="size-5" /> {t("clanCourses", "Cursos do clan")}
               </CardTitle>
               <CardDescription>
-                Crie cursos vinculados ao clan. Anexe os membros participantes no
-                editor — a venda divide igual no Saldo de cada um.
+                {t("clanCoursesDesc", "Crie cursos vinculados ao clan. Anexe os membros participantes no editor — a venda divide igual no Saldo de cada um.")}
               </CardDescription>
             </div>
             <Button size="sm" onClick={handleCreateCourse} disabled={creatingCourse}>
               <Plus className="size-4 mr-1" />
-              {creatingCourse ? "Criando..." : "Criar curso"}
+              {creatingCourse ? t("creating", "Criando...") : t("createCourse", "Criar curso")}
             </Button>
           </CardHeader>
           <CardContent>
@@ -907,7 +920,7 @@ export default function ManageClanPage({
               if (clanCourses.length === 0) {
                 return (
                   <p className="text-sm text-muted-foreground">
-                    Você ainda não criou cursos neste clan.
+                    {t("noClanCoursesYet", "Você ainda não criou cursos neste clan.")}
                   </p>
                 )
               }
@@ -931,7 +944,13 @@ export default function ManageClanPage({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium truncate">{c.title}</div>
-                        <div className="text-xs text-muted-foreground capitalize">{c.status}</div>
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {c.status === "published"
+                            ? t("statusPublished", "Publicado")
+                            : c.status === "paused"
+                              ? t("statusPaused", "Pausado")
+                              : t("statusDraft", "Rascunho")}
+                        </div>
                       </div>
                     </Link>
                   ))}
@@ -947,37 +966,35 @@ export default function ManageClanPage({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wallet className="size-5" /> Saldo gerado pelo clan
+              <Wallet className="size-5" /> {t("clanGeneratedBalance", "Saldo gerado pelo clan")}
             </CardTitle>
             <CardDescription>
-              Sua parte das vendas deste clan. O dinheiro cai no seu Saldo geral —
-              acompanhe e saque em <Link href="/pagamentos" className="underline">Pagamentos</Link>.
+              {t("clanGeneratedBalanceDescBefore", "Sua parte das vendas deste clan. O dinheiro cai no seu Saldo geral — acompanhe e saque em")} <Link href="/pagamentos" className="underline">{t("payments", "Pagamentos")}</Link>.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {payouts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Nenhuma venda do clan ainda.
+                {t("noClanSalesYet", "Nenhuma venda do clan ainda.")}
               </p>
             ) : (
               <>
                 {(() => {
                   const sum = (st: ClanPayout["status"]) =>
                     payouts.filter((p) => p.status === st).reduce((a, p) => a + (p.amount_cents || 0), 0)
-                  const brl = (c: number) => ((c || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
                   return (
                     <div className="mb-4 grid grid-cols-3 gap-2 text-center">
                       <div className="rounded-md border p-2">
-                        <div className="text-xs text-muted-foreground">Aguardando</div>
-                        <div className="text-sm font-bold text-amber-600">{brl(sum("aguardando"))}</div>
+                        <div className="text-xs text-muted-foreground">{t("payoutStatusWaiting", "Aguardando")}</div>
+                        <div className="text-sm font-bold text-amber-600">{formatMoney(sum("aguardando"))}</div>
                       </div>
                       <div className="rounded-md border p-2">
-                        <div className="text-xs text-muted-foreground">Liberado</div>
-                        <div className="text-sm font-bold text-emerald-600">{brl(sum("aprovado"))}</div>
+                        <div className="text-xs text-muted-foreground">{t("payoutStatusReleased", "Liberado")}</div>
+                        <div className="text-sm font-bold text-emerald-600">{formatMoney(sum("aprovado"))}</div>
                       </div>
                       <div className="rounded-md border p-2">
-                        <div className="text-xs text-muted-foreground">Pago</div>
-                        <div className="text-sm font-bold text-[#E0A500]">{brl(sum("pago"))}</div>
+                        <div className="text-xs text-muted-foreground">{t("payoutStatusPaid", "Pago")}</div>
+                        <div className="text-sm font-bold text-[#E0A500]">{formatMoney(sum("pago"))}</div>
                       </div>
                     </div>
                   )
@@ -990,18 +1007,18 @@ export default function ManageClanPage({
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">
-                          {p.source_type === "clan_course" ? "Curso do clan" : "Serviço do clan"}
+                          {p.source_type === "clan_course" ? t("clanCourseSale", "Curso do clan") : t("clanServiceSale", "Serviço do clan")}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {new Date(p.created_at).toLocaleDateString("pt-BR")}
-                          {p.status === "aguardando" && ` · libera ${new Date(p.available_at).toLocaleDateString("pt-BR")}`}
+                          {formatDate(p.created_at)}
+                          {p.status === "aguardando" && ` · ${t("releasesOn", "libera em")} ${formatDate(p.available_at)}`}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-sm font-bold tabular-nums">
-                          {((p.amount_cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          {formatMoney(p.amount_cents || 0)}
                         </div>
-                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground capitalize">{p.status}</div>
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground capitalize">{payoutStatusLabel(p.status)}</div>
                       </div>
                     </div>
                   ))}
@@ -1017,18 +1034,18 @@ export default function ManageClanPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="size-5" /> Convidar sub-perfil
+                <UserPlus className="size-5" /> {t("inviteSubprofile", "Convidar sub-perfil")}
               </CardTitle>
               <CardDescription>
                 {slotsAvailable > 0
-                  ? `${slotsAvailable} vaga(s) disponível(eis). Busque pelo @username.`
-                  : "Sem vagas disponíveis. Compre uma vaga adicional para convidar mais."}
+                  ? t("availableSlotsSearchHint", "{count} vaga(s) disponível(eis). Busque pelo @username.").replace("{count}", String(slotsAvailable))
+                  : t("noAvailableSlotsHint", "Sem vagas disponíveis. Compre uma vaga adicional para convidar mais.")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Username (sem o @)"
+                  placeholder={t("usernameWithoutAt", "Username (sem o @)")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -1038,7 +1055,7 @@ export default function ManageClanPage({
                   onClick={handleSearch}
                   disabled={searching || slotsAvailable <= 0}
                 >
-                  <Search className="size-4 mr-1" /> Buscar
+                  <Search className="size-4 mr-1" /> {t("search", "Buscar")}
                 </Button>
               </div>
 
@@ -1062,7 +1079,7 @@ export default function ManageClanPage({
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium">@{head.username}</div>
                         <div className="text-xs text-muted-foreground">
-                          {searchResults.length} subperfil(is) encontrado(s) — escolha qual entra no clan
+                          {t("subprofilesFoundChoose", "{count} subperfil(is) encontrado(s) — escolha qual entra no clan").replace("{count}", String(searchResults.length))}
                         </div>
                       </div>
                     </div>
@@ -1070,9 +1087,9 @@ export default function ManageClanPage({
                       {searchResults.map((p) => {
                         const blocked = !p.is_paid || p.already_in_clan
                         const reason = !p.is_paid
-                          ? "Subperfil inativo"
+                          ? t("inactiveSubprofile", "Subperfil inativo")
                           : p.already_in_clan
-                            ? "Já está em outro clan"
+                            ? t("alreadyInAnotherClan", "Já está em outro clan")
                             : ""
                         return (
                           <div
@@ -1088,7 +1105,7 @@ export default function ManageClanPage({
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium truncate">{p.display_name}</div>
                               <div className="text-xs text-muted-foreground truncate">
-                                {p.desc_category || "—"}
+                                {p.desc_category ? tx.profession(p.desc_category) : "—"}
                               </div>
                               {blocked && (
                                 <div className="text-xs text-amber-700 mt-0.5">{reason}</div>
@@ -1099,7 +1116,7 @@ export default function ManageClanPage({
                               onClick={() => handleInvite(p.id_profile)}
                               disabled={blocked || actionLoading}
                             >
-                              Convidar
+                              {t("invite", "Convidar")}
                             </Button>
                           </div>
                         )
@@ -1114,7 +1131,7 @@ export default function ManageClanPage({
           {invites.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Convites pendentes</CardTitle>
+                <CardTitle>{t("pendingInvites", "Convites pendentes")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {invites.map((inv) => (
@@ -1142,7 +1159,7 @@ export default function ManageClanPage({
                       onClick={() => handleCancelInvite(inv.id_clan_invite)}
                       disabled={actionLoading}
                     >
-                      Cancelar
+                      {t("cancel", "Cancelar")}
                     </Button>
                   </div>
                 ))}
@@ -1160,8 +1177,8 @@ export default function ManageClanPage({
           outputHeight={POST_IMAGE_OUTPUT.height}
           maxSizeMB={3}
           mediaType="post_image"
-          title="Cortar imagem"
-          description="Corte sua imagem no formato 4:5 para aparecer melhor no feed."
+          title={t("cropImage", "Cortar imagem")}
+          description={t("cropImageDesc", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
           onCancel={() => setNewItemCropFile(null)}
           onConfirm={handleClanPortfolioCropConfirm}
         />
