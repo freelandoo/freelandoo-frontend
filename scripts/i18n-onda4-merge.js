@@ -808,6 +808,45 @@ Object.assign(ACCOUNT, {
   videoReadyShort: ["Vídeo", "Video", "Video"],
 })
 
+// S10a — landing/editor da aula (account/courses/[id]/lessons/[lessonId] core)
+Object.assign(ACCOUNT, {
+  lessonStatusPublished: ["Publicada", "Published", "Publicada"],
+  lessonStatusHidden: ["Oculta", "Hidden", "Oculta"],
+  backToModule: ["Voltar ao módulo", "Back to module", "Volver al módulo"],
+  backToModules: ["Voltar aos módulos", "Back to modules", "Volver a los módulos"],
+  lessonNext: ["Próxima", "Next", "Siguiente"],
+  loadingLessonShort: ["Carregando aula...", "Loading lesson...", "Cargando clase..."],
+  lessonLoadErrorTitle: ["Não foi possível carregar a aula", "Couldn't load the lesson", "No se pudo cargar la clase"],
+  lessonDataTitle: ["Dados da aula", "Lesson details", "Datos de la clase"],
+  lessonDataDesc: ["Edite título, descrição e status da aula. Recursos de vídeo, materiais, questionário e comentários ficam logo abaixo.", "Edit the lesson title, description and status. Video, materials, quiz and comments are right below.", "Edita el título, la descripción y el estado de la clase. Los recursos de video, materiales, cuestionario y comentarios están justo debajo."],
+  loadingModuleShort: ["Carregando módulo...", "Loading module...", "Cargando módulo..."],
+  moduleEyebrow: ["Módulo", "Module", "Módulo"],
+  lessonsPublishedLabel: ["publicadas", "published", "publicadas"],
+  searchLessonPlaceholder: ["Busque por uma aula...", "Search for a lesson...", "Busca una clase..."],
+  noLessonMatch: ["Nenhuma aula com esse nome.", "No lesson with that name.", "Ninguna clase con ese nombre."],
+  lessonUpdated: ["Aula atualizada", "Lesson updated", "Clase actualizada"],
+  lessonTitleExample: ["Ex.: Visão geral do que você vai aprender", "E.g.: Overview of what you'll learn", "Ej.: Resumen de lo que vas a aprender"],
+  lessonDescFormPlaceholder: ["Resumo do que essa aula cobre. Você pode usar como contexto para o aluno antes de assistir.", "A summary of what this lesson covers. Use it as context for the student before watching.", "Resumen de lo que cubre esta clase. Úsalo como contexto para el alumno antes de ver."],
+  statusLabel: ["Status", "Status", "Estado"],
+  onlyPublishedVisible: ["Apenas aulas publicadas ficam visíveis para os alunos.", "Only published lessons are visible to students.", "Solo las clases publicadas son visibles para los alumnos."],
+  videoFormatRejected: ["Formato não aceito. Envie MP4, MOV ou WebM.", "Format not accepted. Upload MP4, MOV or WebM.", "Formato no aceptado. Sube MP4, MOV o WebM."],
+  videoTooLarge: ["Arquivo maior que 100MB. Comprima antes de enviar.", "File larger than 100MB. Compress it before uploading.", "Archivo mayor a 100MB. Comprímelo antes de subir."],
+  uploadingVideo: ["Enviando vídeo...", "Uploading video...", "Subiendo video..."],
+  dontCloseTab: ["Não feche esta aba até o envio terminar.", "Don't close this tab until the upload finishes.", "No cierres esta pestaña hasta que termine la subida."],
+  processingVideo: ["Processando vídeo...", "Processing video...", "Procesando video..."],
+  processingVideoDesc: ["Padronizando em 4:5 e gerando a capa. Isso pode levar alguns minutos dependendo do tamanho. Não feche esta aba.", "Standardizing to 4:5 and generating the cover. This may take a few minutes depending on size. Don't close this tab.", "Estandarizando a 4:5 y generando la portada. Esto puede tardar unos minutos según el tamaño. No cierres esta pestaña."],
+  processingPreviewAvailable: ["Processando 4:5 — preview do original disponível", "Processing 4:5 — preview of the original available", "Procesando 4:5 — vista previa del original disponible"],
+  videoReady: ["Vídeo pronto", "Video ready", "Video listo"],
+  changeVideo: ["Trocar vídeo", "Replace video", "Cambiar video"],
+  removingShort: ["Removendo...", "Removing...", "Eliminando..."],
+  lastUploadFailed: ["Algo deu errado no último envio", "Something went wrong with the last upload", "Algo salió mal en la última subida"],
+  dragVideoHere: ["Arraste o vídeo aqui ou clique para selecionar", "Drag the video here or click to select", "Arrastra el video aquí o haz clic para seleccionar"],
+  videoFormatsHint: ["MP4, MOV ou WebM · até 100MB", "MP4, MOV or WebM · up to 100MB", "MP4, MOV o WebM · hasta 100MB"],
+  tryUploadAgain: ["Tente enviar novamente", "Try uploading again", "Intenta subir de nuevo"],
+  lessonVideo: ["Vídeo da aula", "Lesson video", "Video de la clase"],
+  videoProcessingBadge: ["Processamento 4:5", "4:5 processing", "Procesamiento 4:5"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {

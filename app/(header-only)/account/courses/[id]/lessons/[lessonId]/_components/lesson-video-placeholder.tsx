@@ -11,6 +11,9 @@ import {
   RefreshCw,
 } from "lucide-react"
 import type { CourseLesson } from "@/hooks/use-module-lessons"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+
+type Translator = (key: string, fallback: string) => string
 
 interface Props {
   lesson: CourseLesson
@@ -25,12 +28,12 @@ const ACCEPTED_MIME = ["video/mp4", "video/quicktime", "video/webm"]
 const ACCEPTED_HINT = ".mp4, .mov, .webm"
 const MAX_BYTES = 100 * 1024 * 1024
 
-function validateFile(file: File): string | null {
+function validateFile(file: File, t: Translator): string | null {
   if (!ACCEPTED_MIME.includes(file.type.toLowerCase())) {
-    return "Formato não aceito. Envie MP4, MOV ou WebM."
+    return t("videoFormatRejected", "Formato não aceito. Envie MP4, MOV ou WebM.")
   }
   if (file.size > MAX_BYTES) {
-    return "Arquivo maior que 100MB. Comprima antes de enviar."
+    return t("videoTooLarge", "Arquivo maior que 100MB. Comprima antes de enviar.")
   }
   return null
 }
@@ -40,6 +43,7 @@ function formatPercent(ratio: number): string {
 }
 
 export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
+  const t = useTranslations("Account")
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -49,7 +53,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
   const startUpload = useCallback(
     async (file: File) => {
       setLocalError(null)
-      const err = validateFile(file)
+      const err = validateFile(file, t)
       if (err) {
         setLocalError(err)
         return
@@ -58,12 +62,12 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
         setProgress(0)
         await onUpload(file, (ratio) => setProgress(ratio))
       } catch (e) {
-        setLocalError(e instanceof Error ? e.message : "Falha no envio")
+        setLocalError(e instanceof Error ? e.message : t("uploadFailed", "Falha no envio"))
       } finally {
         setProgress(0)
       }
     },
-    [onUpload],
+    [onUpload, t],
   )
 
   const handleDrop = useCallback(
@@ -93,11 +97,11 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
     try {
       await onRemove()
     } catch (e) {
-      setLocalError(e instanceof Error ? e.message : "Falha ao remover")
+      setLocalError(e instanceof Error ? e.message : t("removeFailed", "Falha ao remover"))
     } finally {
       setRemoving(false)
     }
-  }, [removing, onRemove])
+  }, [removing, onRemove, t])
 
   const status = lesson.video_status
   const previewUrl =
@@ -113,7 +117,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
             <UploadCloud className="h-9 w-9 animate-pulse text-sky-300" />
             <p className="text-sm font-semibold text-white">
-              Enviando vídeo... {formatPercent(progress)}
+              {t("uploadingVideo", "Enviando vídeo...")} {formatPercent(progress)}
             </p>
             <div className="mx-auto h-1.5 w-56 overflow-hidden rounded-full bg-white/10">
               <div
@@ -122,7 +126,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
               />
             </div>
             <p className="text-[11px] text-white/45">
-              Não feche esta aba até o envio terminar.
+              {t("dontCloseTab", "Não feche esta aba até o envio terminar.")}
             </p>
           </div>
         </div>
@@ -140,11 +144,13 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
             <Loader2 className="h-9 w-9 animate-spin text-sky-300" />
             <p className="text-sm font-semibold text-white">
-              Processando vídeo...
+              {t("processingVideo", "Processando vídeo...")}
             </p>
             <p className="mx-auto max-w-md text-xs text-white/55">
-              Padronizando em 4:5 e gerando a capa. Isso pode levar alguns
-              minutos dependendo do tamanho. Não feche esta aba.
+              {t(
+                "processingVideoDesc",
+                "Padronizando em 4:5 e gerando a capa. Isso pode levar alguns minutos dependendo do tamanho. Não feche esta aba.",
+              )}
             </p>
           </div>
         </div>
@@ -175,10 +181,10 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
             {status === "processing" ? (
               <span className="inline-flex items-center gap-1.5">
                 <Loader2 className="h-3 w-3 animate-spin text-sky-300" />
-                Processando 4:5 — preview do original disponível
+                {t("processingPreviewAvailable", "Processando 4:5 — preview do original disponível")}
               </span>
             ) : (
-              <span>Vídeo pronto</span>
+              <span>{t("videoReady", "Vídeo pronto")}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -188,7 +194,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              Trocar vídeo
+              {t("changeVideo", "Trocar vídeo")}
             </button>
             <button
               type="button"
@@ -197,7 +203,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-500/10 px-3 py-1.5 text-[12px] font-medium text-red-200 transition hover:bg-red-500/15 disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {removing ? "Removendo..." : "Remover"}
+              {removing ? t("removingShort", "Removendo...") : t("remove", "Remover")}
             </button>
           </div>
         </div>
@@ -258,27 +264,27 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
         <div>
           <p className="text-sm font-semibold text-white">
             {isError
-              ? "Algo deu errado no último envio"
-              : "Arraste o vídeo aqui ou clique para selecionar"}
+              ? t("lastUploadFailed", "Algo deu errado no último envio")
+              : t("dragVideoHere", "Arraste o vídeo aqui ou clique para selecionar")}
           </p>
           <p className="mt-1 text-xs text-white/55">
-            MP4, MOV ou WebM · até 100MB
+            {t("videoFormatsHint", "MP4, MOV ou WebM · até 100MB")}
           </p>
         </div>
         {isError && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-[11px] font-medium text-red-200">
             <VideoOff className="h-3 w-3" />
-            Tente enviar novamente
+            {t("tryUploadAgain", "Tente enviar novamente")}
           </span>
         )}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-5 py-3">
         <div className="inline-flex items-center gap-2 text-[12px] text-white/55">
           <Video className="h-3.5 w-3.5 text-primary/70" />
-          Vídeo da aula
+          {t("lessonVideo", "Vídeo da aula")}
         </div>
         <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/45">
-          Processamento 4:5 · Slice 8
+          {t("videoProcessingBadge", "Processamento 4:5")}
         </span>
       </div>
       {localError && (

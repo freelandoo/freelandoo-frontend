@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import type {
   CourseLesson,
   LessonStatus,
@@ -40,6 +41,7 @@ function buildForm(l: CourseLesson): FormState {
 }
 
 export function LessonDataForm({ lesson, onSave }: Props) {
+  const t = useTranslations("Account")
   const [form, setForm] = useState<FormState>(() => buildForm(lesson))
   const [isSaving, setIsSaving] = useState(false)
 
@@ -59,7 +61,7 @@ export function LessonDataForm({ lesson, onSave }: Props) {
   async function handleSave() {
     const title = form.title.trim()
     if (!title) {
-      toast.error("Informe o título da aula")
+      toast.error(t("lessonTitleRequired", "Informe o título da aula"))
       return
     }
     setIsSaving(true)
@@ -69,10 +71,12 @@ export function LessonDataForm({ lesson, onSave }: Props) {
         description: form.description.trim() || null,
         status: form.status,
       })
-      toast.success("Aula atualizada")
+      toast.success(t("lessonUpdated", "Aula atualizada"))
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao salvar alterações",
+        err instanceof Error
+          ? err.message
+          : t("saveChangesFailed", "Falha ao salvar alterações"),
       )
     } finally {
       setIsSaving(false)
@@ -83,11 +87,11 @@ export function LessonDataForm({ lesson, onSave }: Props) {
     <div className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="ld-title">
-          Título da aula <span className="text-destructive">*</span>
+          {t("lessonTitleLabel", "Título da aula")} <span className="text-destructive">*</span>
         </Label>
         <Input
           id="ld-title"
-          placeholder="Ex.: Visão geral do que você vai aprender"
+          placeholder={t("lessonTitleExample", "Ex.: Visão geral do que você vai aprender")}
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           disabled={isSaving}
@@ -96,10 +100,13 @@ export function LessonDataForm({ lesson, onSave }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="ld-desc">Descrição</Label>
+        <Label htmlFor="ld-desc">{t("descriptionLabel", "Descrição")}</Label>
         <Textarea
           id="ld-desc"
-          placeholder="Resumo do que essa aula cobre. Você pode usar como contexto para o aluno antes de assistir."
+          placeholder={t(
+            "lessonDescFormPlaceholder",
+            "Resumo do que essa aula cobre. Você pode usar como contexto para o aluno antes de assistir.",
+          )}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={6}
@@ -108,7 +115,7 @@ export function LessonDataForm({ lesson, onSave }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="ld-status">Status</Label>
+        <Label htmlFor="ld-status">{t("statusLabel", "Status")}</Label>
         <Select
           value={form.status}
           onValueChange={(v) =>
@@ -120,19 +127,21 @@ export function LessonDataForm({ lesson, onSave }: Props) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="draft">Rascunho</SelectItem>
-            <SelectItem value="published">Publicada</SelectItem>
-            <SelectItem value="hidden">Oculta</SelectItem>
+            <SelectItem value="draft">{t("statusDraft", "Rascunho")}</SelectItem>
+            <SelectItem value="published">{t("lessonStatusPublished", "Publicada")}</SelectItem>
+            <SelectItem value="hidden">{t("lessonStatusHidden", "Oculta")}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-[11px] text-white/45">
-          Apenas aulas publicadas ficam visíveis para os alunos.
+          {t("onlyPublishedVisible", "Apenas aulas publicadas ficam visíveis para os alunos.")}
         </p>
       </div>
 
       <div className="sticky bottom-4 mt-6 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/[0.07] bg-zinc-950/85 px-4 py-3 backdrop-blur-md">
         <p className="mr-auto text-[12px] text-white/55">
-          {isDirty ? "Você tem alterações não salvas." : "Tudo salvo."}
+          {isDirty
+            ? t("unsavedChanges", "Você tem alterações não salvas.")
+            : t("allSaved", "Tudo salvo.")}
         </p>
         <Button
           type="button"
@@ -144,7 +153,7 @@ export function LessonDataForm({ lesson, onSave }: Props) {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Salvar alterações
+          {t("saveChanges", "Salvar alterações")}
         </Button>
       </div>
     </div>

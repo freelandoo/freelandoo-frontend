@@ -14,6 +14,7 @@ import {
 import { useCourseModules } from "@/hooks/use-course-modules"
 import { useModuleLessons } from "@/hooks/use-module-lessons"
 import { useCourseLesson } from "@/hooks/use-course-lesson"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { LessonCommentsPanel } from "@/components/courses/lesson-comments-panel"
 import { PageShell } from "@/components/tabloide"
 import { LessonModuleSidebar } from "./lesson-module-sidebar"
@@ -28,29 +29,31 @@ interface Props {
 }
 
 function LessonStatusPill({ status }: { status: "draft" | "published" | "hidden" }) {
+  const t = useTranslations("Account")
   if (status === "published") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-        Publicada
+        {t("lessonStatusPublished", "Publicada")}
       </span>
     )
   }
   if (status === "hidden") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-        Oculta
+        {t("lessonStatusHidden", "Oculta")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
-      Rascunho
+      {t("statusDraft", "Rascunho")}
     </span>
   )
 }
 
 export function LessonAdminView({ courseId, lessonId }: Props) {
+  const t = useTranslations("Account")
   const router = useRouter()
   const { modules, isLoading: loadingModules } = useCourseModules(courseId)
   const {
@@ -106,7 +109,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
             className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            Voltar ao módulo
+            {t("backToModule", "Voltar ao módulo")}
           </Link>
           {lesson && <LessonStatusPill status={lesson.status} />}
 
@@ -121,7 +124,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-30"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Anterior
+              {t("previous", "Anterior")}
             </button>
             <button
               type="button"
@@ -132,7 +135,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
               disabled={!nextLesson}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-30"
             >
-              Próxima
+              {t("lessonNext", "Próxima")}
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -142,7 +145,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
         {loadingLesson && (
           <div className="flex items-center justify-center rounded-[2rem] border border-white/[0.07] bg-white/[0.02] py-16 text-white/55">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Carregando aula...
+            {t("loadingLessonShort", "Carregando aula...")}
           </div>
         )}
 
@@ -151,13 +154,13 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
           <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
-              <p className="font-medium">Não foi possível carregar a aula</p>
+              <p className="font-medium">{t("lessonLoadErrorTitle", "Não foi possível carregar a aula")}</p>
               <p className="mt-1 text-red-200/80">{lessonError}</p>
               <Link
                 href={`/account/courses/${courseId}`}
                 className="mt-3 inline-block text-red-200 underline underline-offset-2 hover:text-white"
               >
-                Voltar para o curso
+                {t("backToCourse", "Voltar para o curso")}
               </Link>
             </div>
           </div>
@@ -205,11 +208,13 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
                 <section className="rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:p-7">
                   <header className="mb-4">
                     <h2 className="text-lg font-semibold text-white">
-                      Dados da aula
+                      {t("lessonDataTitle", "Dados da aula")}
                     </h2>
                     <p className="mt-1 text-xs text-white/50">
-                      Edite título, descrição e status da aula. Recursos de
-                      vídeo, materiais, questionário e comentários ficam logo abaixo.
+                      {t(
+                        "lessonDataDesc",
+                        "Edite título, descrição e status da aula. Recursos de vídeo, materiais, questionário e comentários ficam logo abaixo.",
+                      )}
                     </p>
                   </header>
                   <LessonDataForm

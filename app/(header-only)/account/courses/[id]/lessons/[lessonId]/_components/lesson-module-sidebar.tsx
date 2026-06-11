@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { CourseModule } from "@/hooks/use-course-modules"
 import type { CourseLesson } from "@/hooks/use-module-lessons"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,7 @@ export function LessonModuleSidebar({
   lessons,
   isLoading,
 }: Props) {
+  const t = useTranslations("Account")
   const [query, setQuery] = useState("")
 
   const orderedLessons = useMemo(
@@ -64,7 +66,7 @@ export function LessonModuleSidebar({
       <div className="rounded-[1.5rem] border border-white/[0.07] bg-white/[0.02] p-4 text-[12px] text-white/55">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Carregando módulo...
+          {t("loadingModuleShort", "Carregando módulo...")}
         </div>
       </div>
     )
@@ -79,7 +81,7 @@ export function LessonModuleSidebar({
           className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-white/85 transition hover:border-white/25 hover:text-white"
         >
           <ArrowLeft className="h-3 w-3" />
-          Voltar aos módulos
+          {t("backToModules", "Voltar aos módulos")}
         </Link>
       </div>
 
@@ -101,7 +103,7 @@ export function LessonModuleSidebar({
           <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/85 via-black/0 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-3 text-left">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary/85">
-              Módulo
+              {t("moduleEyebrow", "Módulo")}
             </p>
             <p className="line-clamp-2 text-[13px] font-semibold leading-tight text-white">
               {module?.title || "—"}
@@ -114,7 +116,7 @@ export function LessonModuleSidebar({
       <div className="px-4 pt-3">
         <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
           <span>
-            {publishedCount}/{totalCount} publicadas
+            {publishedCount}/{totalCount} {t("lessonsPublishedLabel", "publicadas")}
           </span>
           <span className="font-mono text-white/40">{progressPct}%</span>
         </div>
@@ -132,7 +134,7 @@ export function LessonModuleSidebar({
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Busque por uma aula..."
+          placeholder={t("searchLessonPlaceholder", "Busque por uma aula...")}
           className="h-9 border-white/10 bg-white/[0.04] pl-9 text-[12px] text-white placeholder:text-white/35"
         />
       </div>
@@ -142,8 +144,8 @@ export function LessonModuleSidebar({
         {filteredLessons.length === 0 ? (
           <p className="px-2 py-4 text-center text-[12px] text-white/45">
             {query.trim()
-              ? "Nenhuma aula com esse nome."
-              : "Sem aulas neste módulo."}
+              ? t("noLessonMatch", "Nenhuma aula com esse nome.")
+              : t("noLessonsInModule", "Sem aulas neste módulo.")}
           </p>
         ) : (
           <ul className="space-y-1">
