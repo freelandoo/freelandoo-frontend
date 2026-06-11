@@ -1982,7 +1982,15 @@
     "processingButton": "Processando...",
     "proceedPaymentButton": "Proceder com Pagamento",
     "cancelButton": "Cancelar",
-    "securePaymentRedirectNotice": "Voc? ser? redirecionado para a plataforma de pagamento segura ap?s confirmar."
+    "securePaymentRedirectNotice": "Voc? ser? redirecionado para a plataforma de pagamento segura ap?s confirmar.",
+    "eyebrowPayment": "Pagamento",
+    "successHeading": "CONFIRMADO.",
+    "successDescription": "Recebemos seu pagamento. Assim que o Stripe confirmar, seu perfil será ativado automaticamente nos classificados — em alguns segundos o status aparece em \"Minha conta\".",
+    "goToMyAccount": "Ir para minha conta",
+    "backToHome": "Voltar ao início",
+    "cancelledHeading": "CANCELADO.",
+    "cancelledDescription": "Nenhum valor foi cobrado. Você pode tentar novamente quando quiser.",
+    "tryAgain": "Tentar novamente"
   },
   "AdvertiseServices": {
     "hero.badge": "Para profissionais",

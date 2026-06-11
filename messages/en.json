@@ -1993,7 +1993,15 @@
     "processingButton": "Processing...",
     "proceedPaymentButton": "Proceed to payment",
     "cancelButton": "Cancel",
-    "securePaymentRedirectNotice": "You will be redirected to the secure payment platform after confirming."
+    "securePaymentRedirectNotice": "You will be redirected to the secure payment platform after confirming.",
+    "eyebrowPayment": "Payment",
+    "successHeading": "CONFIRMED.",
+    "successDescription": "We received your payment. As soon as Stripe confirms it, your profile will be activated automatically in the listings — within seconds the status will show in \"My account\".",
+    "goToMyAccount": "Go to my account",
+    "backToHome": "Back to home",
+    "cancelledHeading": "CANCELLED.",
+    "cancelledDescription": "No charge was made. You can try again whenever you like.",
+    "tryAgain": "Try again"
   },
   "AdvertiseServices": {
     "hero.badge": "For professionals",

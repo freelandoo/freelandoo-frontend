@@ -301,7 +301,7 @@ function CheckoutContent() {
       <main className="relative z-10 mx-auto max-w-2xl px-4 py-10 md:py-12">
         <TabloidPageIntro
           size="compact"
-          eyebrow="Pagamento"
+          eyebrow={t("eyebrowPayment", "Pagamento")}
           title="CHECKOUT."
           subtitle={item?.current_item_name}
           back={
