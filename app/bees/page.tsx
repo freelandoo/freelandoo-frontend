@@ -9,6 +9,7 @@ import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-
 import { BeesPost } from "@/components/bees/bees-post"
 import { CommentsPanel } from "@/components/comments/comments-panel"
 import { LivesView } from "@/components/lives/lives-view"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
@@ -28,6 +29,7 @@ export default function BeesPage() {
 }
 
 function BeesPageInner() {
+  const t = useTranslations("Bees")
   const [items, setItems] = useState<FeedPost[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -99,7 +101,7 @@ function BeesPageInner() {
     setError(null)
     fetchPage(null, true)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Erro ao carregar Bees")
+        if (!cancelled) setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar Bees"))
       })
       .finally(() => {
         if (!cancelled) setLoadingInitial(false)
@@ -107,7 +109,7 @@ function BeesPageInner() {
     return () => {
       cancelled = true
     }
-  }, [fetchPage])
+  }, [fetchPage, t])
 
   // Prefetch quando estiver perto do fim
   useEffect(() => {
@@ -144,22 +146,25 @@ function BeesPageInner() {
         whileTap={{ scale: 0.94 }}
         transition={{ type: "spring", stiffness: 220, damping: 24 }}
         className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.7)] backdrop-blur transition hover:bg-red-600"
-        aria-label="Ver lives"
+        aria-label={t("viewLives", "Ver lives")}
       >
         {liveCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-extrabold text-red-600 shadow">
             {liveCount}
           </span>
         )}
-        <Radio className={cn("h-4 w-4", liveCount > 0 && "animate-pulse")} /> Live
+        <Radio className={cn("h-4 w-4", liveCount > 0 && "animate-pulse")} /> {t("liveButton", "Live")}
       </motion.button>
 
       {loadingInitial ? (
         <LoadingState />
       ) : error && items.length === 0 ? (
-        <ErrorState message={error} onRetry={() => fetchPage(null, true)} />
+        <ErrorState message={error} onRetry={() => fetchPage(null, true)} retryLabel={t("retry", "Tentar de novo")} />
       ) : items.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title={t("emptyTitle", "Ainda não tem Bees por aqui")}
+          description={t("emptyDescription", "Bees é o feed vertical 9:16. Quando alguém publicar um vídeo nesse formato, ele aparece aqui automaticamente.")}
+        />
       ) : (
         <>
           <BeesScroller
@@ -268,7 +273,7 @@ function LoadingState() {
   )
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorState({ message, onRetry, retryLabel }: { message: string; onRetry: () => void; retryLabel: string }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center text-white/80">
       <p className="text-sm">{message}</p>
@@ -277,20 +282,19 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
         onClick={onRetry}
         className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
       >
-        Tentar de novo
+        {retryLabel}
       </button>
     </div>
   )
 }
 
-function EmptyState() {
+function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center text-white/75">
       <Sparkles className="h-10 w-10 text-[#F2B705]" />
-      <p className="text-base font-semibold">Ainda não tem Bees por aqui</p>
+      <p className="text-base font-semibold">{title}</p>
       <p className="max-w-xs text-sm text-white/55">
-        Bees é o feed vertical 9:16. Quando alguém publicar um vídeo nesse formato, ele aparece
-        aqui automaticamente.
+        {description}
       </p>
     </div>
   )

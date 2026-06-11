@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { Bell } from "lucide-react"
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 /**
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils"
  * na /account (subperfis não recebem).
  */
 export function NotificationBell({ className }: { className?: string }) {
+  const t = useTranslations("Notifications")
   const navCounts = useNavCounts()
   const unread = navCounts.notificationUnread
   const active = unread > 0
@@ -25,7 +27,7 @@ export function NotificationBell({ className }: { className?: string }) {
         type="button"
         ref={ref}
         onClick={() => setOpen((v) => !v)}
-        aria-label={active ? `Notificações (${unread})` : "Notificações"}
+        aria-label={active ? `${t("title", "Notificações")} (${unread})` : t("title", "Notificações")}
         aria-expanded={open}
         className={cn(
           "relative inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px",

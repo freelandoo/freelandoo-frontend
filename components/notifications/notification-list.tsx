@@ -3,7 +3,10 @@
 import Link from "next/link"
 import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
+
+type TFn = (key: string, fallback?: string) => string
 
 export interface NotificationItem {
   id_notification: string
@@ -29,42 +32,44 @@ interface NotificationListProps {
   emptyHint?: string
 }
 
-function relativeTime(iso: string) {
+function relativeTime(iso: string, t: TFn) {
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60_000)
-  if (m < 1) return "agora"
-  if (m < 60) return `${m}min`
+  if (m < 1) return t("now", "agora")
+  if (m < 60) return `${m}${t("minuteSuffix", "min")}`
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
+  if (h < 24) return `${h}${t("hourSuffix", "h")}`
   const d = Math.floor(h / 24)
-  if (d < 7) return `${d}d`
-  return `${Math.floor(d / 7)}sem`
+  if (d < 7) return `${d}${t("daySuffix", "d")}`
+  return `${Math.floor(d / 7)}${t("weekSuffix", "sem")}`
 }
 
-const PERM_LABELS: Record<string, string> = {
-  can_view_feed: "ver o feed",
-  can_post_feed: "postar no feed",
-  can_use_bees: "usar Bees",
-  can_watch_courses: "assistir cursos",
-  can_sell_courses: "vender cursos",
-  can_message: "enviar mensagens",
-  can_receive_messages: "receber mensagens",
-  can_use_global_chat: "chat global",
-  can_use_machine_chat: "chat de enxames",
+const PERM_KEYS: Record<string, [string, string]> = {
+  can_view_feed: ["permViewFeed", "ver o feed"],
+  can_post_feed: ["permPostFeed", "postar no feed"],
+  can_use_bees: ["permUseBees", "usar Bees"],
+  can_watch_courses: ["permWatchCourses", "assistir cursos"],
+  can_sell_courses: ["permSellCourses", "vender cursos"],
+  can_message: ["permMessage", "enviar mensagens"],
+  can_receive_messages: ["permReceiveMessages", "receber mensagens"],
+  can_use_global_chat: ["permGlobalChat", "chat global"],
+  can_use_machine_chat: ["permMachineChat", "chat de enxames"],
 }
 
-function labelFor(item: NotificationItem) {
-  const who = item.actor?.profile_display_name || item.actor?.username || "Alguém"
+function labelFor(item: NotificationItem, t: TFn) {
+  const who = item.actor?.profile_display_name || item.actor?.username || t("someone", "Alguém")
+  const sub = (key: string, fallback: string) => t(key, fallback).replace("{who}", who)
   switch (item.type) {
-    case "like_received": return `${who} curtiu seu portfólio`
-    case "comment_received": return `${who} comentou no seu portfólio`
-    case "follow_received": return `${who} começou a seguir`
-    case "message_received": return `${who} mandou uma mensagem`
-    case "supervised_message_received": return `Conta supervisionada recebeu uma mensagem de ${who}`
+    case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
+    case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
+    case "follow_received": return sub("followReceived", "{who} começou a seguir")
+    case "message_received": return sub("messageReceived", "{who} mandou uma mensagem")
+    case "supervised_message_received": return sub("supervisedMessageReceived", "Conta supervisionada recebeu uma mensagem de {who}")
     case "parental_permission_request": {
       const key = String((item.payload as { permission_key?: string })?.permission_key || "")
-      const what = PERM_LABELS[key] || key || "uma permissão"
-      return `${who} pediu permissão para ${what}`
+      const permEntry = PERM_KEYS[key]
+      const what = permEntry ? t(permEntry[0], permEntry[1]) : (key || t("aPermission", "uma permissão"))
+      return sub("permissionRequest", "{who} pediu permissão para {what}").replace("{what}", what)
     }
     default: return who
   }
@@ -107,17 +112,18 @@ function initials(name: string | null | undefined) {
   return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("")
 }
 
-export function NotificationList({ items, onMarkRead, emptyHint = "Sem notificações." }: NotificationListProps) {
+export function NotificationList({ items, onMarkRead, emptyHint }: NotificationListProps) {
+  const t = useTranslations("Notifications")
   if (items.length === 0) {
     return (
-      <div className="px-4 py-10 text-center text-sm text-[#9A938A]">{emptyHint}</div>
+      <div className="px-4 py-10 text-center text-sm text-[#9A938A]">{emptyHint ?? t("emptyShort", "Sem notificações.")}</div>
     )
   }
   return (
     <ul className="divide-y divide-[#F5F1E8]/[0.08]">
       {items.map((item) => {
         const isUnread = !item.read_at
-        const name = item.actor?.profile_display_name || item.actor?.username || "Alguém"
+        const name = item.actor?.profile_display_name || item.actor?.username || t("someone", "Alguém")
         return (
           <li key={item.id_notification}>
             <Link
@@ -142,8 +148,8 @@ export function NotificationList({ items, onMarkRead, emptyHint = "Sem notifica�
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm text-[#F5F1E8]/90">{labelFor(item)}</p>
-                <p className="mt-0.5 text-[11px] text-[#9A938A]">{relativeTime(item.created_at)}</p>
+                <p className="line-clamp-2 text-sm text-[#F5F1E8]/90">{labelFor(item, t)}</p>
+                <p className="mt-0.5 text-[11px] text-[#9A938A]">{relativeTime(item.created_at, t)}</p>
               </div>
               {isUnread && (
                 <span className="h-2 w-2 shrink-0 rounded-full bg-[#F2B705]" aria-hidden />

@@ -6,8 +6,10 @@ import { ArrowLeft, Loader2, Bell } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { NotificationList, type NotificationItem } from "@/components/notifications/notification-list"
 import { PageShell, EmptyState, LoadingState } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function NotificationsPage() {
+  const t = useTranslations("Notifications")
   const [items, setItems] = useState<NotificationItem[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -92,18 +94,18 @@ export default function NotificationsPage() {
           <Link
             href="/account"
             className="rounded-full p-1.5 text-[#C9C2B6] transition hover:bg-[#F5F1E8]/10 hover:text-[#F5F1E8]"
-            aria-label="Voltar"
+            aria-label={t("back", "Voltar")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="fl-display text-2xl text-[#F5F1E8]">Notificações</h1>
+          <h1 className="fl-display text-2xl text-[#F5F1E8]">{t("title", "Notificações")}</h1>
           {unread > 0 && (
             <button
               type="button"
               onClick={markAll}
               className="ml-auto text-xs font-bold text-[#F2B705] transition hover:text-[#ffc81f]"
             >
-              Marcar todas como lidas
+              {t("markAllRead", "Marcar todas como lidas")}
             </button>
           )}
         </div>
@@ -112,14 +114,14 @@ export default function NotificationsPage() {
       <div className="mx-auto w-full max-w-2xl">
         {loading ? (
           <div className="px-4 py-16">
-            <LoadingState label="Carregando notificações…" />
+            <LoadingState label={t("loading", "Carregando notificações…")} />
           </div>
         ) : items.length === 0 ? (
           <div className="px-4 py-16">
             <EmptyState
               icon={<Bell className="h-6 w-6" />}
-              title="Tudo em dia"
-              description="Quando alguém curtir, comentar, seguir ou te mandar mensagem, aparece aqui."
+              title={t("allCaughtUp", "Tudo em dia")}
+              description={t("emptyDescription", "Quando alguém curtir, comentar, seguir ou te mandar mensagem, aparece aqui.")}
             />
           </div>
         ) : (
@@ -131,7 +133,7 @@ export default function NotificationsPage() {
               </div>
             )}
             {!hasMore && items.length > 0 && (
-              <p className="py-8 text-center text-xs text-[#9A938A]">Você chegou ao fim.</p>
+              <p className="py-8 text-center text-xs text-[#9A938A]">{t("reachedEnd", "Você chegou ao fim.")}</p>
             )}
             <div ref={sentinelRef} className="h-px w-full" />
           </>

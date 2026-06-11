@@ -14,6 +14,7 @@ import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupo
 import { ReportPostDialog } from "@/components/feed/report-post-dialog"
 import { BeesVideo } from "./bees-video"
 import { TrackAudio } from "@/components/media/track-audio"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface BeesPostProps {
   post: FeedPost
@@ -51,6 +52,7 @@ export function BeesPost({
   onOpenComments,
   commentsCount,
 }: BeesPostProps) {
+  const t = useTranslations("Bees")
   const router = useRouter()
   const sectionRef = useRef<HTMLElement | null>(null)
   const impressionFired = useRef(false)
@@ -162,7 +164,7 @@ export function BeesPost({
     const url = shareCoupon?.code ? buildShareUrlWithCoupon(baseUrl, shareCoupon.code) : baseUrl
 
     const shareData: ShareData = {
-      title: post.profile_name || "Freelandoo",
+      title: post.profile_name || "Freelandoo", // marca, não traduz
       text: post.title || post.caption || "",
       url,
     }
@@ -219,7 +221,7 @@ export function BeesPost({
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     const token = getToken()
-    if (!token) throw new Error("Faça login para denunciar")
+    if (!token) throw new Error(t("loginToReport", "Faça login para denunciar"))
     const res = await fetch(`/api/portfolio/items/${post.post_id}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -264,7 +266,7 @@ export function BeesPost({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-zinc-900 text-sm text-white/40">
-              Sem vídeo disponível
+              {t("noVideo", "Sem vídeo disponível")}
             </div>
           )}
 
@@ -300,7 +302,7 @@ export function BeesPost({
             )}
           >
             <ActionButton
-              ariaLabel={liked ? "Descurtir" : "Curtir"}
+              ariaLabel={liked ? t("unlike", "Descurtir") : t("like", "Curtir")}
               onClick={handleLike}
               disabled={likePending}
             >
@@ -314,14 +316,14 @@ export function BeesPost({
             </ActionButton>
 
             <ActionButton
-              ariaLabel="Comentários"
+              ariaLabel={t("comments", "Comentários")}
               onClick={() => onOpenComments?.(post.post_id)}
             >
               <MessageSquare className="h-7 w-7" />
               <CounterLabel value={commentsCount ?? 0} />
             </ActionButton>
 
-            <ActionButton ariaLabel="Compartilhar" onClick={handleShare}>
+            <ActionButton ariaLabel={t("share", "Compartilhar")} onClick={handleShare}>
               {copied ? (
                 <Check className="h-7 w-7 text-emerald-400" />
               ) : (
@@ -331,7 +333,7 @@ export function BeesPost({
             </ActionButton>
 
             <ActionButton
-              ariaLabel={bookmarked ? "Remover dos salvos" : "Salvar para depois"}
+              ariaLabel={bookmarked ? t("removeBookmark", "Remover dos salvos") : t("saveForLater", "Salvar para depois")}
               onClick={handleBookmark}
               disabled={bookmarkPending}
             >
@@ -343,7 +345,7 @@ export function BeesPost({
               />
             </ActionButton>
 
-            <ActionButton ariaLabel="Denunciar publicação" onClick={() => setReportOpen(true)}>
+            <ActionButton ariaLabel={t("reportPost", "Denunciar publicação")} onClick={() => setReportOpen(true)}>
               <Flag className="h-6 w-6 text-white/75" />
             </ActionButton>
 
@@ -359,7 +361,7 @@ export function BeesPost({
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/90 transition active:scale-90">
                   <MessageCircle className="h-6 w-6 text-white" />
                 </span>
-                <span className="text-[10px] font-medium text-white/85">Chat</span>
+                <span className="text-[10px] font-medium text-white/85">{t("chat", "Chat")}</span>
               </a>
             )}
           </div>
@@ -382,7 +384,7 @@ export function BeesPost({
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white drop-shadow-md">
-                  @{post.username || "perfil"}
+                  @{post.username || t("profileWord", "perfil")}
                 </p>
                 {(post.profession?.name || post.city) && (
                   <p className="truncate text-[11px] text-white/75">

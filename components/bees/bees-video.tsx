@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Volume2, VolumeX, Play } from "lucide-react"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 interface BeesVideoProps {
@@ -20,6 +21,7 @@ interface BeesVideoProps {
  * - duplo-tap pausa/resume manualmente
  */
 export function BeesVideo({ url, poster, isActive, muted, onToggleMute }: BeesVideoProps) {
+  const t = useTranslations("Bees")
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [manuallyPaused, setManuallyPaused] = useState(false)
   const [showPlayOverlay, setShowPlayOverlay] = useState(false)
@@ -93,7 +95,7 @@ export function BeesVideo({ url, poster, isActive, muted, onToggleMute }: BeesVi
             e.stopPropagation()
             togglePause()
           }}
-          aria-label="Reproduzir"
+          aria-label={t("play", "Reproduzir")}
           className="absolute inset-0 z-10 flex items-center justify-center"
         >
           <span className="rounded-full bg-black/50 p-5 backdrop-blur-md">
@@ -108,7 +110,7 @@ export function BeesVideo({ url, poster, isActive, muted, onToggleMute }: BeesVi
           e.stopPropagation()
           onToggleMute()
         }}
-        aria-label={muted ? "Ativar som" : "Mudo"}
+        aria-label={muted ? t("unmute", "Ativar som") : t("mute", "Mudo")}
         className={cn(
           "absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full",
           "border border-white/15 bg-black/45 text-white/85 backdrop-blur-md transition",

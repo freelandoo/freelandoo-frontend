@@ -5,7 +5,10 @@ import { createPortal } from "react-dom"
 import { Heart, Loader2, Send, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
+
+type TFn = (key: string, fallback?: string) => string
 
 export interface CommentUser {
   username: string | null
@@ -35,24 +38,24 @@ interface CommentsPanelProps {
   loginNextPath?: string
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: TFn): string {
   const ts = new Date(iso).getTime()
   if (!Number.isFinite(ts)) return ""
   const diff = Date.now() - ts
   const s = Math.floor(diff / 1000)
-  if (s < 60) return "agora"
+  if (s < 60) return t("now", "agora")
   const m = Math.floor(s / 60)
-  if (m < 60) return `${m}min`
+  if (m < 60) return `${m}${t("minuteSuffix", "min")}`
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
+  if (h < 24) return `${h}${t("hourSuffix", "h")}`
   const d = Math.floor(h / 24)
-  if (d < 7) return `${d}d`
+  if (d < 7) return `${d}${t("daySuffix", "d")}`
   const w = Math.floor(d / 7)
-  if (w < 5) return `${w}sem`
+  if (w < 5) return `${w}${t("weekSuffix", "sem")}`
   const mo = Math.floor(d / 30)
-  if (mo < 12) return `${mo}m`
+  if (mo < 12) return `${mo}${t("monthSuffix", "m")}`
   const y = Math.floor(d / 365)
-  return `${y}a`
+  return `${y}${t("yearSuffix", "a")}`
 }
 
 function initials(name: string | null | undefined) {
@@ -88,6 +91,7 @@ export function CommentsPanel({
   onCountChange,
   loginNextPath,
 }: CommentsPanelProps) {
+  const t = useTranslations("Comments")
   const [mounted, setMounted] = useState(false)
   const [comments, setComments] = useState<CommentItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -156,7 +160,7 @@ export function CommentsPanel({
     setHasMore(false)
     fetchComments(null, true)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Erro ao carregar")
+        if (!cancelled) setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar"))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -164,7 +168,7 @@ export function CommentsPanel({
     return () => {
       cancelled = true
     }
-  }, [open, postId, fetchComments])
+  }, [open, postId, fetchComments, t])
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore || !cursor) return
@@ -172,7 +176,7 @@ export function CommentsPanel({
     try {
       await fetchComments(cursor, false)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar mais")
+      setError(e instanceof Error ? e.message : t("loadMoreError", "Erro ao carregar mais"))
     } finally {
       setLoadingMore(false)
     }
@@ -203,7 +207,7 @@ export function CommentsPanel({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || "Erro ao publicar comentário")
+        setError(data.error || t("postError", "Erro ao publicar comentário"))
         return
       }
       const created = data.comment as CommentItem | null
@@ -213,7 +217,7 @@ export function CommentsPanel({
       }
       setDraft("")
     } catch {
-      setError("Erro ao publicar comentário")
+      setError(t("postError", "Erro ao publicar comentário"))
     } finally {
       setSubmitting(false)
     }
@@ -223,7 +227,7 @@ export function CommentsPanel({
     if (!postId) return
     const token = getToken()
     if (!token) return
-    if (!confirm("Remover esse comentário?")) return
+    if (!confirm(t("confirmDelete", "Remover esse comentário?"))) return
     try {
       const res = await fetch(`/api/portfolio/comments/${commentId}`, {
         method: "DELETE",
@@ -231,13 +235,13 @@ export function CommentsPanel({
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error || "Erro ao remover")
+        setError(data.error || t("deleteError", "Erro ao remover"))
         return
       }
       setComments((prev) => prev.filter((c) => c.id_portfolio_comment !== commentId))
       onCountChange?.(postId, -1)
     } catch {
-      setError("Erro ao remover")
+      setError(t("deleteError", "Erro ao remover"))
     }
   }
 
@@ -315,7 +319,7 @@ export function CommentsPanel({
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Comentários"
+        aria-label={t("title", "Comentários")}
         className={cn(
           "absolute left-0 right-0 bottom-0 max-h-[85dvh] rounded-t-2xl border-t border-white/10",
           "md:right-0 md:top-0 md:left-auto md:bottom-auto md:h-full md:max-h-none md:w-[420px] md:rounded-none md:border-t-0 md:border-l",
@@ -325,11 +329,11 @@ export function CommentsPanel({
       >
         {/* Header */}
         <header className="flex items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">Comentários</h3>
+          <h3 className="text-sm font-semibold text-white">{t("title", "Comentários")}</h3>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition hover:border-white/25 hover:text-white"
           >
             <X className="h-4 w-4" />
@@ -346,7 +350,7 @@ export function CommentsPanel({
             <div className="py-8 text-center text-sm text-red-300">{error}</div>
           ) : comments.length === 0 ? (
             <div className="py-12 text-center text-sm text-white/55">
-              Seja a primeira pessoa a comentar.
+              {t("beFirst", "Seja a primeira pessoa a comentar.")}
             </div>
           ) : (
             <ul className="flex flex-col gap-4">
@@ -354,7 +358,7 @@ export function CommentsPanel({
                 const canDelete =
                   !!me &&
                   (me.id_user === c.id_user || !!me.is_admin)
-                const handle = c.user?.username || c.user?.display_name || "perfil"
+                const handle = c.user?.username || c.user?.display_name || t("profileWord", "perfil")
                 const liked = !!c.viewer_has_liked
                 const likesCount = c.likes_count ?? 0
                 return (
@@ -373,12 +377,12 @@ export function CommentsPanel({
                           {c.user?.username ? `@${c.user.username}` : handle}
                         </span>
                         <span aria-hidden>·</span>
-                        <span>{timeAgo(c.created_at)}</span>
+                        <span>{timeAgo(c.created_at, t)}</span>
                         {canDelete && (
                           <button
                             type="button"
                             onClick={() => handleDelete(c.id_portfolio_comment)}
-                            aria-label="Remover comentário"
+                            aria-label={t("deleteComment", "Remover comentário")}
                             className="ml-auto text-white/35 transition hover:text-red-300"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -392,7 +396,7 @@ export function CommentsPanel({
                         <button
                           type="button"
                           onClick={() => handleToggleLike(c.id_portfolio_comment)}
-                          aria-label={liked ? "Descurtir comentário" : "Curtir comentário"}
+                          aria-label={liked ? t("unlikeComment", "Descurtir comentário") : t("likeComment", "Curtir comentário")}
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 transition hover:bg-white/5 active:scale-95",
                             liked ? "text-yellow-400" : "text-white/55 hover:text-white",
@@ -424,7 +428,7 @@ export function CommentsPanel({
                 disabled={loadingMore}
                 className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/75 transition hover:bg-white/[0.08] disabled:opacity-60"
               >
-                {loadingMore ? "Carregando…" : "Carregar mais"}
+                {loadingMore ? t("loading", "Carregando…") : t("loadMore", "Carregar mais")}
               </button>
             </div>
           )}
@@ -439,7 +443,7 @@ export function CommentsPanel({
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Escreva um comentário…"
+            placeholder={t("placeholder", "Escreva um comentário…")}
             maxLength={1000}
             rows={1}
             className="min-h-[40px] max-h-32 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-[13px] text-white placeholder:text-white/35 focus:border-white/30 focus:outline-none"
@@ -447,7 +451,7 @@ export function CommentsPanel({
           <button
             type="submit"
             disabled={submitting || draft.trim().length === 0}
-            aria-label="Enviar comentário"
+            aria-label={t("send", "Enviar comentário")}
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition disabled:opacity-40"
           >
             {submitting ? (
