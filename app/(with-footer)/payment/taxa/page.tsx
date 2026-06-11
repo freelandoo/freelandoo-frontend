@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeft, CheckCircle2, Loader2, Shield, Zap } from "lucide-react"
 import { usePricing, formatBRL } from "@/lib/pricing"
 import { TabloidPageIntro } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface ProfileSummary {
   id_profile: string
@@ -19,6 +20,7 @@ interface ProfileSummary {
 }
 
 function TaxaPageInner() {
+  const t = useTranslations("Checkout")
   const router = useRouter()
   const search = useSearchParams()
   const profileIdParam = search.get("profile_id")
@@ -39,31 +41,31 @@ function TaxaPageInner() {
           return
         }
         if (!profileIdParam) {
-          setError("Nenhum perfil informado. Volte e clique em 'Ativar perfil' no card desejado.")
+          setError(t("taxaNoProfile", "Nenhum perfil informado. Volte e clique em 'Ativar perfil' no card desejado."))
           return
         }
         const res = await fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-        if (!res.ok) throw new Error("Não foi possível validar seu perfil")
+        if (!res.ok) throw new Error(t("taxaValidateError", "Não foi possível validar seu perfil"))
         const data = await res.json()
         const found: ProfileSummary | undefined = (data.profiles || []).find(
           (p: ProfileSummary) => p.id_profile === profileIdParam
         )
         if (!found) {
-          setError("Esse perfil não pertence à sua conta.")
+          setError(t("taxaNotYours", "Esse perfil não pertence à sua conta."))
           return
         }
         if (found.is_published) {
-          setError("Este perfil já está ativado.")
+          setError(t("taxaAlreadyActive", "Este perfil já está ativado."))
         }
         setProfile(found)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar perfil")
+        setError(err instanceof Error ? err.message : t("taxaLoadProfileError", "Erro ao carregar perfil"))
       } finally {
         setLoadingProfile(false)
       }
     }
     loadProfile()
-  }, [profileIdParam, router])
+  }, [profileIdParam, router, t])
 
   async function handleCheckout() {
     setIsLoading(true)
@@ -71,11 +73,11 @@ function TaxaPageInner() {
     try {
       const token = localStorage.getItem("token")
       if (!token) {
-        setError("Você precisa estar logado para ativar o perfil")
+        setError(t("taxaNeedLogin", "Você precisa estar logado para ativar o perfil"))
         return
       }
       if (!profileIdParam) {
-        setError("Perfil não informado")
+        setError(t("taxaProfileMissing", "Perfil não informado"))
         return
       }
 
@@ -98,18 +100,18 @@ function TaxaPageInner() {
       try {
         data = text ? JSON.parse(text) : {}
       } catch {
-        data = { error: `Resposta inválida do servidor (${response.status})` }
+        data = { error: t("taxaInvalidResponse", "Resposta inválida do servidor ({status})").replace("{status}", String(response.status)) }
       }
       if (!response.ok) {
-        throw new Error(data?.error || "Erro ao iniciar pagamento")
+        throw new Error(data?.error || t("taxaStartPaymentError", "Erro ao iniciar pagamento"))
       }
       if (!data?.url) {
-        throw new Error("Resposta do servidor sem URL de checkout")
+        throw new Error(t("taxaNoCheckoutUrl", "Resposta do servidor sem URL de checkout"))
       }
 
       window.location.href = data.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado")
+      setError(err instanceof Error ? err.message : t("taxaUnexpectedError", "Erro inesperado"))
       setIsLoading(false)
     }
   }
@@ -119,9 +121,9 @@ function TaxaPageInner() {
       <div className="mx-auto max-w-4xl px-4 py-8 md:py-10">
         <TabloidPageIntro
           size="compact"
-          eyebrow="Ativação de perfil"
+          eyebrow={t("taxaEyebrow", "Ativação de perfil")}
           title="TAXA."
-          subtitle="Pagamento único por perfil — sem renovação automática."
+          subtitle={t("taxaSubtitle", "Pagamento único por perfil — sem renovação automática.")}
           back={
             <button
               type="button"
@@ -129,7 +131,7 @@ function TaxaPageInner() {
               className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              {t("backButton", "Voltar")}
             </button>
           }
           className="mb-8"
@@ -138,19 +140,19 @@ function TaxaPageInner() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Ativação do perfil</CardTitle>
+              <CardTitle>{t("taxaActivationTitle", "Ativação do perfil")}</CardTitle>
               <CardDescription>
                 {profile
-                  ? `Ativando o perfil "${profile.display_name}"`
-                  : "Mantenha seu perfil ativo nos classificados"}
+                  ? t("taxaActivatingProfile", 'Ativando o perfil "{name}"').replace("{name}", profile.display_name)
+                  : t("taxaKeepActive", "Mantenha seu perfil ativo nos classificados")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-center py-6">
-                <p className="text-sm text-muted-foreground mb-2">Pagamento único por perfil</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("taxaOneTimePerProfile", "Pagamento único por perfil")}</p>
                 <p className="text-4xl font-bold">{formatBRL(pricing.subscription_annual.amount_cents, pricing.subscription_annual.currency)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Sem renovação automática. Cada perfil tem ativação própria.
+                  {t("taxaNoAutoRenew", "Sem renovação automática. Cada perfil tem ativação própria.")}
                 </p>
               </div>
 
@@ -158,9 +160,9 @@ function TaxaPageInner() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Apareça nos Classificados</p>
+                    <p className="font-medium">{t("taxaPerk1Title", "Apareça nos Classificados")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Somente o perfil ativado aparece publicamente. Seus outros perfis seguem inativos.
+                      {t("taxaPerk1Desc", "Somente o perfil ativado aparece publicamente. Seus outros perfis seguem inativos.")}
                     </p>
                   </div>
                 </div>
@@ -168,9 +170,9 @@ function TaxaPageInner() {
                 <div className="flex items-start gap-3">
                   <Zap className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   <div>
-                    <p className="font-medium">Ativação imediata</p>
+                    <p className="font-medium">{t("taxaPerk2Title", "Ativação imediata")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Confirmação via Stripe ativa o perfil automaticamente.
+                      {t("taxaPerk2Desc", "Confirmação via Stripe ativa o perfil automaticamente.")}
                     </p>
                   </div>
                 </div>
@@ -178,9 +180,9 @@ function TaxaPageInner() {
                 <div className="flex items-start gap-3">
                   <Shield className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Pagamento seguro</p>
+                    <p className="font-medium">{t("taxaPerk3Title", "Pagamento seguro")}</p>
                     <p className="text-sm text-muted-foreground">
-                      Processado pelo Stripe com criptografia ponta a ponta.
+                      {t("taxaPerk3Desc", "Processado pelo Stripe com criptografia ponta a ponta.")}
                     </p>
                   </div>
                 </div>
@@ -190,13 +192,13 @@ function TaxaPageInner() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Finalizar pagamento</CardTitle>
+              <CardTitle>{t("taxaFinishPayment", "Finalizar pagamento")}</CardTitle>
               <CardDescription>
                 {profile
                   ? profile.is_clan
-                    ? `Clan: ${profile.display_name}${profile.machine_name ? ` · ${profile.machine_name}` : ""}`
-                    : `Perfil: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
-                  : "Você será redirecionado ao Stripe para concluir"}
+                    ? `${t("taxaClanLabel", "Clan")}: ${profile.display_name}${profile.machine_name ? ` · ${profile.machine_name}` : ""}`
+                    : `${t("taxaProfileLabel", "Perfil")}: ${profile.display_name}${profile.category ? ` · ${profile.category}` : ""}`
+                  : t("taxaRedirectStripe", "Você será redirecionado ao Stripe para concluir")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -208,11 +210,11 @@ function TaxaPageInner() {
                 <>
                   <div className="space-y-2">
                     <label className="text-sm font-medium" htmlFor="coupon">
-                      Cupom de desconto (opcional)
+                      {t("taxaCouponLabel", "Cupom de desconto (opcional)")}
                     </label>
                     <Input
                       id="coupon"
-                      placeholder="Insira seu código"
+                      placeholder={t("taxaCouponPlaceholder", "Insira seu código")}
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                       disabled={isLoading || !profile}
@@ -227,17 +229,17 @@ function TaxaPageInner() {
                     onClick={handleCheckout}
                     disabled={isLoading || !profile || !!profile?.is_published}
                   >
-                    {isLoading ? "Redirecionando..." : "Pagar com Stripe"}
+                    {isLoading ? t("taxaRedirecting", "Redirecionando...") : t("taxaPayWithStripe", "Pagar com Stripe")}
                   </button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    Ao continuar, você concorda com o{" "}
+                    {t("taxaAgreePre", "Ao continuar, você concorda com o")}{" "}
                     <a href="/subscription-terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
-                      Termo de ativação
+                      {t("taxaActivationTerm", "Termo de ativação")}
                     </a>{" "}
-                    e os{" "}
+                    {t("taxaAgreeAnd", "e os")}{" "}
                     <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
-                      Termos de Uso
+                      {t("taxaTermsOfUse", "Termos de Uso")}
                     </a>
                     .
                   </p>
