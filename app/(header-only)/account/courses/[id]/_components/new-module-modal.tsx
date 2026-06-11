@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Loader2, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function NewModuleModal({
   onUploadBanner,
   onCreated,
 }: Props) {
+  const t = useTranslations("Account")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [pendingFile, setPendingFile] = useState<File | null>(null)
@@ -61,7 +63,7 @@ export function NewModuleModal({
   async function handleSubmit() {
     const trimmedTitle = title.trim()
     if (!trimmedTitle) {
-      toast.error("Informe o nome do módulo.")
+      toast.error(t("moduleTitleRequired", "Informe o nome do módulo."))
       return
     }
     setSaving(true)
@@ -76,17 +78,17 @@ export function NewModuleModal({
         } catch (err) {
           toast.error(
             err instanceof Error
-              ? `Módulo criado, mas o banner falhou: ${err.message}`
-              : "Módulo criado, mas o banner falhou.",
+              ? t("moduleCreatedBannerFailedWithMessage", "Módulo criado, mas o banner falhou: {message}").replace("{message}", err.message)
+              : t("moduleCreatedBannerFailed", "Módulo criado, mas o banner falhou."),
           )
         }
       }
-      toast.success("Módulo criado!")
+      toast.success(t("moduleCreated", "Módulo criado!"))
       onCreated?.(created)
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao criar módulo")
+      toast.error(err instanceof Error ? err.message : t("moduleCreateFailed", "Falha ao criar módulo"))
     } finally {
       setSaving(false)
     }
@@ -102,23 +104,22 @@ export function NewModuleModal({
     >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Novo módulo</DialogTitle>
+          <DialogTitle>{t("newModule", "Novo módulo")}</DialogTitle>
           <DialogDescription>
-            Um módulo agrupa aulas de um mesmo tema. Você pode trocar o banner
-            depois pela página do módulo.
+            {t("newModuleDesc", "Um módulo agrupa aulas de um mesmo tema. Você pode trocar o banner depois pela página do módulo.")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
-              Banner do módulo (opcional)
+              {t("moduleBannerOptional", "Banner do módulo (opcional)")}
             </Label>
             <ImageDropZone
               aspect="16/9"
               currentUrl={preview}
-              title="Arraste ou envie uma imagem para o banner do módulo"
-              hint="Recomendado 16:9 · JPG, PNG ou WebP · até 12MB"
+              title={t("moduleBannerDropTitle", "Arraste ou envie uma imagem para o banner do módulo")}
+              hint={t("moduleBannerDropHint", "Recomendado 16:9 · JPG, PNG ou WebP · até 12MB")}
               onUpload={(file) => handleSelectFile(file)}
               onRemove={() => {
                 setPendingFile(null)
@@ -130,24 +131,24 @@ export function NewModuleModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-module-title">Nome do módulo</Label>
+            <Label htmlFor="new-module-title">{t("moduleTitleLabel", "Nome do módulo")}</Label>
             <Input
               id="new-module-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex.: Fundamentos do design"
+              placeholder={t("moduleTitlePlaceholder", "Ex.: Fundamentos do design")}
               maxLength={160}
               disabled={saving}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-module-desc">Descrição curta (opcional)</Label>
+            <Label htmlFor="new-module-desc">{t("moduleShortDescriptionOptional", "Descrição curta (opcional)")}</Label>
             <Textarea
               id="new-module-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Em poucas linhas, o que este módulo cobre."
+              placeholder={t("moduleDescriptionPlaceholder", "Em poucas linhas, o que este módulo cobre.")}
               rows={3}
               maxLength={500}
               disabled={saving}
@@ -165,7 +166,7 @@ export function NewModuleModal({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("cancel", "Cancelar")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving}>
             {saving ? (
@@ -173,7 +174,7 @@ export function NewModuleModal({
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            Criar módulo
+            {t("createModule", "Criar módulo")}
           </Button>
         </DialogFooter>
       </DialogContent>

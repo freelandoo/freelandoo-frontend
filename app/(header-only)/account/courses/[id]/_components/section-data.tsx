@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -67,6 +68,7 @@ export function CourseDataSection({
   profileOptions = [],
   onSaved,
 }: Props) {
+  const t = useTranslations("Account")
   const [form, setForm] = useState<FormState>(() => buildFormFromCourse(course))
   const [isSaving, setIsSaving] = useState(false)
 
@@ -92,7 +94,7 @@ export function CourseDataSection({
   async function handleSave() {
     const title = form.title.trim()
     if (!title) {
-      toast.error("Informe o título do curso")
+      toast.error(t("courseTitleRequired", "Informe o título do curso"))
       return
     }
     const priceCents = parsePriceInput(form.price_text)
@@ -101,7 +103,7 @@ export function CourseDataSection({
       form.status === "published" &&
       (priceCents == null || priceCents < COURSE_MIN_PUBLISH_PRICE_CENTS)
     ) {
-      toast.error("Para publicar, o preço precisa ser de no mínimo R$ 5,00")
+      toast.error(t("priceMinimumPublishError", "Para publicar, o preço precisa ser de no mínimo R$ 5,00"))
       return
     }
 
@@ -118,7 +120,7 @@ export function CourseDataSection({
 
     const token = getToken()
     if (!token) {
-      toast.error("Sessão expirada. Faça login novamente.")
+      toast.error(t("sessionExpired", "Sessão expirada. Faça login novamente."))
       return
     }
 
@@ -140,13 +142,13 @@ export function CourseDataSection({
         | { course?: MyCourse; error?: string }
         | null
       if (!res.ok || !data?.course) {
-        throw new Error(data?.error || "Falha ao salvar")
+        throw new Error(data?.error || t("saveFailed", "Falha ao salvar"))
       }
       onSaved(data.course)
-      toast.success("Alterações salvas")
+      toast.success(t("changesSaved", "Alterações salvas"))
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao salvar alterações",
+        err instanceof Error ? err.message : t("saveChangesFailed", "Falha ao salvar alterações"),
       )
     } finally {
       setIsSaving(false)
@@ -157,11 +159,11 @@ export function CourseDataSection({
     <div className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="cd-title">
-          Nome do curso <span className="text-destructive">*</span>
+          {t("courseNameLabel", "Nome do curso")} <span className="text-destructive">*</span>
         </Label>
         <Input
           id="cd-title"
-          placeholder="Ex.: Fundamentos de Edição de Vídeo"
+          placeholder={t("courseTitleExample", "Ex.: Fundamentos de Edição de Vídeo")}
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           disabled={isSaving}
@@ -170,10 +172,10 @@ export function CourseDataSection({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cd-short">Descrição curta</Label>
+        <Label htmlFor="cd-short">{t("courseShortDescription", "Descrição curta")}</Label>
         <Input
           id="cd-short"
-          placeholder="Uma frase que resume a proposta do curso"
+          placeholder={t("courseShortPlaceholderData", "Uma frase que resume a proposta do curso")}
           value={form.short_description}
           onChange={(e) =>
             setForm({ ...form, short_description: e.target.value })
@@ -187,10 +189,10 @@ export function CourseDataSection({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cd-desc">Descrição completa</Label>
+        <Label htmlFor="cd-desc">{t("courseFullDescription", "Descrição completa")}</Label>
         <Textarea
           id="cd-desc"
-          placeholder="Para quem é, o que o aluno aprende, como o curso está organizado..."
+          placeholder={t("courseFullDescriptionDataPlaceholder", "Para quem é, o que o aluno aprende, como o curso está organizado...")}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={6}
@@ -199,7 +201,7 @@ export function CourseDataSection({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cd-cover">URL da capa</Label>
+        <Label htmlFor="cd-cover">{t("coverUrlLabel", "URL da capa")}</Label>
         <Input
           id="cd-cover"
           placeholder="https://..."
@@ -208,14 +210,13 @@ export function CourseDataSection({
           disabled={isSaving}
         />
         <p className="text-[11px] text-white/45">
-          Upload direto pelo R2 chega no próximo slice. Por enquanto cole uma
-          URL pública (ex.: do seu R2 ou de qualquer host de imagem).
+          {t("coverUrlHint", "Upload direto pelo R2 chega no próximo slice. Por enquanto cole uma URL pública (ex.: do seu R2 ou de qualquer host de imagem).")}
         </p>
         {form.cover_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={form.cover_url}
-            alt="Pré-visualização da capa"
+            alt={t("coverPreviewAlt", "Pré-visualização da capa")}
             className="mt-2 aspect-[16/9] w-full max-w-md rounded-xl border border-white/[0.07] object-cover"
             onError={(e) => {
               ;(e.currentTarget as HTMLImageElement).style.display = "none"
@@ -226,7 +227,7 @@ export function CourseDataSection({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="cd-price">Preço (R$)</Label>
+          <Label htmlFor="cd-price">{t("priceBrlLabel", "Preço (R$)")}</Label>
           <Input
             id="cd-price"
             placeholder="0,00"
@@ -236,12 +237,12 @@ export function CourseDataSection({
             inputMode="decimal"
           />
           <p className="text-[11px] text-white/45">
-            Mínimo R$ 5,00 para publicar. Em rascunho pode ficar vazio.
+            {t("draftPriceHint", "Mínimo R$ 5,00 para publicar. Em rascunho pode ficar vazio.")}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="cd-status">Status</Label>
+          <Label htmlFor="cd-status">{t("studentTableStatus", "Status")}</Label>
           <Select
             value={form.status}
             onValueChange={(v) =>
@@ -253,20 +254,20 @@ export function CourseDataSection({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="draft">Rascunho</SelectItem>
-              <SelectItem value="published">Publicado</SelectItem>
-              <SelectItem value="paused">Pausado</SelectItem>
+              <SelectItem value="draft">{t("statusDraft", "Rascunho")}</SelectItem>
+              <SelectItem value="published">{t("statusPublished", "Publicado")}</SelectItem>
+              <SelectItem value="paused">{t("statusPaused", "Pausado")}</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[11px] text-white/45">
-            Publicar exige título e preço ≥ R$ 5,00.
+            {t("publishRequirementHint", "Publicar exige título e preço ≥ R$ 5,00.")}
           </p>
         </div>
       </div>
 
       {profileOptions.length > 0 && (
         <div className="space-y-2">
-          <Label htmlFor="cd-profile">Perfil vinculado</Label>
+          <Label htmlFor="cd-profile">{t("linkedProfile", "Perfil vinculado")}</Label>
           <Select
             value={form.profile_id || "__none__"}
             onValueChange={(v) =>
@@ -275,10 +276,10 @@ export function CourseDataSection({
             disabled={isSaving}
           >
             <SelectTrigger id="cd-profile">
-              <SelectValue placeholder="Sem perfil vinculado" />
+              <SelectValue placeholder={t("noLinkedProfile", "Sem perfil vinculado")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">Sem perfil vinculado</SelectItem>
+              <SelectItem value="__none__">{t("noLinkedProfile", "Sem perfil vinculado")}</SelectItem>
               {profileOptions.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
@@ -287,7 +288,7 @@ export function CourseDataSection({
             </SelectContent>
           </Select>
           <p className="text-[11px] text-white/45">
-            Se associado, o curso vai aparecer na página deste subperfil.
+            {t("profileLinkHint", "Se associado, o curso vai aparecer na página deste subperfil.")}
           </p>
         </div>
       )}
@@ -302,8 +303,8 @@ export function CourseDataSection({
       <div className="sticky bottom-4 mt-6 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-white/[0.07] bg-zinc-950/85 px-4 py-3 backdrop-blur-md">
         <p className="mr-auto text-[12px] text-white/55">
           {isDirty
-            ? "Você tem alterações não salvas."
-            : "Tudo salvo."}
+            ? t("unsavedChanges", "Você tem alterações não salvas.")
+            : t("allSaved", "Tudo salvo.")}
         </p>
         <Button
           type="button"
@@ -315,7 +316,7 @@ export function CourseDataSection({
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Salvar alterações
+          {t("saveChanges", "Salvar alterações")}
         </Button>
       </div>
     </div>

@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { MyCourse } from "@/hooks/use-my-courses"
@@ -24,33 +25,39 @@ interface Props {
   onCourseChanged: (course: MyCourse) => void
 }
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "Ainda não publicado"
+function formatDate(
+  value: string | null | undefined,
+  locale: string,
+  t: (key: string, fallback?: string) => string,
+) {
+  if (!value) return t("notPublishedYet", "Ainda não publicado")
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "Data indisponível"
-  return new Intl.DateTimeFormat("pt-BR", {
+  if (Number.isNaN(date.getTime())) return t("dateUnavailable", "Data indisponível")
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date)
 }
 
-function defaultMessage(course: MyCourse) {
+function defaultMessage(course: MyCourse, t: (key: string, fallback?: string) => string) {
   const desc = course.short_description?.trim()
   if (desc) return desc
-  return `Meu curso ${course.title} está disponível na Freelandoo.`
+  return t("courseFeedDefaultMessage", "Meu curso {title} está disponível na Freelandoo.").replace("{title}", course.title)
 }
 
 function Stat({
   label,
   value,
+  locale,
 }: {
   label: string
   value: number
+  locale: string
 }) {
   return (
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
       <p className="font-mono text-lg font-semibold text-white">
-        {value.toLocaleString("pt-BR")}
+        {value.toLocaleString(locale)}
       </p>
       <p className="mt-0.5 text-[11px] text-white/45">{label}</p>
     </div>
@@ -58,10 +65,12 @@ function Stat({
 }
 
 export function CoursePublishSection({ course, onCourseChanged }: Props) {
+  const locale = useLocale()
+  const t = useTranslations("Account")
   const { feedPost, isLoading, error, publish, remove } = useCourseFeedPost(
     course.id,
   )
-  const [message, setMessage] = useState(() => defaultMessage(course))
+  const [message, setMessage] = useState(() => defaultMessage(course, t))
   const [isPublishing, setIsPublishing] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
 
@@ -69,29 +78,29 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
     if (feedPost?.message != null) {
       setMessage(feedPost.message)
     } else {
-      setMessage(defaultMessage(course))
+      setMessage(defaultMessage(course, t))
     }
-  }, [course, feedPost?.message])
+  }, [course, feedPost?.message, t])
 
   const isLive = feedPost?.status === "published" && feedPost.is_active
   const publicCourseUrl = course.slug ? `/cursos/${course.slug}` : null
 
   const blockers = useMemo(() => {
     const items: string[] = []
-    if (course.status !== "published") items.push("curso em status publicado")
-    if (!course.profile_id) items.push("perfil vinculado")
-    if (!course.slug) items.push("slug público do curso")
+    if (course.status !== "published") items.push(t("blockerPublishedStatus", "curso em status publicado"))
+    if (!course.profile_id) items.push(t("blockerLinkedProfile", "perfil vinculado"))
+    if (!course.slug) items.push(t("blockerPublicSlug", "slug público do curso"))
     return items
-  }, [course])
+  }, [course, t])
 
   async function handlePublish() {
     setIsPublishing(true)
     try {
       const data = await publish(message)
       if (data.course) onCourseChanged(data.course)
-      toast.success(isLive ? "Divulgação atualizada." : "Curso divulgado no feed.")
+      toast.success(isLive ? t("disclosureUpdated", "Divulgação atualizada.") : t("courseSharedFeed", "Curso divulgado no feed."))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao publicar")
+      toast.error(err instanceof Error ? err.message : t("publishFailed", "Falha ao publicar"))
     } finally {
       setIsPublishing(false)
     }
@@ -102,9 +111,9 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
     try {
       const data = await remove()
       if (data.course) onCourseChanged(data.course)
-      toast.success("Divulgação removida do feed.")
+      toast.success(t("disclosureRemoved", "Divulgação removida do feed."))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao remover")
+      toast.error(err instanceof Error ? err.message : t("removeFailed", "Falha ao remover"))
     } finally {
       setIsRemoving(false)
     }
@@ -127,26 +136,26 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
               ) : (
                 <Radio className="h-3.5 w-3.5" />
               )}
-              {isLive ? "No feed" : "Fora do feed"}
+              {isLive ? t("feedStatusOn", "No feed") : t("feedStatusOff", "Fora do feed")}
             </span>
             <span className="text-xs text-white/45">
-              {formatDate(feedPost?.published_at)}
+              {formatDate(feedPost?.published_at, locale, t)}
             </span>
           </div>
 
           <div className="mt-5 space-y-2">
-            <Label htmlFor="course-feed-message">Mensagem da divulgação</Label>
+            <Label htmlFor="course-feed-message">{t("feedMessageLabel", "Mensagem da divulgação")}</Label>
             <Textarea
               id="course-feed-message"
               value={message}
               onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
               rows={7}
               maxLength={1000}
-              placeholder="Escreva uma chamada curta para aparecer no feed."
+              placeholder={t("feedMessagePlaceholder", "Escreva uma chamada curta para aparecer no feed.")}
               className="border-white/10 bg-zinc-900/80 text-white"
             />
             <div className="flex items-center justify-between gap-3 text-[11px] text-white/45">
-              <span>A capa do curso entra como mídia do post quando existir.</span>
+              <span>{t("feedMediaHint", "A capa do curso entra como mídia do post quando existir.")}</span>
               <span>{message.length}/1000</span>
             </div>
           </div>
@@ -163,15 +172,15 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
               />
             ) : (
               <div className="flex aspect-[4/5] items-center justify-center bg-white/[0.03] px-6 text-center text-xs text-white/35">
-                Sem capa para o post
+                {t("noCoverForPost", "Sem capa para o post")}
               </div>
             )}
           </div>
           <p className="mt-3 line-clamp-2 text-sm font-semibold text-white">
-            Curso: {course.title}
+            {t("coursePrefix", "Curso:")} {course.title}
           </p>
           <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-white/50">
-            {message || course.short_description || "Chamada do curso no feed."}
+            {message || course.short_description || t("feedCourseFallback", "Chamada do curso no feed.")}
           </p>
         </aside>
       </div>
@@ -179,7 +188,7 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
       {isLoading && (
         <div className="flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-xs text-white/55">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Carregando estado da divulgação...
+          {t("loadingFeedPostState", "Carregando estado da divulgação...")}
         </div>
       )}
 
@@ -192,20 +201,20 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
 
       {blockers.length > 0 && (
         <div className="rounded-2xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-          Para divulgar no feed, complete: {blockers.join(", ")}.
+          {t("feedBlockersPrefix", "Para divulgar no feed, complete:")} {blockers.join(", ")}.
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Stat label="Curtidas no post" value={feedPost?.likes_count ?? 0} />
-        <Stat label="Compartilhamentos" value={feedPost?.shares_count ?? 0} />
-        <Stat label="Impressões" value={feedPost?.impressions_count ?? 0} />
+        <Stat label={t("postLikes", "Curtidas no post")} value={feedPost?.likes_count ?? 0} locale={locale} />
+        <Stat label={t("shares", "Compartilhamentos")} value={feedPost?.shares_count ?? 0} locale={locale} />
+        <Stat label={t("impressions", "Impressões")} value={feedPost?.impressions_count ?? 0} locale={locale} />
       </div>
 
       <div className="sticky bottom-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/[0.07] bg-zinc-950/85 px-4 py-3 backdrop-blur-md">
         <div className="mr-auto flex items-center gap-2 text-[12px] text-white/55">
           <BarChart3 className="h-3.5 w-3.5 text-primary" />
-          {isLive ? "Post ativo no feed público." : "Pronto para criar ou reativar o post."}
+          {isLive ? t("postActivePublic", "Post ativo no feed público.") : t("postReady", "Pronto para criar ou reativar o post.")}
         </div>
 
         {publicCourseUrl && (
@@ -217,7 +226,7 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
           >
             <Link href={publicCourseUrl} target="_blank">
               <Eye className="mr-2 h-4 w-4" />
-              Ver curso
+              {t("viewCourse", "Ver curso")}
             </Link>
           </Button>
         )}
@@ -235,7 +244,7 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
             ) : (
               <Trash2 className="mr-2 h-4 w-4" />
             )}
-            Remover do feed
+            {t("removeFromFeed", "Remover do feed")}
           </Button>
         )}
 
@@ -249,7 +258,7 @@ export function CoursePublishSection({ course, onCourseChanged }: Props) {
           ) : (
             <Megaphone className="mr-2 h-4 w-4" />
           )}
-          {isLive ? "Atualizar divulgação" : "Divulgar no feed"}
+          {isLive ? t("updateDisclosure", "Atualizar divulgação") : t("discloseOnFeed", "Divulgar no feed")}
         </Button>
       </div>
     </div>

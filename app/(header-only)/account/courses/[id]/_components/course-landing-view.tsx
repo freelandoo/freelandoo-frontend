@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { ImageDropZone } from "@/components/courses/image-drop-zone"
 import { PageShell } from "@/components/tabloide"
 import { fetchWithLog } from "@/lib/fetch-with-log"
@@ -33,7 +34,6 @@ import { useCourseModules, type CourseModule } from "@/hooks/use-course-modules"
 import {
   COURSE_MIN_PUBLISH_PRICE_CENTS,
   centsToInputText,
-  formatPriceBRL,
   parsePriceInput,
 } from "@/lib/courses/format"
 import { AffiliateOptInField } from "@/components/affiliate/affiliate-opt-in-field"
@@ -70,47 +70,51 @@ function getToken(): string | null {
 }
 
 function StatusBadge({ status }: { status: "draft" | "published" | "paused" }) {
+  const t = useTranslations("Account")
+
   if (status === "published") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-        Publicado
+        {t("statusPublished", "Publicado")}
       </span>
     )
   }
   if (status === "paused") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
-        Pausado
+        {t("statusPaused", "Pausado")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-      Rascunho
+      {t("statusDraft", "Rascunho")}
     </span>
   )
 }
 
 function ModuleStatusPill({ status }: { status: "draft" | "published" | "hidden" }) {
+  const t = useTranslations("Account")
+
   if (status === "published") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
         <span className="h-1 w-1 rounded-full bg-emerald-300" />
-        Publicado
+        {t("statusPublished", "Publicado")}
       </span>
     )
   }
   if (status === "hidden") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">
-        <EyeOff className="h-3 w-3" /> Oculto
+        <EyeOff className="h-3 w-3" /> {t("statusHidden", "Oculto")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300">
-      Rascunho
+      {t("statusDraft", "Rascunho")}
     </span>
   )
 }
@@ -122,6 +126,8 @@ function ModuleCard({
   module: CourseModule
   courseId: string
 }) {
+  const t = useTranslations("Account")
+
   return (
     <Link
       href={`/account/courses/${encodeURIComponent(courseId)}/modules/${encodeURIComponent(module.id)}`}
@@ -146,8 +152,10 @@ function ModuleCard({
         </div>
         <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full border border-white/12 bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-white/85 backdrop-blur-sm">
           <PlaySquare className="h-3 w-3" />
-          {module.lessons_count} aula
-          {module.lessons_count === 1 ? "" : "s"}
+          {module.lessons_count}{" "}
+          {module.lessons_count === 1
+            ? t("lessonSingular", "aula")
+            : t("lessonPlural", "aulas")}
         </div>
         <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition group-hover:border-primary/45 group-hover:text-primary">
           <ArrowRight className="h-3.5 w-3.5" />
@@ -164,7 +172,7 @@ function ModuleCard({
           </p>
         ) : (
           <p className="text-xs leading-relaxed text-white/35">
-            Sem descrição. Abra para editar.
+            {t("moduleNoDescriptionHint", "Sem descrição. Abra para editar.")}
           </p>
         )}
       </div>
@@ -174,6 +182,8 @@ function ModuleCard({
 
 export function CourseLandingView({ courseId }: Props) {
   const router = useRouter()
+  const locale = useLocale()
+  const t = useTranslations("Account")
   const {
     course,
     isLoading: courseLoading,
@@ -201,6 +211,11 @@ export function CourseLandingView({ courseId }: Props) {
   const [isNewModuleOpen, setIsNewModuleOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [studentsOpen, setStudentsOpen] = useState(false)
+  const formatPrice = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "BRL",
+    }).format(value / 100)
 
   // ---- Edição in-place dos dados do curso (sem modal) ----
   const [form, setForm] = useState({
@@ -254,12 +269,12 @@ export function CourseLandingView({ courseId }: Props) {
       try {
         await updateCourse(patch)
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Falha ao salvar")
+        toast.error(err instanceof Error ? err.message : t("saveFailed", "Falha ao salvar"))
       } finally {
         setSavingField(null)
       }
     },
-    [course, form.price_text, updateCourse],
+    [course, form.price_text, t, updateCourse],
   )
 
   const saveAffiliates = useCallback(
@@ -273,12 +288,12 @@ export function CourseLandingView({ courseId }: Props) {
         await updateCourse({ affiliates_allowed: next })
       } catch (err) {
         setAffiliatesAllowed(prev) // reverte se falhar
-        toast.error(err instanceof Error ? err.message : "Falha ao salvar")
+        toast.error(err instanceof Error ? err.message : t("saveFailed", "Falha ao salvar"))
       } finally {
         setSavingField(null)
       }
     },
-    [course, updateCourse],
+    [course, t, updateCourse],
   )
 
   // Carrega subperfis do usuário (não-clan) para o select no modal de dados.
@@ -298,7 +313,7 @@ export function CourseLandingView({ courseId }: Props) {
           .filter((p) => !p.is_clan)
           .map((p) => ({
             id: p.id_profile,
-            name: p.display_name || "Perfil sem nome",
+            name: p.display_name || t("unnamedProfile", "Perfil sem nome"),
             is_clan: false,
           }))
         setProfileOptions(list)
@@ -309,7 +324,7 @@ export function CourseLandingView({ courseId }: Props) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   // Detecta se o perfil vinculado é um clan e carrega membros + co-autores atuais.
   const courseMemberIdsKey = (course?.member_profile_ids || []).join(",")
@@ -337,7 +352,7 @@ export function CourseLandingView({ courseId }: Props) {
         const clan = data?.clan
         if (cancelled || !clan) return
         const members = clan.members || []
-        setClanInfo({ id: pid, name: clan.display_name || "Clan", members })
+        setClanInfo({ id: pid, name: clan.display_name || t("clanWord", "Clan"), members })
         const validIds = new Set(members.map((m) => String(m.id_member_profile)))
         setSelectedMembers(
           (course?.member_profile_ids || []).filter((id) => validIds.has(String(id))),
@@ -354,7 +369,7 @@ export function CourseLandingView({ courseId }: Props) {
     }
     // courseMemberIdsKey sincroniza a seleção quando o curso recarrega.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.profile_id, courseMemberIdsKey])
+  }, [form.profile_id, courseMemberIdsKey, t])
 
   const saveMembers = useCallback(
     async (next: string[]) => {
@@ -365,12 +380,12 @@ export function CourseLandingView({ courseId }: Props) {
         await updateCourse({ member_profile_ids: next })
       } catch (err) {
         setSelectedMembers(prev) // reverte
-        toast.error(err instanceof Error ? err.message : "Falha ao salvar membros")
+        toast.error(err instanceof Error ? err.message : t("saveMembersFailed", "Falha ao salvar membros"))
       } finally {
         setSavingMembers(false)
       }
     },
-    [selectedMembers, updateCourse],
+    [selectedMembers, t, updateCourse],
   )
 
   const toggleMember = useCallback(
@@ -397,24 +412,24 @@ export function CourseLandingView({ courseId }: Props) {
     async (file: File) => {
       try {
         await uploadCover(file)
-        toast.success("Capa atualizada!")
+        toast.success(t("coverUpdated", "Capa atualizada!"))
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Falha ao enviar capa")
+        toast.error(err instanceof Error ? err.message : t("coverUploadFailed", "Falha ao enviar capa"))
         throw err
       }
     },
-    [uploadCover],
+    [t, uploadCover],
   )
 
   const handleCoverRemove = useCallback(async () => {
     try {
       await removeCover()
-      toast.success("Capa removida.")
+      toast.success(t("coverRemoved", "Capa removida."))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao remover")
+      toast.error(err instanceof Error ? err.message : t("removeFailed", "Falha ao remover"))
       throw err
     }
-  }, [removeCover])
+  }, [removeCover, t])
 
   // ---------- estados de erro / loading ----------
 
@@ -439,15 +454,15 @@ export function CourseLandingView({ courseId }: Props) {
       <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
-          <p className="font-medium">Não foi possível carregar o curso.</p>
+          <p className="font-medium">{t("courseLoadFailedTitle", "Não foi possível carregar o curso.")}</p>
           <p className="mt-1 text-red-200/80">
-            {courseError || "Curso indisponível."}
+            {courseError || t("courseUnavailable", "Curso indisponível.")}
           </p>
           <Link
             href="/account"
             className="mt-4 inline-flex rounded-full border border-white/15 px-4 py-2 text-sm text-white/85"
           >
-            Voltar para Meus Cursos
+            {t("backToMyCourses", "Voltar para Meus Cursos")}
           </Link>
         </div>
       </div>
@@ -471,7 +486,7 @@ export function CourseLandingView({ courseId }: Props) {
             className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Meus Cursos
+            {t("myCourses", "Meus Cursos")}
           </Link>
           <StatusBadge status={course.status} />
           {course.slug && course.status === "published" && (
@@ -481,14 +496,14 @@ export function CourseLandingView({ courseId }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
             >
               <Eye className="h-3.5 w-3.5" />
-              Página pública
+              {t("publicPage", "Página pública")}
             </Link>
           )}
 
           {savingField && (
             <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F2B705]" />
-              salvando…
+              {t("saving", "Salvando...")}
             </span>
           )}
 
@@ -499,7 +514,7 @@ export function CourseLandingView({ courseId }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/85 transition hover:border-white/25 hover:text-white"
             >
               <Users className="h-3.5 w-3.5" />
-              Alunos
+              {t("studentsTitle", "Alunos")}
             </button>
             <button
               type="button"
@@ -507,7 +522,7 @@ export function CourseLandingView({ courseId }: Props) {
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[12px] font-bold text-primary-foreground shadow-[0_10px_28px_-12px_rgba(230,184,0,0.7)] transition hover:bg-primary/90"
             >
               <Megaphone className="h-3.5 w-3.5" />
-              {course.status === "published" ? "Publicação" : "Publicar"}
+              {course.status === "published" ? t("publication", "Publicação") : t("publish", "Publicar")}
             </button>
           </div>
         </div>
@@ -517,9 +532,9 @@ export function CourseLandingView({ courseId }: Props) {
           <ImageDropZone
             currentUrl={course.cover_url}
             aspect="21/9"
-            label="Banner do curso"
-            title="Arraste ou envie uma imagem para o banner do curso"
-            hint="Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB"
+            label={t("courseBannerLabel", "Banner do curso")}
+            title={t("courseBannerDropTitle", "Arraste ou envie uma imagem para o banner do curso")}
+            hint={t("courseBannerDropHint", "Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB")}
             onUpload={handleCoverUpload}
             onRemove={course.cover_url ? handleCoverRemove : undefined}
           />
@@ -528,7 +543,7 @@ export function CourseLandingView({ courseId }: Props) {
           <div className="relative mt-5 border-2 border-white/12 bg-[#15100A] p-5 shadow-[6px_6px_0_0_rgba(0,0,0,0.5)] md:p-6">
             <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#F2B705]">
               <Sparkles className="h-3 w-3" />
-              Curso Freelandoo · edite tudo aqui
+              {t("courseEditorEyebrow", "Curso Freelandoo · edite tudo aqui")}
             </p>
 
             {/* Título editável */}
@@ -536,7 +551,7 @@ export function CourseLandingView({ courseId }: Props) {
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               onBlur={(e) => saveField("title", e.target.value)}
-              placeholder="Nome do curso"
+              placeholder={t("courseTitlePlaceholder", "Nome do curso")}
               maxLength={160}
               className="fl-display mt-2 w-full bg-transparent text-3xl leading-tight text-white outline-none placeholder:text-white/25 md:text-4xl"
             />
@@ -546,7 +561,7 @@ export function CourseLandingView({ courseId }: Props) {
               value={form.short_description}
               onChange={(e) => setForm((f) => ({ ...f, short_description: e.target.value }))}
               onBlur={(e) => saveField("short_description", e.target.value)}
-              placeholder="Uma frase que resume a proposta do curso (opcional)"
+              placeholder={t("courseShortPlaceholder", "Uma frase que resume a proposta do curso (opcional)")}
               maxLength={280}
               className="mt-3 w-full border-b border-white/10 bg-transparent pb-1.5 text-sm text-white/75 outline-none placeholder:text-white/30 focus:border-[#F2B705]/50"
             />
@@ -554,24 +569,30 @@ export function CourseLandingView({ courseId }: Props) {
             {/* Meta pills (contadores) */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <MetaPill icon={<Layers className="h-3.5 w-3.5" />}>
-                {course.modules_count ?? modules.length} módulos
+                {course.modules_count ?? modules.length}{" "}
+                {(course.modules_count ?? modules.length) === 1
+                  ? t("moduleSingular", "módulo")
+                  : t("modulePlural", "módulos")}
               </MetaPill>
               <MetaPill icon={<PlaySquare className="h-3.5 w-3.5" />}>
-                {course.lessons_count ?? lessonsTotal} aulas
+                {course.lessons_count ?? lessonsTotal}{" "}
+                {(course.lessons_count ?? lessonsTotal) === 1
+                  ? t("lessonSingular", "aula")
+                  : t("lessonPlural", "aulas")}
               </MetaPill>
             </div>
 
             {/* Descrição completa */}
             <div className="mt-5">
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
-                Descrição completa
+                {t("courseFullDescription", "Descrição completa")}
               </label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 onBlur={(e) => saveField("description", e.target.value)}
                 rows={4}
-                placeholder="Conte o que o aluno vai aprender, pra quem é o curso, o que ele precisa saber antes…"
+                placeholder={t("courseFullDescriptionPlaceholder", "Conte o que o aluno vai aprender, pra quem é o curso, o que ele precisa saber antes…")}
                 className="w-full resize-y border-2 border-white/10 bg-[#0E0B06] p-3 text-sm leading-relaxed text-white/80 outline-none placeholder:text-white/30 focus:border-[#F2B705]/40"
               />
             </div>
@@ -580,7 +601,7 @@ export function CourseLandingView({ courseId }: Props) {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
-                  Preço
+                  {t("priceLabel", "Preço")}
                 </label>
                 <div className="flex items-center border-2 border-white/12 bg-[#0E0B06] px-3 focus-within:border-[#F2B705]/50">
                   <span className="fl-display text-lg text-[#F2B705]">R$</span>
@@ -594,20 +615,20 @@ export function CourseLandingView({ courseId }: Props) {
                   />
                 </div>
                 <p className="mt-1 text-[11px] text-white/40">
-                  Mínimo {formatPriceBRL(COURSE_MIN_PUBLISH_PRICE_CENTS)} para publicar.
+                  {t("minimumPriceToPublish", "Mínimo {price} para publicar.").replace("{price}", formatPrice(COURSE_MIN_PUBLISH_PRICE_CENTS))}
                 </p>
               </div>
 
               {(profileOptions.length > 0 || clanInfo) && (
                 <div>
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
-                    Perfil vinculado
+                    {t("linkedProfile", "Perfil vinculado")}
                   </label>
                   {clanInfo ? (
                     // Curso de clan: o vínculo é fixo (definido ao criar pelo clan).
                     <div className="flex h-[46px] items-center gap-2 border-2 border-[#F2B705]/30 bg-[#F2B705]/10 px-3 text-sm font-semibold text-[#F2B705]">
                       <Users className="h-4 w-4" />
-                      Clan: {clanInfo.name}
+                      {t("clanPrefix", "Clan:")} {clanInfo.name}
                     </div>
                   ) : (
                     <select
@@ -619,7 +640,7 @@ export function CourseLandingView({ courseId }: Props) {
                       }}
                       className="h-[46px] w-full border-2 border-white/12 bg-[#0E0B06] px-3 text-sm text-white outline-none focus:border-[#F2B705]/40"
                     >
-                      <option value="">Sem perfil vinculado</option>
+                      <option value="">{t("noLinkedProfile", "Sem perfil vinculado")}</option>
                       {profileOptions.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
@@ -637,16 +658,18 @@ export function CourseLandingView({ courseId }: Props) {
                 <div className="mb-3 flex items-center justify-between">
                   <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
                     <Users className="h-3.5 w-3.5" />
-                    Membros participantes
+                    {t("participatingMembers", "Membros participantes")}
                   </label>
                   <span className="text-[11px] text-white/45">
-                    {selectedMembers.length} selecionado{selectedMembers.length === 1 ? "" : "s"}
-                    {savingMembers ? " · salvando…" : ""}
+                    {selectedMembers.length}{" "}
+                    {selectedMembers.length === 1
+                      ? t("selectedSingular", "selecionado")
+                      : t("selectedPlural", "selecionados")}
+                    {savingMembers ? ` · ${t("saving", "Salvando...")}` : ""}
                   </span>
                 </div>
                 <p className="mb-3 text-[11px] leading-relaxed text-white/40">
-                  A venda do curso é dividida igualmente no Saldo de cada membro
-                  anexado (liberação em 8 dias). Anexe pelo menos um para publicar.
+                  {t("clanCourseSplitHint", "A venda do curso é dividida igualmente no Saldo de cada membro anexado (liberação em 8 dias). Anexe pelo menos um para publicar.")}
                 </p>
                 <div className="space-y-1.5">
                   {clanInfo.members.map((m) => {
@@ -684,7 +707,7 @@ export function CourseLandingView({ courseId }: Props) {
                           <div className="text-[11px] text-white/45">@{m.username}</div>
                         </div>
                         {m.role === "owner" && (
-                          <span className="shrink-0 text-[11px] text-white/45">dono</span>
+                          <span className="shrink-0 text-[11px] text-white/45">{t("ownerLower", "dono")}</span>
                         )}
                       </label>
                     )
@@ -715,13 +738,13 @@ export function CourseLandingView({ courseId }: Props) {
             <div>
               <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-primary/85">
                 <Layers className="h-3 w-3" />
-                Módulos do curso
+                {t("courseModulesEyebrow", "Módulos do curso")}
               </p>
               <h2 className="mt-2 text-xl font-semibold text-white md:text-2xl">
-                Organize o conteúdo em módulos
+                {t("organizeCourseModules", "Organize o conteúdo em módulos")}
               </h2>
               <p className="mt-1 text-xs text-white/50">
-                Cada módulo terá sua própria página com banner e aulas.
+                {t("courseModulesHint", "Cada módulo terá sua própria página com banner e aulas.")}
               </p>
             </div>
             <Button
@@ -730,7 +753,7 @@ export function CourseLandingView({ courseId }: Props) {
               className="rounded-full bg-primary text-primary-foreground shadow-[0_10px_28px_-14px_rgba(230,184,0,0.65)] hover:bg-primary/90"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Novo módulo
+              {t("newModule", "Novo módulo")}
             </Button>
           </header>
 
@@ -758,11 +781,10 @@ export function CourseLandingView({ courseId }: Props) {
                 <Layers className="h-7 w-7 text-primary" />
               </div>
               <p className="text-sm font-medium text-white/85">
-                Nenhum módulo ainda
+                {t("noModulesYet", "Nenhum módulo ainda")}
               </p>
               <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
-                Comece pelo primeiro módulo — pode ser uma introdução curta com
-                boas-vindas. Você adiciona as aulas dentro dele depois.
+                {t("noModulesYetDesc", "Comece pelo primeiro módulo — pode ser uma introdução curta com boas-vindas. Você adiciona as aulas dentro dele depois.")}
               </p>
               <Button
                 type="button"
@@ -770,7 +792,7 @@ export function CourseLandingView({ courseId }: Props) {
                 className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Criar primeiro módulo
+                {t("createFirstModule", "Criar primeiro módulo")}
               </Button>
             </div>
           )}
@@ -809,9 +831,9 @@ export function CourseLandingView({ courseId }: Props) {
       <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
           <DialogHeader>
-            <DialogTitle>Publicação do curso</DialogTitle>
+            <DialogTitle>{t("coursePublicationTitle", "Publicação do curso")}</DialogTitle>
             <DialogDescription>
-              Controle o status do curso e o post no feed do Freelandoo.
+              {t("coursePublicationDesc", "Controle o status do curso e o post no feed do Freelandoo.")}
             </DialogDescription>
           </DialogHeader>
           <CoursePublishSection
@@ -827,9 +849,9 @@ export function CourseLandingView({ courseId }: Props) {
       <Dialog open={studentsOpen} onOpenChange={setStudentsOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[820px]">
           <DialogHeader>
-            <DialogTitle>Alunos e vendas</DialogTitle>
+            <DialogTitle>{t("studentsSalesTitle", "Alunos e vendas")}</DialogTitle>
             <DialogDescription>
-              Quem comprou este curso e quanto já entrou em receita.
+              {t("studentsSalesDesc", "Quem comprou este curso e quanto já entrou em receita.")}
             </DialogDescription>
           </DialogHeader>
           <CourseStudentsSection courseId={course.id} />

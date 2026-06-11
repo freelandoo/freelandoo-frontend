@@ -9,30 +9,37 @@ import {
   ReceiptText,
   Users,
 } from "lucide-react"
-import { formatPriceBRL } from "@/lib/courses/format"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useCourseStudents, type CourseStudent } from "@/hooks/use-course-students"
 
 interface Props {
   courseId: string
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "Sem compras ainda"
+function formatDate(
+  value: string | null,
+  locale: string,
+  t: (key: string, fallback?: string) => string,
+): string {
+  if (!value) return t("noPurchasesYet", "Sem compras ainda")
   try {
-    return new Intl.DateTimeFormat("pt-BR", {
+    return new Intl.DateTimeFormat(locale, {
       day: "2-digit",
       month: "short",
       year: "numeric",
     }).format(new Date(value))
   } catch {
-    return "Data indisponível"
+    return t("dateUnavailable", "Data indisponível")
   }
 }
 
-function statusLabel(status: CourseStudent["status"]): string {
-  if (status === "refunded") return "Reembolsado"
-  if (status === "canceled") return "Cancelado"
-  return "Ativo"
+function statusLabel(
+  status: CourseStudent["status"],
+  t: (key: string, fallback?: string) => string,
+): string {
+  if (status === "refunded") return t("studentStatusRefunded", "Reembolsado")
+  if (status === "canceled") return t("studentStatusCanceled", "Cancelado")
+  return t("studentStatusActive", "Ativo")
 }
 
 function initials(name: string): string {
@@ -95,24 +102,32 @@ function StudentsSkeleton() {
 }
 
 function EmptyStudents() {
+  const t = useTranslations("Account")
+
   return (
     <div className="rounded-2xl border border-dashed border-white/12 bg-white/[0.02] px-6 py-10 text-center">
       <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/45">
         <Users className="h-7 w-7" />
       </div>
       <p className="text-sm font-semibold text-white/85">
-        Nenhuma venda registrada ainda
+        {t("noSalesYet", "Nenhuma venda registrada ainda")}
       </p>
       <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
-        Quando o checkout de curso criar matrículas, os alunos ativos e a
-        receita aparecem aqui automaticamente.
+        {t("noSalesYetDesc", "Quando o checkout de curso criar matrículas, os alunos ativos e a receita aparecem aqui automaticamente.")}
       </p>
     </div>
   )
 }
 
 export function CourseStudentsSection({ courseId }: Props) {
+  const locale = useLocale()
+  const t = useTranslations("Account")
   const { students, summary, isLoading, error } = useCourseStudents(courseId)
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "BRL",
+    }).format(value / 100)
 
   if (isLoading) return <StudentsSkeleton />
 
@@ -121,7 +136,7 @@ export function CourseStudentsSection({ courseId }: Props) {
       <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <div>
-          <p className="font-medium">Não foi possível carregar alunos</p>
+          <p className="font-medium">{t("studentsLoadFailed", "Não foi possível carregar alunos")}</p>
           <p className="mt-1 text-red-200/80">{error}</p>
         </div>
       </div>
@@ -133,23 +148,25 @@ export function CourseStudentsSection({ courseId }: Props) {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Metric
           icon={Users}
-          label="Alunos ativos"
+          label={t("activeStudents", "Alunos ativos")}
           value={String(summary.active_students_count)}
-          hint={`${summary.total_enrollments_count} matrícula${
-            summary.total_enrollments_count === 1 ? "" : "s"
-          } no total`}
+          hint={`${summary.total_enrollments_count} ${
+            summary.total_enrollments_count === 1
+              ? t("enrollmentSingular", "matrícula")
+              : t("enrollmentPlural", "matrículas")
+          } ${t("totalSuffix", "no total")}`}
         />
         <Metric
           icon={CreditCard}
-          label="Receita ativa"
-          value={formatPriceBRL(summary.active_revenue_cents)}
-          hint="Soma de matrículas não reembolsadas"
+          label={t("activeRevenue", "Receita ativa")}
+          value={formatMoney(summary.active_revenue_cents)}
+          hint={t("activeRevenueHint", "Soma de matrículas não reembolsadas")}
         />
         <Metric
           icon={CalendarDays}
-          label="Última venda"
-          value={formatDate(summary.last_enrolled_at)}
-          hint="Mais recente matrícula registrada"
+          label={t("lastSale", "Última venda")}
+          value={formatDate(summary.last_enrolled_at, locale, t)}
+          hint={t("lastSaleHint", "Mais recente matrícula registrada")}
         />
       </div>
 
@@ -158,9 +175,9 @@ export function CourseStudentsSection({ courseId }: Props) {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015]">
           <div className="grid grid-cols-[minmax(0,1.5fr)_140px_120px] gap-3 border-b border-white/[0.07] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-white/40 max-md:hidden">
-            <span>Aluno</span>
-            <span>Valor</span>
-            <span>Status</span>
+            <span>{t("studentTableStudent", "Aluno")}</span>
+            <span>{t("studentTableValue", "Valor")}</span>
+            <span>{t("studentTableStatus", "Status")}</span>
           </div>
           <ul className="divide-y divide-white/[0.06]">
             {students.map((student) => (
@@ -178,7 +195,7 @@ export function CourseStudentsSection({ courseId }: Props) {
                     />
                   ) : (
                     <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-semibold text-white/70">
-                      {initials(student.student_name) || "AL"}
+                      {initials(student.student_name) || t("studentInitialsFallback", "AL")}
                     </span>
                   )}
                   <div className="min-w-0">
@@ -188,18 +205,18 @@ export function CourseStudentsSection({ courseId }: Props) {
                     <p className="mt-0.5 inline-flex max-w-full items-center gap-1 text-xs text-white/45">
                       <Mail className="h-3 w-3 shrink-0" />
                       <span className="truncate">
-                        {student.student_email || "Email não disponível"}
+                        {student.student_email || t("emailUnavailable", "Email não disponível")}
                       </span>
                     </p>
                   </div>
                 </div>
 
                 <div className="font-mono text-sm font-semibold text-white/85">
-                  {formatPriceBRL(student.amount_paid_cents)}
+                  {formatMoney(student.amount_paid_cents)}
                   {student.order_id && (
                     <p className="mt-0.5 inline-flex items-center gap-1 font-sans text-[11px] font-normal text-white/40">
                       <ReceiptText className="h-3 w-3" />
-                      Pedido vinculado
+                      {t("linkedOrder", "Pedido vinculado")}
                     </p>
                   )}
                 </div>
@@ -212,10 +229,10 @@ export function CourseStudentsSection({ courseId }: Props) {
                         : "border-white/12 bg-white/[0.04] text-white/55"
                     }`}
                   >
-                    {statusLabel(student.status)}
+                    {statusLabel(student.status, t)}
                   </span>
                   <p className="mt-1 text-[11px] text-white/40">
-                    {formatDate(student.enrolled_at)}
+                    {formatDate(student.enrolled_at, locale, t)}
                   </p>
                 </div>
               </li>

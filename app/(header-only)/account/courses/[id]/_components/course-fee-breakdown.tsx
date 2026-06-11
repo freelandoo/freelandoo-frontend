@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
-import { formatPriceBRL } from "@/lib/courses/format"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 type Pricing = {
   seller_amount_cents: number
@@ -24,8 +24,15 @@ export function CourseFeeBreakdown({
   priceCents: number | null
   affiliatesAllowed?: boolean
 }) {
+  const locale = useLocale()
+  const t = useTranslations("Account")
   const [pricing, setPricing] = useState<Pricing | null>(null)
   const [loading, setLoading] = useState(false)
+  const formatPrice = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "BRL",
+    }).format(value / 100)
 
   useEffect(() => {
     if (!priceCents || priceCents <= 0) {
@@ -58,8 +65,7 @@ export function CourseFeeBreakdown({
   if (!priceCents || priceCents <= 0) {
     return (
       <p className="mt-2 text-xs text-white/45">
-        Defina um preço (mín. R$ 5,00 para publicar) e veja aqui o que você
-        recebe e o que o cliente paga.
+        {t("feeBreakdownIntro", "Defina um preço (mín. R$ 5,00 para publicar) e veja aqui o que você recebe e o que o cliente paga.")}
       </p>
     )
   }
@@ -68,24 +74,24 @@ export function CourseFeeBreakdown({
     <div className="mt-3 border-2 border-white/12 bg-[#15100A] p-4 shadow-[4px_4px_0_0_rgba(0,0,0,0.45)]">
       <div className="mb-2 flex items-center justify-between">
         <span className="fl-display text-sm uppercase tracking-wide text-[#F2B705]">
-          Quem paga o quê
+          {t("whoPaysWhat", "Quem paga o quê")}
         </span>
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-white/40" />}
       </div>
 
       {pricing ? (
         <div className="space-y-1.5 text-sm">
-          <Row label="Você recebe" value={pricing.seller_amount_cents} tone="seller" />
-          <Row label="+ Taxa de serviço" value={pricing.service_fee_cents} tone="fee" />
-          <Row label="+ Taxa da maquininha" value={pricing.processor_fee_cents} tone="fee" />
+          <Row label={t("feeSellerReceives", "Você recebe")} value={formatPrice(pricing.seller_amount_cents)} tone="seller" />
+          <Row label={t("feeServiceFee", "+ Taxa de serviço")} value={formatPrice(pricing.service_fee_cents)} tone="fee" />
+          <Row label={t("feeProcessorFee", "+ Taxa da maquininha")} value={formatPrice(pricing.processor_fee_cents)} tone="fee" />
           {pricing.affiliate_commission_cents > 0 && (
-            <Row label="+ Comissão do afiliado" value={pricing.affiliate_commission_cents} tone="fee" />
+            <Row label={t("feeAffiliateCommission", "+ Comissão do afiliado")} value={formatPrice(pricing.affiliate_commission_cents)} tone="fee" />
           )}
           <div className="my-1 h-px bg-white/10" />
-          <Row label="Cliente paga" value={pricing.display_price_cents} tone="total" />
+          <Row label={t("feeCustomerPays", "Cliente paga")} value={formatPrice(pricing.display_price_cents)} tone="total" />
         </div>
       ) : (
-        !loading && <p className="text-xs text-white/45">Não foi possível calcular as taxas agora.</p>
+        !loading && <p className="text-xs text-white/45">{t("feeUnavailable", "Não foi possível calcular as taxas agora.")}</p>
       )}
     </div>
   )
@@ -97,7 +103,7 @@ function Row({
   tone,
 }: {
   label: string
-  value: number
+  value: string
   tone: "seller" | "fee" | "total"
 }) {
   const labelCls =
@@ -115,7 +121,7 @@ function Row({
   return (
     <div className="flex items-center justify-between gap-3">
       <span className={labelCls}>{label}</span>
-      <span className={valueCls}>{formatPriceBRL(value)}</span>
+      <span className={valueCls}>{value}</span>
     </div>
   )
 }
