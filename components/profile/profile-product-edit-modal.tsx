@@ -3,18 +3,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Camera, GripVertical, ImagePlus, Loader2, Package, Save, Trash2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
+
+const INTL_TAG: Record<string, string> = { "pt-BR": "pt-BR", en: "en-US", es: "es-ES" }
+type Translator = (key: string, fallback: string) => string
 
 // Caixas padrão Correios/Melhor Envio — escolher uma preenche as dimensões.
 // Valores em cm. O peso fica separado porque varia por produto mesmo dentro
 // da mesma caixa. "Personalizada" deixa os 3 campos livres.
-type BoxPreset = { id: string; label: string; h: number; w: number; l: number; hint?: string }
+type BoxPreset = { id: string; label: string; labelKey: string; h: number; w: number; l: number; hint?: string; hintKey?: string }
 const BOX_PRESETS: BoxPreset[] = [
-  { id: "mini",   label: "Mini Envios (16 × 11 × 2 cm)",      h: 2,  w: 11, l: 16, hint: "envelope, acessórios pequenos" },
-  { id: "pp",     label: "Caixa PP (18 × 14 × 8 cm)",         h: 8,  w: 14, l: 18, hint: "joias, eletrônicos pequenos" },
-  { id: "p",      label: "Caixa P (27 × 18 × 9 cm)",          h: 9,  w: 18, l: 27, hint: "livros, camisetas dobradas" },
-  { id: "m",      label: "Caixa M (31 × 24 × 11 cm)",         h: 11, w: 24, l: 31, hint: "roupas, calçados" },
-  { id: "g",      label: "Caixa G (41 × 27 × 11 cm)",         h: 11, w: 27, l: 41, hint: "kits, produtos maiores" },
-  { id: "gg",     label: "Caixa GG (33 × 24 × 24 cm)",        h: 24, w: 24, l: 33, hint: "volumosos" },
+  { id: "mini",   labelKey: "boxMini", label: "Mini Envios (16 × 11 × 2 cm)",      h: 2,  w: 11, l: 16, hintKey: "boxMiniHint", hint: "envelope, acessórios pequenos" },
+  { id: "pp",     labelKey: "boxPP", label: "Caixa PP (18 × 14 × 8 cm)",         h: 8,  w: 14, l: 18, hintKey: "boxPPHint", hint: "joias, eletrônicos pequenos" },
+  { id: "p",      labelKey: "boxP", label: "Caixa P (27 × 18 × 9 cm)",          h: 9,  w: 18, l: 27, hintKey: "boxPHint", hint: "livros, camisetas dobradas" },
+  { id: "m",      labelKey: "boxM", label: "Caixa M (31 × 24 × 11 cm)",         h: 11, w: 24, l: 31, hintKey: "boxMHint", hint: "roupas, calçados" },
+  { id: "g",      labelKey: "boxG", label: "Caixa G (41 × 27 × 11 cm)",         h: 11, w: 27, l: 41, hintKey: "boxGHint", hint: "kits, produtos maiores" },
+  { id: "gg",     labelKey: "boxGG", label: "Caixa GG (33 × 24 × 24 cm)",        h: 24, w: 24, l: 33, hintKey: "boxGGHint", hint: "volumosos" },
 ]
 
 function detectPreset(h: string, w: string, l: string): string {
@@ -106,12 +111,12 @@ function parsePriceReais(input: string): number {
   return Math.round(n * 100)
 }
 
-function formatPriceParts(cents: number) {
+function formatPriceParts(cents: number, intlTag: string) {
   const safe = Math.max(0, Math.round(Number.isFinite(cents) ? cents : 0))
   const intPart = Math.floor(safe / 100)
   const frac = safe % 100
   return {
-    integer: intPart.toLocaleString("pt-BR"),
+    integer: intPart.toLocaleString(intlTag),
     cents: frac.toString().padStart(2, "0"),
   }
 }
@@ -133,17 +138,20 @@ function ProductCardPreview({
   stockQty: number
   coverUrl: string | null
 }) {
-  const { integer, cents } = formatPriceParts(priceCents)
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
+  const { integer, cents } = formatPriceParts(priceCents, intlTag)
   const desc = description.trim()
   const outOfStock = stockQty <= 0
-  const displayName = name.trim() || "Nome do produto"
+  const displayName = name.trim() || t("productNameFallback", "Nome do produto")
 
   return (
     <div className="group relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-left">
       <div className="relative aspect-[4/5] w-full shrink-0 border-b-2 border-[#0B0B0D] bg-[#1d1810]">
         {outOfStock && (
           <span className="absolute left-2 top-2 z-10 rounded-full border border-[#0B0B0D] bg-[#0B0B0D]/85 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#F1EDE2]">
-            Esgotado
+            {t("soldOut", "Esgotado")}
           </span>
         )}
         {coverUrl ? (
@@ -176,7 +184,7 @@ function ProductCardPreview({
               <span className="align-top text-[10px] font-semibold text-[#0B0B0D]/75">,{cents}</span>
             </p>
             <span className="shrink-0 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wider text-[#1A1505]">
-              Ver
+              {t("viewWord", "Ver")}
             </span>
           </div>
         </div>
@@ -222,6 +230,10 @@ export function ProfileProductEditModal({
   onMediaChanged,
   onError,
 }: ProfileProductEditModalProps) {
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
+  const locale = useLocale()
+  const intlTag = INTL_TAG[locale] || "pt-BR"
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -423,7 +435,7 @@ export function ProfileProductEditModal({
     // no preview; o upload real acontece logo depois do salvar.
     if (!product) {
       if (!isImage) {
-        onError?.("Antes de salvar, só dá pra escolher uma foto. Vídeos podem ser adicionados depois, editando o produto.")
+        onError?.(t("onlyPhotoBeforeSave", "Antes de salvar, só dá pra escolher uma foto. Vídeos podem ser adicionados depois, editando o produto."))
         return
       }
       const validation = validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
@@ -435,7 +447,7 @@ export function ProfileProductEditModal({
           outputHeight: POST_IMAGE_OUTPUT.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
-          errorMessage: "A foto do produto precisa ter no máximo 3MB após otimização.",
+          errorMessage: t("photoProductMax3mb", "A foto do produto precisa ter no máximo 3MB após otimização."),
         })
         setPendingFile(processed.file)
         setPendingPreviewUrl((prev) => {
@@ -443,7 +455,7 @@ export function ProfileProductEditModal({
           return processed.previewUrl
         })
       } catch (err) {
-        onError?.(err instanceof Error ? err.message : "Erro ao processar a foto")
+        onError?.(err instanceof Error ? err.message : t("photoProcessError", "Erro ao processar a foto"))
       } finally {
         setUploading(false)
       }
@@ -454,14 +466,14 @@ export function ProfileProductEditModal({
       ? validateImageFile(file, POST_IMAGE_MAX_SIZE_BYTES)
       : isVideo
         ? validateVideoFile(file)
-        : { ok: false as const, error: "Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV." }
+        : { ok: false as const, error: t("unsupportedFormat", "Formato não suportado. Envie JPG, PNG, WebP, MP4, WebM ou MOV.") }
 
     if (!validation.ok) {
       onError?.(validation.error)
       return
     }
     if (mediaList.length >= MAX_PRODUCT_MEDIA) {
-      onError?.(`Máximo de ${MAX_PRODUCT_MEDIA} arquivos por produto.`)
+      onError?.(`${t("maxFilesPre", "Máximo de")} ${MAX_PRODUCT_MEDIA} ${t("maxFilesPostProduct", "arquivos por produto.")}`)
       return
     }
 
@@ -475,7 +487,7 @@ export function ProfileProductEditModal({
           outputHeight: POST_IMAGE_OUTPUT.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
-          errorMessage: "A foto do produto precisa ter no máximo 3MB após otimização.",
+          errorMessage: t("photoProductMax3mb", "A foto do produto precisa ter no máximo 3MB após otimização."),
         })
         uploadFile = processed.file
         previewUrlToRevoke = processed.previewUrl
@@ -493,10 +505,10 @@ export function ProfileProductEditModal({
         onMediaChanged?.(product.id_profile_product, nextMedia)
       } else {
         const d = await res.json().catch(() => ({}))
-        onError?.(d.error || "Erro ao enviar arquivo")
+        onError?.(d.error || t("uploadFileError", "Erro ao enviar arquivo"))
       }
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : "Erro de conexão ao enviar arquivo")
+      onError?.(err instanceof Error ? err.message : t("uploadFileConnError", "Erro de conexão ao enviar arquivo"))
     } finally {
       if (previewUrlToRevoke) URL.revokeObjectURL(previewUrlToRevoke)
       setUploading(false)
@@ -519,10 +531,10 @@ export function ProfileProductEditModal({
         })
       } else {
         const d = await res.json().catch(() => ({}))
-        onError?.(d.error || "Erro ao remover arquivo")
+        onError?.(d.error || t("removeFileError", "Erro ao remover arquivo"))
       }
     } catch {
-      onError?.("Erro de conexão ao remover arquivo")
+      onError?.(t("removeFileConnError", "Erro de conexão ao remover arquivo"))
     }
     setDeletingMedia(null)
   }
@@ -567,32 +579,32 @@ export function ProfileProductEditModal({
 
   async function saveProduct() {
     const name = form.name.trim()
-    if (!name) { onError?.("Informe o nome do produto"); return }
-    if (name.length > 160) { onError?.("Nome deve ter no máximo 160 caracteres"); return }
+    if (!name) { onError?.(t("enterProductName", "Informe o nome do produto")); return }
+    if (name.length > 160) { onError?.(t("nameMax160", "Nome deve ter no máximo 160 caracteres")); return }
 
     const price_amount = parsePriceReais(form.price_reais)
-    if (price_amount < 0) { onError?.("Preço inválido"); return }
+    if (price_amount < 0) { onError?.(t("invalidPrice", "Preço inválido")); return }
 
     const stock_quantity = parseInteger(form.stock_quantity)
-    if (stock_quantity < 0) { onError?.("Estoque inválido"); return }
+    if (stock_quantity < 0) { onError?.(t("invalidStock", "Estoque inválido")); return }
 
     const weight_grams = parseInteger(form.weight_grams)
-    if (weight_grams < 0) { onError?.("Peso inválido (gramas)"); return }
+    if (weight_grams < 0) { onError?.(t("invalidWeight", "Peso inválido (gramas)")); return }
 
     const height_cm = parseDecimal(form.height_cm)
     const width_cm = parseDecimal(form.width_cm)
     const length_cm = parseDecimal(form.length_cm)
     if (height_cm < 0 || width_cm < 0 || length_cm < 0) {
-      onError?.("Dimensões inválidas"); return
+      onError?.(t("invalidDimensions", "Dimensões inválidas")); return
     }
 
     const zipDigits = form.origin_zipcode_override.replace(/\D/g, "")
     if (zipDigits && zipDigits.length !== 8) {
-      onError?.("CEP de origem do produto inválido (8 dígitos)"); return
+      onError?.(t("invalidOriginZip", "CEP de origem do produto inválido (8 dígitos)")); return
     }
 
     const categoryId = form.id_product_category ? Number(form.id_product_category) : 0
-    if (!categoryId) { onError?.("Selecione uma categoria para o produto"); return }
+    if (!categoryId) { onError?.(t("selectCategory", "Selecione uma categoria para o produto")); return }
 
     setSaving(true)
     const body: Record<string, unknown> = {
@@ -634,7 +646,7 @@ export function ProfileProductEditModal({
               body: fd,
             })
             if (!up.ok) {
-              onError?.("Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo.")
+              onError?.(t("productSavedPhotoFailed", "Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo."))
             }
           } catch {
             onError?.("Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo.")
@@ -643,10 +655,10 @@ export function ProfileProductEditModal({
         onSaved(saved)
         onClose()
       } else {
-        onError?.(d.error || "Erro ao salvar")
+        onError?.(d.error || t("saveError", "Erro ao salvar"))
       }
     } catch {
-      onError?.("Erro de conexão")
+      onError?.(t("connectionErrorShort", "Erro de conexão"))
     }
     setSaving(false)
   }
@@ -665,13 +677,13 @@ export function ProfileProductEditModal({
       >
         <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 p-6">
           <h2 id="profile-product-edit-title" className="fl-display text-2xl text-[#0B0B0D]">
-            {isEdit ? "Editar produto" : "Novo produto"}
+            {isEdit ? t("editProduct", "Editar produto") : t("newProduct", "Novo produto")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-2 text-[#0B0B0D]/60 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
-            aria-label="Fechar"
+            aria-label={t("close", "Fechar")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -679,13 +691,15 @@ export function ProfileProductEditModal({
 
         <div className="border-b-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] px-6 py-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#5b554b]">
-            Pré-visualização na vitrine — toque no cartão pra {previewCoverUrl ? "trocar" : "escolher"} a foto
+            {previewCoverUrl
+              ? t("storePreviewHintChange", "Pré-visualização na vitrine — toque no cartão pra trocar a foto")
+              : t("storePreviewHintChoose", "Pré-visualização na vitrine — toque no cartão pra escolher a foto")}
           </p>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            aria-label={previewCoverUrl ? "Trocar a foto do produto" : "Escolher a foto do produto"}
+            aria-label={previewCoverUrl ? t("changeProductPhoto", "Trocar a foto do produto") : t("chooseProductPhoto", "Escolher a foto do produto")}
             className="group/preview mx-auto block w-[180px] overflow-hidden rounded-xl text-left transition-transform hover:-translate-y-0.5 disabled:opacity-60"
           >
             <div className="relative">
@@ -702,7 +716,7 @@ export function ProfileProductEditModal({
                 ) : (
                   <Camera className="h-3 w-3" />
                 )}
-                {previewCoverUrl ? "Trocar foto" : "Escolher foto"}
+                {previewCoverUrl ? t("changePhoto", "Trocar foto") : t("choosePhoto", "Escolher foto")}
               </span>
             </div>
           </button>
@@ -718,15 +732,15 @@ export function ProfileProductEditModal({
         <div className="space-y-5 p-6">
           {/* ── 1 · Categoria — botões, como no filtro do enxame ───────────── */}
           <section>
-            <StepTitle n={1} title="Categoria" />
+            <StepTitle n={1} title={t("categoryStep", "Categoria")} />
             <div className="flex flex-wrap gap-1.5">
               {categories.length === 0 && (
-                <span className="text-xs text-[#8a8275]">Carregando categorias…</span>
+                <span className="text-xs text-[#8a8275]">{t("loadingCategories", "Carregando categorias…")}</span>
               )}
               {categories.map((c) => (
                 <OptionChip
                   key={c.id_product_category}
-                  label={c.name}
+                  label={tx.productCategory(c.slug, c.name)}
                   active={String(c.id_product_category) === form.id_product_category}
                   onClick={() => {
                     const next = String(c.id_product_category)
@@ -748,31 +762,31 @@ export function ProfileProductEditModal({
             <>
               {/* ── 2 · Modelo — atributos da categoria (viram filtro na busca) ── */}
               <section>
-                <StepTitle n={2} title="Modelo" hint="o comprador filtra por isso na busca" />
+                <StepTitle n={2} title={t("modelStep", "Modelo")} hint={t("modelStepHint", "o comprador filtra por isso na busca")} />
                 {activeSchema.length > 0 ? (
                   <AttributeFieldsEditor schema={activeSchema} value={attrs} onChange={setAttrs} />
                 ) : (
-                  <p className="text-xs text-[#8a8275]">Essa categoria não tem detalhes extras.</p>
+                  <p className="text-xs text-[#8a8275]">{t("noExtraDetails", "Essa categoria não tem detalhes extras.")}</p>
                 )}
               </section>
 
               {/* ── 3 · Valor e descrição ───────────────────────────────────── */}
               <section className="space-y-3">
-                <StepTitle n={3} title="Valor e descrição" />
+                <StepTitle n={3} title={t("priceDescStep", "Valor e descrição")} />
                 <div>
-                  <label className="fl-label">Nome</label>
+                  <label className="fl-label">{t("nameLabel", "Nome")}</label>
                   <input
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     maxLength={160}
-                    placeholder="Ex: Camiseta oversized"
+                    placeholder={t("productNamePlaceholder", "Ex: Camiseta oversized")}
                     className="fl-input"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="fl-label">Preço (R$) — você recebe</label>
+                    <label className="fl-label">{t("priceYouReceiveLabel", "Preço (R$) — você recebe")}</label>
                     <input
                       type="text"
                       value={form.price_reais}
@@ -782,7 +796,7 @@ export function ProfileProductEditModal({
                     />
                   </div>
                   <div>
-                    <label className="fl-label">Estoque (unidades)</label>
+                    <label className="fl-label">{t("stockUnitsLabel", "Estoque (unidades)")}</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -794,7 +808,7 @@ export function ProfileProductEditModal({
                   </div>
                 </div>
                 <div>
-                  <label className="fl-label">Descrição (opcional)</label>
+                  <label className="fl-label">{t("descriptionOptional", "Descrição (opcional)")}</label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -809,24 +823,24 @@ export function ProfileProductEditModal({
           {showRest && pricingPreview && pricingPreview.display_price_cents > 0 && (
             <div className="rounded-lg border-2 border-[#E0A500]/40 bg-[#F2B705]/10 px-3 py-2">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-[#b8860b]">
-                Preço final ao comprador (com taxas)
+                {t("finalPriceWithFees", "Preço final ao comprador (com taxas)")}
               </p>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-lg font-bold text-[#0B0B0D] tabular-nums">
-                  {(pricingPreview.display_price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {(pricingPreview.display_price_cents / 100).toLocaleString(intlTag, { style: "currency", currency: "BRL" })}
                 </span>
                 <span className="text-[10px] text-[#5b554b]">
-                  Serviço {(pricingPreview.service_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  {" · "}Maquininha {(pricingPreview.processor_fee_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  {t("serviceWord", "Serviço")} {(pricingPreview.service_fee_cents / 100).toLocaleString(intlTag, { style: "currency", currency: "BRL" })}
+                  {" · "}{t("cardMachineWord", "Maquininha")} {(pricingPreview.processor_fee_cents / 100).toLocaleString(intlTag, { style: "currency", currency: "BRL" })}
                   {pricingPreview.affiliate_commission_cents > 0 && (
                     <>
-                      {" · "}Afiliado {(pricingPreview.affiliate_commission_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {" · "}{t("affiliateWord", "Afiliado")} {(pricingPreview.affiliate_commission_cents / 100).toLocaleString(intlTag, { style: "currency", currency: "BRL" })}
                     </>
                   )}
                 </span>
               </div>
               <p className="mt-1 text-[10px] text-[#8a8275]">
-                Frete (Melhor Envio) é somado em cima desse valor no checkout.
+                {t("shippingAddedAtCheckout", "Frete (Melhor Envio) é somado em cima desse valor no checkout.")}
               </p>
             </div>
           )}
@@ -836,8 +850,8 @@ export function ProfileProductEditModal({
             <section>
               <StepTitle
                 n={4}
-                title={isEdit ? "Fotos e vídeos" : "Foto"}
-                hint={isEdit ? "arraste pra reordenar" : "ou toque no cartão de pré-visualização lá em cima"}
+                title={isEdit ? t("photosVideosStep", "Fotos e vídeos") : t("photoStep", "Foto")}
+                hint={isEdit ? t("dragReorderHint2", "arraste pra reordenar") : t("orTapPreview", "ou toque no cartão de pré-visualização lá em cima")}
               />
               {!isEdit ? (
                 <button
@@ -861,10 +875,10 @@ export function ProfileProductEditModal({
                   )}
                   <span className="min-w-0">
                     <span className="block text-xs font-bold text-[#0B0B0D]">
-                      {pendingFile ? "Foto escolhida — toque pra trocar" : "Escolher a foto do produto"}
+                      {pendingFile ? t("photoChosenTapChange", "Foto escolhida — toque pra trocar") : t("chooseProductPhoto", "Escolher a foto do produto")}
                     </span>
                     <span className="block text-[10px] text-[#8a8275]">
-                      Sobe junto quando você salvar. Mais fotos e vídeos: edite o produto depois.
+                      {t("uploadsOnSave", "Sobe junto quando você salvar. Mais fotos e vídeos: edite o produto depois.")}
                     </span>
                   </span>
                 </button>
@@ -894,7 +908,7 @@ export function ProfileProductEditModal({
                           <button
                             type="button"
                             className="m-1 cursor-grab rounded p-0.5 text-white/70 hover:text-white active:cursor-grabbing"
-                            aria-label="Arrastar para reordenar"
+                            aria-label={t("dragToReorder", "Arrastar para reordenar")}
                           >
                             <GripVertical className="h-4 w-4" />
                           </button>
@@ -903,7 +917,7 @@ export function ProfileProductEditModal({
                             onClick={() => handleDeleteMedia(media.id_product_media)}
                             disabled={deletingMedia === media.id_product_media}
                             className="m-1 rounded bg-red-600/80 p-1 text-white hover:bg-red-600 disabled:opacity-50"
-                            aria-label="Remover arquivo"
+                            aria-label={t("removeFile", "Remover arquivo")}
                           >
                             {deletingMedia === media.id_product_media ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -927,15 +941,15 @@ export function ProfileProductEditModal({
                         ) : (
                           <>
                             <ImagePlus className="h-5 w-5" />
-                            <span className="text-[10px]">Adicionar</span>
+                            <span className="text-[10px]">{t("add", "Adicionar")}</span>
                           </>
                         )}
                       </button>
                     )}
                   </div>
                   <p className="mt-1.5 text-[10px] text-[#8a8275]">
-                    JPG, PNG, WebP, MP4, WebM ou MOV · Até {MAX_PRODUCT_MEDIA} arquivos.
-                    {mediaList.length > 1 && " Arraste para reordenar."}
+                    {t("productMediaHintPre", "JPG, PNG, WebP, MP4, WebM ou MOV · Até")} {MAX_PRODUCT_MEDIA} {t("filesWord", "arquivos.")}
+                    {mediaList.length > 1 && ` ${t("dragToReorderHint", "Arraste para reordenar.")}`}
                   </p>
                 </>
               )}
@@ -945,15 +959,15 @@ export function ProfileProductEditModal({
           {/* ── 5 · Entrega — tudo em botões ─────────────────────────────── */}
           {showRest && (
             <section className="space-y-3">
-              <StepTitle n={5} title="Entrega" />
+              <StepTitle n={5} title={t("deliveryStep", "Entrega")} />
               <div className="flex flex-wrap gap-1.5">
                 <OptionChip
-                  label="🤝 Retirar comigo"
+                  label={t("pickupWithMe", "🤝 Retirar comigo")}
                   active={form.delivery_mode === "local_pickup"}
                   onClick={() => setForm((f) => ({ ...f, delivery_mode: "local_pickup" }))}
                 />
                 <OptionChip
-                  label="📦 Enviar com frete"
+                  label={t("shipWithFreight", "📦 Enviar com frete")}
                   active={form.delivery_mode === "shipping"}
                   onClick={() => setForm((f) => ({ ...f, delivery_mode: "shipping" }))}
                 />
@@ -961,19 +975,20 @@ export function ProfileProductEditModal({
 
               {form.delivery_mode === "local_pickup" ? (
                 <div className="rounded-lg border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-3 text-xs text-[#5b554b]">
-                  Sem frete por transportadora. O comprador vai ver o botão &quot;Falar com vendedor&quot;
-                  no produto, que abre uma conversa direta com você no Mensagens.
+                  {t("noCarrierFreightInfo", "Sem frete por transportadora. O comprador vai ver o botão \"Falar com vendedor\" no produto, que abre uma conversa direta com você no Mensagens.")}
                 </div>
               ) : (
                 <>
                   <p className="text-[10px] text-[#8a8275]">
-                    Escolha a caixa em que vai embalar (Correios / Melhor Envio). Se nenhuma serve, use Personalizada.
+                    {t("chooseBoxHint", "Escolha a caixa em que vai embalar (Correios / Melhor Envio). Se nenhuma serve, use Personalizada.")}
                   </p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {BOX_PRESETS.map((p) => {
                       const active = boxPresetId === p.id
-                      const name = p.label.replace(/\s*\(.*$/, "")
-                      const dims = p.label.match(/\((.*)\)/)?.[1] ?? ""
+                      const localizedLabel = t(p.labelKey, p.label)
+                      const name = localizedLabel.replace(/\s*\(.*$/, "")
+                      const dims = localizedLabel.match(/\((.*)\)/)?.[1] ?? ""
+                      const hintText = p.hintKey ? t(p.hintKey, p.hint || "") : p.hint
                       return (
                         <button
                           key={p.id}
@@ -998,7 +1013,7 @@ export function ProfileProductEditModal({
                         >
                           <span className="block text-[11px] font-extrabold text-[#0B0B0D]">{name}</span>
                           <span className={cn("block text-[10px]", active ? "text-[#0B0B0D]/75" : "text-[#8a8275]")}>
-                            {dims}{p.hint ? ` · ${p.hint}` : ""}
+                            {dims}{hintText ? ` · ${hintText}` : ""}
                           </span>
                         </button>
                       )
@@ -1014,9 +1029,9 @@ export function ProfileProductEditModal({
                           : "border-dashed border-[#0B0B0D]/30 bg-white/50 hover:border-[#0B0B0D]",
                       )}
                     >
-                      <span className="block text-[11px] font-extrabold text-[#0B0B0D]">Personalizada</span>
+                      <span className="block text-[11px] font-extrabold text-[#0B0B0D]">{t("customBox", "Personalizada")}</span>
                       <span className={cn("block text-[10px]", boxPresetId === "custom" ? "text-[#0B0B0D]/75" : "text-[#8a8275]")}>
-                        digitar dimensões à mão
+                        {t("typeDimsManually", "digitar dimensões à mão")}
                       </span>
                     </button>
                   </div>
@@ -1024,10 +1039,10 @@ export function ProfileProductEditModal({
                   {boxPresetId === "custom" ? (
                     <>
                       <div>
-                        <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">Dimensões e peso (personalizadas)</p>
+                        <p className="mb-2 text-xs font-bold text-[#0B0B0D]/60">{t("customDimsWeight", "Dimensões e peso (personalizadas)")}</p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="fl-label">Peso (g)</label>
+                            <label className="fl-label">{t("weightG", "Peso (g)")}</label>
                             <input
                               type="text"
                               inputMode="numeric"
@@ -1038,7 +1053,7 @@ export function ProfileProductEditModal({
                             />
                           </div>
                           <div>
-                            <label className="fl-label">Altura (cm)</label>
+                            <label className="fl-label">{t("heightCm", "Altura (cm)")}</label>
                             <input
                               type="text"
                               value={form.height_cm}
@@ -1048,7 +1063,7 @@ export function ProfileProductEditModal({
                             />
                           </div>
                           <div>
-                            <label className="fl-label">Largura (cm)</label>
+                            <label className="fl-label">{t("widthCm", "Largura (cm)")}</label>
                             <input
                               type="text"
                               value={form.width_cm}
@@ -1058,7 +1073,7 @@ export function ProfileProductEditModal({
                             />
                           </div>
                           <div>
-                            <label className="fl-label">Comprimento (cm)</label>
+                            <label className="fl-label">{t("lengthCm", "Comprimento (cm)")}</label>
                             <input
                               type="text"
                               value={form.length_cm}
@@ -1071,7 +1086,7 @@ export function ProfileProductEditModal({
                       </div>
 
                       <div>
-                        <label className="fl-label">CEP de origem deste produto (opcional)</label>
+                        <label className="fl-label">{t("productOriginZip", "CEP de origem deste produto (opcional)")}</label>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -1082,14 +1097,14 @@ export function ProfileProductEditModal({
                           className="fl-input font-mono"
                         />
                         <p className="mt-1 text-[10px] text-[#8a8275]">
-                          Sobrescreve o CEP padrão do subperfil para este produto.
+                          {t("overridesDefaultZip", "Sobrescreve o CEP padrão do subperfil para este produto.")}
                         </p>
                       </div>
                     </>
                   ) : (
                     <div>
                       {/* Caixa padrão escolhida — peso é o único campo que ainda precisa do vendedor. */}
-                      <label className="fl-label">Peso (g)</label>
+                      <label className="fl-label">{t("weightG", "Peso (g)")}</label>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -1099,7 +1114,7 @@ export function ProfileProductEditModal({
                         className="fl-input max-w-[200px] font-mono"
                       />
                       <p className="mt-1 text-[10px] text-[#8a8275]">
-                        Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.
+                        {t("standardBoxAutoFills", "Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.")}
                       </p>
                     </div>
                   )}
@@ -1115,7 +1130,7 @@ export function ProfileProductEditModal({
               onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
               className="h-4 w-4 rounded border-[#0B0B0D]/40 text-[#E0A500] accent-[#E0A500]"
             />
-            <span className="text-sm font-medium text-[#0B0B0D]">Ativo (visível na loja)</span>
+            <span className="text-sm font-medium text-[#0B0B0D]">{t("activeVisibleInStore", "Ativo (visível na loja)")}</span>
           </label>
 
           <AffiliateOptInField
@@ -1131,7 +1146,7 @@ export function ProfileProductEditModal({
             onClick={onClose}
             className="fl-btn-card rounded-full px-4 py-2 text-sm font-bold"
           >
-            Cancelar
+            {t("cancel", "Cancelar")}
           </button>
           <button
             type="button"
@@ -1140,7 +1155,7 @@ export function ProfileProductEditModal({
             className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Salvando..." : "Salvar"}
+            {saving ? t("saving", "Salvando...") : t("save", "Salvar")}
           </button>
         </div>
       </div>
@@ -1162,6 +1177,8 @@ function AttributeFieldsEditor({
   value: ProductAttributes
   onChange: (next: ProductAttributes) => void
 }) {
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
   if (schema.length === 0) return null
 
   const toggleMulti = (key: string, option: string) => {
@@ -1189,14 +1206,14 @@ function AttributeFieldsEditor({
           const listId = `attr-brand-${field.key}`
           return (
             <div key={field.key}>
-              <label className="fl-label">{field.label}</label>
+              <label className="fl-label">{tx.attrLabel(field.label)}</label>
               <input
                 type="text"
                 list={field.suggestions?.length ? listId : undefined}
                 value={typeof value[field.key] === "string" ? (value[field.key] as string) : ""}
                 onChange={(e) => setText(field.key, e.target.value)}
                 maxLength={80}
-                placeholder="Ex.: marca do produto"
+                placeholder={t("brandPlaceholder", "Ex.: marca do produto")}
                 className="fl-input"
               />
               {field.suggestions?.length ? (
@@ -1212,7 +1229,7 @@ function AttributeFieldsEditor({
           const selected = Array.isArray(value[field.key]) ? (value[field.key] as string[]) : []
           return (
             <div key={field.key}>
-              <label className="fl-label">{field.label}</label>
+              <label className="fl-label">{tx.attrLabel(field.label)}</label>
               <div className="flex flex-wrap gap-1.5">
                 {COLOR_SWATCHES.map((c) => {
                   const active = selected.includes(c.name)
@@ -1222,7 +1239,7 @@ function AttributeFieldsEditor({
                       type="button"
                       onClick={() => toggleMulti(field.key, c.name)}
                       aria-pressed={active}
-                      title={c.name}
+                      title={tx.colorName(c.name)}
                       className={
                         "h-7 w-7 rounded-full border-2 transition-transform hover:-translate-y-0.5 " +
                         (active ? "border-[#0B0B0D] ring-2 ring-[#E0A500]" : "border-[#0B0B0D]/25")
@@ -1245,7 +1262,7 @@ function AttributeFieldsEditor({
         const selected = Array.isArray(value[field.key]) ? (value[field.key] as string[]) : []
         return (
           <div key={field.key}>
-            <label className="fl-label">{field.label}</label>
+            <label className="fl-label">{tx.attrLabel(field.label)}</label>
             <div className="flex flex-wrap gap-1.5">
               {options.map((opt) => {
                 const active = selected.includes(opt)
@@ -1262,7 +1279,7 @@ function AttributeFieldsEditor({
                         : "border-[#0B0B0D]/25 bg-white/50 text-[#3a352c] hover:border-[#0B0B0D]")
                     }
                   >
-                    {opt}
+                    {tx.attrOption(opt)}
                   </button>
                 )
               })}

@@ -1243,6 +1243,92 @@ Object.assign(ACCOUNT, {
   activeVisibleToClients: ["Ativo (visível para clientes)", "Active (visible to clients)", "Activo (visible para clientes)"],
 })
 
+// S14d — profile-product-edit-modal
+Object.assign(ACCOUNT, {
+  // box presets
+  boxMini: ["Mini Envios (16 × 11 × 2 cm)", "Mini Shipping (16 × 11 × 2 cm)", "Mini Envíos (16 × 11 × 2 cm)"],
+  boxMiniHint: ["envelope, acessórios pequenos", "envelope, small accessories", "sobre, accesorios pequeños"],
+  boxPP: ["Caixa PP (18 × 14 × 8 cm)", "XS Box (18 × 14 × 8 cm)", "Caja PP (18 × 14 × 8 cm)"],
+  boxPPHint: ["joias, eletrônicos pequenos", "jewelry, small electronics", "joyas, electrónicos pequeños"],
+  boxP: ["Caixa P (27 × 18 × 9 cm)", "S Box (27 × 18 × 9 cm)", "Caja P (27 × 18 × 9 cm)"],
+  boxPHint: ["livros, camisetas dobradas", "books, folded shirts", "libros, camisetas dobladas"],
+  boxM: ["Caixa M (31 × 24 × 11 cm)", "M Box (31 × 24 × 11 cm)", "Caja M (31 × 24 × 11 cm)"],
+  boxMHint: ["roupas, calçados", "clothes, footwear", "ropa, calzado"],
+  boxG: ["Caixa G (41 × 27 × 11 cm)", "L Box (41 × 27 × 11 cm)", "Caja G (41 × 27 × 11 cm)"],
+  boxGHint: ["kits, produtos maiores", "kits, larger products", "kits, productos más grandes"],
+  boxGG: ["Caixa GG (33 × 24 × 24 cm)", "XL Box (33 × 24 × 24 cm)", "Caja GG (33 × 24 × 24 cm)"],
+  boxGGHint: ["volumosos", "bulky items", "voluminosos"],
+  // preview card
+  productNameFallback: ["Nome do produto", "Product name", "Nombre del producto"],
+  soldOut: ["Esgotado", "Sold out", "Agotado"],
+  viewWord: ["Ver", "View", "Ver"],
+  // upload / validation
+  onlyPhotoBeforeSave: ["Antes de salvar, só dá pra escolher uma foto. Vídeos podem ser adicionados depois, editando o produto.", "Before saving, you can only choose a photo. Videos can be added later by editing the product.", "Antes de guardar, solo puedes elegir una foto. Los videos se pueden agregar luego editando el producto."],
+  photoProductMax3mb: ["A foto do produto precisa ter no máximo 3MB após otimização.", "The product photo must be at most 3MB after optimization.", "La foto del producto debe pesar como máximo 3MB tras la optimización."],
+  photoProcessError: ["Erro ao processar a foto", "Error processing the photo", "Error al procesar la foto"],
+  maxFilesPostProduct: ["arquivos por produto.", "files per product.", "archivos por producto."],
+  // save validation
+  enterProductName: ["Informe o nome do produto", "Enter the product name", "Ingresa el nombre del producto"],
+  nameMax160: ["Nome deve ter no máximo 160 caracteres", "Name must be at most 160 characters", "El nombre debe tener como máximo 160 caracteres"],
+  invalidPrice: ["Preço inválido", "Invalid price", "Precio no válido"],
+  invalidStock: ["Estoque inválido", "Invalid stock", "Stock no válido"],
+  invalidWeight: ["Peso inválido (gramas)", "Invalid weight (grams)", "Peso no válido (gramos)"],
+  invalidDimensions: ["Dimensões inválidas", "Invalid dimensions", "Dimensiones no válidas"],
+  invalidOriginZip: ["CEP de origem do produto inválido (8 dígitos)", "Invalid product origin ZIP (8 digits)", "Código postal de origen no válido (8 dígitos)"],
+  selectCategory: ["Selecione uma categoria para o produto", "Select a category for the product", "Selecciona una categoría para el producto"],
+  productSavedPhotoFailed: ["Produto salvo, mas a foto falhou. Edite o produto pra enviar de novo.", "Product saved, but the photo failed. Edit the product to upload again.", "Producto guardado, pero la foto falló. Edita el producto para subirla de nuevo."],
+  // header / preview
+  editProduct: ["Editar produto", "Edit product", "Editar producto"],
+  newProduct: ["Novo produto", "New product", "Nuevo producto"],
+  storePreviewHintChange: ["Pré-visualização na vitrine — toque no cartão pra trocar a foto", "Showcase preview — tap the card to change the photo", "Vista previa en la vitrina — toca la tarjeta para cambiar la foto"],
+  storePreviewHintChoose: ["Pré-visualização na vitrine — toque no cartão pra escolher a foto", "Showcase preview — tap the card to choose the photo", "Vista previa en la vitrina — toca la tarjeta para elegir la foto"],
+  changeProductPhoto: ["Trocar a foto do produto", "Change the product photo", "Cambiar la foto del producto"],
+  chooseProductPhoto: ["Escolher a foto do produto", "Choose the product photo", "Elegir la foto del producto"],
+  choosePhoto: ["Escolher foto", "Choose photo", "Elegir foto"],
+  // steps
+  categoryStep: ["Categoria", "Category", "Categoría"],
+  loadingCategories: ["Carregando categorias…", "Loading categories…", "Cargando categorías…"],
+  modelStep: ["Modelo", "Model", "Modelo"],
+  modelStepHint: ["o comprador filtra por isso na busca", "buyers filter by this in search", "el comprador filtra por esto en la búsqueda"],
+  noExtraDetails: ["Essa categoria não tem detalhes extras.", "This category has no extra details.", "Esta categoría no tiene detalles adicionales."],
+  priceDescStep: ["Valor e descrição", "Price and description", "Precio y descripción"],
+  productNamePlaceholder: ["Ex: Camiseta oversized", "E.g.: Oversized t-shirt", "Ej.: Camiseta oversized"],
+  priceYouReceiveLabel: ["Preço (R$) — você recebe", "Price (R$) — you receive", "Precio (R$) — tú recibes"],
+  stockUnitsLabel: ["Estoque (unidades)", "Stock (units)", "Stock (unidades)"],
+  // pricing preview
+  finalPriceWithFees: ["Preço final ao comprador (com taxas)", "Final price to buyer (with fees)", "Precio final para el comprador (con tarifas)"],
+  serviceWord: ["Serviço", "Service", "Servicio"],
+  cardMachineWord: ["Maquininha", "Card machine", "Datáfono"],
+  affiliateWord: ["Afiliado", "Affiliate", "Afiliado"],
+  shippingAddedAtCheckout: ["Frete (Melhor Envio) é somado em cima desse valor no checkout.", "Shipping (Melhor Envio) is added on top of this amount at checkout.", "El envío (Melhor Envio) se suma a este monto en el checkout."],
+  // photo step
+  photosVideosStep: ["Fotos e vídeos", "Photos and videos", "Fotos y videos"],
+  photoStep: ["Foto", "Photo", "Foto"],
+  dragReorderHint2: ["arraste pra reordenar", "drag to reorder", "arrastra para reordenar"],
+  orTapPreview: ["ou toque no cartão de pré-visualização lá em cima", "or tap the preview card above", "o toca la tarjeta de vista previa de arriba"],
+  photoChosenTapChange: ["Foto escolhida — toque pra trocar", "Photo chosen — tap to change", "Foto elegida — toca para cambiar"],
+  uploadsOnSave: ["Sobe junto quando você salvar. Mais fotos e vídeos: edite o produto depois.", "Uploads when you save. More photos and videos: edit the product afterwards.", "Se sube cuando guardas. Más fotos y videos: edita el producto después."],
+  productMediaHintPre: ["JPG, PNG, WebP, MP4, WebM ou MOV · Até", "JPG, PNG, WebP, MP4, WebM or MOV · Up to", "JPG, PNG, WebP, MP4, WebM o MOV · Hasta"],
+  // delivery
+  deliveryStep: ["Entrega", "Delivery", "Entrega"],
+  pickupWithMe: ["🤝 Retirar comigo", "🤝 Pick up with me", "🤝 Retirar conmigo"],
+  shipWithFreight: ["📦 Enviar com frete", "📦 Ship with carrier", "📦 Enviar con envío"],
+  noCarrierFreightInfo: ["Sem frete por transportadora. O comprador vai ver o botão \"Falar com vendedor\" no produto, que abre uma conversa direta com você no Mensagens.", "No carrier shipping. The buyer will see a \"Talk to seller\" button on the product that opens a direct conversation with you in Messages.", "Sin envío por transportista. El comprador verá el botón \"Hablar con el vendedor\" en el producto, que abre una conversación directa contigo en Mensajes."],
+  chooseBoxHint: ["Escolha a caixa em que vai embalar (Correios / Melhor Envio). Se nenhuma serve, use Personalizada.", "Choose the box you'll pack it in (Correios / Melhor Envio). If none fits, use Custom.", "Elige la caja en la que vas a empacar (Correios / Melhor Envio). Si ninguna sirve, usa Personalizada."],
+  customBox: ["Personalizada", "Custom", "Personalizada"],
+  typeDimsManually: ["digitar dimensões à mão", "type dimensions manually", "escribir dimensiones a mano"],
+  customDimsWeight: ["Dimensões e peso (personalizadas)", "Dimensions and weight (custom)", "Dimensiones y peso (personalizados)"],
+  weightG: ["Peso (g)", "Weight (g)", "Peso (g)"],
+  heightCm: ["Altura (cm)", "Height (cm)", "Altura (cm)"],
+  widthCm: ["Largura (cm)", "Width (cm)", "Ancho (cm)"],
+  lengthCm: ["Comprimento (cm)", "Length (cm)", "Largo (cm)"],
+  productOriginZip: ["CEP de origem deste produto (opcional)", "Origin ZIP for this product (optional)", "Código postal de origen de este producto (opcional)"],
+  overridesDefaultZip: ["Sobrescreve o CEP padrão do subperfil para este produto.", "Overrides the subprofile's default ZIP for this product.", "Sobrescribe el código postal predeterminado del subperfil para este producto."],
+  standardBoxAutoFills: ["Caixa padrão preenche as dimensões automaticamente. Só o peso varia por produto.", "Standard box fills the dimensions automatically. Only the weight varies per product.", "La caja estándar rellena las dimensiones automáticamente. Solo el peso varía por producto."],
+  activeVisibleInStore: ["Ativo (visível na loja)", "Active (visible in store)", "Activo (visible en la tienda)"],
+  brandPlaceholder: ["Ex.: marca do produto", "E.g.: product brand", "Ej.: marca del producto"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {
