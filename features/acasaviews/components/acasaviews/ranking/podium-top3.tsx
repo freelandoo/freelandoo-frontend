@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, type KeyboardEvent } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
@@ -19,6 +19,7 @@ export interface PodiumMeta {
 }
 
 export interface PodiumItem {
+  id?: string
   rank: number
   name: string
   handle: string
@@ -33,6 +34,8 @@ export interface PodiumItem {
 interface PodiumTop3Props {
   items: PodiumItem[] // [rank1, rank2, rank3]
   accent: "cyan" | "magenta"
+  onSelect?: (item: PodiumItem) => void
+  getSelectLabel?: (item: PodiumItem) => string
 }
 
 const accentBg: Record<Accent, string> = {
@@ -42,17 +45,50 @@ const accentBg: Record<Accent, string> = {
   ink: "bg-[var(--ink)] text-white",
 }
 
-function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "magenta" }) {
+function PodiumColumn({
+  item,
+  accent,
+  onSelect,
+  selectLabel,
+}: {
+  item: PodiumItem
+  accent: "cyan" | "magenta"
+  onSelect?: (item: PodiumItem) => void
+  selectLabel?: string
+}) {
   const isFirst = item.rank === 1
   const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
   const frameColor = isFirst ? accentVar : "var(--ink)"
+  const interactive = !!onSelect
 
   const order = item.rank === 1 ? "order-2" : item.rank === 2 ? "order-1" : "order-3"
   const width = isFirst ? "w-[40%]" : "w-[30%]"
   const pedestalH = isFirst ? "h-14 md:h-40" : item.rank === 2 ? "h-10 md:h-28" : "h-8 md:h-20"
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect) return
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onSelect(item)
+    }
+  }
+
   return (
-    <div className={cn("flex min-w-0 flex-col items-center", order, width)} data-podium-col data-rank={item.rank}>
+    <div
+      className={cn(
+        "flex min-w-0 flex-col items-center outline-none",
+        interactive && "cursor-pointer focus-visible:ring-4 focus-visible:ring-[var(--cyan)]/55",
+        order,
+        width,
+      )}
+      data-podium-col
+      data-rank={item.rank}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? selectLabel || item.name : undefined}
+      onClick={interactive ? () => onSelect?.(item) : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
+    >
       {/* Card flutuante */}
       <div className="relative w-full">
         {isFirst && (
@@ -154,7 +190,7 @@ function PodiumColumn({ item, accent }: { item: PodiumItem; accent: "cyan" | "ma
   )
 }
 
-export function PodiumTop3({ items, accent }: PodiumTop3Props) {
+export function PodiumTop3({ items, accent, onSelect, getSelectLabel }: PodiumTop3Props) {
   const root = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -190,7 +226,13 @@ export function PodiumTop3({ items, accent }: PodiumTop3Props) {
     <div ref={root} className="mx-auto max-w-5xl px-5 pb-10 pt-16 md:px-10 md:pt-20">
       <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
         {items.map((item) => (
-          <PodiumColumn key={item.rank} item={item} accent={accent} />
+          <PodiumColumn
+            key={item.rank}
+            item={item}
+            accent={accent}
+            onSelect={onSelect}
+            selectLabel={getSelectLabel?.(item)}
+          />
         ))}
       </div>
     </div>

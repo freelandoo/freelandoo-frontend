@@ -1,3 +1,6 @@
+"use client"
+
+import type { KeyboardEvent } from "react"
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Accent, Trend } from "@/lib/acasaviews/ranking-data"
@@ -23,6 +26,8 @@ interface RankingCardProps {
   tagAccent: Accent
   stats: RankingCardStat[]
   accent: "cyan" | "magenta"
+  onSelect?: () => void
+  selectLabel?: string
 }
 
 const accentBg: Record<Accent, string> = {
@@ -67,8 +72,20 @@ export function RankingCard({
   tagAccent,
   stats,
   accent,
+  onSelect,
+  selectLabel,
 }: RankingCardProps) {
   const accentVar = accent === "cyan" ? "var(--cyan)" : "var(--magenta)"
+  const interactive = !!onSelect
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect) return
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onSelect()
+    }
+  }
+
   return (
     <div
       data-rank-card
@@ -76,7 +93,13 @@ export function RankingCard({
         "group relative flex items-center gap-3 border-2 border-[var(--ink)] bg-white px-3 py-3 md:gap-5 md:px-5 md:py-4",
         "transition-transform duration-200 hover:-translate-y-1 hover:-rotate-[0.4deg]",
         "shadow-[5px_5px_0_0_var(--ink)] hover:shadow-[8px_8px_0_0_var(--ink)]",
+        interactive && "cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-[var(--cyan)]/55",
       )}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? selectLabel || name : undefined}
+      onClick={interactive ? onSelect : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
     >
       {/* Posição */}
       <div className="flex w-10 shrink-0 justify-center md:w-14">
