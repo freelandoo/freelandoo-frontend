@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react"
 import { Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type Props = {
   label?: string
@@ -17,7 +18,9 @@ type Props = {
  * Tag premium de Manifestação — gradiente metálico dourado com highlight diagonal animado.
  * Respeita prefers-reduced-motion. Loop sutil; hover dá scale + glow extra.
  */
-export function ManifestationBadge({ label = "Manifestação", size = "sm", className, iconNode }: Props) {
+export function ManifestationBadge({ label, size = "sm", className, iconNode }: Props) {
+  const t = useTranslations("Manifestation")
+  const text = label ?? t("badge", "Manifestação")
   const shineRef = useRef<HTMLSpanElement | null>(null)
 
   useEffect(() => {
@@ -92,7 +95,7 @@ export function ManifestationBadge({ label = "Manifestação", size = "sm", clas
       <span className="relative inline-flex items-center gap-1 drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]">
         {iconNode ?? <Sparkles className={cn(iconSize, "fill-amber-100")} />}
         <span className={cn("leading-none", size === "lg" ? "" : "")}>
-          {label}
+          {text}
         </span>
       </span>
     </span>

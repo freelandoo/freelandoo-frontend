@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 type Quote = {
   profile?: {
@@ -33,12 +34,12 @@ function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
 
-function fmtBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function fmtBRL(cents: number, locale = "pt-BR") {
+  return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+function fmtDate(iso: string, locale = "pt-BR") {
+  return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
 export function PremiumProfileModal({
@@ -52,6 +53,8 @@ export function PremiumProfileModal({
   profileId: string
   profileName?: string
 }) {
+  const tr = useTranslations("Premium")
+  const locale = useLocale()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(false)
   const [buying, setBuying] = useState<"polens" | "stripe" | null>(null)
@@ -63,14 +66,14 @@ export function PremiumProfileModal({
     try {
       const res = await fetch(`/api/premium/quote/${profileId}`, { cache: "no-store" })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Não foi possível carregar")
+      if (!res.ok) throw new Error(data.error || tr("loadError", "Não foi possível carregar"))
       setQuote(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar")
+      setError(err instanceof Error ? err.message : tr("loadErrorShort", "Erro ao carregar"))
     } finally {
       setLoading(false)
     }
-  }, [profileId])
+  }, [profileId, tr])
 
   useEffect(() => {
     if (open) void load()
@@ -92,7 +95,7 @@ export function PremiumProfileModal({
         body: JSON.stringify(sharedCoupon?.code ? { coupon_code: sharedCoupon.code } : {}),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Erro ao processar compra")
+      if (!res.ok) throw new Error(data.error || tr("purchaseError", "Erro ao processar compra"))
       if (method === "stripe" && data.checkout_url) {
         window.location.href = data.checkout_url
         return
@@ -100,7 +103,7 @@ export function PremiumProfileModal({
       // Polens: já ativou. Recarrega quote pra mostrar "Ativo até".
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao processar compra")
+      setError(err instanceof Error ? err.message : tr("purchaseError", "Erro ao processar compra"))
     } finally {
       setBuying(null)
     }
@@ -118,10 +121,10 @@ export function PremiumProfileModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crown className="h-5 w-5 fill-amber-300 text-amber-400" />
-            Quer dar destaque nesse perfil?
+            {tr("title", "Quer dar destaque nesse perfil?")}
           </DialogTitle>
           <DialogDescription>
-            {profileName ? `Premium para ${profileName}` : "Coloque seu perfil em destaque na vitrine."}
+            {profileName ? tr("subtitleNamed", "Premium para {name}").replace("{name}", profileName) : tr("subtitle", "Coloque seu perfil em destaque na vitrine.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,11 +136,10 @@ export function PremiumProfileModal({
           <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
             <div className="flex items-center gap-2 text-emerald-300">
               <CheckCircle2 className="h-5 w-5" />
-              <span className="font-semibold">Premium ativo</span>
+              <span className="font-semibold">{tr("premiumActive", "Premium ativo")}</span>
             </div>
             <p className="mt-2 text-sm text-emerald-100/85">
-              Este perfil está em destaque até <strong>{fmtDate(active.expires_at)}</strong>. Volte para
-              comprar de novo quando expirar.
+              {tr("activeUntilPre", "Este perfil está em destaque até")} <strong>{fmtDate(active.expires_at, locale)}</strong>. {tr("activeUntilPost", "Volte para comprar de novo quando expirar.")}
             </p>
           </div>
         ) : (
@@ -146,20 +148,19 @@ export function PremiumProfileModal({
               <li className="flex gap-2">
                 <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  <strong className="text-white">Primeiras posições</strong> nas vitrines de enxame e
-                  profissão na sua cidade.
+                  <strong className="text-white">{tr("perk1Bold", "Primeiras posições")}</strong> {tr("perk1Rest", "nas vitrines de enxame e profissão na sua cidade.")}
                 </span>
               </li>
               <li className="flex gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  Tag <strong className="text-white">Premium</strong> aparece no card e dentro do perfil.
+                  {tr("perk2Pre", "Tag")} <strong className="text-white">Premium</strong> {tr("perk2Rest", "aparece no card e dentro do perfil.")}
                 </span>
               </li>
               <li className="flex gap-2">
                 <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <span>
-                  Card com fundo e borda da cor do seu enxame, com brilho e botão preto destacado.
+                  {tr("perk3", "Card com fundo e borda da cor do seu enxame, com brilho e botão preto destacado.")}
                 </span>
               </li>
             </ul>
@@ -167,18 +168,18 @@ export function PremiumProfileModal({
             {pricing && (
               <div className="rounded-xl border border-amber-300/15 bg-amber-300/5 p-4">
                 <p className="text-xs uppercase tracking-wider text-amber-200/70">
-                  Destaque por {pricing.duration_days} dias
+                  {tr("highlightForDays", "Destaque por {days} dias").replace("{days}", String(pricing.duration_days))}
                 </p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   <div className="rounded-lg border border-white/10 bg-zinc-950/40 p-3">
-                    <p className="text-xs text-white/60">Cartão</p>
-                    <p className="mt-1 text-lg font-semibold tracking-tight">{fmtBRL(pricing.price_cents)}</p>
+                    <p className="text-xs text-white/60">{tr("card", "Cartão")}</p>
+                    <p className="mt-1 text-lg font-semibold tracking-tight">{fmtBRL(pricing.price_cents, locale)}</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-zinc-950/40 p-3">
-                    <p className="text-xs text-white/60">Poléns</p>
+                    <p className="text-xs text-white/60">{tr("polens", "Poléns")}</p>
                     <p className="mt-1 flex items-center gap-1 text-lg font-semibold tracking-tight text-amber-200">
                       <Hexagon className="h-4 w-4 fill-amber-300 text-amber-300" />
-                      {pricing.price_polens.toLocaleString("pt-BR")}
+                      {pricing.price_polens.toLocaleString(locale)}
                     </p>
                   </div>
                 </div>
@@ -187,9 +188,9 @@ export function PremiumProfileModal({
 
             {slots && (
               <p className="text-xs text-white/60">
-                Vagas em <strong>{quote?.profile?.city_name}/{quote?.profile?.uf}</strong>:{" "}
+                {tr("slotsIn", "Vagas em")} <strong>{quote?.profile?.city_name}/{quote?.profile?.uf}</strong>:{" "}
                 <span className={noSlots ? "text-rose-300" : "text-emerald-300"}>
-                  {slots.available} de {slots.total} {slots.available === 1 ? "disponível" : "disponíveis"}
+                  {tr("slotsCount", "{available} de {total}").replace("{available}", String(slots.available)).replace("{total}", String(slots.total))} {slots.available === 1 ? tr("slotSingular", "disponível") : tr("slotPlural", "disponíveis")}
                 </span>
               </p>
             )}
@@ -207,7 +208,7 @@ export function PremiumProfileModal({
                 ) : (
                   <CreditCard className="mr-2 h-4 w-4" />
                 )}
-                Comprar com cartão
+                {tr("buyWithCard", "Comprar com cartão")}
               </Button>
               <Button
                 onClick={() => buy("polens")}
@@ -220,7 +221,7 @@ export function PremiumProfileModal({
                 ) : (
                   <Hexagon className="mr-2 h-4 w-4 fill-amber-300 text-amber-300" />
                 )}
-                Comprar com Poléns
+                {tr("buyWithPolens", "Comprar com Poléns")}
               </Button>
             </div>
           </div>

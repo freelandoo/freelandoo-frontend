@@ -21,6 +21,9 @@ import {
   EmptyState,
   ErrorState,
 } from "@/components/tabloide"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+
+type TFn = (key: string, fallback?: string) => string
 
 type ManifestationType = "motivational" | "emotion" | null
 
@@ -76,22 +79,22 @@ type Mine = {
 
 type Filter = "all" | "motivational" | "emotion" | "owned" | "not_owned"
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "Todos" },
-  { id: "motivational", label: "Motivacionais" },
-  { id: "emotion", label: "Emoções" },
-  { id: "owned", label: "Comprados" },
-  { id: "not_owned", label: "Não comprados" },
+const FILTERS: { id: Filter; label: string; labelKey: string }[] = [
+  { id: "all", label: "Todos", labelKey: "filterAll" },
+  { id: "motivational", label: "Motivacionais", labelKey: "filterMotivational" },
+  { id: "emotion", label: "Emoções", labelKey: "filterEmotion" },
+  { id: "owned", label: "Comprados", labelKey: "filterOwned" },
+  { id: "not_owned", label: "Não comprados", labelKey: "filterNotOwned" },
 ]
 
-function typeLabel(type: ManifestationType): string {
-  if (type === "motivational") return "Motivacional"
-  if (type === "emotion") return "Emoção"
-  return "Manifestação"
+function typeLabel(type: ManifestationType, t: TFn): string {
+  if (type === "motivational") return t("typeMotivational", "Motivacional")
+  if (type === "emotion") return t("typeEmotion", "Emoção")
+  return t("typeDefault", "Manifestação")
 }
 
-function fmtBRL(cents: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+function fmtBRL(cents: number, locale = "pt-BR"): string {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(
     (cents || 0) / 100,
   )
 }
@@ -118,6 +121,8 @@ function BannerImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function ManifestacaoPage() {
+  const t = useTranslations("Manifestation")
+  const locale = useLocale()
   const [products, setProducts] = useState<Product[]>([])
   const [mine, setMine] = useState<Mine | null>(null)
   const [polens, setPolens] = useState<number | null>(null)
@@ -126,7 +131,7 @@ export default function ManifestacaoPage() {
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
   const [busy, setBusy] = useState<string | null>(null)
-  const [feedback, setFeedback] = useState<{ ok: boolean; title: string; message: string } | null>(null)
+  const [feedback, setFeedback] = useState<{ ok: boolean; title: string; message: string; insufficient?: boolean } | null>(null)
   const [previewId, setPreviewId] = useState<string | null>(null)
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -156,11 +161,11 @@ export default function ManifestacaoPage() {
       try {
         const res = await fetch("/api/manifestations/products", { cache: "no-store" })
         const data = await res.json()
-        if (!res.ok) throw new Error(data?.error || "Não foi possível carregar a loja")
+        if (!res.ok) throw new Error(data?.error || t("loadStoreError", "Não foi possível carregar a loja"))
         if (!cancelled) setProducts(Array.isArray(data?.products) ? data.products : [])
         await loadMine()
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Erro ao carregar")
+        if (!cancelled) setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar"))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -169,7 +174,7 @@ export default function ManifestacaoPage() {
     return () => {
       cancelled = true
     }
-  }, [loadMine])
+  }, [loadMine, t])
 
   // Retorno do checkout Stripe: o webhook desbloqueia; recarrega "owned".
   useEffect(() => {
@@ -178,13 +183,12 @@ export default function ManifestacaoPage() {
       window.history.replaceState(null, "", "/manifestacao")
       setFeedback({
         ok: true,
-        title: "Pagamento confirmado",
-        message:
-          'Sua manifestação foi desbloqueada. Clique em "Usar no perfil" para aplicá-la.',
+        title: t("paymentConfirmed", "Pagamento confirmado"),
+        message: t("paymentConfirmedMsg", 'Sua manifestação foi desbloqueada. Clique em "Usar no perfil" para aplicá-la.'),
       })
       void loadMine()
     }
-  }, [loadMine])
+  }, [loadMine, t])
 
   const ownedIds = useMemo(
     () => new Set((mine?.owned || []).map((o) => o.product_id)),
@@ -247,20 +251,22 @@ export default function ManifestacaoPage() {
         body: JSON.stringify({ product_id: product.id }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Compra não concluída")
+      if (!res.ok) throw new Error(data?.error || t("purchaseNotCompleted", "Compra não concluída"))
       await loadMine()
       setPreviewId(null)
       setFeedback({
         ok: true,
-        title: "Tudo certo!",
-        message: data?.message || "Manifestação desbloqueada com sucesso.",
+        title: t("allSet", "Tudo certo!"),
+        message: data?.message || t("unlockedSuccess", "Manifestação desbloqueada com sucesso."),
       })
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro na compra"
+      const message = err instanceof Error ? err.message : t("purchaseError", "Erro na compra")
+      const insufficient = message.toLowerCase().includes("pólens") || message.toLowerCase().includes("polens")
       setFeedback({
         ok: false,
-        title: message.toLowerCase().includes("pólens") ? "Saldo insuficiente" : "Compra não concluída",
+        title: insufficient ? t("insufficientBalance", "Saldo insuficiente") : t("purchaseNotCompleted", "Compra não concluída"),
         message,
+        insufficient,
       })
     } finally {
       setBusy(null)
@@ -280,17 +286,17 @@ export default function ManifestacaoPage() {
         body: JSON.stringify({ product_id: product.id }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Não foi possível iniciar o pagamento")
+      if (!res.ok) throw new Error(data?.error || t("startPaymentError", "Não foi possível iniciar o pagamento"))
       if (data?.checkout_url) {
         window.location.href = data.checkout_url
         return
       }
-      throw new Error("Checkout indisponível")
+      throw new Error(t("checkoutUnavailable", "Checkout indisponível"))
     } catch (err) {
       setFeedback({
         ok: false,
-        title: "Pagamento não iniciado",
-        message: err instanceof Error ? err.message : "Erro no checkout",
+        title: t("paymentNotStarted", "Pagamento não iniciado"),
+        message: err instanceof Error ? err.message : t("checkoutError", "Erro no checkout"),
       })
       setBusy(null)
     }
@@ -309,19 +315,19 @@ export default function ManifestacaoPage() {
         body: JSON.stringify({ product_id: productId }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Não foi possível aplicar")
+      if (!res.ok) throw new Error(data?.error || t("applyError", "Não foi possível aplicar"))
       await loadMine()
       setPreviewId(null)
       setFeedback({
         ok: true,
-        title: "Manifestação aplicada",
-        message: data?.message || "Pronto, ela já aparece no headcard do seu perfil.",
+        title: t("applied", "Manifestação aplicada"),
+        message: data?.message || t("appliedMsg", "Pronto, ela já aparece no headcard do seu perfil."),
       })
     } catch (err) {
       setFeedback({
         ok: false,
-        title: "Não foi possível aplicar",
-        message: err instanceof Error ? err.message : "Erro ao aplicar",
+        title: t("applyError", "Não foi possível aplicar"),
+        message: err instanceof Error ? err.message : t("applyErrorShort", "Erro ao aplicar"),
       })
     } finally {
       setBusy(null)
@@ -340,19 +346,19 @@ export default function ManifestacaoPage() {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || "Não foi possível remover")
+      if (!res.ok) throw new Error(data?.error || t("removeError", "Não foi possível remover"))
       await loadMine()
       setPreviewId(null)
       setFeedback({
         ok: true,
-        title: "Removida do perfil",
-        message: data?.message || "Sua manifestação saiu do headcard. Ela continua na sua lista de comprados.",
+        title: t("removed", "Removida do perfil"),
+        message: data?.message || t("removedMsg", "Sua manifestação saiu do headcard. Ela continua na sua lista de comprados."),
       })
     } catch (err) {
       setFeedback({
         ok: false,
-        title: "Não foi possível remover",
-        message: err instanceof Error ? err.message : "Erro ao remover",
+        title: t("removeError", "Não foi possível remover"),
+        message: err instanceof Error ? err.message : t("removeErrorShort", "Erro ao remover"),
       })
     } finally {
       setBusy(null)
@@ -365,21 +371,21 @@ export default function ManifestacaoPage() {
       <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8 md:pt-14">
         <TabloidPageIntro
           size="compact"
-          eyebrow="Manifestação"
-          title="Loja de Manifestações"
-          subtitle="Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre."
+          eyebrow={t("eyebrow", "Manifestação")}
+          title={t("storeTitle", "Loja de Manifestações")}
+          subtitle={t("subtitle", "Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre.")}
           actions={
             <>
               {token && (
                 <span className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]">
                   <Coins className="h-3.5 w-3.5" />
-                  {polens == null ? "—" : polens.toLocaleString("pt-BR")} Poléns
+                  {polens == null ? "—" : polens.toLocaleString(locale)} {t("polens", "Poléns")}
                   <Link href="/loja-polens" className="ml-1 underline underline-offset-2">
-                    comprar
+                    {t("buyLink", "comprar")}
                   </Link>
                 </span>
               )}
-              <ShareIconButton path="/manifestacao" title="Loja de Manifestações no Freelandoo" />
+              <ShareIconButton path="/manifestacao" title={t("shareTitle", "Loja de Manifestações no Freelandoo")} />
             </>
           }
         />
@@ -393,7 +399,7 @@ export default function ManifestacaoPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nome ou estado"
+              placeholder={t("searchPlaceholder", "Buscar por nome ou estado")}
               className="h-11 w-full rounded-none border-2 border-[#F5F1E8]/12 bg-[#1D1810] pl-10 pr-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] shadow-[3px_3px_0_0_rgba(0,0,0,0.4)] outline-none transition focus:border-[#F2B705]"
             />
           </div>
@@ -409,7 +415,7 @@ export default function ManifestacaoPage() {
                     : "border-[#F5F1E8]/12 bg-[#1D1810] text-[#C9C2B6] hover:border-[#F5F1E8]/30",
                 )}
               >
-                {f.label}
+                {t(f.labelKey, f.label)}
               </button>
             ))}
           </div>
@@ -419,12 +425,12 @@ export default function ManifestacaoPage() {
         {ownedList.length > 0 && (
           <div className="mt-8">
             <div className="mb-4 flex items-center gap-3">
-              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">Comprados</h2>
+              <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("owned", "Comprados")}</h2>
               <span className="border-2 border-[#F5F1E8]/14 bg-[#1D1810] px-2 py-0.5 text-xs font-black uppercase tracking-wider text-[#C9C2B6]">
                 {ownedList.length}
               </span>
               <span className="hidden text-xs font-medium text-[#9A938A] sm:inline">
-                Aplique uma no headcard ou remova a que está em uso.
+                {t("ownedHint", "Aplique uma no headcard ou remova a que está em uso.")}
               </span>
             </div>
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -445,7 +451,7 @@ export default function ManifestacaoPage() {
                       {isActive && (
                         <span className="absolute right-2 top-2 inline-flex items-center gap-1 border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200 backdrop-blur">
                           <CheckCircle2 className="h-3 w-3" />
-                          No perfil
+                          {t("onProfile", "No perfil")}
                         </span>
                       )}
                     </div>
@@ -458,7 +464,7 @@ export default function ManifestacaoPage() {
                             : "border-sky-300/30 bg-sky-500/12 text-sky-200",
                         )}
                       >
-                        {typeLabel(o.type)}
+                        {typeLabel(o.type, t)}
                       </span>
                       <h3 className="fl-display text-base leading-none text-[#F5F1E8]">{o.name}</h3>
                       <div className="mt-auto pt-1">
@@ -470,7 +476,7 @@ export default function ManifestacaoPage() {
                             className="inline-flex w-full items-center justify-center gap-1.5 rounded-none border-2 border-[#F5F1E8]/25 bg-transparent px-3 py-2 text-[11px] font-black uppercase tracking-wider text-[#F5F1E8] transition hover:border-rose-400 hover:bg-rose-500/10 hover:text-rose-200 disabled:opacity-55"
                           >
                             {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                            Remover
+                            {t("remove", "Remover")}
                           </button>
                         ) : (
                           <button
@@ -480,7 +486,7 @@ export default function ManifestacaoPage() {
                             className="inline-flex w-full items-center justify-center gap-1.5 rounded-none border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-[11px] font-black uppercase tracking-wider text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#0B0B0D] disabled:opacity-55"
                           >
                             {applying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BadgeCheck className="h-3.5 w-3.5" />}
-                            Aplicar
+                            {t("apply", "Aplicar")}
                           </button>
                         )}
                       </div>
@@ -515,11 +521,11 @@ export default function ManifestacaoPage() {
           <div className="py-16">
             <EmptyState
               icon={<Sparkles className="h-6 w-6" />}
-              title={products.length === 0 ? "Sem manifestações" : "Nada encontrado"}
+              title={products.length === 0 ? t("noManifestations", "Sem manifestações") : t("nothingFound", "Nada encontrado")}
               description={
                 products.length === 0
-                  ? "Nenhuma manifestação disponível no momento."
-                  : "Nenhuma manifestação encontrada para esse filtro."
+                  ? t("noManifestationsDesc", "Nenhuma manifestação disponível no momento.")
+                  : t("noMatchDesc", "Nenhuma manifestação encontrada para esse filtro.")
               }
             />
           </div>
@@ -551,7 +557,7 @@ export default function ManifestacaoPage() {
                     {isActive && (
                       <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-semibold text-emerald-200 backdrop-blur">
                         <CheckCircle2 className="h-3 w-3" />
-                        Ativo
+                        {t("active", "Ativo")}
                       </span>
                     )}
                   </div>
@@ -566,7 +572,7 @@ export default function ManifestacaoPage() {
                           : "border-sky-300/30 bg-sky-500/12 text-sky-200",
                       )}
                     >
-                      {typeLabel(p.type)}
+                      {typeLabel(p.type, t)}
                     </span>
                     <h3 className="fl-display text-lg leading-none text-[#F5F1E8]">{p.name}</h3>
 
@@ -589,15 +595,15 @@ export default function ManifestacaoPage() {
                     <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#F5F1E8]/8 pt-2">
                       <span className="fl-display text-base text-[#F2B705]">
                         {p.price_cents > 0
-                          ? fmtBRL(p.price_cents)
+                          ? fmtBRL(p.price_cents, locale)
                           : p.price_polens > 0
-                            ? `${p.price_polens.toLocaleString("pt-BR")} P`
-                            : "Grátis"}
+                            ? `${p.price_polens.toLocaleString(locale)} P`
+                            : t("free", "Grátis")}
                       </span>
                       {owned && !isActive && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-[#F5F1E8]/15 bg-[#F5F1E8]/8 px-2 py-0.5 text-[10px] font-medium text-[#C9C2B6]">
                           <BadgeCheck className="h-3 w-3" />
-                          Comprado
+                          {t("ownedTag", "Comprado")}
                         </span>
                       )}
                     </div>
@@ -625,13 +631,13 @@ export default function ManifestacaoPage() {
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-label={`Preview de ${p.name}`}
+              aria-label={t("previewOf", "Preview de {name}").replace("{name}", p.name)}
             >
               <button
                 type="button"
                 onClick={() => setPreviewId(null)}
                 className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-[#0b0804]/55 text-white backdrop-blur transition hover:bg-[#0b0804]/75"
-                aria-label="Fechar"
+                aria-label={t("close", "Fechar")}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -651,7 +657,7 @@ export default function ManifestacaoPage() {
                         : "border-sky-400/40 bg-sky-400/15 text-sky-700",
                     )}
                   >
-                    {typeLabel(p.type)}
+                    {typeLabel(p.type, t)}
                   </span>
                   <h3 className="fl-display text-2xl text-[var(--fl-ink)]">{p.name}</h3>
                   {p.headline && (
@@ -665,17 +671,17 @@ export default function ManifestacaoPage() {
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-[#0B0B0D]/10 pt-3">
                   {p.price_cents > 0 && (
                     <span className="text-2xl font-black tracking-tight text-[#0B0B0D]">
-                      {fmtBRL(p.price_cents)}
+                      {fmtBRL(p.price_cents, locale)}
                     </span>
                   )}
                   {p.price_polens > 0 && (
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#9c6e2a]">
                       <Coins className="h-4 w-4" />
-                      ou {p.price_polens.toLocaleString("pt-BR")} Poléns
+                      {t("or", "ou")} {p.price_polens.toLocaleString(locale)} {t("polens", "Poléns")}
                     </span>
                   )}
                   {p.price_cents === 0 && p.price_polens === 0 && (
-                    <span className="text-2xl font-black tracking-tight text-[#15803d]">Grátis</span>
+                    <span className="text-2xl font-black tracking-tight text-[#15803d]">{t("free", "Grátis")}</span>
                   )}
                 </div>
 
@@ -684,7 +690,7 @@ export default function ManifestacaoPage() {
                     <>
                       <div className="inline-flex w-full items-center justify-center gap-2 rounded-none border-2 border-[#16a34a] bg-[#16a34a]/12 py-3 text-sm font-black uppercase tracking-wider text-[#15803d]">
                         <CheckCircle2 className="h-4 w-4" />
-                        Aplicada no seu perfil
+                        {t("appliedOnProfile", "Aplicada no seu perfil")}
                       </div>
                       <button
                         type="button"
@@ -693,7 +699,7 @@ export default function ManifestacaoPage() {
                         className="inline-flex w-full items-center justify-center gap-2 rounded-none border-2 border-[#0B0B0D]/25 bg-transparent py-3 text-sm font-black uppercase tracking-wider text-[#0B0B0D] transition hover:border-rose-500 hover:bg-rose-500/10 hover:text-rose-700 disabled:opacity-55"
                       >
                         {busy === "remove" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                        Remover do perfil
+                        {t("removeFromProfile", "Remover do perfil")}
                       </button>
                     </>
                   ) : owned ? (
@@ -708,7 +714,7 @@ export default function ManifestacaoPage() {
                       ) : (
                         <BadgeCheck className="mr-2 h-4 w-4" />
                       )}
-                      Usar no perfil
+                      {t("useOnProfile", "Usar no perfil")}
                     </button>
                   ) : (
                     <>
@@ -724,7 +730,7 @@ export default function ManifestacaoPage() {
                           ) : (
                             <CreditCard className="mr-2 h-4 w-4" />
                           )}
-                          Comprar · {fmtBRL(p.price_cents)}
+                          {t("buy", "Comprar")} · {fmtBRL(p.price_cents, locale)}
                         </button>
                       )}
                       <button
@@ -739,8 +745,8 @@ export default function ManifestacaoPage() {
                           <Coins className="mr-2 h-4 w-4" />
                         )}
                         {p.price_polens > 0
-                          ? `Comprar · ${p.price_polens.toLocaleString("pt-BR")} Poléns`
-                          : "Resgatar grátis"}
+                          ? `${t("buy", "Comprar")} · ${p.price_polens.toLocaleString(locale)} ${t("polens", "Poléns")}`
+                          : t("redeemFree", "Resgatar grátis")}
                       </button>
                     </>
                   )}
@@ -776,12 +782,12 @@ export default function ManifestacaoPage() {
             <h3 className="fl-display mt-4 text-2xl text-[var(--fl-ink)]">{feedback.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#5b554b]">{feedback.message}</p>
             <div className="mt-5 flex justify-end gap-2">
-              {!feedback.ok && feedback.title === "Saldo insuficiente" && (
+              {!feedback.ok && feedback.insufficient && (
                 <Link
                   href="/loja-polens"
                   className="fl-btn-card inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider"
                 >
-                  Comprar Poléns
+                  {t("buyPolens", "Comprar Poléns")}
                 </Link>
               )}
               <button
@@ -789,7 +795,7 @@ export default function ManifestacaoPage() {
                 onClick={() => setFeedback(null)}
                 className="fl-btn-gold inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-bold"
               >
-                Entendi
+                {t("gotIt", "Entendi")}
               </button>
             </div>
           </div>
