@@ -12,6 +12,7 @@ import {
   TabloidPageIntro,
   TABLOID_ACTION_CLASSES,
 } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 interface Order {
   id_order: number
@@ -36,13 +37,13 @@ interface Order {
   created_at: string
 }
 
-const STATUS_LABEL: Record<Order["status"], { label: string; classes: string }> = {
-  pending:   { label: "Aguardando pagamento", classes: "border-[#A16207] bg-[#FEF3C7] text-[#854D0E]" },
-  paid:      { label: "Pago",                 classes: "border-[#15803D] bg-[#DCFCE7] text-[#166534]" },
-  shipped:   { label: "Enviado",              classes: "border-[#0369A1] bg-[#E0F2FE] text-[#075985]" },
-  delivered: { label: "Entregue",             classes: "border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]" },
-  canceled:  { label: "Cancelado",            classes: "border-[#52525B] bg-[#E4E4E7] text-[#3F3F46]" },
-  refunded:  { label: "Reembolsado",          classes: "border-[#BE123C] bg-[#FFE4E6] text-[#9F1239]" },
+const STATUS_LABEL: Record<Order["status"], { i18nKey: string; label: string; classes: string }> = {
+  pending:   { i18nKey: "orderStatusPending",   label: "Aguardando pagamento", classes: "border-[#A16207] bg-[#FEF3C7] text-[#854D0E]" },
+  paid:      { i18nKey: "orderStatusPaid",      label: "Pago",                 classes: "border-[#15803D] bg-[#DCFCE7] text-[#166534]" },
+  shipped:   { i18nKey: "orderStatusShipped",   label: "Enviado",              classes: "border-[#0369A1] bg-[#E0F2FE] text-[#075985]" },
+  delivered: { i18nKey: "orderStatusDelivered", label: "Entregue",             classes: "border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]" },
+  canceled:  { i18nKey: "orderStatusCanceled",  label: "Cancelado",            classes: "border-[#52525B] bg-[#E4E4E7] text-[#3F3F46]" },
+  refunded:  { i18nKey: "orderStatusRefunded",  label: "Reembolsado",          classes: "border-[#BE123C] bg-[#FFE4E6] text-[#9F1239]" },
 }
 
 function formatBRL(cents: number) {
@@ -60,6 +61,7 @@ function getToken() {
 }
 
 export default function ComprasPage() {
+  const t = useTranslations("Account")
   const [orders, setOrders] = useState<Order[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error" | "unauth">("loading")
 
@@ -91,37 +93,37 @@ export default function ComprasPage() {
     <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto w-full max-w-3xl px-4 py-10 md:py-12">
         <TabloidPageIntro
-          eyebrow="Loja"
-          title="COMPRAS."
-          subtitle="Pedidos da Loja de criadores Freelandoo, com status, frete e rastreio em um bloco de papel editorial."
-          back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+          eyebrow={t("storeEyebrow", "Loja")}
+          title={t("purchasesTitle", "COMPRAS.")}
+          subtitle={t("purchasesSubtitle", "Pedidos da Loja de criadores Freelandoo, com status, frete e rastreio em um bloco de papel editorial.")}
+          back={<TabloidBackLink href="/account">{t("back", "Voltar")}</TabloidBackLink>}
           className="mb-8"
         />
 
         {state === "loading" && (
           <div className="py-10">
-            <LoadingState label="Carregando suas compras..." />
+            <LoadingState label={t("loadingPurchases", "Carregando suas compras...")} />
           </div>
         )}
 
         {state === "unauth" && (
           <EmptyState
             icon={<ShoppingBag className="h-6 w-6" />}
-            title="Entre para ver compras"
-            description="Faça login para acompanhar seus pedidos da Loja."
-            action={<Link href="/login" className={TABLOID_ACTION_CLASSES}>Entrar</Link>}
+            title={t("loginToSeePurchases", "Entre para ver compras")}
+            description={t("loginToSeePurchasesDesc", "Faça login para acompanhar seus pedidos da Loja.")}
+            action={<Link href="/login" className={TABLOID_ACTION_CLASSES}>{t("login", "Entrar")}</Link>}
           />
         )}
 
         {state === "error" && (
-          <ErrorState title="Pedidos indisponíveis" description="Não foi possível carregar suas compras agora." />
+          <ErrorState title={t("ordersUnavailable", "Pedidos indisponíveis")} description={t("ordersUnavailableDesc", "Não foi possível carregar suas compras agora.")} />
         )}
 
         {state === "loaded" && orders.length === 0 && (
           <EmptyState
             icon={<Package className="h-6 w-6" />}
-            title="Nada comprado ainda"
-            description="Quando você comprar produtos da Loja, os pedidos aparecem aqui."
+            title={t("nothingPurchased", "Nada comprado ainda")}
+            description={t("nothingPurchasedDesc", "Quando você comprar produtos da Loja, os pedidos aparecem aqui.")}
           />
         )}
 
@@ -149,11 +151,11 @@ export default function ComprasPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="truncate text-sm font-black text-[var(--fl-ink)] md:text-base">{o.product_name}</h2>
                       <span className={`inline-flex rounded-[2px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${status.classes}`}>
-                        {status.label}
+                        {t(status.i18nKey, status.label)}
                       </span>
                     </div>
                     <p className="mt-1 truncate text-xs text-[#5b554b]">
-                      Vendedor: {o.seller_display_name || o.seller_username || "-"} · pedido #{o.id_order}
+                      {t("sellerLabel", "Vendedor")}: {o.seller_display_name || o.seller_username || "-"} · {t("orderLabel", "pedido")} #{o.id_order}
                     </p>
                     <p className="mt-1 text-xs text-[#5b554b]">
                       {o.shipping_carrier ? `${o.shipping_carrier} · ${o.shipping_service_name}` : "-"} · CEP {o.destination_zipcode}
@@ -161,17 +163,17 @@ export default function ComprasPage() {
                     {o.tracking_code && (
                       <p className="mt-1 flex items-center gap-1 text-xs font-bold text-[#075985]">
                         <Truck className="h-3.5 w-3.5" aria-hidden />
-                        Rastreio: <span className="font-mono">{o.tracking_code}</span>
+                        {t("trackingLabel", "Rastreio")}: <span className="font-mono">{o.tracking_code}</span>
                       </p>
                     )}
                     <p className="mt-1 text-[11px] text-[#756d5f]">
-                      Realizado em {formatDate(o.created_at)}{o.paid_at ? ` · Pago em ${formatDate(o.paid_at)}` : ""}
+                      {t("placedOn", "Realizado em")} {formatDate(o.created_at)}{o.paid_at ? ` · ${t("paidOn", "Pago em")} ${formatDate(o.paid_at)}` : ""}
                     </p>
                   </div>
 
                   <div className="shrink-0 text-left md:text-right">
                     <p className="text-base font-black tabular-nums text-[var(--fl-ink)] md:text-lg">{formatBRL(o.total_cents)}</p>
-                    <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + frete {formatBRL(o.shipping_cents)}</p>
+                    <p className="text-[11px] text-[#5b554b]">{formatBRL(o.unit_price_cents)} + {t("shippingWord", "frete")} {formatBRL(o.shipping_cents)}</p>
                   </div>
                 </li>
               )

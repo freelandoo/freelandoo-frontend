@@ -10,8 +10,10 @@ import {
   TABLOID_ACTION_CLASSES,
   TABLOID_OUTLINE_ACTION_CLASSES,
 } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function DadosPage() {
+  const t = useTranslations("Account")
   const router = useRouter()
   const [exporting, setExporting] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -28,7 +30,7 @@ export default function DadosPage() {
       const res = await fetch("/api/users/me/export", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) throw new Error("Erro ao exportar dados")
+      if (!res.ok) throw new Error(t("exportError", "Erro ao exportar dados"))
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -37,7 +39,7 @@ export default function DadosPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao exportar dados")
+      setError(err instanceof Error ? err.message : t("exportError", "Erro ao exportar dados"))
     } finally {
       setExporting(false)
     }
@@ -54,12 +56,12 @@ export default function DadosPage() {
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Erro ao desativar conta")
+        throw new Error(data.error || t("deactivateError", "Erro ao desativar conta"))
       }
       localStorage.clear()
       router.push("/")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao desativar conta")
+      setError(err instanceof Error ? err.message : t("deactivateError", "Erro ao desativar conta"))
       setDeleting(false)
     }
   }
@@ -70,9 +72,9 @@ export default function DadosPage() {
         <div className="mx-auto flex max-w-xl flex-col gap-6">
           <TabloidPageIntro
             eyebrow="LGPD"
-            title="MEUS DADOS."
-            subtitle="Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados."
-            back={<TabloidBackLink href="/account">Voltar para minha conta</TabloidBackLink>}
+            title={t("myDataTitle", "MEUS DADOS.")}
+            subtitle={t("myDataSubtitle", "Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados.")}
+            back={<TabloidBackLink href="/account">{t("backToAccount", "Voltar para minha conta")}</TabloidBackLink>}
           />
 
           {error && (
@@ -85,10 +87,10 @@ export default function DadosPage() {
             <div>
               <h2 className="flex items-center gap-2 text-base font-black text-[var(--fl-ink)]">
                 <Download className="h-4 w-4" />
-                Exportar meus dados
+                {t("exportMyData", "Exportar meus dados")}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5b554b]">
-                Baixe um arquivo JSON com todos os seus dados: perfil, ativações e cupons.
+                {t("exportMyDataDesc", "Baixe um arquivo JSON com todos os seus dados: perfil, ativações e cupons.")}
               </p>
             </div>
             <button
@@ -97,7 +99,7 @@ export default function DadosPage() {
               disabled={exporting}
               className={`mt-5 ${TABLOID_ACTION_CLASSES}`}
             >
-              {exporting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Exportando...</> : "Baixar meus dados"}
+              {exporting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("exporting", "Exportando...")}</> : t("downloadMyData", "Baixar meus dados")}
             </button>
           </article>
 
@@ -105,18 +107,17 @@ export default function DadosPage() {
             <div>
               <h2 className="flex items-center gap-2 text-base font-black text-red-700">
                 <Trash2 className="h-4 w-4" />
-                Desativar conta
+                {t("deactivateAccount", "Desativar conta")}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5b554b]">
-                Desativa sua conta e preserva o histórico de ativações. Esta ação não pode ser desfeita.
-                Seus dados são mantidos por obrigação legal e removidos após o prazo regulatório.
+                {t("deactivateDesc", "Desativa sua conta e preserva o histórico de ativações. Esta ação não pode ser desfeita. Seus dados são mantidos por obrigação legal e removidos após o prazo regulatório.")}
               </p>
             </div>
             <div className="mt-5">
               {confirmDelete ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm font-bold text-[var(--fl-ink)]">
-                    Tem certeza? Você perderá acesso imediatamente.
+                    {t("deactivateConfirm", "Tem certeza? Você perderá acesso imediatamente.")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -125,14 +126,14 @@ export default function DadosPage() {
                       onClick={handleDelete}
                       className="inline-flex items-center justify-center border-2 border-red-900 bg-red-700 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white shadow-[3px_3px_0_0_#7f1d1d] disabled:cursor-not-allowed disabled:opacity-55"
                     >
-                      {deleting ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />Desativando...</> : "Sim, desativar minha conta"}
+                      {deleting ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />{t("deactivating", "Desativando...")}</> : t("deactivateYes", "Sim, desativar minha conta")}
                     </button>
                     <button
                       type="button"
                       className={`${TABLOID_OUTLINE_ACTION_CLASSES} !border-[#0B0B0D] !px-4 !py-2 !text-[#0B0B0D]`}
                       onClick={() => setConfirmDelete(false)}
                     >
-                      Cancelar
+                      {t("cancel", "Cancelar")}
                     </button>
                   </div>
                 </div>
@@ -143,7 +144,7 @@ export default function DadosPage() {
                   className="inline-flex items-center justify-center border-2 border-red-900 bg-red-700 px-5 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-white shadow-[4px_4px_0_0_#7f1d1d] transition hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#7f1d1d]"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Desativar conta
+                  {t("deactivateAccount", "Desativar conta")}
                 </button>
               )}
             </div>

@@ -178,6 +178,54 @@ const ACCOUNT = {
   wallet: ["Carteira", "Wallet", "Cartera"],
 }
 
+// Slice 2 — _components/account-states + /dados + /compras
+Object.assign(ACCOUNT, {
+  // account-states
+  loadingProfile: ["Carregando seu perfil…", "Loading your profile…", "Cargando tu perfil…"],
+  loadFailed: ["Não foi possível carregar", "Couldn't load", "No se pudo cargar"],
+  loadProfileErrorRelogin: ["Erro ao carregar perfil. Faça login novamente.", "Error loading profile. Please log in again.", "Error al cargar el perfil. Inicia sesión de nuevo."],
+  backToLogin: ["Voltar ao login", "Back to login", "Volver al inicio de sesión"],
+  // /dados (LGPD)
+  exportError: ["Erro ao exportar dados", "Error exporting data", "Error al exportar los datos"],
+  deactivateError: ["Erro ao desativar conta", "Error deactivating account", "Error al desactivar la cuenta"],
+  myDataTitle: ["MEUS DADOS.", "MY DATA.", "MIS DATOS."],
+  myDataSubtitle: ["Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados.", "Manage your personal data in accordance with data protection law.", "Gestiona tus datos personales conforme a la ley de protección de datos."],
+  backToAccount: ["Voltar para minha conta", "Back to my account", "Volver a mi cuenta"],
+  exportMyData: ["Exportar meus dados", "Export my data", "Exportar mis datos"],
+  exportMyDataDesc: ["Baixe um arquivo JSON com todos os seus dados: perfil, ativações e cupons.", "Download a JSON file with all your data: profile, activations and coupons.", "Descarga un archivo JSON con todos tus datos: perfil, activaciones y cupones."],
+  exporting: ["Exportando...", "Exporting...", "Exportando..."],
+  downloadMyData: ["Baixar meus dados", "Download my data", "Descargar mis datos"],
+  deactivateAccount: ["Desativar conta", "Deactivate account", "Desactivar cuenta"],
+  deactivateDesc: ["Desativa sua conta e preserva o histórico de ativações. Esta ação não pode ser desfeita. Seus dados são mantidos por obrigação legal e removidos após o prazo regulatório.", "Deactivates your account and preserves the activation history. This action can't be undone. Your data is kept by legal obligation and removed after the regulatory period.", "Desactiva tu cuenta y conserva el historial de activaciones. Esta acción no se puede deshacer. Tus datos se conservan por obligación legal y se eliminan tras el plazo regulatorio."],
+  deactivateConfirm: ["Tem certeza? Você perderá acesso imediatamente.", "Are you sure? You'll lose access immediately.", "¿Estás seguro? Perderás el acceso de inmediato."],
+  deactivating: ["Desativando...", "Deactivating...", "Desactivando..."],
+  deactivateYes: ["Sim, desativar minha conta", "Yes, deactivate my account", "Sí, desactivar mi cuenta"],
+  // /compras
+  orderStatusPending: ["Aguardando pagamento", "Awaiting payment", "Esperando pago"],
+  orderStatusPaid: ["Pago", "Paid", "Pagado"],
+  orderStatusShipped: ["Enviado", "Shipped", "Enviado"],
+  orderStatusDelivered: ["Entregue", "Delivered", "Entregado"],
+  orderStatusCanceled: ["Cancelado", "Canceled", "Cancelado"],
+  orderStatusRefunded: ["Reembolsado", "Refunded", "Reembolsado"],
+  storeEyebrow: ["Loja", "Store", "Tienda"],
+  purchasesTitle: ["COMPRAS.", "PURCHASES.", "COMPRAS."],
+  purchasesSubtitle: ["Pedidos da Loja de criadores Freelandoo, com status, frete e rastreio em um bloco de papel editorial.", "Orders from the Freelandoo creators' Store, with status, shipping and tracking in an editorial paper block.", "Pedidos de la Tienda de creadores Freelandoo, con estado, envío y seguimiento en un bloque de papel editorial."],
+  loadingPurchases: ["Carregando suas compras...", "Loading your purchases...", "Cargando tus compras..."],
+  loginToSeePurchases: ["Entre para ver compras", "Log in to see purchases", "Inicia sesión para ver compras"],
+  loginToSeePurchasesDesc: ["Faça login para acompanhar seus pedidos da Loja.", "Log in to track your Store orders.", "Inicia sesión para seguir tus pedidos de la Tienda."],
+  login: ["Entrar", "Log in", "Iniciar sesión"],
+  ordersUnavailable: ["Pedidos indisponíveis", "Orders unavailable", "Pedidos no disponibles"],
+  ordersUnavailableDesc: ["Não foi possível carregar suas compras agora.", "Couldn't load your purchases right now.", "No se pudieron cargar tus compras ahora."],
+  nothingPurchased: ["Nada comprado ainda", "Nothing purchased yet", "Nada comprado todavía"],
+  nothingPurchasedDesc: ["Quando você comprar produtos da Loja, os pedidos aparecem aqui.", "When you buy Store products, your orders show up here.", "Cuando compres productos de la Tienda, tus pedidos aparecerán aquí."],
+  sellerLabel: ["Vendedor", "Seller", "Vendedor"],
+  orderLabel: ["pedido", "order", "pedido"],
+  trackingLabel: ["Rastreio", "Tracking", "Seguimiento"],
+  placedOn: ["Realizado em", "Placed on", "Realizado el"],
+  paidOn: ["Pago em", "Paid on", "Pagado el"],
+  shippingWord: ["frete", "shipping", "envío"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {
