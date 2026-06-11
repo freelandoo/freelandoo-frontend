@@ -9,17 +9,18 @@ import {
   TabloidPageIntro,
   TABLOID_ACTION_CLASSES,
 } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
-const REQUESTABLE: Array<{ key: string; label: string; hint?: string }> = [
-  { key: "can_view_feed", label: "Ver o feed" },
-  { key: "can_post_feed", label: "Postar no feed" },
-  { key: "can_use_bees", label: "Usar Bees" },
-  { key: "can_watch_courses", label: "Assistir cursos" },
-  { key: "can_sell_courses", label: "Vender cursos", hint: "Permite publicar cursos para venda" },
-  { key: "can_message", label: "Enviar mensagens" },
-  { key: "can_receive_messages", label: "Receber mensagens" },
-  { key: "can_use_global_chat", label: "Chat global" },
-  { key: "can_use_machine_chat", label: "Chat de enxames" },
+const REQUESTABLE: Array<{ key: string; labelKey: string; label: string; hintKey?: string; hint?: string }> = [
+  { key: "can_view_feed", labelKey: "permViewFeed", label: "Ver o feed" },
+  { key: "can_post_feed", labelKey: "permPostFeed", label: "Postar no feed" },
+  { key: "can_use_bees", labelKey: "permUseBees", label: "Usar Bees" },
+  { key: "can_watch_courses", labelKey: "permWatchCourses", label: "Assistir cursos" },
+  { key: "can_sell_courses", labelKey: "permSellCourses", label: "Vender cursos", hintKey: "permSellCoursesHintReq", hint: "Permite publicar cursos para venda" },
+  { key: "can_message", labelKey: "permSendMessages", label: "Enviar mensagens" },
+  { key: "can_receive_messages", labelKey: "permReceiveMessages", label: "Receber mensagens" },
+  { key: "can_use_global_chat", labelKey: "permGlobalChat", label: "Chat global" },
+  { key: "can_use_machine_chat", labelKey: "permSwarmChat", label: "Chat de enxames" },
 ]
 
 function authHeaders(): HeadersInit {
@@ -29,6 +30,7 @@ function authHeaders(): HeadersInit {
 }
 
 export default function ParentalRequestPage() {
+  const t = useTranslations("Account")
   const router = useRouter()
   const [selected, setSelected] = useState<string>("can_sell_courses")
   const [note, setNote] = useState("")
@@ -70,13 +72,13 @@ export default function ParentalRequestPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data?.error || "Falha ao enviar pedido")
+        setError(data?.error || t("sendRequestError", "Falha ao enviar pedido"))
         return
       }
       setSent((prev) => new Set(prev).add(selected))
       setNote("")
     } catch {
-      setError("Erro de conexão. Tente novamente.")
+      setError(t("connectionError", "Erro de conexão. Tente novamente."))
     } finally {
       setSending(false)
     }
@@ -86,7 +88,7 @@ export default function ParentalRequestPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <LoadingState label="Carregando..." />
+          <LoadingState label={t("loading", "Carregando...")} />
         </div>
       </PageShell>
     )
@@ -96,9 +98,9 @@ export default function ParentalRequestPage() {
     <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto max-w-2xl px-4 py-10">
         <TabloidPageIntro
-          eyebrow="Supervisão"
-          title="PEDIR PERMISSÃO."
-          subtitle="Envie um pedido ao responsável para liberar uma ação bloqueada."
+          eyebrow={t("parentalEyebrow", "Supervisão")}
+          title={t("requestPermissionTitle", "PEDIR PERMISSÃO.")}
+          subtitle={t("requestPermissionSubtitle", "Envie um pedido ao responsável para liberar uma ação bloqueada.")}
           back={
             <button
               type="button"
@@ -106,7 +108,7 @@ export default function ParentalRequestPage() {
               className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              {t("back", "Voltar")}
             </button>
           }
           className="mb-8"
@@ -121,9 +123,9 @@ export default function ParentalRequestPage() {
 
         <article className="fl-card fl-hard rounded-[6px] p-5 sm:p-6">
           <div className="mb-5">
-            <h2 className="text-lg font-black text-[var(--fl-ink)]">Qual permissão você quer?</h2>
+            <h2 className="text-lg font-black text-[var(--fl-ink)]">{t("whichPermission", "Qual permissão você quer?")}</h2>
             <p className="mt-1 text-sm leading-relaxed text-[#5b554b]">
-              O responsável recebe a notificação e decide se libera. Você pode incluir um recado.
+              {t("requestPermissionHelp", "O responsável recebe a notificação e decide se libera. Você pode incluir um recado.")}
             </p>
           </div>
 
@@ -143,8 +145,8 @@ export default function ParentalRequestPage() {
                   }`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-[var(--fl-ink)]">{item.label}</p>
-                    {item.hint && <p className="text-xs text-[#5b554b]">{item.hint}</p>}
+                    <p className="text-sm font-black text-[var(--fl-ink)]">{t(item.labelKey, item.label)}</p>
+                    {item.hint && item.hintKey && <p className="text-xs text-[#5b554b]">{t(item.hintKey, item.hint)}</p>}
                   </div>
                   {isSent && <Check className="h-4 w-4 shrink-0 text-green-700" />}
                 </button>
@@ -154,14 +156,14 @@ export default function ParentalRequestPage() {
 
           <div className="mt-5">
             <label htmlFor="note" className="fl-label">
-              Recado para o responsável (opcional)
+              {t("noteToGuardian", "Recado para o responsável (opcional)")}
             </label>
             <textarea
               id="note"
               rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ex.: Quero publicar um curso de violão. Posso?"
+              placeholder={t("notePlaceholder", "Ex.: Quero publicar um curso de violão. Posso?")}
               maxLength={280}
               className="fl-input resize-none"
             />
@@ -176,13 +178,13 @@ export default function ParentalRequestPage() {
               className={TABLOID_ACTION_CLASSES}
             >
               <Send className="mr-2 h-4 w-4" />
-              {sending ? "Enviando..." : "Enviar pedido"}
+              {sending ? t("sending", "Enviando...") : t("sendRequest", "Enviar pedido")}
             </button>
           </div>
 
           {sent.size > 0 && (
             <div className="mt-5 rounded-xl border-2 border-green-800/30 bg-green-100 p-3 text-sm font-bold text-green-800">
-              Pedido enviado. O responsável vai receber uma notificação.
+              {t("requestSent", "Pedido enviado. O responsável vai receber uma notificação.")}
             </div>
           )}
         </article>

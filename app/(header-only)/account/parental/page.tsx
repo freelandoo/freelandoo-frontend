@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PageShell, TabloidPageIntro } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import {
   ArrowLeft,
   Plus,
@@ -77,39 +79,55 @@ interface Machine {
 }
 
 const PERMISSION_GROUPS: Array<{
+  titleKey: string
   title: string
+  descKey: string
   description: string
-  items: Array<{ key: keyof Permissions; label: string; hint?: string }>
+  hard?: boolean
+  items: Array<{
+    key: keyof Permissions
+    labelKey: string
+    label: string
+    hintKey?: string
+    hint?: string
+  }>
 }> = [
   {
+    titleKey: "permGroupContent",
     title: "Conteúdo",
+    descKey: "permGroupContentDesc",
     description: "O que o menor pode ver e publicar",
     items: [
-      { key: "can_view_feed", label: "Ver o feed" },
-      { key: "can_post_feed", label: "Postar no feed" },
-      { key: "can_use_bees", label: "Usar Bees" },
-      { key: "can_watch_courses", label: "Assistir cursos" },
-      { key: "can_sell_courses", label: "Vender cursos", hint: "Publicação exige aprovação" },
+      { key: "can_view_feed", labelKey: "permViewFeed", label: "Ver o feed" },
+      { key: "can_post_feed", labelKey: "permPostFeed", label: "Postar no feed" },
+      { key: "can_use_bees", labelKey: "permUseBees", label: "Usar Bees" },
+      { key: "can_watch_courses", labelKey: "permWatchCourses", label: "Assistir cursos" },
+      { key: "can_sell_courses", labelKey: "permSellCourses", label: "Vender cursos", hintKey: "permSellCoursesHint", hint: "Publicação exige aprovação" },
     ],
   },
   {
+    titleKey: "permGroupConversations",
     title: "Conversas",
+    descKey: "permGroupConversationsDesc",
     description: "Mensagens e chats coletivos",
     items: [
-      { key: "can_message", label: "Enviar mensagens" },
-      { key: "can_receive_messages", label: "Receber mensagens" },
-      { key: "can_use_global_chat", label: "Chat global" },
-      { key: "can_use_machine_chat", label: "Chat de enxames" },
+      { key: "can_message", labelKey: "permSendMessages", label: "Enviar mensagens" },
+      { key: "can_receive_messages", labelKey: "permReceiveMessages", label: "Receber mensagens" },
+      { key: "can_use_global_chat", labelKey: "permGlobalChat", label: "Chat global" },
+      { key: "can_use_machine_chat", labelKey: "permSwarmChat", label: "Chat de enxames" },
     ],
   },
   {
+    titleKey: "permGroupHardBlocks",
     title: "Bloqueios duros (não desligáveis)",
+    descKey: "permGroupHardBlocksDesc",
     description: "Mantidos sempre desligados para contas supervisionadas",
+    hard: true,
     items: [
-      { key: "can_request_service", label: "Pedir serviço" },
-      { key: "can_show_in_showcase", label: "Aparecer na vitrine" },
-      { key: "can_show_in_ranking", label: "Aparecer no ranking" },
-      { key: "can_have_mural", label: "Mural público" },
+      { key: "can_request_service", labelKey: "permRequestService", label: "Pedir serviço" },
+      { key: "can_show_in_showcase", labelKey: "permShowInShowcase", label: "Aparecer na vitrine" },
+      { key: "can_show_in_ranking", labelKey: "permShowInRanking", label: "Aparecer no ranking" },
+      { key: "can_have_mural", labelKey: "permPublicMural", label: "Mural público" },
     ],
   },
 ]
@@ -125,6 +143,8 @@ function authHeaders(): HeadersInit {
 }
 
 export default function ParentalPage() {
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -154,8 +174,8 @@ export default function ParentalPage() {
       const minorsData = await minorsRes.json()
       const machinesData = await machinesRes.json()
 
-      if (!invitesRes.ok) throw new Error(invitesData?.error || "Falha ao listar códigos")
-      if (!minorsRes.ok) throw new Error(minorsData?.error || "Falha ao listar menores")
+      if (!invitesRes.ok) throw new Error(invitesData?.error || t("loadCodesError", "Falha ao listar códigos"))
+      if (!minorsRes.ok) throw new Error(minorsData?.error || t("loadMinorsError", "Falha ao listar menores"))
 
       setInvites(invitesData.invites || [])
       setMinors(minorsData.minors || [])
@@ -165,11 +185,11 @@ export default function ParentalPage() {
           : machinesData.enxames || machinesData.machines || []
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro inesperado")
+      setError(err instanceof Error ? err.message : t("unexpectedError", "Erro inesperado"))
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }, [router, t])
 
   useEffect(() => {
     fetchAll()
@@ -190,7 +210,7 @@ export default function ParentalPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data?.error || "Falha ao gerar código")
+        setError(data?.error || t("generateCodeError", "Falha ao gerar código"))
         return
       }
       setInvites((prev) => [data.invite, ...prev])
@@ -200,7 +220,7 @@ export default function ParentalPage() {
   }
 
   const handleRevoke = async (id_invite: string) => {
-    if (!confirm("Revogar este código? Quem tiver com ele em mãos não conseguirá mais usar.")) return
+    if (!confirm(t("revokeCodeConfirm", "Revogar este código? Quem tiver com ele em mãos não conseguirá mais usar."))) return
     const res = await fetch(`/api/supervision/codes/${id_invite}`, {
       method: "DELETE",
       headers: authHeaders(),
@@ -209,7 +229,7 @@ export default function ParentalPage() {
       setInvites((prev) => prev.filter((i) => i.id_invite !== id_invite))
     } else {
       const data = await res.json().catch(() => ({}))
-      setError(data?.error || "Falha ao revogar")
+      setError(data?.error || t("revokeFailed", "Falha ao revogar"))
     }
   }
 
@@ -285,9 +305,9 @@ export default function ParentalPage() {
   const setStatus = async (minor: Minor, status: SupervisedStatus) => {
     const label =
       status === "suspended"
-        ? "Suspender este vínculo? O menor mantém a conta, mas perde acesso supervisionado."
+        ? t("suspendLinkConfirm", "Suspender este vínculo? O menor mantém a conta, mas perde acesso supervisionado.")
         : status === "revoked"
-          ? "Revogar este vínculo? A conta do menor ficará sem responsável."
+          ? t("revokeLinkConfirm", "Revogar este vínculo? A conta do menor ficará sem responsável.")
           : null
     if (label && !confirm(label)) return
 
@@ -312,9 +332,9 @@ export default function ParentalPage() {
     <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto max-w-3xl px-4 py-10">
         <TabloidPageIntro
-          eyebrow="Supervisão"
+          eyebrow={t("parentalEyebrow", "Supervisão")}
           title="PARENTAL."
-          subtitle="Contas supervisionadas vinculadas à sua conta, com permissões e mensagens em ritmo de jornal."
+          subtitle={t("parentalSubtitle", "Contas supervisionadas vinculadas à sua conta, com permissões e mensagens em ritmo de jornal.")}
           back={
             <button
               type="button"
@@ -322,7 +342,7 @@ export default function ParentalPage() {
               className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F5F1E8]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              {t("back", "Voltar")}
             </button>
           }
           className="mb-8"
@@ -338,21 +358,21 @@ export default function ParentalPage() {
         {/* Gerar código */}
         <Card className="fl-card mb-6 rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
-            <CardTitle className="text-lg">Código do responsável</CardTitle>
+            <CardTitle className="text-lg">{t("guardianCodeTitle", "Código do responsável")}</CardTitle>
             <CardDescription className="text-[#5b554b]">
-              Gere um código e envie ao menor. Ele usa o código no cadastro para vincular a conta a você.
+              {t("guardianCodeDesc", "Gere um código e envie ao menor. Ele usa o código no cadastro para vincular a conta a você.")}
               <br />
-              <span className="text-xs">Cada código vale 24h e pode ser usado uma única vez.</span>
+              <span className="text-xs">{t("guardianCodeValidity", "Cada código vale 24h e pode ser usado uma única vez.")}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button onClick={handleGenerate} disabled={generating}>
               <Plus className="mr-2 h-4 w-4" />
-              {generating ? "Gerando..." : "Gerar código"}
+              {generating ? t("generating", "Gerando...") : t("generateCode", "Gerar código")}
             </Button>
 
             {activeInvites.length === 0 && !loading && (
-              <p className="text-sm text-muted-foreground">Nenhum código ativo no momento.</p>
+              <p className="text-sm text-muted-foreground">{t("noActiveCodes", "Nenhum código ativo no momento.")}</p>
             )}
 
             {activeInvites.length > 0 && (
@@ -371,14 +391,14 @@ export default function ParentalPage() {
                         {inv.code}
                       </code>
                       <span className="text-xs text-muted-foreground">
-                        Expira em {expiresIn}h
+                        {t("expiresIn", "Expira em")} {expiresIn}h
                       </span>
                       <div className="ml-auto flex gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCopy(inv.code)}
-                          aria-label="Copiar"
+                          aria-label={t("copy", "Copiar")}
                         >
                           {copiedCode === inv.code ? (
                             <Check className="h-4 w-4 text-green-500" />
@@ -390,7 +410,7 @@ export default function ParentalPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRevoke(inv.id_invite)}
-                          aria-label="Revogar"
+                          aria-label={t("revoke", "Revogar")}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
@@ -406,21 +426,21 @@ export default function ParentalPage() {
         {/* Lista de menores */}
         <Card className="fl-card rounded-2xl border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
           <CardHeader>
-            <CardTitle className="text-lg">Filhos vinculados</CardTitle>
+            <CardTitle className="text-lg">{t("linkedChildrenTitle", "Filhos vinculados")}</CardTitle>
             <CardDescription className="text-[#5b554b]">
               {minors.length === 0
-                ? "Quando o menor usar o seu código no cadastro, ele aparecerá aqui."
-                : "Toque em um menor para abrir permissões e enxames liberados."}
+                ? t("linkedChildrenEmptyDesc", "Quando o menor usar o seu código no cadastro, ele aparecerá aqui.")
+                : t("linkedChildrenDesc", "Toque em um menor para abrir permissões e enxames liberados.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {loading && (
-              <p className="text-sm text-muted-foreground">Carregando...</p>
+              <p className="text-sm text-muted-foreground">{t("loading", "Carregando...")}</p>
             )}
 
             {!loading && minors.length === 0 && (
               <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
-                Nenhum filho vinculado ainda.
+                {t("noChildrenYet", "Nenhum filho vinculado ainda.")}
               </div>
             )}
 
@@ -461,7 +481,11 @@ export default function ParentalPage() {
                             : "bg-red-500/15 text-red-400"
                       }`}
                     >
-                      {minor.status}
+                      {minor.status === "active"
+                        ? t("supStatusActive", "ativo")
+                        : minor.status === "suspended"
+                          ? t("supStatusSuspended", "suspenso")
+                          : t("supStatusRevoked", "revogado")}
                     </span>
                   </button>
 
@@ -475,7 +499,7 @@ export default function ParentalPage() {
                           disabled={saving || minor.status === "active"}
                           onClick={() => setStatus(minor, "active")}
                         >
-                          Ativar
+                          {t("activate", "Ativar")}
                         </Button>
                         <Button
                           size="sm"
@@ -483,7 +507,7 @@ export default function ParentalPage() {
                           disabled={saving || minor.status === "suspended"}
                           onClick={() => setStatus(minor, "suspended")}
                         >
-                          Suspender
+                          {t("suspend", "Suspender")}
                         </Button>
                         <Button
                           size="sm"
@@ -492,14 +516,14 @@ export default function ParentalPage() {
                           onClick={() => setStatus(minor, "revoked")}
                           className="text-red-500 hover:text-red-400"
                         >
-                          Revogar
+                          {t("revoke", "Revogar")}
                         </Button>
                         <Link
                           href={`/account/parental/${minor.minor_user_id}/messages`}
                           className="ml-auto inline-flex items-center gap-1 text-xs text-primary hover:underline"
                         >
                           <MessageSquare className="h-3 w-3" />
-                          Mensagens de {minor.minor_nome.split(" ")[0]}
+                          {t("messagesOf", "Mensagens de")} {minor.minor_nome.split(" ")[0]}
                         </Link>
                       </div>
 
@@ -507,14 +531,14 @@ export default function ParentalPage() {
                       {minor.permissions ? (
                         <div className="space-y-4">
                           {PERMISSION_GROUPS.map((group) => (
-                            <div key={group.title} className="space-y-2">
+                            <div key={group.titleKey} className="space-y-2">
                               <div>
-                                <p className="text-sm font-medium text-white">{group.title}</p>
-                                <p className="text-xs text-muted-foreground">{group.description}</p>
+                                <p className="text-sm font-medium text-white">{t(group.titleKey, group.title)}</p>
+                                <p className="text-xs text-muted-foreground">{t(group.descKey, group.description)}</p>
                               </div>
                               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 {group.items.map((item) => {
-                                  const isHard = group.title.startsWith("Bloqueios")
+                                  const isHard = !!group.hard
                                   return (
                                     <label
                                       key={item.key}
@@ -528,10 +552,10 @@ export default function ParentalPage() {
                                         onCheckedChange={() => togglePermission(minor, item.key)}
                                       />
                                       <div className="min-w-0 flex-1">
-                                        <span className="text-white/90">{item.label}</span>
-                                        {item.hint && (
+                                        <span className="text-white/90">{t(item.labelKey, item.label)}</span>
+                                        {item.hint && item.hintKey && (
                                           <span className="ml-1 text-[10px] text-muted-foreground">
-                                            ({item.hint})
+                                            ({t(item.hintKey, item.hint)})
                                           </span>
                                         )}
                                       </div>
@@ -543,15 +567,15 @@ export default function ParentalPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">Permissões não disponíveis.</p>
+                        <p className="text-sm text-muted-foreground">{t("permissionsUnavailable", "Permissões não disponíveis.")}</p>
                       )}
 
                       {/* Enxames */}
                       <div className="space-y-2">
                         <div>
-                          <p className="text-sm font-medium text-white">Enxames liberados</p>
+                          <p className="text-sm font-medium text-white">{t("allowedSwarms", "Enxames liberados")}</p>
                           <p className="text-xs text-muted-foreground">
-                            Marque os enxames que o menor pode usar. Sem marcação = bloqueado.
+                            {t("allowedSwarmsDesc", "Marque os enxames que o menor pode usar. Sem marcação = bloqueado.")}
                           </p>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -569,7 +593,7 @@ export default function ParentalPage() {
                                     toggleMachine(minor, m, v === true)
                                   }
                                 />
-                                <span className="text-white/90">{m.name}</span>
+                                <span className="text-white/90">{tx.enxame(m.slug, m.name)}</span>
                               </label>
                             )
                           })}
