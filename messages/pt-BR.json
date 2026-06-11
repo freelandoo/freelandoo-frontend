@@ -2454,7 +2454,10 @@
     "errChooseMachineProfession": "Escolha Enxame e profissão.",
     "errTitleRequired": "Título obrigatório (mín. 3 caracteres).",
     "errChooseProductCategory": "Escolha uma categoria de produto.",
-    "errOpenFailed": "Erro ao abrir chamado"
+    "errOpenFailed": "Erro ao abrir chamado",
+    "refineProduct": "Detalhe o que você procura (opcional):",
+    "edit": "Editar",
+    "searchBrandPlaceholder": "Buscar marca…"
   },
   "Profile": {
     "activateAccount": "Ative sua conta",

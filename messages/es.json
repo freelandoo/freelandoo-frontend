@@ -2457,7 +2457,10 @@
     "errChooseMachineProfession": "Elige Enjambre y profesión.",
     "errTitleRequired": "Título obligatorio (mín. 3 caracteres).",
     "errChooseProductCategory": "Elige una categoría de producto.",
-    "errOpenFailed": "Error al abrir la solicitud"
+    "errOpenFailed": "Error al abrir la solicitud",
+    "refineProduct": "Detalla lo que buscas (opcional):",
+    "edit": "Editar",
+    "searchBrandPlaceholder": "Buscar marca…"
   },
   "TaxEnxame": {
     "_full": "Enjambre de {name}",

@@ -10,7 +10,14 @@ const SEARCH = {
   backToEnxames: ["Voltar pros enxames", "Back to swarms", "Volver a los enjambres"],
 }
 
-const GROUPS = { Search: SEARCH }
+// Subfiltros de produto dentro do modal de chamado (espelha o drill-in da Loja).
+const CHAMADO = {
+  refineProduct: ["Detalhe o que você procura (opcional):", "Detail what you're looking for (optional):", "Detalla lo que buscas (opcional):"],
+  edit: ["Editar", "Edit", "Editar"],
+  searchBrandPlaceholder: ["Buscar marca…", "Search brand…", "Buscar marca…"],
+}
+
+const GROUPS = { Search: SEARCH, Chamado: CHAMADO }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

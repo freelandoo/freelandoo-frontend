@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2, MessageCircle, Clock, Megaphone, Package, Sparkles, MapPin, GraduationCap } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 const INTL_TAG: Record<string, string> = { "pt-BR": "pt-BR", en: "en-US", es: "es-ES" }
 
@@ -40,6 +41,7 @@ interface ProductRequestMuralItem {
   created_at: string
   id_product_category: number
   category_name: string
+  attributes?: Record<string, string[]> | null
   buyer_username?: string
   responses_count?: number
 }
@@ -87,6 +89,7 @@ type ReqKind = "service" | "product" | "course"
 /* ------------------------------------------------------------------ */
 export function MuralModal({ open, onOpenChange, profileId }: Props) {
   const t = useTranslations("Account")
+  const tx = useTaxonomy()
   const locale = useLocale()
   const intlTag = INTL_TAG[locale] || "pt-BR"
   const router = useRouter()
@@ -360,6 +363,20 @@ export function MuralModal({ open, onOpenChange, profileId }: Props) {
                             {" · "}<Clock className="h-2.5 w-2.5 inline" /> {new Date(item.created_at).toLocaleDateString(intlTag)}
                           </p>
                           <p className="mt-1.5 text-xs text-[#5b554b] line-clamp-2">{item.description}</p>
+                          {item.attributes && Object.keys(item.attributes).length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {Object.entries(item.attributes).flatMap(([key, vals]) =>
+                                (vals ?? []).map((v) => (
+                                  <span
+                                    key={`${key}:${v}`}
+                                    className="border-2 border-[#0B0B0D]/20 bg-white/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.03em] text-[#0B0B0D]"
+                                  >
+                                    {key === "brand" ? v : key === "colors" ? tx.colorName(v) : tx.attrOption(v)}
+                                  </span>
+                                )),
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="mt-3 flex justify-end">

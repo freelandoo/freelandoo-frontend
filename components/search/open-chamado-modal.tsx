@@ -9,6 +9,12 @@ import { cn } from "@/lib/utils"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
+import {
+  COLOR_SWATCHES,
+  getAttributeSchema,
+  rangeValues,
+  type AttrField,
+} from "@/lib/product-attributes"
 
 export type ChamadoMode = "service" | "product" | "course"
 
@@ -27,12 +33,14 @@ type Profession = {
 type ProductCategory = {
   id_product_category: number
   name: string
+  slug?: string | null
 }
 
 type Step =
   | "machine"        // service / course
   | "profession"     // service / course
   | "productCat"     // product
+  | "productAttrs"   // product — subfiltros da categoria (mesmo schema do FilterRail)
   | "compose"
   | "success"
 
@@ -93,6 +101,10 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
   const [productTitle, setProductTitle] = useState("")
   const [minPrice, setMinPrice] = useState("")
   const [maxPrice, setMaxPrice] = useState("")
+  // Subfiltros da categoria (igual ao drill-in do FilterRail): chave → valores
+  // marcados. Valores ficam em pt (mesma regra da querystring attr_*).
+  const [attrSel, setAttrSel] = useState<Record<string, string[]>>({})
+  const [brandSel, setBrandSel] = useState("")
 
   // shared
   const [description, setDescription] = useState("")
@@ -109,6 +121,8 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
     setMaxPrice("")
     setSelectedProfessionId(null)
     setSelectedProductCategoryId(null)
+    setAttrSel({})
+    setBrandSel("")
     setEstadoUf("")
     setMunicipio("")
     setMunicipios([])
@@ -188,6 +202,33 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
     [productCategories, selectedProductCategoryId],
   )
 
+  // Schema de subfiltros da categoria selecionada (mesma fonte do FilterRail).
+  const productSchema = useMemo(
+    () => getAttributeSchema(selectedProductCategory?.slug),
+    [selectedProductCategory?.slug],
+  )
+
+  /** Atributos efetivos pro payload/resumo: chips/cores marcados + marca. */
+  const pickedAttributes = useMemo(() => {
+    const out: Record<string, string[]> = {}
+    for (const [key, vals] of Object.entries(attrSel)) {
+      if (vals.length > 0) out[key] = vals
+    }
+    if (brandSel.trim()) out.brand = [brandSel.trim()]
+    return out
+  }, [attrSel, brandSel])
+
+  const toggleAttr = (key: string, option: string) => {
+    setAttrSel((prev) => {
+      const cur = prev[key] ?? []
+      const next = cur.includes(option) ? cur.filter((v) => v !== option) : [...cur, option]
+      const out = { ...prev }
+      if (next.length === 0) delete out[key]
+      else out[key] = next
+      return out
+    })
+  }
+
   const trimmedMachine = selectedMachine ? tx.enxame(selectedMachine.slug, selectedMachine.name) : ""
   const accent = selectedMachine?.color_accent || "#fbbf24"
   const ModeIcon = MODE_LABELS[mode].icon
@@ -256,6 +297,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
         description: desc,
         id_product_category: selectedProductCategoryId,
       }
+      if (Object.keys(pickedAttributes).length > 0) payload.attributes = pickedAttributes
       // Local opcional: quando informado, restringe o matching à cidade/UF;
       // ausência = pedido nacional (qualquer vendedor elegível responde).
       if (estadoUf) payload.state = estadoUf
@@ -328,7 +370,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="border-white/10 bg-zinc-950 p-0 sm:max-w-[480px]">
+      <DialogContent showCloseButton={false} className="!rounded-none border-2 border-white/15 bg-zinc-950 p-0 shadow-[6px_6px_0_0_rgba(0,0,0,0.6)] sm:max-w-[480px]">
         <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
           <div className="flex items-center gap-2">
             <ModeIcon className="h-4 w-4" style={{ color: accent }} />
@@ -339,7 +381,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-full p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white"
+            className="border-2 border-white/15 p-1.5 text-white/55 transition hover:bg-white/[0.06] hover:text-white"
             aria-label={t("close", "Fechar")}
           >
             <X className="h-4 w-4" />
@@ -371,7 +413,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                         setStep("profession")
                       }}
                       className={cn(
-                        "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[13px] transition",
+                        "flex items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-[13px] transition",
                         isActive
                           ? "border-white/30 bg-white/[0.06] text-white"
                           : "border-white/10 bg-white/[0.02] text-white/75 hover:border-white/20 hover:text-white",
@@ -397,13 +439,13 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             1 clique na profissão já vai pro final (descrição + região). */}
         {step === "profession" && (
           <div className="px-5 py-5">
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2 border-2 border-white/15 bg-white/[0.03] p-3">
               {!defaultMachineId && (
                 <button
                   type="button"
                   onClick={() => setStep("machine")}
                   aria-label={t("back", "Voltar")}
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center border-2 border-white/25 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </button>
@@ -435,7 +477,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                         setStep("compose")
                       }}
                       className={cn(
-                        "flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-[12.5px] transition",
+                        "flex items-center justify-between gap-2 border-2 px-3 py-2 text-left text-[12.5px] transition",
                         isActive
                           ? "border-white/30 bg-white/[0.06] text-white"
                           : "border-white/10 bg-white/[0.02] text-white/75 hover:border-white/20 hover:text-white",
@@ -480,10 +522,13 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                       type="button"
                       onClick={() => {
                         setSelectedProductCategoryId(p.id_product_category)
-                        setStep("compose")
+                        setAttrSel({})
+                        setBrandSel("")
+                        // Tem subfiltros pra esta categoria? Drill-in; senão, compose direto.
+                        setStep(getAttributeSchema(p.slug).length > 0 ? "productAttrs" : "compose")
                       }}
                       className={cn(
-                        "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[13px] transition",
+                        "flex items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-[13px] transition",
                         isActive
                           ? "border-white/30 bg-white/[0.06] text-white"
                           : "border-white/10 bg-white/[0.02] text-white/75 hover:border-white/20 hover:text-white",
@@ -505,11 +550,64 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
           </div>
         )}
 
+        {/* ---------- step: productAttrs ----------
+            Espelha o drill-in de subfiltros da Loja (FilterRail): os mesmos
+            campos da categoria (plataforma, condição, marca…). Todos opcionais
+            — refinam o matching, mas o comprador pode pular. */}
+        {step === "productAttrs" && (
+          <div className="px-5 py-5">
+            <div className="flex items-center gap-2 border-2 border-white/15 bg-white/[0.03] p-3">
+              <button
+                type="button"
+                onClick={() => setStep("productCat")}
+                aria-label={t("back", "Voltar")}
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center border-2 border-white/25 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">{t("categoryLabel", "Categoria")}</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-white">{productCategoryName}</p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-sm text-white/75">{t("refineProduct", "Detalhe o que você procura (opcional):")}</p>
+
+            <div className="mt-4 max-h-[44vh] space-y-4 overflow-y-auto pr-0.5">
+              {productSchema.map((field) => (
+                <AttrFieldDark
+                  key={field.key}
+                  field={field}
+                  accent={accent}
+                  selected={attrSel[field.key] ?? []}
+                  brand={brandSel}
+                  onToggle={toggleAttr}
+                  onBrand={setBrandSel}
+                  tx={tx}
+                  t={t}
+                />
+              ))}
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-2">
+              <Button variant="ghost" onClick={() => setStep("productCat")}>
+                {t("back", "Voltar")}
+              </Button>
+              <Button
+                onClick={() => setStep("compose")}
+                className="rounded-none bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
+              >
+                {t("continue", "Continuar")}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ---------- step: compose ---------- */}
         {step === "compose" && (
           <div className="px-5 py-5">
             {/* Resumo do escopo */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div className="border-2 border-white/15 bg-white/[0.03] p-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 {mode !== "product" ? (
                   <>
@@ -534,6 +632,29 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 )}
               </div>
             </div>
+            {/* Recap dos subfiltros escolhidos (só product) */}
+            {mode === "product" && Object.keys(pickedAttributes).length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {Object.entries(pickedAttributes).flatMap(([key, vals]) =>
+                  vals.map((v) => (
+                    <span
+                      key={`${key}:${v}`}
+                      className="border-2 border-white/15 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white/80"
+                    >
+                      {key === "brand" ? v : key === "colors" ? tx.colorName(v) : tx.attrOption(v)}
+                    </span>
+                  )),
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStep("productAttrs")}
+                  className="text-[10px] font-bold uppercase tracking-[0.08em] text-yellow-400/90 underline-offset-2 hover:underline"
+                >
+                  {t("edit", "Editar")}
+                </button>
+              </div>
+            )}
+
             {composeIntroNode}
 
             {/* Campo título — só product */}
@@ -548,7 +669,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                   onChange={(e) => setProductTitle(e.target.value)}
                   placeholder={t("productTitlePlaceholder", "Ex: Tênis de corrida número 42")}
                   maxLength={160}
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+                  className="w-full border-2 border-white/15 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/50 focus:outline-none"
                 />
               </>
             )}
@@ -563,7 +684,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                   <select
                     value={estadoUf}
                     onChange={(e) => { setEstadoUf(e.target.value); setMunicipio("") }}
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
+                    className="h-10 w-full border-2 border-white/15 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/50 focus:outline-none [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="">{t("allStates", "Todos")}</option>
                     {ESTADOS_BRASIL.map((e) => (
@@ -579,7 +700,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     value={municipio}
                     onChange={(e) => setMunicipio(e.target.value)}
                     disabled={!estadoUf || loadingMunicipios}
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/40 focus:outline-none disabled:opacity-40 [&>option]:bg-zinc-900 [&>option]:text-white"
+                    className="h-10 w-full border-2 border-white/15 bg-white/[0.03] px-2 text-sm text-white focus:border-yellow-400/50 focus:outline-none disabled:opacity-40 [&>option]:bg-zinc-900 [&>option]:text-white"
                   >
                     <option value="">{!estadoUf ? t("chooseStateFirst", "Escolha estado") : loadingMunicipios ? t("loading", "Carregando…") : t("allCities", "Todas")}</option>
                     {municipios.map((m) => (
@@ -604,7 +725,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     placeholder="0,00"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+                    className="h-10 w-full border-2 border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/50 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -618,7 +739,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     placeholder="0,00"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+                    className="h-10 w-full border-2 border-white/15 bg-white/[0.03] px-3 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -634,20 +755,28 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               placeholder={t("messagePlaceholder", "Descreva o que você precisa…")}
               rows={5}
               maxLength={4000}
-              className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/40 focus:outline-none"
+              className="w-full resize-none border-2 border-white/15 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-yellow-400/50 focus:outline-none"
             />
             <div className="mt-1 flex items-center justify-between text-[11px] text-white/45">
               <span>{t("minChars", "Mínimo 5 caracteres.")}</span>
               <span>{description.length}/4000</span>
             </div>
             {error && (
-              <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</p>
+              <p className="mt-3 border-2 border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</p>
             )}
 
             <div className="mt-5 flex items-center justify-between gap-2">
               <Button
                 variant="ghost"
-                onClick={() => setStep(mode === "product" ? "productCat" : "profession")}
+                onClick={() =>
+                  setStep(
+                    mode === "product"
+                      ? productSchema.length > 0
+                        ? "productAttrs"
+                        : "productCat"
+                      : "profession",
+                  )
+                }
                 disabled={sending}
               >
                 {t("back", "Voltar")}
@@ -655,7 +784,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <Button
                 onClick={handleSend}
                 disabled={sending || description.trim().length < 5}
-                className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
+                className="rounded-none bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
               >
                 {sending ? (
                   <>
@@ -686,12 +815,137 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 { verb: t(MODE_LABELS[mode].verbKey, MODE_LABELS[mode].verbPt), dest: "Mensagens → O.S." }
               )}
             </p>
-            <Button onClick={() => onOpenChange(false)} className="mt-5 bg-yellow-400 text-zinc-950 hover:bg-yellow-300">
+            <Button onClick={() => onOpenChange(false)} className="mt-5 rounded-none bg-yellow-400 text-zinc-950 hover:bg-yellow-300">
               {t("close", "Fechar")}
             </Button>
           </div>
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Campo de subfiltro — variante escura (paleta do modal, cantos retos) */
+/*  Espelha SubfilterField do FilterRail, mas no tema do chamado.        */
+/* ------------------------------------------------------------------ */
+function AttrFieldDark({
+  field, accent, selected, brand, onToggle, onBrand, tx, t,
+}: {
+  field: AttrField
+  accent: string
+  selected: string[]
+  brand: string
+  onToggle: (key: string, option: string) => void
+  onBrand: (v: string) => void
+  tx: ReturnType<typeof useTaxonomy>
+  t: ReturnType<typeof useTranslations>
+}) {
+  const chip = (key: string, opt: string, label: string, active: boolean) => (
+    <button
+      key={opt}
+      type="button"
+      onClick={() => onToggle(key, opt)}
+      aria-pressed={active}
+      className={cn(
+        "border-2 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.03em] transition",
+        active
+          ? "border-transparent text-zinc-950"
+          : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
+      )}
+      style={active ? { background: accent } : undefined}
+    >
+      {label}
+    </button>
+  )
+
+  // range → chips dos valores discretos (ex.: numeração de calçado).
+  if (field.type === "range") {
+    return (
+      <div>
+        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{tx.attrLabel(field.label)}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {rangeValues(field).map((v) => chip(field.key, v, v, selected.includes(v)))}
+        </div>
+      </div>
+    )
+  }
+
+  if (field.type === "colors") {
+    return (
+      <div>
+        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{tx.attrLabel(field.label)}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {COLOR_SWATCHES.map((c) => {
+            const active = selected.includes(c.name)
+            return (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => onToggle(field.key, c.name)}
+                aria-pressed={active}
+                title={tx.colorName(c.name)}
+                className={cn(
+                  "h-6 w-6 border-2 transition",
+                  active ? "border-white ring-2 ring-offset-1 ring-offset-zinc-950" : "border-white/25",
+                )}
+                style={{
+                  background: c.hex || "conic-gradient(#E0312D,#F2B705,#2E9E44,#2E62D9,#7B3FE4,#E0312D)",
+                  ...(active ? ({ "--tw-ring-color": accent } as React.CSSProperties) : {}),
+                }}
+              />
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  if (field.type === "brand") {
+    return (
+      <div>
+        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{tx.attrLabel(field.label)}</p>
+        <input
+          type="text"
+          value={brand}
+          onChange={(e) => onBrand(e.target.value)}
+          maxLength={80}
+          placeholder={t("searchBrandPlaceholder", "Buscar marca…")}
+          className="w-full border-2 border-white/15 bg-white/[0.03] px-2 py-1.5 text-xs text-white placeholder:text-white/30 focus:border-yellow-400/50 focus:outline-none"
+        />
+        {field.suggestions?.length ? (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {field.suggestions.map((s) => {
+              const active = brand.toLowerCase() === s.toLowerCase()
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onBrand(active ? "" : s)}
+                  aria-pressed={active}
+                  className={cn(
+                    "border-2 px-1.5 py-0.5 text-[10px] font-bold transition",
+                    active ? "border-transparent text-zinc-950" : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
+                  )}
+                  style={active ? { background: accent } : undefined}
+                >
+                  {s}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  // chips
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{tx.attrLabel(field.label)}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {(field.options ?? []).map((opt) => chip(field.key, opt, tx.attrOption(opt), selected.includes(opt)))}
+      </div>
+    </div>
   )
 }

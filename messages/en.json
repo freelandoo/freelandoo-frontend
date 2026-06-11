@@ -2477,7 +2477,10 @@
     "errChooseMachineProfession": "Choose a Swarm and a profession.",
     "errTitleRequired": "Title required (min. 3 characters).",
     "errChooseProductCategory": "Choose a product category.",
-    "errOpenFailed": "Failed to open request"
+    "errOpenFailed": "Failed to open request",
+    "refineProduct": "Detail what you're looking for (optional):",
+    "edit": "Edit",
+    "searchBrandPlaceholder": "Search brand…"
   },
   "TaxEnxame": {
     "_full": "{name} Swarm",
