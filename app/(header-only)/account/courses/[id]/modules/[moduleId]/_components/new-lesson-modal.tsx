@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Loader2, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export function NewLessonModal({
   onUploadCover,
   onCreated,
 }: Props) {
+  const t = useTranslations("Account")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [pendingFile, setPendingFile] = useState<File | null>(null)
@@ -59,7 +61,7 @@ export function NewLessonModal({
   async function handleSubmit() {
     const trimmed = title.trim()
     if (!trimmed) {
-      toast.error("Informe o título da aula.")
+      toast.error(t("lessonTitleRequired", "Informe o título da aula."))
       return
     }
     setSaving(true)
@@ -74,17 +76,17 @@ export function NewLessonModal({
         } catch (err) {
           toast.error(
             err instanceof Error
-              ? `Aula criada, mas a capa falhou: ${err.message}`
-              : "Aula criada, mas a capa falhou.",
+              ? t("lessonCreatedCoverFailedWithMessage", "Aula criada, mas a capa falhou: {message}").replace("{message}", err.message)
+              : t("lessonCreatedCoverFailed", "Aula criada, mas a capa falhou."),
           )
         }
       }
-      toast.success("Aula criada!")
+      toast.success(t("lessonCreated", "Aula criada!"))
       onCreated?.(created)
       reset()
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao criar aula")
+      toast.error(err instanceof Error ? err.message : t("lessonCreateFailed", "Falha ao criar aula"))
     } finally {
       setSaving(false)
     }
@@ -100,23 +102,22 @@ export function NewLessonModal({
     >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Nova aula</DialogTitle>
+          <DialogTitle>{t("newLesson", "Nova aula")}</DialogTitle>
           <DialogDescription>
-            A aula nasce em rascunho. Você pode subir o vídeo, materiais e
-            questionário depois pela página da aula.
+            {t("newLessonDesc", "A aula nasce em rascunho. Você pode subir o vídeo, materiais e questionário depois pela página da aula.")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-white/55">
-              Capa da aula (opcional)
+              {t("lessonCoverOptional", "Capa da aula (opcional)")}
             </Label>
             <ImageDropZone
               aspect="4/5"
               currentUrl={preview}
-              title="Arraste ou envie uma imagem para a capa"
-              hint="Recomendado 4:5 (vertical) · JPG, PNG ou WebP · até 12MB"
+              title={t("lessonCoverDropTitle", "Arraste ou envie uma imagem para a capa")}
+              hint={t("lessonCoverDropHint", "Recomendado 4:5 (vertical) · JPG, PNG ou WebP · até 12MB")}
               onUpload={(file) => handleSelectFile(file)}
               onRemove={() => {
                 setPendingFile(null)
@@ -128,24 +129,24 @@ export function NewLessonModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-lesson-title">Título da aula</Label>
+            <Label htmlFor="new-lesson-title">{t("lessonTitleLabel", "Título da aula")}</Label>
             <Input
               id="new-lesson-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex.: Conheça seu mentor"
+              placeholder={t("lessonTitlePlaceholder", "Ex.: Conheça seu mentor")}
               maxLength={160}
               disabled={saving}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-lesson-desc">Breve descrição (opcional)</Label>
+            <Label htmlFor="new-lesson-desc">{t("lessonShortDescriptionOptional", "Breve descrição (opcional)")}</Label>
             <Textarea
               id="new-lesson-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Resuma em uma ou duas linhas o que o aluno aprende aqui."
+              placeholder={t("lessonDescriptionPlaceholder", "Resuma em uma ou duas linhas o que o aluno aprende aqui.")}
               rows={3}
               disabled={saving}
             />
@@ -159,7 +160,7 @@ export function NewLessonModal({
             onClick={() => onOpenChange(false)}
             disabled={saving}
           >
-            Cancelar
+            {t("cancel", "Cancelar")}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={saving}>
             {saving ? (
@@ -167,7 +168,7 @@ export function NewLessonModal({
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            Criar aula
+            {t("createLesson", "Criar aula")}
           </Button>
         </DialogFooter>
       </DialogContent>

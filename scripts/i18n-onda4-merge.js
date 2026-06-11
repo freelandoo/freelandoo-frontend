@@ -764,6 +764,50 @@ Object.assign(ACCOUNT, {
   whoPaysWhat: ["Quem paga o quê", "Who pays what", "Quién paga qué"],
 })
 
+// Slice 9 — account/courses/[id]/modules/[moduleId] (editor de módulo + criação de aula)
+Object.assign(ACCOUNT, {
+  backToCourse: ["Voltar ao curso", "Back to course", "Volver al curso"],
+  bannerRemoved: ["Banner removido.", "Banner removed.", "Banner eliminado."],
+  bannerUpdated: ["Banner atualizado!", "Banner updated!", "Banner actualizado!"],
+  createFirstLesson: ["Criar primeira aula", "Create first lesson", "Crear primera clase"],
+  createLesson: ["Criar aula", "Create lesson", "Crear clase"],
+  editModule: ["Editar módulo", "Edit module", "Editar módulo"],
+  editModuleDesc: ["Ajuste nome, descrição e status. Para trocar o banner, use o hero acima na página.", "Adjust name, description and status. To change the banner, use the hero above on the page.", "Ajusta nombre, descripción y estado. Para cambiar el banner, usa el hero de arriba en la página."],
+  errorShort: ["Erro", "Error", "Error"],
+  lessonCoverDropHint: ["Recomendado 4:5 (vertical) · JPG, PNG ou WebP · até 12MB", "Recommended 4:5 (vertical) · JPG, PNG or WebP · up to 12MB", "Recomendado 4:5 (vertical) · JPG, PNG o WebP · hasta 12MB"],
+  lessonCoverDropTitle: ["Arraste ou envie uma imagem para a capa", "Drag or upload an image for the cover", "Arrastra o sube una imagen para la portada"],
+  lessonCoverOptional: ["Capa da aula (opcional)", "Lesson cover (optional)", "Portada de la clase (opcional)"],
+  lessonCreated: ["Aula criada!", "Lesson created!", "Clase creada!"],
+  lessonCreatedCoverFailed: ["Aula criada, mas a capa falhou.", "Lesson created, but the cover failed.", "Clase creada, pero falló la portada."],
+  lessonCreatedCoverFailedWithMessage: ["Aula criada, mas a capa falhou: {message}", "Lesson created, but the cover failed: {message}", "Clase creada, pero falló la portada: {message}"],
+  lessonCreateFailed: ["Falha ao criar aula", "Failed to create lesson", "Error al crear la clase"],
+  lessonDescriptionPlaceholder: ["Resuma em uma ou duas linhas o que o aluno aprende aqui.", "Summarize in one or two lines what the student learns here.", "Resume en una o dos líneas lo que el alumno aprende aquí."],
+  lessonShortDescriptionOptional: ["Breve descrição (opcional)", "Brief description (optional)", "Breve descripción (opcional)"],
+  lessonsTitle: ["Aulas", "Lessons", "Clases"],
+  lessonTitleLabel: ["Título da aula", "Lesson title", "Título de la clase"],
+  lessonTitlePlaceholder: ["Ex.: Conheça seu mentor", "Example: Meet your mentor", "Ej.: Conoce a tu mentor"],
+  lessonTitleRequired: ["Informe o título da aula.", "Enter the lesson title.", "Ingresa el título de la clase."],
+  moduleBannerLabel: ["Banner do módulo", "Module banner", "Banner del módulo"],
+  moduleBannerWideDropHint: ["Recomendado 21:9 ou 16:9 · JPG, PNG ou WebP · até 12MB", "Recommended 21:9 or 16:9 · JPG, PNG or WebP · up to 12MB", "Recomendado 21:9 o 16:9 · JPG, PNG o WebP · hasta 12MB"],
+  moduleLessonsEyebrow: ["Aulas do módulo", "Module lessons", "Clases del módulo"],
+  moduleLessonsHint: ["Cada aula tem sua landing com vídeo, materiais, questionário e comentários.", "Each lesson has its landing page with video, materials, quiz and comments.", "Cada clase tiene su landing con video, materiales, cuestionario y comentarios."],
+  moduleLoadFailedTitle: ["Não foi possível carregar o módulo.", "Couldn't load the module.", "No se pudo cargar el módulo."],
+  moduleSingularTitle: ["Módulo", "Module", "Módulo"],
+  moduleUnavailable: ["Módulo indisponível.", "Module unavailable.", "Módulo no disponible."],
+  moduleUpdated: ["Módulo atualizado.", "Module updated.", "Módulo actualizado."],
+  newLesson: ["Nova aula", "New lesson", "Nueva clase"],
+  newLessonDesc: ["A aula nasce em rascunho. Você pode subir o vídeo, materiais e questionário depois pela página da aula.", "The lesson starts as a draft. You can upload the video, materials and quiz later from the lesson page.", "La clase nace como borrador. Puedes subir el video, materiales y cuestionario después desde la página de la clase."],
+  noLessonsInModule: ["Nenhuma aula neste módulo", "No lessons in this module", "Ninguna clase en este módulo"],
+  noLessonsInModuleDesc: ["Crie a primeira aula. Você poderá adicionar vídeo, materiais e questionário pela página dela.", "Create the first lesson. You can add video, materials and quiz from its page.", "Crea la primera clase. Podrás agregar video, materiales y cuestionario desde su página."],
+  noVideo: ["Sem vídeo", "No video", "Sin video"],
+  openLessonSr: ["Abrir aula {title} do módulo {moduleId}", "Open lesson {title} from module {moduleId}", "Abrir clase {title} del módulo {moduleId}"],
+  publishedLessonPlural: ["publicadas", "published", "publicadas"],
+  publishedLessonSingular: ["publicada", "published", "publicada"],
+  updateFailed: ["Falha ao atualizar", "Failed to update", "Error al actualizar"],
+  uploadFailed: ["Falha ao enviar", "Failed to upload", "Error al subir"],
+  videoReadyShort: ["Vídeo", "Video", "Video"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {
