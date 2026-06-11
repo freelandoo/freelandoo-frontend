@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 /* ──────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -83,18 +84,19 @@ const formatDate = (iso: string | null) => {
   return new Date(iso).toLocaleDateString("pt-BR")
 }
 
-const KIND_META: Record<EarningKind, { label: string; icon: typeof Briefcase; accent: string }> = {
-  service:   { label: "Serviço",  icon: Briefcase,      accent: "from-sky-400/20 to-cyan-400/10 text-sky-300" },
-  product:   { label: "Produto",  icon: Package,        accent: "from-emerald-400/20 to-teal-400/10 text-emerald-300" },
-  course:    { label: "Curso",    icon: GraduationCap,  accent: "from-violet-400/20 to-fuchsia-400/10 text-violet-300" },
-  affiliate: { label: "Afiliado", icon: Users,          accent: "from-yellow-400/25 to-amber-500/15 text-yellow-300" },
+// Mapas module-level: labelKey + label(fallback pt) resolvidos no render via t().
+const KIND_META: Record<EarningKind, { labelKey: string; label: string; icon: typeof Briefcase; accent: string }> = {
+  service:   { labelKey: "kindService",   label: "Serviço",  icon: Briefcase,      accent: "from-sky-400/20 to-cyan-400/10 text-sky-300" },
+  product:   { labelKey: "kindProduct",   label: "Produto",  icon: Package,        accent: "from-emerald-400/20 to-teal-400/10 text-emerald-300" },
+  course:    { labelKey: "kindCourse",    label: "Curso",    icon: GraduationCap,  accent: "from-violet-400/20 to-fuchsia-400/10 text-violet-300" },
+  affiliate: { labelKey: "kindAffiliate", label: "Afiliado", icon: Users,          accent: "from-yellow-400/25 to-amber-500/15 text-yellow-300" },
 }
 
-const STATUS_META: Record<EarningStatus, { label: string; color: string }> = {
-  pending:   { label: "Aguardando", color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-  available: { label: "Disponível", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-  paid:      { label: "Pago",       color: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
-  reversed:  { label: "Revertido",  color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
+const STATUS_META: Record<EarningStatus, { labelKey: string; label: string; color: string }> = {
+  pending:   { labelKey: "earnStatusPending",   label: "Aguardando", color: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  available: { labelKey: "earnStatusAvailable", label: "Disponível", color: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
+  paid:      { labelKey: "earnStatusPaid",      label: "Pago",       color: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
+  reversed:  { labelKey: "earnStatusReversed",  label: "Revertido",  color: "bg-rose-500/15 text-rose-300 border-rose-500/30" },
 }
 
 type Tab = "all" | EarningKind | "afiliado" | "cupom"
@@ -126,6 +128,7 @@ type CouponSale = {
 /*  Page                                                               */
 /* ──────────────────────────────────────────────────────────────────── */
 export default function MeusFaturamentosPage() {
+  const t = useTranslations("Account")
   const [tab, setTab] = useState<Tab>("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -164,11 +167,11 @@ export default function MeusFaturamentosPage() {
       setEarnings(Array.isArray(data.items) ? data.items : [])
       setAggregates(data.aggregates || null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar")
+      setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar"))
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, t])
 
   const loadCouponSales = useCallback(async (page: number) => {
     if (!token) return
@@ -183,11 +186,11 @@ export default function MeusFaturamentosPage() {
       setCouponSales(Array.isArray(data.items) ? data.items : [])
       setCouponTotalPages(Math.max(1, Number(data?.pagination?.total_pages) || 1))
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar")
+      setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar"))
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, t])
 
   const loadAffiliate = useCallback(async () => {
     if (!token) return
@@ -213,7 +216,7 @@ export default function MeusFaturamentosPage() {
 
   useEffect(() => {
     if (!token) {
-      setError("Faça login para ver seus faturamentos.")
+      setError(t("billingLoginRequired", "Faça login para ver seus faturamentos."))
       setLoading(false)
       return
     }
@@ -222,7 +225,7 @@ export default function MeusFaturamentosPage() {
     } else {
       loadEarnings(tab)
     }
-  }, [tab, token, loadEarnings, loadCouponSales, couponPage])
+  }, [tab, token, loadEarnings, loadCouponSales, couponPage, t])
 
   useEffect(() => { loadAffiliate() }, [loadAffiliate])
 
@@ -254,26 +257,26 @@ export default function MeusFaturamentosPage() {
 
   const totals = aggregates?.totals
   const kpis = useMemo(() => ([
-    { label: "Recebido",   value: totals?.received  ?? 0, icon: CreditCard, hint: "Já pago em sua conta" },
-    { label: "Disponível", value: totals?.available ?? 0, icon: CheckCircle2, hint: "Liberado · próximo payout" },
-    { label: "Em espera",  value: totals?.pending   ?? 0, icon: Hourglass, hint: "Janela de holdback / aprovação" },
-    { label: "Revertido",  value: totals?.reversed  ?? 0, icon: RotateCcw, hint: "Reembolso / cancelamento" },
-  ]), [totals])
+    { label: t("kpiReceived", "Recebido"),    value: totals?.received  ?? 0, icon: CreditCard, hint: t("kpiReceivedHint", "Já pago em sua conta") },
+    { label: t("kpiAvailable", "Disponível"), value: totals?.available ?? 0, icon: CheckCircle2, hint: t("kpiAvailableHint", "Liberado · próximo payout") },
+    { label: t("kpiPending", "Em espera"),    value: totals?.pending   ?? 0, icon: Hourglass, hint: t("kpiPendingHint", "Janela de holdback / aprovação") },
+    { label: t("kpiReversed", "Revertido"),   value: totals?.reversed  ?? 0, icon: RotateCcw, hint: t("kpiReversedHint", "Reembolso / cancelamento") },
+  ]), [totals, t])
 
   return (
     <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto px-4 py-10">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <TabloidPageIntro
-            eyebrow="Comissões"
-            title="FATURAMENTO."
-            subtitle="Vendas de cursos, serviços, loja e comissões em leitura compacta, com dinheiro em destaque e controles duros."
-            back={<TabloidBackLink href="/account">Voltar</TabloidBackLink>}
+            eyebrow={t("billingEyebrow", "Comissões")}
+            title={t("billingTitle", "FATURAMENTO.")}
+            subtitle={t("billingSubtitle", "Vendas de cursos, serviços, loja e comissões em leitura compacta, com dinheiro em destaque e controles duros.")}
+            back={<TabloidBackLink href="/account">{t("back", "Voltar")}</TabloidBackLink>}
             actions={
               affiliate ? (
                 <span className="inline-flex items-center gap-2 border-2 border-[#F2B705] bg-[#F2B705]/12 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#F2B705]">
                   <Wallet className="h-3.5 w-3.5" />
-                  Afiliado · {affiliate.status}
+                  {t("kindAffiliate", "Afiliado")} · {affiliate.status}
                 </span>
               ) : null
             }
@@ -297,12 +300,12 @@ export default function MeusFaturamentosPage() {
 
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 border-y-2 border-[#F1EDE2]/12 bg-[#1D1810]/70 py-3">
-            <TabPill icon={<TrendingUp className="h-3.5 w-3.5" />} label="Tudo" active={tab === "all"} onClick={() => setTab("all")} />
-            <TabPill icon={<GraduationCap className="h-3.5 w-3.5" />} label="Cursos" active={tab === "course"} onClick={() => setTab("course")} />
-            <TabPill icon={<Briefcase className="h-3.5 w-3.5" />} label="Serviços" active={tab === "service"} onClick={() => setTab("service")} />
-            <TabPill icon={<Package className="h-3.5 w-3.5" />} label="Produtos" active={tab === "product"} onClick={() => setTab("product")} />
-            <TabPill icon={<Users className="h-3.5 w-3.5" />} label="Afiliado" active={tab === "afiliado" || tab === "affiliate"} onClick={() => setTab("afiliado")} />
-            <TabPill icon={<Ticket className="h-3.5 w-3.5" />} label="Cupom" active={tab === "cupom"} onClick={() => { setCouponPage(1); setTab("cupom") }} />
+            <TabPill icon={<TrendingUp className="h-3.5 w-3.5" />} label={t("billingTabAll", "Tudo")} active={tab === "all"} onClick={() => setTab("all")} />
+            <TabPill icon={<GraduationCap className="h-3.5 w-3.5" />} label={t("billingTabCourses", "Cursos")} active={tab === "course"} onClick={() => setTab("course")} />
+            <TabPill icon={<Briefcase className="h-3.5 w-3.5" />} label={t("billingTabServices", "Serviços")} active={tab === "service"} onClick={() => setTab("service")} />
+            <TabPill icon={<Package className="h-3.5 w-3.5" />} label={t("billingTabProducts", "Produtos")} active={tab === "product"} onClick={() => setTab("product")} />
+            <TabPill icon={<Users className="h-3.5 w-3.5" />} label={t("kindAffiliate", "Afiliado")} active={tab === "afiliado" || tab === "affiliate"} onClick={() => setTab("afiliado")} />
+            <TabPill icon={<Ticket className="h-3.5 w-3.5" />} label={t("billingTabCoupon", "Cupom")} active={tab === "cupom"} onClick={() => { setCouponPage(1); setTab("cupom") }} />
           </div>
 
           {/* Content */}
@@ -325,8 +328,8 @@ export default function MeusFaturamentosPage() {
                 ) : couponSales.length === 0 ? (
                   <div className="rounded-[6px] border-2 border-[#F1EDE2]/12 bg-[#1D1810] px-6 py-12 text-center">
                     <Ticket className="mx-auto mb-3 h-7 w-7 text-white/35" />
-                    <p className="text-sm font-medium text-white/85">Nenhuma venda com seu cupom ainda</p>
-                    <p className="mt-1 text-xs text-white/45">Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.</p>
+                    <p className="text-sm font-medium text-white/85">{t("couponSalesEmptyTitle", "Nenhuma venda com seu cupom ainda")}</p>
+                    <p className="mt-1 text-xs text-white/45">{t("couponSalesEmptyHint", "Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.")}</p>
                   </div>
                 ) : (
                   <>
@@ -339,7 +342,7 @@ export default function MeusFaturamentosPage() {
                           onClick={() => setCouponPage((p) => Math.max(1, p - 1))}
                           className="rounded-lg border border-white/10 px-3 py-1.5 transition hover:border-white/30 hover:text-white disabled:opacity-40"
                         >
-                          Anterior
+                          {t("previous", "Anterior")}
                         </button>
                         <span className="tabular-nums">{couponPage} / {couponTotalPages}</span>
                         <button
@@ -348,7 +351,7 @@ export default function MeusFaturamentosPage() {
                           onClick={() => setCouponPage((p) => Math.min(couponTotalPages, p + 1))}
                           className="rounded-lg border border-white/10 px-3 py-1.5 transition hover:border-white/30 hover:text-white disabled:opacity-40"
                         >
-                          Próxima
+                          {t("next", "Próximo")}
                         </button>
                       </div>
                     )}
@@ -427,6 +430,7 @@ function TabPill({ icon, label, active, onClick }: {
 }
 
 function EarningRow({ earning }: { earning: Earning }) {
+  const t = useTranslations("Account")
   const km = KIND_META[earning.kind]
   const sm = STATUS_META[earning.status]
   const Icon = km.icon
@@ -435,7 +439,7 @@ function EarningRow({ earning }: { earning: Earning }) {
   const subtitle: string[] = []
   if (typeof meta.buyer_name === "string" && meta.buyer_name) subtitle.push(meta.buyer_name)
   if (typeof meta.client_name === "string" && meta.client_name) subtitle.push(meta.client_name)
-  if (typeof meta.coupon_code === "string" && meta.coupon_code) subtitle.push(`Cupom ${meta.coupon_code}`)
+  if (typeof meta.coupon_code === "string" && meta.coupon_code) subtitle.push(`${t("couponLabel", "Cupom")} ${meta.coupon_code}`)
   if (typeof meta.quantity === "number" && meta.quantity > 1) subtitle.push(`x${meta.quantity}`)
 
   return (
@@ -450,9 +454,9 @@ function EarningRow({ earning }: { earning: Earning }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium text-white truncate">{earning.title}</span>
-          <Badge className="border-white/15 bg-white/[0.04] text-[10px] text-white/65 h-5 py-0">{km.label}</Badge>
+          <Badge className="border-white/15 bg-white/[0.04] text-[10px] text-white/65 h-5 py-0">{t(km.labelKey, km.label)}</Badge>
           <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${sm.color}`}>
-            {sm.label}
+            {t(sm.labelKey, sm.label)}
           </span>
         </div>
         {subtitle.length > 0 && (
@@ -461,10 +465,10 @@ function EarningRow({ earning }: { earning: Earning }) {
         <p className="mt-1 text-[10px] text-white/35">
           {formatDate(earning.created_at)}
           {earning.paid_at && earning.status === "paid" && (
-            <> · pago em {formatDate(earning.paid_at)}</>
+            <> · {t("paidOn", "pago em")} {formatDate(earning.paid_at)}</>
           )}
           {earning.available_at && earning.status === "pending" && (
-            <> · libera em {formatDate(earning.available_at)}</>
+            <> · {t("releasesOn", "libera em")} {formatDate(earning.available_at)}</>
           )}
         </p>
       </div>
@@ -473,7 +477,7 @@ function EarningRow({ earning }: { earning: Earning }) {
         {earning.gross_cents !== earning.net_cents && (
           <p className="text-[10px] text-white/35 tabular-nums inline-flex items-center gap-0.5">
             <ArrowDownRight className="h-2.5 w-2.5" />
-            de {formatBRL(earning.gross_cents)}
+            {t("fromAmount", "de")} {formatBRL(earning.gross_cents)}
           </p>
         )}
       </div>
@@ -482,13 +486,14 @@ function EarningRow({ earning }: { earning: Earning }) {
 }
 
 function CouponSaleRow({ sale }: { sale: CouponSale }) {
+  const t = useTranslations("Account")
   const sm = STATUS_META[sale.status] || STATUS_META.pending
-  const buyerLabel = sale.buyer.name || sale.buyer.email || "Comprador"
+  const buyerLabel = sale.buyer.name || sale.buyer.email || t("buyer", "Comprador")
   const itemLabel = sale.item.name
     ? sale.item.count > 1
       ? `${sale.item.name} +${sale.item.count - 1}`
       : sale.item.name
-    : `${sale.item.count} item(s)`
+    : `${sale.item.count} ${t("itemsCount", "item(s)")}`
   return (
     <motion.div
       whileHover={{ y: -1 }}
@@ -507,14 +512,14 @@ function CouponSaleRow({ sale }: { sale: CouponSale }) {
             </Badge>
           )}
           <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${sm.color}`}>
-            {sm.label}
+            {t(sm.labelKey, sm.label)}
           </span>
         </div>
         <p className="mt-0.5 truncate text-xs text-white/45">{itemLabel}</p>
         <p className="mt-1 text-[10px] text-white/35">
           {formatDate(sale.created_at)}
           {sale.amounts.discount_cents > 0 && (
-            <> · desconto {formatBRL(sale.amounts.discount_cents)}</>
+            <> · {t("discount", "desconto")} {formatBRL(sale.amounts.discount_cents)}</>
           )}
         </p>
       </div>
@@ -527,13 +532,14 @@ function CouponSaleRow({ sale }: { sale: CouponSale }) {
 }
 
 function EmptyEarnings({ tab }: { tab: Tab }) {
+  const tr = useTranslations("Account")
   const txt: Record<Tab, { title: string; hint: string }> = {
-    all:       { title: "Nenhum faturamento ainda", hint: "Suas vendas de cursos, serviços, loja e comissões aparecem aqui." },
-    course:    { title: "Nenhuma venda de curso",   hint: "Publique um curso e venda pra ver os faturamentos aqui." },
-    service:   { title: "Nenhuma venda de serviço", hint: "Faturamentos de bookings pagos aparecem aqui após 8 dias de holdback." },
-    product:   { title: "Nenhuma venda da loja",    hint: "Adicione produtos na sua loja e venda pra ver os ganhos." },
+    all:       { title: tr("emptyAllTitle", "Nenhum faturamento ainda"), hint: tr("emptyAllHint", "Suas vendas de cursos, serviços, loja e comissões aparecem aqui.") },
+    course:    { title: tr("emptyCourseTitle", "Nenhuma venda de curso"), hint: tr("emptyCourseHint", "Publique um curso e venda pra ver os faturamentos aqui.") },
+    service:   { title: tr("emptyServiceTitle", "Nenhuma venda de serviço"), hint: tr("emptyServiceHint", "Faturamentos de bookings pagos aparecem aqui após 8 dias de holdback.") },
+    product:   { title: tr("emptyProductTitle", "Nenhuma venda da loja"), hint: tr("emptyProductHint", "Adicione produtos na sua loja e venda pra ver os ganhos.") },
     afiliado:  { title: "—", hint: "—" },
-    affiliate: { title: "Nenhuma comissão", hint: "Compartilhe seu cupom de afiliado pra gerar conversões." },
+    affiliate: { title: tr("emptyAffiliateTitle", "Nenhuma comissão"), hint: tr("emptyAffiliateHint", "Compartilhe seu cupom de afiliado pra gerar conversões.") },
     cupom:     { title: "—", hint: "—" },
   }
   const t = txt[tab]
@@ -564,6 +570,7 @@ function AfiliadoPanel({
   savingPix: boolean
   pixSaved: boolean
 }) {
+  const t = useTranslations("Account")
   return (
     <>
       {!affiliate && (
@@ -571,8 +578,7 @@ function AfiliadoPanel({
           <CardContent className="flex gap-3 items-start p-4">
             <Info className="h-4 w-4 text-yellow-300 mt-0.5" />
             <div className="text-sm text-white/65">
-              Você ainda não está cadastrado no programa de afiliados. Fale com a equipe Freelandoo
-              para ativar sua afiliação e habilitar pagamentos.
+              {t("affiliateNotEnrolled", "Você ainda não está cadastrado no programa de afiliados. Fale com a equipe Freelandoo para ativar sua afiliação e habilitar pagamentos.")}
             </div>
           </CardContent>
         </Card>
@@ -583,16 +589,16 @@ function AfiliadoPanel({
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2 text-white">
             <Ticket className="h-4 w-4" />
-            Seu cupom
+            {t("yourCoupon", "Seu cupom")}
           </CardTitle>
           <CardDescription>
-            Divulgue seu cupom para gerar conversões e acumular comissão.
+            {t("yourCouponDesc", "Divulgue seu cupom para gerar conversões e acumular comissão.")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {coupons.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">
-              Você ainda não tem cupom ativo. Fale com a equipe Freelandoo para gerar o seu.
+              {t("noCouponYet", "Você ainda não tem cupom ativo. Fale com a equipe Freelandoo para gerar o seu.")}
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -610,15 +616,15 @@ function AfiliadoPanel({
       {defaultRule && (
         <Card className="border-white/[0.06] bg-white/[0.02]">
           <CardHeader>
-            <CardTitle className="text-base text-white">Regra vigente</CardTitle>
-            <CardDescription>Aplicada por padrão aos seus cupons.</CardDescription>
+            <CardTitle className="text-base text-white">{t("currentRule", "Regra vigente")}</CardTitle>
+            <CardDescription>{t("currentRuleDesc", "Aplicada por padrão aos seus cupons.")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-              <Cell label="Comissão" value={`${defaultRule.commission_percent}%`} />
-              <Cell label="Base" value={defaultRule.commission_base === "GROSS" ? "Bruto" : "Líquido do desconto"} />
-              <Cell label="Pedido mínimo" value={formatBRL(defaultRule.min_order_cents)} />
-              <Cell label="Liberação após" value={`${defaultRule.approval_delay_days} dias`} />
+              <Cell label={t("ruleCommission", "Comissão")} value={`${defaultRule.commission_percent}%`} />
+              <Cell label={t("ruleBase", "Base")} value={defaultRule.commission_base === "GROSS" ? t("ruleBaseGross", "Bruto") : t("ruleBaseNet", "Líquido do desconto")} />
+              <Cell label={t("ruleMinOrder", "Pedido mínimo")} value={formatBRL(defaultRule.min_order_cents)} />
+              <Cell label={t("ruleReleaseAfter", "Liberação após")} value={`${defaultRule.approval_delay_days} ${t("daysWord", "dias")}`} />
             </div>
           </CardContent>
         </Card>
@@ -627,33 +633,33 @@ function AfiliadoPanel({
       {/* PIX */}
       <Card className="border-white/[0.06] bg-white/[0.02]">
         <CardHeader>
-          <CardTitle className="text-base text-white">Dados para pagamento</CardTitle>
-          <CardDescription>Usaremos estas informações quando gerarmos um lote de pagamento.</CardDescription>
+          <CardTitle className="text-base text-white">{t("payoutData", "Dados para pagamento")}</CardTitle>
+          <CardDescription>{t("payoutDataDesc", "Usaremos estas informações quando gerarmos um lote de pagamento.")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="pix-type" className="text-[11px] uppercase tracking-wider text-white/50">Tipo de chave PIX</Label>
+              <Label htmlFor="pix-type" className="text-[11px] uppercase tracking-wider text-white/50">{t("pixKeyType", "Tipo de chave PIX")}</Label>
               <Select value={pixForm.pix_key_type} onValueChange={(v) => setPixForm((p) => ({ ...p, pix_key_type: v }))}>
-                <SelectTrigger id="pix-type"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger id="pix-type"><SelectValue placeholder={t("select", "Selecione")} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CPF">CPF</SelectItem>
-                  <SelectItem value="EMAIL">E-mail</SelectItem>
-                  <SelectItem value="PHONE">Telefone</SelectItem>
-                  <SelectItem value="RANDOM">Chave aleatória</SelectItem>
+                  <SelectItem value="EMAIL">{t("pixTypeEmail", "E-mail")}</SelectItem>
+                  <SelectItem value="PHONE">{t("pixTypePhone", "Telefone")}</SelectItem>
+                  <SelectItem value="RANDOM">{t("pixTypeRandom", "Chave aleatória")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pix-key" className="text-[11px] uppercase tracking-wider text-white/50">Chave PIX</Label>
-              <Input id="pix-key" placeholder="Sua chave" value={pixForm.pix_key} onChange={(e) => setPixForm((p) => ({ ...p, pix_key: e.target.value }))} />
+              <Label htmlFor="pix-key" className="text-[11px] uppercase tracking-wider text-white/50">{t("pixKey", "Chave PIX")}</Label>
+              <Input id="pix-key" placeholder={t("pixKeyPlaceholder", "Sua chave")} value={pixForm.pix_key} onChange={(e) => setPixForm((p) => ({ ...p, pix_key: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="legal-name" className="text-[11px] uppercase tracking-wider text-white/50">Nome / Razão social</Label>
+              <Label htmlFor="legal-name" className="text-[11px] uppercase tracking-wider text-white/50">{t("legalName", "Nome / Razão social")}</Label>
               <Input id="legal-name" value={pixForm.legal_name} onChange={(e) => setPixForm((p) => ({ ...p, legal_name: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tax-id" className="text-[11px] uppercase tracking-wider text-white/50">CPF / CNPJ</Label>
+              <Label htmlFor="tax-id" className="text-[11px] uppercase tracking-wider text-white/50">{t("taxId", "CPF / CNPJ")}</Label>
               <Input id="tax-id" value={pixForm.tax_id} onChange={(e) => setPixForm((p) => ({ ...p, tax_id: e.target.value }))} />
             </div>
           </div>
@@ -663,10 +669,10 @@ function AfiliadoPanel({
               disabled={savingPix || !affiliate}
               className="rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:from-yellow-300 hover:to-amber-400"
             >
-              {savingPix ? (<><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />Salvando…</>) : (<><Sparkles className="mr-1.5 h-4 w-4" />Salvar</>)}
+              {savingPix ? (<><Loader2 className="mr-1.5 h-4 w-4 animate-spin" />{t("saving", "Salvando...")}</>) : (<><Sparkles className="mr-1.5 h-4 w-4" />{t("save", "Salvar")}</>)}
             </Button>
-            {pixSaved && <span className="text-xs text-emerald-400">Dados salvos.</span>}
-            {!affiliate && <span className="text-xs text-white/45">Disponível após ativação.</span>}
+            {pixSaved && <span className="text-xs text-emerald-400">{t("dataSaved", "Dados salvos.")}</span>}
+            {!affiliate && <span className="text-xs text-white/45">{t("availableAfterActivation", "Disponível após ativação.")}</span>}
           </div>
         </CardContent>
       </Card>
