@@ -27,12 +27,17 @@ import {
   validateImageFile,
 } from "@/lib/media/media-validation"
 import type { ProcessedImage } from "@/lib/media/image-processing"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 const Separator = () => <hr className="my-4 border-border" />
 
 export default function ProfileSettingsPage() {
   const params = useParams()
   const router = useRouter()
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const tx = useTaxonomy()
   const id_profile = params?.id_profile as string
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
 
@@ -131,7 +136,7 @@ export default function ProfileSettingsPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <LoadingState label="Carregando perfil..." />
+          <LoadingState label={t("loadingProfile", "Carregando seu perfil…")} />
         </div>
       </PageShell>
     )
@@ -141,7 +146,7 @@ export default function ProfileSettingsPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <ErrorState title="Perfil indisponível" description={error || "Erro ao carregar perfil"} />
+          <ErrorState title={t("profileUnavailable", "Perfil indisponível")} description={error || t("loadProfileError", "Erro ao carregar perfil")} />
         </div>
       </PageShell>
     )
@@ -151,11 +156,11 @@ export default function ProfileSettingsPage() {
     return (
       <PageShell className="tabloid-account-page md:pl-[80px]">
       <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-4 px-4 py-12">
-        <p className="text-muted-foreground">Este perfil não existe ou não pertence a você.</p>
+        <p className="text-muted-foreground">{t("profileNotExist", "Este perfil não existe ou não pertence a você.")}</p>
         <Button asChild variant="outline">
           <Link href="/account">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para minha conta
+            {t("backToAccount", "Voltar para minha conta")}
           </Link>
         </Button>
       </main>
@@ -216,13 +221,13 @@ export default function ProfileSettingsPage() {
             ),
           }
         })
-        setStatusMsg({ kind: "ok", text: "Foto atualizada com sucesso!" })
+        setStatusMsg({ kind: "ok", text: t("photoUpdated", "Foto atualizada com sucesso!") })
         setTimeout(() => setStatusMsg(null), 3000)
       } else {
-        setStatusMsg({ kind: "error", text: data.error || "Erro ao enviar foto." })
+        setStatusMsg({ kind: "error", text: data.error || t("uploadPhotoError", "Erro ao enviar foto.") })
       }
     } catch {
-      setStatusMsg({ kind: "error", text: "Erro ao enviar foto." })
+      setStatusMsg({ kind: "error", text: t("uploadPhotoError", "Erro ao enviar foto.") })
     } finally {
       setUploadingAvatar(false)
     }
@@ -252,20 +257,20 @@ export default function ProfileSettingsPage() {
     const token = localStorage.getItem("token")
     if (!token) return
     if (!form.display_name.trim()) {
-      setStatusMsg({ kind: "error", text: "O nome de exibição é obrigatório." })
+      setStatusMsg({ kind: "error", text: t("displayNameRequired", "O nome de exibição é obrigatório.") })
       return
     }
     if (form.bio.trim().length > 200) {
-      setStatusMsg({ kind: "error", text: "A bio deve ter no máximo 200 caracteres." })
+      setStatusMsg({ kind: "error", text: t("bioMax200", "A bio deve ter no máximo 200 caracteres.") })
       return
     }
     if (!form.id_machine || !form.id_category) {
-      setStatusMsg({ kind: "error", text: "Selecione enxame e profissão." })
+      setStatusMsg({ kind: "error", text: t("selectEnxameProfession", "Selecione enxame e profissão.") })
       return
     }
     const zipDigits = form.origin_zipcode.replace(/\D/g, "")
     if (zipDigits && zipDigits.length !== 8) {
-      setStatusMsg({ kind: "error", text: "CEP de origem deve ter 8 dígitos." })
+      setStatusMsg({ kind: "error", text: t("zipMustBe8", "CEP de origem deve ter 8 dígitos.") })
       return
     }
     setSaving(true)
@@ -285,13 +290,13 @@ export default function ProfileSettingsPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        setStatusMsg({ kind: "ok", text: "Alterações salvas." })
+        setStatusMsg({ kind: "ok", text: t("changesSaved", "Alterações salvas.") })
         await refreshMe()
       } else {
-        setStatusMsg({ kind: "error", text: data.error || "Erro ao salvar." })
+        setStatusMsg({ kind: "error", text: data.error || t("saveError", "Erro ao salvar.") })
       }
     } catch {
-      setStatusMsg({ kind: "error", text: "Erro ao salvar." })
+      setStatusMsg({ kind: "error", text: t("saveError", "Erro ao salvar.") })
     } finally {
       setSaving(false)
     }
@@ -311,7 +316,7 @@ export default function ProfileSettingsPage() {
       if (res.ok) {
         await refreshMe()
       } else {
-        setStatusMsg({ kind: "error", text: data.error || "Erro ao alterar visibilidade." })
+        setStatusMsg({ kind: "error", text: data.error || t("visibilityError", "Erro ao alterar visibilidade.") })
       }
     } finally {
       setSavingVisibility(false)
@@ -322,7 +327,7 @@ export default function ProfileSettingsPage() {
     const token = localStorage.getItem("token")
     if (!token) return
     const ok = window.confirm(
-      "Tem certeza que deseja excluir este perfil? Ele não aparecerá mais para você nem para o público. O histórico de pagamentos é preservado para auditoria."
+      t("deleteProfileConfirm", "Tem certeza que deseja excluir este perfil? Ele não aparecerá mais para você nem para o público. O histórico de pagamentos é preservado para auditoria.")
     )
     if (!ok) return
     setDeleting(true)
@@ -336,7 +341,7 @@ export default function ProfileSettingsPage() {
         router.push("/account")
       } else {
         const data = await res.json().catch(() => ({}))
-        setStatusMsg({ kind: "error", text: data.error || "Erro ao excluir o perfil." })
+        setStatusMsg({ kind: "error", text: data.error || t("deleteProfileErrorRetry", "Erro ao excluir o perfil.") })
       }
     } finally {
       setDeleting(false)
@@ -424,17 +429,17 @@ export default function ProfileSettingsPage() {
         setIsSocialMediaModalOpen(false)
       } else {
         const data = await response.json()
-        alert(data.error || "Erro ao salvar rede social")
+        alert(data.error || t("saveSocialError", "Erro ao salvar rede social"))
       }
     } catch {
-      alert("Erro ao salvar rede social. Tente novamente.")
+      alert(t("saveSocialErrorRetry", "Erro ao salvar rede social. Tente novamente."))
     } finally {
       setIsSubmittingSocial(false)
     }
   }
 
   const handleDeleteSocial = async (social: SocialMedia) => {
-    if (!confirm(`Remover ${social.desc_social_media_type} do perfil?`)) return
+    if (!confirm(t("removeSocialConfirm", "Remover {network} do perfil?").replace("{network}", social.desc_social_media_type))) return
     const currentToken = localStorage.getItem("token")
     if (!currentToken) return
 
@@ -448,10 +453,10 @@ export default function ProfileSettingsPage() {
         await refreshMe()
       } else {
         const data = await response.json()
-        alert(data.error || "Erro ao remover rede social")
+        alert(data.error || t("deleteSocialError", "Erro ao remover rede social"))
       }
     } catch {
-      alert("Erro ao remover rede social. Tente novamente.")
+      alert(t("deleteSocialErrorRetry", "Erro ao remover rede social. Tente novamente."))
     }
   }
 
@@ -494,13 +499,13 @@ export default function ProfileSettingsPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setStatusMsg({ kind: "error", text: data.error || "Erro ao processar reembolso." })
+        setStatusMsg({ kind: "error", text: data.error || t("refundError", "Erro ao processar reembolso.") })
         return
       }
-      setStatusMsg({ kind: "ok", text: "Reembolso solicitado com sucesso. O valor volta ao seu cartão em até 10 dias úteis." })
+      setStatusMsg({ kind: "ok", text: t("refundRequested", "Reembolso solicitado com sucesso. O valor volta ao seu cartão em até 10 dias úteis.") })
       setRefundConfirm(false)
     } catch {
-      setStatusMsg({ kind: "error", text: "Erro de conexão. Tente novamente." })
+      setStatusMsg({ kind: "error", text: t("connectionError", "Erro de conexão. Tente novamente.") })
     } finally {
       setRefunding(false)
     }
@@ -510,20 +515,20 @@ export default function ProfileSettingsPage() {
     <PageShell className="tabloid-account-page md:pl-[80px]">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
       <TabloidPageIntro
-        eyebrow="Perfil"
-        title="AJUSTES."
-        subtitle="Configurações do subperfil, redes, ativação e visibilidade com a mesma pegada de ranking premium."
-        back={<TabloidBackLink href={`/account/profile/${id_profile}`}>Voltar para o Perfil</TabloidBackLink>}
+        eyebrow={t("profileEyebrow", "Perfil")}
+        title={t("settingsTitle", "AJUSTES.")}
+        subtitle={t("settingsSubtitle", "Configurações do subperfil, redes, ativação e visibilidade com a mesma pegada de ranking premium.")}
+        back={<TabloidBackLink href={`/account/profile/${id_profile}`}>{t("backToProfile", "Voltar para o Perfil")}</TabloidBackLink>}
         actions={
           !isPaid ? (
             <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 border border-amber-500/30">
-              Aguardando ativação
+              {t("awaitingActivation", "Aguardando ativação")}
             </Badge>
           ) : isPublished ? (
-            <Badge className="bg-green-600 hover:bg-green-700">Ativo e visível</Badge>
+            <Badge className="bg-green-600 hover:bg-green-700">{t("activeAndVisible", "Ativo e visível")}</Badge>
           ) : (
             <Badge variant="secondary" className="bg-slate-500/15 text-slate-700 border border-slate-500/30">
-              Invisível
+              {t("invisible", "Invisível")}
             </Badge>
           )
         }
@@ -541,7 +546,7 @@ export default function ProfileSettingsPage() {
               </Avatar>
               <label
                 className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                title="Alterar foto do perfil"
+                title={t("changeProfilePhoto", "Alterar foto do perfil")}
               >
                 <input
                   type="file"
@@ -556,8 +561,8 @@ export default function ProfileSettingsPage() {
               </label>
             </div>
             <div>
-              <CardTitle>Configurações do Perfil</CardTitle>
-              <CardDescription>{profile.machine_name || profile.machine_slug || "—"} · {profile.category || "—"}</CardDescription>
+              <CardTitle>{t("profileSettings", "Configurações do Perfil")}</CardTitle>
+              <CardDescription>{(profile.machine_name ? tx.enxame(profile.machine_slug, profile.machine_name) : profile.machine_slug) || "—"} · {profile.category ? tx.profession(profile.category) : "—"}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -568,9 +573,9 @@ export default function ProfileSettingsPage() {
 
           {/* Informações básicas */}
           <section className="space-y-3">
-            <h3 className="font-semibold">Informações básicas</h3>
+            <h3 className="font-semibold">{t("basicInfo", "Informações básicas")}</h3>
             <div className="space-y-2">
-              <Label htmlFor="display_name">Nome de exibição</Label>
+              <Label htmlFor="display_name">{t("displayNameLabel", "Nome de exibição")}</Label>
               <Input
                 id="display_name"
                 value={form.display_name}
@@ -578,7 +583,7 @@ export default function ProfileSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio / descrição (máx 200 caracteres)</Label>
+              <Label htmlFor="bio">{t("bioDescLabel", "Bio / descrição (máx 200 caracteres)")}</Label>
               <textarea
                 id="bio"
                 rows={4}
@@ -595,40 +600,40 @@ export default function ProfileSettingsPage() {
 
           {/* Enxame e profissão */}
           <section className="space-y-3">
-            <h3 className="font-semibold">Enxame e profissão</h3>
+            <h3 className="font-semibold">{t("enxameAndProfession", "Enxame e profissão")}</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Enxame</Label>
+                <Label>{t("enxameLabel", "Enxame")}</Label>
                 <Select
                   value={form.id_machine}
                   onValueChange={(val) => setForm((f) => ({ ...f, id_machine: val, id_category: "" }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={t("select", "Selecione")} />
                   </SelectTrigger>
                   <SelectContent>
                     {machines.map((m) => (
                       <SelectItem key={m.id_machine} value={String(m.id_machine)}>
-                        {m.name}
+                        {tx.enxame(m.slug, m.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Profissão</Label>
+                <Label>{t("professionLabel", "Profissão")}</Label>
                 <Select
                   value={form.id_category}
                   onValueChange={(val) => setForm((f) => ({ ...f, id_category: val }))}
                   disabled={!form.id_machine}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={form.id_machine ? "Selecione" : "Selecione um enxame primeiro"} />
+                    <SelectValue placeholder={form.id_machine ? t("select", "Selecione") : t("selectEnxameFirst", "Selecione um enxame primeiro")} />
                   </SelectTrigger>
                   <SelectContent>
                     {professions.map((p) => (
                       <SelectItem key={p.id_category} value={String(p.id_category)}>
-                        {p.desc_category}
+                        {tx.profession(p.desc_category)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -641,16 +646,16 @@ export default function ProfileSettingsPage() {
 
           {/* Localização */}
           <section className="space-y-3">
-            <h3 className="font-semibold">Localização</h3>
+            <h3 className="font-semibold">{t("location", "Localização")}</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Estado</Label>
+                <Label>{t("stateLabel", "Estado")}</Label>
                 <Select
                   value={form.estado}
                   onValueChange={(val) => setForm((f) => ({ ...f, estado: val, municipio: "" }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={t("select", "Selecione")} />
                   </SelectTrigger>
                   <SelectContent>
                     {ESTADOS_BRASIL.map((e) => (
@@ -660,14 +665,14 @@ export default function ProfileSettingsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Município</Label>
+                <Label>{t("cityLabel", "Município")}</Label>
                 <Select
                   value={form.municipio}
                   onValueChange={(val) => setForm((f) => ({ ...f, municipio: val }))}
                   disabled={!form.estado || loadingMunicipios}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione"} />
+                    <SelectValue placeholder={loadingMunicipios ? t("loading", "Carregando...") : t("select", "Selecione")} />
                   </SelectTrigger>
                   <SelectContent>
                     {municipios.map((m) => (
@@ -678,7 +683,7 @@ export default function ProfileSettingsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="origin_zipcode">CEP de origem (Loja)</Label>
+              <Label htmlFor="origin_zipcode">{t("originZip", "CEP de origem (Loja)")}</Label>
               <Input
                 id="origin_zipcode"
                 inputMode="numeric"
@@ -693,14 +698,14 @@ export default function ProfileSettingsPage() {
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                Será usado para calcular o frete dos produtos vendidos por este perfil.
+                {t("originZipHint", "Será usado para calcular o frete dos produtos vendidos por este perfil.")}
               </p>
             </div>
           </section>
 
           <div className="flex justify-end pt-4">
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Salvando..." : "Salvar alterações"}
+              {saving ? t("saving", "Salvando...") : t("saveChanges", "Salvar alterações")}
             </Button>
           </div>
         </CardContent>
@@ -710,13 +715,13 @@ export default function ProfileSettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Redes Sociais</CardTitle>
+            <CardTitle>{t("socialNetworks", "Redes Sociais")}</CardTitle>
             <Button size="sm" variant="outline" onClick={handleOpenAddSocial}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar
+              {t("add", "Adicionar")}
             </Button>
           </div>
-          <CardDescription>Gerencie as redes sociais exibidas no seu perfil.</CardDescription>
+          <CardDescription>{t("socialNetworksDesc", "Gerencie as redes sociais exibidas no seu perfil.")}</CardDescription>
         </CardHeader>
         <CardContent>
           {profile.social_media && profile.social_media.filter((s) => s.is_active).length > 0 ? (
@@ -746,7 +751,7 @@ export default function ProfileSettingsPage() {
                   </a>
                   <div className="flex items-center gap-2 ml-3">
                     {social.icon?.toLowerCase() !== "whatsapp" && social.follower_range && (
-                      <Badge variant="secondary">{social.follower_range} seguidores</Badge>
+                      <Badge variant="secondary">{social.follower_range} {t("followers", "seguidores")}</Badge>
                     )}
                     <Button
                       size="icon"
@@ -769,7 +774,7 @@ export default function ProfileSettingsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">Sem redes sociais cadastradas.</p>
+            <p className="text-muted-foreground text-sm">{t("noSocialNetworks", "Sem redes sociais cadastradas.")}</p>
           )}
         </CardContent>
       </Card>
@@ -777,13 +782,13 @@ export default function ProfileSettingsPage() {
       {/* Status da ativação */}
       <Card>
         <CardHeader>
-          <CardTitle>Status da ativação</CardTitle>
+          <CardTitle>{t("activationStatus", "Status da ativação")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {isPaid ? (
             <>
               <p className="text-sm">
-                Ativação <strong>ativa</strong>.
+                {t("activationActivePrefix", "Ativação")} <strong>{t("activationActiveWord", "ativa")}</strong>.
               </p>
               {!refundConfirm && (
                 <div className={`rounded-md border p-3 space-y-2 ${canRefund ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
@@ -791,20 +796,20 @@ export default function ProfileSettingsPage() {
                     {refundDeadline ? (
                       canRefund ? (
                         <>
-                          Você pode solicitar reembolso integral até{" "}
-                          <strong>{refundDeadline.toLocaleDateString("pt-BR")}</strong>{" "}
-                          ({daysLeftForRefund} {daysLeftForRefund === 1 ? "dia" : "dias"} restante{daysLeftForRefund === 1 ? "" : "s"}).
-                          O perfil será desativado imediatamente.
+                          {t("refundAvailablePrefix", "Você pode solicitar reembolso integral até")}{" "}
+                          <strong>{refundDeadline.toLocaleDateString(locale)}</strong>{" "}
+                          ({daysLeftForRefund} {daysLeftForRefund === 1 ? t("dayWord", "dia") : t("daysWord", "dias")} {daysLeftForRefund === 1 ? t("remainingSingular", "restante") : t("remainingPlural", "restantes")}).{" "}
+                          {t("refundProfileDeactivated", "O perfil será desativado imediatamente.")}
                         </>
                       ) : (
                         <>
-                          Prazo de reembolso encerrado em{" "}
-                          <strong>{refundDeadline.toLocaleDateString("pt-BR")}</strong>.
-                          Para suporte sobre reembolso, entre em contato com a Freelandoo.
+                          {t("refundDeadlinePassedPrefix", "Prazo de reembolso encerrado em")}{" "}
+                          <strong>{refundDeadline.toLocaleDateString(locale)}</strong>.{" "}
+                          {t("refundSupportContact", "Para suporte sobre reembolso, entre em contato com a Freelandoo.")}
                         </>
                       )
                     ) : (
-                      "Para suporte sobre reembolso, entre em contato com a Freelandoo."
+                      t("refundSupportContact", "Para suporte sobre reembolso, entre em contato com a Freelandoo.")
                     )}
                   </p>
                   <Button
@@ -814,16 +819,15 @@ export default function ProfileSettingsPage() {
                     className={canRefund ? "border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10" : ""}
                     onClick={() => canRefund && setRefundConfirm(true)}
                   >
-                    Solicitar reembolso
+                    {t("requestRefund", "Solicitar reembolso")}
                   </Button>
                 </div>
               )}
               {refundConfirm && (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 space-y-2">
-                  <p className="text-sm font-medium text-destructive">Confirmar reembolso?</p>
+                  <p className="text-sm font-medium text-destructive">{t("confirmRefund", "Confirmar reembolso?")}</p>
                   <p className="text-xs text-muted-foreground">
-                    O valor integral será devolvido ao seu cartão em até 10 dias úteis.
-                    Seu perfil será desativado imediatamente e não aparecerá publicamente.
+                    {t("confirmRefundDesc", "O valor integral será devolvido ao seu cartão em até 10 dias úteis. Seu perfil será desativado imediatamente e não aparecerá publicamente.")}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -832,7 +836,7 @@ export default function ProfileSettingsPage() {
                       onClick={handleRefund}
                       disabled={refunding}
                     >
-                      {refunding ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Processando…</> : "Sim, quero reembolso"}
+                      {refunding ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("processing", "Processando…")}</> : t("yesWantRefund", "Sim, quero reembolso")}
                     </Button>
                     <Button
                       size="sm"
@@ -840,7 +844,7 @@ export default function ProfileSettingsPage() {
                       onClick={() => setRefundConfirm(false)}
                       disabled={refunding}
                     >
-                      Cancelar
+                      {t("cancel", "Cancelar")}
                     </Button>
                   </div>
                 </div>
@@ -849,10 +853,10 @@ export default function ProfileSettingsPage() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Este perfil ainda não foi ativado. Ele continua editável, mas não aparece publicamente.
+                {t("profileNotActivatedYet", "Este perfil ainda não foi ativado. Ele continua editável, mas não aparece publicamente.")}
               </p>
               <Button onClick={() => router.push(`/payment/taxa?profile_id=${id_profile}`)}>
-                Ativar perfil
+                {t("activateProfile", "Ativar perfil")}
               </Button>
             </>
           )}
@@ -864,10 +868,10 @@ export default function ProfileSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Link2 className="h-4 w-4 text-primary" /> Link público do perfil
+              <Link2 className="h-4 w-4 text-primary" /> {t("publicProfileLink", "Link público do perfil")}
             </CardTitle>
             <CardDescription>
-              Este é o endereço que outras pessoas usam para encontrar você. Copie ou compartilhe — funciona mesmo em status invisível (mas só fica indexado nas buscas quando publicado).
+              {t("publicProfileLinkDesc", "Este é o endereço que outras pessoas usam para encontrar você. Copie ou compartilhe — funciona mesmo em status invisível (mas só fica indexado nas buscas quando publicado).")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -884,16 +888,16 @@ export default function ProfileSettingsPage() {
                     setCopied(true)
                     setTimeout(() => setCopied(false), 2000)
                   } catch {
-                    setStatusMsg({ kind: "error", text: "Não foi possível copiar." })
+                    setStatusMsg({ kind: "error", text: t("couldNotCopy", "Não foi possível copiar.") })
                   }
                 }}
               >
                 {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-                {copied ? "Copiado!" : "Copiar link"}
+                {copied ? t("copiedExcl", "Copiado!") : t("copyLink", "Copiar link")}
               </Button>
               <Button asChild variant="outline" size="sm">
                 <a href={canonicalPath} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Abrir perfil
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> {t("openProfile", "Abrir perfil")}
                 </a>
               </Button>
               <Button
@@ -905,7 +909,7 @@ export default function ProfileSettingsPage() {
                     try {
                       await nav.share({
                         title: profile.display_name,
-                        text: `Confira meu perfil na Freelandoo: ${profile.display_name}`,
+                        text: `${t("checkMyProfile", "Confira meu perfil na Freelandoo:")} ${profile.display_name}`,
                         url: canonicalUrl,
                       })
                     } catch {
@@ -914,14 +918,14 @@ export default function ProfileSettingsPage() {
                   } else if (nav) {
                     try {
                       await nav.clipboard.writeText(canonicalUrl)
-                      setStatusMsg({ kind: "ok", text: "Link copiado (compartilhamento nativo indisponível)." })
+                      setStatusMsg({ kind: "ok", text: t("linkCopiedNativeUnavailable", "Link copiado (compartilhamento nativo indisponível).") })
                     } catch {
-                      setStatusMsg({ kind: "error", text: "Compartilhamento não suportado." })
+                      setStatusMsg({ kind: "error", text: t("shareNotSupported", "Compartilhamento não suportado.") })
                     }
                   }
                 }}
               >
-                <Send className="h-3.5 w-3.5 mr-1.5" /> Compartilhar
+                <Send className="h-3.5 w-3.5 mr-1.5" /> {t("share", "Compartilhar")}
               </Button>
             </div>
           </CardContent>
@@ -932,18 +936,18 @@ export default function ProfileSettingsPage() {
       {isPaid && (
         <Card>
           <CardHeader>
-            <CardTitle>Visibilidade pública</CardTitle>
+            <CardTitle>{t("publicVisibility", "Visibilidade pública")}</CardTitle>
             <CardDescription>
-              Controle se o perfil aparece nos enxames, buscas e vitrine. A ativação continua ativa quando você deixa invisível.
+              {t("publicVisibilityDesc", "Controle se o perfil aparece nos enxames, buscas e vitrine. A ativação continua ativa quando você deixa invisível.")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm">
               {isVisible ? <Eye className="h-4 w-4 text-green-600" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-              <span>{isVisible ? "Visível nas buscas" : "Invisível nas buscas"}</span>
+              <span>{isVisible ? t("visibleInSearch", "Visível nas buscas") : t("invisibleInSearch", "Invisível nas buscas")}</span>
             </div>
             <Button variant="outline" onClick={handleToggleVisibility} disabled={savingVisibility}>
-              {savingVisibility ? "..." : isVisible ? "Deixar invisível" : "Tornar visível"}
+              {savingVisibility ? "..." : isVisible ? t("makeInvisible", "Deixar invisível") : t("makeVisible", "Tornar visível")}
             </Button>
           </CardContent>
         </Card>
@@ -952,15 +956,15 @@ export default function ProfileSettingsPage() {
       {/* Ações perigosas */}
       <Card className="border-destructive/40">
         <CardHeader>
-          <CardTitle className="text-destructive">Ações perigosas</CardTitle>
+          <CardTitle className="text-destructive">{t("dangerActions", "Ações perigosas")}</CardTitle>
           <CardDescription>
-            A exclusão remove o perfil das buscas e do seu painel. O histórico de pagamentos é preservado para auditoria.
+            {t("dangerActionsDesc", "A exclusão remove o perfil das buscas e do seu painel. O histórico de pagamentos é preservado para auditoria.")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
             <Trash2 className="h-4 w-4 mr-2" />
-            {deleting ? "Excluindo..." : "Excluir perfil"}
+            {deleting ? t("deletingProfile", "Excluindo...") : t("deleteProfile", "Excluir perfil")}
           </Button>
         </CardContent>
       </Card>
@@ -969,18 +973,18 @@ export default function ProfileSettingsPage() {
       <Dialog open={isSocialMediaModalOpen} onOpenChange={setIsSocialMediaModalOpen}>
         <DialogContent className="fl-root fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>{editingSocial ? "Editar Rede Social" : "Adicionar Rede Social"}</DialogTitle>
+            <DialogTitle>{editingSocial ? t("editSocialTitle", "Editar Rede Social") : t("addSocialTitle", "Adicionar Rede Social")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {!editingSocial && (
               <div className="space-y-2">
-                <Label>Rede Social</Label>
+                <Label>{t("socialNetwork", "Rede Social")}</Label>
                 <Select
                   value={socialForm.id_social_media_type}
                   onValueChange={(v) => setSocialForm((prev) => ({ ...prev, id_social_media_type: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione a rede social" />
+                    <SelectValue placeholder={t("selectSocialNetwork", "Selecione a rede social")} />
                   </SelectTrigger>
                   <SelectContent>
                     {socialMediaMeta.types.map((t) => (
@@ -995,41 +999,41 @@ export default function ProfileSettingsPage() {
 
             {isWhatsapp ? (
               <div className="space-y-2">
-                <Label htmlFor="social-phone">Número de telefone</Label>
+                <Label htmlFor="social-phone">{t("phoneNumber", "Número de telefone")}</Label>
                 <Input
                   id="social-phone"
                   type="tel"
-                  placeholder="Ex: 11999999999"
+                  placeholder={t("phoneNumberPlaceholder", "Ex: 11999999999")}
                   value={socialForm.phone_number}
                   onChange={(e) => setSocialForm((prev) => ({ ...prev, phone_number: e.target.value }))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  O link do WhatsApp e a mensagem padrão são gerados automaticamente.
+                  {t("whatsappAutoHint", "O link do WhatsApp e a mensagem padrão são gerados automaticamente.")}
                 </p>
               </div>
             ) : (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="social-url">
-                    {editingSocial ? `Link (${editingSocial.desc_social_media_type})` : "Link do perfil"}
+                    {editingSocial ? `${t("link", "Link")} (${editingSocial.desc_social_media_type})` : t("profileLink", "Link do perfil")}
                   </Label>
                   <Input
                     id="social-url"
-                    placeholder="https://instagram.com/seu_usuario"
+                    placeholder={t("socialUrlPlaceholder", "https://instagram.com/seu_usuario")}
                     value={socialForm.url}
                     onChange={(e) => setSocialForm((prev) => ({ ...prev, url: e.target.value }))}
                   />
-                  <p className="text-xs text-muted-foreground">Cole o link completo do seu perfil.</p>
+                  <p className="text-xs text-muted-foreground">{t("pasteFullLink", "Cole o link completo do seu perfil.")}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faixa de Seguidores <span className="text-muted-foreground">(opcional)</span></Label>
+                  <Label>{t("followerRange", "Faixa de Seguidores")} <span className="text-muted-foreground">{t("optionalParen", "(opcional)")}</span></Label>
                   <Select
                     value={socialForm.id_follower_range}
                     onValueChange={(v) => setSocialForm((prev) => ({ ...prev, id_follower_range: v }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a faixa" />
+                      <SelectValue placeholder={t("selectRange", "Selecione a faixa")} />
                     </SelectTrigger>
                     <SelectContent>
                       {socialMediaMeta.follower_ranges.map((r) => (
@@ -1045,7 +1049,7 @@ export default function ProfileSettingsPage() {
 
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setIsSocialMediaModalOpen(false)} disabled={isSubmittingSocial}>
-                Cancelar
+                {t("cancel", "Cancelar")}
               </Button>
               <Button
                 onClick={handleSaveSocial}
@@ -1055,7 +1059,7 @@ export default function ProfileSettingsPage() {
                   (isWhatsapp ? !socialForm.phone_number : !socialForm.url.trim())
                 }
               >
-                {isSubmittingSocial ? "Salvando..." : "Salvar"}
+                {isSubmittingSocial ? t("saving", "Salvando...") : t("save", "Salvar")}
               </Button>
             </div>
           </div>
@@ -1070,8 +1074,8 @@ export default function ProfileSettingsPage() {
           outputHeight={AVATAR_IMAGE_OUTPUT.height}
           maxSizeMB={2}
           mediaType="profile_avatar"
-          title="Ajustar foto de perfil"
-          description="Ajuste sua foto de perfil."
+          title={t("adjustAvatarTitle", "Ajustar foto de perfil")}
+          description={t("adjustAvatarDesc", "Ajuste sua foto de perfil.")}
           onCancel={() => setAvatarCropFile(null)}
           onConfirm={handleAvatarCropConfirm}
         />

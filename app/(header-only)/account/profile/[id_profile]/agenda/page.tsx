@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import AgendaPageClient, { type ClanMember } from "@/components/agenda/AgendaPageClient"
 import { LoadingState, PageShell } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 export default function AgendaPage() {
   const params = useParams()
+  const t = useTranslations("Account")
   const profileId = params.id_profile as string
 
   const [resolved, setResolved] = useState<{
@@ -38,7 +40,7 @@ export default function AgendaPage() {
     return (
       <PageShell className="md:pl-[80px]">
         <div className="relative z-10 px-4 py-16">
-          <LoadingState label="Carregando agenda..." />
+          <LoadingState label={t("loadingAgenda", "Carregando agenda...")} />
         </div>
       </PageShell>
     )
