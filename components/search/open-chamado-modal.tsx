@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Loader2, MessageSquarePlus, X, ArrowRight, Check, Briefcase, Package, GraduationCap } from "lucide-react"
+import { Loader2, X, ArrowLeft, Check, Briefcase, Package, GraduationCap } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { getToken } from "@/lib/auth"
@@ -346,7 +346,8 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
           </button>
         </div>
 
-        {/* ---------- step: machine (service/course) ---------- */}
+        {/* ---------- step: machine (service/course) ----------
+            1 clique no enxame já avança pras profissões (sem "Continuar"). */}
         {step === "machine" && (
           <div className="px-5 py-5">
             <p className="text-sm text-white/75">{t("chooseMachine", "Escolha o Enxame que vai receber sua mensagem:")}</p>
@@ -364,7 +365,11 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     <button
                       key={m.id_machine}
                       type="button"
-                      onClick={() => setSelectedMachineId(m.id_machine)}
+                      onClick={() => {
+                        setSelectedMachineId(m.id_machine)
+                        setSelectedProfessionId(null)
+                        setStep("profession")
+                      }}
                       className={cn(
                         "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[13px] transition",
                         isActive
@@ -384,26 +389,31 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
               <Button variant="ghost" onClick={() => onOpenChange(false)}>
                 {t("cancel", "Cancelar")}
               </Button>
-              <Button
-                onClick={() => setStep("profession")}
-                disabled={!selectedMachineId}
-                className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
-              >
-                {t("continue", "Continuar")}
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
             </div>
           </div>
         )}
 
-        {/* ---------- step: profession (service/course) ---------- */}
+        {/* ---------- step: profession (service/course) ----------
+            1 clique na profissão já vai pro final (descrição + região). */}
         {step === "profession" && (
           <div className="px-5 py-5">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">{t("machineLabel", "Enxame")}</p>
-              <p className="mt-0.5 text-sm font-semibold" style={{ color: accent }}>
-                {trimmedMachine}
-              </p>
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              {!defaultMachineId && (
+                <button
+                  type="button"
+                  onClick={() => setStep("machine")}
+                  aria-label={t("back", "Voltar")}
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">{t("machineLabel", "Enxame")}</p>
+                <p className="mt-0.5 truncate text-sm font-semibold" style={{ color: accent }}>
+                  {trimmedMachine}
+                </p>
+              </div>
             </div>
             <p className="mt-4 text-sm text-white/75">{t("chooseProfession", "Escolha a profissão dentro do enxame:")}</p>
             {loadingProfessions ? (
@@ -420,7 +430,10 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     <button
                       key={p.id_category}
                       type="button"
-                      onClick={() => setSelectedProfessionId(p.id_category)}
+                      onClick={() => {
+                        setSelectedProfessionId(p.id_category)
+                        setStep("compose")
+                      }}
                       className={cn(
                         "flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-[12.5px] transition",
                         isActive
@@ -442,14 +455,6 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                 onClick={() => (defaultMachineId ? onOpenChange(false) : setStep("machine"))}
               >
                 {defaultMachineId ? t("cancel", "Cancelar") : t("back", "Voltar")}
-              </Button>
-              <Button
-                onClick={() => setStep("compose")}
-                disabled={!selectedProfessionId}
-                className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
-              >
-                {t("continue", "Continuar")}
-                <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -473,7 +478,10 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
                     <button
                       key={p.id_product_category}
                       type="button"
-                      onClick={() => setSelectedProductCategoryId(p.id_product_category)}
+                      onClick={() => {
+                        setSelectedProductCategoryId(p.id_product_category)
+                        setStep("compose")
+                      }}
                       className={cn(
                         "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-[13px] transition",
                         isActive
@@ -492,14 +500,6 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
             <div className="mt-5 flex items-center justify-between gap-2">
               <Button variant="ghost" onClick={() => onOpenChange(false)}>
                 {t("cancel", "Cancelar")}
-              </Button>
-              <Button
-                onClick={() => setStep("compose")}
-                disabled={!selectedProductCategoryId}
-                className="bg-yellow-400 text-zinc-950 hover:bg-yellow-300"
-              >
-                {t("continue", "Continuar")}
-                <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
           </div>

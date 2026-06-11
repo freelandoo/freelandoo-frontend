@@ -1707,7 +1707,8 @@
     "backToCategories": "Volver a las categorías",
     "searchBrandPlaceholder": "Buscar marca…",
     "minAria": "Mínimo",
-    "maxAria": "Máximo"
+    "maxAria": "Máximo",
+    "backToEnxames": "Volver a los enjambres"
   },
   "Messages": {
     "loginPromptTitle": "Inicia sesión para ver tus mensajes",

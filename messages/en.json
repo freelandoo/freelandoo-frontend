@@ -1707,7 +1707,8 @@
     "backToCategories": "Back to categories",
     "searchBrandPlaceholder": "Search brand…",
     "minAria": "Minimum",
-    "maxAria": "Maximum"
+    "maxAria": "Maximum",
+    "backToEnxames": "Back to swarms"
   },
   "Messages": {
     "loginPromptTitle": "Sign in to see your messages",
