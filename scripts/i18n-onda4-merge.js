@@ -287,6 +287,49 @@ Object.assign(ACCOUNT, {
   workTitlePlaceholder: ["Trabalho que fiz ontem...", "Work I did yesterday...", "Trabajo que hice ayer..."],
 })
 
+// Slice 4 — _components/courses-section.tsx (Meus Cursos: criados/comprados)
+Object.assign(ACCOUNT, {
+  byCreator: ["por", "by", "por"],
+  courseActions: ["Ações do curso", "Course actions", "Acciones del curso"],
+  courseCreatedPlural: ["criados", "created", "creados"],
+  courseCreatedSingular: ["criado", "created", "creado"],
+  courseDeleted: ["Curso excluído", "Course deleted", "Curso eliminado"],
+  coursePublishedPlural: ["publicados", "published", "publicados"],
+  coursePublishedSingular: ["publicado", "published", "publicado"],
+  courseWordPlural: ["cursos", "courses", "cursos"],
+  courseWordSingular: ["curso", "course", "curso"],
+  createCourseError: ["Falha ao criar curso", "Failed to create course", "Error al crear el curso"],
+  createdByMe: ["Criados por mim", "Created by me", "Creados por mí"],
+  createFirstCourse: ["Criar meu primeiro curso", "Create my first course", "Crear mi primer curso"],
+  deleteCourseDesc: ["Esta ação não pode ser desfeita. O curso, seus módulos e aulas serão removidos.", "This action cannot be undone. The course, its modules and lessons will be removed.", "Esta acción no se puede deshacer. El curso, sus módulos y clases serán eliminados."],
+  deleteCourseError: ["Falha ao excluir curso", "Failed to delete course", "Error al eliminar el curso"],
+  deleteCourseQuestion: ["Excluir curso?", "Delete course?", "¿Eliminar curso?"],
+  deletePermanently: ["Excluir definitivamente", "Delete permanently", "Eliminar definitivamente"],
+  enrolled: ["Matriculado", "Enrolled", "Inscrito"],
+  exploreCourses: ["Explorar cursos", "Explore courses", "Explorar cursos"],
+  inDraft: ["em rascunho", "in draft", "en borrador"],
+  lessonsWord: ["aulas", "lessons", "clases"],
+  manageCourse: ["Gerenciar curso", "Manage course", "Gestionar curso"],
+  modulesShort: ["mód.", "mod.", "mód."],
+  myCourses: ["Meus Cursos", "My Courses", "Mis Cursos"],
+  newCourse: ["Novo Curso", "New Course", "Nuevo Curso"],
+  newCourseDefaultTitle: ["Novo curso", "New course", "Nuevo curso"],
+  noCoursesCreatedDesc: ["Crie cursos gratuitamente. Defina módulos, aulas, vídeos e materiais. Para publicar e vender, o curso precisa ter no mínimo R$ 5,00.", "Create courses for free. Set up modules, lessons, videos and materials. To publish and sell, the course must be at least R$ 5.00.", "Crea cursos gratis. Define módulos, clases, videos y materiales. Para publicar y vender, el curso debe costar al menos R$ 5,00."],
+  noCoursesCreatedTitle: ["Você ainda não criou nenhum curso", "You haven't created any course yet", "Aún no has creado ningún curso"],
+  noCoursesPurchasedDesc: ["Explore o feed do Freelandoo para descobrir cursos publicados por outros criadores.", "Explore the Freelandoo feed to discover courses published by other creators.", "Explora el feed de Freelandoo para descubrir cursos publicados por otros creadores."],
+  noCoursesPurchasedTitle: ["Você ainda não comprou nenhum curso", "You haven't purchased any course yet", "Aún no has comprado ningún curso"],
+  openCourse: ["Abrir curso", "Open course", "Abrir curso"],
+  progress: ["Progresso", "Progress", "Progreso"],
+  purchasedByMe: ["Comprados por mim", "Purchased by me", "Comprados por mí"],
+  statusDraft: ["Rascunho", "Draft", "Borrador"],
+  statusPaused: ["Pausado", "Paused", "Pausado"],
+  statusPublished: ["Publicado", "Published", "Publicado"],
+  studentsWord: ["alunos", "students", "estudiantes"],
+  viewCoursePublicPage: ["Ver página pública do curso", "View course public page", "Ver la página pública del curso"],
+  viewPublicPage: ["Ver página pública", "View public page", "Ver página pública"],
+  withActiveAccess: ["com acesso ativo", "with active access", "con acceso activo"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {

@@ -46,6 +46,7 @@ import {
 } from "@/hooks/use-purchased-courses"
 import { formatPriceBRL } from "@/lib/courses/format"
 import { useActionConsent } from "@/hooks/use-action-consent"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type CoursesTab = "created" | "purchased"
 
@@ -115,24 +116,25 @@ function toPurchasedCardData(c: PurchasedCourse): CourseCardData {
 // ---------------------------------------------------------------------------
 
 function StatusBadge({ status }: { status: CourseStatus }) {
+  const t = useTranslations("Account")
   if (status === "published") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-        Publicado
+        {t("statusPublished", "Publicado")}
       </span>
     )
   }
   if (status === "paused") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
-        Pausado
+        {t("statusPaused", "Pausado")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
-      Rascunho
+      {t("statusDraft", "Rascunho")}
     </span>
   )
 }
@@ -155,6 +157,7 @@ function CourseCard({
   onDelete?: (id: string) => void
 }) {
   const router = useRouter()
+  const t = useTranslations("Account")
   const isOwner = variant === "created"
   const progress = course.progress_percent ?? 0
 
@@ -168,7 +171,7 @@ function CourseCard({
             : router.push(`/account/courses/${course.id}/watch`)
         }
         className="relative block aspect-[4/5] w-full overflow-hidden bg-zinc-900/80 transition"
-        aria-label={`Abrir curso ${course.title}`}
+        aria-label={`${t("openCourse", "Abrir curso")} ${course.title}`}
       >
         {course.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -194,7 +197,7 @@ function CourseCard({
         )}
         {!isOwner && (
           <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-200 backdrop-blur-sm">
-            Matriculado
+            {t("enrolled", "Matriculado")}
           </span>
         )}
         {!isOwner && (
@@ -210,7 +213,7 @@ function CourseCard({
             <button
               type="button"
               className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 shadow-[0_8px_20px_rgba(0,0,0,0.22)] backdrop-blur-sm transition hover:border-primary/40 hover:text-primary"
-              aria-label="Ações do curso"
+              aria-label={t("courseActions", "Ações do curso")}
             >
               <Settings className="h-3.5 w-3.5" />
             </button>
@@ -218,14 +221,14 @@ function CourseCard({
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuItem onClick={() => onManage?.(course.id)}>
               <Edit className="h-4 w-4 mr-2" />
-              Gerenciar curso
+              {t("manageCourse", "Gerenciar curso")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onPreview?.(course.id)}
               disabled={course.status !== "published" || !course.slug}
             >
               <Eye className="h-4 w-4 mr-2" />
-              Ver página pública
+              {t("viewPublicPage", "Ver página pública")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -233,7 +236,7 @@ function CourseCard({
               onClick={() => onDelete?.(course.id)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
+              {t("delete", "Excluir")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -249,7 +252,7 @@ function CourseCard({
         <Link
           href={`/cursos/${course.slug}`}
           className="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-zinc-950/85 text-white/85 backdrop-blur-sm transition hover:border-primary/40 hover:text-primary"
-          aria-label="Ver página pública do curso"
+          aria-label={t("viewCoursePublicPage", "Ver página pública do curso")}
         >
           <Eye className="h-3.5 w-3.5" />
         </Link>
@@ -263,26 +266,28 @@ function CourseCard({
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-white/55 md:text-[11px]">
           <span className="inline-flex items-center gap-1">
             <BookOpen className="h-3 w-3" />
-            {course.modules_count} mód.
+            {course.modules_count} {t("modulesShort", "mód.")}
           </span>
           <span className="inline-flex items-center gap-1">
             <PlaySquare className="h-3 w-3" />
-            {course.lessons_count} aulas
+            {course.lessons_count} {t("lessonsWord", "aulas")}
           </span>
           {isOwner && (
             <span className="inline-flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {course.students_count} alunos
+              {course.students_count} {t("studentsWord", "alunos")}
             </span>
           )}
           {!isOwner && course.creator_name && (
-            <span className="truncate">por {course.creator_name}</span>
+            <span className="truncate">
+              {t("byCreator", "por")} {course.creator_name}
+            </span>
           )}
         </div>
         {!isOwner && (
           <div className="mt-2">
             <div className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-white/35">
-              <span>Progresso</span>
+              <span>{t("progress", "Progresso")}</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
@@ -321,6 +326,7 @@ function EmptyState({
   variant: CoursesTab
   onCreate?: () => void
 }) {
+  const t = useTranslations("Account")
   if (variant === "created") {
     return (
       <div className="rounded-[1.5rem] border border-dashed border-primary/25 bg-[radial-gradient(circle_at_top_left,rgba(242,196,9,0.12),transparent_34%),rgba(255,255,255,0.018)] p-8 text-center sm:p-10">
@@ -328,11 +334,13 @@ function EmptyState({
           <GraduationCap className="h-7 w-7 text-primary" />
         </div>
         <p className="text-sm font-medium text-white/85">
-          Você ainda não criou nenhum curso
+          {t("noCoursesCreatedTitle", "Você ainda não criou nenhum curso")}
         </p>
         <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
-          Crie cursos gratuitamente. Defina módulos, aulas, vídeos e materiais.
-          Para publicar e vender, o curso precisa ter no mínimo R$ 5,00.
+          {t(
+            "noCoursesCreatedDesc",
+            "Crie cursos gratuitamente. Defina módulos, aulas, vídeos e materiais. Para publicar e vender, o curso precisa ter no mínimo R$ 5,00.",
+          )}
         </p>
         <Button
           type="button"
@@ -340,7 +348,7 @@ function EmptyState({
           className="mt-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Criar meu primeiro curso
+          {t("createFirstCourse", "Criar meu primeiro curso")}
         </Button>
       </div>
     )
@@ -351,17 +359,19 @@ function EmptyState({
         <ShoppingBag className="h-7 w-7 text-primary/80" />
       </div>
       <p className="text-sm font-medium text-white/85">
-        Você ainda não comprou nenhum curso
+        {t("noCoursesPurchasedTitle", "Você ainda não comprou nenhum curso")}
       </p>
       <p className="mx-auto mt-1 max-w-md text-xs text-white/55">
-        Explore o feed do Freelandoo para descobrir cursos publicados por
-        outros criadores.
+        {t(
+          "noCoursesPurchasedDesc",
+          "Explore o feed do Freelandoo para descobrir cursos publicados por outros criadores.",
+        )}
       </p>
       <Link
         href="/feed"
         className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition hover:bg-primary/90"
       >
-        Explorar cursos
+        {t("exploreCourses", "Explorar cursos")}
       </Link>
     </div>
   )
@@ -373,6 +383,7 @@ function EmptyState({
 
 export function CoursesSection(_props: Props) {
   const router = useRouter()
+  const t = useTranslations("Account")
   const { courses, isLoading, error, createCourse, deleteCourse } =
     useMyCourses()
   const {
@@ -398,14 +409,20 @@ export function CoursesSection(_props: Props) {
     creatingRef.current = true
     setCreating(true)
     try {
-      const created = await createCourse({ title: "Novo curso" })
+      const created = await createCourse({
+        title: t("newCourseDefaultTitle", "Novo curso"),
+      })
       router.push(`/account/courses/${created.id}`)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao criar curso")
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("createCourseError", "Falha ao criar curso"),
+      )
       creatingRef.current = false
       setCreating(false)
     }
-  }, [createCourse, router, ensureConsent])
+  }, [createCourse, router, ensureConsent, t])
 
   // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
   useEffect(() => {
@@ -430,10 +447,22 @@ export function CoursesSection(_props: Props) {
     [courses, purchasedCourses],
   )
 
+  const createdWord =
+    counts.createdTotal === 1
+      ? t("courseCreatedSingular", "criado")
+      : t("courseCreatedPlural", "criados")
+  const publishedWord =
+    counts.createdPublished === 1
+      ? t("coursePublishedSingular", "publicado")
+      : t("coursePublishedPlural", "publicados")
+  const purchasedWord =
+    counts.purchasedTotal === 1
+      ? t("courseWordSingular", "curso")
+      : t("courseWordPlural", "cursos")
   const subline =
     tab === "created"
-      ? `${counts.createdTotal} criado${counts.createdTotal === 1 ? "" : "s"} · ${counts.createdPublished} publicado${counts.createdPublished === 1 ? "" : "s"} · ${counts.createdDraft} em rascunho`
-      : `${counts.purchasedTotal} curso${counts.purchasedTotal === 1 ? "" : "s"} com acesso ativo`
+      ? `${counts.createdTotal} ${createdWord} · ${counts.createdPublished} ${publishedWord} · ${counts.createdDraft} ${t("inDraft", "em rascunho")}`
+      : `${counts.purchasedTotal} ${purchasedWord} ${t("withActiveAccess", "com acesso ativo")}`
 
   function goToManage(id: string) {
     router.push(`/account/courses/${id}`)
@@ -450,11 +479,13 @@ export function CoursesSection(_props: Props) {
     setIsDeleting(true)
     try {
       await deleteCourse(deletingId)
-      toast.success("Curso excluído")
+      toast.success(t("courseDeleted", "Curso excluído"))
       setDeletingId(null)
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Falha ao excluir curso",
+        err instanceof Error
+          ? err.message
+          : t("deleteCourseError", "Falha ao excluir curso"),
       )
     } finally {
       setIsDeleting(false)
@@ -471,7 +502,7 @@ export function CoursesSection(_props: Props) {
           <div>
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
               <GraduationCap className="h-4 w-4 text-primary" />
-              Meus Cursos
+              {t("myCourses", "Meus Cursos")}
             </h2>
             <p className="mt-1 text-xs text-white/50">{subline}</p>
           </div>
@@ -491,7 +522,7 @@ export function CoursesSection(_props: Props) {
               ) : (
                 <Plus className="h-3.5 w-3.5" />
               )}
-              Novo Curso
+              {t("newCourse", "Novo Curso")}
             </button>
           )}
         </header>
@@ -508,7 +539,7 @@ export function CoursesSection(_props: Props) {
             }`}
           >
             <GraduationCap className="h-3.5 w-3.5" />
-            Criados por mim
+            {t("createdByMe", "Criados por mim")}
             <span
               className={`ml-1 rounded-full px-1.5 py-px text-[10px] ${
                 tab === "created"
@@ -529,7 +560,7 @@ export function CoursesSection(_props: Props) {
             }`}
           >
             <ShoppingBag className="h-3.5 w-3.5" />
-            Comprados por mim
+            {t("purchasedByMe", "Comprados por mim")}
             <span
               className={`ml-1 rounded-full px-1.5 py-px text-[10px] ${
                 tab === "purchased"
@@ -624,10 +655,12 @@ export function CoursesSection(_props: Props) {
       >
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Excluir curso?</DialogTitle>
+            <DialogTitle>{t("deleteCourseQuestion", "Excluir curso?")}</DialogTitle>
             <DialogDescription>
-              Esta ação não pode ser desfeita. O curso, seus módulos e aulas
-              serão removidos.
+              {t(
+                "deleteCourseDesc",
+                "Esta ação não pode ser desfeita. O curso, seus módulos e aulas serão removidos.",
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
@@ -637,7 +670,7 @@ export function CoursesSection(_props: Props) {
               onClick={() => setDeletingId(null)}
               disabled={isDeleting}
             >
-              Cancelar
+              {t("cancel", "Cancelar")}
             </Button>
             <Button
               type="button"
@@ -648,7 +681,7 @@ export function CoursesSection(_props: Props) {
               {isDeleting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              Excluir definitivamente
+              {t("deletePermanently", "Excluir definitivamente")}
             </Button>
           </DialogFooter>
         </DialogContent>
