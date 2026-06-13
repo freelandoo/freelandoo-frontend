@@ -2751,7 +2751,12 @@
     "serviceResponseReceived": "{who} respondeu seu chamado",
     "courseResponseReceived": "{who} respondeu seu pedido de curso",
     "productResponseNew": "{who} respondeu seu pedido de produto",
-    "productRequestNew": "Novo pedido de produto compatível com você"
+    "productRequestNew": "Novo pedido de produto compatível com você",
+    "clanInvite": "{who} convidou você para um clan",
+    "clanInviteNamed": "{who} convidou você para o clan {clan}",
+    "clanMemberJoined": "{who} entrou no seu clan",
+    "liveGiftReceived": "{who} te enviou um presente na live",
+    "liveGiftNamed": "{who} te enviou {gift} na live"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",

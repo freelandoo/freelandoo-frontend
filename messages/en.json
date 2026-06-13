@@ -3337,7 +3337,12 @@
     "serviceResponseReceived": "{who} replied to your request",
     "courseResponseReceived": "{who} replied to your course request",
     "productResponseNew": "{who} replied to your product request",
-    "productRequestNew": "New product request matching you"
+    "productRequestNew": "New product request matching you",
+    "clanInvite": "{who} invited you to a clan",
+    "clanInviteNamed": "{who} invited you to the clan {clan}",
+    "clanMemberJoined": "{who} joined your clan",
+    "liveGiftReceived": "{who} sent you a gift on the live",
+    "liveGiftNamed": "{who} sent you {gift} on the live"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",

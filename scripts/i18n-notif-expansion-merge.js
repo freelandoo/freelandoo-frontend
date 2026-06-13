@@ -19,6 +19,12 @@ const NOTIFICATIONS = {
     "New product request matching you",
     "Nuevo pedido de producto compatible contigo",
   ],
+  // Slice F — social extra
+  clanInvite: ["{who} convidou você para um clan", "{who} invited you to a clan", "{who} te invitó a un clan"],
+  clanInviteNamed: ["{who} convidou você para o clan {clan}", "{who} invited you to the clan {clan}", "{who} te invitó al clan {clan}"],
+  clanMemberJoined: ["{who} entrou no seu clan", "{who} joined your clan", "{who} se unió a tu clan"],
+  liveGiftReceived: ["{who} te enviou um presente na live", "{who} sent you a gift on the live", "{who} te envió un regalo en el vivo"],
+  liveGiftNamed: ["{who} te enviou {gift} na live", "{who} sent you {gift} on the live", "{who} te envió {gift} en el vivo"],
 }
 
 const GROUPS = { Notifications: NOTIFICATIONS }

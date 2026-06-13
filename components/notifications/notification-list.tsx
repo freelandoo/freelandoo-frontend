@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -81,6 +81,20 @@ function labelFor(item: NotificationItem, t: TFn) {
     }
     case "product_request_new":
       return t("productRequestNew", "Novo pedido de produto compatível com você")
+    case "clan_invite": {
+      const clan = (item.payload as { preview?: string })?.preview
+      return clan
+        ? sub("clanInviteNamed", "{who} convidou você para o clan {clan}").replace("{clan}", clan)
+        : sub("clanInvite", "{who} convidou você para um clan")
+    }
+    case "clan_member_joined":
+      return sub("clanMemberJoined", "{who} entrou no seu clan")
+    case "live_gift_received": {
+      const giftName = (item.payload as { preview?: string })?.preview
+      return giftName
+        ? sub("liveGiftNamed", "{who} te enviou {gift} na live").replace("{gift}", giftName)
+        : sub("liveGiftReceived", "{who} te enviou um presente na live")
+    }
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -110,6 +124,9 @@ function iconFor(type: string) {
     case "service_response_received": return <ClipboardList className="h-3.5 w-3.5" />
     case "product_response_new":
     case "product_request_new": return <PackageSearch className="h-3.5 w-3.5" />
+    case "clan_invite":
+    case "clan_member_joined": return <Users className="h-3.5 w-3.5" />
+    case "live_gift_received": return <Gift className="h-3.5 w-3.5" />
     default: return null
   }
 }
@@ -138,6 +155,11 @@ function hrefFor(item: NotificationItem): string {
       return "/mensagens?tab=os"
     case "product_request_new":
       return "/mensagens?tab=os"
+    case "clan_invite":
+    case "clan_member_joined":
+      return "/account/clans"
+    case "live_gift_received":
+      return "/account"
     default:
       return "/account"
   }
