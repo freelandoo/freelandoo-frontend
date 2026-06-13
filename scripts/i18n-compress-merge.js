@@ -107,7 +107,16 @@ const COMPRESS = {
   ],
 }
 
-const GROUPS = { Compress: COMPRESS }
+// Atalho proativo no composer (PickStep) → /comprimir. Vive no ns Composer.
+const COMPOSER = {
+  "pick.compressLink": [
+    "Arquivo grande? Comprimir mídia",
+    "File too large? Compress media",
+    "¿Archivo muy grande? Comprimir medios",
+  ],
+}
+
+const GROUPS = { Compress: COMPRESS, Composer: COMPOSER }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

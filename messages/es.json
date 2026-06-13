@@ -2436,7 +2436,8 @@
     "errors.createItem": "Error al crear el ítem.",
     "errors.createItemResponse": "Respuesta inesperada al crear el ítem.",
     "errors.uploadMedia": "Ítem creado, pero falló la subida del medio.",
-    "errors.publish": "Error al publicar."
+    "errors.publish": "Error al publicar.",
+    "pick.compressLink": "¿Archivo muy grande? Comprimir medios"
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",

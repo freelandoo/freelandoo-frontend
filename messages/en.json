@@ -2456,7 +2456,8 @@
     "errors.createItem": "Error creating item.",
     "errors.createItemResponse": "Unexpected response while creating item.",
     "errors.uploadMedia": "Item created, but media upload failed.",
-    "errors.publish": "Failed to publish."
+    "errors.publish": "Failed to publish.",
+    "pick.compressLink": "File too large? Compress media"
   },
   "Chamado": {
     "titleService": "Open a service request",

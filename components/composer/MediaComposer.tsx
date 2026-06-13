@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  AlertCircle, ArrowLeft, ArrowRight, ImagePlus, Loader2, Music,
+  AlertCircle, ArrowLeft, ArrowRight, ImagePlus, Loader2, Minimize2, Music,
   SlidersHorizontal, Type, Layers, Video, X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -727,6 +727,14 @@ function PickStep({ onPick, onCamera, error }: { onPick: () => void; onCamera?: 
           <AlertCircle className="h-4 w-4 shrink-0" /> {error}
         </div>
       )}
+      <a
+        href="/comprimir"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#a89f8d] underline-offset-2 transition hover:text-[#F2B705] hover:underline"
+      >
+        <Minimize2 className="h-3.5 w-3.5" /> {t("pick.compressLink", "Arquivo grande? Comprimir mídia")}
+      </a>
     </div>
   )
 }

@@ -2433,7 +2433,8 @@
     "errors.createItem": "Erro ao criar item.",
     "errors.createItemResponse": "Resposta inesperada ao criar item.",
     "errors.uploadMedia": "Item criado, mas o upload da mídia falhou.",
-    "errors.publish": "Falha ao publicar."
+    "errors.publish": "Falha ao publicar.",
+    "pick.compressLink": "Arquivo grande? Comprimir mídia"
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",
