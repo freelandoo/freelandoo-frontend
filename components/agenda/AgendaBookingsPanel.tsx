@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { ptBR, enUS, es } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Clock, Sparkles } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -14,6 +14,7 @@ import {
   groupBookingsByDate,
   sortBookingsByDateTime,
 } from "@/components/agenda/agenda-booking-utils"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 export interface AgendaBookingRow {
@@ -35,7 +36,10 @@ export interface AgendaBookingRow {
   client_profile_display_name?: string | null
 }
 
+type TFn = (key: string, fallback?: string) => string
 type UiStatusKey = "confirmed" | "in_progress" | "completed" | "canceled"
+
+const DATE_FNS_LOCALES: Record<string, typeof ptBR> = { "pt-BR": ptBR, en: enUS, es }
 
 function uiStatus(status: string): UiStatusKey {
   if (status === "completed") return "completed"
@@ -45,20 +49,19 @@ function uiStatus(status: string): UiStatusKey {
   return "in_progress"
 }
 
-const UI_STATUS_LABEL: Record<UiStatusKey, string> = {
-  confirmed: "Confirmado",
-  in_progress: "Em andamento",
-  completed: "Finalizado",
-  canceled: "Cancelado",
+const UI_STATUS_LABEL: Record<UiStatusKey, { key: string; pt: string }> = {
+  confirmed: { key: "statusConfirmed", pt: "Confirmado" },
+  in_progress: { key: "statusInProgress", pt: "Em andamento" },
+  completed: { key: "statusCompleted", pt: "Finalizado" },
+  canceled: { key: "statusCanceled", pt: "Cancelado" },
 }
 
+/* Pílulas de status no papel (cores semânticas do tabloide). */
 const UI_STATUS_CLASS: Record<UiStatusKey, string> = {
-  confirmed:
-    "border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-300/95 ring-1 ring-emerald-500/15",
-  in_progress:
-    "border-yellow-500/30 bg-yellow-400/[0.08] text-yellow-200 ring-1 ring-yellow-400/15",
-  completed: "border-zinc-600/60 bg-zinc-800/40 text-zinc-300 ring-1 ring-white/[0.04]",
-  canceled: "border-rose-500/20 bg-rose-500/[0.06] text-rose-200/90 ring-1 ring-rose-500/12",
+  confirmed: "bg-[#00876B] text-white",
+  in_progress: "bg-[#F2B705] text-[#0B0B0D]",
+  completed: "bg-[#0B0B0D] text-[#F1EDE2]",
+  canceled: "bg-[#9A3412] text-white",
 }
 
 function initials(name: string) {
@@ -89,28 +92,33 @@ export function AgendaBookingsPanel({
   onGoCurrentWeek,
   onClearDay,
 }: AgendaBookingsPanelProps) {
+  const t = useTranslations("Agenda")
+  const locale = useLocale()
+  const dfLocale = DATE_FNS_LOCALES[locale] || ptBR
+
   const { start: wStart, end: wEnd } = agendaWeekRange(weekAnchor)
-  const weekRangeLabel = `${format(wStart, "d MMM", { locale: ptBR })} — ${format(wEnd, "d MMM yyyy", { locale: ptBR })}`
+  const weekRangeLabel = `${format(wStart, "d MMM", { locale: dfLocale })} — ${format(wEnd, "d MMM yyyy", { locale: dfLocale })}`
 
   const grouped = pickedDay === null ? groupBookingsByDate(bookings) : null
-  const flatDay =
-    pickedDay !== null ? sortBookingsByDateTime(bookings) : null
+  const flatDay = pickedDay !== null ? sortBookingsByDateTime(bookings) : null
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-800/80 bg-gradient-to-b from-zinc-900/50 to-zinc-950/80 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md">
-      <header className="flex flex-col gap-4 border-b border-zinc-800/80 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex min-h-0 flex-1 flex-col border-2 border-[#F1EDE2]/12 bg-[#1D1810]">
+      <header className="flex flex-col gap-4 border-b-2 border-[#F1EDE2]/12 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-            <Sparkles className="size-3.5 text-yellow-500/70" aria-hidden />
-            Agendamentos
+          <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+            <Sparkles className="size-3.5 text-[#F2B705]" aria-hidden />
+            {t("bookingsEyebrow", "Agendamentos")}
           </div>
-          <h2 className="truncate text-lg font-semibold tracking-tight text-zinc-50">
-            {pickedDay ? formatAgendaDayHeading(pickedDay) : `Semana atual · ${weekRangeLabel}`}
-          </h2>
-          <p className="text-sm text-zinc-500">
+          <h2 className="fl-display truncate text-2xl leading-none text-[#F1EDE2]">
             {pickedDay
-              ? "Horários do dia selecionado."
-              : "Visualização agrupada por dia da semana."}
+              ? formatAgendaDayHeading(pickedDay, dfLocale)
+              : `${t("currentWeek", "Semana atual")} · ${weekRangeLabel}`}
+          </h2>
+          <p className="text-sm font-medium text-[#9A938A]">
+            {pickedDay
+              ? t("daySubtitle", "Horários do dia selecionado.")
+              : t("weekSubtitle", "Visualização agrupada por dia da semana.")}
           </p>
         </div>
 
@@ -119,33 +127,33 @@ export function AgendaBookingsPanel({
             <button
               type="button"
               onClick={onClearDay}
-              className="rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-yellow-500/25 hover:bg-yellow-400/5 hover:text-yellow-200"
+              className="border-2 border-[#F1EDE2]/25 bg-transparent px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
             >
-              Ver semana
+              {t("viewWeek", "Ver semana")}
             </button>
           ) : (
             <>
               <button
                 type="button"
                 onClick={onGoCurrentWeek}
-                className="rounded-xl border border-yellow-500/25 bg-yellow-400/10 px-4 py-2 text-sm font-semibold text-yellow-200 transition hover:bg-yellow-400/15"
+                className="border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
               >
-                Esta semana
+                {t("thisWeek", "Esta semana")}
               </button>
-              <div className="flex items-center rounded-xl border border-zinc-700/80 bg-zinc-900/50 p-0.5">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={onPrevWeek}
-                  className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                  aria-label="Semana anterior"
+                  className="inline-flex size-9 items-center justify-center border-2 border-[#F1EDE2]/25 text-[#F1EDE2] transition hover:border-[#F1EDE2] hover:bg-[#F1EDE2]/5"
+                  aria-label={t("prevWeek", "Semana anterior")}
                 >
                   <ChevronLeft className="size-5" />
                 </button>
                 <button
                   type="button"
                   onClick={onNextWeek}
-                  className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
-                  aria-label="Próxima semana"
+                  className="inline-flex size-9 items-center justify-center border-2 border-[#F1EDE2]/25 text-[#F1EDE2] transition hover:border-[#F1EDE2] hover:bg-[#F1EDE2]/5"
+                  aria-label={t("nextWeek", "Próxima semana")}
                 >
                   <ChevronRight className="size-5" />
                 </button>
@@ -157,30 +165,35 @@ export function AgendaBookingsPanel({
 
       <div className="flex-1 space-y-8 px-4 py-6 sm:px-6">
         {bookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30 px-6 py-20 text-center">
-            <p className="text-sm font-medium text-zinc-400">Nenhum agendamento neste período</p>
-            <p className="mt-2 max-w-sm text-xs leading-relaxed text-zinc-600">
-              Escolha outro dia no calendário ou navegue entre semanas para ver mais compromissos.
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#F1EDE2]/15 px-6 py-20 text-center">
+            <p className="fl-display text-2xl text-[#F1EDE2]">
+              {t("emptyBookingsTitle", "Nenhum agendamento neste período")}
+            </p>
+            <p className="mt-2 max-w-sm text-xs leading-relaxed text-[#9A938A]">
+              {t(
+                "emptyBookingsDesc",
+                "Escolha outro dia no calendário ou navegue entre semanas para ver mais compromissos.",
+              )}
             </p>
           </div>
         ) : pickedDay && flatDay ? (
           <ul className="space-y-3">
             {flatDay.map((b) => (
               <li key={b.id}>
-                <BookingCard b={b} compactTime />
+                <BookingCard b={b} compactTime t={t} />
               </li>
             ))}
           </ul>
         ) : (
           grouped?.map((group) => (
             <div key={group.dateKey}>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                {formatAgendaDayHeading(group.date)}
+              <h3 className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+                {formatAgendaDayHeading(group.date, dfLocale)}
               </h3>
               <ul className="space-y-3">
                 {group.items.map((b) => (
                   <li key={b.id}>
-                    <BookingCard b={b} />
+                    <BookingCard b={b} t={t} />
                   </li>
                 ))}
               </ul>
@@ -195,9 +208,11 @@ export function AgendaBookingsPanel({
 function BookingCard({
   b,
   compactTime,
+  t,
 }: {
   b: AgendaBookingRow
   compactTime?: boolean
+  t: TFn
 }) {
   const startHm = agendaTimeHm(b.start_time)
   const endHm = agendaTimeHm(b.end_time)
@@ -206,22 +221,19 @@ function BookingCard({
   const ui = uiStatus(b.status)
   const label =
     b.status === "no_show"
-      ? "Não compareceu"
-      : UI_STATUS_LABEL[ui]
+      ? t("statusNoShow", "Não compareceu")
+      : t(UI_STATUS_LABEL[ui].key, UI_STATUS_LABEL[ui].pt)
 
   const displayName = b.client_profile_display_name || b.client_name
   const timeLabel = startHm
+  const serviceName = b.service_name_snapshot || t("serviceFallback", "Serviço")
+  const minLabel = t("minutesShort", "min")
 
   return (
-    <article
-      className={cn(
-        "group relative overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-900/35 p-4 transition duration-200",
-        "hover:border-zinc-700 hover:bg-zinc-900/55 hover:shadow-[0_12px_40px_-28px_rgba(250,204,21,0.12)]",
-      )}
-    >
+    <article className="group relative overflow-hidden border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[4px_4px_0_0_#0B0B0D] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#F2B705]">
       <div className="flex gap-4">
-        <Avatar className="size-12 shrink-0 border border-zinc-700/80 shadow-inner">
-          <AvatarFallback className="bg-zinc-800 text-xs font-semibold text-zinc-300">
+        <Avatar className="size-12 shrink-0 rounded-none border-2 border-[#0B0B0D]" style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}>
+          <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
             {initials(displayName)}
           </AvatarFallback>
         </Avatar>
@@ -230,78 +242,52 @@ function BookingCard({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               {compactTime ? (
-                <p className="font-mono text-sm font-semibold tabular-nums text-yellow-400/95">
+                <p className="font-mono text-sm font-bold tabular-nums text-[#E0A500]">
                   {timeLabel}{" "}
-                  <span className="font-sans text-zinc-500">—</span>{" "}
-                  <span className="font-sans font-medium text-zinc-100">
-                    {b.service_name_snapshot || "Serviço"}
-                  </span>
+                  <span className="font-sans text-[#6B6457]">—</span>{" "}
+                  <span className="font-sans font-bold text-[#0B0B0D]">{serviceName}</span>
                 </p>
               ) : (
                 <>
-                  <p className="text-xs font-medium text-zinc-500">
-                    <Clock className="mr-1 inline size-3.5 align-text-bottom text-yellow-500/60" />
-                    <span className="tabular-nums text-zinc-300">{timeLabel}</span>
-                    <span className="mx-2 text-zinc-600">·</span>
-                    <span>{dur} min</span>
+                  <p className="text-xs font-semibold text-[#6B6457]">
+                    <Clock className="mr-1 inline size-3.5 align-text-bottom text-[#E0A500]" />
+                    <span className="tabular-nums text-[#0B0B0D]">{timeLabel}</span>
+                    <span className="mx-2 text-[#6B6457]">·</span>
+                    <span>{dur} {minLabel}</span>
                   </p>
-                  <p className="mt-1 truncate text-base font-semibold tracking-tight text-zinc-50">
-                    {b.service_name_snapshot || "Serviço"}
-                  </p>
+                  <p className="fl-display mt-1 truncate text-xl leading-none text-[#0B0B0D]">{serviceName}</p>
                 </>
               )}
-              {!compactTime && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  {b.client_profile_id ? (
-                    <Link
-                      href={`/freelancer/${b.client_profile_id}`}
-                      className="truncate text-sm font-medium text-yellow-400/95 underline-offset-2 hover:underline"
-                    >
-                      {displayName}
-                    </Link>
-                  ) : (
-                    <span className="truncate text-sm font-medium text-zinc-200">{displayName}</span>
-                  )}
-                  <span className="text-xs text-zinc-600">{b.client_email}</span>
-                </div>
-              )}
-              {compactTime && (
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  {b.client_profile_id ? (
-                    <Link
-                      href={`/freelancer/${b.client_profile_id}`}
-                      className="truncate text-sm font-medium text-yellow-400/95 underline-offset-2 hover:underline"
-                    >
-                      {displayName}
-                    </Link>
-                  ) : (
-                    <span className="truncate text-sm font-medium text-zinc-200">{displayName}</span>
-                  )}
-                  <span className="text-xs tabular-nums text-zinc-500">{dur} min</span>
-                </div>
-              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                {b.client_profile_id ? (
+                  <Link
+                    href={`/freelancer/${b.client_profile_id}`}
+                    className="truncate text-sm font-bold text-[#E0A500] underline-offset-2 hover:underline"
+                  >
+                    {displayName}
+                  </Link>
+                ) : (
+                  <span className="truncate text-sm font-bold text-[#0B0B0D]">{displayName}</span>
+                )}
+                {compactTime ? (
+                  <span className="text-xs tabular-nums text-[#6B6457]">{dur} {minLabel}</span>
+                ) : (
+                  <span className="text-xs text-[#6B6457]">{b.client_email}</span>
+                )}
+              </div>
             </div>
 
-            <span
-              className={cn(
-                "shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide",
-                UI_STATUS_CLASS[ui],
-              )}
-            >
+            <span className={cn("shrink-0 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em]", UI_STATUS_CLASS[ui])}>
               {label}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-zinc-800/70 pt-3 text-xs text-zinc-500">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t-2 border-[#0B0B0D]/12 pt-3 text-xs text-[#6B6457]">
             <span>
-              Valor{" "}
-              <strong className="font-semibold text-yellow-400/90 tabular-nums">
-                {formatAgendaBRL(amount)}
-              </strong>
+              {t("amount", "Valor")}{" "}
+              <strong className="font-extrabold tabular-nums text-[#E0A500]">{formatAgendaBRL(amount)}</strong>
             </span>
-            {b.client_whatsapp ? (
-              <span className="tabular-nums">{b.client_whatsapp}</span>
-            ) : null}
+            {b.client_whatsapp ? <span className="tabular-nums">{b.client_whatsapp}</span> : null}
           </div>
         </div>
       </div>

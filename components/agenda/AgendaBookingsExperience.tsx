@@ -12,6 +12,7 @@ import {
   filterBookingsForDay,
   filterBookingsForWeek,
 } from "@/components/agenda/agenda-booking-utils"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
 function authHeaders(): HeadersInit {
@@ -40,6 +41,7 @@ export function AgendaBookingsExperience({
   className,
   settingsHref,
 }: AgendaBookingsExperienceProps) {
+  const t = useTranslations("Agenda")
   const standalone = controlledBookings === undefined
 
   const [internalBookings, setInternalBookings] = useState<AgendaBookingRow[]>([])
@@ -113,21 +115,21 @@ export function AgendaBookingsExperience({
   }, [])
 
   const handleAgendaThisWeek = useCallback(() => {
-    const t = new Date()
-    setAgendaWeekAnchor(startOfWeek(t, { weekStartsOn: AGENDA_WEEK_STARTS_ON }))
+    const now = new Date()
+    setAgendaWeekAnchor(startOfWeek(now, { weekStartsOn: AGENDA_WEEK_STARTS_ON }))
     setAgendaPickedDay(null)
-    setAgendaMonth(t)
+    setAgendaMonth(now)
   }, [])
 
   if (standalone && loadState === "loading") {
     return (
       <div
         className={cn(
-          "flex min-h-[320px] items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/40",
+          "flex min-h-[320px] items-center justify-center border-2 border-[#F1EDE2]/12 bg-[#1D1810]",
           className,
         )}
       >
-        <Loader2 className="size-8 animate-spin text-yellow-500/60" aria-hidden />
+        <Loader2 className="size-8 animate-spin text-[#F2B705]" aria-hidden />
       </div>
     )
   }
@@ -136,12 +138,12 @@ export function AgendaBookingsExperience({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-dashed border-zinc-700 bg-zinc-900/30 px-6 py-14 text-center",
+          "border-2 border-dashed border-[#F1EDE2]/15 px-6 py-14 text-center",
           className,
         )}
       >
-        <p className="text-sm text-zinc-400">
-          Não foi possível carregar os agendamentos agora. Tente novamente em instantes.
+        <p className="text-sm font-semibold text-[#9A938A]">
+          {t("loadErrorBookings", "Não foi possível carregar os agendamentos agora. Tente novamente em instantes.")}
         </p>
       </div>
     )
@@ -153,9 +155,9 @@ export function AgendaBookingsExperience({
         {settingsHref ? (
           <Link
             href={settingsHref}
-            aria-label="Configurar agenda"
-            title="Configurar agenda"
-            className="flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-3 text-zinc-300 transition hover:border-yellow-500/35 hover:bg-yellow-400/10 hover:text-yellow-200"
+            aria-label={t("configureAgenda", "Configurar agenda")}
+            title={t("configureAgenda", "Configurar agenda")}
+            className="flex items-center justify-center border-2 border-[#F1EDE2]/25 px-3 py-3 text-[#F1EDE2] transition hover:border-[#F2B705] hover:bg-[#F2B705]/10 hover:text-[#F2B705]"
           >
             <Settings className="size-4" aria-hidden />
           </Link>
@@ -164,27 +166,27 @@ export function AgendaBookingsExperience({
           type="button"
           onClick={() => setMobileAgendaTab("calendar")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition lg:hidden",
+            "flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 text-[11px] font-extrabold uppercase tracking-[0.12em] transition lg:hidden",
             mobileAgendaTab === "calendar"
-              ? "border-yellow-500/35 bg-yellow-400/15 text-yellow-200"
-              : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200",
+              ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+              : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]",
           )}
         >
           <Calendar className="size-4" aria-hidden />
-          Calendário
+          {t("tabCalendar", "Calendário")}
         </button>
         <button
           type="button"
           onClick={() => setMobileAgendaTab("list")}
           className={cn(
-            "flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition lg:hidden",
+            "flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 text-[11px] font-extrabold uppercase tracking-[0.12em] transition lg:hidden",
             mobileAgendaTab === "list"
-              ? "border-yellow-500/35 bg-yellow-400/15 text-yellow-200"
-              : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200",
+              ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+              : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]",
           )}
         >
           <Briefcase className="size-4" aria-hidden />
-          Agendamentos
+          {t("bookingsEyebrow", "Agendamentos")}
         </button>
       </div>
 

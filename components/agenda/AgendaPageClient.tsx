@@ -6,9 +6,12 @@ import {
   ArrowLeft, Save, Calendar, Clock, Lock, Unlock, Plus, Trash2,
   AlertCircle, Briefcase, X, Pencil, Power, Users,
 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ProfileServiceEditModal } from "@/components/profile/profile-service-edit-modal"
 import { AgendaBookingsExperience } from "@/components/agenda/AgendaBookingsExperience"
+import { Halftone, Underline } from "@/components/tabloide"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { cn } from "@/lib/utils"
 
 interface WeeklyRule {
   weekday: number
@@ -67,8 +70,8 @@ export interface ClanMember {
   role: "owner" | "member"
 }
 
-const WEEKDAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
-const WEEKDAY_ABBR  = ["DOM",     "SEG",     "TER",   "QUA",    "QUI",    "SEX",   "SÁB"]
+/* Acento gold do tabloide (igual ranking). */
+const PAPER = "#F1EDE2"
 
 function getToken() {
   if (typeof window === "undefined") return null
@@ -82,6 +85,12 @@ function centsToReais(cents: number) {
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 }
+
+/* Inputs/selects no papel (cantos retos, borda preta). */
+const PAPER_FIELD =
+  "border-2 border-[#0B0B0D]/30 bg-white px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight text-[#0B0B0D] focus:border-[#0B0B0D] focus:outline-none"
+const MODAL_FIELD =
+  "border-2 border-[#0B0B0D]/30 bg-white px-3 py-1.5 text-sm text-[#0B0B0D] focus:border-[#0B0B0D] focus:outline-none"
 
 type Tab = "rules" | "services" | "bookings"
 
@@ -97,6 +106,17 @@ export default function AgendaPageClient({
   backHref?: string
 }) {
   const router = useRouter()
+  const t = useTranslations("Agenda")
+  const locale = useLocale()
+
+  const WEEKDAY_NAMES = [
+    t("daySun", "Domingo"), t("dayMon", "Segunda"), t("dayTue", "Terça"),
+    t("dayWed", "Quarta"), t("dayThu", "Quinta"), t("dayFri", "Sexta"), t("daySat", "Sábado"),
+  ]
+  const WEEKDAY_ABBR = [
+    t("abbrSun", "DOM"), t("abbrMon", "SEG"), t("abbrTue", "TER"),
+    t("abbrWed", "QUA"), t("abbrThu", "QUI"), t("abbrFri", "SEX"), t("abbrSat", "SÁB"),
+  ]
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -173,14 +193,14 @@ export default function AgendaPageClient({
     setSaving(true)
     try {
       const res = await fetch(`/api/profile/${profileId}/availability`, { method: "POST", headers: headers(), body: JSON.stringify({ rules }) })
-      if (res.ok) showMsg("success", "Disponibilidade semanal salva!")
-      else { const d = await res.json(); showMsg("error", d.error || "Erro ao salvar") }
-    } catch { showMsg("error", "Erro de conexão") }
+      if (res.ok) showMsg("success", t("msgRulesSaved", "Disponibilidade semanal salva!"))
+      else { const d = await res.json(); showMsg("error", d.error || t("msgSaveError", "Erro ao salvar")) }
+    } catch { showMsg("error", t("msgConnError", "Erro de conexão")) }
     setSaving(false)
   }
 
   async function saveOverride() {
-    if (!newOverrideDate) { showMsg("error", "Selecione uma data"); return }
+    if (!newOverrideDate) { showMsg("error", t("msgPickDate", "Selecione uma data")); return }
     setSaving(true)
     try {
       const res = await fetch(`/api/profile/${profileId}/availability-overrides`, {
@@ -195,9 +215,9 @@ export default function AgendaPageClient({
           return [...prev, d.override]
         })
         setNewOverrideDate(""); setNewOverrideBlocked(false); setNewOverrideNote("")
-        showMsg("success", "Exceção salva!")
-      } else { const d = await res.json(); showMsg("error", d.error || "Erro") }
-    } catch { showMsg("error", "Erro de conexão") }
+        showMsg("success", t("msgOverrideSaved", "Exceção salva!"))
+      } else { const d = await res.json(); showMsg("error", d.error || t("msgError", "Erro")) }
+    } catch { showMsg("error", t("msgConnError", "Erro de conexão")) }
     setSaving(false)
   }
 
@@ -226,14 +246,14 @@ export default function AgendaPageClient({
         method: "PATCH", headers: headers(), body: JSON.stringify({ is_active: !s.is_active }),
       })
       if (res.ok) { const d = await res.json(); setServices(prev => prev.map(x => x.id_profile_service === d.service.id_profile_service ? d.service : x)) }
-    } catch { showMsg("error", "Erro de conexão") }
+    } catch { showMsg("error", t("msgConnError", "Erro de conexão")) }
   }
   async function deleteService(s: ProfileService) {
-    if (!confirm(`Remover serviço "${s.name}"?`)) return
+    if (!confirm(t("confirmRemoveService", 'Remover serviço "{name}"?').replace("{name}", s.name))) return
     try {
       const res = await fetch(`/api/profile/${profileId}/services/${s.id_profile_service}`, { method: "DELETE", headers: headers() })
-      if (res.ok) { setServices(prev => prev.filter(x => x.id_profile_service !== s.id_profile_service)); showMsg("success", "Serviço removido") }
-    } catch { showMsg("error", "Erro de conexão") }
+      if (res.ok) { setServices(prev => prev.filter(x => x.id_profile_service !== s.id_profile_service)); showMsg("success", t("msgServiceRemoved", "Serviço removido")) }
+    } catch { showMsg("error", t("msgConnError", "Erro de conexão")) }
   }
 
   // Helper: nome do membro por id
@@ -243,94 +263,112 @@ export default function AgendaPageClient({
     return m
   }, [clanMembers])
 
+  const minLabel = t("minutesShort", "min")
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0804] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#6B6354] border-t-[#F2B705]" />
+      <div className="fl-root fl-paper-texture flex min-h-[100dvh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-[#F1EDE2]/15 border-t-[#F2B705]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0804] text-[#F5F1E8]">
-      <header className="border-b border-[#2A2218] bg-[#0b0804]/80 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center gap-4">
-          <button onClick={() => backHref ? router.push(backHref) : router.back()} className="p-2 rounded-lg hover:bg-[#2A2218] transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="fl-marker text-base font-bold leading-none text-[#F2B705]">{isClan ? "Agenda do clan" : "Agenda"}</p>
-            <h1 className="fl-display text-2xl leading-[0.9] text-[#F2B705] sm:text-3xl">
-              {isClan ? "OPERAÇÃO." : "AGENDA."}
-            </h1>
-            <p className="mt-0.5 text-xs font-bold text-[#9A938A]">
-              Disponibilidade, serviços e visão clara dos seus compromissos.
-            </p>
-          </div>
-        </div>
+    <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24 text-[#F1EDE2]">
+      {/* HERO */}
+      <header className="relative mx-auto w-full max-w-6xl border-b-2 border-[#F1EDE2]/12 px-3 pb-8 pt-9 md:px-8 md:pt-12">
+        <Halftone className="absolute right-2 top-6 hidden h-24 w-28 opacity-[0.1] md:block" />
+        <button
+          onClick={() => (backHref ? router.push(backHref) : router.back())}
+          className="mb-5 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] text-[#9A938A] transition hover:text-[#F1EDE2]"
+        >
+          <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+        </button>
+        <p className="fl-marker text-2xl text-[#F2B705]">
+          {isClan ? t("clanEyebrow", "agenda do clan") : t("eyebrow", "a sua agenda")}
+        </p>
+        <h1 className="relative inline-block">
+          <span className="fl-display block text-[16vw] leading-[0.86] text-[#F2B705] sm:text-[11vw] lg:text-[6.5rem]">
+            {isClan ? t("clanTitle", "Operação") : t("title", "Agenda")}<span style={{ color: PAPER }}>.</span>
+          </span>
+          <Underline className="absolute -bottom-3 left-0 h-4 w-full text-[#F2B705]" />
+        </h1>
+        <p className="mt-6 max-w-2xl text-sm font-bold leading-relaxed text-[#C9C2B6]">
+          {t("subtitle", "Disponibilidade, serviços e visão clara dos seus compromissos.")}
+        </p>
       </header>
 
       {message && (
-        <div className="max-w-[1600px] mx-auto px-4 pt-3">
-          <div className={`px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 ${
-            message.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
-          }`}>
-            <AlertCircle className="w-4 h-4 shrink-0" />{message.text}
+        <div className="mx-auto w-full max-w-6xl px-3 pt-4 md:px-8">
+          <div className={cn(
+            "flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2.5 text-sm font-bold",
+            message.type === "success" ? "bg-[#00876B] text-white" : "bg-[#9A3412] text-white",
+          )}>
+            <AlertCircle className="h-4 w-4 shrink-0" />{message.text}
           </div>
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto grid grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-[220px_1fr]">
-        <aside className="space-y-3 lg:sticky lg:top-20 lg:self-start">
-          <nav className="space-y-1 rounded-2xl border border-[#2A2218] bg-[#1D1810] p-2">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 px-3 py-8 md:px-8 lg:grid-cols-[220px_1fr]">
+        {/* Navegação */}
+        <aside className="min-w-0">
+          <nav className="flex flex-wrap gap-2 lg:sticky lg:top-6 lg:flex-col">
             {([
-              { key: "rules", label: "Disponibilidade", icon: Clock },
-              { key: "services", label: "Serviços", icon: Briefcase },
-              { key: "bookings", label: "Agendamentos", icon: Calendar },
+              { key: "rules", label: t("tabAvailability", "Disponibilidade"), icon: Clock },
+              { key: "services", label: t("tabServices", "Serviços"), icon: Briefcase },
+              { key: "bookings", label: t("tabBookings", "Agendamentos"), icon: Calendar },
             ] as const).map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => setActiveTab(key)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === key ? "bg-[#F2B705] text-[#1D1810]" : "text-[#C9C2B6] hover:bg-[#2A2218]"
-                }`}>
-                <Icon className="w-4 h-4" />{label}
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={cn(
+                  "inline-flex items-center gap-2 border-2 px-3 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.1em] transition lg:w-full",
+                  activeTab === key
+                    ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                    : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]",
+                )}
+              >
+                <Icon className="h-4 w-4" />{label}
               </button>
             ))}
           </nav>
         </aside>
 
-        <main className="min-w-0">
+        <section className="min-w-0">
           {/* ─── Disponibilidade ─── */}
           {activeTab === "rules" && (
-            <div className="bg-[#1D1810] border border-[#2A2218] rounded-2xl overflow-hidden">
+            <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
               <div className="px-4 pt-4 pb-3">
-                <h2 className="text-base font-semibold tracking-tight">Disponibilidade semanal</h2>
-                <p className="mt-0.5 text-[11px] text-[#8A8275]">
-                  Dias e horários em que {isClan ? "o clan" : "você"} atende.
+                <h2 className="fl-display text-2xl text-[#0B0B0D]">{t("availabilityTitle", "Disponibilidade semanal")}</h2>
+                <p className="mt-0.5 text-[11px] font-semibold text-[#6B6457]">
+                  {isClan
+                    ? t("availabilityDescClan", "Dias e horários em que o clan atende.")
+                    : t("availabilityDesc", "Dias e horários em que você atende.")}
                 </p>
               </div>
-              <ul className="divide-y divide-[#2A2218]/70 border-t border-[#2A2218]/70">
+              <ul className="divide-y-2 divide-[#0B0B0D]/10 border-t-2 border-[#0B0B0D]/10">
                 {rules.map((rule, i) => (
                   <li
                     key={rule.weekday}
-                    className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2 transition-colors ${
-                      rule.is_enabled ? "bg-[#1D1810]" : "bg-[#0b0804]/30"
-                    }`}
+                    className={cn(
+                      "flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2",
+                      rule.is_enabled ? "bg-transparent" : "bg-[#0B0B0D]/[0.04]",
+                    )}
                   >
                     <label
-                      className="flex items-center gap-2 w-[78px] shrink-0 cursor-pointer select-none"
+                      className="flex w-[78px] shrink-0 cursor-pointer select-none items-center gap-2"
                       title={WEEKDAY_NAMES[rule.weekday]}
                     >
                       <input
                         type="checkbox"
                         checked={rule.is_enabled}
                         onChange={e => { const next = [...rules]; next[i] = { ...rule, is_enabled: e.target.checked }; setRules(next) }}
-                        className="w-3.5 h-3.5 rounded border-[#6B6354] text-[#F2B705] focus:ring-[#F2B705] focus:ring-offset-0 bg-[#2A2218]"
+                        className="h-3.5 w-3.5 border-[#0B0B0D]/40 accent-[#F2B705]"
                       />
-                      <span
-                        className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${
-                          rule.is_enabled ? "text-[#F5F1E8]" : "text-[#8A8275]"
-                        }`}
-                      >
+                      <span className={cn(
+                        "text-[11px] font-extrabold uppercase tracking-[0.12em]",
+                        rule.is_enabled ? "text-[#0B0B0D]" : "text-[#6B6457]",
+                      )}>
                         {WEEKDAY_ABBR[rule.weekday]}
                       </span>
                     </label>
@@ -342,26 +380,26 @@ export default function AgendaPageClient({
                             type="time"
                             value={rule.start_time}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, start_time: e.target.value }; setRules(next) }}
-                            aria-label="Horário de início"
-                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-[#F2B705]/60 focus:outline-none"
+                            aria-label={t("startTime", "Horário de início")}
+                            className={PAPER_FIELD}
                           />
-                          <span className="text-[#6B6354] text-xs">–</span>
+                          <span className="text-xs text-[#6B6457]">–</span>
                           <input
                             type="time"
                             value={rule.end_time}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, end_time: e.target.value }; setRules(next) }}
-                            aria-label="Horário de término"
-                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md px-1.5 py-0.5 text-[12px] font-mono tabular-nums tracking-tight focus:border-[#F2B705]/60 focus:outline-none"
+                            aria-label={t("endTime", "Horário de término")}
+                            className={PAPER_FIELD}
                           />
                         </div>
 
-                        <div className="flex items-center gap-1" title="Duração do slot">
-                          <Clock className="w-3 h-3 text-[#8A8275]" aria-hidden />
+                        <div className="flex items-center gap-1" title={t("slotDuration", "Duração do slot")}>
+                          <Clock className="h-3 w-3 text-[#6B6457]" aria-hidden />
                           <select
                             value={rule.slot_duration_minutes}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, slot_duration_minutes: Number(e.target.value) }; setRules(next) }}
-                            aria-label="Duração do slot"
-                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-[#F2B705]/60 focus:outline-none"
+                            aria-label={t("slotDuration", "Duração do slot")}
+                            className={PAPER_FIELD}
                           >
                             {[15, 30, 45, 60, 90, 120].map(m => (
                               <option key={m} value={m}>{m}m</option>
@@ -369,13 +407,13 @@ export default function AgendaPageClient({
                           </select>
                         </div>
 
-                        <div className="flex items-center gap-1" title="Intervalo entre slots">
-                          <span className="text-[10px] font-semibold text-[#8A8275] uppercase tracking-wider">Int</span>
+                        <div className="flex items-center gap-1" title={t("slotBuffer", "Intervalo entre slots")}>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#6B6457]">{t("bufferShort", "Int")}</span>
                           <select
                             value={rule.buffer_minutes}
                             onChange={e => { const next = [...rules]; next[i] = { ...rule, buffer_minutes: Number(e.target.value) }; setRules(next) }}
-                            aria-label="Intervalo entre slots"
-                            className="bg-[#2A2218]/80 border border-[#3A3228]/60 rounded-md pl-1.5 pr-1 py-0.5 text-[12px] font-mono tabular-nums focus:border-[#F2B705]/60 focus:outline-none"
+                            aria-label={t("slotBuffer", "Intervalo entre slots")}
+                            className={PAPER_FIELD}
                           >
                             {[0, 5, 10, 15, 30].map(m => (
                               <option key={m} value={m}>+{m}m</option>
@@ -384,29 +422,29 @@ export default function AgendaPageClient({
                         </div>
                       </div>
                     ) : (
-                      <span className="text-[11px] italic text-[#6B6354]">sem atendimento</span>
+                      <span className="text-[11px] italic text-[#6B6457]">{t("noService", "sem atendimento")}</span>
                     )}
                   </li>
                 ))}
               </ul>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-[#2A2218]/70 px-3 py-2.5 bg-[#0b0804]/40">
+              <div className="flex flex-wrap items-center gap-2 border-t-2 border-[#0B0B0D]/10 bg-[#0B0B0D]/[0.04] px-3 py-2.5">
                 <button
                   onClick={saveRules}
                   disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  {saving ? "Salvando…" : "Salvar"}
+                  <Save className="h-3.5 w-3.5" />
+                  {saving ? t("saving", "Salvando…") : t("save", "Salvar")}
                 </button>
                 <button
                   onClick={() => setExceptionsOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[#3A3228]/70 bg-[#2A2218]/70 hover:bg-[#2A2218] px-3 py-1.5 text-xs font-medium text-[#E3DDCC] transition-colors"
+                  className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D]/40 bg-transparent px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] transition hover:border-[#0B0B0D]"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
-                  Exceções
+                  <Calendar className="h-3.5 w-3.5" />
+                  {t("exceptions", "Exceções")}
                   {overrides.length > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-[#F2B705]/20 px-1.5 py-0 text-[10px] font-mono text-[#F2B705]">
+                    <span className="ml-0.5 inline-flex items-center justify-center bg-[#0B0B0D] px-1.5 text-[10px] font-mono text-[#F2B705]">
                       {overrides.length}
                     </span>
                   )}
@@ -417,22 +455,28 @@ export default function AgendaPageClient({
 
           {/* ─── Serviços ─── */}
           {activeTab === "services" && (
-            <div className="bg-[#1D1810] border border-[#2A2218] rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] p-6 shadow-[5px_5px_0_0_#0B0B0D]">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold">Serviços</h2>
-                  <p className="text-sm text-[#9A938A]">Cadastre os serviços que {isClan ? "o clan" : "você"} oferece. Apenas ativos aparecem para o cliente.</p>
+                  <h2 className="fl-display text-2xl text-[#0B0B0D]">{t("tabServices", "Serviços")}</h2>
+                  <p className="text-sm text-[#6B6457]">
+                    {isClan
+                      ? t("servicesDescClan", "Cadastre os serviços que o clan oferece. Apenas ativos aparecem para o cliente.")
+                      : t("servicesDesc", "Cadastre os serviços que você oferece. Apenas ativos aparecem para o cliente.")}
+                  </p>
                 </div>
-                <button onClick={openNewService}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] rounded-lg text-sm font-semibold transition-colors">
-                  <Plus className="w-4 h-4" />Adicionar serviço
+                <button
+                  onClick={openNewService}
+                  className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
+                >
+                  <Plus className="h-4 w-4" />{t("addService", "Adicionar serviço")}
                 </button>
               </div>
               {services.length === 0 ? (
-                <div className="text-center py-12">
-                  <Briefcase className="w-12 h-12 text-[#6B6354] mx-auto mb-3" />
-                  <p className="text-[#9A938A]">Nenhum serviço cadastrado.</p>
-                  <p className="text-xs text-[#8A8275] mt-1">Clique em &quot;Adicionar serviço&quot; para começar.</p>
+                <div className="flex flex-col items-center border-2 border-dashed border-[#0B0B0D]/20 py-12 text-center">
+                  <Briefcase className="mb-3 h-12 w-12 text-[#0B0B0D]/30" />
+                  <p className="fl-display text-xl text-[#0B0B0D]">{t("noServicesTitle", "Nenhum serviço cadastrado.")}</p>
+                  <p className="mt-1 text-xs text-[#6B6457]">{t("noServicesHint", 'Clique em "Adicionar serviço" para começar.')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -444,37 +488,38 @@ export default function AgendaPageClient({
                     const perMember = isClan && participantes.length > 0 ? s.price_amount / participantes.length : null
                     return (
                       <div key={s.id_profile_service}
-                        className={`flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border ${
-                          s.is_active ? "bg-[#2A2218]/50 border-[#3A3228]" : "bg-[#1D1810]/50 border-[#2A2218]/50 opacity-60"
-                        }`}>
+                        className={cn(
+                          "flex flex-wrap items-center justify-between gap-3 border-2 p-4",
+                          s.is_active ? "border-[#0B0B0D]/25 bg-white/60" : "border-[#0B0B0D]/15 bg-white/30 opacity-60",
+                        )}>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm">{s.name}</p>
-                            {!s.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-[#3A3228] text-[#C9C2B6]">Inativo</span>}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="fl-display text-lg leading-none text-[#0B0B0D]">{s.name}</p>
+                            {!s.is_active && <span className="bg-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#F1EDE2]">{t("inactive", "Inativo")}</span>}
                           </div>
-                          {s.description && <p className="text-xs text-[#9A938A] mt-0.5">{s.description}</p>}
-                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-[#9A938A]">
-                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{s.duration_minutes} min</span>
-                            <span className="text-[#F2B705] font-medium">{centsToReais(s.price_amount)}</span>
+                          {s.description && <p className="mt-0.5 text-xs text-[#6B6457]">{s.description}</p>}
+                          <div className="mt-2 flex flex-wrap gap-3 text-xs text-[#6B6457]">
+                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{s.duration_minutes} {minLabel}</span>
+                            <span className="font-extrabold text-[#E0A500]">{centsToReais(s.price_amount)}</span>
                             {perMember !== null && (
-                              <span className="text-[#8A8275]">
-                                {centsToReais(perMember)}/membro
+                              <span className="text-[#6B6457]">
+                                {t("perMember", "{value}/membro").replace("{value}", centsToReais(perMember))}
                               </span>
                             )}
                           </div>
                           {isClan && (
-                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              <Users className="w-3.5 h-3.5 text-[#8A8275] shrink-0" />
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <Users className="h-3.5 w-3.5 shrink-0 text-[#6B6457]" />
                               {participantes.length === 0 ? (
-                                <span className="text-xs text-[#8A8275]">Sem membros configurados</span>
+                                <span className="text-xs text-[#6B6457]">{t("noMembersConfigured", "Sem membros configurados")}</span>
                               ) : mids.length === 0 ? (
-                                <span className="text-xs text-[#8A8275]">Todos os membros</span>
+                                <span className="text-xs text-[#6B6457]">{t("allMembers", "Todos os membros")}</span>
                               ) : (
                                 participantes.map(m => (
-                                  <Avatar key={m.id_member_profile} className="size-5 border border-[#6B6354]">
+                                  <Avatar key={m.id_member_profile} className="size-5 rounded-none border border-[#0B0B0D]">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {m.avatar_url && <img src={m.avatar_url} alt={m.display_name} className="object-cover" />}
-                                    <AvatarFallback className="text-[8px]">{getInitials(m.display_name)}</AvatarFallback>
+                                    <AvatarFallback className="rounded-none text-[8px]">{getInitials(m.display_name)}</AvatarFallback>
                                   </Avatar>
                                 ))
                               )}
@@ -482,17 +527,17 @@ export default function AgendaPageClient({
                           )}
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={() => toggleServiceActive(s)} title={s.is_active ? "Desativar" : "Ativar"}
-                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-[#F2B705] transition-colors">
-                            <Power className="w-4 h-4" />
+                          <button onClick={() => toggleServiceActive(s)} title={s.is_active ? t("deactivate", "Desativar") : t("activate", "Ativar")}
+                            className="border-2 border-transparent p-2 text-[#6B6457] transition hover:border-[#0B0B0D] hover:text-[#0B0B0D]">
+                            <Power className="h-4 w-4" />
                           </button>
-                          <button onClick={() => openEditService(s)} title="Editar"
-                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-[#F5F1E8] transition-colors">
-                            <Pencil className="w-4 h-4" />
+                          <button onClick={() => openEditService(s)} title={t("edit", "Editar")}
+                            className="border-2 border-transparent p-2 text-[#6B6457] transition hover:border-[#0B0B0D] hover:text-[#0B0B0D]">
+                            <Pencil className="h-4 w-4" />
                           </button>
-                          <button onClick={() => deleteService(s)} title="Remover"
-                            className="p-2 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-red-400 transition-colors">
-                            <Trash2 className="w-4 h-4" />
+                          <button onClick={() => deleteService(s)} title={t("remove", "Remover")}
+                            className="border-2 border-transparent p-2 text-[#6B6457] transition hover:border-[#9A3412] hover:text-[#9A3412]">
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
@@ -503,11 +548,11 @@ export default function AgendaPageClient({
             </div>
           )}
 
-          {/* ─── Agendamentos (calendário mensal + lista premium) ─── */}
+          {/* ─── Agendamentos (calendário mensal + lista) ─── */}
           {activeTab === "bookings" && (
             <AgendaBookingsExperience profileId={profileId} controlledBookings={bookings} />
           )}
-        </main>
+        </section>
       </div>
 
       <ProfileServiceEditModal
@@ -531,66 +576,68 @@ export default function AgendaPageClient({
             }
             return [...prev, updated as ProfileService]
           })
-          showMsg("success", wasEdit ? "Serviço atualizado!" : "Serviço criado!")
+          showMsg("success", wasEdit ? t("msgServiceUpdated", "Serviço atualizado!") : t("msgServiceCreated", "Serviço criado!"))
         }}
         onError={(msg) => showMsg("error", msg)}
       />
 
       {/* Modal: Exceções */}
       {exceptionsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setExceptionsOpen(false)}>
-          <div className="bg-[#1D1810] border border-[#2A2218] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-[#2A2218]">
+        <div className="fl-root fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setExceptionsOpen(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b-2 border-[#0B0B0D]/15 p-6">
               <div>
-                <h2 className="text-lg font-semibold">Exceções por data</h2>
-                <p className="text-xs text-[#9A938A] mt-0.5">Bloqueie dias inteiros ou ajuste horários específicos.</p>
+                <h2 className="fl-display text-2xl text-[#0B0B0D]">{t("exceptionsTitle", "Exceções por data")}</h2>
+                <p className="mt-0.5 text-xs text-[#6B6457]">{t("exceptionsDesc", "Bloqueie dias inteiros ou ajuste horários específicos.")}</p>
               </div>
-              <button onClick={() => setExceptionsOpen(false)} className="p-2 rounded-lg hover:bg-[#2A2218] text-[#9A938A]">
-                <X className="w-5 h-5" />
+              <button onClick={() => setExceptionsOpen(false)} aria-label={t("close", "Fechar")} className="border-2 border-transparent p-2 text-[#6B6457] transition hover:border-[#0B0B0D] hover:text-[#0B0B0D]">
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="p-6">
-              <div className="flex flex-wrap items-end gap-3 mb-6 p-4 bg-[#2A2218]/50 rounded-lg border border-[#3A3228]">
+              <div className="mb-6 flex flex-wrap items-end gap-3 border-2 border-[#0B0B0D]/20 bg-white/60 p-4">
                 <div>
-                  <label className="block text-xs text-[#9A938A] mb-1">Data</label>
-                  <input type="date" value={newOverrideDate} onChange={e => setNewOverrideDate(e.target.value)}
-                    className="bg-[#2A2218] border border-[#3A3228] rounded-lg px-3 py-1.5 text-sm" />
+                  <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-wide text-[#6B6457]">{t("date", "Data")}</label>
+                  <input type="date" value={newOverrideDate} onChange={e => setNewOverrideDate(e.target.value)} className={MODAL_FIELD} />
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2">
                   <input type="checkbox" checked={newOverrideBlocked} onChange={e => setNewOverrideBlocked(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#6B6354] text-red-500 focus:ring-red-500 bg-[#2A2218]" />
-                  <span className="text-sm">Bloquear dia inteiro</span>
+                    className="h-4 w-4 border-[#0B0B0D]/40 accent-[#9A3412]" />
+                  <span className="text-sm font-bold text-[#0B0B0D]">{t("blockWholeDay", "Bloquear dia inteiro")}</span>
                 </label>
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs text-[#9A938A] mb-1">Observação</label>
+                <div className="min-w-[200px] flex-1">
+                  <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-wide text-[#6B6457]">{t("note", "Observação")}</label>
                   <input type="text" value={newOverrideNote} onChange={e => setNewOverrideNote(e.target.value)}
-                    placeholder="Ex: Feriado, viagem..."
-                    className="w-full bg-[#2A2218] border border-[#3A3228] rounded-lg px-3 py-1.5 text-sm" />
+                    placeholder={t("notePlaceholder", "Ex: Feriado, viagem...")}
+                    className={cn(MODAL_FIELD, "w-full")} />
                 </div>
                 <button onClick={saveOverride} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-[#F2B705] hover:bg-[#F2B705] text-[#1D1810] rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
-                  <Plus className="w-4 h-4" />Adicionar
+                  className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                  <Plus className="h-4 w-4" />{t("add", "Adicionar")}
                 </button>
               </div>
               {overrides.length === 0 ? (
-                <p className="text-sm text-[#8A8275] text-center py-8">Nenhuma exceção cadastrada.</p>
+                <p className="py-8 text-center text-sm text-[#6B6457]">{t("noExceptions", "Nenhuma exceção cadastrada.")}</p>
               ) : (
                 <div className="space-y-2">
                   {overrides.map(ov => (
-                    <div key={ov.id} className="flex items-center justify-between p-3 bg-[#2A2218]/50 rounded-lg border border-[#3A3228]">
+                    <div key={ov.id} className="flex items-center justify-between border-2 border-[#0B0B0D]/20 bg-white/60 p-3">
                       <div className="flex items-center gap-3">
-                        {ov.is_day_blocked ? <Lock className="w-4 h-4 text-red-400" /> : <Unlock className="w-4 h-4 text-emerald-400" />}
+                        {ov.is_day_blocked ? <Lock className="h-4 w-4 text-[#9A3412]" /> : <Unlock className="h-4 w-4 text-[#00876B]" />}
                         <div>
-                          <span className="text-sm font-medium">{new Date(ov.override_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                          <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${ov.is_day_blocked ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"}`}>
-                            {ov.is_day_blocked ? "Bloqueado" : "Personalizado"}
+                          <span className="text-sm font-bold text-[#0B0B0D]">{new Date(ov.override_date + "T12:00:00").toLocaleDateString(locale)}</span>
+                          <span className={cn(
+                            "ml-2 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+                            ov.is_day_blocked ? "bg-[#9A3412] text-white" : "bg-[#00876B] text-white",
+                          )}>
+                            {ov.is_day_blocked ? t("blocked", "Bloqueado") : t("custom", "Personalizado")}
                           </span>
-                          {ov.note && <span className="ml-2 text-xs text-[#8A8275]">{ov.note}</span>}
+                          {ov.note && <span className="ml-2 text-xs text-[#6B6457]">{ov.note}</span>}
                         </div>
                       </div>
-                      <button onClick={() => deleteOverride(ov.id)}
-                        className="p-1.5 rounded-lg hover:bg-[#3A3228] text-[#9A938A] hover:text-red-400 transition-colors">
-                        <Trash2 className="w-4 h-4" />
+                      <button onClick={() => deleteOverride(ov.id)} aria-label={t("remove", "Remover")}
+                        className="border-2 border-transparent p-1.5 text-[#6B6457] transition hover:border-[#9A3412] hover:text-[#9A3412]">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   ))}
@@ -600,6 +647,6 @@ export default function AgendaPageClient({
           </div>
         </div>
       )}
-    </div>
+    </main>
   )
 }

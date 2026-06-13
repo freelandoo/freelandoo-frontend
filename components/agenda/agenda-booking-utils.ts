@@ -1,5 +1,6 @@
 import { endOfWeek, format, isWithinInterval, parseISO, startOfWeek } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import type { Locale } from "date-fns"
 
 /** Domingo como primeiro dia da coluna (alinha com MiniCalendar e expectativa pt-BR). */
 export const AGENDA_WEEK_STARTS_ON = 0 as const
@@ -87,9 +88,9 @@ export function groupBookingsByDate<T extends { booking_date: string; start_time
   }))
 }
 
-export function formatAgendaDayHeading(date: Date): string {
-  const wd = format(date, "EEEE", { locale: ptBR }).replace(/^./, (c) => c.toUpperCase())
-  const rest = format(date, "d MMM", { locale: ptBR }).replace(/^./, (c) => c.toUpperCase())
+export function formatAgendaDayHeading(date: Date, dfLocale: Locale = ptBR): string {
+  const wd = format(date, "EEEE", { locale: dfLocale }).replace(/^./, (c) => c.toUpperCase())
+  const rest = format(date, "d MMM", { locale: dfLocale }).replace(/^./, (c) => c.toUpperCase())
   return `${wd} — ${rest}`
 }
 
