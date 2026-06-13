@@ -10,6 +10,7 @@ import { CouponCapture } from "@/components/share/coupon-capture"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
 import { AdminAlerts } from "@/components/admin/admin-alerts"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
+import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
@@ -133,6 +134,7 @@ export default function RootLayout({
             <OnlineHeartbeat />
             <AdminAlerts />
             <InstallPrompt />
+            <PullToRefresh />
           </TourProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
