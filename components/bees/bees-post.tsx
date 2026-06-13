@@ -253,8 +253,11 @@ export function BeesPost({
     >
       {/* Vídeo ou fallback */}
       <div className="absolute inset-0 flex items-center justify-center">
+        {/* Em retrato (celular/tablet) o vídeo é full-bleed estilo TikTok/Kwai —
+            o object-cover corta o excedente. A moldura 9:16 centralizada só
+            vale em paisagem/desktop, onde o cover cortaria demais. */}
         <div
-          className="relative h-full w-full max-w-[min(100vw,calc(100dvh*9/16))]"
+          className="relative h-full w-full landscape:max-w-[min(100vw,calc(100dvh*9/16))]"
         >
           {hasVideo ? (
             <BeesVideo
@@ -295,10 +298,11 @@ export function BeesPost({
           <div
             className={cn(
               "absolute z-20 flex flex-col items-center gap-5",
-              // mobile: overlay no canto inferior direito do vídeo
+              // retrato (celular/tablet full-bleed): overlay no canto inferior direito do vídeo
               "bottom-24 right-3",
-              // desktop: fora do vídeo, grudado na borda direita
-              "md:bottom-12 md:right-auto md:left-full md:ml-3"
+              // desktop/paisagem: fora do vídeo, grudado na borda direita (em
+              // retrato o vídeo é full-bleed — left-full jogaria a coluna pra fora da tela)
+              "md:landscape:bottom-12 md:landscape:right-auto md:landscape:left-full md:landscape:ml-3"
             )}
           >
             <ActionButton
@@ -367,7 +371,9 @@ export function BeesPost({
           </div>
 
           {/* Bloco inferior — perfil + caption (dentro do vídeo) */}
-          <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 pr-16 md:pr-4">
+          {/* pr-16 reserva espaço pra coluna de ações em overlay; só encolhe
+              quando ela sai do vídeo (paisagem/desktop). */}
+          <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 pr-16 md:landscape:pr-4">
           <div className="flex items-center gap-2.5">
             <Link
               href={post.public_profile_url || "#"}
