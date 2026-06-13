@@ -3342,7 +3342,13 @@
     "clanInviteNamed": "{who} invited you to the clan {clan}",
     "clanMemberJoined": "{who} joined your clan",
     "liveGiftReceived": "{who} sent you a gift on the live",
-    "liveGiftNamed": "{who} sent you {gift} on the live"
+    "liveGiftNamed": "{who} sent you {gift} on the live",
+    "affiliateCommission": "Affiliate commission confirmed",
+    "subscriptionExpiring": "Your subscription is about to expire",
+    "premiumExpiring": "Your Premium boost is about to expire",
+    "manifestationExpiring": "Your Manifestation is about to expire",
+    "dayUnit": "day",
+    "daysUnit": "days"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",

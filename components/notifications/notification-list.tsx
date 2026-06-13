@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -62,6 +62,13 @@ function moneySuffix(payload: Record<string, unknown>): string {
   return ` · R$ ${(cents / 100).toFixed(2).replace(".", ",")}`
 }
 
+function daysSuffix(base: string, payload: Record<string, unknown>, t: TFn): string {
+  const d = Number((payload as { days_left?: number })?.days_left)
+  if (!Number.isFinite(d) || d <= 0) return base
+  const unit = d === 1 ? t("dayUnit", "dia") : t("daysUnit", "dias")
+  return `${base} · ${d} ${unit}`
+}
+
 function labelFor(item: NotificationItem, t: TFn) {
   const who = item.actor?.profile_display_name || item.actor?.username || t("someone", "Alguém")
   const sub = (key: string, fallback: string) => t(key, fallback).replace("{who}", who)
@@ -95,6 +102,14 @@ function labelFor(item: NotificationItem, t: TFn) {
         ? sub("liveGiftNamed", "{who} te enviou {gift} na live").replace("{gift}", giftName)
         : sub("liveGiftReceived", "{who} te enviou um presente na live")
     }
+    case "affiliate_commission_released":
+      return t("affiliateCommission", "Comissão de afiliado confirmada") + moneySuffix(item.payload)
+    case "subscription_expiring":
+      return daysSuffix(t("subscriptionExpiring", "Sua assinatura está perto de expirar"), item.payload, t)
+    case "premium_expiring":
+      return daysSuffix(t("premiumExpiring", "Seu destaque (Premium) está perto de expirar"), item.payload, t)
+    case "manifestation_expiring":
+      return daysSuffix(t("manifestationExpiring", "Sua Manifestação está perto de expirar"), item.payload, t)
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -127,6 +142,10 @@ function iconFor(type: string) {
     case "clan_invite":
     case "clan_member_joined": return <Users className="h-3.5 w-3.5" />
     case "live_gift_received": return <Gift className="h-3.5 w-3.5" />
+    case "affiliate_commission_released": return <DollarSign className="h-3.5 w-3.5" />
+    case "subscription_expiring":
+    case "premium_expiring":
+    case "manifestation_expiring": return <Clock className="h-3.5 w-3.5" />
     default: return null
   }
 }
@@ -160,6 +179,14 @@ function hrefFor(item: NotificationItem): string {
       return "/account/clans"
     case "live_gift_received":
       return "/account"
+    case "affiliate_commission_released":
+      return "/account/afiliado"
+    case "subscription_expiring":
+      return "/pagamentos"
+    case "premium_expiring":
+      return "/account"
+    case "manifestation_expiring":
+      return "/manifestacao"
     default:
       return "/account"
   }

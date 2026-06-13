@@ -3322,7 +3322,13 @@
     "clanInviteNamed": "{who} te invitó al clan {clan}",
     "clanMemberJoined": "{who} se unió a tu clan",
     "liveGiftReceived": "{who} te envió un regalo en el vivo",
-    "liveGiftNamed": "{who} te envió {gift} en el vivo"
+    "liveGiftNamed": "{who} te envió {gift} en el vivo",
+    "affiliateCommission": "Comisión de afiliado confirmada",
+    "subscriptionExpiring": "Tu suscripción está por vencer",
+    "premiumExpiring": "Tu destacado (Premium) está por vencer",
+    "manifestationExpiring": "Tu Manifestación está por vencer",
+    "dayUnit": "día",
+    "daysUnit": "días"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",

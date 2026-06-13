@@ -25,6 +25,13 @@ const NOTIFICATIONS = {
   clanMemberJoined: ["{who} entrou no seu clan", "{who} joined your clan", "{who} se unió a tu clan"],
   liveGiftReceived: ["{who} te enviou um presente na live", "{who} sent you a gift on the live", "{who} te envió un regalo en el vivo"],
   liveGiftNamed: ["{who} te enviou {gift} na live", "{who} sent you {gift} on the live", "{who} te envió {gift} en el vivo"],
+  // Slice E — financeiro
+  affiliateCommission: ["Comissão de afiliado confirmada", "Affiliate commission confirmed", "Comisión de afiliado confirmada"],
+  subscriptionExpiring: ["Sua assinatura está perto de expirar", "Your subscription is about to expire", "Tu suscripción está por vencer"],
+  premiumExpiring: ["Seu destaque (Premium) está perto de expirar", "Your Premium boost is about to expire", "Tu destacado (Premium) está por vencer"],
+  manifestationExpiring: ["Sua Manifestação está perto de expirar", "Your Manifestation is about to expire", "Tu Manifestación está por vencer"],
+  dayUnit: ["dia", "day", "día"],
+  daysUnit: ["dias", "days", "días"],
 }
 
 const GROUPS = { Notifications: NOTIFICATIONS }
