@@ -19,6 +19,12 @@ import { trackTourEvent } from "./tourAnalytics";
 import { markPathVisited } from "./visitedPaths";
 import { isTourSnoozed, snoozeTour as persistSnooze } from "./snoozedTours";
 import { fetchIntentStatus } from "@/features/intent/intentApi";
+import { getStoredUser } from "@/lib/auth";
+
+function checkAdmin(): boolean {
+  const u = getStoredUser();
+  return !!(u?.is_admin || u?.roles?.some((r) => r.desc_role === "Administrator"));
+}
 
 type ProgressMap = Record<string, { status: TourStatus; current_step: number; seen_version: number }>;
 
@@ -36,6 +42,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [progress, setProgress] = useState<ProgressMap>({});
   const [hideAllTours, setHideAllToursState] = useState(false);
+  // Modo análise: admin vê o tour TODA vez que entra numa página (ignora
+  // progresso/snooze persistidos) pra avaliar e melhorar. Só após mount —
+  // SSR não enxerga localStorage. Reavalia em login/logout (auth:changed).
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(checkAdmin());
+    const onAuth = () => setIsAdmin(checkAdmin());
+    window.addEventListener("auth:changed", onAuth);
+    return () => window.removeEventListener("auth:changed", onAuth);
+  }, []);
   const [activeTour, setActiveTour] = useState<TourConfig | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   // Auto-start só pode rodar depois que carregamos o progress do backend —
@@ -146,6 +162,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   const completeTour = (tourKey: TourKey) => {
     const version = tourVersion(tourKey);
+    // No modo admin o progresso é ignorado no auto-start; sem isto o tour
+    // reabriria em loop ao concluir na mesma página. Trava só nesta visita.
+    dismissedThisVisitRef.current.add(tourKey);
     setProgress((prev) => ({ ...prev, [tourKey]: { status: "completed", current_step: stepIndex, seen_version: version } }));
     setActiveTour(null);
     void completeTourProgress(tourKey, stepIndex, version);
@@ -247,6 +266,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     const candidate = eligibleTours.find((tour) => {
       if (!pathMatches(tour.pagePath, pathname)) return false;
       if (dismissedThisVisitRef.current.has(tour.tourKey)) return false;
+      // Admin (modo análise): re-dispara sempre que entra na página, ignorando
+      // progresso persistido e snooze. dismissedThisVisit e hideAllTours seguem
+      // valendo (impede reabrir em loop na mesma visita e permite silenciar).
+      if (isAdmin) return true;
       if (isTourSnoozed(tour.tourKey)) return false;
       const p = progress[tour.tourKey];
       // Nunca visto → dispara.
@@ -263,7 +286,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }));
     void startTourProgress(candidate.tourKey, 0, candidate.version);
     trackTourEvent("tour_started", { tour_key: candidate.tourKey, step_id: candidate.steps[0]?.id || "", page: pathname });
-  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded, onboardingResolved, chainPending]);
+  }, [pathname, hideAllTours, activeTour, eligibleTours, progress, progressLoaded, onboardingResolved, chainPending, isAdmin]);
 
   const value = {
     startTour,
