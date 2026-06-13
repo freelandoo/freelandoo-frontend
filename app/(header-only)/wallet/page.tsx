@@ -179,7 +179,7 @@ export default function WalletPage() {
       </section>
 
       {/* CORPO — coluna única (Vida Financeira em cima + Ganhos embaixo) + Mercado à direita */}
-      <section className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-3 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="mx-auto mt-8 grid w-full max-w-6xl grid-cols-1 gap-6 px-3 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           {/* Vida Financeira — orçamento manual mensal (em cima) */}
           <VidaFinanceira />
@@ -533,7 +533,7 @@ function MarketSidebar() {
       >
         <BarChart3 className="h-4 w-4" /> {tr("market", "Mercado")}
       </button>
-      <div className={cn("fixed inset-0 z-40 lg:hidden", !open && "pointer-events-none")} aria-hidden={!open}>
+      <div className={cn("fixed inset-0 z-40 overflow-hidden lg:hidden", !open && "pointer-events-none")} aria-hidden={!open}>
         <div
           onClick={() => setOpen(false)}
           className={cn("absolute inset-0 bg-[#0B0B0D]/60 transition-opacity duration-300", open ? "opacity-100" : "opacity-0")}

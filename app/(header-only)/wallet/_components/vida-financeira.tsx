@@ -115,12 +115,12 @@ export function VidaFinanceira() {
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[160px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[160px_minmax(0,1fr)]">
         {/* Coluna de meses */}
         <MonthRail year={year} month={month} onPick={(y, m) => setYm(y * 100 + m)} tr={tr} locale={locale} />
 
         <div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Column
               dir="in"
               data={data}
@@ -223,7 +223,7 @@ function CostChart({ data, tr, locale }: { data: MonthData | null; tr: TFn; loca
           {tr("costEmpty", "Lance entradas e saídas para ver o panorama do mês aqui.")}
         </p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Entradas x Saídas */}
           <div>
             <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("inVsOut", "Entradas × Saídas")}</p>
