@@ -3450,6 +3450,11 @@
     "postHint": "Agora é só baixar e enviar esse arquivo no lugar do original.",
     "errFormat": "Formato não aceito. Envie JPG, PNG ou WebP.",
     "errTooBig": "Imagem grande demais para comprimir aqui (máx. 40MB).",
-    "errGeneric": "Não deu pra comprimir essa imagem."
+    "errGeneric": "Não deu pra comprimir essa imagem.",
+    "close": "Fechar",
+    "oversizeTitle": "Arquivo muito grande",
+    "oversizeBody": "O limite aqui é {limit}. Comprima o arquivo e poste a versão menor.",
+    "compressCta": "Comprimir mídia",
+    "chooseAnother": "Escolher outro arquivo"
   }
 }

@@ -12,6 +12,8 @@ import {
 } from "lucide-react"
 import type { CourseLesson } from "@/hooks/use-module-lessons"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { OversizeModal } from "@/components/media/oversize-modal"
+import { UPLOAD_LIMITS } from "@/lib/media/upload-limits"
 
 type Translator = (key: string, fallback: string) => string
 
@@ -32,9 +34,6 @@ function validateFile(file: File, t: Translator): string | null {
   if (!ACCEPTED_MIME.includes(file.type.toLowerCase())) {
     return t("videoFormatRejected", "Formato não aceito. Envie MP4, MOV ou WebM.")
   }
-  if (file.size > MAX_BYTES) {
-    return t("videoTooLarge", "Arquivo maior que 100MB. Comprima antes de enviar.")
-  }
   return null
 }
 
@@ -49,10 +48,16 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
   const [progress, setProgress] = useState(0)
   const [localError, setLocalError] = useState<string | null>(null)
   const [removing, setRemoving] = useState(false)
+  const [oversize, setOversize] = useState(false)
 
   const startUpload = useCallback(
     async (file: File) => {
       setLocalError(null)
+      // Arquivo grande → modal amigável com atalho pra /comprimir.
+      if (file.size > MAX_BYTES) {
+        setOversize(true)
+        return
+      }
       const err = validateFile(file, t)
       if (err) {
         setLocalError(err)
@@ -163,6 +168,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
   // -----------------------------------------------------------------
   if ((status === "processing" || status === "ready") && previewUrl) {
     return (
+      <>
       <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
         <div className="relative aspect-video w-full bg-black">
           <video
@@ -220,6 +226,8 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
           className="hidden"
         />
       </section>
+      <OversizeModal open={oversize} onClose={() => setOversize(false)} limitLabel={UPLOAD_LIMITS.courseVideo.label} />
+      </>
     )
   }
 
@@ -229,6 +237,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
   const isError = status === "error"
 
   return (
+    <>
     <section className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
       <div
         role="button"
@@ -300,5 +309,7 @@ export function LessonVideoPlaceholder({ lesson, onUpload, onRemove }: Props) {
         className="hidden"
       />
     </section>
+    <OversizeModal open={oversize} onClose={() => setOversize(false)} limitLabel={UPLOAD_LIMITS.courseVideo.label} />
+    </>
   )
 }

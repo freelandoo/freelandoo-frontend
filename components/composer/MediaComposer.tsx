@@ -32,6 +32,8 @@ import {
 } from "@/lib/composer/types"
 import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
 import { AudioPicker } from "./AudioPicker"
+import { OversizeModal } from "@/components/media/oversize-modal"
+import { UPLOAD_LIMITS } from "@/lib/media/upload-limits"
 
 type Step = "pick" | "crop" | "edit" | "details" | "publish"
 type EditTab = "filtro" | "texto" | "sobreposicao" | "musica"
@@ -74,6 +76,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const [progress, setProgress] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [oversize, setOversize] = useState(false)
   const [videoNotice, setVideoNotice] = useState<string | null>(null)
   const [cameraOpen, setCameraOpen] = useState(false)
 
@@ -160,7 +163,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     const isImg = f.type.startsWith("image/")
     const isVid = f.type.startsWith("video/")
     if (!isImg && !isVid) { setError(t("errors.pickMedia", "Selecione uma imagem ou um vídeo.")); return }
-    if (f.size > MAX_BYTES) { setError(t("errors.fileTooLarge", "Arquivo acima de 80MB. Reduza ou corte.")); return }
+    if (f.size > MAX_BYTES) { setOversize(true); return }
     const url = URL.createObjectURL(f)
     const kind: MediaKind = isImg ? "image" : "video"
     setVideoNotice(null)
@@ -352,7 +355,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     const isImg = f.type.startsWith("image/")
     const isVid = f.type.startsWith("video/")
     if (!isImg && !isVid) { setError(t("errors.overlayMedia", "Sobreposição deve ser imagem ou vídeo.")); return }
-    if (f.size > MAX_BYTES) { setError(t("errors.overlayTooLarge", "Sobreposição acima de 80MB.")); return }
+    if (f.size > MAX_BYTES) { setOversize(true); return }
     // limpa anterior
     if (overlay?.url) URL.revokeObjectURL(overlay.url)
     const prev = overlayElRef.current
@@ -526,6 +529,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         ref={overlayInputRef} type="file" accept="image/*,video/*" className="hidden"
         onChange={(e) => { handleOverlayFile(e.target.files?.[0] || null); e.target.value = "" }}
       />
+      <OversizeModal open={oversize} onClose={() => setOversize(false)} limitLabel={UPLOAD_LIMITS.post.label} />
       <div className="relative flex h-full w-full max-w-[560px] flex-col overflow-hidden border-x-2 border-[#0B0B0D] bg-[#0b0804]">
         {/* App bar tabloide */}
         <header className="flex items-center justify-between border-b-2 border-[#F1EDE2]/12 px-3 py-2.5">

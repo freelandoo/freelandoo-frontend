@@ -4036,6 +4036,11 @@
     "postHint": "Now just download and upload this file instead of the original.",
     "errFormat": "Unsupported format. Use JPG, PNG or WebP.",
     "errTooBig": "Image too large to compress here (max 40MB).",
-    "errGeneric": "Couldn't compress this image."
+    "errGeneric": "Couldn't compress this image.",
+    "close": "Close",
+    "oversizeTitle": "File too large",
+    "oversizeBody": "The limit here is {limit}. Compress the file and post the smaller version.",
+    "compressCta": "Compress media",
+    "chooseAnother": "Choose another file"
   }
 }

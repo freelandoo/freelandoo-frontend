@@ -30,6 +30,7 @@ import { ManifestationBadge } from "@/components/manifestation/ManifestationBadg
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
+import { OversizeModal } from "@/components/media/oversize-modal"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,6 +87,10 @@ const MediaCropModal = dynamic(
   { ssr: false }
 )
 
+function mbLabel(bytes: number) {
+  return `${Math.round(bytes / (1024 * 1024))}MB`
+}
+
 export default function PerfilPage() {
   const t = useTranslations("Account")
   const tx = useTaxonomy()
@@ -131,6 +136,9 @@ export default function PerfilPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  // Modal amigável de "arquivo grande" (leva pra /comprimir). Guarda o rótulo
+  // do limite porque avatar e vídeo têm limites diferentes.
+  const [oversizeLabel, setOversizeLabel] = useState<string | null>(null)
   const imageRef = React.useRef<HTMLImageElement>(null)
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false)
   const [isNewProfileModalOpen, setIsNewProfileModalOpen] = useState(false)
@@ -673,6 +681,10 @@ export default function PerfilPage() {
     const file = e.target.files?.[0]
     e.target.value = ""
     if (file) {
+      if (file.size > AVATAR_IMAGE_MAX_SIZE_BYTES) {
+        setOversizeLabel(mbLabel(AVATAR_IMAGE_MAX_SIZE_BYTES))
+        return
+      }
       const validation = validateImageFile(file, AVATAR_IMAGE_MAX_SIZE_BYTES)
       if (!validation.ok) {
         alert(validation.error)
@@ -1181,7 +1193,7 @@ export default function PerfilPage() {
     }
 
     if (file.size > 100 * 1024 * 1024) {
-      alert(t("fileTooBig100", "O arquivo deve ter no máximo 100MB"))
+      setOversizeLabel("100MB")
       return
     }
 
@@ -2748,6 +2760,8 @@ export default function PerfilPage() {
         open={followingModalOpen}
         onClose={() => setFollowingModalOpen(false)}
       />
+
+      <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />
     </div>
   )
 }

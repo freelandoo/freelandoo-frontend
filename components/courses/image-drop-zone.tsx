@@ -3,6 +3,8 @@
 import { useCallback, useRef, useState } from "react"
 import { ImagePlus, Loader2, RefreshCw, Trash2, Upload } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { OversizeModal } from "@/components/media/oversize-modal"
+import { UPLOAD_LIMITS } from "@/lib/media/upload-limits"
 
 const ACCEPTED_MIMES = new Set(["image/jpeg", "image/png", "image/webp"])
 const MAX_BYTES = 12 * 1024 * 1024
@@ -43,19 +45,22 @@ export function ImageDropZone({
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [oversize, setOversize] = useState(false)
 
   const validate = useCallback((file: File): string | null => {
     if (!ACCEPTED_MIMES.has(file.type.toLowerCase())) {
       return "Formato não aceito. Envie JPG, PNG ou WebP."
-    }
-    if (file.size > MAX_BYTES) {
-      return "Arquivo maior que 12MB."
     }
     return null
   }, [])
 
   const handleFile = useCallback(
     async (file: File) => {
+      // Arquivo grande → modal amigável com atalho pra /comprimir.
+      if (file.size > MAX_BYTES) {
+        setOversize(true)
+        return
+      }
       const err = validate(file)
       if (err) {
         setError(err)
@@ -212,6 +217,8 @@ export function ImageDropZone({
       {error && (
         <p className="mt-2 text-xs font-medium text-red-300">{error}</p>
       )}
+
+      <OversizeModal open={oversize} onClose={() => setOversize(false)} limitLabel={UPLOAD_LIMITS.courseThumb.label} />
     </div>
   )
 }

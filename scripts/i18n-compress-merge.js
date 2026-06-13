@@ -45,6 +45,15 @@ const COMPRESS = {
     "Imagen demasiado grande para comprimir aquí (máx. 40MB).",
   ],
   errGeneric: ["Não deu pra comprimir essa imagem.", "Couldn't compress this image.", "No se pudo comprimir esta imagen."],
+  close: ["Fechar", "Close", "Cerrar"],
+  oversizeTitle: ["Arquivo muito grande", "File too large", "Archivo demasiado grande"],
+  oversizeBody: [
+    "O limite aqui é {limit}. Comprima o arquivo e poste a versão menor.",
+    "The limit here is {limit}. Compress the file and post the smaller version.",
+    "El límite aquí es {limit}. Comprime el archivo y publica la versión más pequeña.",
+  ],
+  compressCta: ["Comprimir mídia", "Compress media", "Comprimir medios"],
+  chooseAnother: ["Escolher outro arquivo", "Choose another file", "Elegir otro archivo"],
 }
 
 const GROUPS = { Compress: COMPRESS }
