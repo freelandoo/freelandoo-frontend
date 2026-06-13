@@ -24,6 +24,7 @@ import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { VidaFinanceira } from "./_components/vida-financeira"
+import { MeiCard } from "./_components/mei-card"
 
 /* ── paleta (verde teal no lugar do dourado) ──────────────────────────────── */
 const GREEN = "#16B79A"
@@ -256,6 +257,11 @@ export default function WalletPage() {
             <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
             <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
             <Kpi label={tr("kpiEntries", "Lançamentos")} value={String(totals.count || 0)} />
+          </div>
+
+          {/* MEI — termômetro do teto + recibo */}
+          <div className="mt-6">
+            <MeiCard />
           </div>
 
           {/* Gráfico */}
