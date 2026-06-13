@@ -105,7 +105,7 @@ export function VidaFinanceira() {
   const positive = totals.net_cents >= 0
 
   return (
-    <section className="mx-auto mt-16 w-full max-w-6xl px-3 md:px-8">
+    <section className="w-full">
       <div className="relative mb-8">
         <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
         <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>

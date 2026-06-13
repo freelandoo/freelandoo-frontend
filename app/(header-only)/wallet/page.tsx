@@ -178,13 +178,15 @@ export default function WalletPage() {
         </h1>
       </section>
 
-      {/* Vida Financeira — orçamento manual mensal (em cima) */}
-      <VidaFinanceira />
+      {/* CORPO — coluna única (Vida Financeira em cima + Ganhos embaixo) + Mercado à direita */}
+      <section className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-3 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0">
+          {/* Vida Financeira — orçamento manual mensal (em cima) */}
+          <VidaFinanceira />
 
-      {/* GANHOS NA PLATAFORMA — controles + extrato (embaixo) */}
-      {/* CONTROLES */}
-      <section className="mx-auto w-full max-w-6xl px-3 md:px-8">
-        <div className="mt-10 flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* GANHOS NA PLATAFORMA — controles + extrato (embaixo) */}
+          {/* CONTROLES */}
+          <div className="mt-12 flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">{tr("period", "Período")}</span>
             <div className="flex gap-1.5">
@@ -228,18 +230,14 @@ export default function WalletPage() {
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#F1EDE2]" />
           </div>
         </div>
-        {profileId && (
-          <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
-            {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por subperfil.")}
-          </p>
-        )}
-      </section>
+          {profileId && (
+            <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
+              {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por subperfil.")}
+            </p>
+          )}
 
-      {/* GRID principal */}
-      <section className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-3 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0">
           {/* KPIs */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Kpi label={tr("kpiReceived", "Recebido")} value={brl(totals.received, locale)} accent />
             <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
             <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
