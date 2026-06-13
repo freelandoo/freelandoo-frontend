@@ -16,7 +16,6 @@ import {
   Building2,
   Eye,
   Globe2,
-  Heart,
   Loader2,
   MapPin,
   Star,
@@ -50,6 +49,14 @@ import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { RankingPodium } from "./ranking-podium"
 import { AnimatedNumber } from "./ranking-ui"
+import {
+  RankingSocialActions,
+  RankingSocialPanel,
+  emptySummary,
+  useRankingSocial,
+  type RankingSocialSummary,
+  type RankingSocialTarget,
+} from "./ranking-social"
 
 type RankingScope = "general" | "machine" | "profession" | "region"
 
@@ -243,6 +250,23 @@ export function RankingPageClient() {
   )
   const error = rankingState.key === requestKey ? rankingState.error : null
   const loading = !!rankingUrl && rankingState.key !== requestKey
+
+  // Social do ranking (likes/comentários sobre os perfis listados)
+  const profileIds = useMemo(() => rows.map((row) => row.id_profile), [rows])
+  const { summaryById, mergeSummary, toggleLike } = useRankingSocial(profileIds)
+  const [socialTarget, setSocialTarget] = useState<RankingSocialTarget | null>(null)
+  const openComments = (row: RankingRow, rank: number) => {
+    setSocialTarget({
+      id_profile: row.id_profile,
+      display_name: row.display_name,
+      avatar_url: row.avatar_url,
+      username: row.username,
+      href: rowHref(row),
+      rank,
+      points: Math.round(Number(row.ranking_score ?? row.total_points ?? 0)),
+      is_clan: row.is_clan,
+    })
+  }
 
   const scopeLabel = useMemo(() => {
     if (scope === "general") return t("scopeBrasil", "Brasil")
@@ -450,7 +474,14 @@ export function RankingPageClient() {
           </div>
           <span className="hidden text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6]/50 sm:block">{t("top3", "Top 3")} · {scopeLabel}</span>
         </div>
-        <RankingPodium rows={rows} rowHref={(row) => rowHref(row as RankingRow)} loading={loading} />
+        <RankingPodium
+          rows={rows}
+          rowHref={(row) => rowHref(row as RankingRow)}
+          loading={loading}
+          summaryFor={(row) => summaryById[row.id_profile] || emptySummary(row.id_profile)}
+          onLike={(row) => toggleLike(row.id_profile)}
+          onComments={(row, rank) => openComments(row as RankingRow, rank)}
+        />
       </section>
 
       {/* LISTA */}
@@ -469,18 +500,47 @@ export function RankingPageClient() {
           {!loading && error && <RankingError error={error} />}
           {!loading && !error && rows.length === 0 && <RankingEmpty />}
           {!loading && !error && rest.map((row, index) => (
-            <RankingRowCard key={row.id_profile} row={row} rank={index + 4} />
+            <RankingRowCard
+              key={row.id_profile}
+              row={row}
+              rank={index + 4}
+              summary={summaryById[row.id_profile] || emptySummary(row.id_profile)}
+              onLike={() => toggleLike(row.id_profile)}
+              onComments={() => openComments(row, index + 4)}
+            />
           ))}
           {!loading && !error && rows.length > 0 && rest.length === 0 && (
             <p className="text-center text-sm text-[#C9C2B6]/60">{t("allShownOnPodium", "O pódio já mostra todos os colocados.")}</p>
           )}
         </div>
       </section>
+
+      {socialTarget && (
+        <RankingSocialPanel
+          target={socialTarget}
+          summary={summaryById[socialTarget.id_profile] || emptySummary(socialTarget.id_profile)}
+          onClose={() => setSocialTarget(null)}
+          onToggleLike={toggleLike}
+          mergeSummary={mergeSummary}
+        />
+      )}
     </main>
   )
 }
 
-function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
+function RankingRowCard({
+  row,
+  rank,
+  summary,
+  onLike,
+  onComments,
+}: {
+  row: RankingRow
+  rank: number
+  summary: RankingSocialSummary
+  onLike: () => void
+  onComments: () => void
+}) {
   const t = useTranslations("Ranking")
   const initials = getInitials(row.display_name)
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
@@ -518,10 +578,10 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
           )}
         </div>
         <p className="truncate text-[11px] font-semibold text-[#6B6457]">{meta}</p>
-        <div className="mt-1.5 hidden items-center gap-4 md:flex">
-          <Stat icon={<Star className="h-3.5 w-3.5 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
-          <Stat icon={<Eye className="h-3.5 w-3.5 text-[#6B6457]" />} value={<AnimatedNumber value={row.visits_count ?? 0} compact />} />
-          <Stat icon={<Heart className="h-3.5 w-3.5 text-[#6B6457]" />} value={<AnimatedNumber value={row.likes_count ?? 0} compact />} />
+        <div className="mt-1.5 flex items-center gap-2 md:gap-4">
+          <Stat className="hidden md:inline-flex" icon={<Star className="h-3.5 w-3.5 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
+          <Stat className="hidden md:inline-flex" icon={<Eye className="h-3.5 w-3.5 text-[#6B6457]" />} value={<AnimatedNumber value={row.visits_count ?? 0} compact />} />
+          <RankingSocialActions summary={summary} onLike={onLike} onComments={onComments} />
         </div>
       </div>
 
@@ -536,9 +596,9 @@ function RankingRowCard({ row, rank }: { row: RankingRow; rank: number }) {
   )
 }
 
-function Stat({ icon, value }: { icon: ReactNode; value: ReactNode }) {
+function Stat({ icon, value, className }: { icon: ReactNode; value: ReactNode; className?: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1 text-xs font-extrabold tabular-nums text-[#0B0B0D]">
+    <span className={cn("inline-flex items-baseline gap-1 text-xs font-extrabold tabular-nums text-[#0B0B0D]", className)}>
       {icon}
       {value}
     </span>

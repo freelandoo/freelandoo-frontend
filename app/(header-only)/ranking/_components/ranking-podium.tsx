@@ -11,11 +11,12 @@ import Link from "next/link"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
-import { Star, Eye, Heart } from "lucide-react"
+import { Star, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DoodleCrown } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { AnimatedNumber } from "./ranking-ui"
+import { RankingSocialActions, emptySummary, type RankingSocialSummary } from "./ranking-social"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -45,6 +46,9 @@ interface Props {
   rows: PodiumRow[]
   rowHref: (row: PodiumRow) => string
   loading?: boolean
+  summaryFor?: (row: PodiumRow) => RankingSocialSummary
+  onLike?: (row: PodiumRow) => void
+  onComments?: (row: PodiumRow, rank: number) => void
 }
 
 function getInitials(name: string | null | undefined) {
@@ -52,7 +56,21 @@ function getInitials(name: string | null | undefined) {
   return name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("")
 }
 
-function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3; rowHref: (r: PodiumRow) => string }) {
+function PodiumColumn({
+  row,
+  rank,
+  rowHref,
+  summary,
+  onLike,
+  onComments,
+}: {
+  row: PodiumRow
+  rank: 1 | 2 | 3
+  rowHref: (r: PodiumRow) => string
+  summary: RankingSocialSummary
+  onLike?: (row: PodiumRow) => void
+  onComments?: (row: PodiumRow, rank: number) => void
+}) {
   const t = useTranslations("Ranking")
   const isFirst = rank === 1
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
@@ -84,21 +102,23 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
           {rank}
         </span>
 
-        {/* Foto rasgada */}
-        <div className="fl-torn-1 fl-cut relative overflow-hidden p-2" style={{ background: frame }}>
-          {row.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.avatar_url}
-              alt={row.display_name}
-              className={cn("w-full object-cover", isFirst ? "aspect-[4/5]" : "aspect-square")}
-            />
-          ) : (
-            <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-5xl text-[#F2B705]", isFirst ? "aspect-[4/5]" : "aspect-square")}>
-              {getInitials(row.display_name)}
-            </div>
-          )}
-        </div>
+        {/* Foto rasgada — clicável, leva ao perfil */}
+        <Link href={rowHref(row)} aria-label={row.display_name} className="block">
+          <div className="fl-torn-1 fl-cut relative overflow-hidden p-2" style={{ background: frame }}>
+            {row.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={row.avatar_url}
+                alt={row.display_name}
+                className={cn("w-full object-cover", isFirst ? "aspect-[4/5]" : "aspect-square")}
+              />
+            ) : (
+              <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-5xl text-[#F2B705]", isFirst ? "aspect-[4/5]" : "aspect-square")}>
+                {getInitials(row.display_name)}
+              </div>
+            )}
+          </div>
+        </Link>
 
         {/* Nome + score */}
         <div className="fl-card relative mt-2 p-2 text-center md:mt-3 md:p-3">
@@ -119,10 +139,17 @@ function PodiumColumn({ row, rank, rowHref }: { row: PodiumRow; rank: 1 | 2 | 3;
           </div>
           <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">{t("pontos", "pontos")}</p>
 
-          <div className="mt-2 flex items-center justify-center gap-1.5 border-t border-[#0B0B0D]/10 pt-2 md:mt-3 md:gap-3">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 border-t border-[#0B0B0D]/10 pt-2 md:mt-3 md:gap-2.5">
             <Meta icon={<Star className="h-3 w-3 text-[#E0A500]" />} value={row.avg_rating ? Number(row.avg_rating).toFixed(1) : "0.0"} />
             <Meta icon={<Eye className="h-3 w-3 text-[#6B6457]" />} value={<AnimatedNumber value={row.visits_count ?? 0} compact />} />
-            <Meta icon={<Heart className="h-3 w-3 text-[#6B6457]" />} value={<AnimatedNumber value={row.likes_count ?? 0} compact />} />
+            {onLike && onComments && (
+              <RankingSocialActions
+                summary={summary}
+                onLike={() => onLike(row)}
+                onComments={() => onComments(row, rank)}
+                compact
+              />
+            )}
           </div>
         </div>
       </div>
@@ -145,7 +172,7 @@ function Meta({ icon, value }: { icon: React.ReactNode; value: React.ReactNode }
   )
 }
 
-export function RankingPodium({ rows, rowHref, loading }: Props) {
+export function RankingPodium({ rows, rowHref, loading, summaryFor, onLike, onComments }: Props) {
   const root = useRef<HTMLDivElement>(null)
   const top3 = rows.slice(0, 3)
 
@@ -183,7 +210,15 @@ export function RankingPodium({ rows, rowHref, loading }: Props) {
     <div ref={root} className="mx-auto max-w-4xl">
       <div className="flex items-end justify-center gap-1.5 sm:gap-3 md:gap-5">
         {top3.map((row, i) => (
-          <PodiumColumn key={row.id_profile} row={row} rank={(i + 1) as 1 | 2 | 3} rowHref={rowHref} />
+          <PodiumColumn
+            key={row.id_profile}
+            row={row}
+            rank={(i + 1) as 1 | 2 | 3}
+            rowHref={rowHref}
+            summary={summaryFor ? summaryFor(row) : emptySummary(row.id_profile)}
+            onLike={onLike}
+            onComments={onComments}
+          />
         ))}
       </div>
     </div>
