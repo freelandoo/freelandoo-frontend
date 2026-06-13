@@ -21,6 +21,10 @@ const GREEN_DEEP = "#00876B"
 const AMBER = "#F2B705"
 const RED = "#C0392B"
 
+// Emissão de recibo desligada por ora (função órfã — código/endpoints preservados).
+// Vira `true` para reativar os botões "Emitir recibo"/"Recibos" e seus modais.
+const RECEIPTS_ENABLED = false
+
 type TFn = (key: string, fallback?: string) => string
 
 interface MeiProfile {
@@ -205,31 +209,33 @@ export function MeiCard() {
         {t("disclaimer", "Estimativa do que entrou pela plataforma neste ano. Receita fora da Freelandoo também conta no teto — confirme com seu contador.")}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setModal("receipt")}
-          className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#06251F] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
-          style={{ background: GREEN }}
-        >
-          <Plus className="h-3.5 w-3.5" /> {t("issueReceipt", "Emitir recibo")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setModal("list")}
-          className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D]/40 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] transition hover:border-[#0B0B0D]"
-        >
-          <FileText className="h-3.5 w-3.5" /> {t("myReceipts", "Recibos")}
-        </button>
-      </div>
+      {RECEIPTS_ENABLED && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setModal("receipt")}
+            className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#06251F] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
+            style={{ background: GREEN }}
+          >
+            <Plus className="h-3.5 w-3.5" /> {t("issueReceipt", "Emitir recibo")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setModal("list")}
+            className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D]/40 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] transition hover:border-[#0B0B0D]"
+          >
+            <FileText className="h-3.5 w-3.5" /> {t("myReceipts", "Recibos")}
+          </button>
+        </div>
+      )}
 
-      {modal === "receipt" && (
+      {RECEIPTS_ENABLED && modal === "receipt" && (
         <ReceiptModal t={t} profile={profile} fallbackName={fallbackName} onClose={() => setModal(null)} />
       )}
       {modal === "settings" && (
         <SettingsModal t={t} profile={profile} onClose={() => setModal(null)} onSaved={() => { setModal(null); void load() }} />
       )}
-      {modal === "list" && (
+      {RECEIPTS_ENABLED && modal === "list" && (
         <ReceiptsModal t={t} locale={locale} profile={profile} fallbackName={fallbackName} onClose={() => setModal(null)} />
       )}
     </div>

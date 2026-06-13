@@ -1,4 +1,9 @@
-export type ConsentActionKey = "publish_content" | "publish_offer" | "purchase" | "affiliate"
+export type ConsentActionKey =
+  | "publish_content"
+  | "publish_offer"
+  | "purchase"
+  | "platform_purchase"
+  | "affiliate"
 
 export interface ConsentActionDef {
   key: ConsentActionKey
@@ -50,17 +55,34 @@ export const CONSENT_ACTIONS: Record<ConsentActionKey, ConsentActionDef> = {
   purchase: {
     key: "purchase",
     version: 1,
-    title: "Antes de concluir a compra",
+    title: "Antes de contratar",
     summary:
-      "A contratação é entre você e o vendedor; a Freelandoo intermedia o pagamento com proteção. Confira seus direitos antes de continuar.",
+      "A Freelandoo é uma plataforma que conecta você ao vendedor ou profissional. A contratação, a execução e a entrega são responsabilidade direta de quem oferece a oferta — a Freelandoo apenas intermedeia o contato e o pagamento e não é parte do contrato.",
     bullets: [
-      "Direito de arrependimento em até 7 dias em compras online (CDC, art. 49).",
-      "O pagamento fica protegido até a confirmação da entrega.",
-      "Você leu a Política de Devolução e as regras da compra.",
+      "O contrato é firmado diretamente entre você e o vendedor/profissional; a Freelandoo não responde pela execução, qualidade, segurança, prazos ou resultado da oferta.",
+      "Você confere os dados, o preço e as condições antes de prosseguir e é responsável por avaliar o fornecedor e a oferta.",
+      "Divergências sobre o serviço ou produto são resolvidas diretamente entre as partes; seus direitos de consumidor (CDC) permanecem preservados perante o fornecedor.",
     ],
     links: [
-      { label: "Política de Devolução", href: "/return-policy" },
       { label: "Termos do Marketplace", href: "/marketplace-terms" },
+      { label: "Política de Devolução", href: "/return-policy" },
+      { label: "Termos de Uso", href: "/terms" },
+    ],
+  },
+  platform_purchase: {
+    key: "platform_purchase",
+    version: 1,
+    title: "Antes de concluir",
+    summary:
+      "Você está adquirindo um recurso digital da própria Freelandoo (como Poléns, destaque ou banner de manifestação). É um item de uso dentro da plataforma, liberado após a confirmação do pagamento.",
+    bullets: [
+      "É um item digital, sem entrega física, com fruição imediata após a confirmação do pagamento.",
+      "Créditos e recursos digitais não são, em regra, reembolsáveis após a liberação ou o uso, salvo quando a lei exigir.",
+      "O uso segue os Termos da Freelandoo e as regras específicas do recurso adquirido.",
+    ],
+    links: [
+      { label: "Termos de Uso", href: "/terms" },
+      { label: "Termos de Poléns", href: "/polens-terms" },
     ],
   },
   affiliate: {

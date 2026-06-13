@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Loader2, X } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 interface Product {
   id_profile_product: number
@@ -49,6 +50,7 @@ export function BuyProductDialog({
 }: BuyProductDialogProps) {
   const t = useTranslations("Product")
   const locale = useLocale()
+  const { ensureConsent } = useActionConsent()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
@@ -84,6 +86,7 @@ export function BuyProductDialog({
       setError(t("streetNumberRequired", "Rua e número são obrigatórios"))
       return
     }
+    if (!(await ensureConsent("purchase"))) return
     setSubmitting(true)
     try {
       const token = getToken()

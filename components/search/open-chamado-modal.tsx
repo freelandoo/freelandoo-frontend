@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
+import { useActionConsent } from "@/hooks/use-action-consent"
 import {
   COLOR_SWATCHES,
   getAttributeSchema,
@@ -72,6 +73,7 @@ function renderTemplate(template: string, values: Record<string, React.ReactNode
 export function OpenChamadoModal({ open, onOpenChange, mode = "service", defaultMachineId }: Props) {
   const t = useTranslations("Chamado")
   const tx = useTaxonomy()
+  const { ensureConsent } = useActionConsent()
   // ---------- estado base ----------
   const initialStep: Step = useMemo(() => {
     if (mode === "product") return "productCat"
@@ -251,6 +253,7 @@ export function OpenChamadoModal({ open, onOpenChange, mode = "service", default
       setError(t("errLoginRequired", "Faça login para abrir um chamado."))
       return
     }
+    if (!(await ensureConsent("purchase"))) return
 
     let endpoint = ""
     let payload: Record<string, unknown> = {}

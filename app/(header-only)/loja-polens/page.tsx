@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 type Product = {
   id: string
@@ -39,6 +40,7 @@ export default function LojaPolensPage() {
 function LojaPolensContent() {
   const t = useTranslations("Polens")
   const locale = useLocale()
+  const { ensureConsent } = useActionConsent()
   const params = useSearchParams()
   const checkout = params.get("polens_checkout")
 
@@ -127,6 +129,7 @@ function LojaPolensContent() {
       window.location.href = "/login?next=/loja-polens"
       return
     }
+    if (!(await ensureConsent("platform_purchase"))) return
     setBuyingId(product.id)
     setError("")
     try {

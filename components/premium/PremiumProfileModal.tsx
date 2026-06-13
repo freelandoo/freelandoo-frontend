@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 type Quote = {
   profile?: {
@@ -55,6 +56,7 @@ export function PremiumProfileModal({
 }) {
   const tr = useTranslations("Premium")
   const locale = useLocale()
+  const { ensureConsent } = useActionConsent()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(false)
   const [buying, setBuying] = useState<"polens" | "stripe" | null>(null)
@@ -85,6 +87,7 @@ export function PremiumProfileModal({
       window.location.href = "/login?next=/account"
       return
     }
+    if (!(await ensureConsent("platform_purchase"))) return
     setBuying(method)
     setError(null)
     try {

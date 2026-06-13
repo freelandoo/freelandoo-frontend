@@ -22,6 +22,7 @@ import {
   ErrorState,
 } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useActionConsent } from "@/hooks/use-action-consent"
 
 type TFn = (key: string, fallback?: string) => string
 
@@ -123,6 +124,7 @@ function BannerImage({ src, alt }: { src: string; alt: string }) {
 export default function ManifestacaoPage() {
   const t = useTranslations("Manifestation")
   const locale = useLocale()
+  const { ensureConsent } = useActionConsent()
   const [products, setProducts] = useState<Product[]>([])
   const [mine, setMine] = useState<Mine | null>(null)
   const [polens, setPolens] = useState<number | null>(null)
@@ -243,6 +245,7 @@ export default function ManifestacaoPage() {
       window.location.href = "/login?next=/manifestacao"
       return
     }
+    if (!(await ensureConsent("platform_purchase"))) return
     setBusy(`buy:${product.id}`)
     try {
       const res = await fetch("/api/manifestations/checkout/polens", {
@@ -278,6 +281,7 @@ export default function ManifestacaoPage() {
       window.location.href = "/login?next=/manifestacao"
       return
     }
+    if (!(await ensureConsent("platform_purchase"))) return
     setBusy(`stripe:${product.id}`)
     try {
       const res = await fetch("/api/manifestations/checkout/stripe", {
