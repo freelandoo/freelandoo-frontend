@@ -1860,7 +1860,8 @@
     "productNoChatNote": "Pedidos de produto não têm chat contínuo. A negociação acontece pelos contatos trocados na resposta.",
     "sideLabelResponded": "Respondi",
     "sideLabelRequested": "Pedi",
-    "productRequestFallback": "Pedido de produto"
+    "productRequestFallback": "Pedido de produto",
+    "machineHasUnread": "Conversa nova"
   },
   "Conversation": {
     "deleteMessageConfirm": "Apagar essa mensagem?",

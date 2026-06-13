@@ -1860,7 +1860,8 @@
     "productNoChatNote": "Product requests don't have an ongoing chat. Negotiation happens through the contacts shared in the response.",
     "sideLabelResponded": "I answered",
     "sideLabelRequested": "I requested",
-    "productRequestFallback": "Product request"
+    "productRequestFallback": "Product request",
+    "machineHasUnread": "New activity"
   },
   "Conversation": {
     "deleteMessageConfirm": "Delete this message?",

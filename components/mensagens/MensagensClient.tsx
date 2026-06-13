@@ -46,6 +46,7 @@ import {
 import { getToken } from "@/lib/auth"
 import { emitRealtime, onRealtime } from "@/lib/realtime"
 import { useAuth } from "@/hooks/use-auth"
+import { useNavCounts, refreshNavCounts } from "@/components/navigation/use-nav-counts"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import type {
@@ -337,6 +338,7 @@ export default function MensagensClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { status } = useAuth()
+  const navCounts = useNavCounts()
 
   const initialConvId = searchParams.get("c")
   const initialOpenWith = searchParams.get("with")
@@ -942,6 +944,28 @@ export default function MensagensClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
+  // Ao entrar numa sala (Global ou um enxame), o backend marca o escopo como
+  // lido ao listar as mensagens. Damos um tempinho e re-puxamos os nav-counts
+  // pra a bolinha de não-lido sumir. Também roda ao trocar de enxame.
+  useEffect(() => {
+    if (status !== "authenticated") return
+    const inRoom = tab === "global" || (tab === "machine" && !!chatMachineId)
+    if (!inRoom) return
+    const h = setTimeout(() => {
+      void refreshNavCounts(true)
+    }, 1500)
+    return () => clearTimeout(h)
+  }, [status, tab, chatMachineId])
+
+  // Bolinhas: escopos com não-lido, descontando o que está aberto agora.
+  const unreadMachineIds = useMemo(() => {
+    const set = new Set(navCounts.chatMachines)
+    if (tab === "machine" && chatMachineId) set.delete(chatMachineId)
+    return set
+  }, [navCounts.chatMachines, tab, chatMachineId])
+  const globalHasUnread = navCounts.chatGlobal && tab !== "global"
+  const machinesTabHasUnread = unreadMachineIds.size > 0
+
   const handlePickMachine = useCallback((id: number) => {
     setChatMachineId(id)
     setNeedsMachinePick(false)
@@ -1261,6 +1285,7 @@ export default function MensagensClient() {
                   label={t("globalTabLabel", "Global")}
                   shortLabel={t("globalTabLabel", "Global")}
                   dataTour="messages-tab-global"
+                  badge={globalHasUnread}
                 />
                 <TabBtn
                   active={tab === "machine"}
@@ -1269,6 +1294,7 @@ export default function MensagensClient() {
                   label={t("machinesTabLabel", "Enxames")}
                   shortLabel={t("machinesTabShortLabel", "Máq.")}
                   dataTour="messages-tab-machine"
+                  badge={machinesTabHasUnread}
                 />
               </>
             )}
@@ -1584,6 +1610,7 @@ export default function MensagensClient() {
               loading={machinesLoading && !machinesLoaded}
               activeId={chatMachineId}
               onPick={handlePickMachine}
+              unreadIds={unreadMachineIds}
             />
           </div>
         </aside>
@@ -2333,6 +2360,7 @@ function TabBtn({
   label,
   shortLabel,
   dataTour,
+  badge = false,
 }: {
   active: boolean
   onClick: () => void
@@ -2340,6 +2368,7 @@ function TabBtn({
   label: string
   shortLabel: string
   dataTour?: string
+  badge?: boolean
 }) {
   return (
     <button
@@ -2347,13 +2376,18 @@ function TabBtn({
       onClick={onClick}
       data-tour={dataTour}
       className={cn(
-        "flex min-w-0 flex-1 items-center justify-center gap-1 px-1.5 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] transition-colors",
+        "relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1.5 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] transition-colors",
         active
           ? "-mb-[2px] border-b-[3px] border-[#F2B705] text-[#F2B705]"
           : "border-b-[3px] border-transparent text-[#9A938A] hover:text-[#F5F1E8]"
       )}
     >
-      <span className="shrink-0">{icon}</span>
+      <span className="relative shrink-0">
+        {icon}
+        {badge && (
+          <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-[#F2B705] ring-2 ring-[#141009]" />
+        )}
+      </span>
       <span className="hidden truncate lg:inline">{label}</span>
       <span className="truncate lg:hidden">{shortLabel}</span>
     </button>
@@ -2376,12 +2410,14 @@ function MachineList({
   loading,
   activeId,
   onPick,
+  unreadIds,
 }: {
   userMachines: ChatMachine[]
   allMachines: ChatMachine[]
   loading: boolean
   activeId: number | null
   onPick: (id: number) => void
+  unreadIds: Set<number>
 }) {
   const t = useTranslations("Messages")
   if (loading) {
@@ -2399,6 +2435,7 @@ function MachineList({
 
   const renderItem = (m: ChatMachine, mine: boolean) => {
     const isActive = m.id_machine === activeId
+    const hasUnread = unreadIds.has(m.id_machine)
     return (
       <li key={m.id_machine}>
         <button
@@ -2414,10 +2451,16 @@ function MachineList({
           />
           <span className={cn(
             "flex-1 truncate text-sm",
-            isActive ? "text-white" : "text-white/85"
+            isActive ? "text-white" : hasUnread ? "text-white font-semibold" : "text-white/85"
           )}>
             {m.name}
           </span>
+          {hasUnread && (
+            <span
+              className="h-2 w-2 shrink-0 rounded-full bg-[#F2B705]"
+              aria-label={t("machineHasUnread", "Conversa nova")}
+            />
+          )}
           {mine && (
             <span className="shrink-0 rounded-sm bg-emerald-400/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-300">
               {t("yourMachineLabel", "Sua")}

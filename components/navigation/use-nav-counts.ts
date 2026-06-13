@@ -18,6 +18,11 @@ interface NavCountsResponse {
   notifications?: {
     unread_count?: number
   }
+  chat?: {
+    global?: boolean
+    machines?: number[]
+    total?: number
+  }
 }
 
 export interface NavCounts {
@@ -26,6 +31,9 @@ export interface NavCounts {
   serviceUnread: number
   serviceHasNew: boolean
   notificationUnread: number
+  chatGlobal: boolean
+  chatMachines: number[]
+  chatTotal: number
   updatedAt: number
   loading: boolean
 }
@@ -36,6 +44,9 @@ const emptyCounts: NavCounts = {
   serviceUnread: 0,
   serviceHasNew: false,
   notificationUnread: 0,
+  chatGlobal: false,
+  chatMachines: [],
+  chatTotal: 0,
   updatedAt: 0,
   loading: false,
 }
@@ -89,6 +100,9 @@ export async function refreshNavCounts(force = false) {
         serviceUnread,
         serviceHasNew: !!data.serviceRequests?.has_new || serviceUnread > 0,
         notificationUnread: Number(data.notifications?.unread_count) || 0,
+        chatGlobal: !!data.chat?.global,
+        chatMachines: Array.isArray(data.chat?.machines) ? data.chat!.machines! : [],
+        chatTotal: Number(data.chat?.total) || 0,
         updatedAt: Date.now(),
         loading: false,
       }

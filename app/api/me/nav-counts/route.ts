@@ -8,6 +8,7 @@ const EMPTY = {
   conversations: { total: 0, by_actor: [] },
   serviceRequests: { has_new: false, unread_chats: 0 },
   notifications: { unread_count: 0 },
+  chat: { global: false, machines: [], total: 0 },
 }
 
 export async function GET(request: Request) {

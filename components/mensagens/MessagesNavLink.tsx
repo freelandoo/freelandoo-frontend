@@ -45,6 +45,9 @@ export default function MessagesNavLink({ className = "" }: { className?: string
 
   const serviceUnread = navCounts.serviceUnread
   const unread = navCounts.conversationUnread + serviceUnread
+  // Chat ao vivo (Global/Enxames) é não-lido por escopo, sem contagem precisa →
+  // vira bolinha quando não há badge numérico de conversa/O.S.
+  const chatHasUnread = navCounts.chatTotal > 0
 
   useEffect(() => {
     const sync = () => setAuthed(!!getToken())
@@ -96,11 +99,13 @@ export default function MessagesNavLink({ className = "" }: { className?: string
           className={`relative inline-flex h-9 w-9 items-center justify-center rounded-md text-white/80 hover:bg-white/10 hover:text-white ${className}`}
         >
           <MessageCircle className="h-5 w-5" />
-          {unread > 0 && (
+          {unread > 0 ? (
             <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-black">
               {unread > 99 ? "99+" : unread}
             </span>
-          )}
+          ) : chatHasUnread ? (
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-black" />
+          ) : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">

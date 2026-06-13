@@ -1860,7 +1860,8 @@
     "productNoChatNote": "Los pedidos de producto no tienen chat continuo. La negociación ocurre por los contactos intercambiados en la respuesta.",
     "sideLabelResponded": "Respondí",
     "sideLabelRequested": "Pedí",
-    "productRequestFallback": "Pedido de producto"
+    "productRequestFallback": "Pedido de producto",
+    "machineHasUnread": "Conversación nueva"
   },
   "Conversation": {
     "deleteMessageConfirm": "¿Borrar este mensaje?",
