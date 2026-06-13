@@ -3997,5 +3997,25 @@
     "noReceipts": "Ningún recibo emitido aún.",
     "receiptNo": "Recibo Nº {n}",
     "reprint": "Reimprimir"
+  },
+  "Compress": {
+    "eyebrow": "Herramienta",
+    "title": "Comprimir medios",
+    "subtitle": "Haz tu imagen más liviana para no superar el límite. Todo ocurre en tu dispositivo — luego solo descarga y publica.",
+    "tabImage": "Imagen",
+    "tabVideo": "Video",
+    "soon": "pronto",
+    "dropHere": "Arrastra la imagen o haz clic para elegir",
+    "formatsHint": "JPG, PNG o WebP · hasta 40MB",
+    "compressing": "Comprimiendo…",
+    "before": "Antes",
+    "after": "Después",
+    "saved": "Ahorro",
+    "download": "Descargar imagen",
+    "another": "Otra imagen",
+    "postHint": "Ahora solo descarga y sube este archivo en lugar del original.",
+    "errFormat": "Formato no aceptado. Usa JPG, PNG o WebP.",
+    "errTooBig": "Imagen demasiado grande para comprimir aquí (máx. 40MB).",
+    "errGeneric": "No se pudo comprimir esta imagen."
   }
 }

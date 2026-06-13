@@ -4017,5 +4017,25 @@
     "noReceipts": "No receipts issued yet.",
     "receiptNo": "Receipt No. {n}",
     "reprint": "Reprint"
+  },
+  "Compress": {
+    "eyebrow": "Tool",
+    "title": "Compress media",
+    "subtitle": "Make your image lighter so it fits the upload limit. It all happens on your device — then just download and post.",
+    "tabImage": "Image",
+    "tabVideo": "Video",
+    "soon": "soon",
+    "dropHere": "Drag the image or click to choose",
+    "formatsHint": "JPG, PNG or WebP · up to 40MB",
+    "compressing": "Compressing…",
+    "before": "Before",
+    "after": "After",
+    "saved": "Saved",
+    "download": "Download image",
+    "another": "Another image",
+    "postHint": "Now just download and upload this file instead of the original.",
+    "errFormat": "Unsupported format. Use JPG, PNG or WebP.",
+    "errTooBig": "Image too large to compress here (max 40MB).",
+    "errGeneric": "Couldn't compress this image."
   }
 }
