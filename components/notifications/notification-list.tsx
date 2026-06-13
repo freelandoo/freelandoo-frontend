@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -56,10 +56,19 @@ const PERM_KEYS: Record<string, [string, string]> = {
   can_use_machine_chat: ["permMachineChat", "chat de enxames"],
 }
 
+function moneySuffix(payload: Record<string, unknown>): string {
+  const cents = Number((payload as { amount_cents?: number })?.amount_cents)
+  if (!Number.isFinite(cents) || cents <= 0) return ""
+  return ` · R$ ${(cents / 100).toFixed(2).replace(".", ",")}`
+}
+
 function labelFor(item: NotificationItem, t: TFn) {
   const who = item.actor?.profile_display_name || item.actor?.username || t("someone", "Alguém")
   const sub = (key: string, fallback: string) => t(key, fallback).replace("{who}", who)
   switch (item.type) {
+    case "product_sale": return t("productSale", "Você vendeu um produto") + moneySuffix(item.payload)
+    case "course_sale": return t("courseSale", "Você vendeu um curso") + moneySuffix(item.payload)
+    case "booking_received": return t("bookingReceived", "Novo agendamento recebido") + moneySuffix(item.payload)
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -83,6 +92,9 @@ function iconFor(type: string) {
     case "message_received": return <Mail className="h-3.5 w-3.5" />
     case "supervised_message_received": return <ShieldCheck className="h-3.5 w-3.5" />
     case "parental_permission_request": return <KeyRound className="h-3.5 w-3.5" />
+    case "product_sale": return <Package className="h-3.5 w-3.5" />
+    case "course_sale": return <GraduationCap className="h-3.5 w-3.5" />
+    case "booking_received": return <CalendarCheck className="h-3.5 w-3.5" />
     default: return null
   }
 }
@@ -102,6 +114,10 @@ function hrefFor(item: NotificationItem): string {
     }
     case "parental_permission_request":
       return "/account/parental"
+    case "product_sale":
+    case "course_sale":
+    case "booking_received":
+      return "/pagamentos"
     default:
       return "/account"
   }

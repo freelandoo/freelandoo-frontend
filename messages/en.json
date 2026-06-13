@@ -3330,7 +3330,10 @@
     "permMessage": "send messages",
     "permReceiveMessages": "receive messages",
     "permGlobalChat": "global chat",
-    "permMachineChat": "swarm chat"
+    "permMachineChat": "swarm chat",
+    "productSale": "You sold a product",
+    "courseSale": "You sold a course",
+    "bookingReceived": "New booking received"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",

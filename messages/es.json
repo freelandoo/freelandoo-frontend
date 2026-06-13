@@ -3310,7 +3310,10 @@
     "permMessage": "enviar mensajes",
     "permReceiveMessages": "recibir mensajes",
     "permGlobalChat": "chat global",
-    "permMachineChat": "chat de enjambres"
+    "permMachineChat": "chat de enjambres",
+    "productSale": "Vendiste un producto",
+    "courseSale": "Vendiste un curso",
+    "bookingReceived": "Nueva reserva recibida"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",

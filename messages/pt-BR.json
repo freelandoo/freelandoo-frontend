@@ -2744,7 +2744,10 @@
     "permMessage": "enviar mensagens",
     "permReceiveMessages": "receber mensagens",
     "permGlobalChat": "chat global",
-    "permMachineChat": "chat de enxames"
+    "permMachineChat": "chat de enxames",
+    "productSale": "Você vendeu um produto",
+    "courseSale": "Você vendeu um curso",
+    "bookingReceived": "Novo agendamento recebido"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",
