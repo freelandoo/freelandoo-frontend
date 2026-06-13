@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Save, Calendar, Clock, Lock, Unlock, Plus, Trash2,
-  AlertCircle, Briefcase, X, Pencil, Power, Users,
+  AlertCircle, Briefcase, X, Pencil, Power, Users, BellRing,
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ProfileServiceEditModal } from "@/components/profile/profile-service-edit-modal"
@@ -141,6 +141,11 @@ export default function AgendaPageClient({
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ProfileService | null>(null)
 
+  // Lembrete de horário (anti-no-show) — config por subperfil (booking-settings).
+  const [reminderEnabled, setReminderEnabled] = useState(true)
+  const [reminderHours, setReminderHours] = useState(24)
+  const [reminderSaving, setReminderSaving] = useState(false)
+
   const headers = useCallback(() => {
     const token = getToken()
     return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }
@@ -159,11 +164,12 @@ export default function AgendaPageClient({
     async function load() {
       setLoading(true)
       try {
-        const [rulesRes, overridesRes, bookingsRes, servicesRes] = await Promise.all([
+        const [rulesRes, overridesRes, bookingsRes, servicesRes, settingsRes] = await Promise.all([
           fetch(`/api/profile/${profileId}/availability`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/availability-overrides`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/bookings`, { headers: headers() }),
           fetch(`/api/profile/${profileId}/services`, { headers: headers() }),
+          fetch(`/api/profile/${profileId}/booking-settings`, { headers: headers() }),
         ])
         if (rulesRes.ok) {
           const d = await rulesRes.json()
@@ -183,6 +189,12 @@ export default function AgendaPageClient({
           setBookings(list)
         }
         if (servicesRes.ok) { const d = await servicesRes.json(); setServices(d.services || []) }
+        if (settingsRes.ok) {
+          const d = await settingsRes.json()
+          const s = d.settings || {}
+          setReminderEnabled(s.reminder_enabled !== false)
+          setReminderHours(Number(s.reminder_hours_before) || 24)
+        }
       } catch (e) { console.error(e) }
       setLoading(false)
     }
@@ -197,6 +209,26 @@ export default function AgendaPageClient({
       else { const d = await res.json(); showMsg("error", d.error || t("msgSaveError", "Erro ao salvar")) }
     } catch { showMsg("error", t("msgConnError", "Erro de conexão")) }
     setSaving(false)
+  }
+
+  async function saveReminder(next: { enabled?: boolean; hours?: number }) {
+    const enabled = next.enabled ?? reminderEnabled
+    const hours = next.hours ?? reminderHours
+    setReminderEnabled(enabled)
+    setReminderHours(hours)
+    setReminderSaving(true)
+    try {
+      const res = await fetch(`/api/profile/${profileId}/booking-settings`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({ reminder_enabled: enabled, reminder_hours_before: hours }),
+      })
+      if (res.ok) showMsg("success", t("reminderSaved", "Lembrete atualizado!"))
+      else showMsg("error", t("msgSaveError", "Erro ao salvar"))
+    } catch {
+      showMsg("error", t("msgConnError", "Erro de conexão"))
+    }
+    setReminderSaving(false)
   }
 
   async function saveOverride() {
@@ -337,6 +369,7 @@ export default function AgendaPageClient({
         <section className="min-w-0">
           {/* ─── Disponibilidade ─── */}
           {activeTab === "rules" && (
+            <>
             <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
               <div className="px-4 pt-4 pb-3">
                 <h2 className="fl-display text-2xl text-[#0B0B0D]">{t("availabilityTitle", "Disponibilidade semanal")}</h2>
@@ -451,6 +484,51 @@ export default function AgendaPageClient({
                 </button>
               </div>
             </div>
+
+            {/* Lembrete de horário (anti-no-show) */}
+            <div className="mt-5 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
+                    <BellRing className="h-5 w-5" /> {t("reminderConfigTitle", "Lembrete automático")}
+                  </h2>
+                  <p className="mt-0.5 max-w-md text-[11px] font-semibold text-[#6B6457]">
+                    {t("reminderConfigDesc", "Avisa o cliente por e-mail antes do horário — reduz falta. Você ainda pode lembrar no WhatsApp com 1 toque na lista.")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={reminderEnabled}
+                  disabled={reminderSaving}
+                  onClick={() => saveReminder({ enabled: !reminderEnabled })}
+                  className={cn(
+                    "relative h-7 w-12 shrink-0 border-2 border-[#0B0B0D] transition",
+                    reminderEnabled ? "bg-[#F2B705]" : "bg-white",
+                  )}
+                  aria-label={t("reminderEnabledLabel", "Enviar lembrete")}
+                >
+                  <span className={cn("absolute top-0.5 h-5 w-5 border-2 border-[#0B0B0D] bg-[#0B0B0D] transition-all", reminderEnabled ? "left-[22px]" : "left-0.5")} />
+                </button>
+              </div>
+
+              {reminderEnabled && (
+                <div className="mt-3 flex items-center gap-2 border-t-2 border-[#0B0B0D]/10 pt-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#6B6457]">{t("reminderHoursLabel", "Antecedência")}</span>
+                  <select
+                    value={reminderHours}
+                    disabled={reminderSaving}
+                    onChange={(e) => saveReminder({ hours: Number(e.target.value) })}
+                    className="border-2 border-[#0B0B0D]/30 bg-white px-2 py-1 text-[12px] font-bold text-[#0B0B0D] outline-none focus:border-[#0B0B0D]"
+                  >
+                    {[2, 3, 6, 12, 24, 48, 72].map((h) => (
+                      <option key={h} value={h}>{t("hoursBefore", "{h}h antes").replace("{h}", String(h))}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            </>
           )}
 
           {/* ─── Serviços ─── */}
