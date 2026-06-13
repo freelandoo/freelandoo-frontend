@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
@@ -1572,21 +1572,8 @@ export default function PerfilPage() {
                   </button>
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
-                    {/* Carteira — em cima do @username, ao lado da foto */}
-                    <Link
-                      href="/wallet"
-                      aria-label={t("openWallet", "Abrir minha Carteira")}
-                      title={t("myWallet", "Minha Carteira")}
-                      className="group rotate-2 transition-transform duration-200 hover:rotate-0"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/wallet/carteira-card.webp"
-                        alt={t("wallet", "Carteira")}
-                        className="w-[84px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[92px]"
-                      />
-                    </Link>
-                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
+                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto.
+                        Carteira virou botão no toolbar (junto de Métricas/Gerenciar). */}
                     {perfil.username && (
                       <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
                     )}
@@ -1709,6 +1696,16 @@ export default function PerfilPage() {
                 >
                   <FolderCog className="h-4 w-4" />
                   {t("mgmtButton", "Gerenciar")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/wallet")}
+                  aria-label={t("openWallet", "Abrir minha Carteira")}
+                  title={t("myWallet", "Minha Carteira")}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                >
+                  <Wallet className="h-4 w-4" />
+                  {t("wallet", "Carteira")}
                 </button>
                 <button
                   type="button"
