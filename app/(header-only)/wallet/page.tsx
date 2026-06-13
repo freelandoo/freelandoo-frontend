@@ -153,7 +153,7 @@ export default function WalletPage() {
       <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
 
       {/* HERO */}
-      <section className="mx-auto w-full max-w-6xl px-5 pt-9 md:px-8 md:pt-12">
+      <section className="mx-auto w-full max-w-6xl px-3 pt-9 md:px-8 md:pt-12">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/account"
@@ -178,8 +178,12 @@ export default function WalletPage() {
         </h1>
       </section>
 
+      {/* Vida Financeira — orçamento manual mensal (em cima) */}
+      <VidaFinanceira />
+
+      {/* GANHOS NA PLATAFORMA — controles + extrato (embaixo) */}
       {/* CONTROLES */}
-      <section className="mx-auto w-full max-w-6xl px-5 md:px-8">
+      <section className="mx-auto w-full max-w-6xl px-3 md:px-8">
         <div className="mt-10 flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">{tr("period", "Período")}</span>
@@ -232,7 +236,7 @@ export default function WalletPage() {
       </section>
 
       {/* GRID principal */}
-      <section className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-5 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-3 md:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           {/* KPIs */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -334,9 +338,6 @@ export default function WalletPage() {
 
         <MarketSidebar />
       </section>
-
-      {/* Vida Financeira — orçamento manual mensal */}
-      <VidaFinanceira />
     </main>
   )
 }
@@ -483,11 +484,11 @@ function MarketSidebar() {
 
   const body = (
     <div className="space-y-5">
-      <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
-        {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
-          <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
+      <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
+        {loading ? <RowsSkeleton n={2} /> : data?.news?.length ? (
+          data.news.map((n) => <NewsRow key={n.id} item={n} />)
         ) : (
-          data.stocks.map((s) => <QuoteRow key={s.symbol} item={s} />)
+          <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
         )}
       </MarketSection>
       <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
@@ -497,11 +498,11 @@ function MarketSidebar() {
           data.quotes.map((q) => <QuoteRow key={q.symbol} item={q} />)
         )}
       </MarketSection>
-      <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
-        {loading ? <RowsSkeleton n={2} /> : data?.news?.length ? (
-          data.news.map((n) => <NewsRow key={n.id} item={n} />)
+      <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
+        {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
+          <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
         ) : (
-          <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
+          data.stocks.slice(0, 5).map((s) => <QuoteRow key={s.symbol} item={s} />)
         )}
       </MarketSection>
     </div>

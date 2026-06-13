@@ -2900,7 +2900,11 @@
     "errPickCategory": "Escolha ou digite uma categoria.",
     "errValidAmount": "Informe um valor válido.",
     "errCouldNotSave": "Não deu pra salvar",
-    "errSaving": "Erro ao salvar"
+    "errSaving": "Erro ao salvar",
+    "addIncome": "Incluir ganho",
+    "addExpense": "Incluir gasto",
+    "fixedIncome": "Ganho fixo",
+    "fixedExpense": "Gasto fixo"
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",

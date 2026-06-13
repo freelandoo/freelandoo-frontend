@@ -105,7 +105,7 @@ export function VidaFinanceira() {
   const positive = totals.net_cents >= 0
 
   return (
-    <section className="mx-auto mt-16 w-full max-w-6xl px-5 md:px-8">
+    <section className="mx-auto mt-16 w-full max-w-6xl px-3 md:px-8">
       <div className="relative mb-8">
         <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
         <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>
@@ -351,12 +351,18 @@ function Column({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <ActionBtn accent={accent} onClick={() => onAdd("recurring")} icon={isIn ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}>
-          {isIn ? tr("receiveMonthly", "Recebo todo mês") : tr("spendMonthly", "Gasto todo mês")}
-        </ActionBtn>
-        <ActionBtn accent={accent} onClick={() => onAdd("oneoff")} icon={isIn ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}>
-          {isIn ? tr("receivedToday", "Recebi hoje") : tr("spentToday", "Gastei hoje")}
-        </ActionBtn>
+        <ActionBtn
+          accent={accent}
+          onClick={() => onAdd("recurring")}
+          icon={isIn ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+          label={isIn ? tr("fixedIncome", "Ganho fixo") : tr("fixedExpense", "Gasto fixo")}
+        />
+        <ActionBtn
+          accent={accent}
+          onClick={() => onAdd("oneoff")}
+          icon={isIn ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+          label={isIn ? tr("addIncome", "Incluir ganho") : tr("addExpense", "Incluir gasto")}
+        />
       </div>
 
       {quick.length > 0 && (
@@ -422,16 +428,22 @@ function Group({ title, entries, accent, onDelete, tr, locale }: { title: string
   )
 }
 
-function ActionBtn({ accent, onClick, icon, children }: { accent: string; onClick: () => void; icon: ReactNode; children: ReactNode }) {
+function ActionBtn({ accent, onClick, icon, label }: { accent: string; onClick: () => void; icon: ReactNode; label: string }) {
+  // "uma palavra em cima e outra embaixo": quebra o rótulo em linhas (1 palavra/linha)
+  const words = label.split(" ")
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-center gap-1.5 border-2 border-[#0B0B0D] px-2 py-2 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#0B0B0D] transition-transform hover:-translate-y-0.5"
+      className="flex items-center justify-center gap-1 border-2 border-[#0B0B0D] px-1.5 py-1.5 text-[9px] font-extrabold uppercase leading-[1.05] tracking-[0.06em] text-[#0B0B0D] transition-transform hover:-translate-y-0.5"
       style={{ background: `${accent}26` }}
     >
-      {icon}
-      {children}
+      <span className="shrink-0">{icon}</span>
+      <span className="flex flex-col items-start">
+        {words.map((w, i) => (
+          <span key={i}>{w}</span>
+        ))}
+      </span>
     </button>
   )
 }
@@ -471,8 +483,8 @@ function EntryModal({
   const amountRef = useRef<HTMLInputElement | null>(null)
 
   const heading = isIn
-    ? recurrence === "recurring" ? tr("receiveMonthly", "Recebo todo mês") : tr("receivedToday", "Recebi hoje")
-    : recurrence === "recurring" ? tr("spendMonthly", "Gasto todo mês") : tr("spentToday", "Gastei hoje")
+    ? recurrence === "recurring" ? tr("fixedIncome", "Ganho fixo") : tr("addIncome", "Incluir ganho")
+    : recurrence === "recurring" ? tr("fixedExpense", "Gasto fixo") : tr("addExpense", "Incluir gasto")
 
   const loadCats = useCallback(async () => {
     const t = token()

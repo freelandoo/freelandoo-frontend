@@ -3466,7 +3466,11 @@
     "errPickCategory": "Elige o escribe una categoría.",
     "errValidAmount": "Ingresa un importe válido.",
     "errCouldNotSave": "No se pudo guardar",
-    "errSaving": "Error al guardar"
+    "errSaving": "Error al guardar",
+    "addIncome": "Incluir ingreso",
+    "addExpense": "Incluir gasto",
+    "fixedIncome": "Ingreso fijo",
+    "fixedExpense": "Gasto fijo"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

@@ -3486,7 +3486,11 @@
     "errPickCategory": "Pick or type a category.",
     "errValidAmount": "Enter a valid amount.",
     "errCouldNotSave": "Couldn't save",
-    "errSaving": "Error saving"
+    "errSaving": "Error saving",
+    "addIncome": "Add income",
+    "addExpense": "Add expense",
+    "fixedIncome": "Fixed income",
+    "fixedExpense": "Fixed expense"
   },
   "Polens": {
     "eyebrow": "Polen packages",
