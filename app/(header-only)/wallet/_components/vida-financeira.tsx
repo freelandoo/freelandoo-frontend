@@ -115,12 +115,12 @@ export function VidaFinanceira() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[160px_minmax(0,1fr)]">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[160px_minmax(0,1fr)]">
         {/* Coluna de meses */}
         <MonthRail year={year} month={month} onPick={(y, m) => setYm(y * 100 + m)} tr={tr} locale={locale} />
 
-        <div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="min-w-0">
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
             <Column
               dir="in"
               data={data}
@@ -223,7 +223,7 @@ function CostChart({ data, tr, locale }: { data: MonthData | null; tr: TFn; loca
           {tr("costEmpty", "Lance entradas e saídas para ver o panorama do mês aqui.")}
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-6 md:grid md:grid-cols-2">
           {/* Entradas x Saídas */}
           <div>
             <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">{tr("inVsOut", "Entradas × Saídas")}</p>
@@ -339,8 +339,8 @@ function Column({
   }, [oneoff])
 
   return (
-    <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="min-w-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
           {isIn ? <PiggyBank className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
           {isIn ? tr("income", "Entradas") : tr("expenses", "Saídas")}
