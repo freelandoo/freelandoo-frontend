@@ -100,6 +100,7 @@ export default function WalletPage() {
   const [profileId, setProfileId] = useState<string>("")
   const [range, setRange] = useState("30d")
   const [kind, setKind] = useState("all")
+  const [marketOpen, setMarketOpen] = useState(false)
 
   const [agg, setAgg] = useState<Agg | null>(null)
   const [items, setItems] = useState<Earning[]>([])
@@ -170,12 +171,25 @@ export default function WalletPage() {
         </div>
 
         <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("heroEyebrow", "a sua grana")}</p>
-        <h1 className="relative">
-          <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
-            {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
-          </span>
-          <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="relative min-w-0">
+            <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
+              {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
+            </span>
+            <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
+          </h1>
+          {/* Mercado (mobile): na hero p/ não ficar atrás da toolbar de baixo */}
+          <button
+            type="button"
+            onClick={() => setMarketOpen(true)}
+            aria-label={tr("market", "Mercado")}
+            className="mt-1 inline-flex aspect-square w-16 shrink-0 flex-col items-center justify-center gap-1 border-2 border-[#0B0B0D] text-[9px] font-extrabold uppercase leading-none tracking-[0.1em] text-[#06251F] shadow-[4px_4px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 lg:hidden"
+            style={{ background: GREEN }}
+          >
+            <BarChart3 className="h-5 w-5" />
+            {tr("market", "Mercado")}
+          </button>
+        </div>
       </section>
 
       {/* CORPO — coluna única (Vida Financeira em cima + Ganhos embaixo) + Mercado à direita */}
@@ -334,7 +348,7 @@ export default function WalletPage() {
           </div>
         </div>
 
-        <MarketSidebar />
+        <MarketSidebar open={marketOpen} setOpen={setMarketOpen} />
       </section>
     </main>
   )
@@ -462,9 +476,8 @@ function ExtratoSkeleton() {
 }
 
 /* ═══ Sidebar de mercado ══════════════════════════════════════════════════════ */
-function MarketSidebar() {
+function MarketSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
   const tr = useTranslations("Wallet")
-  const [open, setOpen] = useState(false)
   const [data, setData] = useState<{ stocks: MarketItem[]; quotes: MarketItem[]; news: NewsItem[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(false)
@@ -524,15 +537,7 @@ function MarketSidebar() {
         <div className="sticky top-6">{Card}</div>
       </aside>
 
-      {/* Mobile: botão + slide-over */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#06251F] shadow-[4px_4px_0_0_#0B0B0D] lg:hidden"
-        style={{ background: GREEN }}
-      >
-        <BarChart3 className="h-4 w-4" /> {tr("market", "Mercado")}
-      </button>
+      {/* Mobile: slide-over (acionado pelo botão na hero) */}
       <div className={cn("fixed inset-0 z-40 overflow-hidden lg:hidden", !open && "pointer-events-none")} aria-hidden={!open}>
         <div
           onClick={() => setOpen(false)}
