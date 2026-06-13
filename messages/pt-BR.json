@@ -2747,7 +2747,11 @@
     "permMachineChat": "chat de enxames",
     "productSale": "Você vendeu um produto",
     "courseSale": "Você vendeu um curso",
-    "bookingReceived": "Novo agendamento recebido"
+    "bookingReceived": "Novo agendamento recebido",
+    "serviceResponseReceived": "{who} respondeu seu chamado",
+    "courseResponseReceived": "{who} respondeu seu pedido de curso",
+    "productResponseNew": "{who} respondeu seu pedido de produto",
+    "productRequestNew": "Novo pedido de produto compatível com você"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",

@@ -10,6 +10,15 @@ const NOTIFICATIONS = {
   productSale: ["Você vendeu um produto", "You sold a product", "Vendiste un producto"],
   courseSale: ["Você vendeu um curso", "You sold a course", "Vendiste un curso"],
   bookingReceived: ["Novo agendamento recebido", "New booking received", "Nueva reserva recibida"],
+  // Slice D — chamados / O.S.
+  serviceResponseReceived: ["{who} respondeu seu chamado", "{who} replied to your request", "{who} respondió tu solicitud"],
+  courseResponseReceived: ["{who} respondeu seu pedido de curso", "{who} replied to your course request", "{who} respondió tu solicitud de curso"],
+  productResponseNew: ["{who} respondeu seu pedido de produto", "{who} replied to your product request", "{who} respondió tu pedido de producto"],
+  productRequestNew: [
+    "Novo pedido de produto compatível com você",
+    "New product request matching you",
+    "Nuevo pedido de producto compatible contigo",
+  ],
 }
 
 const GROUPS = { Notifications: NOTIFICATIONS }

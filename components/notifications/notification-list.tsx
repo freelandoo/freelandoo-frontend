@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -69,6 +69,18 @@ function labelFor(item: NotificationItem, t: TFn) {
     case "product_sale": return t("productSale", "Você vendeu um produto") + moneySuffix(item.payload)
     case "course_sale": return t("courseSale", "Você vendeu um curso") + moneySuffix(item.payload)
     case "booking_received": return t("bookingReceived", "Novo agendamento recebido") + moneySuffix(item.payload)
+    case "service_response_received": {
+      const isCourse = (item.payload as { kind?: string })?.kind === "course"
+      return isCourse
+        ? sub("courseResponseReceived", "{who} respondeu seu pedido de curso")
+        : sub("serviceResponseReceived", "{who} respondeu seu chamado")
+    }
+    case "product_response_new": {
+      const seller = (item.payload as { seller_display_name?: string })?.seller_display_name || who
+      return t("productResponseNew", "{who} respondeu seu pedido de produto").replace("{who}", seller)
+    }
+    case "product_request_new":
+      return t("productRequestNew", "Novo pedido de produto compatível com você")
     case "like_received": return sub("likeReceived", "{who} curtiu seu portfólio")
     case "comment_received": return sub("commentReceived", "{who} comentou no seu portfólio")
     case "follow_received": return sub("followReceived", "{who} começou a seguir")
@@ -95,6 +107,9 @@ function iconFor(type: string) {
     case "product_sale": return <Package className="h-3.5 w-3.5" />
     case "course_sale": return <GraduationCap className="h-3.5 w-3.5" />
     case "booking_received": return <CalendarCheck className="h-3.5 w-3.5" />
+    case "service_response_received": return <ClipboardList className="h-3.5 w-3.5" />
+    case "product_response_new":
+    case "product_request_new": return <PackageSearch className="h-3.5 w-3.5" />
     default: return null
   }
 }
@@ -118,6 +133,11 @@ function hrefFor(item: NotificationItem): string {
     case "course_sale":
     case "booking_received":
       return "/pagamentos"
+    case "service_response_received":
+    case "product_response_new":
+      return "/mensagens?tab=os"
+    case "product_request_new":
+      return "/mensagens?tab=os"
     default:
       return "/account"
   }

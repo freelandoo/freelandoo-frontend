@@ -3333,7 +3333,11 @@
     "permMachineChat": "swarm chat",
     "productSale": "You sold a product",
     "courseSale": "You sold a course",
-    "bookingReceived": "New booking received"
+    "bookingReceived": "New booking received",
+    "serviceResponseReceived": "{who} replied to your request",
+    "courseResponseReceived": "{who} replied to your course request",
+    "productResponseNew": "{who} replied to your product request",
+    "productRequestNew": "New product request matching you"
   },
   "Payments": {
     "statusRefundedMale": "Refunded",

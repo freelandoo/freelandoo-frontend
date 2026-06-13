@@ -3313,7 +3313,11 @@
     "permMachineChat": "chat de enjambres",
     "productSale": "Vendiste un producto",
     "courseSale": "Vendiste un curso",
-    "bookingReceived": "Nueva reserva recibida"
+    "bookingReceived": "Nueva reserva recibida",
+    "serviceResponseReceived": "{who} respondió tu solicitud",
+    "courseResponseReceived": "{who} respondió tu solicitud de curso",
+    "productResponseNew": "{who} respondió tu pedido de producto",
+    "productRequestNew": "Nuevo pedido de producto compatible contigo"
   },
   "Payments": {
     "statusRefundedMale": "Reembolsado",
