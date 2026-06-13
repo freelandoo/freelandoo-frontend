@@ -54,6 +54,57 @@ const COMPRESS = {
   ],
   compressCta: ["Comprimir mídia", "Compress media", "Comprimir medios"],
   chooseAnother: ["Escolher outro arquivo", "Choose another file", "Elegir otro archivo"],
+  // Aba Vídeo (servidor temporário)
+  dropVideoHere: [
+    "Arraste o vídeo ou clique para escolher",
+    "Drag the video or click to choose",
+    "Arrastra el video o haz clic para elegir",
+  ],
+  videoFormatsHint: ["MP4, WebM ou MOV · até 500MB", "MP4, WebM or MOV · up to 500MB", "MP4, WebM o MOV · hasta 500MB"],
+  uploading: ["Enviando…", "Uploading…", "Subiendo…"],
+  processing: [
+    "Comprimindo no servidor… isso pode levar alguns minutos.",
+    "Compressing on the server… this may take a few minutes.",
+    "Comprimiendo en el servidor… esto puede tardar unos minutos.",
+  ],
+  videoDone: ["Vídeo comprimido!", "Video compressed!", "¡Video comprimido!"],
+  downloadVideo: ["Baixar vídeo", "Download video", "Descargar video"],
+  anotherVideo: ["Outro vídeo", "Another video", "Otro video"],
+  videoExpireHint: [
+    "O link fica disponível por cerca de 3 horas. Baixe agora e poste no lugar do original.",
+    "The link stays available for about 3 hours. Download now and post it instead of the original.",
+    "El enlace queda disponible por unas 3 horas. Descárgalo ahora y publícalo en lugar del original.",
+  ],
+  videoPrivacyHint: [
+    "O vídeo sobe para um estúdio temporário só para a compressão e é apagado automaticamente em cerca de 3 horas.",
+    "The video is uploaded to a temporary studio only for compression and is automatically deleted in about 3 hours.",
+    "El video se sube a un estudio temporal solo para la compresión y se elimina automáticamente en unas 3 horas.",
+  ],
+  loginToCompress: [
+    "Entrar para comprimir vídeos",
+    "Sign in to compress videos",
+    "Inicia sesión para comprimir videos",
+  ],
+  errVideoFormat: [
+    "Formato de vídeo não aceito. Envie MP4, WebM ou MOV.",
+    "Unsupported video format. Use MP4, WebM or MOV.",
+    "Formato de video no aceptado. Usa MP4, WebM o MOV.",
+  ],
+  errVideoTooBig: [
+    "Vídeo grande demais (máx. 500MB).",
+    "Video too large (max 500MB).",
+    "Video demasiado grande (máx. 500MB).",
+  ],
+  errVideoGeneric: [
+    "Não deu pra comprimir esse vídeo.",
+    "Couldn't compress this video.",
+    "No se pudo comprimir este video.",
+  ],
+  errLogin: [
+    "Entre na sua conta para comprimir vídeos.",
+    "Sign in to compress videos.",
+    "Inicia sesión para comprimir videos.",
+  ],
 }
 
 const GROUPS = { Compress: COMPRESS }

@@ -4021,6 +4021,20 @@
     "oversizeTitle": "Archivo demasiado grande",
     "oversizeBody": "El límite aquí es {limit}. Comprime el archivo y publica la versión más pequeña.",
     "compressCta": "Comprimir medios",
-    "chooseAnother": "Elegir otro archivo"
+    "chooseAnother": "Elegir otro archivo",
+    "dropVideoHere": "Arrastra el video o haz clic para elegir",
+    "videoFormatsHint": "MP4, WebM o MOV · hasta 500MB",
+    "uploading": "Subiendo…",
+    "processing": "Comprimiendo en el servidor… esto puede tardar unos minutos.",
+    "videoDone": "¡Video comprimido!",
+    "downloadVideo": "Descargar video",
+    "anotherVideo": "Otro video",
+    "videoExpireHint": "El enlace queda disponible por unas 3 horas. Descárgalo ahora y publícalo en lugar del original.",
+    "videoPrivacyHint": "El video se sube a un estudio temporal solo para la compresión y se elimina automáticamente en unas 3 horas.",
+    "loginToCompress": "Inicia sesión para comprimir videos",
+    "errVideoFormat": "Formato de video no aceptado. Usa MP4, WebM o MOV.",
+    "errVideoTooBig": "Video demasiado grande (máx. 500MB).",
+    "errVideoGeneric": "No se pudo comprimir este video.",
+    "errLogin": "Inicia sesión para comprimir videos."
   }
 }

@@ -4041,6 +4041,20 @@
     "oversizeTitle": "File too large",
     "oversizeBody": "The limit here is {limit}. Compress the file and post the smaller version.",
     "compressCta": "Compress media",
-    "chooseAnother": "Choose another file"
+    "chooseAnother": "Choose another file",
+    "dropVideoHere": "Drag the video or click to choose",
+    "videoFormatsHint": "MP4, WebM or MOV · up to 500MB",
+    "uploading": "Uploading…",
+    "processing": "Compressing on the server… this may take a few minutes.",
+    "videoDone": "Video compressed!",
+    "downloadVideo": "Download video",
+    "anotherVideo": "Another video",
+    "videoExpireHint": "The link stays available for about 3 hours. Download now and post it instead of the original.",
+    "videoPrivacyHint": "The video is uploaded to a temporary studio only for compression and is automatically deleted in about 3 hours.",
+    "loginToCompress": "Sign in to compress videos",
+    "errVideoFormat": "Unsupported video format. Use MP4, WebM or MOV.",
+    "errVideoTooBig": "Video too large (max 500MB).",
+    "errVideoGeneric": "Couldn't compress this video.",
+    "errLogin": "Sign in to compress videos."
   }
 }
