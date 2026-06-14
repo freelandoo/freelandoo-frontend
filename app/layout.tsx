@@ -12,15 +12,17 @@ import { AdminAlerts } from "@/components/admin/admin-alerts"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
+import { TourProvider } from "@/features/tour/TourProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import "./globals.css"
 
-// DESATIVADO: o sistema de tour (TourProvider/TourManager) e o modal de
-// entrada de tour (IntentModal — chooser "ganhar dinheiro / explorar") foram
-// desligados a pedido. Os arquivos em features/tour/* e features/intent/*
-// permanecem no repo, apenas órfãos (não montados). useTour() tem fallback
-// no-op, então qualquer consumidor remanescente continua funcionando inerte.
-// Para reativar: re-importar TourProvider/IntentModal e remontar abaixo.
+// TOURS DESLIGADOS: o TourProvider segue montado mas INERTE (flag
+// TOURS_DISABLED em features/tour/TourProvider.tsx) — sem auto-start, sem
+// TourManager, sem chamadas ao backend. Fica montado de propósito para
+// preservar o contexto useTour() que a sidebar e outros consomem (evita
+// regressão). O modal de entrada de tour (IntentModal) foi REMOVIDO daqui.
+// Arquivos em features/intent/* ficam órfãos. Para reativar tours:
+// TOURS_DISABLED=false e remontar <IntentModal/>.
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
@@ -128,16 +130,18 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         <I18nProvider>
-          <ConsentProvider>{children}</ConsentProvider>
-          <ProfileSidebar />
-          <BirthdateGate />
-          <CookieConsent />
-          <AnalyticsProvider />
-          <CouponCapture />
-          <OnlineHeartbeat />
-          <AdminAlerts />
-          <InstallPrompt />
-          <PullToRefresh />
+          <TourProvider>
+            <ConsentProvider>{children}</ConsentProvider>
+            <ProfileSidebar />
+            <BirthdateGate />
+            <CookieConsent />
+            <AnalyticsProvider />
+            <CouponCapture />
+            <OnlineHeartbeat />
+            <AdminAlerts />
+            <InstallPrompt />
+            <PullToRefresh />
+          </TourProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
             tag do Google carregar (LGPD). O banner de cookies atualiza para
