@@ -37,14 +37,6 @@ function tourVersion(tourKey: TourKey) {
   return TOUR_CONFIGS.find((tour) => tour.tourKey === tourKey)?.version ?? 1;
 }
 
-// DESATIVADO: tours desligados a pedido. O provider permanece montado (para
-// que registerAction/runAction e useTour() sigam com identidade estável e os
-// consumidores — sidebar etc. — não mudem de comportamento), mas NÃO faz
-// auto-start, NÃO chama o backend de tour, NÃO renderiza o TourManager e os
-// disparos manuais (startTour/beginGuidedTour) viram no-op. O modal de entrada
-// (IntentModal) segue removido do layout. Para reativar: TOURS_DISABLED=false.
-const TOURS_DISABLED = true;
-
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -84,7 +76,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (TOURS_DISABLED) return;
     let mounted = true;
     fetchTourProgress().then((items) => {
       if (!mounted) return;
@@ -116,7 +107,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // o fetch quando "auth:changed" (login/logout) ou "intent:resolved"
   // (dispatched pelo IntentModal após escolher/dispensar) disparam.
   useEffect(() => {
-    if (TOURS_DISABLED) return;
     let mounted = true;
     const check = async () => {
       const status = await fetchIntentStatus();
@@ -143,7 +133,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const startTour = useCallback((tourKey: TourKey) => {
-    if (TOURS_DISABLED) return;
     const found = TOUR_CONFIGS.find((tour) => tour.tourKey === tourKey);
     if (!found) return;
     setActiveTour(found);
@@ -158,7 +147,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   // (ex.: feed, bees_feed, enxames, ranking, welcome) não dispare entre
   // o router.push e o startTour.
   const beginGuidedTour = useCallback((tourKey: TourKey, route?: string) => {
-    if (TOURS_DISABLED) return;
     if (chainTimerRef.current) {
       clearTimeout(chainTimerRef.current);
       chainTimerRef.current = null;
@@ -265,7 +253,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    if (TOURS_DISABLED) return;
     if (!progressLoaded) return;
     // Gate: nenhum auto-start até o BirthdateGate e o IntentModal serem
     // resolvidos. Manual startTour() (via IntentModal) não passa por aqui.
@@ -321,7 +308,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   return (
     <TourContext.Provider value={value}>
       {children}
-      {TOURS_DISABLED ? null : <TourManager
+      <TourManager
         tour={activeTour}
         stepIndex={stepIndex}
         onStepChange={setStepIndex}
@@ -344,7 +331,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         onCtaClick={(stepId) =>
           trackTourEvent("tour_cta_clicked", { tour_key: activeTour?.tourKey || "", step_id: stepId, page: pathname || "" })
         }
-      />}
+      />
     </TourContext.Provider>
   );
 }
