@@ -18,6 +18,8 @@ export function extractAuthSession(data: AuthResponse): {
   token: string
   user: AuthUser
   emailVerified: boolean | null
+  needsTerms: boolean
+  termsVersion: number | null
 } | null {
   const token =
     typeof data.token === "string"
@@ -43,6 +45,10 @@ export function extractAuthSession(data: AuthResponse): {
     token,
     user,
     emailVerified: responseEmailVerified ?? userEmailVerified,
+    // Aceite dos Termos pendente (ex.: cadastro novo via Google, ou bump de versão).
+    needsTerms: data.needs_terms === true,
+    termsVersion:
+      typeof data.terms_version === "number" ? data.terms_version : null,
   }
 }
 

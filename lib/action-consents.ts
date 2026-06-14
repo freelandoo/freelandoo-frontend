@@ -1,3 +1,8 @@
+// Aceite geral dos Termos de Uso + Política de Privacidade no cadastro.
+// Espelha SIGNUP_TERMS_VERSION do backend (src/utils/terms.js) — manter em sincronia.
+// Subir aqui e no backend re-dispara a tela /aceitar-termos para todos.
+export const SIGNUP_TERMS_VERSION = 1
+
 export type ConsentActionKey =
   | "publish_content"
   | "publish_offer"

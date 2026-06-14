@@ -103,6 +103,27 @@ export function GoogleSignInButton({
 
         setSession(session.token, session.user)
 
+        // Aceite dos Termos pendente (conta nova via Google / bump de versão):
+        // leva à tela obrigatória de aceite antes de qualquer outro destino,
+        // mesmo no modo inline (onComplete).
+        if (session.needsTerms) {
+          const back =
+            redirectTo ||
+            (typeof window !== "undefined" ? window.location.pathname : "/search")
+          const gate = `/aceitar-termos?next=${encodeURIComponent(back)}${
+            session.termsVersion ? `&v=${session.termsVersion}` : ""
+          }`
+          didRedirect = true
+          router.replace(gate)
+          router.refresh()
+          window.setTimeout(() => {
+            if (window.location.pathname !== "/aceitar-termos") {
+              window.location.replace(gate)
+            }
+          }, 400)
+          return
+        }
+
         if (onComplete) {
           // Permanece na página corrente (modal de booking, etc).
           didRedirect = true

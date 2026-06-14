@@ -90,7 +90,22 @@
     "verifyEmail": "Verify email",
     "activateAccount": "Activate account",
     "loggingIn": "Logging in...",
-    "creatingAccount": "Creating account..."
+    "creatingAccount": "Creating account...",
+    "termsGateEyebrow": "Almost there",
+    "termsGateAsideTitle": "Just one",
+    "termsGateAsideHighlight": "step",
+    "termsGateAsideSubtitle": "To use Freelandoo — sell, buy, publish and get paid — we need you to accept our terms.",
+    "termsGateBullet1": "You control your data (LGPD)",
+    "termsGateBullet2": "Protected payments and transparent payouts",
+    "termsGateBullet3": "Clear rules for the community",
+    "termsGateTitle": "Accept the terms to continue",
+    "termsGateSubtitle": "You're signed in. Before continuing, please read and accept the documents below.",
+    "termsGateBody": "Freelandoo connects professionals and clients and processes payments for courses, products, services and digital resources. By continuing, you agree to the documents below:",
+    "termsGateCheckbox": "I have read and accept Freelandoo's Terms of Use and Privacy Policy.",
+    "termsGateSubmitting": "Saving...",
+    "termsGateAccept": "Agree and continue",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "Privacy Policy"
   },
   "Account": {
     "title": "My account",
@@ -1462,7 +1477,7 @@
     "confirmPasswordPlaceholder": "Repeat your password",
     "passwordsDontMatch": "Passwords don't match.",
     "acceptTermsPrefix": "I have read and accept the",
-    "termsOfUse": "terms of use",
+    "termsOfUse": "Terms of Use",
     "continue": "Continue",
     "alreadyHaveAccount": "Already have an account?",
     "doLogin": "Sign in",
@@ -1495,7 +1510,10 @@
     "termsP2": "Freelandoo operates exclusively as a listing platform. It does not mediate negotiations, take part in agreements, or receive payments. All partnerships, prices, and deliveries are handled directly between the parties.",
     "termsP3": "Each user is responsible for the information disclosed in their profile. Freelandoo is not responsible for breach of agreements, delays, quality of deliveries, or losses.",
     "termsClose": "Close",
-    "termsAccept": "I have read and accept"
+    "termsAccept": "I have read and accept",
+    "googleTermsPrefix": "By continuing with Google, you agree to the",
+    "and": "and the",
+    "privacyPolicy": "Privacy Policy"
   },
   "ForgotPassword": {
     "title": "Forgot your password?",

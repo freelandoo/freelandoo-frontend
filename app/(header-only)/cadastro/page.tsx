@@ -60,7 +60,6 @@ export default function CadastroPage() {
     senha: "",
     confirmarSenha: "",
   })
-  const [openTermosModal, setOpenTermosModal] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   // Conta supervisionada (menor de idade)
@@ -369,6 +368,17 @@ export default function CadastroPage() {
             {!isMinorBirth && (
               <div className="mb-6 space-y-4">
                 <GoogleSignInButton text="signup_with" redirectTo={nextParam ?? undefined} />
+                <p className="text-center text-xs text-[#5b554b]">
+                  {t("googleTermsPrefix", "Ao continuar com o Google, você concorda com os")}{" "}
+                  <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#0B0B0D] underline underline-offset-2">
+                    {t("termsOfUse", "Termos de Uso")}
+                  </Link>{" "}
+                  {t("and", "e a")}{" "}
+                  <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#0B0B0D] underline underline-offset-2">
+                    {t("privacyPolicy", "Política de Privacidade")}
+                  </Link>
+                  .
+                </p>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-[#0B0B0D]/12" />
@@ -563,13 +573,23 @@ export default function CadastroPage() {
                   />
                   <span className="text-[#3a352d]">
                     {t("acceptTermsPrefix", "Li e aceito os")}{" "}
-                    <button
-                      type="button"
-                      onClick={() => setOpenTermosModal(true)}
+                    <Link
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="font-bold text-[#0B0B0D] underline underline-offset-2"
                     >
-                      {t("termsOfUse", "termos de uso")}
-                    </button>
+                      {t("termsOfUse", "Termos de Uso")}
+                    </Link>{" "}
+                    {t("and", "e a")}{" "}
+                    <Link
+                      href="/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-[#0B0B0D] underline underline-offset-2"
+                    >
+                      {t("privacyPolicy", "Política de Privacidade")}
+                    </Link>
                     .
                   </span>
                 </label>
@@ -812,39 +832,6 @@ export default function CadastroPage() {
         )}
       </div>
 
-      {/* Modal de termos (tabloide leve) */}
-      {openTermosModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpenTermosModal(false)} />
-          <div className="fl-card relative z-10 max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl p-6">
-            <h3 className="fl-display text-2xl text-[var(--fl-ink)]">{t("termsModalTitle", "Termos de Uso - Freelandoo")}</h3>
-            <div className="mt-4 space-y-4 text-sm text-[#3a352d]">
-              <p>{t("termsP1", "Ao acessar e utilizar a plataforma Freelandoo, você declara que leu, compreendeu e concorda integralmente com os termos.")}</p>
-              <p>{t("termsP2", "A Freelandoo atua exclusivamente como plataforma de divulgação. Não intermedia negociações, não participa de acordos e não recebe pagamentos. Todas as parcerias, valores e entregas são tratadas diretamente entre as partes.")}</p>
-              <p>{t("termsP3", "Cada usuário é responsável pelas informações divulgadas em seu perfil. A Freelandoo não se responsabiliza por descumprimento de acordos, atrasos, qualidade de entregas ou prejuízos.")}</p>
-            </div>
-            <div className="mt-5 flex justify-end gap-2 border-t border-[#0B0B0D]/12 pt-4">
-              <button
-                type="button"
-                onClick={() => setOpenTermosModal(false)}
-                className="fl-btn-card inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider"
-              >
-                {t("termsClose", "Fechar")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAcceptedTerms(true)
-                  setOpenTermosModal(false)
-                }}
-                className="fl-btn-gold inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-bold"
-              >
-                {t("termsAccept", "Li e aceito")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </PageShell>
   )
 }

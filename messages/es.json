@@ -90,7 +90,22 @@
     "verifyEmail": "Verificar correo",
     "activateAccount": "Activar cuenta",
     "loggingIn": "Iniciando sesión...",
-    "creatingAccount": "Creando cuenta..."
+    "creatingAccount": "Creando cuenta...",
+    "termsGateEyebrow": "Casi listo",
+    "termsGateAsideTitle": "Solo falta",
+    "termsGateAsideHighlight": "un paso",
+    "termsGateAsideSubtitle": "Para usar Freelandoo — vender, comprar, publicar y recibir — necesitamos que aceptes nuestros términos.",
+    "termsGateBullet1": "Tú controlas tus datos (LGPD)",
+    "termsGateBullet2": "Pagos protegidos y transferencias transparentes",
+    "termsGateBullet3": "Reglas claras para la comunidad",
+    "termsGateTitle": "Acepta los términos para continuar",
+    "termsGateSubtitle": "Has iniciado sesión. Antes de continuar, lee y acepta los documentos a continuación.",
+    "termsGateBody": "Freelandoo conecta a profesionales y clientes y procesa pagos de cursos, productos, servicios y recursos digitales. Al continuar, aceptas los siguientes documentos:",
+    "termsGateCheckbox": "He leído y acepto los Términos de Uso y la Política de Privacidad de Freelandoo.",
+    "termsGateSubmitting": "Guardando...",
+    "termsGateAccept": "Aceptar y continuar",
+    "termsOfUse": "Términos de Uso",
+    "privacyPolicy": "Política de Privacidad"
   },
   "Account": {
     "title": "Mi cuenta",
@@ -1462,7 +1477,7 @@
     "confirmPasswordPlaceholder": "Repite tu contraseña",
     "passwordsDontMatch": "Las contraseñas no coinciden.",
     "acceptTermsPrefix": "He leído y acepto los",
-    "termsOfUse": "términos de uso",
+    "termsOfUse": "Términos de Uso",
     "continue": "Continuar",
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "doLogin": "Inicia sesión",
@@ -1495,7 +1510,10 @@
     "termsP2": "Freelandoo actúa exclusivamente como plataforma de divulgación. No intermedia negociaciones, no participa en acuerdos ni recibe pagos. Todas las alianzas, valores y entregas son tratadas directamente entre las partes.",
     "termsP3": "Cada usuario es responsable de la información divulgada en su perfil. Freelandoo no se responsabiliza por incumplimiento de acuerdos, retrasos, calidad de entregas o perjuicios.",
     "termsClose": "Cerrar",
-    "termsAccept": "He leído y acepto"
+    "termsAccept": "He leído y acepto",
+    "googleTermsPrefix": "Al continuar con Google, aceptas los",
+    "and": "y la",
+    "privacyPolicy": "Política de Privacidad"
   },
   "ForgotPassword": {
     "title": "¿Olvidaste tu contraseña?",

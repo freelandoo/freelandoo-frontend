@@ -66,8 +66,14 @@ export default function LoginPage() {
       }
 
       setSession(session.token, session.user)
-      const target =
+      const postLogin =
         session.emailVerified === false ? "/verify-email" : nextParam ?? "/search"
+      // Aceite dos Termos pendente (ex.: bump de versão) → tela obrigatória antes do destino.
+      const target = session.needsTerms
+        ? `/aceitar-termos?next=${encodeURIComponent(postLogin)}${
+            session.termsVersion ? `&v=${session.termsVersion}` : ""
+          }`
+        : postLogin
       didRedirect = true
       // SPA primeiro (rápido, mantém socket), fallback duro depois.
       try {
