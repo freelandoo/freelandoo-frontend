@@ -19,6 +19,8 @@ import {
   Package,
   GraduationCap,
   ChevronDown,
+  Wallet,
+  Home,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -118,6 +120,11 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       label: tAcc("earningsLabel", "Meus Faturamentos"),
       icon: Briefcase,
     },
+    {
+      href: "/wallet",
+      label: tAcc("wallet", "Carteira"),
+      icon: Wallet,
+    },
   ]
   // Itens abaixo do "Abrir chamado".
   const actionsBottom: Action[] = [
@@ -130,6 +137,11 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       href: "/account/xp",
       label: tAcc("xpLabel", "Métricas"),
       icon: BarChart3,
+    },
+    {
+      href: "/acasaviews",
+      label: tAcc("casaViewsLabel", "Casa Views"),
+      icon: Home,
     },
   ]
 

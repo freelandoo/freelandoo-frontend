@@ -27,6 +27,7 @@ const ACCOUNT = {
   cancel: ["Cancelar", "Cancel", "Cancelar"],
   casaViewsRankings: ["Rankings da Casa Views", "Casa Views rankings", "Rankings de Casa Views"],
   casaViewsRankingsAria: ["Ver os rankings da Casa Views", "View Casa Views rankings", "Ver los rankings de Casa Views"],
+  casaViewsLabel: ["Casa Views", "Casa Views", "Casa Views"],
   changeAvatar: ["Trocar foto de perfil", "Change profile photo", "Cambiar foto de perfil"],
   changeAvatarTitle: ["Alterar avatar", "Change avatar", "Cambiar avatar"],
   changePhoto: ["Trocar foto", "Change photo", "Cambiar foto"],

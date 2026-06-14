@@ -1375,7 +1375,8 @@
     "mgmtCancel": "Cancel",
     "mgmtDeleteConfirm": "Delete permanently",
     "mgmtDeleted": "Deleted successfully",
-    "mgmtDeleteError": "Failed to delete"
+    "mgmtDeleteError": "Failed to delete",
+    "casaViewsLabel": "Casa Views"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

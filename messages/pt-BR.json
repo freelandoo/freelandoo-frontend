@@ -1375,7 +1375,8 @@
     "mgmtCancel": "Cancelar",
     "mgmtDeleteConfirm": "Excluir definitivamente",
     "mgmtDeleted": "Excluído com sucesso",
-    "mgmtDeleteError": "Erro ao excluir"
+    "mgmtDeleteError": "Erro ao excluir",
+    "casaViewsLabel": "Casa Views"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
