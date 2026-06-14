@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useScrollReveal } from "@/lib/scroll-reveal"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-// TourHelpCenter desativado junto com o sistema de tour (órfão em features/tour).
+import { TourHelpCenter } from "@/features/tour/TourHelpCenter"
 
 const categories = [
   "Conta e cadastro",
@@ -160,6 +160,7 @@ export function CentralDeAjudaContent() {
               </a>
             </div>
           </div>
+          <TourHelpCenter />
         </div>
       </section>
     </main>
