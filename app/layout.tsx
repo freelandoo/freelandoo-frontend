@@ -124,17 +124,24 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         <I18nProvider>
           <TourProvider>
-            <ConsentProvider>{children}</ConsentProvider>
-            <ProfileSidebar />
-            <BirthdateGate />
-            <IntentModal />
-            <CookieConsent />
-            <AnalyticsProvider />
-            <CouponCapture />
-            <OnlineHeartbeat />
-            <AdminAlerts />
-            <InstallPrompt />
-            <PullToRefresh />
+            {/* ConsentProvider precisa envolver TODA a árvore (children + os
+                componentes globais abaixo): a ProfileSidebar/UserDropside monta
+                o OpenChamadoModal, que chama useConsentContext(). Com o provider
+                envolvendo só {children}, a sidebar (irmã) ficava fora do contexto
+                e estourava "useConsentContext fora do ConsentProvider" ao logar. */}
+            <ConsentProvider>
+              {children}
+              <ProfileSidebar />
+              <BirthdateGate />
+              <IntentModal />
+              <CookieConsent />
+              <AnalyticsProvider />
+              <CouponCapture />
+              <OnlineHeartbeat />
+              <AdminAlerts />
+              <InstallPrompt />
+              <PullToRefresh />
+            </ConsentProvider>
           </TourProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
