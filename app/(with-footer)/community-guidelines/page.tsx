@@ -48,12 +48,14 @@ const sections = [
     ],
   },
   {
-    title: "5. Mensagens e chat ao vivo",
+    title: "5. Mensagens, chat e transmissões ao vivo",
     items: [
-      "As mensagens privadas e as salas de chat devem seguir as mesmas regras de respeito e legalidade.",
-      "É proibido usar mensagens para assédio, spam ou aliciamento.",
-      "A plataforma utiliza ferramentas de moderação, incluindo filtros automáticos de termos, nas salas de chat.",
-      "Conversas podem ser revisadas mediante denúncia ou exigência legal.",
+      "As mensagens privadas, as salas de chat e as transmissões ao vivo (Lives) devem seguir as mesmas regras de respeito e legalidade.",
+      "É proibido usar mensagens, chat ou transmissões para assédio, spam ou aliciamento.",
+      "Quem transmite ao vivo é responsável por tudo o que exibe e diz durante a transmissão, em tempo real.",
+      "Os presentes virtuais enviados durante as Lives não autorizam, solicitam ou recompensam qualquer conteúdo proibido por estas diretrizes.",
+      "A plataforma utiliza ferramentas de moderação, incluindo filtros automáticos de termos, no chat e nas transmissões ao vivo.",
+      "Conversas e transmissões podem ser revisadas mediante denúncia ou exigência legal.",
     ],
   },
   {
@@ -104,7 +106,7 @@ export default function CommunityGuidelinesPage() {
     <LegalDocument
       namespace="CommunityGuidelines"
       title="Diretrizes da Comunidade"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="A Freelandoo é uma comunidade de profissionais e criadores. Estas diretrizes definem o que é esperado de todo conteúdo e interação na plataforma, para que o ambiente permaneça seguro, respeitoso e profissional."
       sections={sections}
       footerPrefix="Ao publicar conteúdo na Freelandoo, você concorda com estas Diretrizes da Comunidade. Veja também nossa"

@@ -61,7 +61,7 @@ const sections = [
   {
     title: "6. Pagamento e processamento",
     items: [
-      "O pagamento do pedido é processado pela plataforma por meio da Stripe.",
+      "O pagamento do pedido é processado pela plataforma por meio da Stripe, incluindo cartão e Pix, quando disponíveis.",
       "O valor pago pelo comprador fica sob gestão da plataforma até a conclusão das etapas de garantia.",
       "A confirmação do pedido depende da aprovação do pagamento.",
     ],
@@ -163,7 +163,7 @@ export default function MarketplaceTermsPage() {
     <LegalDocument
       namespace="MarketplaceTerms"
       title="Termos do Marketplace"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="Estes termos regulam a compra, a venda e o agendamento de serviços realizados dentro da plataforma Freelandoo. Ao utilizar a Loja, comprador e vendedor declaram ter lido e concordado com estas regras."
       sections={sections}
       footerPrefix="Ao comprar ou vender na Loja da Freelandoo, você concorda com estes termos. Veja também nossa"

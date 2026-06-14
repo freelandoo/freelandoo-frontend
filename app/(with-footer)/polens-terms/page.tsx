@@ -28,7 +28,8 @@ const sections = [
     title: "3. Uso de Poléns",
     items: [
       "Poléns podem ser usados para adquirir itens digitais e recursos pagos da plataforma.",
-      "O custo em Poléns de cada item é exibido antes da confirmação.",
+      "Poléns também podem ser usados para enviar presentes virtuais durante transmissões ao vivo (Lives).",
+      "O custo em Poléns de cada item ou presente é exibido antes da confirmação.",
       "O uso de Poléns é definitivo após a confirmação da operação.",
       "Alguns recursos podem ser pagos com Poléns ou diretamente via Stripe, conforme a disponibilidade.",
     ],
@@ -41,6 +42,8 @@ const sections = [
     items: [
       "Manifestação: banner personalizado e tag exibidos no perfil.",
       "Premium e destaques: maior visibilidade do perfil por um período determinado.",
+      "Presentes em transmissões ao vivo: itens virtuais enviados a quem transmite, como forma de apoio. Uma vez enviados, são definitivos e não reembolsáveis.",
+      "O valor correspondente aos presentes recebidos por quem transmite pode ser convertido em ganho do criador, exibido na Carteira e sujeito às regras de repasse da plataforma.",
       "Outros recursos digitais de personalização e divulgação disponibilizados na plataforma.",
       "Itens digitais são de uso pessoal, vinculados à conta e não transferíveis.",
     ],
@@ -94,7 +97,7 @@ export default function PolensTermsPage() {
     <LegalDocument
       namespace="PolensTerms"
       title="Termos de Poléns e Itens Digitais"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="Estes termos regulam a aquisição e o uso dos Poléns, os créditos virtuais da Freelandoo, e dos itens digitais oferecidos na plataforma, como Manifestação e destaques Premium."
       sections={sections}
       footerPrefix="Ao adquirir ou usar Poléns e itens digitais, você concorda com estes termos. Veja também nossos"

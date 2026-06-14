@@ -39,8 +39,8 @@ const sections = [
   {
     title: "4. O que acontece após a notificação",
     items: [
-      "A Freelandoo analisa a notificação recebida.",
-      "Conteúdo aparentemente infrator pode ser removido ou ter o acesso suspenso.",
+      "A Freelandoo analisa a notificação recebida, observando os prazos e a priorização descritos na Política de Moderação e Denúncias.",
+      "Conteúdo aparentemente infrator pode ser removido ou ter o acesso suspenso. Nos termos do art. 21 do Marco Civil da Internet (Lei nº 12.965/2014), conteúdo que viole direitos autorais pode ser removido mediante notificação, independentemente de ordem judicial.",
       "O usuário responsável pelo conteúdo é informado sobre a medida.",
       "A Freelandoo pode solicitar informações adicionais antes de decidir.",
     ],
@@ -76,7 +76,7 @@ export default function CopyrightPolicyPage() {
     <LegalDocument
       namespace="CopyrightPolicy"
       title="Política de Direitos Autorais"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="Esta política explica como a Freelandoo trata violações de direitos autorais e de propriedade intelectual, e como titulares de direitos podem notificar conteúdo infrator publicado na plataforma."
       sections={sections}
       footerPrefix="Esta política integra os Termos de Uso da Freelandoo. Veja também nossas"

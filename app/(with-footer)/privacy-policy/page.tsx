@@ -21,8 +21,9 @@ const sections = [
     items: [
       "Dados de cadastro: nome, e-mail, credenciais de autenticação (armazenadas de forma protegida, com hash, nunca em texto puro), data de nascimento e, quando fornecidos, CPF e telefone.",
       "Dados de perfil: profissão, experiência, portfólio, fotos, vídeos, localização e descrição.",
-      "Conteúdo publicado: posts, stories, vídeos, comentários e arquivos enviados.",
-      "Comunicações: mensagens privadas, áudios e interações em salas de chat.",
+      "Conteúdo publicado: posts, stories, vídeos, transmissões ao vivo, comentários e arquivos enviados.",
+      "Mídia enviada (fotos e vídeos) pode ser processada e otimizada automaticamente — incluindo geração de versões, compressão e transcodificação. Arquivos temporários gerados nesse processamento são descartados após a conclusão.",
+      "Comunicações: mensagens privadas, áudios e interações em salas de chat e transmissões ao vivo.",
       "Dados de transações: histórico de ativações, compras na Loja, cursos, Poléns e dados parciais de pagamento.",
       "Dados de uso e dispositivo: endereço IP, navegador, sistema, páginas visitadas, cliques e preferências.",
       "Dados de localização: cidade e região informadas ou inferidas, usadas na vitrine e na busca.",
@@ -45,7 +46,7 @@ const sections = [
     title: "4. Compartilhamento de dados",
     paragraphs: ["Compartilhamos dados apenas quando necessário, com as seguintes categorias de terceiros:"],
     items: [
-      "Processamento de pagamentos: Stripe.",
+      "Processamento de pagamentos: Stripe (incluindo cartão e Pix, quando disponíveis).",
       "Logística e envio de produtos da Loja: Melhor Envio e transportadoras.",
       "Armazenamento de arquivos: Cloudflare R2.",
       "Hospedagem e infraestrutura: Vercel e Railway.",
@@ -132,7 +133,7 @@ export default function PrivacyPolicyPage() {
     <LegalDocument
       namespace="PrivacyPolicy"
       title="Política de Privacidade"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="A Freelandoo valoriza a sua privacidade e se compromete a proteger os dados pessoais dos usuários da plataforma. Esta política explica, de forma transparente, como coletamos, usamos, armazenamos e compartilhamos as informações que você fornece, em conformidade com a Lei Geral de Proteção de Dados."
       sections={sections}
       footerPrefix="Ao usar o Freelandoo, você concorda com esta Política de Privacidade. Veja também nossos"

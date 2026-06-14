@@ -17,9 +17,12 @@ const sections = [
       "Perfil e subperfil: páginas profissionais públicas criadas pelo usuário; um usuário pode manter um perfil principal e subperfis.",
       "Clan: subperfil coletivo que reúne vários profissionais.",
       "Enxame: categoria temática da vitrine que agrupa profissões e perfis.",
-      "Conteúdo do usuário: textos, imagens, vídeos, áudios, portfólios, posts, stories e mensagens publicados pelos usuários.",
+      "Conteúdo do usuário: textos, imagens, vídeos, áudios, portfólios, posts, stories, transmissões ao vivo e mensagens publicados pelos usuários.",
       "Loja: o ambiente de compra e venda de produtos entre usuários dentro da plataforma.",
+      "Lives: transmissões ao vivo realizadas por usuários na plataforma.",
       "Poléns: créditos virtuais utilizados na plataforma, sem valor monetário e não sacáveis.",
+      "Presentes: itens virtuais adquiridos com Poléns e enviados durante transmissões ao vivo, regidos pelos Termos de Poléns e Itens Digitais.",
+      "Carteira: o painel em que o usuário acompanha seu saldo, ganhos e repasses dentro da plataforma.",
     ],
   },
   {
@@ -57,7 +60,7 @@ const sections = [
     title: "5. Ativação, pagamentos e moeda virtual",
     items: [
       "Determinadas funcionalidades exigem a ativação paga do perfil, regida pelo Termo de Ativação.",
-      "Os pagamentos são processados por provedores externos, como a Stripe; a Freelandoo não armazena dados completos de cartão.",
+      "Os pagamentos são processados por provedores externos, como a Stripe, incluindo cartão e Pix, quando disponíveis; a Freelandoo não armazena dados completos de cartão.",
       "A plataforma oferece Poléns, créditos virtuais sem valor monetário, não reembolsáveis e não sacáveis, conforme os Termos de Poléns e Itens Digitais.",
       "Compras de itens digitais, como banners de Manifestação e destaques Premium, cursos, produtos da Loja e agendamentos possuem regras próprias descritas nos respectivos termos.",
     ],
@@ -69,7 +72,8 @@ const sections = [
       "O usuário declara possuir todos os direitos necessários sobre o conteúdo que publica e não violar direitos de terceiros.",
       "Ao publicar conteúdo, o usuário concede à Freelandoo uma licença não exclusiva, mundial e gratuita para hospedar, exibir, reproduzir e divulgar esse conteúdo na plataforma e em suas comunicações, enquanto o conteúdo estiver publicado.",
       "A Freelandoo pode remover ou restringir conteúdo que viole estes termos, as Diretrizes da Comunidade ou a legislação aplicável.",
-      "Nos termos do Marco Civil da Internet (Lei nº 12.965/2014), a Freelandoo não é previamente responsável por conteúdo de terceiros, podendo removê-lo mediante notificação ou ordem judicial.",
+      "Qualquer usuário pode denunciar conteúdo pelos botões de denúncia da plataforma. As denúncias são analisadas conforme a gravidade e os prazos descritos na Política de Moderação e Denúncias.",
+      "Nos termos do Marco Civil da Internet (Lei nº 12.965/2014), a Freelandoo não é previamente responsável por conteúdo de terceiros, podendo removê-lo mediante notificação — inclusive nas hipóteses do art. 21 (direitos autorais e exposição íntima não autorizada) — ou mediante ordem judicial.",
     ],
   },
   {
@@ -79,9 +83,10 @@ const sections = [
     ],
     items: [
       "Vitrine por Enxames, perfis, subperfis, clans, portfólios e ranking.",
-      "Rede social: Feed, Bees, Stories, mensagens privadas e salas de chat ao vivo.",
+      "Rede social: Feed, Bees, Stories, mensagens privadas, salas de chat ao vivo e transmissões ao vivo (Lives) com presentes virtuais.",
       "Cursos e conteúdos educacionais.",
       "Loja de produtos e agendamento de serviços.",
+      "Carteira: acompanhamento de saldo, ganhos e repasses, e moeda virtual (Poléns).",
       "Itens de destaque e personalização, como Manifestação e Premium.",
       "Programa de afiliados e cupons.",
       "Casa Views: reality show, ranking de engajamento e participação da audiência, regidos pelo Regulamento da Casa Views.",
@@ -181,7 +186,7 @@ export default function TermsPage() {
     <LegalDocument
       namespace="Terms"
       title="Termos de Uso"
-      updatedAt="Última atualização: 21 de maio de 2026"
+      updatedAt="Última atualização: 14 de junho de 2026"
       intro="Estes Termos de Uso regulam o acesso e a utilização da plataforma Freelandoo. Ao criar uma conta, navegar ou utilizar qualquer funcionalidade, você declara que leu, compreendeu e concorda integralmente com este documento. Caso não concorde, não utilize a plataforma."
       sections={sections}
       footerPrefix="Ao utilizar o Freelandoo, você concorda integralmente com estes Termos de Uso. Veja também nossa"
