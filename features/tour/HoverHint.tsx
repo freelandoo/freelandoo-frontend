@@ -20,6 +20,10 @@ interface HoverHintProps {
 const GAP = 12
 const TOOLTIP_MAX_W = 260
 
+// Tour desligado (2026-06-14): HoverHint vira pass-through (só renderiza os
+// children, preservando data-tour). Call-sites intactas. Reativar: false.
+const HINTS_DISABLED = true
+
 /**
  * Tooltip que aparece no hover/focus. Renderizado via portal em
  * `document.body` com `position: fixed` para escapar de containers com
@@ -94,8 +98,9 @@ export function HoverHint({ id, side = "bottom", className, dataTour, children }
   }, [open, computePosition])
 
   if (!hint) return <>{children}</>
-  // Hint já visto (uma vez por id) OU opt-out global → não desenha tooltip.
-  if (hideAllTours || seen) {
+  // Hint já visto (uma vez por id), opt-out global, OU tour desligado → não
+  // desenha tooltip.
+  if (HINTS_DISABLED || hideAllTours || seen) {
     if (!dataTour) return <>{children}</>
     return (
       <span data-tour={dataTour} className={cn("relative inline-flex", className)}>

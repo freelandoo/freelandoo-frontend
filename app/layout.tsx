@@ -14,8 +14,12 @@ import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { TourProvider } from "@/features/tour/TourProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
-import { IntentModal } from "@/features/intent/IntentModal"
 import "./globals.css"
+
+// TOUR DESLIGADO (2026-06-14): o TourProvider segue montado mas INERTE
+// (TOURS_DISABLED em features/tour/TourProvider.tsx) e o modal de entrada de
+// tour (IntentModal) foi REMOVIDO daqui. Será reconstruído do zero. Arquivos
+// em features/intent/* ficam órfãos.
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
@@ -133,7 +137,6 @@ export default function RootLayout({
               {children}
               <ProfileSidebar />
               <BirthdateGate />
-              <IntentModal />
               <CookieConsent />
               <AnalyticsProvider />
               <CouponCapture />
