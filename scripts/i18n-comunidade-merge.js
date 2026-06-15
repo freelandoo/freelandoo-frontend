@@ -113,7 +113,29 @@ const PROFILE = {
   communities: ["Comunidade", "Community", "Comunidad"],
 }
 
-const GROUPS = { Community: COMMUNITY, Profile: PROFILE }
+// ns Account: aba/contador/menu/slot do /account (substituem os de Clans).
+const ACCOUNT = {
+  tabCommunity: ["Comunidade", "Community", "Comunidad"],
+  countCommunities: ["Comunidades", "Communities", "Comunidades"],
+  menuCommunity: ["Comunidade", "Community", "Comunidad"],
+  myCommunities: ["Minhas comunidades", "My communities", "Mis comunidades"],
+  noCommunitiesYet: [
+    "Você ainda não participa de nenhuma comunidade.",
+    "You're not in any community yet.",
+    "Aún no participas en ninguna comunidad.",
+  ],
+  createOrJoinCommunity: [
+    "Criar ou entrar em uma comunidade",
+    "Create or join a community",
+    "Crear o unirse a una comunidad",
+  ],
+  openCommunityAria: ["Abrir comunidade {name}", "Open community {name}", "Abrir comunidad {name}"],
+  roleLeaderShort: ["Líder", "Leader", "Líder"],
+  roleViceShort: ["Vice-líder", "Vice-leader", "Vicelíder"],
+  roleMemberShort: ["Membro", "Member", "Miembro"],
+}
+
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

@@ -609,7 +609,7 @@ export function UserPortfolio({
                 className={tabBtn(portfolioTab === "clans")}
               >
                 <Users className="h-3.5 w-3.5" />
-                {tr("tabClans", "Clans")}
+                {tr("tabCommunity", "Comunidade")}
               </button>
             </HoverHint>
           )}

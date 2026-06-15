@@ -1391,7 +1391,17 @@
     "mgmtDeleteConfirm": "Eliminar definitivamente",
     "mgmtDeleted": "Eliminado con éxito",
     "mgmtDeleteError": "Error al eliminar",
-    "casaViewsLabel": "Casa Views"
+    "casaViewsLabel": "Casa Views",
+    "tabCommunity": "Comunidad",
+    "countCommunities": "Comunidades",
+    "menuCommunity": "Comunidad",
+    "myCommunities": "Mis comunidades",
+    "noCommunitiesYet": "Aún no participas en ninguna comunidad.",
+    "createOrJoinCommunity": "Crear o unirse a una comunidad",
+    "openCommunityAria": "Abrir comunidad {name}",
+    "roleLeaderShort": "Líder",
+    "roleViceShort": "Vicelíder",
+    "roleMemberShort": "Miembro"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

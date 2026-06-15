@@ -1391,7 +1391,17 @@
     "mgmtDeleteConfirm": "Delete permanently",
     "mgmtDeleted": "Deleted successfully",
     "mgmtDeleteError": "Failed to delete",
-    "casaViewsLabel": "Casa Views"
+    "casaViewsLabel": "Casa Views",
+    "tabCommunity": "Community",
+    "countCommunities": "Communities",
+    "menuCommunity": "Community",
+    "myCommunities": "My communities",
+    "noCommunitiesYet": "You're not in any community yet.",
+    "createOrJoinCommunity": "Create or join a community",
+    "openCommunityAria": "Open community {name}",
+    "roleLeaderShort": "Leader",
+    "roleViceShort": "Vice-leader",
+    "roleMemberShort": "Member"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

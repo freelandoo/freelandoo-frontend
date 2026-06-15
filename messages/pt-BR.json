@@ -1391,7 +1391,17 @@
     "mgmtDeleteConfirm": "Excluir definitivamente",
     "mgmtDeleted": "Excluído com sucesso",
     "mgmtDeleteError": "Erro ao excluir",
-    "casaViewsLabel": "Casa Views"
+    "casaViewsLabel": "Casa Views",
+    "tabCommunity": "Comunidade",
+    "countCommunities": "Comunidades",
+    "menuCommunity": "Comunidade",
+    "myCommunities": "Minhas comunidades",
+    "noCommunitiesYet": "Você ainda não participa de nenhuma comunidade.",
+    "createOrJoinCommunity": "Criar ou entrar em uma comunidade",
+    "openCommunityAria": "Abrir comunidade {name}",
+    "roleLeaderShort": "Líder",
+    "roleViceShort": "Vice-líder",
+    "roleMemberShort": "Membro"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

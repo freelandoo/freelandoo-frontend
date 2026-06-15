@@ -100,6 +100,17 @@ export default function PerfilPage() {
   const unreadMessages = navCounts.conversationUnread
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
+  const [myCommunities, setMyCommunities] = useState<
+    Array<{
+      id_profile: string
+      display_name: string
+      avatar_url: string | null
+      role: "leader" | "vice" | "member"
+      xp_level: number
+      member_count: number
+      enxame_name: string | null
+    }>
+  >([])
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
@@ -218,6 +229,20 @@ export default function PerfilPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) setFollowedProfilesCount(Number(data.following_count) || 0)
+      })
+      .catch(() => {})
+  }, [])
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    fetch("/api/communities/me", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.communities)) setMyCommunities(data.communities)
       })
       .catch(() => {})
   }, [])
@@ -1415,7 +1440,6 @@ export default function PerfilPage() {
   const visibleProfiles = (perfil.profiles || []).filter(
     (p) => !p.is_clan && p.is_published
   ).length
-  const totalClans = (perfil.profiles || []).filter((p) => p.is_clan).length
 
   return (
     <div className="fl-root fl-paper-texture min-h-[100dvh] overflow-x-hidden">
@@ -1466,9 +1490,9 @@ export default function PerfilPage() {
                 <UserRound className="h-4 w-4" />
                 {t("menuProfile", "Perfil")}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/account/clans")}>
+              <DropdownMenuItem onSelect={() => router.push("/comunidades")}>
                 <Users className="h-4 w-4" />
-                {t("menuClan", "Clan")}
+                {t("menuCommunity", "Comunidade")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() =>
@@ -1498,8 +1522,8 @@ export default function PerfilPage() {
         </HoverHint>
         <HoverHint id="account-counter-clans" side="bottom">
           <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countClans", "Clans")}</span>
-            <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalClans}</span>
+            <span className="text-[#9A938A] uppercase tracking-wide">{t("countCommunities", "Comunidades")}</span>
+            <span className="font-semibold tabular-nums text-[#F5F1E8]">{myCommunities.length}</span>
           </span>
         </HoverHint>
         <HoverHint id="account-counter-following" side="bottom">
@@ -1909,135 +1933,55 @@ export default function PerfilPage() {
               <div className="space-y-4">
                 <div className="flex justify-end">
                   <Link
-                    href="/account/clans"
+                    href="/comunidades"
                     className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#F5F1E8]/25 px-4 py-2 text-[13px] font-bold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
                   >
-                    {t("manageClans", "Gerenciar clans")}
+                    {t("myCommunities", "Minhas comunidades")}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
             <div>
-              {perfil.profiles && perfil.profiles.filter((p) => p.is_clan).length > 0 ? (
-                <div className="grid grid-cols-3 gap-px">
-                  {perfil.profiles.filter((p) => p.is_clan).map((clan) => {
-                    const isPaid = !!clan.is_paid
-                    const isVisible = clan.is_visible !== false
-                    const isPublished = !!clan.is_published
-                    const imgSrc = clan.avatar_url || null
-                    return (
-                      <div key={clan.id_profile} className="group relative">
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/clans/${clan.id_profile}`)}
-                          className="relative block aspect-[4/5] w-full overflow-hidden border border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] transition"
-                          aria-label={t("openClanAria", "Abrir clan {name}").replace("{name}", clan.display_name)}
-                        >
-                          {imgSrc ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imgSrc}
-                              alt={clan.display_name}
-                              className="h-full w-full object-cover"
-                            />
+              {myCommunities.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {myCommunities.map((c) => (
+                    <button
+                      key={c.id_profile}
+                      type="button"
+                      onClick={() => router.push(`/comunidades/${c.id_profile}`)}
+                      className="group flex items-center gap-3 rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] p-3 text-left transition hover:border-[#F2B705]/50"
+                      aria-label={t("openCommunityAria", "Abrir comunidade {name}").replace("{name}", c.display_name)}
+                    >
+                      <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F2B705]/15 text-sm font-bold text-[#F5F1E8]">
+                        {c.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.avatar_url} alt={c.display_name} className="h-full w-full object-cover" />
+                        ) : (
+                          getInitials(c.display_name)
+                        )}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-[#F5F1E8]">{c.display_name}</span>
+                        <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#9A938A]">
+                          {c.role === "leader" ? (
+                            <><Crown className="h-3 w-3 text-primary" /> {t("roleLeaderShort", "Líder")}</>
+                          ) : c.role === "vice" ? (
+                            t("roleViceShort", "Vice-líder")
                           ) : (
-                            <div
-                              className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#F5F1E8]/60"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg, rgba(242,183,5,0.22), rgba(20,16,9,0.6))",
-                              }}
-                            >
-                              {getInitials(clan.display_name)}
-                            </div>
+                            t("roleMemberShort", "Membro")
                           )}
-                          <div
-                            aria-hidden
-                            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"
-                          />
-                        </button>
-
-                        {/* Engrenagem (canto superior esquerdo) */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="absolute top-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-white/85 backdrop-blur-sm transition hover:bg-zinc-950"
-                              aria-label={t("clanActions", "Ações do clan")}
-                            >
-                              <Settings className="h-3.5 w-3.5" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-52">
-                            <DropdownMenuItem onClick={() => router.push(`/clans/${clan.id_profile}`)}>
-                              <ArrowRight className="h-4 w-4 mr-2" />
-                              {t("viewClan", "Ver clan")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}`)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              {t("manageClan", "Gerenciar clan")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/account/clans/${clan.id_profile}/agenda`)}>
-                              <CalendarDays className="h-4 w-4 mr-2" />
-                              {t("agenda", "Agenda")}
-                            </DropdownMenuItem>
-                            {isPaid && (
-                              <DropdownMenuItem
-                                disabled={togglingVisibility === clan.id_profile}
-                                onClick={() => handleToggleVisibility(clan.id_profile, !isVisible)}
-                              >
-                                {isVisible ? (
-                                  <><EyeOff className="h-4 w-4 mr-2" /> {t("makeInvisible", "Deixar invisível")}</>
-                                ) : (
-                                  <><Eye className="h-4 w-4 mr-2" /> {t("makeVisible", "Tornar visível")}</>
-                                )}
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              disabled={deletingProfile === clan.id_profile}
-                              onClick={() => handleDeleteProfile(clan.id_profile)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {t("delete", "Excluir")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {/* Status badge (canto superior direito) */}
-                        <div className="absolute top-2 right-2 pointer-events-none">
-                          {!isPaid ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-sm">
-                              {t("statusWaiting", "Aguardando")}
-                            </span>
-                          ) : isPublished ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                              {t("statusVisible", "Visível")}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
-                              {t("statusInvisible", "Invisível")}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="px-1 pt-1.5 inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-[#F5F1E8] md:text-sm">
-                          <Crown className="h-3 w-3 text-primary" />
-                          <span className="truncate">{clan.display_name}</span>
-                        </p>
-                      </div>
-                    )
-                  })}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-2xl border-2 border-dashed border-[#F5F1E8]/15 bg-[#F5F1E8]/[0.02] p-8 text-center">
                   <Users className="mx-auto mb-2 h-8 w-8 text-[#9A938A]" />
                   <p className="text-sm text-[#9A938A]">
-                    {t("noClansYet", "Você ainda não tem clans criados.")}
+                    {t("noCommunitiesYet", "Você ainda não participa de nenhuma comunidade.")}
                   </p>
-                  <Link href="/account/clans" className="mt-2 inline-block text-sm font-bold text-[#F2B705] hover:underline">
-                    {t("createOrJoinClan", "Criar ou entrar em um clan")}
+                  <Link href="/comunidades" className="mt-2 inline-block text-sm font-bold text-[#F2B705] hover:underline">
+                    {t("createOrJoinCommunity", "Criar ou entrar em uma comunidade")}
                   </Link>
                 </div>
               )}
