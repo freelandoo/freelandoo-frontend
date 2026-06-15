@@ -48,7 +48,25 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }]
   },
+  // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
+  // são otimizados por padrão (lucide-react/@radix já são, mas listados por
+  // garantia). Corta JS de import desnecessário no bundle.
+  experimental: {
+    optimizePackageImports: [
+      "framer-motion",
+      "date-fns",
+      "lucide-react",
+    ],
+  },
+  // Remove console.* do output de produção (exceto error) — menos JS no cliente
+  // e menos ruído/custo de log em serverless.
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production" ? { exclude: ["error"] } : false,
+  },
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2678400, // 31 dias — derivadas otimizadas mudam pouco
     remotePatterns: [
       {
         protocol: "https",
