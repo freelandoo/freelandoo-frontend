@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useMachinesCatalog } from "@/components/home/machines/use-machines-catalog"
@@ -9,10 +10,23 @@ import { FeedRetractableHeader } from "@/components/feed/feed-retractable-header
 import { PortfolioPostCard } from "@/components/feed/portfolio-post-card"
 import { EmptyFeedState } from "@/components/feed/empty-feed-state"
 import { FeedSkeleton } from "@/components/feed/feed-skeleton"
-import { CommentsPanel } from "@/components/comments/comments-panel"
 import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
-import { StoryPlayer } from "@/components/stories/story-player"
-import { MediaComposer } from "@/components/composer/MediaComposer"
+
+// Overlays/composer pesados carregados sob demanda — saem do First Load JS do
+// /feed (rota mais pesada). O composer puxa câmera/crop/filtros; o player de
+// story e o painel de comentários só aparecem por interação. (perf Tier 3)
+const CommentsPanel = dynamic(
+  () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
+  { ssr: false }
+)
+const StoryPlayer = dynamic(
+  () => import("@/components/stories/story-player").then((m) => m.StoryPlayer),
+  { ssr: false }
+)
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
@@ -331,13 +345,15 @@ function FeedPageInner() {
         />
       )}
 
-      <MediaComposer
-        open={creatorOpen}
-        mode={composerMode}
-        initialKind="rest"
-        onClose={() => setCreatorOpen(false)}
-        onPosted={() => setStoryBarKey((k) => k + 1)}
-      />
+      {creatorOpen && (
+        <MediaComposer
+          open
+          mode={composerMode}
+          initialKind="rest"
+          onClose={() => setCreatorOpen(false)}
+          onPosted={() => setStoryBarKey((k) => k + 1)}
+        />
+      )}
     </div>
   )
 }
