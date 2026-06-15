@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
-  ImagePlus, Loader2, Save, Hash, Sparkles,
+  ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
+  Pin, Trash2, BarChart3, Plus,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -35,12 +36,14 @@ type Member = {
   top_profile_avatar: string | null
   top_profile_name: string | null
   top_profile_level: number | null
+  top_profile_xp: number
 }
 type Media = { media_url: string; media_type: string; thumbnail_url: string | null }
 type Item = { id_portfolio_item: string; title: string | null; description: string | null; feed_kind: string; media: Media[] }
+type Goal = { id: number; title: string; metric: string; target_value: number; progress: number; percent: number; ends_at: string | null }
+type Announcement = { id: number; body: string; is_pinned: boolean; created_at: string; author_username: string | null; author_name: string | null }
+type Benchmark = { position: number; total: number; percentile: number | null; enxame_name: string | null }
 
-// Cor de destaque (recolore só os detalhes — base paper/tinta é fixa). Mesma
-// lista da página de participante da Casa Views.
 const ACCENTS: { key: string; labelKey: string; fallback: string }[] = [
   { key: "magenta", labelKey: "accentMagenta", fallback: "Magenta" },
   { key: "cyan", labelKey: "accentCyan", fallback: "Ciano" },
@@ -59,9 +62,10 @@ function accentVar(a: string): string {
   return `var(${map[a] || "--magenta"})`
 }
 function compact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`
-  return String(n)
+  const v = Number(n) || 0
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}k`
+  return String(Math.round(v))
 }
 
 export default function CommunityDetailPage() {
@@ -74,6 +78,9 @@ export default function CommunityDetailPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [feed, setFeed] = useState<Item[]>([])
   const [bees, setBees] = useState<Item[]>([])
+  const [goal, setGoal] = useState<Goal | null>(null)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
   const [tab, setTab] = useState<"feed" | "bees" | "members">("feed")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -92,25 +99,60 @@ export default function CommunityDetailPage() {
   const seeded = useRef(false)
   const autoEdited = useRef(false)
 
+  // Meta + mural
+  const [goalFormOpen, setGoalFormOpen] = useState(false)
+  const [goalTitle, setGoalTitle] = useState("")
+  const [goalMetric, setGoalMetric] = useState("xp")
+  const [goalTarget, setGoalTarget] = useState("")
+  const [savingGoal, setSavingGoal] = useState(false)
+  const [annBody, setAnnBody] = useState("")
+  const [annPin, setAnnPin] = useState(false)
+  const [postingAnn, setPostingAnn] = useState(false)
+
   const currentUserId = getStoredUser()?.id_user ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
   const myMembership = useMemo(
     () => members.find((m) => m.id_user === currentUserId) || null,
     [members, currentUserId]
   )
-
   const accent = accentVar(accentDraft)
+  const showAsLeaderEdit = isLeader && edit
+
+  const ranked = useMemo(
+    () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
+    [members]
+  )
+  const spotlight = ranked[0] || null
+
+  const metricLabel = useCallback(
+    (m: string) => m === "posts" ? t("metricPosts", "Publicações") : m === "members" ? t("metricMembers", "Membros") : t("metricXp", "XP coletivo"),
+    [t]
+  )
+
+  const fetchGoal = useCallback(async () => {
+    const r = await fetch(`/api/communities/${id}/goal`)
+    const d = await r.json().catch(() => ({}))
+    setGoal(d.goal || null)
+  }, [id])
+  const fetchAnnouncements = useCallback(async () => {
+    const r = await fetch(`/api/communities/${id}/announcements`)
+    const d = await r.json().catch(() => ({}))
+    setAnnouncements(Array.isArray(d.announcements) ? d.announcements : [])
+  }, [id])
 
   const loadAll = useCallback(async () => {
     if (!id) return
     setLoading(true)
     setError(null)
     try {
-      const [cRes, mRes, fRes, bRes] = await Promise.all([
+      const [cRes, mRes, fRes, bRes, gRes, aRes, bmRes] = await Promise.all([
         fetch(`/api/communities/${id}`),
         fetch(`/api/communities/${id}/members`),
         fetch(`/api/communities/${id}/feed?kind=feed`),
         fetch(`/api/communities/${id}/feed?kind=bees`),
+        fetch(`/api/communities/${id}/goal`),
+        fetch(`/api/communities/${id}/announcements`),
+        fetch(`/api/communities/${id}/benchmark`),
       ])
       const cData = await cRes.json()
       if (!cRes.ok) throw new Error(cData.error || t("notFound", "Comunidade não encontrada."))
@@ -122,12 +164,12 @@ export default function CommunityDetailPage() {
         setAccentDraft(c.community_theme?.accent || "magenta")
         seeded.current = true
       }
-      const mData = await mRes.json()
-      setMembers(Array.isArray(mData.members) ? mData.members : [])
-      const fData = await fRes.json()
-      setFeed(Array.isArray(fData.items) ? fData.items : [])
-      const bData = await bRes.json()
-      setBees(Array.isArray(bData.items) ? bData.items : [])
+      const mData = await mRes.json(); setMembers(Array.isArray(mData.members) ? mData.members : [])
+      const fData = await fRes.json(); setFeed(Array.isArray(fData.items) ? fData.items : [])
+      const bData = await bRes.json(); setBees(Array.isArray(bData.items) ? bData.items : [])
+      const gData = await gRes.json(); setGoal(gData.goal || null)
+      const aData = await aRes.json(); setAnnouncements(Array.isArray(aData.announcements) ? aData.announcements : [])
+      const bmData = await bmRes.json(); setBenchmark(bmData.benchmark || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : t("notFound", "Comunidade não encontrada."))
     } finally {
@@ -136,8 +178,6 @@ export default function CommunityDetailPage() {
   }, [id, t])
 
   useEffect(() => { loadAll() }, [loadAll])
-
-  // Líder abre em modo edição uma vez (igual à página de participante).
   useEffect(() => {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
@@ -147,9 +187,7 @@ export default function CommunityDetailPage() {
     if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
     setBusy(true); setActionMsg(null)
     try {
-      const res = await fetch(`/api/communities/${id}/${action}`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await fetch(`/api/communities/${id}/${action}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("joinError", "Não foi possível entrar."))
       setActionMsg(action === "join" ? t("joinSuccess", "Você entrou na comunidade!") : t("leaveSuccess", "Você saiu da comunidade."))
@@ -166,11 +204,8 @@ export default function CommunityDetailPage() {
     if (kind === "banner") setBannerPreview(localUrl); else setAvatarPreview(localUrl)
     setUploading(kind); setActionMsg(null)
     try {
-      const fd = new FormData()
-      fd.append(kind, file)
-      const res = await fetch(`/api/communities/${id}/${kind}`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
-      })
+      const fd = new FormData(); fd.append(kind, file)
+      const res = await fetch(`/api/communities/${id}/${kind}`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("uploadError", "Não foi possível enviar a imagem."))
       await loadAll()
@@ -183,7 +218,6 @@ export default function CommunityDetailPage() {
     }
   }
 
-  // Salva nome+bio (/profile) e accent (/theme) juntos.
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
@@ -191,16 +225,14 @@ export default function CommunityDetailPage() {
     setSaving(true); setActionMsg(null)
     try {
       const pRes = await fetch(`/api/communities/${id}/profile`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ display_name: nameDraft.trim(), bio: bioDraft.trim() || null }),
       })
       const pData = await pRes.json()
       if (!pRes.ok) throw new Error(pData.error || t("saveError", "Não foi possível salvar."))
       if ((community.community_theme?.accent || "magenta") !== accentDraft) {
         const tRes = await fetch(`/api/communities/${id}/theme`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ theme: { ...(community.community_theme || {}), accent: accentDraft } }),
         })
         const tData = await tRes.json()
@@ -212,6 +244,67 @@ export default function CommunityDetailPage() {
     } catch (err) {
       setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
     } finally { setSaving(false) }
+  }
+
+  // Meta
+  const openGoalForm = () => {
+    setGoalTitle(goal?.title || "")
+    setGoalMetric(goal?.metric || "xp")
+    setGoalTarget(goal ? String(goal.target_value) : "")
+    setGoalFormOpen(true)
+  }
+  const saveGoal = async () => {
+    const token = getToken()
+    if (!token) return
+    const target = Number(goalTarget)
+    if (!goalTitle.trim() || !Number.isFinite(target) || target <= 0) {
+      setActionMsg(t("goalInvalid", "Preencha o nome e um alvo maior que zero.")); return
+    }
+    setSavingGoal(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/goal`, {
+        method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: goalTitle.trim(), metric: goalMetric, target_value: target }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setGoalFormOpen(false)
+      await fetchGoal()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingGoal(false) }
+  }
+  const removeGoal = async () => {
+    const token = getToken()
+    if (!token) return
+    await fetch(`/api/communities/${id}/goal`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    setGoalFormOpen(false)
+    await fetchGoal()
+  }
+
+  // Mural
+  const postAnnouncement = async () => {
+    const token = getToken()
+    if (!token || !annBody.trim()) return
+    setPostingAnn(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/announcements`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body: annBody.trim(), is_pinned: annPin }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setAnnBody(""); setAnnPin(false)
+      await fetchAnnouncements()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setPostingAnn(false) }
+  }
+  const deleteAnnouncement = async (annId: number) => {
+    const token = getToken()
+    if (!token) return
+    await fetch(`/api/communities/${id}/announcements/${annId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    await fetchAnnouncements()
   }
 
   if (loading) {
@@ -237,7 +330,6 @@ export default function CommunityDetailPage() {
   const items = tab === "bees" ? bees : feed
   const bannerSrc = bannerPreview || community.banner_url
   const avatarSrc = avatarPreview || community.avatar_url
-  const showAsLeaderEdit = isLeader && edit
 
   return (
     <div className={`casa-rank casa-paper relative min-h-[100dvh] overflow-hidden ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
@@ -255,20 +347,14 @@ export default function CommunityDetailPage() {
                 <Palette className="h-4 w-4 text-[var(--ink)]" />
                 <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]">{t("colorsLabel", "Cores")}</span>
                 <span className="h-5 w-5 rounded-full border-2 border-[var(--ink)]" style={{ background: accent }} />
-                <select
-                  value={accentDraft}
-                  onChange={(e) => setAccentDraft(e.target.value)}
-                  className="border-l-2 border-[var(--ink)]/20 bg-transparent pl-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] outline-none"
-                >
+                <select value={accentDraft} onChange={(e) => setAccentDraft(e.target.value)}
+                  className="border-l-2 border-[var(--ink)]/20 bg-transparent pl-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] outline-none">
                   {ACCENTS.map((a) => <option key={a.key} value={a.key}>{t(a.labelKey, a.fallback)}</option>)}
                 </select>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => setEdit((e) => !e)}
-              className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]"
-            >
+            <button type="button" onClick={() => setEdit((e) => !e)}
+              className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]">
               {edit ? <><Eye className="h-4 w-4" /> {t("viewPublic", "Ver como público")}</> : <><ScrollText className="h-4 w-4" /> {t("edit", "Editar")}</>}
             </button>
           </div>
@@ -306,39 +392,24 @@ export default function CommunityDetailPage() {
           </div>
           <div className="flex-1 pb-1 md:pb-2">
             {showAsLeaderEdit ? (
-              <input
-                value={nameDraft}
-                maxLength={80}
-                onChange={(e) => setNameDraft(e.target.value)}
-                placeholder={t("nameLabel", "Nome da comunidade")}
-                className="w-full border-b-2 border-dashed border-[var(--ink)]/40 bg-transparent casa-display text-4xl leading-[0.85] text-[var(--ink)] outline-none md:text-6xl"
-              />
+              <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
+                className="w-full border-b-2 border-dashed border-[var(--ink)]/40 bg-transparent casa-display text-4xl leading-[0.85] text-[var(--ink)] outline-none md:text-6xl" />
             ) : (
               <h1 className="casa-display text-4xl leading-[0.85] text-[var(--ink)] sm:text-5xl md:text-6xl">{community.display_name}</h1>
             )}
           </div>
-          {/* ação de visitante */}
           {!isLeader && (
             <div className="pb-1">
               {myMembership ? (
                 myMembership.role !== "leader" ? (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => joinOrLeave("leave")}
-                    className="border-2 border-[var(--ink)] bg-white px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60"
-                  >
+                  <button type="button" disabled={busy} onClick={() => joinOrLeave("leave")}
+                    className="border-2 border-[var(--ink)] bg-white px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60">
                     {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
                   </button>
                 ) : null
               ) : (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => joinOrLeave("join")}
-                  className="border-2 border-[var(--ink)] px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60"
-                  style={{ background: accent }}
-                >
+                <button type="button" disabled={busy} onClick={() => joinOrLeave("join")}
+                  className="border-2 border-[var(--ink)] px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60" style={{ background: accent }}>
                   {busy ? t("joining", "Entrando...") : t("join", "Entrar")}
                 </button>
               )}
@@ -362,120 +433,235 @@ export default function CommunityDetailPage() {
         </div>
       </section>
 
-      {/* Perfil (bio) */}
-      {(showAsLeaderEdit || community.bio) && (
-        <section className="relative z-10 mx-auto mt-6 max-w-5xl px-5 md:px-10">
-          <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
-            {showAsLeaderEdit ? (
-              <textarea
-                value={bioDraft}
-                maxLength={200}
-                onChange={(e) => setBioDraft(e.target.value)}
-                placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")}
-                rows={4}
-                className="w-full bg-transparent casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85 outline-none"
-              />
-            ) : (
-              <p className="whitespace-pre-line casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85">{community.bio}</p>
-            )}
-          </Block>
-        </section>
-      )}
-
-      {/* Tabs */}
-      <section className="relative z-10 mx-auto mt-8 max-w-5xl px-5 md:px-10">
-        <div className="flex gap-1 border-b-2 border-[var(--ink)]">
-          {([
-            ["feed", t("tabFeed", "Feed")],
-            ["bees", t("tabBees", "Bees")],
-            ["members", t("tabMembers", "Membros")],
-          ] as const).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className="-mb-0.5 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]"
-              style={{
-                borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent",
-                opacity: tab === key ? 1 : 0.5,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Conteúdo */}
-        <div className="mt-6">
-          {tab === "members" ? (
-            members.length === 0 ? (
-              <Empty text={t("membersEmpty", "Sem membros ainda.")} />
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {members.map((m) => (
-                  <div key={m.id_user} className="flex items-center gap-3 border-2 border-[var(--ink)] bg-white p-3 shadow-[4px_4px_0_0_var(--ink)]">
-                    <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[var(--ink)]" style={{ background: "var(--paper-2)" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{m.top_profile_name || m.user_name}</p>
-                      <p className="flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/60">
-                        {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
-                         m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
-                         t("roleMember", "Membro")}
-                        {typeof m.top_profile_level === "number" ? ` · ${t("level", "Nível")} ${m.top_profile_level}` : ""}
-                      </p>
-                    </div>
+      {/* GRID: principal + sidebar */}
+      <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
+        {/* ── coluna principal ── */}
+        <div className="space-y-6 md:col-span-2">
+          {/* Meta coletiva */}
+          {(showAsLeaderEdit || goal) && (
+            <Block title={t("goalTitle", "Meta da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
+              {goalFormOpen && showAsLeaderEdit ? (
+                <div className="space-y-2">
+                  <input value={goalTitle} maxLength={120} onChange={(e) => setGoalTitle(e.target.value)} placeholder={t("goalNamePlaceholder", "Ex.: Bora postar essa semana!")}
+                    className="w-full border-b-2 border-dashed border-[var(--ink)]/40 bg-transparent casa-display text-xl text-[var(--ink)] outline-none" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select value={goalMetric} onChange={(e) => setGoalMetric(e.target.value)} className="border-2 border-[var(--ink)] bg-white px-2 py-1.5 casa-body text-xs font-bold uppercase text-[var(--ink)]">
+                      <option value="xp">{t("metricXp", "XP coletivo")}</option>
+                      <option value="posts">{t("metricPosts", "Publicações")}</option>
+                      <option value="members">{t("metricMembers", "Membros")}</option>
+                    </select>
+                    <input type="number" min={1} value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} placeholder={t("goalTarget", "Alvo")}
+                      className="w-28 border-2 border-[var(--ink)] bg-white px-2 py-1.5 casa-body text-sm text-[var(--ink)] outline-none" />
                   </div>
-                ))}
-              </div>
-            )
-          ) : items.length === 0 ? (
-            <Empty text={tab === "bees" ? t("beesEmpty", "Nenhum Bee ainda.") : t("feedEmpty", "Esta comunidade ainda não publicou nada.")} />
-          ) : (
-            <div className={tab === "bees" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "grid gap-4 sm:grid-cols-2"}>
-              {items.map((it) => {
-                const cover = it.media?.[0]
-                return (
-                  <div key={it.id_portfolio_item} className="overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[4px_4px_0_0_var(--ink)]">
-                    {cover ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={cover.thumbnail_url || cover.media_url}
-                        alt={it.title || ""}
-                        loading="lazy"
-                        className={tab === "bees" ? "aspect-[9/16] w-full object-cover" : "aspect-[4/5] w-full object-cover"}
-                      />
-                    ) : null}
-                    {it.title || it.description ? (
-                      <div className="p-3">
-                        {it.title ? <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{it.title}</p> : null}
-                        {it.description ? <p className="mt-0.5 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{it.description}</p> : null}
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" disabled={savingGoal} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-60">
+                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("save", "Salvar")}
+                    </button>
+                    {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[var(--magenta)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--magenta-deep)]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
+                    <button type="button" onClick={() => setGoalFormOpen(false)} className="border-2 border-[var(--ink)]/30 px-4 py-1.5 casa-body text-xs font-bold uppercase text-[var(--ink-soft)]/70">{t("cancel", "Cancelar")}</button>
+                  </div>
+                </div>
+              ) : goal ? (
+                <div>
+                  <div className="flex items-end justify-between gap-3">
+                    <span className="casa-display text-xl leading-tight text-[var(--ink)]">{goal.title}</span>
+                    <span className="shrink-0 casa-body text-sm font-extrabold text-[var(--ink)]">{compact(goal.progress)}<span className="text-[var(--ink-soft)]/50">/{compact(goal.target_value)}</span></span>
+                  </div>
+                  <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[var(--ink)] bg-white">
+                    <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55">
+                    <span>{goal.percent}% · {metricLabel(goal.metric)}</span>
+                    {showAsLeaderEdit && <button type="button" onClick={openGoalForm} className="text-[var(--ink)] underline">{t("goalEdit", "Editar meta")}</button>}
+                  </div>
+                </div>
+              ) : showAsLeaderEdit ? (
+                <button type="button" onClick={openGoalForm} className="inline-flex items-center gap-2 border-2 border-dashed border-[var(--ink)]/40 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/70 hover:border-[var(--ink)]">
+                  <Plus className="h-4 w-4" /> {t("goalSet", "Definir meta")}
+                </button>
+              ) : null}
+            </Block>
+          )}
+
+          {/* Mural do líder */}
+          {(showAsLeaderEdit || announcements.length > 0) && (
+            <Block title={t("muralTitle", "Mural do líder")} icon={<Megaphone className="h-4 w-4" />} accent={accent}>
+              {showAsLeaderEdit && (
+                <div className="mb-3 space-y-2 border-b border-[var(--line)] pb-3">
+                  <textarea value={annBody} maxLength={1000} rows={2} onChange={(e) => setAnnBody(e.target.value)} placeholder={t("muralPlaceholder", "Escreva um recado para a comunidade...")}
+                    className="w-full bg-transparent casa-body text-sm text-[var(--ink)] outline-none" />
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/70">
+                      <input type="checkbox" checked={annPin} onChange={(e) => setAnnPin(e.target.checked)} /> <Pin className="h-3 w-3" /> {t("muralPin", "Fixar")}
+                    </label>
+                    <button type="button" disabled={postingAnn || !annBody.trim()} onClick={postAnnouncement}
+                      className="ml-auto inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-50">
+                      {postingAnn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Megaphone className="h-4 w-4" />} {t("muralPost", "Publicar")}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {announcements.length === 0 ? (
+                <p className="casa-body text-sm text-[var(--ink-soft)]/55">{t("muralEmpty", "Nenhum recado ainda.")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {announcements.map((a) => (
+                    <div key={a.id} className="relative border border-[var(--line)] bg-[var(--paper)] px-4 py-3">
+                      {a.is_pinned && <span className="mb-1 inline-flex items-center gap-1 casa-body text-[9px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}><Pin className="h-3 w-3" /> {t("pinned", "Fixado")}</span>}
+                      <p className="whitespace-pre-line casa-body text-sm text-[var(--ink-soft)]/90">{a.body}</p>
+                      <div className="mt-1 flex items-center justify-between casa-body text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/45">
+                        <span>{a.author_username ? `@${a.author_username}` : ""} · {new Date(a.created_at).toLocaleDateString()}</span>
+                        {showAsLeaderEdit && <button type="button" onClick={() => deleteAnnouncement(a.id)} className="text-[var(--magenta-deep)]"><Trash2 className="h-3.5 w-3.5" /></button>}
                       </div>
-                    ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Block>
+          )}
+
+          {/* Perfil (bio) */}
+          {(showAsLeaderEdit || community.bio) && (
+            <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
+              {showAsLeaderEdit ? (
+                <textarea value={bioDraft} maxLength={200} onChange={(e) => setBioDraft(e.target.value)} placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")} rows={4}
+                  className="w-full bg-transparent casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85 outline-none" />
+              ) : (
+                <p className="whitespace-pre-line casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85">{community.bio}</p>
+              )}
+            </Block>
+          )}
+
+          {/* Tabs + conteúdo */}
+          <div>
+            <div className="flex gap-1 border-b-2 border-[var(--ink)]">
+              {([
+                ["feed", t("tabFeed", "Feed")],
+                ["bees", t("tabBees", "Bees")],
+                ["members", t("tabMembers", "Membros")],
+              ] as const).map(([key, label]) => (
+                <button key={key} type="button" onClick={() => setTab(key)} className="-mb-0.5 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]"
+                  style={{ borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent", opacity: tab === key ? 1 : 0.5 }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-6">
+              {tab === "members" ? (
+                members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ranked.map((m, i) => (
+                      <div key={m.id_user} className="flex items-center gap-3 border-2 border-[var(--ink)] bg-white p-3 shadow-[4px_4px_0_0_var(--ink)]">
+                        <span className="casa-display text-xl leading-none text-[var(--ink)]/30">{i + 1}</span>
+                        <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[var(--ink)]" style={{ background: "var(--paper-2)" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{m.top_profile_name || m.user_name}</p>
+                          <p className="flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/60">
+                            {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
+                             m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
+                             t("roleMember", "Membro")} · {compact(m.top_profile_xp)} XP
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )
-              })}
+              ) : items.length === 0 ? (
+                <Empty text={tab === "bees" ? t("beesEmpty", "Nenhum Bee ainda.") : t("feedEmpty", "Esta comunidade ainda não publicou nada.")} />
+              ) : (
+                <div className={tab === "bees" ? "grid grid-cols-2 gap-3 sm:grid-cols-3" : "grid gap-4 sm:grid-cols-2"}>
+                  {items.map((it) => {
+                    const cover = it.media?.[0]
+                    return (
+                      <div key={it.id_portfolio_item} className="overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[4px_4px_0_0_var(--ink)]">
+                        {cover ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={cover.thumbnail_url || cover.media_url} alt={it.title || ""} loading="lazy"
+                            className={tab === "bees" ? "aspect-[9/16] w-full object-cover" : "aspect-[4/5] w-full object-cover"} />
+                        ) : null}
+                        {it.title || it.description ? (
+                          <div className="p-3">
+                            {it.title ? <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{it.title}</p> : null}
+                            {it.description ? <p className="mt-0.5 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{it.description}</p> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── sidebar ── */}
+        <div className="space-y-6">
+          {/* Benchmark */}
+          {benchmark && (
+            <div className="relative border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-5 text-white shadow-[6px_6px_0_0_var(--magenta)]">
+              <div className="flex items-center gap-2 casa-body text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/60">
+                <BarChart3 className="h-4 w-4" /> {t("benchmarkTitle", "Benchmark")}
+              </div>
+              <div className="mt-1 casa-display text-5xl leading-none" style={{ color: "var(--gold)" }}>#{benchmark.position}</div>
+              <p className="mt-1 casa-body text-xs font-semibold text-white/70">
+                {t("benchmarkOf", "de")} {benchmark.total} · {benchmark.enxame_name ? tx.enxame(null, benchmark.enxame_name) : t("communitiesWord", "comunidades")}
+              </p>
+              {benchmark.percentile != null && benchmark.total > 1 && (
+                <span className="mt-2 inline-block border-2 border-white/30 px-2 py-0.5 casa-body text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: "var(--gold)" }}>
+                  {t("benchmarkTop", "top")} {benchmark.percentile}%
+                </span>
+              )}
             </div>
           )}
+
+          {/* Destaque */}
+          {spotlight && (
+            <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
+              <div className="flex items-center gap-3">
+                <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]" style={{ background: "var(--paper-2)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={spotlight.top_profile_avatar || "/placeholder-user.jpg"} alt={spotlight.top_profile_name || ""} className="h-full w-full object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate casa-display text-lg leading-tight text-[var(--ink)]">{spotlight.top_profile_name || spotlight.user_name}</p>
+                  <p className="casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55">{t("spotlightSub", "Membro destaque")} · {compact(spotlight.top_profile_xp)} XP</p>
+                </div>
+              </div>
+            </Block>
+          )}
+
+          {/* Ranking interno */}
+          {ranked.length > 0 && (
+            <Block title={t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
+              <ol className="space-y-2">
+                {ranked.slice(0, 5).map((m, i) => (
+                  <li key={m.id_user} className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 casa-display text-base text-[var(--ink)]/40">{i + 1}</span>
+                    <div className="h-8 w-8 shrink-0 overflow-hidden border border-[var(--ink)]" style={{ background: "var(--paper-2)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <span className="min-w-0 flex-1 truncate casa-body text-sm font-semibold text-[var(--ink)]">{m.top_profile_name || m.user_name}</span>
+                    <span className="shrink-0 casa-body text-[11px] font-extrabold" style={{ color: accent }}>{compact(m.top_profile_xp)}</span>
+                  </li>
+                ))}
+              </ol>
+            </Block>
+          )}
         </div>
-      </section>
+      </div>
 
       {/* Barra fixa de edição */}
       {showAsLeaderEdit && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[var(--ink)] bg-white/95 px-5 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
-            <span className="inline-flex items-center gap-2 casa-body text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60">
-              <Hash className="h-4 w-4" /> {community.display_name}
-            </span>
+            <span className="inline-flex items-center gap-2 casa-body text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60"><Hash className="h-4 w-4" /> {community.display_name}</span>
             {actionMsg && <span className="casa-body text-xs font-bold text-[var(--ink-soft)]/70">{actionMsg}</span>}
-            <button
-              type="button"
-              onClick={saveAll}
-              disabled={saving}
-              className="ml-auto inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-2 casa-body text-sm font-extrabold uppercase tracking-[0.14em] text-white disabled:opacity-60"
-            >
+            <button type="button" onClick={saveAll} disabled={saving}
+              className="ml-auto inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-2 casa-body text-sm font-extrabold uppercase tracking-[0.14em] text-white disabled:opacity-60">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("save", "Salvar")}
             </button>
           </div>

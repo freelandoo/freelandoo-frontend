@@ -74,6 +74,33 @@ const COMMUNITY = {
   accentRed: ["Vermelho", "Red", "Rojo"],
   accentOrange: ["Laranja", "Orange", "Naranja"],
   accentGray: ["Cinza", "Gray", "Gris"],
+  // Meta coletiva
+  goalTitle: ["Meta da comunidade", "Community goal", "Meta de la comunidad"],
+  goalSet: ["Definir meta", "Set goal", "Definir meta"],
+  goalEdit: ["Editar meta", "Edit goal", "Editar meta"],
+  goalRemove: ["Remover", "Remove", "Quitar"],
+  goalTarget: ["Alvo", "Target", "Meta"],
+  goalNamePlaceholder: ["Ex.: Bora postar essa semana!", "e.g. Let's post this week!", "Ej.: ¡A publicar esta semana!"],
+  goalInvalid: ["Preencha o nome e um alvo maior que zero.", "Fill in a name and a target above zero.", "Completa un nombre y una meta mayor que cero."],
+  metricXp: ["XP coletivo", "Community XP", "XP colectivo"],
+  metricPosts: ["Publicações", "Posts", "Publicaciones"],
+  metricMembers: ["Membros", "Members", "Miembros"],
+  // Mural do líder
+  muralTitle: ["Mural do líder", "Leader's board", "Muro del líder"],
+  muralEmpty: ["Nenhum recado ainda.", "No posts yet.", "Sin avisos aún."],
+  muralPlaceholder: ["Escreva um recado para a comunidade...", "Write a note to the community...", "Escribe un aviso para la comunidad..."],
+  muralPost: ["Publicar", "Post", "Publicar"],
+  muralPin: ["Fixar", "Pin", "Fijar"],
+  pinned: ["Fixado", "Pinned", "Fijado"],
+  // Benchmark
+  benchmarkTitle: ["Benchmark", "Benchmark", "Benchmark"],
+  benchmarkOf: ["de", "of", "de"],
+  benchmarkTop: ["top", "top", "top"],
+  communitiesWord: ["comunidades", "communities", "comunidades"],
+  // Ranking interno + destaque
+  spotlightTitle: ["Destaque", "Spotlight", "Destacado"],
+  spotlightSub: ["Membro destaque", "Top member", "Miembro destacado"],
+  rankingTitle: ["Ranking dos membros", "Member ranking", "Ranking de miembros"],
   // Tema (líder)
   editTheme: ["Editar cores", "Edit colors", "Editar colores"],
   saveTheme: ["Salvar", "Save", "Guardar"],
