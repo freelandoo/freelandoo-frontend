@@ -2305,7 +2305,19 @@
     "voteSwitch": "Switch to {name}",
     "voteLevelN": "Level {n}",
     "voteDone": "Vote recorded!",
-    "voteError": "Could not vote."
+    "voteError": "Could not vote.",
+    "editName": "Edit name",
+    "editBio": "Edit description",
+    "addBio": "Add a description",
+    "bioPlaceholder": "Tell people about the community...",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveError": "Could not save.",
+    "profileSaved": "Changes saved!",
+    "changeBanner": "Change cover",
+    "changePhoto": "Change photo",
+    "uploading": "Uploading...",
+    "uploadError": "Could not upload the image."
   },
   "Careers": {
     "hero.badge": "Careers",

@@ -2305,7 +2305,19 @@
     "voteSwitch": "Cambiar a {name}",
     "voteLevelN": "Nivel {n}",
     "voteDone": "¡Voto registrado!",
-    "voteError": "No se pudo votar."
+    "voteError": "No se pudo votar.",
+    "editName": "Editar nombre",
+    "editBio": "Editar descripción",
+    "addBio": "Agregar descripción",
+    "bioPlaceholder": "Cuenta sobre la comunidad...",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "saveError": "No se pudo guardar.",
+    "profileSaved": "¡Cambios guardados!",
+    "changeBanner": "Cambiar portada",
+    "changePhoto": "Cambiar foto",
+    "uploading": "Subiendo...",
+    "uploadError": "No se pudo subir la imagen."
   },
   "Careers": {
     "hero.badge": "Carreras",
