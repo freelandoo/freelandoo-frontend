@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { Loader2, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
@@ -8,8 +9,14 @@ import { cn } from "@/lib/utils"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
 import { CommentsPanel } from "@/components/comments/comments-panel"
-import { LivesView } from "@/components/lives/lives-view"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+
+// Lives carregam livekit-client (pesado). Só importam quando o usuário abre a
+// aba de lives — fora do bundle inicial do /bees (rota mais pesada). (perf Tier 3)
+const LivesView = dynamic(
+  () => import("@/components/lives/lives-view").then((m) => m.LivesView),
+  { ssr: false }
+)
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
