@@ -2317,7 +2317,19 @@
     "changeBanner": "Cambiar portada",
     "changePhoto": "Cambiar foto",
     "uploading": "Subiendo...",
-    "uploadError": "No se pudo subir la imagen."
+    "uploadError": "No se pudo subir la imagen.",
+    "edit": "Editar",
+    "viewPublic": "Ver como público",
+    "colorsLabel": "Colores",
+    "profileSection": "Perfil",
+    "accentMagenta": "Magenta",
+    "accentCyan": "Cian",
+    "accentGold": "Dorado",
+    "accentPurple": "Morado",
+    "accentLeaf": "Verde hoja",
+    "accentRed": "Rojo",
+    "accentOrange": "Naranja",
+    "accentGray": "Gris"
   },
   "Careers": {
     "hero.badge": "Carreras",

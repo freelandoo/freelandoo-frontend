@@ -2317,7 +2317,19 @@
     "changeBanner": "Change cover",
     "changePhoto": "Change photo",
     "uploading": "Uploading...",
-    "uploadError": "Could not upload the image."
+    "uploadError": "Could not upload the image.",
+    "edit": "Edit",
+    "viewPublic": "View as public",
+    "colorsLabel": "Colors",
+    "profileSection": "Profile",
+    "accentMagenta": "Magenta",
+    "accentCyan": "Cyan",
+    "accentGold": "Gold",
+    "accentPurple": "Purple",
+    "accentLeaf": "Leaf green",
+    "accentRed": "Red",
+    "accentOrange": "Orange",
+    "accentGray": "Gray"
   },
   "Careers": {
     "hero.badge": "Careers",

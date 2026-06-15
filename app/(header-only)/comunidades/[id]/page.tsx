@@ -1,15 +1,19 @@
 "use client"
 
+import "../comunidade-casa.css"
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, Trophy, ArrowLeft, Palette, Crown, Shield, Camera, ImagePlus, Pencil, Check, X } from "lucide-react"
+import {
+  Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
+  ImagePlus, Loader2, Save, Hash, Sparkles,
+} from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 
-type Theme = { primary?: string; background?: string; text?: string }
+type Theme = { primary?: string; background?: string; text?: string; accent?: string }
 type Community = {
   id_profile: string
   id_leader_user: string | null
@@ -19,6 +23,7 @@ type Community = {
   banner_url: string | null
   enxame_name: string | null
   community_theme: Theme | null
+  xp_total: number
   xp_level: number
   member_count: number
 }
@@ -34,19 +39,29 @@ type Member = {
 type Media = { media_url: string; media_type: string; thumbnail_url: string | null }
 type Item = { id_portfolio_item: string; title: string | null; description: string | null; feed_kind: string; media: Media[] }
 
-const DEFAULT_THEME: Required<Theme> = { primary: "#F2B705", background: "#F1EDE2", text: "#1A1505" }
-
-// Luminância relativa (WCAG) de uma cor hex (#RGB ou #RRGGBB). Usada para
-// decidir o contorno: claro sobre fundo escuro, escuro sobre fundo claro.
-function luminance(hex: string): number {
-  let h = (hex || "").replace("#", "").trim()
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("")
-  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return 0.5
-  const ch = (i: number) => {
-    const c = parseInt(h.substring(i, i + 2), 16) / 255
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+// Cor de destaque (recolore só os detalhes — base paper/tinta é fixa). Mesma
+// lista da página de participante da Casa Views.
+const ACCENTS: { key: string; labelKey: string; fallback: string }[] = [
+  { key: "magenta", labelKey: "accentMagenta", fallback: "Magenta" },
+  { key: "cyan", labelKey: "accentCyan", fallback: "Ciano" },
+  { key: "gold", labelKey: "accentGold", fallback: "Dourado" },
+  { key: "purple", labelKey: "accentPurple", fallback: "Roxo" },
+  { key: "leaf", labelKey: "accentLeaf", fallback: "Verde folha" },
+  { key: "red", labelKey: "accentRed", fallback: "Vermelho" },
+  { key: "orange", labelKey: "accentOrange", fallback: "Laranja" },
+  { key: "gray", labelKey: "accentGray", fallback: "Cinza" },
+]
+function accentVar(a: string): string {
+  const map: Record<string, string> = {
+    magenta: "--magenta", cyan: "--cyan", gold: "--gold", purple: "--purple",
+    leaf: "--leaf", red: "--red", orange: "--orange", gray: "--gray",
   }
-  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4)
+  return `var(${map[a] || "--magenta"})`
+}
+function compact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`
+  return String(n)
 }
 
 export default function CommunityDetailPage() {
@@ -64,19 +79,18 @@ export default function CommunityDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [themeOpen, setThemeOpen] = useState(false)
 
-  // Edição inline
-  const [editingName, setEditingName] = useState(false)
-  const [editingBio, setEditingBio] = useState(false)
+  // Edição (líder)
+  const [edit, setEdit] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [nameDraft, setNameDraft] = useState("")
   const [bioDraft, setBioDraft] = useState("")
-  const [savingProfile, setSavingProfile] = useState(false)
+  const [accentDraft, setAccentDraft] = useState("magenta")
   const [uploading, setUploading] = useState<"banner" | "avatar" | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const bannerInputRef = useRef<HTMLInputElement>(null)
-  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const seeded = useRef(false)
+  const autoEdited = useRef(false)
 
   const currentUserId = getStoredUser()?.id_user ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
@@ -85,17 +99,7 @@ export default function CommunityDetailPage() {
     [members, currentUserId]
   )
 
-  const theme = useMemo<Required<Theme>>(
-    () => ({ ...DEFAULT_THEME, ...(community?.community_theme || {}) }),
-    [community]
-  )
-
-  // Contorno adaptativo: branco translúcido sobre fundo escuro, preto sobre claro.
-  const darkBg = useMemo(() => luminance(theme.background) < 0.5, [theme.background])
-  const outline = useCallback(
-    (alpha: number) => (darkBg ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`),
-    [darkBg]
-  )
+  const accent = accentVar(accentDraft)
 
   const loadAll = useCallback(async () => {
     if (!id) return
@@ -110,7 +114,14 @@ export default function CommunityDetailPage() {
       ])
       const cData = await cRes.json()
       if (!cRes.ok) throw new Error(cData.error || t("notFound", "Comunidade não encontrada."))
-      setCommunity(cData.community)
+      const c: Community = cData.community
+      setCommunity(c)
+      if (!seeded.current) {
+        setNameDraft(c.display_name)
+        setBioDraft(c.bio || "")
+        setAccentDraft(c.community_theme?.accent || "magenta")
+        seeded.current = true
+      }
       const mData = await mRes.json()
       setMembers(Array.isArray(mData.members) ? mData.members : [])
       const fData = await fRes.json()
@@ -124,22 +135,20 @@ export default function CommunityDetailPage() {
     }
   }, [id, t])
 
+  useEffect(() => { loadAll() }, [loadAll])
+
+  // Líder abre em modo edição uma vez (igual à página de participante).
   useEffect(() => {
-    loadAll()
-  }, [loadAll])
+    if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
+  }, [isLeader])
 
   const joinOrLeave = async (action: "join" | "leave") => {
     const token = getToken()
-    if (!token) {
-      setActionMsg(t("loginToJoin", "Entre para participar"))
-      return
-    }
-    setBusy(true)
-    setActionMsg(null)
+    if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
+    setBusy(true); setActionMsg(null)
     try {
       const res = await fetch(`/api/communities/${id}/${action}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("joinError", "Não foi possível entrar."))
@@ -147,51 +156,20 @@ export default function CommunityDetailPage() {
       await loadAll()
     } catch (err) {
       setActionMsg(err instanceof Error ? err.message : t("joinError", "Não foi possível entrar."))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // ─── Edição de perfil (líder) ───────────────────────────────────────────────
-  const saveProfile = async (patch: { display_name?: string; bio?: string | null }) => {
-    const token = getToken()
-    if (!token) return false
-    setSavingProfile(true)
-    setActionMsg(null)
-    try {
-      const res = await fetch(`/api/communities/${id}/profile`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(patch),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
-      setActionMsg(t("profileSaved", "Alterações salvas!"))
-      await loadAll()
-      return true
-    } catch (err) {
-      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
-      return false
-    } finally {
-      setSavingProfile(false)
-    }
+    } finally { setBusy(false) }
   }
 
   const uploadImage = async (kind: "banner" | "avatar", file: File) => {
     const token = getToken()
     if (!token) return
     const localUrl = URL.createObjectURL(file)
-    if (kind === "banner") setBannerPreview(localUrl)
-    else setAvatarPreview(localUrl)
-    setUploading(kind)
-    setActionMsg(null)
+    if (kind === "banner") setBannerPreview(localUrl); else setAvatarPreview(localUrl)
+    setUploading(kind); setActionMsg(null)
     try {
       const fd = new FormData()
       fd.append(kind, file)
       const res = await fetch(`/api/communities/${id}/${kind}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd,
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("uploadError", "Não foi possível enviar a imagem."))
@@ -200,26 +178,58 @@ export default function CommunityDetailPage() {
       setActionMsg(err instanceof Error ? err.message : t("uploadError", "Não foi possível enviar a imagem."))
     } finally {
       setUploading(null)
-      if (kind === "banner") setBannerPreview(null)
-      else setAvatarPreview(null)
+      if (kind === "banner") setBannerPreview(null); else setAvatarPreview(null)
       URL.revokeObjectURL(localUrl)
     }
   }
 
+  // Salva nome+bio (/profile) e accent (/theme) juntos.
+  const saveAll = async () => {
+    const token = getToken()
+    if (!token || !community) return
+    if (!nameDraft.trim()) { setActionMsg(t("saveError", "Não foi possível salvar.")); return }
+    setSaving(true); setActionMsg(null)
+    try {
+      const pRes = await fetch(`/api/communities/${id}/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ display_name: nameDraft.trim(), bio: bioDraft.trim() || null }),
+      })
+      const pData = await pRes.json()
+      if (!pRes.ok) throw new Error(pData.error || t("saveError", "Não foi possível salvar."))
+      if ((community.community_theme?.accent || "magenta") !== accentDraft) {
+        const tRes = await fetch(`/api/communities/${id}/theme`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ theme: { ...(community.community_theme || {}), accent: accentDraft } }),
+        })
+        const tData = await tRes.json()
+        if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
+      }
+      setActionMsg(t("profileSaved", "Alterações salvas!"))
+      await loadAll()
+      setTimeout(() => setActionMsg(null), 2500)
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSaving(false) }
+  }
+
   if (loading) {
     return (
-      <div className="flex min-h-[60dvh] items-center justify-center text-sm text-muted-foreground">
+      <div className="casa-rank casa-paper flex min-h-[100dvh] items-center justify-center casa-body text-sm font-bold uppercase tracking-[0.14em] text-[var(--ink-soft)]/60">
         {t("pageTitle", "Comunidades")}…
       </div>
     )
   }
   if (error || !community) {
     return (
-      <div className="mx-auto max-w-md px-5 py-24 text-center">
-        <p className="text-lg font-semibold">{t("notFound", "Comunidade não encontrada.")}</p>
-        <Link href="/comunidades" className="mt-4 inline-flex items-center gap-2 text-sm text-[#F2B705]">
-          <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
-        </Link>
+      <div className="casa-rank casa-paper min-h-[100dvh]">
+        <div className="mx-auto max-w-md px-5 py-24 text-center">
+          <p className="casa-display text-2xl text-[var(--ink)]">{t("notFound", "Comunidade não encontrada.")}</p>
+          <Link href="/comunidades" className="mt-4 inline-flex items-center gap-2 casa-body text-sm font-bold uppercase tracking-[0.12em] text-[var(--magenta-deep)]">
+            <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+          </Link>
+        </div>
       </div>
     )
   }
@@ -227,261 +237,154 @@ export default function CommunityDetailPage() {
   const items = tab === "bees" ? bees : feed
   const bannerSrc = bannerPreview || community.banner_url
   const avatarSrc = avatarPreview || community.avatar_url
+  const showAsLeaderEdit = isLeader && edit
 
   return (
-    <div className="min-h-[100dvh]" style={{ background: theme.background, color: theme.text }}>
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-8 sm:py-8">
-        <Link href="/comunidades" className="inline-flex items-center gap-2 text-sm opacity-70 hover:opacity-100">
-          <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+    <div className={`casa-rank casa-paper relative min-h-[100dvh] overflow-hidden ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
+      <div className="casa-dots pointer-events-none absolute right-0 top-40 h-40 w-40 opacity-[0.06]" />
+
+      {/* Top bar */}
+      <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
+        <Link href="/comunidades" className="inline-flex items-center gap-2 casa-body text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--ink-soft)]/70 hover:text-[var(--ink)]">
+          <ArrowLeft className="h-4 w-4" /> {t("pageTitle", "Comunidades")}
         </Link>
-
-        {/* Banner estilo curso: capa no topo, informações embaixo */}
-        <div className="mt-4 overflow-hidden rounded-3xl border" style={{ borderColor: outline(0.12) }}>
-          <div
-            className="relative aspect-[16/6] w-full sm:aspect-[16/5]"
-            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.background})` }}
-          >
-            {bannerSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={bannerSrc} alt={community.display_name} className="h-full w-full object-cover" />
-            ) : null}
-            {isLeader ? (
-              <>
-                <input
-                  ref={bannerInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0]
-                    if (f) uploadImage("banner", f)
-                    e.target.value = ""
-                  }}
-                />
-                <button
-                  type="button"
-                  disabled={uploading === "banner"}
-                  onClick={() => bannerInputRef.current?.click()}
-                  className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold backdrop-blur-md disabled:opacity-60"
-                  style={{ background: "rgba(0,0,0,0.45)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
+        {isLeader && (
+          <div className="flex items-center gap-2">
+            {edit && (
+              <div className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-2.5 py-1.5 shadow-[3px_3px_0_0_var(--ink)]">
+                <Palette className="h-4 w-4 text-[var(--ink)]" />
+                <span className="casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]">{t("colorsLabel", "Cores")}</span>
+                <span className="h-5 w-5 rounded-full border-2 border-[var(--ink)]" style={{ background: accent }} />
+                <select
+                  value={accentDraft}
+                  onChange={(e) => setAccentDraft(e.target.value)}
+                  className="border-l-2 border-[var(--ink)]/20 bg-transparent pl-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] outline-none"
                 >
-                  <ImagePlus className="h-4 w-4" />
-                  {uploading === "banner" ? t("uploading", "Enviando...") : t("changeBanner", "Trocar capa")}
-                </button>
-              </>
-            ) : null}
+                  {ACCENTS.map((a) => <option key={a.key} value={a.key}>{t(a.labelKey, a.fallback)}</option>)}
+                </select>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setEdit((e) => !e)}
+              className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]"
+            >
+              {edit ? <><Eye className="h-4 w-4" /> {t("viewPublic", "Ver como público")}</> : <><ScrollText className="h-4 w-4" /> {t("edit", "Editar")}</>}
+            </button>
           </div>
+        )}
+      </div>
 
-          {/* Bloco de informações abaixo do banner */}
-          <div className="px-4 pb-5 sm:px-6">
-            <div className="-mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:justify-between">
-              <div className="flex items-end gap-4">
-                <div className="relative">
-                  <Avatar className="size-20 ring-4 sm:size-24" style={{ boxShadow: `0 0 0 4px ${theme.background}` }}>
-                    <AvatarImage src={avatarSrc || undefined} alt={community.display_name} />
-                    <AvatarFallback>{community.display_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  {isLeader ? (
-                    <>
-                      <input
-                        ref={avatarInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (f) uploadImage("avatar", f)
-                          e.target.value = ""
-                        }}
-                      />
-                      <button
-                        type="button"
-                        disabled={uploading === "avatar"}
-                        onClick={() => avatarInputRef.current?.click()}
-                        aria-label={t("changePhoto", "Trocar foto")}
-                        className="absolute -bottom-1 -right-1 grid size-8 place-items-center rounded-full disabled:opacity-60"
-                        style={{ background: theme.primary, color: "#1A1505", border: `2px solid ${theme.background}` }}
-                      >
-                        <Camera className="h-4 w-4" />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Ações (líder: cores | visitante: entrar/sair) */}
-              <div className="flex flex-col gap-2 sm:items-end">
-                {isLeader ? (
-                  <button
-                    type="button"
-                    onClick={() => setThemeOpen((v) => !v)}
-                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold"
-                    style={{ border: `2px solid ${theme.primary}`, color: theme.text }}
-                  >
-                    <Palette className="h-4 w-4" /> {t("editTheme", "Editar cores")}
-                  </button>
-                ) : myMembership ? (
-                  myMembership.role !== "leader" ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => joinOrLeave("leave")}
-                      className="rounded-xl px-5 py-2 text-sm font-semibold disabled:opacity-60"
-                      style={{ border: `2px solid ${outline(0.25)}`, color: theme.text }}
-                    >
-                      {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
-                    </button>
-                  ) : null
-                ) : (
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => joinOrLeave("join")}
-                    className="rounded-xl px-5 py-2 text-sm font-bold disabled:opacity-60"
-                    style={{ background: theme.primary, color: "#1A1505" }}
-                  >
-                    {busy ? t("joining", "Entrando...") : t("join", "Entrar")}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Nome (editável inline pelo líder) */}
-            <div className="mt-3">
-              {editingName ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    autoFocus
-                    value={nameDraft}
-                    maxLength={80}
-                    onChange={(e) => setNameDraft(e.target.value)}
-                    className="min-w-0 flex-1 rounded-lg px-3 py-1.5 text-xl font-extrabold outline-none"
-                    style={{ background: outline(0.06), border: `2px solid ${outline(0.2)}`, color: theme.text }}
-                  />
-                  <button
-                    type="button"
-                    disabled={savingProfile || !nameDraft.trim()}
-                    onClick={async () => { if (await saveProfile({ display_name: nameDraft.trim() })) setEditingName(false) }}
-                    aria-label={t("save", "Salvar")}
-                    className="grid size-9 place-items-center rounded-lg disabled:opacity-50"
-                    style={{ background: theme.primary, color: "#1A1505" }}
-                  >
-                    <Check className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingName(false)}
-                    aria-label={t("cancel", "Cancelar")}
-                    className="grid size-9 place-items-center rounded-lg"
-                    style={{ border: `2px solid ${outline(0.2)}` }}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-extrabold sm:text-3xl">{community.display_name}</h1>
-                  {isLeader ? (
-                    <button
-                      type="button"
-                      onClick={() => { setNameDraft(community.display_name); setEditingName(true) }}
-                      aria-label={t("editName", "Editar nome")}
-                      className="grid size-8 place-items-center rounded-lg opacity-60 hover:opacity-100"
-                      style={{ border: `1px solid ${outline(0.18)}` }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                  ) : null}
-                </div>
-              )}
-              {community.enxame_name ? (
-                <p className="mt-1 text-sm opacity-70">{tx.enxame(null, community.enxame_name)}</p>
-              ) : null}
-            </div>
-
-            {/* Bio (editável inline pelo líder) */}
-            <div className="mt-2">
-              {editingBio ? (
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    autoFocus
-                    value={bioDraft}
-                    maxLength={200}
-                    placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")}
-                    onChange={(e) => setBioDraft(e.target.value)}
-                    className="h-20 w-full resize-none rounded-lg px-3 py-2 text-sm outline-none"
-                    style={{ background: outline(0.06), border: `2px solid ${outline(0.2)}`, color: theme.text }}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={savingProfile}
-                      onClick={async () => { if (await saveProfile({ bio: bioDraft.trim() || null })) setEditingBio(false) }}
-                      className="rounded-lg px-4 py-1.5 text-sm font-bold disabled:opacity-50"
-                      style={{ background: theme.primary, color: "#1A1505" }}
-                    >
-                      {savingProfile ? t("saving", "Salvando...") : t("save", "Salvar")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingBio(false)}
-                      className="rounded-lg px-4 py-1.5 text-sm"
-                      style={{ border: `2px solid ${outline(0.2)}` }}
-                    >
-                      {t("cancel", "Cancelar")}
-                    </button>
-                  </div>
-                </div>
-              ) : community.bio ? (
-                <div className="flex items-start gap-2">
-                  <p className="text-sm opacity-80">{community.bio}</p>
-                  {isLeader ? (
-                    <button
-                      type="button"
-                      onClick={() => { setBioDraft(community.bio || ""); setEditingBio(true) }}
-                      aria-label={t("editBio", "Editar descrição")}
-                      className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg opacity-60 hover:opacity-100"
-                      style={{ border: `1px solid ${outline(0.18)}` }}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                  ) : null}
-                </div>
-              ) : isLeader ? (
-                <button
-                  type="button"
-                  onClick={() => { setBioDraft(""); setEditingBio(true) }}
-                  className="inline-flex items-center gap-1.5 text-sm opacity-60 hover:opacity-100"
-                >
-                  <Pencil className="h-3.5 w-3.5" /> {t("addBio", "Adicionar descrição")}
-                </button>
-              ) : null}
-            </div>
-
-            {/* Stats */}
-            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm opacity-80">
-              <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" /> {community.member_count} {t("membersCount", "membros")}</span>
-              <span className="inline-flex items-center gap-1"><Trophy className="h-4 w-4" /> {t("level", "Nível")} {community.xp_level}</span>
-            </div>
+      {/* HERO */}
+      <header className="relative mx-auto mt-4 max-w-5xl px-5 md:px-10">
+        <div className="relative overflow-hidden border-2 border-[var(--ink)] shadow-[8px_8px_0_0_var(--ink)]">
+          <div className="relative h-44 md:h-56" style={{ background: accent }}>
+            {bannerSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90 mix-blend-luminosity" />
+            )}
+            <div className="casa-dots absolute inset-0 opacity-10" />
+            {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
+            {community.enxame_name && (
+              <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[var(--ink)] bg-white px-3 py-1 casa-body text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--ink)]">
+                {tx.enxame(null, community.enxame_name)}
+              </span>
+            )}
+            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[var(--ink)] bg-white px-2 text-[var(--ink)]">
+              <span className="casa-body text-[8px] font-bold uppercase">{t("level", "Nível")}</span>
+              <span className="casa-display text-2xl leading-none">{community.xp_level}</span>
+            </span>
           </div>
         </div>
 
-        {actionMsg ? (
-          <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: `${theme.primary}22` }}>{actionMsg}</p>
-        ) : null}
+        {/* identidade */}
+        <div className="relative z-20 -mt-12 flex items-end gap-4 px-2 md:-mt-16 md:px-3">
+          <div className="relative h-28 w-28 shrink-0 border-2 border-[var(--ink)] shadow-[5px_5px_0_0_var(--ink)] md:h-36 md:w-36" style={{ background: "var(--paper-2)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
+            {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+          </div>
+          <div className="flex-1 pb-1 md:pb-2">
+            {showAsLeaderEdit ? (
+              <input
+                value={nameDraft}
+                maxLength={80}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder={t("nameLabel", "Nome da comunidade")}
+                className="w-full border-b-2 border-dashed border-[var(--ink)]/40 bg-transparent casa-display text-4xl leading-[0.85] text-[var(--ink)] outline-none md:text-6xl"
+              />
+            ) : (
+              <h1 className="casa-display text-4xl leading-[0.85] text-[var(--ink)] sm:text-5xl md:text-6xl">{community.display_name}</h1>
+            )}
+          </div>
+          {/* ação de visitante */}
+          {!isLeader && (
+            <div className="pb-1">
+              {myMembership ? (
+                myMembership.role !== "leader" ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => joinOrLeave("leave")}
+                    className="border-2 border-[var(--ink)] bg-white px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60"
+                  >
+                    {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
+                  </button>
+                ) : null
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => joinOrLeave("join")}
+                  className="border-2 border-[var(--ink)] px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60"
+                  style={{ background: accent }}
+                >
+                  {busy ? t("joining", "Entrando...") : t("join", "Entrar")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
 
-        {themeOpen && isLeader ? (
-          <ThemeEditor
-            communityId={community.id_profile}
-            initial={theme}
-            t={t}
-            onClose={() => setThemeOpen(false)}
-            onSaved={loadAll}
-          />
-        ) : null}
+      {actionMsg && (
+        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-5 md:px-10">
+          <p className="inline-block border-2 border-[var(--ink)] bg-white px-3 py-1.5 casa-body text-xs font-bold text-[var(--ink-soft)]/80 shadow-[2px_2px_0_0_var(--ink)]">{actionMsg}</p>
+        </div>
+      )}
 
-        {/* Tabs */}
-        <div className="mt-8 flex gap-2 border-b" style={{ borderColor: outline(0.15) }}>
+      {/* KPIs */}
+      <section className="relative z-10 mx-auto mt-6 max-w-5xl px-5 md:px-10">
+        <div className="grid grid-cols-3 gap-3">
+          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={compact(community.member_count)} accent={accent} />
+          <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={String(community.xp_level)} accent={accent} />
+          <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={compact(community.xp_total)} accent={accent} />
+        </div>
+      </section>
+
+      {/* Perfil (bio) */}
+      {(showAsLeaderEdit || community.bio) && (
+        <section className="relative z-10 mx-auto mt-6 max-w-5xl px-5 md:px-10">
+          <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
+            {showAsLeaderEdit ? (
+              <textarea
+                value={bioDraft}
+                maxLength={200}
+                onChange={(e) => setBioDraft(e.target.value)}
+                placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")}
+                rows={4}
+                className="w-full bg-transparent casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85 outline-none"
+              />
+            ) : (
+              <p className="whitespace-pre-line casa-body text-sm leading-relaxed text-[var(--ink-soft)]/85">{community.bio}</p>
+            )}
+          </Block>
+        </section>
+      )}
+
+      {/* Tabs */}
+      <section className="relative z-10 mx-auto mt-8 max-w-5xl px-5 md:px-10">
+        <div className="flex gap-1 border-b-2 border-[var(--ink)]">
           {([
             ["feed", t("tabFeed", "Feed")],
             ["bees", t("tabBees", "Bees")],
@@ -491,10 +394,10 @@ export default function CommunityDetailPage() {
               key={key}
               type="button"
               onClick={() => setTab(key)}
-              className="px-4 py-2 text-sm font-semibold"
+              className="-mb-0.5 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]"
               style={{
-                borderBottom: tab === key ? `3px solid ${theme.primary}` : "3px solid transparent",
-                opacity: tab === key ? 1 : 0.6,
+                borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent",
+                opacity: tab === key ? 1 : 0.5,
               }}
             >
               {label}
@@ -506,20 +409,20 @@ export default function CommunityDetailPage() {
         <div className="mt-6">
           {tab === "members" ? (
             members.length === 0 ? (
-              <Empty text={t("membersEmpty", "Sem membros ainda.")} outline={outline} />
+              <Empty text={t("membersEmpty", "Sem membros ainda.")} />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {members.map((m) => (
-                  <div key={m.id_user} className="flex items-center gap-3 rounded-2xl p-4" style={{ background: outline(0.05) }}>
-                    <Avatar className="size-12">
-                      <AvatarImage src={m.top_profile_avatar || undefined} alt={m.top_profile_name || m.user_name || ""} />
-                      <AvatarFallback>{(m.top_profile_name || m.user_name || "?").slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                  <div key={m.id_user} className="flex items-center gap-3 border-2 border-[var(--ink)] bg-white p-3 shadow-[4px_4px_0_0_var(--ink)]">
+                    <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[var(--ink)]" style={{ background: "var(--paper-2)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{m.top_profile_name || m.user_name}</p>
-                      <p className="flex items-center gap-1 text-xs opacity-70">
-                        {m.role === "leader" ? <><Crown className="h-3 w-3" /> {t("roleLeader", "Líder")}</> :
-                         m.role === "vice" ? <><Shield className="h-3 w-3" /> {t("roleVice", "Vice-líder")}</> :
+                      <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{m.top_profile_name || m.user_name}</p>
+                      <p className="flex items-center gap-1 casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/60">
+                        {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
+                         m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
                          t("roleMember", "Membro")}
                         {typeof m.top_profile_level === "number" ? ` · ${t("level", "Nível")} ${m.top_profile_level}` : ""}
                       </p>
@@ -529,13 +432,13 @@ export default function CommunityDetailPage() {
               </div>
             )
           ) : items.length === 0 ? (
-            <Empty text={tab === "bees" ? t("beesEmpty", "Nenhum Bee ainda.") : t("feedEmpty", "Esta comunidade ainda não publicou nada.")} outline={outline} />
+            <Empty text={tab === "bees" ? t("beesEmpty", "Nenhum Bee ainda.") : t("feedEmpty", "Esta comunidade ainda não publicou nada.")} />
           ) : (
             <div className={tab === "bees" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "grid gap-4 sm:grid-cols-2"}>
               {items.map((it) => {
                 const cover = it.media?.[0]
                 return (
-                  <div key={it.id_portfolio_item} className="overflow-hidden rounded-2xl" style={{ background: outline(0.05) }}>
+                  <div key={it.id_portfolio_item} className="overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[4px_4px_0_0_var(--ink)]">
                     {cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -547,8 +450,8 @@ export default function CommunityDetailPage() {
                     ) : null}
                     {it.title || it.description ? (
                       <div className="p-3">
-                        {it.title ? <p className="truncate text-sm font-semibold">{it.title}</p> : null}
-                        {it.description ? <p className="line-clamp-2 text-xs opacity-70">{it.description}</p> : null}
+                        {it.title ? <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{it.title}</p> : null}
+                        {it.description ? <p className="mt-0.5 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{it.description}</p> : null}
                       </div>
                     ) : null}
                   </div>
@@ -557,86 +460,71 @@ export default function CommunityDetailPage() {
             </div>
           )}
         </div>
-      </div>
+      </section>
+
+      {/* Barra fixa de edição */}
+      {showAsLeaderEdit && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[var(--ink)] bg-white/95 px-5 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center gap-3">
+            <span className="inline-flex items-center gap-2 casa-body text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60">
+              <Hash className="h-4 w-4" /> {community.display_name}
+            </span>
+            {actionMsg && <span className="casa-body text-xs font-bold text-[var(--ink-soft)]/70">{actionMsg}</span>}
+            <button
+              type="button"
+              onClick={saveAll}
+              disabled={saving}
+              className="ml-auto inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-2 casa-body text-sm font-extrabold uppercase tracking-[0.14em] text-white disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("save", "Salvar")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function Empty({ text, outline }: { text: string; outline: (a: number) => string }) {
+function ImageDrop({ onFile, label, small, busy }: { onFile: (f: File) => void; label: string; small?: boolean; busy?: boolean }) {
+  const ref = useRef<HTMLInputElement>(null)
   return (
-    <div className="rounded-2xl border border-dashed py-16 text-center text-sm opacity-60" style={{ borderColor: outline(0.25) }}>
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) onFile(f) }}
+      onClick={() => ref.current?.click()}
+      className={`absolute inset-0 z-30 flex cursor-pointer flex-col items-center justify-center gap-1 bg-black/40 text-white transition-opacity hover:opacity-100 ${busy ? "opacity-100" : "opacity-0"} ${small ? "text-[10px]" : "text-xs"}`}
+    >
+      {busy ? <Loader2 className={small ? "h-5 w-5 animate-spin" : "h-7 w-7 animate-spin"} /> : <ImagePlus className={small ? "h-5 w-5" : "h-7 w-7"} />}
+      <span className="casa-body font-bold uppercase tracking-wide">{label}</span>
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = "" }} />
+    </div>
+  )
+}
+
+function Kpi({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
+  return (
+    <div className="border-2 border-[var(--ink)] bg-white px-3 py-3 shadow-[3px_3px_0_0_var(--ink)]">
+      <div className="flex items-center gap-1 casa-body text-[9px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55"><span style={{ color: accent }}>{icon}</span>{label}</div>
+      <div className="mt-1 casa-display text-2xl leading-none text-[var(--ink)]">{value}</div>
+    </div>
+  )
+}
+
+function Block({ title, icon, accent, children }: { title: string; icon: React.ReactNode; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="relative border-2 border-[var(--ink)] bg-white p-5 shadow-[5px_5px_0_0_var(--ink)]">
+      <div className="mb-3 flex items-center gap-2 border-b border-[var(--line)] pb-2">
+        <span className="flex flex-1 items-center gap-2 casa-body text-[11px] font-extrabold uppercase tracking-[0.16em] text-[var(--ink)]"><span style={{ color: accent }}>{icon}</span>{title}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="border-2 border-dashed border-[var(--ink)]/30 bg-white/40 py-16 text-center casa-body text-xs font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/50">
       {text}
     </div>
-  )
-}
-
-function ThemeEditor({
-  communityId,
-  initial,
-  t,
-  onClose,
-  onSaved,
-}: {
-  communityId: string
-  initial: Required<Theme>
-  t: (key: string, fallback: string) => string
-  onClose: () => void
-  onSaved: () => void | Promise<void>
-}) {
-  const [primary, setPrimary] = useState(initial.primary)
-  const [background, setBackground] = useState(initial.background)
-  const [text, setText] = useState(initial.text)
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
-
-  const save = async () => {
-    const token = getToken()
-    if (!token) return
-    setSaving(true)
-    setMsg(null)
-    try {
-      const res = await fetch(`/api/communities/${communityId}/theme`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ theme: { primary, background, text } }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("themeError", "Não foi possível salvar as cores."))
-      setMsg(t("themeSaved", "Cores atualizadas!"))
-      await onSaved()
-      onClose()
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("themeError", "Não foi possível salvar as cores."))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: `${text}22` }}>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <ColorField label={t("colorPrimary", "Cor principal")} value={primary} onChange={setPrimary} />
-        <ColorField label={t("colorBackground", "Cor de fundo")} value={background} onChange={setBackground} />
-        <ColorField label={t("colorText", "Cor do texto")} value={text} onChange={setText} />
-      </div>
-      {msg ? <p className="mt-2 text-xs opacity-70">{msg}</p> : null}
-      <div className="mt-3 flex gap-2">
-        <button type="button" disabled={saving} onClick={save} className="rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-60" style={{ background: primary, color: "#1A1505" }}>
-          {t("saveTheme", "Salvar")}
-        </button>
-        <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm" style={{ border: `2px solid ${text}33` }}>
-          {t("cancel", "Cancelar")}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 cursor-pointer rounded border" />
-      <span className="opacity-80">{label}</span>
-    </label>
   )
 }
