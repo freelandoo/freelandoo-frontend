@@ -9,6 +9,7 @@ import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { OnlineHeartbeat } from "@/components/online-heartbeat"
 import { AdminAlerts } from "@/components/admin/admin-alerts"
+import { CommunityVoteModal } from "@/components/community/community-vote-modal"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
@@ -142,6 +143,7 @@ export default function RootLayout({
               <CouponCapture />
               <OnlineHeartbeat />
               <AdminAlerts />
+              <CommunityVoteModal />
               <InstallPrompt />
               <PullToRefresh />
             </ConsentProvider>

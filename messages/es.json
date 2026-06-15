@@ -3311,7 +3311,8 @@
     "videoLimits": "9:16 · hasta 100MB",
     "videoValidateError": "No se pudo validar el video.",
     "view": "Ver",
-    "viewMembers": "Ver miembros"
+    "viewMembers": "Ver miembros",
+    "communities": "Comunidad"
   },
   "Bees": {
     "chat": "Chat",

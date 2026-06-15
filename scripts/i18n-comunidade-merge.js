@@ -108,7 +108,12 @@ const COMMUNITY = {
   voteError: ["Não foi possível votar.", "Could not vote.", "No se pudo votar."],
 }
 
-const GROUPS = { Community: COMMUNITY }
+// Chave avulsa no ns Profile: ação "Comunidade" no headcard (era "Clans").
+const PROFILE = {
+  communities: ["Comunidade", "Community", "Comunidad"],
+}
+
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

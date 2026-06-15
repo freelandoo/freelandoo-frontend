@@ -516,11 +516,11 @@ export function ProfileHeadCard({
                     label={t("myMessages", "Minhas mensagens")}
                     hint="headcard-messages"
                   />
-                  {!isClan && ownerActions.clansHref && (
+                  {!isClan && (
                     <IconAction
-                      href={ownerActions.clansHref}
+                      href="/comunidades"
                       icon={Users}
-                      label={t("clans", "Clans")}
+                      label={t("communities", "Comunidade")}
                       hint="headcard-clans"
                     />
                   )}
