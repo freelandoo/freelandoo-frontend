@@ -13,14 +13,14 @@ import { CommunityVoteModal } from "@/components/community/community-vote-modal"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
-import { TourProvider } from "@/features/tour/TourProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import "./globals.css"
 
-// TOUR DESLIGADO (2026-06-14): o TourProvider segue montado mas INERTE
-// (TOURS_DISABLED em features/tour/TourProvider.tsx) e o modal de entrada de
-// tour (IntentModal) foi REMOVIDO daqui. Será reconstruído do zero. Arquivos
-// em features/intent/* ficam órfãos.
+// TOUR DESLIGADO (2026-06-14) e TourProvider REMOVIDO do shell (2026-06-15,
+// perf Tier 1): saía em toda rota sem função. useTour() tem fallback no-op, então
+// HoverHint e o profile-sidebar seguem ok sem provider. features/tour/* (exceto
+// HoverHint/hints/useTour, ainda importados) e features/intent/* ficam órfãos —
+// candidatos a deleção na higiene (Tier 4). Tour será reconstruído do zero.
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
@@ -128,8 +128,10 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgLd }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: websiteLd }} />
         <I18nProvider>
-          <TourProvider>
-            {/* ConsentProvider precisa envolver TODA a árvore (children + os
+          {/* TourProvider removido (tour desligado desde 2026-06-14): saía em
+              toda rota sem função. useTour() tem fallback no-op, então HoverHint
+              e o profile-sidebar seguem funcionando sem o provider. */}
+          {/* ConsentProvider precisa envolver TODA a árvore (children + os
                 componentes globais abaixo): a ProfileSidebar/UserDropside monta
                 o OpenChamadoModal, que chama useConsentContext(). Com o provider
                 envolvendo só {children}, a sidebar (irmã) ficava fora do contexto
@@ -147,7 +149,6 @@ export default function RootLayout({
               <InstallPrompt />
               <PullToRefresh />
             </ConsentProvider>
-          </TourProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
             tag do Google carregar (LGPD). O banner de cookies atualiza para
@@ -155,9 +156,13 @@ export default function RootLayout({
         <Script id="google-consent-default" strategy="beforeInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});`}
         </Script>
+        {/* AdSense em lazyOnload: o script de anúncios é pesado e só há ad em
+            ~9 páginas (blog/legais via <ContentAd>). Carregar no idle tira ele
+            do caminho crítico de render em TODA rota (LCP/TBT). O Consent Mode
+            default acima continua beforeInteractive (LGPD). */}
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           crossOrigin="anonymous"
         />
       </body>
