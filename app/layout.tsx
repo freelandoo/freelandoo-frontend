@@ -7,11 +7,7 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { ProfileSidebar } from "@/components/layout"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
-import { OnlineHeartbeat } from "@/components/online-heartbeat"
-import { AdminAlerts } from "@/components/admin/admin-alerts"
-import { CommunityVoteModal } from "@/components/community/community-vote-modal"
-import { InstallPrompt } from "@/components/pwa/install-prompt"
-import { PullToRefresh } from "@/components/pwa/pull-to-refresh"
+import { GlobalOverlays } from "@/components/global-overlays"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import "./globals.css"
@@ -143,11 +139,9 @@ export default function RootLayout({
               <CookieConsent />
               <AnalyticsProvider />
               <CouponCapture />
-              <OnlineHeartbeat />
-              <AdminAlerts />
-              <CommunityVoteModal />
-              <InstallPrompt />
-              <PullToRefresh />
+              {/* Overlays não-críticos (heartbeat, alertas admin, modal de
+                  votação, prompts PWA) carregados lazy via client wrapper. */}
+              <GlobalOverlays />
             </ConsentProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
