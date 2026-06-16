@@ -3,16 +3,31 @@
 import "../comunidade-casa.css"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { useParams } from "next/navigation"
 import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
-  Pin, Trash2, BarChart3, Plus,
+  Pin, Trash2, BarChart3, Plus, PenSquare, Film, X,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
+import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
+
+const PortfolioPostCard = dynamic(
+  () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
+  { ssr: false }
+)
+const CommentsPanel = dynamic(
+  () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
+  { ssr: false }
+)
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
 
 type Theme = { primary?: string; background?: string; text?: string; accent?: string }
 type Community = {
@@ -38,8 +53,6 @@ type Member = {
   top_profile_level: number | null
   top_profile_xp: number
 }
-type Media = { media_url: string; media_type: string; thumbnail_url: string | null }
-type Item = { id_portfolio_item: string; title: string | null; description: string | null; feed_kind: string; media: Media[] }
 type Goal = { id: number; title: string; metric: string; target_value: number; progress: number; percent: number; ends_at: string | null }
 type Announcement = { id: number; body: string; is_pinned: boolean; created_at: string; author_username: string | null; author_name: string | null }
 type Benchmark = { position: number; total: number; percentile: number | null; enxame_name: string | null }
@@ -68,6 +81,8 @@ function compact(n: number): string {
   return String(Math.round(v))
 }
 
+const FEED_FILTERS: FeedFilters = { id_machine: null, id_category: null, estado: null, municipio: null, level_min: null }
+
 export default function CommunityDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
@@ -76,16 +91,25 @@ export default function CommunityDetailPage() {
 
   const [community, setCommunity] = useState<Community | null>(null)
   const [members, setMembers] = useState<Member[]>([])
-  const [feed, setFeed] = useState<Item[]>([])
-  const [bees, setBees] = useState<Item[]>([])
   const [goal, setGoal] = useState<Goal | null>(null)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
-  const [tab, setTab] = useState<"feed" | "bees" | "members">("feed")
+  const [tab, setTab] = useState<"feed" | "members">("feed")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // Feed estilo grupo
+  const [posts, setPosts] = useState<FeedPost[]>([])
+  const [postsCursor, setPostsCursor] = useState<string | null>(null)
+  const [postsHasMore, setPostsHasMore] = useState(false)
+  const [loadingPosts, setLoadingPosts] = useState(true)
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false)
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
+  const [chooserOpen, setChooserOpen] = useState(false)
 
   // Edição (líder)
   const [edit, setEdit] = useState(false)
@@ -115,6 +139,7 @@ export default function CommunityDetailPage() {
     () => members.find((m) => m.id_user === currentUserId) || null,
     [members, currentUserId]
   )
+  const isMember = isLeader || !!myMembership
   const accent = accentVar(accentDraft)
   const showAsLeaderEdit = isLeader && edit
 
@@ -140,16 +165,35 @@ export default function CommunityDetailPage() {
     setAnnouncements(Array.isArray(d.announcements) ? d.announcements : [])
   }, [id])
 
+  const fetchPosts = useCallback(async (reset: boolean, cursor?: string | null) => {
+    if (!id) return
+    if (reset) setLoadingPosts(true); else setLoadingMorePosts(true)
+    try {
+      const sp = new URLSearchParams({ limit: "10" })
+      if (!reset && cursor) sp.set("cursor", cursor)
+      const token = getToken()
+      const r = await fetch(`/api/communities/${id}/feed-posts?${sp.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: "no-store",
+      })
+      const d = await r.json().catch(() => ({}))
+      const items: FeedPost[] = Array.isArray(d.items) ? d.items : []
+      setPosts((prev) => (reset ? items : [...prev, ...items]))
+      setPostsCursor(d.next_cursor || null)
+      setPostsHasMore(!!d.has_more)
+    } finally {
+      if (reset) setLoadingPosts(false); else setLoadingMorePosts(false)
+    }
+  }, [id])
+
   const loadAll = useCallback(async () => {
     if (!id) return
     setLoading(true)
     setError(null)
     try {
-      const [cRes, mRes, fRes, bRes, gRes, aRes, bmRes] = await Promise.all([
+      const [cRes, mRes, gRes, aRes, bmRes] = await Promise.all([
         fetch(`/api/communities/${id}`),
         fetch(`/api/communities/${id}/members`),
-        fetch(`/api/communities/${id}/feed?kind=feed`),
-        fetch(`/api/communities/${id}/feed?kind=bees`),
         fetch(`/api/communities/${id}/goal`),
         fetch(`/api/communities/${id}/announcements`),
         fetch(`/api/communities/${id}/benchmark`),
@@ -165,8 +209,6 @@ export default function CommunityDetailPage() {
         seeded.current = true
       }
       const mData = await mRes.json(); setMembers(Array.isArray(mData.members) ? mData.members : [])
-      const fData = await fRes.json(); setFeed(Array.isArray(fData.items) ? fData.items : [])
-      const bData = await bRes.json(); setBees(Array.isArray(bData.items) ? bData.items : [])
       const gData = await gRes.json(); setGoal(gData.goal || null)
       const aData = await aRes.json(); setAnnouncements(Array.isArray(aData.announcements) ? aData.announcements : [])
       const bmData = await bmRes.json(); setBenchmark(bmData.benchmark || null)
@@ -178,6 +220,7 @@ export default function CommunityDetailPage() {
   }, [id, t])
 
   useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => { fetchPosts(true) }, [fetchPosts])
   useEffect(() => {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
@@ -248,10 +291,8 @@ export default function CommunityDetailPage() {
 
   // Meta
   const openGoalForm = () => {
-    setGoalTitle(goal?.title || "")
-    setGoalMetric(goal?.metric || "xp")
-    setGoalTarget(goal ? String(goal.target_value) : "")
-    setGoalFormOpen(true)
+    setGoalTitle(goal?.title || ""); setGoalMetric(goal?.metric || "xp")
+    setGoalTarget(goal ? String(goal.target_value) : ""); setGoalFormOpen(true)
   }
   const saveGoal = async () => {
     const token = getToken()
@@ -268,8 +309,7 @@ export default function CommunityDetailPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
-      setGoalFormOpen(false)
-      await fetchGoal()
+      setGoalFormOpen(false); await fetchGoal()
     } catch (err) {
       setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
     } finally { setSavingGoal(false) }
@@ -278,8 +318,7 @@ export default function CommunityDetailPage() {
     const token = getToken()
     if (!token) return
     await fetch(`/api/communities/${id}/goal`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
-    setGoalFormOpen(false)
-    await fetchGoal()
+    setGoalFormOpen(false); await fetchGoal()
   }
 
   // Mural
@@ -294,8 +333,7 @@ export default function CommunityDetailPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
-      setAnnBody(""); setAnnPin(false)
-      await fetchAnnouncements()
+      setAnnBody(""); setAnnPin(false); await fetchAnnouncements()
     } catch (err) {
       setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
     } finally { setPostingAnn(false) }
@@ -305,6 +343,12 @@ export default function CommunityDetailPage() {
     if (!token) return
     await fetch(`/api/communities/${id}/announcements/${annId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
     await fetchAnnouncements()
+  }
+
+  const openComposer = (kind: "post" | "bee") => {
+    setChooserOpen(false)
+    if (!isMember) { setActionMsg(t("joinToPost", "Entre na comunidade para publicar.")); return }
+    setComposerKind(kind); setComposerOpen(true)
   }
 
   if (loading) {
@@ -327,7 +371,6 @@ export default function CommunityDetailPage() {
     )
   }
 
-  const items = tab === "bees" ? bees : feed
   const bannerSrc = bannerPreview || community.banner_url
   const avatarSrc = avatarPreview || community.avatar_url
 
@@ -383,7 +426,6 @@ export default function CommunityDetailPage() {
           </div>
         </div>
 
-        {/* identidade */}
         <div className="relative z-20 -mt-12 flex items-end gap-4 px-2 md:-mt-16 md:px-3">
           <div className="relative h-28 w-28 shrink-0 border-2 border-[var(--ink)] shadow-[5px_5px_0_0_var(--ink)] md:h-36 md:w-36" style={{ background: "var(--paper-2)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -433,11 +475,11 @@ export default function CommunityDetailPage() {
         </div>
       </section>
 
-      {/* GRID: principal + sidebar */}
+      {/* GRID */}
       <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
-        {/* ── coluna principal ── */}
+        {/* coluna principal */}
         <div className="space-y-6 md:col-span-2">
-          {/* Meta coletiva */}
+          {/* Meta */}
           {(showAsLeaderEdit || goal) && (
             <Block title={t("goalTitle", "Meta da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
               {goalFormOpen && showAsLeaderEdit ? (
@@ -483,7 +525,7 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Mural do líder */}
+          {/* Mural */}
           {(showAsLeaderEdit || announcements.length > 0) && (
             <Block title={t("muralTitle", "Mural do líder")} icon={<Megaphone className="h-4 w-4" />} accent={accent}>
               {showAsLeaderEdit && (
@@ -520,7 +562,7 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Perfil (bio) */}
+          {/* Perfil */}
           {(showAsLeaderEdit || community.bio) && (
             <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
               {showAsLeaderEdit ? (
@@ -532,20 +574,17 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Tabs + conteúdo */}
+          {/* Tabs */}
           <div>
             <div className="flex gap-1 border-b-2 border-[var(--ink)]">
-              {([
-                ["feed", t("tabFeed", "Feed")],
-                ["bees", t("tabBees", "Bees")],
-                ["members", t("tabMembers", "Membros")],
-              ] as const).map(([key, label]) => (
+              {([["feed", t("tabFeed", "Feed")], ["members", t("tabMembers", "Membros")]] as const).map(([key, label]) => (
                 <button key={key} type="button" onClick={() => setTab(key)} className="-mb-0.5 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.14em] text-[var(--ink)]"
                   style={{ borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent", opacity: tab === key ? 1 : 0.5 }}>
                   {label}
                 </button>
               ))}
             </div>
+
             <div className="mt-6">
               {tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
@@ -569,37 +608,65 @@ export default function CommunityDetailPage() {
                     ))}
                   </div>
                 )
-              ) : items.length === 0 ? (
-                <Empty text={tab === "bees" ? t("beesEmpty", "Nenhum Bee ainda.") : t("feedEmpty", "Esta comunidade ainda não publicou nada.")} />
               ) : (
-                <div className={tab === "bees" ? "grid grid-cols-2 gap-3 sm:grid-cols-3" : "grid gap-4 sm:grid-cols-2"}>
-                  {items.map((it) => {
-                    const cover = it.media?.[0]
-                    return (
-                      <div key={it.id_portfolio_item} className="overflow-hidden border-2 border-[var(--ink)] bg-white shadow-[4px_4px_0_0_var(--ink)]">
-                        {cover ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={cover.thumbnail_url || cover.media_url} alt={it.title || ""} loading="lazy"
-                            className={tab === "bees" ? "aspect-[9/16] w-full object-cover" : "aspect-[4/5] w-full object-cover"} />
-                        ) : null}
-                        {it.title || it.description ? (
-                          <div className="p-3">
-                            {it.title ? <p className="truncate casa-display text-base leading-tight text-[var(--ink)]">{it.title}</p> : null}
-                            {it.description ? <p className="mt-0.5 line-clamp-2 casa-body text-xs text-[var(--ink-soft)]/70">{it.description}</p> : null}
-                          </div>
-                        ) : null}
+                <div className="space-y-4">
+                  {/* Composer "Escreva algo" */}
+                  <div className="relative">
+                    <button type="button" onClick={() => isMember ? setChooserOpen((v) => !v) : setActionMsg(t("joinToPost", "Entre na comunidade para publicar."))}
+                      className="flex w-full items-center gap-3 border-2 border-[var(--ink)] bg-white px-4 py-3 text-left shadow-[4px_4px_0_0_var(--ink)]">
+                      <PenSquare className="h-5 w-5 shrink-0" style={{ color: accent }} />
+                      <span className="casa-body text-sm font-semibold text-[var(--ink-soft)]/60">{t("writeSomething", "Escreva algo...")}</span>
+                    </button>
+                    {chooserOpen && isMember && (
+                      <div className="absolute left-0 right-0 top-full z-30 mt-1 flex gap-2 border-2 border-[var(--ink)] bg-white p-2 shadow-[4px_4px_0_0_var(--ink)]">
+                        <button type="button" onClick={() => openComposer("post")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[var(--ink)] bg-[var(--paper)] px-3 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] hover:bg-[var(--paper-2)]">
+                          <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
+                        </button>
+                        <button type="button" onClick={() => openComposer("bee")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[var(--ink)] bg-[var(--paper)] px-3 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.1em] text-[var(--ink)] hover:bg-[var(--paper-2)]">
+                          <Film className="h-4 w-4" /> {t("beeLabel", "Bee")}
+                        </button>
+                        <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[var(--ink)]/30 px-2"><X className="h-4 w-4" /></button>
                       </div>
-                    )
-                  })}
+                    )}
+                  </div>
+
+                  {/* Feed unificado (posts + bees) — cards padrão do Freelandoo (escuros) */}
+                  {loadingPosts ? (
+                    <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[var(--ink-soft)]/50" /></div>
+                  ) : posts.length === 0 ? (
+                    <Empty text={t("feedEmptyGroup", "Ainda não há publicações. Seja o primeiro!")} />
+                  ) : (
+                    <div className="overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-[#0b0804] shadow-[5px_5px_0_0_var(--ink)]">
+                      {posts.map((post) => (
+                        <PortfolioPostCard
+                          key={post.post_id}
+                          post={post}
+                          filters={FEED_FILTERS}
+                          commentsCount={post.comments_count ?? 0}
+                          onOpenComments={(pid) => setOpenCommentsFor(pid)}
+                          onLikeChange={(pid, liked, likes_count) => {
+                            setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {postsHasMore && (
+                    <div className="flex justify-center">
+                      <button type="button" disabled={loadingMorePosts} onClick={() => fetchPosts(false, postsCursor)}
+                        className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-white px-5 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)] disabled:opacity-60">
+                        {loadingMorePosts ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t("loadMore", "Ver mais")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* ── sidebar ── */}
+        {/* sidebar */}
         <div className="space-y-6">
-          {/* Benchmark */}
           {benchmark && (
             <div className="relative border-2 border-[var(--ink)] bg-[var(--ink)] px-5 py-5 text-white shadow-[6px_6px_0_0_var(--magenta)]">
               <div className="flex items-center gap-2 casa-body text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/60">
@@ -617,7 +684,6 @@ export default function CommunityDetailPage() {
             </div>
           )}
 
-          {/* Destaque */}
           {spotlight && (
             <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
               <div className="flex items-center gap-3">
@@ -633,7 +699,6 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Ranking interno */}
           {ranked.length > 0 && (
             <Block title={t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
               <ol className="space-y-2">
@@ -666,6 +731,24 @@ export default function CommunityDetailPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Painel de comentários + composer */}
+      <CommentsPanel
+        postId={openCommentsFor}
+        open={!!openCommentsFor}
+        onClose={() => setOpenCommentsFor(null)}
+        loginNextPath={`/comunidades/${id}`}
+        onCountChange={(pid, delta) => setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) } : p))}
+      />
+      {composerOpen && (
+        <MediaComposer
+          open
+          mode={composerKind}
+          communityId={id}
+          onClose={() => setComposerOpen(false)}
+          onPosted={() => { setComposerOpen(false); fetchPosts(true) }}
+        />
       )}
     </div>
   )

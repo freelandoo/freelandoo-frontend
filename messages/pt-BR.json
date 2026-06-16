@@ -2339,7 +2339,13 @@
     "communitiesWord": "comunidades",
     "spotlightTitle": "Destaque",
     "spotlightSub": "Membro destaque",
-    "rankingTitle": "Ranking dos membros"
+    "rankingTitle": "Ranking dos membros",
+    "writeSomething": "Escreva algo...",
+    "postLabel": "Post",
+    "beeLabel": "Bee",
+    "feedEmptyGroup": "Ainda não há publicações. Seja o primeiro!",
+    "joinToPost": "Entre na comunidade para publicar.",
+    "loadMore": "Ver mais"
   },
   "Careers": {
     "hero.badge": "Carreiras",

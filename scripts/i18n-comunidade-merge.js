@@ -101,6 +101,13 @@ const COMMUNITY = {
   spotlightTitle: ["Destaque", "Spotlight", "Destacado"],
   spotlightSub: ["Membro destaque", "Top member", "Miembro destacado"],
   rankingTitle: ["Ranking dos membros", "Member ranking", "Ranking de miembros"],
+  // Feed estilo grupo
+  writeSomething: ["Escreva algo...", "Write something...", "Escribe algo..."],
+  postLabel: ["Post", "Post", "Post"],
+  beeLabel: ["Bee", "Bee", "Bee"],
+  feedEmptyGroup: ["Ainda não há publicações. Seja o primeiro!", "No posts yet. Be the first!", "Aún no hay publicaciones. ¡Sé el primero!"],
+  joinToPost: ["Entre na comunidade para publicar.", "Join the community to post.", "Únete a la comunidad para publicar."],
+  loadMore: ["Ver mais", "Load more", "Ver más"],
   // Tema (líder)
   editTheme: ["Editar cores", "Edit colors", "Editar colores"],
   saveTheme: ["Salvar", "Save", "Guardar"],

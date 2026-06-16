@@ -49,7 +49,7 @@ function aspectsFor(mode: ComposerProps["mode"]): string[] {
   return mode === "post" ? ["4:5", "1:1", "16:9"] : ["9:16"]
 }
 
-export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, onClose, onPosted }: ComposerProps) {
+export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, communityId = null, onClose, onPosted }: ComposerProps) {
   const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
@@ -501,6 +501,18 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         if (!uploadRes.ok) {
           const uploadData = await uploadRes.json().catch(() => ({}))
           throw new Error(uploadData?.error || t("errors.uploadMedia", "Item criado, mas o upload da mídia falhou."))
+        }
+
+        // Feed de comunidade: liga o post recém-criado ao feed do grupo. Não-fatal
+        // (o post já existe no perfil do membro mesmo que o link falhe).
+        if (communityId) {
+          try {
+            await fetch(`/api/communities/${communityId}/feed`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ id_portfolio_item: itemId }),
+            })
+          } catch { /* noop */ }
         }
         setProgress(1)
       }
