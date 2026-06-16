@@ -17,6 +17,7 @@ import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { ProductsGrid } from "@/components/search/products-grid"
 import { CoursesGrid } from "@/components/search/courses-grid"
+import { CommunitiesGrid } from "@/components/search/communities-grid"
 import { FilterRail, type CoursePriceFilter, type ProductCategoryEntry } from "@/components/search/filter-rail"
 import {
   ProductSubfilterPanel,
@@ -258,7 +259,7 @@ function SearchPageInner() {
   // URL state sync: ?tab=
   useEffect(() => {
     const raw = searchParams.get("tab")
-    if (raw === "services" || raw === "products" || raw === "courses") setTab(raw)
+    if (raw === "services" || raw === "products" || raw === "courses" || raw === "communities") setTab(raw)
   }, [searchParams])
 
   const handleTabChange = useCallback((next: SearchTab) => {
@@ -644,6 +645,10 @@ function SearchPageInner() {
             priceFilter={coursePrice}
           />
         )}
+
+        {tab === "communities" && (
+          <CommunitiesGrid machineId={idMachine} />
+        )}
           </div>
         </div>
       </div>
@@ -667,7 +672,8 @@ function SearchPageInner() {
         onPosted={() => setStoryBarKey((k) => k + 1)}
       />
 
-      {/* FAB: Abrir chamado — broadcast pra todo o Enxame escolhido */}
+      {/* FAB: Abrir chamado — broadcast pra todo o Enxame escolhido (não na aba Comunidades) */}
+      {tab !== "communities" && (
       <button
         type="button"
         data-tour="search-open-chamado"
@@ -678,6 +684,7 @@ function SearchPageInner() {
         <MessageSquarePlus className="h-4 w-4" />
         <span className="hidden sm:inline">{t("openTicket", "Abrir chamado")}</span>
       </button>
+      )}
 
       <OpenChamadoModal
         open={openChamadoOpen}

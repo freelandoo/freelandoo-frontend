@@ -101,6 +101,7 @@ export function FilterRail(props: FilterRailProps) {
        premiumOnly || productCategoryId || coursePrice !== "all")
 
   const isEnxameTab = tab === "services" || tab === "courses"
+  const isCommunitiesTab = tab === "communities"
 
   // Seções reutilizadas dentro e fora do drill de enxame.
   const regionSection = (
@@ -301,6 +302,27 @@ export function FilterRail(props: FilterRailProps) {
             {tab === "services" && premiumSection}
             {tab === "courses" && coursePriceSection}
           </>
+        )}
+
+        {/* Comunidades: filtra só por enxame (não há profissão). Clicar seleciona. */}
+        {isCommunitiesTab && (
+          <RailSection title={t("enxamesSection", "Enxames")} defaultOpen>
+            <RailOption label={t("allMale", "Todos")} active={selectedMachineId == null} accent="#F2B705" onClick={() => onMachineChange(null)} />
+            {machines.map((m) => {
+              const tint = machineAccent(m)
+              const active = m.id_machine === selectedMachineId
+              return (
+                <RailOption
+                  key={m.id_machine}
+                  label={tx.enxame(m.slug, m.name)}
+                  active={active}
+                  accent={tint}
+                  dot={tint}
+                  onClick={() => onMachineChange(active ? null : m.id_machine)}
+                />
+              )
+            })}
+          </RailSection>
         )}
       </div>
     </aside>

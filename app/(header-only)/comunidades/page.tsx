@@ -2,20 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Users, Plus, Trophy } from "lucide-react"
+import { Search, Users, Plus } from "lucide-react"
 import { PageShell, PageHero, EmptyState, LoadingState } from "@/components/tabloide"
+import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
-type CommunityCard = {
-  id_profile: string
+type CommunityCard = CommunityTileData & {
   id_machine: number | null
-  display_name: string
-  avatar_url: string | null
-  enxame_name: string | null
-  xp_level: number
-  member_count: number
 }
 
 const inputCls =
@@ -23,7 +16,6 @@ const inputCls =
 
 export default function CommunityListPage() {
   const t = useTranslations("Community")
-  const tx = useTaxonomy()
   const [communities, setCommunities] = useState<CommunityCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -79,6 +71,12 @@ export default function CommunityListPage() {
             <Search className="h-4 w-4" />
           </button>
           <Link
+            href="/search?tab=communities"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#F5F1E8]/15 px-4 text-sm font-semibold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
+          >
+            <Users className="h-4 w-4" /> {t("browseByEnxame", "Buscar por enxame")}
+          </Link>
+          <Link
             href="/comunidades/criar"
             className="flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#F2B705]/40 px-4 text-sm font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/10"
           >
@@ -97,28 +95,9 @@ export default function CommunityListPage() {
             <EmptyState icon={<Users className="h-6 w-6" />} title={t("empty", "Nenhuma comunidade ainda.")} description={t("pageSubtitle", "Encontre e participe de comunidades.")} />
           </div>
         ) : (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-px bg-white/[0.03] sm:grid-cols-3 lg:grid-cols-4">
             {communities.map((c) => (
-              <Link key={c.id_profile} href={`/comunidades/${c.id_profile}`} className="group block">
-                <div className="fl-card fl-hard h-full rounded-2xl p-5">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="size-14 ring-2 ring-[#0B0B0D]/10">
-                      <AvatarImage src={c.avatar_url || undefined} alt={c.display_name} />
-                      <AvatarFallback>{c.display_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-bold">{c.display_name}</h3>
-                      {c.enxame_name ? (
-                        <p className="truncate text-xs text-[#F5F1E8]/60">{tx.enxame(null, c.enxame_name)}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-4 text-xs text-[#F5F1E8]/70">
-                    <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {c.member_count} {t("membersCount", "membros")}</span>
-                    <span className="inline-flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {t("level", "Nível")} {c.xp_level}</span>
-                  </div>
-                </div>
-              </Link>
+              <CommunityTile key={c.id_profile} community={c} />
             ))}
           </div>
         )}

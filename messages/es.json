@@ -1771,7 +1771,10 @@
     "searchBrandPlaceholder": "Buscar marca…",
     "minAria": "Mínimo",
     "maxAria": "Máximo",
-    "backToEnxames": "Volver a los enjambres"
+    "backToEnxames": "Volver a los enjambres",
+    "tabCommunities": "Comunidades",
+    "noCommunitiesTitle": "Ninguna comunidad encontrada",
+    "noCommunitiesHint": "Elige otro enjambre o crea tu comunidad."
   },
   "Messages": {
     "loginPromptTitle": "Inicia sesión para ver tus mensajes",
@@ -2387,7 +2390,8 @@
     "recadoPlaceholder": "Escribe un recado para la comunidad...",
     "recadoPublish": "Publicar recado",
     "recadoOnlyHere": "Queda solo en la comunidad",
-    "recadoError": "No se pudo publicar el recado."
+    "recadoError": "No se pudo publicar el recado.",
+    "browseByEnxame": "Buscar por enjambre"
   },
   "Careers": {
     "hero.badge": "Carreras",

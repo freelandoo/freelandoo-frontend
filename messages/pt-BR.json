@@ -1771,7 +1771,10 @@
     "searchBrandPlaceholder": "Buscar marca…",
     "minAria": "Mínimo",
     "maxAria": "Máximo",
-    "backToEnxames": "Voltar pros enxames"
+    "backToEnxames": "Voltar pros enxames",
+    "tabCommunities": "Comunidades",
+    "noCommunitiesTitle": "Nenhuma comunidade encontrada",
+    "noCommunitiesHint": "Escolha outro enxame ou crie a sua comunidade."
   },
   "Messages": {
     "loginPromptTitle": "Entre para ver suas mensagens",
@@ -2374,7 +2377,8 @@
     "recadoPlaceholder": "Escreva um recado para a comunidade...",
     "recadoPublish": "Publicar recado",
     "recadoOnlyHere": "Fica só na comunidade",
-    "recadoError": "Não foi possível publicar o recado."
+    "recadoError": "Não foi possível publicar o recado.",
+    "browseByEnxame": "Buscar por enxame"
   },
   "Careers": {
     "hero.badge": "Carreiras",

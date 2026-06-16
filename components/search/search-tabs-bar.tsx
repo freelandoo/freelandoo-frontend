@@ -1,10 +1,10 @@
 "use client"
 
-import { Briefcase, Package, GraduationCap } from "lucide-react"
+import { Briefcase, Package, GraduationCap, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
-export type SearchTab = "services" | "products" | "courses"
+export type SearchTab = "services" | "products" | "courses" | "communities"
 
 interface Props {
   tab: SearchTab
@@ -16,6 +16,7 @@ const TABS: { id: SearchTab; labelKey: string; labelPt: string; icon: React.Comp
   { id: "services", labelKey: "tabServices", labelPt: "Serviços", icon: Briefcase, dataTour: "search-tab-services" },
   { id: "products", labelKey: "tabProducts", labelPt: "Produtos", icon: Package, dataTour: "search-tab-products" },
   { id: "courses", labelKey: "tabCourses", labelPt: "Cursos", icon: GraduationCap, dataTour: "search-tab-courses" },
+  { id: "communities", labelKey: "tabCommunities", labelPt: "Comunidades", icon: Users, dataTour: "search-tab-communities" },
 ]
 
 export function SearchTabsBar({ tab, onTabChange }: Props) {

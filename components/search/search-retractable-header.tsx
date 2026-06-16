@@ -13,7 +13,7 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 
-type HeaderTab = "services" | "products" | "courses"
+type HeaderTab = "services" | "products" | "courses" | "communities"
 
 interface SearchRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -72,7 +72,7 @@ export function SearchRetractableHeader({
   //  services → enxame, profissão, cidade, nível, premium
   //  products → cidade (categoria de produto vive na barra de chips da página)
   //  courses  → enxame, profissão
-  const showMachine = tab === "services" || tab === "courses"
+  const showMachine = tab === "services" || tab === "courses" || tab === "communities"
   const showProfession = tab === "services" || tab === "courses"
   const showCity = tab === "services" || tab === "products"
   const showLevel = tab === "services"

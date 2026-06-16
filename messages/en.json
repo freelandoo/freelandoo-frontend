@@ -1771,7 +1771,10 @@
     "searchBrandPlaceholder": "Search brand…",
     "minAria": "Minimum",
     "maxAria": "Maximum",
-    "backToEnxames": "Back to swarms"
+    "backToEnxames": "Back to swarms",
+    "tabCommunities": "Communities",
+    "noCommunitiesTitle": "No communities found",
+    "noCommunitiesHint": "Pick another swarm or create your own community."
   },
   "Messages": {
     "loginPromptTitle": "Sign in to see your messages",
@@ -2387,7 +2390,8 @@
     "recadoPlaceholder": "Write a note to the community...",
     "recadoPublish": "Post note",
     "recadoOnlyHere": "Stays in the community only",
-    "recadoError": "Could not post the note."
+    "recadoError": "Could not post the note.",
+    "browseByEnxame": "Browse by swarm"
   },
   "Careers": {
     "hero.badge": "Careers",

@@ -10,6 +10,7 @@ const dir = path.join(__dirname, "..", "messages")
 
 const COMMUNITY = {
   // Lista
+  browseByEnxame: ["Buscar por enxame", "Browse by swarm", "Buscar por enjambre"],
   pageTitle: ["Comunidades", "Communities", "Comunidades"],
   pageSubtitle: [
     "Encontre e participe de comunidades.",
@@ -234,7 +235,18 @@ const ACCOUNT = {
   roleMemberShort: ["Membro", "Member", "Miembro"],
 }
 
-const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST }
+// ns Search: 4ª aba "Comunidades" no enxame + estados vazios da malha.
+const SEARCH = {
+  tabCommunities: ["Comunidades", "Communities", "Comunidades"],
+  noCommunitiesTitle: ["Nenhuma comunidade encontrada", "No communities found", "Ninguna comunidad encontrada"],
+  noCommunitiesHint: [
+    "Escolha outro enxame ou crie a sua comunidade.",
+    "Pick another swarm or create your own community.",
+    "Elige otro enjambre o crea tu comunidad.",
+  ],
+}
+
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

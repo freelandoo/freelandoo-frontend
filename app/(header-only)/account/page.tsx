@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog"
 import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet } from "lucide-react"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+import { CommunityTile } from "@/components/community/community-tile"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -109,6 +110,8 @@ export default function PerfilPage() {
       xp_level: number
       member_count: number
       enxame_name: string | null
+      banner_url?: string | null
+      community_theme?: { accent?: string } | null
     }>
   >([])
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
@@ -1933,45 +1936,19 @@ export default function PerfilPage() {
               <div className="space-y-4">
                 <div className="flex justify-end">
                   <Link
-                    href="/comunidades"
+                    href="/search?tab=communities"
                     className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#F5F1E8]/25 px-4 py-2 text-[13px] font-bold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
                   >
-                    {t("myCommunities", "Minhas comunidades")}
+                    <Users className="h-3.5 w-3.5" />
+                    {t("browseByEnxame", "Buscar por enxame")}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
             <div>
               {myCommunities.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-px bg-white/[0.03] sm:grid-cols-3 lg:grid-cols-4">
                   {myCommunities.map((c) => (
-                    <button
-                      key={c.id_profile}
-                      type="button"
-                      onClick={() => router.push(`/comunidades/${c.id_profile}`)}
-                      className="group flex items-center gap-3 rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#F5F1E8]/[0.03] p-3 text-left transition hover:border-[#F2B705]/50"
-                      aria-label={t("openCommunityAria", "Abrir comunidade {name}").replace("{name}", c.display_name)}
-                    >
-                      <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F2B705]/15 text-sm font-bold text-[#F5F1E8]">
-                        {c.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.avatar_url} alt={c.display_name} className="h-full w-full object-cover" />
-                        ) : (
-                          getInitials(c.display_name)
-                        )}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-[#F5F1E8]">{c.display_name}</span>
-                        <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#9A938A]">
-                          {c.role === "leader" ? (
-                            <><Crown className="h-3 w-3 text-primary" /> {t("roleLeaderShort", "Líder")}</>
-                          ) : c.role === "vice" ? (
-                            t("roleViceShort", "Vice-líder")
-                          ) : (
-                            t("roleMemberShort", "Membro")
-                          )}
-                        </span>
-                      </span>
-                    </button>
+                    <CommunityTile key={c.id_profile} community={c} />
                   ))}
                 </div>
               ) : (
