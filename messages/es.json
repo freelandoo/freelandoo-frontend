@@ -4241,5 +4241,27 @@
     "errVideoTooBig": "Video demasiado grande (máx. 500MB).",
     "errVideoGeneric": "No se pudo comprimir este video.",
     "errLogin": "Inicia sesión para comprimir videos."
+  },
+  "Onboarding": {
+    "title": "Falta completar tu registro",
+    "description": "Indica tu fecha de nacimiento para usar Freelandoo. Si eres menor de 18 años, necesitarás un código parental de un responsable adulto.",
+    "birthdateLabel": "Fecha de nacimiento",
+    "ageInfo": "Tienes {age} {unit}.",
+    "yearUnit": "año",
+    "yearsUnit": "años",
+    "minorNotice": "Cuenta supervisada: pide a tu responsable que genere un código en Cuenta › Parental y pégalo abajo.",
+    "codeLabel": "Código del responsable",
+    "codePlaceholder": "PAR-XXXXXXXX",
+    "codeChecking": "Verificando...",
+    "codeValid": "Código válido — responsable encontrado.",
+    "codeInvalid": "Código inválido",
+    "codeFail": "Error al validar — inténtalo de nuevo.",
+    "saveFail": "Error al guardar",
+    "connError": "Error de conexión. Inténtalo de nuevo.",
+    "saving": "Guardando...",
+    "continue": "Continuar",
+    "socialTitle": "Agrega tus redes sociales",
+    "optional": "(opcional)",
+    "socialSubtitle": "Para que más gente te encuentre."
   }
 }

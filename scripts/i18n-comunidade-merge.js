@@ -256,7 +256,39 @@ const RANKING = {
   membersWord: ["membros", "members", "miembros"],
 }
 
-const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH, Ranking: RANKING }
+// ns Onboarding: modal de idade (BirthdateGate) + redes sociais opcionais.
+const ONBOARDING = {
+  title: ["Falta completar seu cadastro", "Complete your sign-up", "Falta completar tu registro"],
+  description: [
+    "Informe sua data de nascimento para usar a Freelandoo. Se você for menor de 18 anos, vai precisar de um código parental de um responsável adulto.",
+    "Enter your date of birth to use Freelandoo. If you're under 18, you'll need a parental code from an adult guardian.",
+    "Indica tu fecha de nacimiento para usar Freelandoo. Si eres menor de 18 años, necesitarás un código parental de un responsable adulto.",
+  ],
+  birthdateLabel: ["Data de nascimento", "Date of birth", "Fecha de nacimiento"],
+  ageInfo: ["Você tem {age} {unit}.", "You are {age} {unit}.", "Tienes {age} {unit}."],
+  yearUnit: ["ano", "year", "año"],
+  yearsUnit: ["anos", "years", "años"],
+  minorNotice: [
+    "Conta supervisionada: peça ao seu responsável para gerar um código em Conta › Parental e cole abaixo.",
+    "Supervised account: ask your guardian to generate a code in Account › Parental and paste it below.",
+    "Cuenta supervisada: pide a tu responsable que genere un código en Cuenta › Parental y pégalo abajo.",
+  ],
+  codeLabel: ["Código do responsável", "Guardian code", "Código del responsable"],
+  codePlaceholder: ["PAR-XXXXXXXX", "PAR-XXXXXXXX", "PAR-XXXXXXXX"],
+  codeChecking: ["Verificando...", "Checking...", "Verificando..."],
+  codeValid: ["Código válido — responsável encontrado.", "Valid code — guardian found.", "Código válido — responsable encontrado."],
+  codeInvalid: ["Código inválido", "Invalid code", "Código inválido"],
+  codeFail: ["Falha ao validar — tente novamente.", "Validation failed — try again.", "Error al validar — inténtalo de nuevo."],
+  saveFail: ["Falha ao salvar", "Failed to save", "Error al guardar"],
+  connError: ["Erro de conexão. Tente novamente.", "Connection error. Try again.", "Error de conexión. Inténtalo de nuevo."],
+  saving: ["Salvando...", "Saving...", "Guardando..."],
+  continue: ["Continuar", "Continue", "Continuar"],
+  socialTitle: ["Coloque suas redes sociais", "Add your social networks", "Agrega tus redes sociales"],
+  optional: ["(opcional)", "(optional)", "(opcional)"],
+  socialSubtitle: ["Para mais gente te encontrar.", "So more people can find you.", "Para que más gente te encuentre."],
+}
+
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH, Ranking: RANKING, Onboarding: ONBOARDING }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

@@ -4261,5 +4261,27 @@
     "errVideoTooBig": "Video too large (max 500MB).",
     "errVideoGeneric": "Couldn't compress this video.",
     "errLogin": "Sign in to compress videos."
+  },
+  "Onboarding": {
+    "title": "Complete your sign-up",
+    "description": "Enter your date of birth to use Freelandoo. If you're under 18, you'll need a parental code from an adult guardian.",
+    "birthdateLabel": "Date of birth",
+    "ageInfo": "You are {age} {unit}.",
+    "yearUnit": "year",
+    "yearsUnit": "years",
+    "minorNotice": "Supervised account: ask your guardian to generate a code in Account › Parental and paste it below.",
+    "codeLabel": "Guardian code",
+    "codePlaceholder": "PAR-XXXXXXXX",
+    "codeChecking": "Checking...",
+    "codeValid": "Valid code — guardian found.",
+    "codeInvalid": "Invalid code",
+    "codeFail": "Validation failed — try again.",
+    "saveFail": "Failed to save",
+    "connError": "Connection error. Try again.",
+    "saving": "Saving...",
+    "continue": "Continue",
+    "socialTitle": "Add your social networks",
+    "optional": "(optional)",
+    "socialSubtitle": "So more people can find you."
   }
 }
