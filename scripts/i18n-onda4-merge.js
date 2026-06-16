@@ -485,6 +485,7 @@ Object.assign(ACCOUNT, {
   socialNetwork: ["Rede Social", "Social Network", "Red Social"],
   socialNetworks: ["Redes Sociais", "Social Networks", "Redes Sociales"],
   socialNetworksDesc: ["Gerencie as redes sociais exibidas no seu perfil.", "Manage the social networks shown on your profile.", "Gestiona las redes sociales que se muestran en tu perfil."],
+  socialNetworksUserHint: ["Aparecem no seu perfil principal (username).", "Shown on your main profile (username).", "Aparecen en tu perfil principal (username)."],
   socialUrlPlaceholder: ["https://instagram.com/seu_usuario", "https://instagram.com/your_username", "https://instagram.com/tu_usuario"],
   uploadPhotoError: ["Erro ao enviar foto.", "Error uploading photo.", "Error al subir la foto."],
   visibleInSearch: ["Visível nas buscas", "Visible in search", "Visible en búsquedas"],

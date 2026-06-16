@@ -1401,7 +1401,8 @@
     "openCommunityAria": "Open community {name}",
     "roleLeaderShort": "Leader",
     "roleViceShort": "Vice-leader",
-    "roleMemberShort": "Member"
+    "roleMemberShort": "Member",
+    "socialNetworksUserHint": "Shown on your main profile (username)."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

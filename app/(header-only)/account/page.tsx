@@ -2471,6 +2471,41 @@ export default function PerfilPage() {
                 onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
               />
             </div>
+
+            {/* Seção: Redes Sociais do user (aparecem no headcard do username).
+                Espelha o que o onboarding salva — fica aqui pra quem pulou o
+                primeiro modal poder cadastrar/editar depois. */}
+            <div className="space-y-3 rounded-xl border-2 border-[#0B0B0D]/15 bg-[#0B0B0D]/[0.03] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5b554b]">
+                    {t("socialNetworks", "Redes Sociais")}
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#8a8275]">
+                    {t("socialNetworksUserHint", "Aparecem no seu perfil principal (username).")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="fl-btn-card inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold"
+                  onClick={() => {
+                    setNovaRede({ id: "", platform: "", account: "", followers_range: "" })
+                    setIsEditing(false)
+                    setIsModalOpen(true)
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("add", "Adicionar")}
+                </button>
+              </div>
+              {perfil.redes_sociais && perfil.redes_sociais.length > 0 ? (
+                <div className="space-y-2">
+                  {perfil.redes_sociais.map((rede) => renderRedeSocial(rede))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-[#8a8275]">{t("noSocialNetworks", "Sem redes sociais cadastradas.")}</p>
+              )}
+            </div>
           </div>
 
           <DialogFooter>

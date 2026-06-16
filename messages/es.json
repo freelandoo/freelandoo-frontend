@@ -1401,7 +1401,8 @@
     "openCommunityAria": "Abrir comunidad {name}",
     "roleLeaderShort": "Líder",
     "roleViceShort": "Vicelíder",
-    "roleMemberShort": "Miembro"
+    "roleMemberShort": "Miembro",
+    "socialNetworksUserHint": "Aparecen en tu perfil principal (username)."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
