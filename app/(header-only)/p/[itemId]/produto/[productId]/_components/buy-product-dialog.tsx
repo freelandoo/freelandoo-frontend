@@ -40,6 +40,22 @@ function formatBRL(cents: number, locale: string) {
   return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 
+// Máscara progressiva CPF (000.000.000-00) / CNPJ (00.000.000/0000-00).
+function maskDocument(value: string) {
+  const d = value.replace(/\D/g, "").slice(0, 14)
+  if (d.length <= 11) {
+    return d
+      .replace(/^(\d{3})(\d)/, "$1.$2")
+      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1-$2")
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+}
+
 function getToken() {
   if (typeof window === "undefined") return null
   return localStorage.getItem("token")
@@ -54,6 +70,7 @@ export function BuyProductDialog({
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
+  const [doc, setDoc] = useState("")
   const [street, setStreet] = useState(destinationAddress?.logradouro || "")
   const [number, setNumber] = useState("")
   const [complement, setComplement] = useState("")
@@ -82,6 +99,11 @@ export function BuyProductDialog({
       setError(t("nameEmailRequired", "Nome e e-mail são obrigatórios"))
       return
     }
+    const docDigits = doc.replace(/\D/g, "")
+    if (docDigits.length !== 11 && docDigits.length !== 14) {
+      setError(t("documentRequired", "Informe um CPF ou CNPJ válido para o envio"))
+      return
+    }
     if (!street.trim() || !number.trim()) {
       setError(t("streetNumberRequired", "Rua e número são obrigatórios"))
       return
@@ -107,6 +129,7 @@ export function BuyProductDialog({
           buyer_name: name.trim(),
           buyer_email: email.trim(),
           buyer_whatsapp: whatsapp.trim() || null,
+          buyer_document: docDigits,
           destination_full_address: {
             street: street.trim(),
             number: number.trim(),
@@ -175,6 +198,16 @@ export function BuyProductDialog({
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
             />
+            <input
+              inputMode="numeric"
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              placeholder={t("documentPlaceholder", "CPF ou CNPJ")}
+              value={doc}
+              onChange={(e) => setDoc(maskDocument(e.target.value))}
+            />
+            <p className="-mt-1 text-[11px] text-muted-foreground">
+              {t("documentHint", "Necessário para emitir a etiqueta de envio.")}
+            </p>
           </div>
 
           <p className="pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("shippingAddressTitle", "Endereço de entrega")}</p>

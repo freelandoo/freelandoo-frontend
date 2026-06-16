@@ -2080,7 +2080,10 @@
     "exceededWeight": "This product weighs more than SEDEX/PAC/Jadlog accept (heavy load). ",
     "exceededSize": "This product's dimensions exceed the limit accepted by SEDEX/PAC/Jadlog. ",
     "exceededLimitsCta": "Arrange pickup or dedicated shipping directly with the seller.",
-    "talkToSeller": "Contact seller"
+    "talkToSeller": "Contact seller",
+    "documentPlaceholder": "Tax ID (CPF/CNPJ)",
+    "documentHint": "Required to issue the shipping label.",
+    "documentRequired": "Enter a valid tax ID (CPF/CNPJ) for shipping"
   },
   "Checkout": {
     "loadCheckoutError": "Failed to load checkout",

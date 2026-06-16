@@ -2069,7 +2069,10 @@
     "exceededWeight": "Este produto pesa mais que o aceito por SEDEX/PAC/Jadlog (carga pesada). ",
     "exceededSize": "As dimensões deste produto passam do limite aceito por SEDEX/PAC/Jadlog. ",
     "exceededLimitsCta": "Combine retirada ou frete dedicado direto com o vendedor.",
-    "talkToSeller": "Falar com vendedor"
+    "talkToSeller": "Falar com vendedor",
+    "documentPlaceholder": "CPF ou CNPJ",
+    "documentHint": "Necessário para emitir a etiqueta de envio.",
+    "documentRequired": "Informe um CPF ou CNPJ válido para o envio"
   },
   "Checkout": {
     "loadCheckoutError": "Erro ao carregar checkout",
