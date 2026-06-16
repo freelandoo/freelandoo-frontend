@@ -648,6 +648,11 @@ export default function CommunityDetailPage() {
                           post={post}
                           filters={FEED_FILTERS}
                           commentsCount={post.comments_count ?? 0}
+                          shareUrlOverride={
+                            isMember && currentUserId && typeof window !== "undefined"
+                              ? `${window.location.origin}/cs/${id}/${currentUserId}/${post.post_id}`
+                              : undefined
+                          }
                           onOpenComments={(pid) => setOpenCommentsFor(pid)}
                           onLikeChange={(pid, liked, likes_count) => {
                             setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))

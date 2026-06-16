@@ -48,6 +48,8 @@ interface PortfolioPostCardProps {
   commentsCount?: number
   /** Um post por ecrã: mídia cresce e o cartão preenche a altura do snap */
   paged?: boolean
+  /** Quando definido, o botão compartilhar usa esta URL (ex.: link rastreado da comunidade). */
+  shareUrlOverride?: string
 }
 
 function initials(name: string | null | undefined) {
@@ -81,7 +83,7 @@ function LikeTapeSticker() {
   )
 }
 
-export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged }: PortfolioPostCardProps) {
+export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged, shareUrlOverride }: PortfolioPostCardProps) {
   const t = useTranslations("Post")
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
@@ -238,6 +240,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
 
   const handleShare = async () => {
     const baseUrl =
+      shareUrlOverride ||
       (primaryUrl
         ? new URL(
             primaryUrl,
