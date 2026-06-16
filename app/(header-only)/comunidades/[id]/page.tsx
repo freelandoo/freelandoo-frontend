@@ -160,7 +160,10 @@ export default function CommunityDetailPage() {
     setGoal(d.goal || null)
   }, [id])
   const fetchAnnouncements = useCallback(async () => {
-    const r = await fetch(`/api/communities/${id}/announcements`)
+    const token = getToken()
+    const r = await fetch(`/api/communities/${id}/announcements`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
     const d = await r.json().catch(() => ({}))
     setAnnouncements(Array.isArray(d.announcements) ? d.announcements : [])
   }, [id])
@@ -191,11 +194,13 @@ export default function CommunityDetailPage() {
     setLoading(true)
     setError(null)
     try {
+      const tk = getToken()
+      const authHeaders = tk ? { Authorization: `Bearer ${tk}` } : undefined
       const [cRes, mRes, gRes, aRes, bmRes] = await Promise.all([
         fetch(`/api/communities/${id}`),
         fetch(`/api/communities/${id}/members`),
         fetch(`/api/communities/${id}/goal`),
-        fetch(`/api/communities/${id}/announcements`),
+        fetch(`/api/communities/${id}/announcements`, authHeaders ? { headers: authHeaders } : undefined),
         fetch(`/api/communities/${id}/benchmark`),
       ])
       const cData = await cRes.json()
@@ -525,8 +530,8 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Mural */}
-          {(showAsLeaderEdit || announcements.length > 0) && (
+          {/* Mural — privado: só membros leem; só o líder posta */}
+          {(showAsLeaderEdit || (isMember && announcements.length > 0)) && (
             <Block title={t("muralTitle", "Mural do líder")} icon={<Megaphone className="h-4 w-4" />} accent={accent}>
               {showAsLeaderEdit && (
                 <div className="mb-3 space-y-2 border-b border-[var(--line)] pb-3">
