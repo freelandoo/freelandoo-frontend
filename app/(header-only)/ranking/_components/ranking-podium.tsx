@@ -40,6 +40,8 @@ export type PodiumRow = {
   xp_level?: number | null
   level?: number | null
   is_clan?: boolean
+  is_community?: boolean
+  members_count?: number | null
 }
 
 interface Props {
@@ -75,7 +77,9 @@ function PodiumColumn({
   const isFirst = rank === 1
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
-  const tag = row.specialty || row.machine_name || location || (row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil"))
+  const tag = row.is_community
+    ? (row.machine_name || location || (row.members_count != null ? `${row.members_count} ${t("membersWord", "membros")}` : t("badgeCommunity", "Comunidade")))
+    : (row.specialty || row.machine_name || location || (row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")))
 
   const order = rank === 1 ? "order-2" : rank === 2 ? "order-1" : "order-3"
   const width = isFirst ? "w-[40%]" : "w-[30%]"
@@ -122,8 +126,8 @@ function PodiumColumn({
 
         {/* Nome + score */}
         <div className="fl-card relative mt-2 p-2 text-center md:mt-3 md:p-3">
-          <span className={cn("inline-block -rotate-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em]", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
-            {row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
+          <span className={cn("inline-block -rotate-1 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em]", row.is_clan || row.is_community ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
+            {row.is_community ? t("badgeCommunity", "Comunidade") : row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
           </span>
           <Link href={rowHref(row)} className="block">
             <h3 className={cn("fl-display mt-1.5 leading-none text-[#0B0B0D] hover:text-[#9a7400] md:mt-2", isFirst ? "text-sm md:text-4xl" : "text-xs md:text-3xl")}>

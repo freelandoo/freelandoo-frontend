@@ -4045,7 +4045,13 @@
     "timeMin": "{n}m",
     "timeHours": "{n}h",
     "timeDays": "{n}d",
-    "timeWeeks": "{n}w"
+    "timeWeeks": "{n}w",
+    "scopeComunidades": "Communities",
+    "badgeCommunity": "Community",
+    "allEnxames": "All",
+    "allCommunities": "All communities",
+    "allRegions": "All regions",
+    "membersWord": "members"
   },
   "Lives": {
     "soonTitle": "We're building this",

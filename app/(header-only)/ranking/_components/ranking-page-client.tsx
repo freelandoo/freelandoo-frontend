@@ -20,6 +20,7 @@ import {
   MapPin,
   Star,
   Trophy,
+  Users,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { RegionFilterSheet } from "@/components/feed/region-filter-sheet"
@@ -58,7 +59,7 @@ import {
   type RankingSocialTarget,
 } from "./ranking-social"
 
-type RankingScope = "general" | "machine" | "profession" | "region"
+type RankingScope = "general" | "machine" | "profession" | "region" | "communities"
 
 type RankingRow = {
   id_profile: string
@@ -80,7 +81,9 @@ type RankingRow = {
   visits_count: number | null
   likes_count: number | null
   is_clan?: boolean
-  entity_type?: "profile" | "clan"
+  is_community?: boolean
+  entity_type?: "profile" | "clan" | "community"
+  enxame_name?: string | null
   xp_total?: number | null
   xp_level?: number | null
   level?: number | null
@@ -114,6 +117,7 @@ const scopeOptions: {
   { key: "machine", labelKey: "scopeEnxame", label: "Enxame", icon: Building2 },
   { key: "profession", labelKey: "scopeProfissao", label: "Profissão", icon: Briefcase },
   { key: "region", labelKey: "scopeRegiao", label: "Região", icon: MapPin },
+  { key: "communities", labelKey: "scopeComunidades", label: "Comunidades", icon: Users },
 ]
 
 const numberFormatter = new Intl.NumberFormat("pt-BR")
@@ -128,7 +132,40 @@ function getInitials(name: string | null | undefined) {
     .join("")
 }
 
+// Comunidades reusam o endpoint /api/communities (já ordenado por xp_total DESC).
+// Mapeia cada comunidade para o shape RankingRow (pontos = xp_total).
+function mapCommunityRow(c: Record<string, unknown>): RankingRow {
+  const enxame = (c.enxame_name as string) ?? null
+  return {
+    id_profile: String(c.id_profile),
+    display_name: String(c.display_name ?? ""),
+    avatar_url: (c.avatar_url as string) ?? null,
+    username: null,
+    sub_profile_slug: null,
+    municipio: (c.municipio as string) ?? null,
+    estado: (c.estado as string) ?? null,
+    specialty: null,
+    profession_slug: null,
+    machine_slug: null,
+    machine_name: enxame,
+    enxame_name: enxame,
+    total_points: Number(c.xp_total) || 0,
+    avg_rating: null,
+    ratings_count: null,
+    visits_count: null,
+    likes_count: null,
+    is_clan: false,
+    is_community: true,
+    entity_type: "community",
+    xp_total: Number(c.xp_total) || 0,
+    xp_level: Number(c.xp_level) || 0,
+    level: Number(c.xp_level) || 0,
+    members_count: Number(c.member_count) || 0,
+  }
+}
+
 function rowHref(row: RankingRow) {
+  if (row.is_community) return `/comunidades/${row.id_profile}`
   if (row.is_clan) return `/clans/${row.id_profile}`
   if (row.username && row.profession_slug) {
     return buildProfileUrl({
@@ -173,7 +210,8 @@ function buildProfessionOptions(machines: CatalogMachine[]): ProfessionOption[] 
 function normalizeRows(data: unknown): RankingRow[] {
   if (Array.isArray(data)) return data as RankingRow[]
   if (data && typeof data === "object") {
-    const record = data as { rows?: unknown; rankings?: unknown; items?: unknown }
+    const record = data as { rows?: unknown; rankings?: unknown; items?: unknown; communities?: unknown }
+    if (Array.isArray(record.communities)) return (record.communities as Record<string, unknown>[]).map(mapCommunityRow)
     if (Array.isArray(record.rows)) return record.rows as RankingRow[]
     if (Array.isArray(record.rankings)) return record.rankings as RankingRow[]
     if (Array.isArray(record.items)) return record.items as RankingRow[]
@@ -201,6 +239,8 @@ export function RankingPageClient() {
 
   const [scope, setScope] = useState<RankingScope>("general")
   const [machineSlug, setMachineSlug] = useState("views")
+  // Comunidades: enxame opcional (null = todos) + região (compartilha o estado de região).
+  const [commMachineId, setCommMachineId] = useState<number | null>(null)
   const [professionSlug, setProfessionSlug] = useState("")
   const [regionState, setRegionState] = useState<string | null>("SP")
   const [regionId, setRegionId] = useState<number | null>(null)
@@ -240,8 +280,14 @@ export function RankingPageClient() {
       })
       return `/api/ranking/public/region?${qs.toString()}`
     }
+    if (scope === "communities") {
+      const qs = new URLSearchParams({ limit: "10" })
+      if (commMachineId) qs.set("id_machine", String(commMachineId))
+      if (regionId) qs.set("id_region", String(regionId))
+      return `/api/communities?${qs.toString()}`
+    }
     return null
-  }, [regionId, scope, selectedMachine, selectedProfession])
+  }, [commMachineId, regionId, scope, selectedMachine, selectedProfession])
 
   const requestKey = `${scope}:${rankingUrl ?? "none"}`
   const rows = useMemo(
@@ -272,9 +318,14 @@ export function RankingPageClient() {
     if (scope === "general") return t("scopeBrasil", "Brasil")
     if (scope === "machine") return selectedMachine ? tx.enxame(selectedMachine.slug, selectedMachine.name) : t("scopeEnxame", "Enxame")
     if (scope === "profession") return selectedProfession ? tx.profession(selectedProfession.label) : t("scopeProfissao", "Profissão")
+    if (scope === "communities") {
+      const enx = commMachineId ? rankedMachines.find((m) => m.id_machine === commMachineId) : null
+      const enxLabel = enx ? tx.enxame(enx.slug, enx.name) : t("allCommunities", "Todas as comunidades")
+      return regionName && regionState ? `${enxLabel} · ${regionName}, ${regionState}` : enxLabel
+    }
     if (regionName && regionState) return `${regionName}, ${regionState}`
     return t("scopeRegiao", "Região")
-  }, [regionName, regionState, scope, selectedMachine, selectedProfession, t, tx])
+  }, [commMachineId, rankedMachines, regionName, regionState, scope, selectedMachine, selectedProfession, t, tx])
 
   const rest = rows.slice(3)
 
@@ -462,6 +513,59 @@ export function RankingPageClient() {
               }
             />
           )}
+
+          {scope === "communities" && (
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  type="button"
+                  onClick={() => setCommMachineId(null)}
+                  className={cn(
+                    "h-9 shrink-0 border-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.1em] transition",
+                    commMachineId == null ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#F1EDE2]/20 text-[#C9C2B6] hover:border-[#F1EDE2]/50"
+                  )}
+                >
+                  {t("allEnxames", "Todos")}
+                </button>
+                {rankedMachines.map((machine) => {
+                  const active = commMachineId === machine.id_machine
+                  return (
+                    <button
+                      key={machine.id_machine}
+                      type="button"
+                      onClick={() => setCommMachineId(active ? null : machine.id_machine)}
+                      className={cn(
+                        "h-9 shrink-0 border-2 px-3 text-[11px] font-extrabold uppercase tracking-[0.1em] transition",
+                        active ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#F1EDE2]/20 text-[#C9C2B6] hover:border-[#F1EDE2]/50"
+                      )}
+                    >
+                      {tx.enxame(machine.slug, machine.name)}
+                    </button>
+                  )
+                })}
+              </div>
+              <RegionFilterSheet
+                state={regionState}
+                regionId={regionId}
+                regionName={regionName}
+                accent={theme.accent}
+                onChange={(next) => {
+                  setRegionState(next.state)
+                  setRegionId(next.regionId)
+                  setRegionName(next.regionName)
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex h-11 w-fit items-center gap-2 border-2 border-[#F1EDE2]/25 px-4 text-sm font-extrabold uppercase tracking-[0.1em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
+                  >
+                    <MapPin className="h-4 w-4 text-[#F2B705]" />
+                    {regionName && regionState ? `${regionName}, ${regionState}` : t("allRegions", "Todas as regiões")}
+                  </button>
+                }
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -546,7 +650,9 @@ function RankingRowCard({
   const location = row.municipio && row.estado ? `${row.municipio}, ${row.estado}` : null
   const level = Number(row.level ?? row.xp_level ?? 0)
   const points = Number(row.ranking_score ?? row.total_points ?? 0)
-  const meta = [row.specialty, row.machine_name, location].filter(Boolean).join(" · ") || t("metaFallback", "Perfil Freelandoo")
+  const meta = row.is_community
+    ? [row.machine_name, location, row.members_count != null ? `${row.members_count} ${t("membersWord", "membros")}` : null].filter(Boolean).join(" · ") || t("metaFallback", "Perfil Freelandoo")
+    : [row.specialty, row.machine_name, location].filter(Boolean).join(" · ") || t("metaFallback", "Perfil Freelandoo")
 
   return (
     <Link
@@ -568,8 +674,8 @@ function RankingRowCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="fl-display truncate text-xl leading-none text-[#0B0B0D] md:text-2xl">{row.display_name}</h4>
-          <span className={cn("hidden -rotate-1 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block", row.is_clan ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
-            {row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
+          <span className={cn("hidden -rotate-1 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:inline-block", row.is_clan || row.is_community ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#0B0B0D] text-[#F1EDE2]")}>
+            {row.is_community ? t("badgeCommunity", "Comunidade") : row.is_clan ? t("badgeClan", "Clan") : t("badgePerfil", "Perfil")}
           </span>
           {level > 0 && (
             <span className="hidden border border-[#0B0B0D]/30 px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.1em] text-[#9a7400] md:inline-block">

@@ -246,7 +246,17 @@ const SEARCH = {
   ],
 }
 
-const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH }
+// ns Ranking: filtro "Comunidades" (top 3 por enxame + região) + selo.
+const RANKING = {
+  scopeComunidades: ["Comunidades", "Communities", "Comunidades"],
+  badgeCommunity: ["Comunidade", "Community", "Comunidad"],
+  allEnxames: ["Todos", "All", "Todos"],
+  allCommunities: ["Todas as comunidades", "All communities", "Todas las comunidades"],
+  allRegions: ["Todas as regiões", "All regions", "Todas las regiones"],
+  membersWord: ["membros", "members", "miembros"],
+}
+
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH, Ranking: RANKING }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

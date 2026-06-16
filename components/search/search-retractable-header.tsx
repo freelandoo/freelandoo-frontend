@@ -74,7 +74,7 @@ export function SearchRetractableHeader({
   //  courses  → enxame, profissão
   const showMachine = tab === "services" || tab === "courses" || tab === "communities"
   const showProfession = tab === "services" || tab === "courses"
-  const showCity = tab === "services" || tab === "products"
+  const showCity = tab === "services" || tab === "products" || tab === "communities"
   const showLevel = tab === "services"
   const showPremium = tab === "services"
   const locationLabel = regionName || state || t("regionFilterLabel", "Região")

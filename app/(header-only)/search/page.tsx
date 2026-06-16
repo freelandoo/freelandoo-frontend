@@ -647,7 +647,7 @@ function SearchPageInner() {
         )}
 
         {tab === "communities" && (
-          <CommunitiesGrid machineId={idMachine} />
+          <CommunitiesGrid machineId={idMachine} regionId={selectedRegionId} />
         )}
           </div>
         </div>

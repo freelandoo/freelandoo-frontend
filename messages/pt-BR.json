@@ -3459,7 +3459,13 @@
     "timeMin": "{n}min",
     "timeHours": "{n}h",
     "timeDays": "{n}d",
-    "timeWeeks": "{n}sem"
+    "timeWeeks": "{n}sem",
+    "scopeComunidades": "Comunidades",
+    "badgeCommunity": "Comunidade",
+    "allEnxames": "Todos",
+    "allCommunities": "Todas as comunidades",
+    "allRegions": "Todas as regiões",
+    "membersWord": "membros"
   },
   "Lives": {
     "soonTitle": "Estamos construindo",

@@ -10,10 +10,11 @@ import { CommunityTile, type CommunityTileData } from "@/components/community/co
 
 interface Props {
   machineId: number | null
+  regionId?: number | null
   q?: string | null
 }
 
-export function CommunitiesGrid({ machineId, q }: Props) {
+export function CommunitiesGrid({ machineId, regionId, q }: Props) {
   const t = useTranslations("Search")
   const [items, setItems] = useState<CommunityTileData[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,6 +26,7 @@ export function CommunitiesGrid({ machineId, q }: Props) {
     setError(null)
     const params = new URLSearchParams()
     if (machineId) params.set("id_machine", String(machineId))
+    if (regionId) params.set("id_region", String(regionId))
     if (q) params.set("q", q)
     const qs = params.toString()
     fetch(`/api/communities${qs ? `?${qs}` : ""}`, { cache: "no-store" })
@@ -37,7 +39,7 @@ export function CommunitiesGrid({ machineId, q }: Props) {
       .catch((err) => alive && setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar")))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [machineId, q, t])
+  }, [machineId, regionId, q, t])
 
   if (loading) {
     return (

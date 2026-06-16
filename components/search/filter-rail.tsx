@@ -304,25 +304,28 @@ export function FilterRail(props: FilterRailProps) {
           </>
         )}
 
-        {/* Comunidades: filtra só por enxame (não há profissão). Clicar seleciona. */}
+        {/* Comunidades: filtra por enxame (sem profissão) + região. */}
         {isCommunitiesTab && (
-          <RailSection title={t("enxamesSection", "Enxames")} defaultOpen>
-            <RailOption label={t("allMale", "Todos")} active={selectedMachineId == null} accent="#F2B705" onClick={() => onMachineChange(null)} />
-            {machines.map((m) => {
-              const tint = machineAccent(m)
-              const active = m.id_machine === selectedMachineId
-              return (
-                <RailOption
-                  key={m.id_machine}
-                  label={tx.enxame(m.slug, m.name)}
-                  active={active}
-                  accent={tint}
-                  dot={tint}
-                  onClick={() => onMachineChange(active ? null : m.id_machine)}
-                />
-              )
-            })}
-          </RailSection>
+          <>
+            <RailSection title={t("enxamesSection", "Enxames")} defaultOpen>
+              <RailOption label={t("allMale", "Todos")} active={selectedMachineId == null} accent="#F2B705" onClick={() => onMachineChange(null)} />
+              {machines.map((m) => {
+                const tint = machineAccent(m)
+                const active = m.id_machine === selectedMachineId
+                return (
+                  <RailOption
+                    key={m.id_machine}
+                    label={tx.enxame(m.slug, m.name)}
+                    active={active}
+                    accent={tint}
+                    dot={tint}
+                    onClick={() => onMachineChange(active ? null : m.id_machine)}
+                  />
+                )
+              })}
+            </RailSection>
+            {regionSection}
+          </>
         )}
       </div>
     </aside>
