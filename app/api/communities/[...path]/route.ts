@@ -68,3 +68,11 @@ export async function PATCH(request: Request, ctx: Ctx) {
   const { path } = await ctx.params
   return forward(request, "PATCH", path)
 }
+export async function PUT(request: Request, ctx: Ctx) {
+  const { path } = await ctx.params
+  return forward(request, "PUT", path)
+}
+export async function DELETE(request: Request, ctx: Ctx) {
+  const { path } = await ctx.params
+  return forward(request, "DELETE", path)
+}

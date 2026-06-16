@@ -1654,7 +1654,10 @@
     "likesLabelOne": "like",
     "musicLabel": "Music",
     "muteMusic": "Mute music",
-    "unmuteMusic": "Unmute music"
+    "unmuteMusic": "Unmute music",
+    "accessCommunity": "Open community",
+    "recadoLabel": "Note",
+    "deleteRecado": "Delete"
   },
   "Stories": {
     "createStoryLabel": "Post",
@@ -2377,7 +2380,14 @@
     "spotlightWinner": "Winner",
     "spotlightLeader": "Season leader",
     "postsEng": "posts/eng",
-    "postsEngHint": "posts / engagement"
+    "postsEngHint": "posts / engagement",
+    "composerCta": "Post or write here",
+    "recadoLabel": "Note",
+    "recadoTitle": "New note",
+    "recadoPlaceholder": "Write a note to the community...",
+    "recadoPublish": "Post note",
+    "recadoOnlyHere": "Stays in the community only",
+    "recadoError": "Could not post the note."
   },
   "Careers": {
     "hero.badge": "Careers",

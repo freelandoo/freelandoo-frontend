@@ -123,8 +123,20 @@ const COMMUNITY = {
   rankingTitle: ["Ranking dos membros", "Member ranking", "Ranking de miembros"],
   // Feed estilo grupo
   writeSomething: ["Escreva algo...", "Write something...", "Escribe algo..."],
+  composerCta: ["Poste ou escreva aqui", "Post or write here", "Publica o escribe aquí"],
   postLabel: ["Post", "Post", "Post"],
   beeLabel: ["Bee", "Bee", "Bee"],
+  // Recado (nota só-texto, exclusiva do feed da comunidade — até 2000 chars)
+  recadoLabel: ["Recado", "Note", "Recado"],
+  recadoTitle: ["Novo recado", "New note", "Nuevo recado"],
+  recadoPlaceholder: [
+    "Escreva um recado para a comunidade...",
+    "Write a note to the community...",
+    "Escribe un recado para la comunidad...",
+  ],
+  recadoPublish: ["Publicar recado", "Post note", "Publicar recado"],
+  recadoOnlyHere: ["Fica só na comunidade", "Stays in the community only", "Queda solo en la comunidad"],
+  recadoError: ["Não foi possível publicar o recado.", "Could not post the note.", "No se pudo publicar el recado."],
   feedEmptyGroup: ["Ainda não há publicações. Seja o primeiro!", "No posts yet. Be the first!", "Aún no hay publicaciones. ¡Sé el primero!"],
   joinToPost: ["Entre na comunidade para publicar.", "Join the community to post.", "Únete a la comunidad para publicar."],
   loadMore: ["Ver mais", "Load more", "Ver más"],
@@ -193,6 +205,13 @@ const PROFILE = {
   communities: ["Comunidade", "Community", "Comunidad"],
 }
 
+// ns Post: card do /feed — botão "Acessar comunidade" + variante recado.
+const POST = {
+  accessCommunity: ["Acessar comunidade", "Open community", "Abrir comunidad"],
+  recadoLabel: ["Recado", "Note", "Recado"],
+  deleteRecado: ["Apagar", "Delete", "Eliminar"],
+}
+
 // ns Account: aba/contador/menu/slot do /account (substituem os de Clans).
 const ACCOUNT = {
   tabCommunity: ["Comunidade", "Community", "Comunidad"],
@@ -215,7 +234,7 @@ const ACCOUNT = {
   roleMemberShort: ["Membro", "Member", "Miembro"],
 }
 
-const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT }
+const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

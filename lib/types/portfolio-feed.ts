@@ -75,6 +75,19 @@ export interface FeedPost {
   public_profile_url: string | null
   whatsapp_url: string | null
   social_links: FeedSocialLink[]
+  /** Comunidade à qual o post está ligado (mig 160). Alimenta o botão
+   *  "Acessar comunidade" no header do card do /feed. Null se não pertence. */
+  community?: FeedCommunity | null
+  /** Recado: nota só-texto exclusiva do feed de uma comunidade (mig 162). */
+  is_recado?: boolean
+  recado_id?: number
+  author_user_id?: string | null
+}
+
+export interface FeedCommunity {
+  id_profile: string
+  display_name: string | null
+  avatar_url: string | null
 }
 
 export interface FeedResponse {

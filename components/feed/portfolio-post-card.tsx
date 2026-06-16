@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX } from "lucide-react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -50,6 +50,12 @@ interface PortfolioPostCardProps {
   paged?: boolean
   /** Quando definido, o botão compartilhar usa esta URL (ex.: link rastreado da comunidade). */
   shareUrlOverride?: string
+  /** Esconde o botão "Acessar comunidade" (ex.: dentro da própria página da comunidade). */
+  hideCommunityLink?: boolean
+  /** Recado: chamado ao apagar; quando ausente, o botão de apagar não aparece. */
+  onDeleteRecado?: (recadoId: number) => void
+  /** Recado: se o viewer pode apagar este recado (autor ou líder). */
+  canDeleteRecado?: boolean
 }
 
 function initials(name: string | null | undefined) {
@@ -83,7 +89,7 @@ function LikeTapeSticker() {
   )
 }
 
-export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged, shareUrlOverride }: PortfolioPostCardProps) {
+export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged, shareUrlOverride, hideCommunityLink, onDeleteRecado, canDeleteRecado }: PortfolioPostCardProps) {
   const t = useTranslations("Post")
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
@@ -351,6 +357,99 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     </button>
   ) : null
 
+  const showCommunityLink = !!post.community && !hideCommunityLink
+  // Chip "Acessar comunidade" (estilo tabloide do /feed) no final do header.
+  const communityChipFeed = showCommunityLink ? (
+    <Link
+      href={`/comunidades/${post.community!.id_profile}`}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessCommunity", "Acessar comunidade")}
+      className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#0B0B0D] transition hover:-translate-y-0.5"
+    >
+      <Users className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessCommunity", "Acessar comunidade")}</span>
+      <ArrowUpRight className="h-3 w-3" />
+    </Link>
+  ) : null
+  // Chip da comunidade na pele escura/rounded do modo paged (bees).
+  const communityChipPaged = showCommunityLink ? (
+    <Link
+      href={`/comunidades/${post.community!.id_profile}`}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessCommunity", "Acessar comunidade")}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold"
+      style={{ color: machineColor, background: `${machineColor}14`, border: `1px solid ${machineColor}33` }}
+    >
+      <Users className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessCommunity", "Acessar comunidade")}</span>
+    </Link>
+  ) : null
+
+  // ── Recado: nota só-texto exclusiva do feed da comunidade (sem mídia). ──────
+  if (post.is_recado) {
+    return (
+      <article
+        ref={impressionRef}
+        className={cn(
+          "group/post box-border w-full max-w-full overflow-hidden text-[#F5F1E8]",
+          paged
+            ? "flex h-full min-h-0 flex-col rounded-2xl border border-white/[0.08] bg-zinc-950/80"
+            : "border-b border-[#F5F1E8]/10 bg-[#15120E]"
+        )}
+        data-post-id={post.post_id}
+      >
+        {/* Header */}
+        <div className="flex w-full min-w-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
+          <Link href={post.public_profile_url || "#"} onClick={handleProfileClick} className="flex min-w-0 flex-1 items-center gap-2.5">
+            <div
+              className="relative shrink-0 -rotate-2 overflow-hidden border-2 border-[#0B0B0D]"
+              style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
+            >
+              <Avatar className="h-9 w-9 rounded-none">
+                {post.avatar_url ? <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" /> : null}
+                <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">{initials(post.profile_name)}</AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="fl-display block truncate text-base leading-none text-[#F5F1E8]">
+                {post.profile_name || post.username || t("profileLabel", "Perfil")}
+              </span>
+              <p className="truncate text-[11px] font-semibold text-[#9A938A]">
+                {post.published_at && timeAgo(post.published_at, t)}
+                {post.published_at && (post.city || post.state) && <span> · </span>}
+                {post.city && <span>{post.city}</span>}
+                {post.city && post.state && <span>/</span>}
+                {post.state && <span>{post.state}</span>}
+              </p>
+            </div>
+          </Link>
+          <span className="inline-flex shrink-0 -rotate-1 items-center gap-1 border border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+            <MessageSquare className="h-3 w-3" /> {t("recadoLabel", "Recado")}
+          </span>
+          {communityChipFeed}
+        </div>
+
+        {/* Corpo: texto do recado */}
+        <div className="bg-[#15120E] px-4 py-4">
+          <div className="border-l-2 border-[#F2B705]/40 pl-3">
+            <p className="whitespace-pre-line text-[15px] leading-relaxed text-[#F5F1E8]">{post.caption}</p>
+          </div>
+          {canDeleteRecado && onDeleteRecado && typeof post.recado_id === "number" && (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => onDeleteRecado(post.recado_id as number)}
+                className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A] transition hover:text-red-300"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> {t("deleteRecado", "Apagar")}
+              </button>
+            </div>
+          )}
+        </div>
+      </article>
+    )
+  }
+
   // Edge-to-edge Instagram-style quando não é paged (bees vertical).
   return (
     <article
@@ -440,6 +539,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               {post.machine.name.replace(/^Enxame de\s+/i, "")}
             </span>
           )}
+          {communityChipPaged}
         </div>
       ) : (
         <div className="flex w-full min-w-0 shrink-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
@@ -501,6 +601,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               {post.machine.name.replace(/^Enxame de\s+/i, "")}
             </span>
           )}
+          {communityChipFeed}
         </div>
       )}
 

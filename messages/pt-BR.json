@@ -1654,7 +1654,10 @@
     "likesLabelOne": "curtida",
     "musicLabel": "Música",
     "muteMusic": "Silenciar música",
-    "unmuteMusic": "Ativar música"
+    "unmuteMusic": "Ativar música",
+    "accessCommunity": "Acessar comunidade",
+    "recadoLabel": "Recado",
+    "deleteRecado": "Apagar"
   },
   "Stories": {
     "createStoryLabel": "Postar",
@@ -2364,7 +2367,14 @@
     "spotlightWinner": "Vencedor",
     "spotlightLeader": "Líder da temporada",
     "postsEng": "posts/eng",
-    "postsEngHint": "posts / engajamento"
+    "postsEngHint": "posts / engajamento",
+    "composerCta": "Poste ou escreva aqui",
+    "recadoLabel": "Recado",
+    "recadoTitle": "Novo recado",
+    "recadoPlaceholder": "Escreva um recado para a comunidade...",
+    "recadoPublish": "Publicar recado",
+    "recadoOnlyHere": "Fica só na comunidade",
+    "recadoError": "Não foi possível publicar o recado."
   },
   "Careers": {
     "hero.badge": "Carreiras",
