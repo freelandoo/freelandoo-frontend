@@ -24,6 +24,7 @@ export const ROUTES = {
   advertiseServices: "/anunciar-servicos",
   hireProfessionals: "/contratar-profissionais",
   helpCenter: "/central-de-ajuda",
+  shippingProtocol: "/protocolo-de-envios",
   blog: "/blog",
   community: "/comunidade",
   about: "/sobre-nos",
