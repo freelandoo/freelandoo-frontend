@@ -53,7 +53,14 @@ type Member = {
   top_profile_level: number | null
   top_profile_xp: number
 }
-type Goal = { id: number; title: string; metric: string; target_value: number; progress: number; percent: number; ends_at: string | null }
+type GoalRankRow = { id_user: string; name: string | null; username: string | null; avatar_url: string | null; xp_level: number | null; score: number; posts?: number; eng?: number }
+type Goal = {
+  id: number; title: string; metric: string; target_value: number | null
+  prize_polens: number; status: string; starts_at: string; ends_at: string | null; closed_at: string | null
+  progress: number; percent: number | null; winner_user_id: string | null
+  winner: { id_user: string; name: string | null; avatar_url: string | null; score: number } | null
+  ranking: GoalRankRow[]
+}
 type Announcement = { id: number; body: string; is_pinned: boolean; created_at: string; author_username: string | null; author_name: string | null }
 type Benchmark = { position: number; total: number; percentile: number | null; enxame_name: string | null }
 
@@ -127,7 +134,7 @@ export default function CommunityDetailPage() {
   const [goalFormOpen, setGoalFormOpen] = useState(false)
   const [goalTitle, setGoalTitle] = useState("")
   const [goalMetric, setGoalMetric] = useState("xp")
-  const [goalTarget, setGoalTarget] = useState("")
+  const [goalDays, setGoalDays] = useState(30)
   const [savingGoal, setSavingGoal] = useState(false)
   const [annBody, setAnnBody] = useState("")
   const [annPin, setAnnPin] = useState(false)
@@ -147,12 +154,21 @@ export default function CommunityDetailPage() {
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
     [members]
   )
-  const spotlight = ranked[0] || null
 
   const metricLabel = useCallback(
-    (m: string) => m === "posts" ? t("metricPosts", "Publicações") : m === "members" ? t("metricMembers", "Membros") : t("metricXp", "XP coletivo"),
+    (m: string) => m === "posts" ? t("metricPosts", "Publicações") : m === "shares" ? t("metricShares", "Compartilhamentos") : t("metricXp", "XP coletivo"),
     [t]
   )
+  // Rótulo do score por métrica (xp ganho / posts·eng / pontos de share).
+  const scoreLabel = useCallback((m: string, r: { score: number; posts?: number; eng?: number }) => {
+    if (m === "posts") return `${r.posts ?? 0}/${r.eng ?? 0}`
+    if (m === "xp") return `${compact(r.score)} XP`
+    return compact(r.score)
+  }, [])
+  const daysLeft = useCallback((ends: string | null) => {
+    if (!ends) return null
+    return Math.max(0, Math.ceil((new Date(ends).getTime() - Date.now()) / 86400000))
+  }, [])
 
   const fetchGoal = useCallback(async () => {
     const r = await fetch(`/api/communities/${id}/goal`)
@@ -294,23 +310,21 @@ export default function CommunityDetailPage() {
     } finally { setSaving(false) }
   }
 
-  // Meta
+  // Temporada (meta)
   const openGoalForm = () => {
     setGoalTitle(goal?.title || ""); setGoalMetric(goal?.metric || "xp")
-    setGoalTarget(goal ? String(goal.target_value) : ""); setGoalFormOpen(true)
+    setGoalDays(30); setGoalFormOpen(true)
   }
   const saveGoal = async () => {
     const token = getToken()
     if (!token) return
-    const target = Number(goalTarget)
-    if (!goalTitle.trim() || !Number.isFinite(target) || target <= 0) {
-      setActionMsg(t("goalInvalid", "Preencha o nome e um alvo maior que zero.")); return
-    }
+    if (!goalTitle.trim()) { setActionMsg(t("goalInvalid", "Dê um nome para a temporada.")); return }
     setSavingGoal(true); setActionMsg(null)
     try {
+      const ends_at = new Date(Date.now() + goalDays * 86400000).toISOString()
       const res = await fetch(`/api/communities/${id}/goal`, {
         method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title: goalTitle.trim(), metric: goalMetric, target_value: target }),
+        body: JSON.stringify({ title: goalTitle.trim(), metric: goalMetric, ends_at }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
@@ -378,6 +392,17 @@ export default function CommunityDetailPage() {
 
   const bannerSrc = bannerPreview || community.banner_url
   const avatarSrc = avatarPreview || community.avatar_url
+
+  // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
+  const seasonOn = !!goal
+  const rankRows = goal
+    ? goal.ranking.map((r) => ({ id_user: r.id_user, name: r.name, avatar_url: r.avatar_url, score: r.score, posts: r.posts, eng: r.eng }))
+    : ranked.map((m) => ({ id_user: m.id_user, name: m.top_profile_name || m.user_name, avatar_url: m.top_profile_avatar, score: Number(m.top_profile_xp || 0), posts: undefined as number | undefined, eng: undefined as number | undefined }))
+  const topRow = goal && goal.status === "closed" && goal.winner
+    ? { id_user: goal.winner.id_user, name: goal.winner.name, avatar_url: goal.winner.avatar_url, score: goal.winner.score, posts: undefined as number | undefined, eng: undefined as number | undefined }
+    : rankRows[0]
+  const rowScore = (row: { score: number; posts?: number; eng?: number }) =>
+    seasonOn && goal ? scoreLabel(goal.metric, row) : compact(row.score)
 
   return (
     <div className={`casa-rank casa-paper relative min-h-[100dvh] overflow-hidden ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
@@ -484,9 +509,9 @@ export default function CommunityDetailPage() {
       <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
         {/* coluna principal */}
         <div className="space-y-6 md:col-span-2">
-          {/* Meta */}
+          {/* Temporada (meta com prazo + ranking + prêmio) */}
           {(showAsLeaderEdit || goal) && (
-            <Block title={t("goalTitle", "Meta da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
+            <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
               {goalFormOpen && showAsLeaderEdit ? (
                 <div className="space-y-2">
                   <input value={goalTitle} maxLength={120} onChange={(e) => setGoalTitle(e.target.value)} placeholder={t("goalNamePlaceholder", "Ex.: Bora postar essa semana!")}
@@ -495,14 +520,20 @@ export default function CommunityDetailPage() {
                     <select value={goalMetric} onChange={(e) => setGoalMetric(e.target.value)} className="border-2 border-[var(--ink)] bg-white px-2 py-1.5 casa-body text-xs font-bold uppercase text-[var(--ink)]">
                       <option value="xp">{t("metricXp", "XP coletivo")}</option>
                       <option value="posts">{t("metricPosts", "Publicações")}</option>
-                      <option value="members">{t("metricMembers", "Membros")}</option>
+                      <option value="shares">{t("metricShares", "Compartilhamentos")}</option>
                     </select>
-                    <input type="number" min={1} value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} placeholder={t("goalTarget", "Alvo")}
-                      className="w-28 border-2 border-[var(--ink)] bg-white px-2 py-1.5 casa-body text-sm text-[var(--ink)] outline-none" />
+                    <select value={goalDays} onChange={(e) => setGoalDays(Number(e.target.value))} className="border-2 border-[var(--ink)] bg-white px-2 py-1.5 casa-body text-xs font-bold uppercase text-[var(--ink)]">
+                      <option value={30}>{t("goalDays30", "30 dias")}</option>
+                      <option value={60}>{t("goalDays60", "60 dias")}</option>
+                      <option value={90}>{t("goalDays90", "90 dias")}</option>
+                    </select>
                   </div>
+                  <p className="casa-body text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/55">
+                    🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {community.member_count < 5 ? `(${community.member_count}/5)` : ""}
+                  </p>
                   <div className="flex gap-2 pt-1">
-                    <button type="button" disabled={savingGoal} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-60">
-                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("save", "Salvar")}
+                    <button type="button" disabled={savingGoal || community.member_count < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[var(--ink)] bg-[var(--ink)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-white disabled:opacity-50">
+                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("goalStart", "Iniciar temporada")}
                     </button>
                     {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[var(--magenta)] px-4 py-1.5 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--magenta-deep)]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
                     <button type="button" onClick={() => setGoalFormOpen(false)} className="border-2 border-[var(--ink)]/30 px-4 py-1.5 casa-body text-xs font-bold uppercase text-[var(--ink-soft)]/70">{t("cancel", "Cancelar")}</button>
@@ -510,21 +541,43 @@ export default function CommunityDetailPage() {
                 </div>
               ) : goal ? (
                 <div>
-                  <div className="flex items-end justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3">
                     <span className="casa-display text-xl leading-tight text-[var(--ink)]">{goal.title}</span>
-                    <span className="shrink-0 casa-body text-sm font-extrabold text-[var(--ink)]">{compact(goal.progress)}<span className="text-[var(--ink-soft)]/50">/{compact(goal.target_value)}</span></span>
+                    <span className="inline-flex shrink-0 items-center gap-1 border-2 border-[var(--ink)] bg-[var(--ink)] px-2 py-0.5 casa-body text-[10px] font-extrabold uppercase text-white" style={{ color: "var(--gold)" }}>
+                      <Sparkles className="h-3 w-3" /> {goal.prize_polens} {t("polensWord", "poléns")}
+                    </span>
                   </div>
-                  <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[var(--ink)] bg-white">
-                    <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55">
-                    <span>{goal.percent}% · {metricLabel(goal.metric)}</span>
-                    {showAsLeaderEdit && <button type="button" onClick={openGoalForm} className="text-[var(--ink)] underline">{t("goalEdit", "Editar meta")}</button>}
-                  </div>
+                  {goal.status === "closed" ? (
+                    <div className="mt-3 border-2 border-[var(--ink)] bg-[var(--paper-2)] px-4 py-3">
+                      <p className="casa-body text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--ink-soft)]/60">{t("goalEnded", "Temporada encerrada")}</p>
+                      {goal.winner ? (
+                        <p className="mt-1 flex items-center gap-2 casa-display text-lg text-[var(--ink)]">🏆 {goal.winner.name} <span className="casa-body text-xs font-bold text-[var(--ink-soft)]/60">· {t("goalWonPrize", "levou")} {goal.prize_polens} {t("polensWord", "poléns")}</span></p>
+                      ) : (
+                        <p className="mt-1 casa-body text-sm text-[var(--ink-soft)]/70">{t("goalNoWinner", "Sem vencedor (ninguém pontuou).")}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mt-2 flex items-center gap-3 casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/60">
+                        <span className="inline-flex items-center gap-1"><Target className="h-3 w-3" style={{ color: accent }} /> {metricLabel(goal.metric)}</span>
+                        <span>· {t("goalDaysLeft", "faltam")} {daysLeft(goal.ends_at) ?? 0} {t("goalDaysWord", "dias")}</span>
+                      </div>
+                      {goal.percent != null && (
+                        <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[var(--ink)] bg-white">
+                          <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {showAsLeaderEdit && (
+                    <button type="button" onClick={openGoalForm} className="mt-2 casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink)] underline">
+                      {goal.status === "closed" ? t("goalNewSeason", "Nova temporada") : t("goalEdit", "Editar temporada")}
+                    </button>
+                  )}
                 </div>
               ) : showAsLeaderEdit ? (
                 <button type="button" onClick={openGoalForm} className="inline-flex items-center gap-2 border-2 border-dashed border-[var(--ink)]/40 px-4 py-2 casa-body text-xs font-extrabold uppercase tracking-[0.12em] text-[var(--ink-soft)]/70 hover:border-[var(--ink)]">
-                  <Plus className="h-4 w-4" /> {t("goalSet", "Definir meta")}
+                  <Plus className="h-4 w-4" /> {t("goalStart", "Iniciar temporada")}
                 </button>
               ) : null}
             </Block>
@@ -694,36 +747,41 @@ export default function CommunityDetailPage() {
             </div>
           )}
 
-          {spotlight && (
+          {topRow && (
             <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
               <div className="flex items-center gap-3">
                 <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[var(--ink)] shadow-[3px_3px_0_0_var(--ink)]" style={{ background: "var(--paper-2)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={spotlight.top_profile_avatar || "/placeholder-user.jpg"} alt={spotlight.top_profile_name || ""} className="h-full w-full object-cover" />
+                  <img src={topRow.avatar_url || "/placeholder-user.jpg"} alt={topRow.name || ""} className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate casa-display text-lg leading-tight text-[var(--ink)]">{spotlight.top_profile_name || spotlight.user_name}</p>
-                  <p className="casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55">{t("spotlightSub", "Membro destaque")} · {compact(spotlight.top_profile_xp)} XP</p>
+                  <p className="truncate casa-display text-lg leading-tight text-[var(--ink)]">{topRow.name}</p>
+                  <p className="casa-body text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-soft)]/55">
+                    {seasonOn && goal?.status === "closed" ? `🏆 ${t("spotlightWinner", "Vencedor")}` : seasonOn ? t("spotlightLeader", "Líder da temporada") : t("spotlightSub", "Membro destaque")} · {rowScore(topRow)}{seasonOn && goal?.metric === "posts" ? ` ${t("postsEng", "posts/eng")}` : ""}
+                  </p>
                 </div>
               </div>
             </Block>
           )}
 
-          {ranked.length > 0 && (
-            <Block title={t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
+          {rankRows.length > 0 && (
+            <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
               <ol className="space-y-2">
-                {ranked.slice(0, 5).map((m, i) => (
-                  <li key={m.id_user} className="flex items-center gap-2">
+                {rankRows.slice(0, 5).map((row, i) => (
+                  <li key={row.id_user} className="flex items-center gap-2">
                     <span className="w-5 shrink-0 casa-display text-base text-[var(--ink)]/40">{i + 1}</span>
                     <div className="h-8 w-8 shrink-0 overflow-hidden border border-[var(--ink)]" style={{ background: "var(--paper-2)" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
+                      <img src={row.avatar_url || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
                     </div>
-                    <span className="min-w-0 flex-1 truncate casa-body text-sm font-semibold text-[var(--ink)]">{m.top_profile_name || m.user_name}</span>
-                    <span className="shrink-0 casa-body text-[11px] font-extrabold" style={{ color: accent }}>{compact(m.top_profile_xp)}</span>
+                    <span className="min-w-0 flex-1 truncate casa-body text-sm font-semibold text-[var(--ink)]">{row.name}</span>
+                    <span className="shrink-0 casa-body text-[11px] font-extrabold" style={{ color: accent }}>{rowScore(row)}</span>
                   </li>
                 ))}
               </ol>
+              {seasonOn && goal?.metric === "posts" && (
+                <p className="mt-2 casa-body text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--ink-soft)]/45">{t("postsEngHint", "posts / engajamento")}</p>
+              )}
             </Block>
           )}
         </div>
