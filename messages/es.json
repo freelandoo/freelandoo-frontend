@@ -1402,7 +1402,15 @@
     "roleLeaderShort": "Líder",
     "roleViceShort": "Vicelíder",
     "roleMemberShort": "Miembro",
-    "socialNetworksUserHint": "Aparecen en tu perfil principal (username)."
+    "socialNetworksUserHint": "Aparecen en tu perfil principal (username).",
+    "originDoc": "CPF/CNPJ del remitente",
+    "originDocPlaceholder": "CPF o CNPJ",
+    "originDocHint": "Obligatorio para emitir la etiqueta de envío de los productos.",
+    "originDocInvalid": "CPF/CNPJ de origen inválido.",
+    "originNumber": "Número",
+    "originNumberPlaceholder": "Nº",
+    "originComplement": "Complemento",
+    "originComplementPlaceholder": "Apto, bloque… (opcional)"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

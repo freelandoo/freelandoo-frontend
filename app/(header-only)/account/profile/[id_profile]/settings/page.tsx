@@ -32,6 +32,22 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 const Separator = () => <hr className="my-4 border-border" />
 
+// Máscara progressiva CPF (000.000.000-00) / CNPJ (00.000.000/0000-00).
+function maskDocument(value: string) {
+  const d = value.replace(/\D/g, "").slice(0, 14)
+  if (d.length <= 11) {
+    return d
+      .replace(/^(\d{3})(\d)/, "$1.$2")
+      .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1-$2")
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+}
+
 export default function ProfileSettingsPage() {
   const params = useParams()
   const router = useRouter()
@@ -56,6 +72,9 @@ export default function ProfileSettingsPage() {
     estado: "",
     municipio: "",
     origin_zipcode: "",
+    origin_document: "",
+    origin_number: "",
+    origin_complement: "",
   })
   const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
   const [loadingMunicipios, setLoadingMunicipios] = useState(false)
@@ -94,6 +113,9 @@ export default function ProfileSettingsPage() {
       origin_zipcode: profile.origin_zipcode
         ? `${profile.origin_zipcode.slice(0, 5)}-${profile.origin_zipcode.slice(5, 8)}`
         : "",
+      origin_document: profile.origin_document ? maskDocument(profile.origin_document) : "",
+      origin_number: profile.origin_number || "",
+      origin_complement: profile.origin_complement || "",
     })
   }, [profile])
 
@@ -273,6 +295,11 @@ export default function ProfileSettingsPage() {
       setStatusMsg({ kind: "error", text: t("zipMustBe8", "CEP de origem deve ter 8 dígitos.") })
       return
     }
+    const docDigits = form.origin_document.replace(/\D/g, "")
+    if (docDigits && docDigits.length !== 11 && docDigits.length !== 14) {
+      setStatusMsg({ kind: "error", text: t("originDocInvalid", "CPF/CNPJ de origem inválido.") })
+      return
+    }
     setSaving(true)
     setStatusMsg(null)
     try {
@@ -286,6 +313,9 @@ export default function ProfileSettingsPage() {
           estado: form.estado || null,
           municipio: form.municipio || null,
           origin_zipcode: zipDigits || null,
+          origin_document: docDigits || null,
+          origin_number: form.origin_number.trim() || null,
+          origin_complement: form.origin_complement.trim() || null,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -700,6 +730,42 @@ export default function ProfileSettingsPage() {
               <p className="text-xs text-muted-foreground">
                 {t("originZipHint", "Será usado para calcular o frete dos produtos vendidos por este perfil.")}
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="origin_document">{t("originDoc", "CPF/CNPJ do remetente")}</Label>
+              <Input
+                id="origin_document"
+                inputMode="numeric"
+                placeholder={t("originDocPlaceholder", "CPF ou CNPJ")}
+                maxLength={18}
+                value={form.origin_document}
+                onChange={(e) => setForm((f) => ({ ...f, origin_document: maskDocument(e.target.value) }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("originDocHint", "Obrigatório para emitir a etiqueta de envio dos produtos.")}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="origin_number">{t("originNumber", "Número")}</Label>
+                <Input
+                  id="origin_number"
+                  placeholder={t("originNumberPlaceholder", "Nº")}
+                  maxLength={20}
+                  value={form.origin_number}
+                  onChange={(e) => setForm((f) => ({ ...f, origin_number: e.target.value }))}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="origin_complement">{t("originComplement", "Complemento")}</Label>
+                <Input
+                  id="origin_complement"
+                  placeholder={t("originComplementPlaceholder", "Apto, bloco… (opcional)")}
+                  maxLength={120}
+                  value={form.origin_complement}
+                  onChange={(e) => setForm((f) => ({ ...f, origin_complement: e.target.value }))}
+                />
+              </div>
             </div>
           </section>
 

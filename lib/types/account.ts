@@ -42,6 +42,9 @@ export interface Profile {
   is_published?: boolean
   is_clan?: boolean
   origin_zipcode?: string | null
+  origin_document?: string | null
+  origin_number?: string | null
+  origin_complement?: string | null
   deleted_at?: string | null
   subscription?: ProfileSubscription | null
   redes_sociais?: RedeSocial[]

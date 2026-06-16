@@ -1402,7 +1402,15 @@
     "roleLeaderShort": "Leader",
     "roleViceShort": "Vice-leader",
     "roleMemberShort": "Member",
-    "socialNetworksUserHint": "Shown on your main profile (username)."
+    "socialNetworksUserHint": "Shown on your main profile (username).",
+    "originDoc": "Sender's tax ID (CPF/CNPJ)",
+    "originDocPlaceholder": "Tax ID (CPF/CNPJ)",
+    "originDocHint": "Required to issue the shipping label for products.",
+    "originDocInvalid": "Invalid sender tax ID.",
+    "originNumber": "Number",
+    "originNumberPlaceholder": "No.",
+    "originComplement": "Complement",
+    "originComplementPlaceholder": "Apt, block… (optional)"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
