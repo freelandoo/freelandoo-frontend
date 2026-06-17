@@ -180,6 +180,7 @@ function TourInner() {
           <EditableText
             ns="Tour"
             as="h2"
+            alwaysOn
             slot={current.titleSlot}
             fallback={current.titleFallback}
             className="fl-display mt-5 text-2xl text-[var(--fl-ink)]"
@@ -196,6 +197,7 @@ function TourInner() {
                   <EditableText
                     ns="Tour"
                     as="p"
+                    alwaysOn
                     slot={item.slot}
                     fallback={item.fallback}
                     className="text-sm leading-relaxed text-[#3a352d]"

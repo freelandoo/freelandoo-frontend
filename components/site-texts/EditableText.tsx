@@ -25,6 +25,7 @@ export function EditableText({
   className,
   mark = true,
   ns = "Home",
+  alwaysOn = false,
 }: {
   slot: string
   fallback: string
@@ -33,13 +34,20 @@ export function EditableText({
   mark?: boolean
   /** Namespace i18n do fallback. Default "Home" (home). Tour usa "Tour". */
   ns?: string
+  /**
+   * Quando true, fica editável para admin direto (igual ao EditableImage),
+   * sem depender do toggle "Editar textos" do provider. Usado em páginas
+   * pequenas/dedicadas (ex.: o tour /bem-vindo) onde o toggle flutuante não é
+   * óbvio. Default false preserva o comportamento por-toggle da home.
+   */
+  alwaysOn?: boolean
 }) {
   const { texts, admin, editMode, requestEdit } = useSiteTexts()
   const t = useTranslations(ns)
   const value = texts[slot] ?? t(slot, fallback)
   const content = renderMarkedText(value, mark)
 
-  if (!admin || !editMode) {
+  if (!admin || (!editMode && !alwaysOn)) {
     return createElement(as, { className }, content)
   }
 
