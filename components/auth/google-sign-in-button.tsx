@@ -106,8 +106,8 @@ export function GoogleSignInButton({
 
         setSession(session.token, session.user)
 
-        // Destino pós-auth: 1º acesso (sem tour visto) cai no tour de boas-vindas.
-        const needsTour = session.user?.onboarding_tour_done === false
+        // Destino pós-auth: o backend decide se mostra o tour (config admin).
+        const needsTour = session.showTour
         const postAuth = redirectTo || (needsTour ? "/bem-vindo" : "/search")
 
         // Aceite dos Termos pendente (conta nova via Google / bump de versão):

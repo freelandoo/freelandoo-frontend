@@ -22,6 +22,7 @@ export function extractAuthSession(data: AuthResponse): {
   emailVerified: boolean | null
   needsTerms: boolean
   termsVersion: number | null
+  showTour: boolean
 } | null {
   const token =
     typeof data.token === "string"
@@ -51,6 +52,9 @@ export function extractAuthSession(data: AuthResponse): {
     needsTerms: data.needs_terms === true,
     termsVersion:
       typeof data.terms_version === "number" ? data.terms_version : null,
+    // Decisão de mostrar o tour vem do backend (respeita a config admin:
+    // ligado/audiência/modo). Fallback: nunca mostrar se ausente.
+    showTour: data.show_tour === true,
   }
 }
 
