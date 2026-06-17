@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, Wallet,
-  RotateCcw, PlayCircle,
+  RotateCcw, PlayCircle, Truck, XCircle,
 } from "lucide-react"
 
 // ---------------------------------------------------------------------------
@@ -29,6 +29,22 @@ interface WebhookEvent {
 }
 interface StuckFlow { flow: string; count: number; error?: string }
 type Counts = Record<string, number>
+interface ShippingHealth {
+  environment: string
+  base_url: string
+  token_configured: boolean
+  token_valid: boolean | null
+  account: { id: number | null; name: string | null; email: string | null } | null
+  balance: number | null
+  balance_currency: string
+  ok: boolean
+  checks: {
+    token: { ok: boolean; error?: string; status?: number | null } | null
+    account: { ok: boolean; error?: string } | null
+    balance: { ok: boolean; sufficient?: boolean; warning?: string | null; error?: string } | null
+  }
+  error: string | null
+}
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -100,10 +116,117 @@ export default function PagamentosAdminPage() {
           </div>
         </div>
 
+        <ShippingHealthSection />
         <StuckSection />
         <EventsSection />
       </main>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Preflight do Melhor Envio (token + saldo) — confirmar antes da 1ª compra real
+// ---------------------------------------------------------------------------
+function ShippingHealthSection() {
+  const [data, setData] = useState<ShippingHealth | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    fetch("/api/admin/payments/shipping-health", { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((d) => setData(d))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const isProd = data?.environment === "production"
+  const balanceWarn = data?.checks?.balance?.warning
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Truck className="h-5 w-5 text-sky-500" />
+          <h2 className="text-lg font-semibold text-foreground">Melhor Envio — preflight</h2>
+          <span className="text-xs text-muted-foreground">verificar antes da 1ª compra real</span>
+        </div>
+        <button onClick={load} disabled={loading}
+          className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary hover:bg-primary/20 disabled:opacity-50">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Verificar Melhor Envio
+        </button>
+      </div>
+
+      {!data && !loading && (
+        <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          Clique em <span className="text-foreground">Verificar Melhor Envio</span> para conferir ambiente, validade do token e saldo da carteira.
+        </p>
+      )}
+
+      {data && (
+        <div className="grid gap-3 md:grid-cols-3">
+          {/* Ambiente */}
+          <div className={`rounded-lg border p-3 ${isProd ? "border-green-500/40 bg-green-500/5" : "border-amber-500/40 bg-amber-500/5"}`}>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ambiente</p>
+            <p className={`mt-1 text-lg font-bold ${isProd ? "text-green-400" : "text-amber-400"}`}>
+              {isProd ? "Produção" : "Sandbox"}
+            </p>
+            <p className="mt-0.5 break-all text-[10px] text-muted-foreground">{data.base_url}</p>
+          </div>
+
+          {/* Token + conta */}
+          <div className={`rounded-lg border p-3 ${data.token_valid ? "border-green-500/40 bg-green-500/5" : "border-red-500/40 bg-red-500/5"}`}>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Token / conta</p>
+            {data.token_valid ? (
+              <>
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-green-400">
+                  <CheckCircle2 className="h-4 w-4" /> Token válido
+                </p>
+                <p className="mt-0.5 text-xs text-foreground">{data.account?.name || "—"}</p>
+                <p className="text-[10px] text-muted-foreground">{data.account?.email || ""}</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-red-400">
+                  <XCircle className="h-4 w-4" /> {data.token_configured ? "Token inválido" : "Token ausente"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-red-400/80">{data.error || "—"}</p>
+              </>
+            )}
+          </div>
+
+          {/* Saldo */}
+          <div className={`rounded-lg border p-3 ${
+            data.balance == null ? "border-border bg-card"
+              : isProd && (data.balance ?? 0) <= 0 ? "border-red-500/40 bg-red-500/5"
+              : "border-green-500/40 bg-green-500/5"
+          }`}>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Saldo da carteira</p>
+            {data.balance == null ? (
+              <p className="mt-1 text-sm text-muted-foreground">{data.checks?.balance?.error || "indisponível"}</p>
+            ) : (
+              <p className={`mt-1 text-lg font-bold ${isProd && data.balance <= 0 ? "text-red-400" : "text-green-400"}`}>
+                {data.balance.toLocaleString("pt-BR", { style: "currency", currency: data.balance_currency || "BRL" })}
+              </p>
+            )}
+            {balanceWarn && <p className="mt-1 text-[10px] text-red-400/80">{balanceWarn}</p>}
+          </div>
+        </div>
+      )}
+
+      {data && !data.ok && (
+        <p className="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          Configuração incompleta — resolva antes de emitir etiqueta real. {!isProd && "Ainda em sandbox: defina MELHOR_ENVIO_ENV=production no Railway."}
+        </p>
+      )}
+      {data && data.ok && isProd && (data.balance ?? 0) > 0 && (
+        <p className="flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-400">
+          <CheckCircle2 className="h-4 w-4 shrink-0" /> Pronto para emitir etiquetas em produção.
+        </p>
+      )}
+    </section>
   )
 }
 
