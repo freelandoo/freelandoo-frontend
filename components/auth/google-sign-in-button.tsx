@@ -41,6 +41,8 @@ type Props = {
   text?: "signin_with" | "signup_with" | "continue_with"
   redirectTo?: string
   theme?: "outline" | "filled_blue" | "filled_black"
+  /** Forma do botão do Google. Default "pill"; "rectangular" para telas sem cantos arredondados. */
+  shape?: "rectangular" | "pill" | "circle" | "square"
   className?: string
   /** Quando fornecido, é chamado em vez de redirecionar — útil pra inline-login dentro de modais. */
   onComplete?: () => void
@@ -50,6 +52,7 @@ export function GoogleSignInButton({
   text = "continue_with",
   redirectTo,
   theme = "filled_black",
+  shape = "pill",
   className,
   onComplete,
 }: Props) {
@@ -170,12 +173,12 @@ export function GoogleSignInButton({
       theme,
       size: "large",
       text,
-      shape: "pill",
+      shape,
       logo_alignment: "center",
       width: 320,
       locale: "pt-BR",
     })
-  }, [scriptReady, clientId, redirectTo, theme, text, router, onComplete])
+  }, [scriptReady, clientId, redirectTo, theme, text, shape, router, onComplete])
 
   return (
     <div className={className}>

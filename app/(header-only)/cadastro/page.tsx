@@ -353,7 +353,7 @@ export default function CadastroPage() {
       asideTitle={t("createTitlePrefix", "Criar")}
       asideHighlight={t("createTitleHighlight", "conta")}
     >
-      <div className="relative z-10 mx-auto w-full max-w-xl">
+      <div className="fl-sharp relative z-10 mx-auto w-full max-w-xl">
         {/* Step pills */}
         <div className="mb-5 flex items-center justify-center gap-2">
           {Array.from({ length: totalSteps }).map((_, i) => {
@@ -435,7 +435,7 @@ export default function CadastroPage() {
 
             {!isMinorBirth && (
               <div className="mb-6 space-y-4">
-                <GoogleSignInButton text="signup_with" redirectTo={nextParam ?? undefined} />
+                <GoogleSignInButton text="signup_with" shape="rectangular" redirectTo={nextParam ?? undefined} />
                 <p className="text-center text-xs text-[#5b554b]">
                   {t("googleTermsPrefix", "Ao continuar com o Google, você concorda com os")}{" "}
                   <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#0B0B0D] underline underline-offset-2">

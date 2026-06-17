@@ -640,3 +640,19 @@
 /* Câmera (CameraStudio): oculta a toolbar global enquanto a câmera está ativa */
 body.camera-active [data-app-toolbar] { display: none !important; }
 body.camera-active { overflow: hidden; }
+
+/* ============================================================================
+   REGRA PERMANENTE — SEM CANTOS ARREDONDADOS (estética tabloide reta).
+   Decisão do Alex (2026-06-17): nada de border-radius. Código novo nasce reto;
+   o legado vai sendo quadrado em manutenção (regra do escoteiro). Aplica-se
+   adicionando a classe `.fl-sharp` no container da tela/área.
+   Vence as classes base fl-* e os utilitários Tailwind via !important.
+   Exceção: fotos/avatares circulares (img.rounded-full ou [data-avatar])
+   continuam redondos — um círculo não é "canto arredondado".
+   ============================================================================ */
+.fl-sharp,
+.fl-sharp *,
+.fl-sharp *::before,
+.fl-sharp *::after { border-radius: 0 !important; }
+.fl-sharp img[class*="rounded-full"],
+.fl-sharp [data-avatar] { border-radius: 9999px !important; }
