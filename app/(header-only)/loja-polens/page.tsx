@@ -2,9 +2,10 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { CheckCircle2, CreditCard, Hexagon, Loader2, Search, Sparkles, XCircle } from "lucide-react"
+import { CheckCircle2, CreditCard, Hexagon, Loader2, Rocket, Search, Sparkles, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getCapturedCoupon } from "@/lib/share-coupon"
+import { getStoredUser } from "@/lib/auth"
 import { PageShell, EmptyState, ErrorState } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useActionConsent } from "@/hooks/use-action-consent"
@@ -20,6 +21,10 @@ type Product = {
 }
 
 type Wallet = { balance: number; lifetime_earned?: number; lifetime_spent?: number }
+
+type BoostProfile = { id_profile: string; display_name: string; xp_level: number; is_clan?: boolean; is_active?: boolean }
+
+const BOOST_TARGET_LEVEL = 5
 
 function fmtBRL(cents: number, locale = "pt-BR") {
   return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format((cents || 0) / 100)
@@ -43,6 +48,12 @@ function LojaPolensContent() {
   const { ensureConsent } = useActionConsent()
   const params = useSearchParams()
   const checkout = params.get("polens_checkout")
+  const xpBoostReturn = params.get("xp_boost")
+
+  // Booster de XP (nível 5)
+  const [boostProfiles, setBoostProfiles] = useState<BoostProfile[]>([])
+  const [boostProfileId, setBoostProfileId] = useState<string>("")
+  const [boostBuying, setBoostBuying] = useState(false)
 
   const [products, setProducts] = useState<Product[]>([])
   const [wallet, setWallet] = useState<Wallet | null>(null)
@@ -68,6 +79,27 @@ function LojaPolensContent() {
     }
   }, [token])
 
+  const loadBoostProfiles = useCallback(async () => {
+    if (!token) return
+    const u = getStoredUser()
+    if (!u?.id_user) return
+    try {
+      const res = await fetch(`/api/profile/user/${encodeURIComponent(u.id_user)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      const list: BoostProfile[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter(
+        (p: BoostProfile) => !p.is_clan && p.is_active !== false && Number(p.xp_level) < BOOST_TARGET_LEVEL,
+      )
+      setBoostProfiles(list)
+      setBoostProfileId((cur) => (cur && list.some((p) => p.id_profile === cur) ? cur : list[0]?.id_profile || ""))
+    } catch {
+      /* ignore */
+    }
+  }, [token])
+
   const loadProducts = useCallback(async () => {
     setLoading(true)
     setError("")
@@ -86,7 +118,8 @@ function LojaPolensContent() {
   useEffect(() => {
     void loadProducts()
     void loadWallet()
-  }, [loadProducts, loadWallet])
+    void loadBoostProfiles()
+  }, [loadProducts, loadWallet, loadBoostProfiles])
 
   useEffect(() => {
     if (checkout === "success") {
@@ -112,6 +145,23 @@ function LojaPolensContent() {
       })
     }
   }, [checkout, loadWallet, t])
+
+  useEffect(() => {
+    if (xpBoostReturn === "success") {
+      setFeedback({
+        kind: "success",
+        title: t("boostSuccessTitle", "Perfil impulsionado!"),
+        message: t("boostSuccessMsg", "Seu subperfil foi levado ao nível 5. O nível atualiza em instantes."),
+      })
+      void loadBoostProfiles()
+    } else if (xpBoostReturn === "cancel") {
+      setFeedback({
+        kind: "cancel",
+        title: t("purchaseCanceled", "Compra cancelada"),
+        message: t("purchaseCanceledMsg", "Você voltou sem concluir o pagamento. Tente novamente quando quiser."),
+      })
+    }
+  }, [xpBoostReturn, loadBoostProfiles, t])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -149,6 +199,40 @@ function LojaPolensContent() {
         message: err instanceof Error ? err.message : t("openCheckoutErrorShort", "Erro ao abrir checkout"),
       })
       setBuyingId(null)
+    }
+  }
+
+  async function buyBooster() {
+    if (!token) {
+      window.location.href = "/login?next=/loja-polens"
+      return
+    }
+    if (!boostProfileId) {
+      setFeedback({
+        kind: "error",
+        title: t("purchaseNotCompleted", "Compra não concluída"),
+        message: t("boosterPickFirst", "Escolha um subperfil primeiro."),
+      })
+      return
+    }
+    if (!(await ensureConsent("platform_purchase"))) return
+    setBoostBuying(true)
+    try {
+      const res = await fetch("/api/xp-boost/checkout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ id_profile: boostProfileId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.checkout_url) throw new Error(data.error || t("openCheckoutError", "Não foi possível abrir o checkout"))
+      window.location.href = data.checkout_url
+    } catch (err) {
+      setFeedback({
+        kind: "error",
+        title: t("purchaseNotCompleted", "Compra não concluída"),
+        message: err instanceof Error ? err.message : t("openCheckoutErrorShort", "Erro ao abrir checkout"),
+      })
+      setBoostBuying(false)
     }
   }
 
@@ -233,6 +317,64 @@ function LojaPolensContent() {
                 </p>
               </>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Booster de XP (nível 5) — UI nova nasce reta (.fl-sharp) */}
+      <section className="fl-sharp mx-auto max-w-7xl px-4 pb-4 md:px-8">
+        <div className="overflow-hidden border-2 border-[#F2B705]/40 bg-[#1D1810]">
+          <div className="grid gap-6 p-6 md:grid-cols-[1.2fr_1fr] md:p-8">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
+                <Rocket className="h-3.5 w-3.5" />
+                {t("boosterEyebrow", "Atalho")}
+              </div>
+              <h2 className="fl-display mt-3 text-3xl text-[#F5F1E8]">
+                {t("boosterTitle", "Booster de Nível 5")}
+              </h2>
+              <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-[#C9C2B6]">
+                {t("boosterDesc", "Leve um subperfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.")}
+              </p>
+              <p className="mt-3 text-xs text-[#9A938A]">
+                {t("boosterPriceNote", "Pagamento único de {price} via Stripe.").replace("{price}", fmtBRL(1000, locale))}
+              </p>
+            </div>
+
+            <div className="flex flex-col justify-center gap-3">
+              {boostProfiles.length === 0 ? (
+                <p className="text-sm text-[#9A938A]">
+                  {t("boosterNoProfiles", "Você não tem subperfis elegíveis (abaixo do nível 5).")}
+                </p>
+              ) : (
+                <>
+                  <label htmlFor="boost-profile" className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">
+                    {t("boosterSelectProfile", "Escolha o subperfil")}
+                  </label>
+                  <select
+                    id="boost-profile"
+                    value={boostProfileId}
+                    onChange={(e) => setBoostProfileId(e.target.value)}
+                    className="h-11 w-full border-2 border-[#F5F1E8]/12 bg-[#141009] px-3 text-sm text-[#F5F1E8] outline-none transition focus:border-[#F2B705]"
+                  >
+                    {boostProfiles.map((p) => (
+                      <option key={p.id_profile} value={p.id_profile}>
+                        {p.display_name} · {t("boosterLevel", "Nível {n}").replace("{n}", String(p.xp_level))}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void buyBooster()}
+                    disabled={boostBuying}
+                    className="inline-flex items-center justify-center gap-2 bg-[#F2B705] px-5 py-3 text-sm font-bold text-[#1A1505] transition hover:bg-[#ffc81f] active:scale-[0.99] disabled:opacity-60"
+                  >
+                    {boostBuying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                    {t("boosterCta", "Impulsionar ao nível 5")} · {fmtBRL(1000, locale)}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>

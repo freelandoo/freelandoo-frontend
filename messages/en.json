@@ -3804,7 +3804,18 @@
     "openCheckoutError": "Couldn't open checkout",
     "openCheckoutErrorShort": "Error opening checkout",
     "loadStoreError": "Couldn't load the store",
-    "loadError": "Loading error"
+    "loadError": "Loading error",
+    "boosterEyebrow": "Shortcut",
+    "boosterTitle": "Level 5 Booster",
+    "boosterDesc": "Take a sub-profile straight to level 5 — unlocks creating a community and much more.",
+    "boosterPriceNote": "One-time payment of {price} via Stripe.",
+    "boosterNoProfiles": "You have no eligible sub-profiles (below level 5).",
+    "boosterSelectProfile": "Choose the sub-profile",
+    "boosterLevel": "Level {n}",
+    "boosterCta": "Boost to level 5",
+    "boosterPickFirst": "Choose a sub-profile first.",
+    "boostSuccessTitle": "Profile boosted!",
+    "boostSuccessMsg": "Your sub-profile was taken to level 5. The level updates in moments."
   },
   "Manifestation": {
     "badge": "Manifestation",

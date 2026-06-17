@@ -3784,7 +3784,18 @@
     "openCheckoutError": "No se pudo abrir el checkout",
     "openCheckoutErrorShort": "Error al abrir el checkout",
     "loadStoreError": "No se pudo cargar la tienda",
-    "loadError": "Error al cargar"
+    "loadError": "Error al cargar",
+    "boosterEyebrow": "Atajo",
+    "boosterTitle": "Booster de Nivel 5",
+    "boosterDesc": "Lleva un subperfil directo al nivel 5 — desbloquea crear comunidad y mucho más.",
+    "boosterPriceNote": "Pago único de {price} vía Stripe.",
+    "boosterNoProfiles": "No tienes subperfiles elegibles (por debajo del nivel 5).",
+    "boosterSelectProfile": "Elige el subperfil",
+    "boosterLevel": "Nivel {n}",
+    "boosterCta": "Impulsar al nivel 5",
+    "boosterPickFirst": "Elige un subperfil primero.",
+    "boostSuccessTitle": "¡Perfil impulsado!",
+    "boostSuccessMsg": "Tu subperfil fue llevado al nivel 5. El nivel se actualiza en instantes."
   },
   "Manifestation": {
     "badge": "Manifestación",
