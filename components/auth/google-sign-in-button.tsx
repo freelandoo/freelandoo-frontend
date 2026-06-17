@@ -106,14 +106,15 @@ export function GoogleSignInButton({
 
         setSession(session.token, session.user)
 
+        // Destino pós-auth: 1º acesso (sem tour visto) cai no tour de boas-vindas.
+        const needsTour = session.user?.onboarding_tour_done === false
+        const postAuth = redirectTo || (needsTour ? "/bem-vindo" : "/search")
+
         // Aceite dos Termos pendente (conta nova via Google / bump de versão):
         // leva à tela obrigatória de aceite antes de qualquer outro destino,
-        // mesmo no modo inline (onComplete).
+        // mesmo no modo inline (onComplete). Depois do aceite, segue pro tour.
         if (session.needsTerms) {
-          const back =
-            redirectTo ||
-            (typeof window !== "undefined" ? window.location.pathname : "/search")
-          const gate = `/aceitar-termos?next=${encodeURIComponent(back)}${
+          const gate = `/aceitar-termos?next=${encodeURIComponent(postAuth)}${
             session.termsVersion ? `&v=${session.termsVersion}` : ""
           }`
           didRedirect = true
@@ -135,8 +136,7 @@ export function GoogleSignInButton({
         }
 
         const target =
-          redirectTo ||
-          (session.emailVerified === false ? "/verify-email" : "/search")
+          session.emailVerified === false ? "/verify-email" : postAuth
         didRedirect = true
         try {
           router.replace(target)

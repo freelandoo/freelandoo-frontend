@@ -39,6 +39,7 @@ const HIDDEN_ON_PATHS = [
   "/verify-email",
   "/confirmar-email",
   "/activate",
+  "/bem-vindo",
 ]
 
 function getInitials(name: string | null | undefined): string {

@@ -66,8 +66,16 @@ export default function LoginPage() {
       }
 
       setSession(session.token, session.user)
+      // 1º acesso (Google/cadastro): cai no tour de boas-vindas. Verificar email
+      // e aceitar termos têm prioridade; o tour vem como destino pós-login.
+      const needsTour = session.user?.onboarding_tour_done === false
+      const tourHref = nextParam ? `/bem-vindo?next=${encodeURIComponent(nextParam)}` : "/bem-vindo"
       const postLogin =
-        session.emailVerified === false ? "/verify-email" : nextParam ?? "/search"
+        session.emailVerified === false
+          ? "/verify-email"
+          : needsTour
+            ? tourHref
+            : nextParam ?? "/search"
       // Aceite dos Termos pendente (ex.: bump de versão) → tela obrigatória antes do destino.
       const target = session.needsTerms
         ? `/aceitar-termos?next=${encodeURIComponent(postLogin)}${

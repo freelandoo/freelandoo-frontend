@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Wallet,
   Home,
+  Compass,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -348,6 +349,16 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                   {tCommon("settings", "Configurações")}
                 </Link>
               </HoverHint>
+            </li>
+            <li>
+              <Link
+                href="/bem-vindo?rever=1"
+                onClick={onClose}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+              >
+                <Compass className="h-4 w-4 text-white/45" />
+                {tNav("reviewTour", "Rever tour")}
+              </Link>
             </li>
             {isAdmin && (
               <li>

@@ -24,15 +24,18 @@ export function EditableText({
   as = "span",
   className,
   mark = true,
+  ns = "Home",
 }: {
   slot: string
   fallback: string
   as?: ElementType
   className?: string
   mark?: boolean
+  /** Namespace i18n do fallback. Default "Home" (home). Tour usa "Tour". */
+  ns?: string
 }) {
   const { texts, admin, editMode, requestEdit } = useSiteTexts()
-  const t = useTranslations("Home")
+  const t = useTranslations(ns)
   const value = texts[slot] ?? t(slot, fallback)
   const content = renderMarkedText(value, mark)
 

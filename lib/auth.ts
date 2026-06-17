@@ -10,6 +10,8 @@ export interface AuthUser {
   avatar?: string | null
   is_admin?: boolean
   roles?: { id_role: string; desc_role: string }[]
+  /** false = ainda não viu o tour de boas-vindas (mostrar /bem-vindo no 1º acesso). */
+  onboarding_tour_done?: boolean
 }
 
 type AuthResponse = Record<string, unknown>
