@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import type React from "react"
 
-import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
@@ -11,7 +10,7 @@ import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge } 
 import { Check, X, ArrowLeft, ArrowRight, Info, ShieldCheck, Search, TrendingUp } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { PageShell } from "@/components/tabloide"
+import { AuthShell } from "@/components/tabloide"
 
 interface Category {
   id_category: number
@@ -349,49 +348,34 @@ export default function CadastroPage() {
   )
 
   return (
-    <PageShell>
-      {/* Barra superior leve (sem header global neste grupo) */}
-      <div className="border-b border-[#F5F1E8]/8">
-        <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between px-5 py-3.5 sm:px-8">
-          <Link href="/" className="flex items-center gap-2" aria-label="Freelandoo">
-            <Image src="/freelandoo-logo.png" alt="Freelandoo" width={200} height={56} className="h-7 w-auto" priority />
-            <span className="text-lg font-black text-[#F5F1E8]">freelandoo</span>
-          </Link>
-          <Link href={loginHref} className="text-sm font-bold text-[#F5F1E8]/80 transition hover:text-[#F5F1E8]">
-            {t("doLogin", "Faça login")}
-          </Link>
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
-        <div className="mb-7 text-center">
-          <div className="mb-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
-            {t("eyebrow", "Comece grátis")}
-          </div>
-          <h1 className="fl-display text-4xl text-[#F5F1E8] sm:text-5xl">{t("title", "Criar conta")}</h1>
-          {/* Step pills */}
-          <div className="mt-5 flex items-center justify-center gap-2">
-            {Array.from({ length: totalSteps }).map((_, i) => {
-              const n = i + 1
-              const active = n <= currentStep
-              return (
-                <span
-                  key={n}
-                  className={`h-2 rounded-full transition-all ${active ? "w-8 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/20"}`}
-                />
-              )
-            })}
-            <span className="ml-3 text-sm text-[#9A938A]">
-              {t("step", "Etapa {step} de {total}")
-                .replace("{step}", String(currentStep))
-                .replace("{total}", String(totalSteps))}
-            </span>
-          </div>
+    <AuthShell
+      eyebrow={t("eyebrow", "Comece grátis")}
+      asideTitle={t("createTitlePrefix", "Criar")}
+      asideHighlight={t("createTitleHighlight", "conta")}
+    >
+      <div className="relative z-10 mx-auto w-full max-w-xl">
+        {/* Step pills */}
+        <div className="mb-5 flex items-center justify-center gap-2">
+          {Array.from({ length: totalSteps }).map((_, i) => {
+            const n = i + 1
+            const active = n <= currentStep
+            return (
+              <span
+                key={n}
+                className={`h-2 rounded-full transition-all ${active ? "w-8 bg-[#F2B705]" : "w-2 bg-[#F5F1E8]/20"}`}
+              />
+            )
+          })}
+          <span className="ml-3 text-sm text-[#9A938A]">
+            {t("step", "Etapa {step} de {total}")
+              .replace("{step}", String(currentStep))
+              .replace("{total}", String(totalSteps))}
+          </span>
         </div>
 
         {/* STEP — INTENÇÃO */}
         {step === "intent" && (
-          <div className="fl-card rounded-3xl p-6 sm:p-8">
+          <div className="fl-card rounded-3xl p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8">
             <div className="mb-6 text-center">
               <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("intentTitle", "O que traz você à Freelandoo?")}</h2>
               <p className="mt-1 text-sm text-[#5b554b]">{t("intentSubtitle", "Você pode mudar isso depois. É só pra começar do jeito certo.")}</p>
@@ -421,7 +405,7 @@ export default function CadastroPage() {
                 <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#F2B705] text-[#0B0B0D]">
                   <TrendingUp className="h-6 w-6" />
                 </span>
-                <p className="mb-1 text-lg font-black text-[#0B0B0D]">{t("intentSellerTitle", "Quero ganhar dinheiro")}</p>
+                <p className="mb-1 text-lg font-black text-[#0B0B0D]">{t("intentSellerTitle", "Quero ganhar dinheiro e/ou ser mais conhecido")}</p>
                 <p className="text-sm text-[#5b554b]">{t("intentSellerDesc", "Quero criar um perfil profissional e receber contatos e pedidos.")}</p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#0B0B0D]">
                   {t("intentSellerCta", "Criar meu perfil")} <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -440,7 +424,7 @@ export default function CadastroPage() {
 
         {/* STEP — IDENTIDADE (nome, email, usuário) */}
         {step === "identity" && (
-          <div className="fl-card rounded-3xl p-6 sm:p-8">
+          <div className="fl-card rounded-3xl p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8">
             <button type="button" onClick={() => setStep("intent")} className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#5b554b] transition hover:text-[#0B0B0D]">
               <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
             </button>
@@ -549,7 +533,7 @@ export default function CadastroPage() {
 
         {/* STEP — ACESSO (nascimento, senha, termos) */}
         {step === "access" && (
-          <div className="fl-card rounded-3xl p-6 sm:p-8">
+          <div className="fl-card rounded-3xl p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8">
             <button type="button" onClick={() => setStep("identity")} className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#5b554b] transition hover:text-[#0B0B0D]">
               <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
             </button>
@@ -713,7 +697,7 @@ export default function CadastroPage() {
 
         {/* STEP — PERFIL (só vendedor) */}
         {step === "profile" && (
-          <div className="fl-card rounded-3xl p-6 sm:p-8">
+          <div className="fl-card rounded-3xl p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8">
             <button type="button" onClick={() => setStep("access")} className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#5b554b] transition hover:text-[#0B0B0D]">
               <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
             </button>
@@ -889,6 +873,6 @@ export default function CadastroPage() {
           </div>
         )}
       </div>
-    </PageShell>
+    </AuthShell>
   )
 }

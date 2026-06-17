@@ -1539,7 +1539,7 @@
     "intentBuyerTitle": "I need to solve a problem",
     "intentBuyerDesc": "I want to find and hire professionals for what I need.",
     "intentBuyerCta": "Start searching",
-    "intentSellerTitle": "I want to make money",
+    "intentSellerTitle": "I want to make money and/or get better known",
     "intentSellerDesc": "I want to create a professional profile and get contacts and orders.",
     "intentSellerCta": "Create my profile",
     "identityTitle": "Let's get to know you",
@@ -1559,7 +1559,9 @@
     "blockCode": "Enter a valid guardian code.",
     "blockPassword": "Your password doesn't meet all requirements.",
     "blockPasswordMatch": "Passwords don't match.",
-    "blockTerms": "Accept the terms of use to continue."
+    "blockTerms": "Accept the terms of use to continue.",
+    "createTitlePrefix": "Create",
+    "createTitleHighlight": "account"
   },
   "ForgotPassword": {
     "title": "Forgot your password?",

@@ -9,6 +9,9 @@ const dir = path.join(__dirname, "..", "messages")
 const SIGNUP = {
   // genéricas que ainda não estavam no dict (tinham só fallback inline)
   eyebrow: ["Comece grátis", "Start free", "Empieza gratis"],
+  // Headline da casca tabloide (AuthShell): "Criar" + destaque "conta"
+  createTitlePrefix: ["Criar", "Create", "Crear"],
+  createTitleHighlight: ["conta", "account", "cuenta"],
 
   // Tela 1 — Intenção
   intentTitle: [

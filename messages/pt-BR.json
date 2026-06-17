@@ -1539,7 +1539,7 @@
     "intentBuyerTitle": "Preciso resolver um problema",
     "intentBuyerDesc": "Quero encontrar e contratar profissionais para o que eu preciso.",
     "intentBuyerCta": "Começar a buscar",
-    "intentSellerTitle": "Quero ganhar dinheiro",
+    "intentSellerTitle": "Quero ganhar dinheiro e/ou ser mais conhecido",
     "intentSellerDesc": "Quero criar um perfil profissional e receber contatos e pedidos.",
     "intentSellerCta": "Criar meu perfil",
     "identityTitle": "Vamos te conhecer",
@@ -1559,7 +1559,9 @@
     "blockCode": "Informe um código de responsável válido.",
     "blockPassword": "Sua senha não atende a todos os requisitos.",
     "blockPasswordMatch": "As senhas não coincidem.",
-    "blockTerms": "Aceite os termos de uso para continuar."
+    "blockTerms": "Aceite os termos de uso para continuar.",
+    "createTitlePrefix": "Criar",
+    "createTitleHighlight": "conta"
   },
   "ForgotPassword": {
     "title": "Esqueceu sua senha?",
