@@ -112,6 +112,7 @@ export default function LoginPage() {
       ]}
     >
       <AuthCard
+        className="fl-sharp"
         title={t("login", "Entrar")}
         subtitle={t("alreadyHaveAccount", "Faça login para acessar sua conta na Freelandoo")}
         footer={
@@ -127,7 +128,7 @@ export default function LoginPage() {
         }
       >
         <div className="space-y-4">
-          <GoogleSignInButton text="signin_with" redirectTo={nextParam ?? undefined} />
+          <GoogleSignInButton text="signin_with" shape="rectangular" redirectTo={nextParam ?? undefined} />
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-[#0B0B0D]/12" />
