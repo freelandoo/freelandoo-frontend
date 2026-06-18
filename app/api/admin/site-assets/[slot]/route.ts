@@ -24,3 +24,23 @@ export async function POST(
     headers: { "Content-Type": "application/json" },
   })
 }
+
+export async function DELETE(
+  request: Request,
+  ctx: { params: Promise<{ slot: string }> },
+) {
+  const { slot } = await ctx.params
+  const authHeader = request.headers.get("Authorization")
+  if (!authHeader) return Response.json({ error: "Token não fornecido" }, { status: 401 })
+
+  const res = await fetch(`${BACKEND}/admin/site-assets/${encodeURIComponent(slot)}`, {
+    method: "DELETE",
+    headers: { Authorization: authHeader },
+    cache: "no-store",
+  })
+  const text = await res.text()
+  return new Response(text || "{}", {
+    status: res.status,
+    headers: { "Content-Type": "application/json" },
+  })
+}

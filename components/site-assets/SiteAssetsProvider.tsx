@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 interface SiteAssetsValue {
   assets: Record<string, string>
   setAsset: (slot: string, url: string) => void
+  removeAsset: (slot: string) => void
 }
 
 const Ctx = createContext<SiteAssetsValue | null>(null)
@@ -31,5 +32,13 @@ export function SiteAssetsProvider({ children }: { children: React.ReactNode }) 
     setAssets((prev) => ({ ...prev, [slot]: url }))
   }, [])
 
-  return <Ctx.Provider value={{ assets, setAsset }}>{children}</Ctx.Provider>
+  const removeAsset = useCallback((slot: string) => {
+    setAssets((prev) => {
+      const next = { ...prev }
+      delete next[slot]
+      return next
+    })
+  }, [])
+
+  return <Ctx.Provider value={{ assets, setAsset, removeAsset }}>{children}</Ctx.Provider>
 }

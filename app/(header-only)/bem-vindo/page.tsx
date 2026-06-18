@@ -11,7 +11,7 @@ import { AuthShell } from "@/components/tabloide"
 import { SiteTextsProvider } from "@/components/site-texts/SiteTextsProvider"
 import { SiteAssetsProvider } from "@/components/site-assets/SiteAssetsProvider"
 import { EditableText } from "@/components/site-texts/EditableText"
-import { EditableImage } from "@/components/site-assets/EditableImage"
+import { EditableImageCarousel } from "@/components/site-assets/EditableImageCarousel"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser, setStoredUser } from "@/lib/auth"
 
@@ -169,12 +169,14 @@ function TourInner() {
         </div>
 
         <div className="fl-card p-6 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8">
-          {/* Banner editável pelo admin (placeholder enquanto não houver imagem) */}
-          <EditableImage
-            slot={current.bannerSlot}
+          {/* Banner(s) editável(is) pelo admin — carrossel de até 5 imagens por
+              passo (admin adiciona via "+"; placeholder enquanto vazio). */}
+          <EditableImageCarousel
+            baseSlot={current.bannerSlot}
             slotConfig={{ aspectRatio: 16 / 6, outputWidth: 1280, outputHeight: 480, label: "Banner do tour" }}
-            className="relative aspect-[16/6] w-full overflow-hidden border-2 border-[#0B0B0D]/12"
+            className="relative aspect-[16/6] w-full border-2 border-[#0B0B0D]/12"
             sizes="(min-width: 640px) 576px, 100vw"
+            max={5}
           />
 
           <EditableText
