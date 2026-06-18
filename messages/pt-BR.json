@@ -2694,7 +2694,16 @@
     "errors.createItemResponse": "Resposta inesperada ao criar item.",
     "errors.uploadMedia": "Item criado, mas o upload da mídia falhou.",
     "errors.publish": "Falha ao publicar.",
-    "pick.compressLink": "Arquivo grande? Comprimir mídia"
+    "pick.compressLink": "Arquivo grande? Comprimir mídia",
+    "carousel.badge": "Carrossel",
+    "carousel.slide": "Foto {n}",
+    "carousel.add": "Adicionar fotos",
+    "carousel.remove": "Remover foto",
+    "carousel.moveLeft": "Mover para a esquerda",
+    "carousel.moveRight": "Mover para a direita",
+    "carousel.hintMulti": "Cada foto tem seu próprio corte, filtro e texto.",
+    "carousel.hintAdd": "Toque em + para montar um carrossel (até {max} fotos).",
+    "pick.carouselHint": "Dica: escolha várias fotos para montar um carrossel."
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",

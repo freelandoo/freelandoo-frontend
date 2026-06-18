@@ -3,13 +3,19 @@
 // Editor de criação unificado (Post · Bee · Story) — pele Freelandoo Tabloide.
 // Fluxo: Pick → Crop/Zoom → Editar (Filtro·Texto·Sobreposição·Música) → Detalhes → Publicar.
 // Visual queimado via ComposerRenderer (mesmo shader da câmera) + StoryRecorder.
-// Slice 1: Filtro funcional; Texto/Sobreposição/Música entram nos slices 2/3/5.
+//
+// Carrossel (mode "post", só imagens): o estado de mídia vira um array `slides`,
+// cada slide com seu próprio crop/filtro/texto/sobreposição. O aspecto é
+// compartilhado por todos os slides (padrão Instagram). Vídeo permanece sempre
+// como mídia única (sem carrossel). Na publicação, compõe cada slide e sobe N
+// mídias no MESMO item de portfólio (sort_order = índice) — o feed já renderiza
+// o carrossel (PostMedia) e o backend já agrega as mídias por sort_order.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  AlertCircle, ArrowLeft, ArrowRight, ImagePlus, Loader2, Minimize2, Music,
-  SlidersHorizontal, Type, Layers, Video, X,
+  AlertCircle, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, ImagePlus, Loader2,
+  Minimize2, Music, Plus, SlidersHorizontal, Type, Layers, Video, X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
@@ -26,7 +32,7 @@ import { compose } from "@/lib/composer/compose"
 import { drawTextLayers, layerBox } from "@/lib/composer/text-layer"
 import {
   ASPECTS, NEUTRAL_CROP, TEXT_COLORS, TEXT_FONTS,
-  type ComposerProps, type CropState, type MediaDraft, type MediaKind,
+  type ComposedResult, type ComposerProps, type CropState, type MediaDraft, type MediaKind,
   type TextLayer, type TextFontId, type TextBoxStyle, type OverlayLayer,
   type AudioPick,
 } from "@/lib/composer/types"
@@ -43,10 +49,77 @@ const MAX_TITLE = 120
 const MAX_DESC = 500
 const MAX_CAPTION = 280
 const SERVERLESS_UPLOAD_LIMIT = 4 * 1024 * 1024
+const MAX_SLIDES = 10
+const EMPTY_LAYERS: TextLayer[] = []
+
+/** Um slide do composer: a mídia + seu estado de edição próprio. */
+type Slide = {
+  id: string
+  draft: MediaDraft
+  crop: CropState
+  presetId: string
+  filter: FilterState
+  textLayers: TextLayer[]
+  overlay: OverlayLayer | null // descritor; o elemento vivo é carregado quando ativo
+}
 
 /** Proporções permitidas por modo. */
 function aspectsFor(mode: ComposerProps["mode"]): string[] {
   return mode === "post" ? ["4:5", "1:1", "16:9"] : ["9:16"]
+}
+
+/** Lê dimensões naturais de uma imagem a partir de um object URL. */
+function readImageDim(url: string): Promise<{ w: number; h: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+    img.onerror = () => reject(new Error("read-image"))
+    img.src = url
+  })
+}
+
+/** Carrega o elemento (img/vídeo) de uma sobreposição. Usado na publicação para
+ *  queimar a overlay de slides não-ativos (cujo elemento não está em memória). */
+async function loadOverlayEl(desc: OverlayLayer | null): Promise<HTMLImageElement | HTMLVideoElement | null> {
+  if (!desc) return null
+  if (desc.kind === "image") {
+    return new Promise((res) => {
+      const im = new Image()
+      im.crossOrigin = "anonymous"
+      im.onload = () => res(im)
+      im.onerror = () => res(null)
+      im.src = desc.url
+    })
+  }
+  const v = document.createElement("video")
+  v.src = desc.url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
+  await new Promise<void>((res) => { v.onloadeddata = () => res(); v.onerror = () => res() })
+  await v.play().catch(() => {})
+  return v
+}
+
+/** Desenha uma sobreposição PiP no canvas (mesma matemática do preview e export). */
+function paintOverlay(
+  ctx: CanvasRenderingContext2D, W: number, H: number,
+  desc: OverlayLayer | null, el: HTMLImageElement | HTMLVideoElement | null,
+) {
+  if (!desc || !el) return
+  const natW = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth
+  const natH = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight
+  if (!natW || !natH) return
+  const w = desc.scale * W
+  const h = w * (natH / natW)
+  const x = desc.x * W - w / 2
+  const y = desc.y * H - h / 2
+  try {
+    ctx.save()
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = w * 0.06; ctx.shadowOffsetY = w * 0.03
+    ctx.drawImage(el, x, y, w, h)
+    ctx.restore()
+    ctx.lineWidth = Math.max(2, w * 0.02)
+    ctx.strokeStyle = "#F2B705"
+    ctx.strokeRect(x, y, w, h)
+  } catch { /* frame não decodável ainda */ }
 }
 
 export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, communityId = null, onClose, onPosted }: ComposerProps) {
@@ -56,13 +129,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
 
   const [step, setStep] = useState<Step>("pick")
   const [editTab, setEditTab] = useState<EditTab>("filtro")
-  const [draft, setDraft] = useState<MediaDraft | null>(null)
-  const [crop, setCrop] = useState<CropState>(NEUTRAL_CROP)
-  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID)
-  const [filter, setFilter] = useState<FilterState>(getPreset(DEFAULT_PRESET_ID).filter)
-  const [textLayers, setTextLayers] = useState<TextLayer[]>([])
+  const [slides, setSlides] = useState<Slide[]>([])
+  const [active, setActive] = useState(0)
   const [activeTextId, setActiveTextId] = useState<string | null>(null)
-  const [overlay, setOverlay] = useState<OverlayLayer | null>(null)
   const [audioPick, setAudioPick] = useState<AudioPick | null>(null)
 
   const [profiles, setProfiles] = useState<ProfileLite[]>([])
@@ -81,40 +150,86 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const [cameraOpen, setCameraOpen] = useState(false)
 
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const addImagesRef = useRef<HTMLInputElement | null>(null)
   const overlayInputRef = useRef<HTMLInputElement | null>(null)
   const overlayElRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null)
-  const overlayRef = useRef<OverlayLayer | null>(overlay)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rendererRef = useRef<ComposerRenderer | null>(null)
   const sourceRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null)
   const rafRef = useRef<number | null>(null)
+
+  // ── slide ativo + estado derivado dele ──────────────────────────────────────
+  const cur = slides[active] ?? null
+  const draft = cur?.draft ?? null
+  const crop = cur?.crop ?? NEUTRAL_CROP
+  const presetId = cur?.presetId ?? DEFAULT_PRESET_ID
+  const filter = cur?.filter ?? getPreset(DEFAULT_PRESET_ID).filter
+  const textLayers = cur?.textLayers ?? EMPTY_LAYERS
+  const overlay = cur?.overlay ?? null
+
+  const isImageMode = slides.length > 0 && slides.every((s) => s.draft.kind === "image")
+  const isCarousel = slides.length > 1
+  const canAddMore = mode === "post" && isImageMode && slides.length < MAX_SLIDES
+  const showTray = mode === "post" && isImageMode
+
+  // refs que o loop de preview lê (mídia/edição do slide ativo)
   const filterRef = useRef(filter)
   const cropRef = useRef(crop)
   const textRef = useRef<TextLayer[]>(textLayers)
+  const overlayRef = useRef<OverlayLayer | null>(overlay)
   useEffect(() => { filterRef.current = filter }, [filter])
   useEffect(() => { cropRef.current = crop }, [crop])
   useEffect(() => { textRef.current = textLayers }, [textLayers])
   useEffect(() => { overlayRef.current = overlay }, [overlay])
 
+  // ── patchers do slide ativo ──────────────────────────────────────────────────
+  const setCrop = useCallback((next: CropState | ((c: CropState) => CropState)) => {
+    setSlides((ss) => ss.map((s, i) => (i === active ? { ...s, crop: typeof next === "function" ? next(s.crop) : next } : s)))
+  }, [active])
+  const setFilter = useCallback((next: FilterState | ((f: FilterState) => FilterState)) => {
+    setSlides((ss) => ss.map((s, i) => (i === active ? { ...s, filter: typeof next === "function" ? next(s.filter) : next } : s)))
+  }, [active])
+  const setTextLayers = useCallback((next: TextLayer[] | ((ls: TextLayer[]) => TextLayer[])) => {
+    setSlides((ss) => ss.map((s, i) => (i === active ? { ...s, textLayers: typeof next === "function" ? next(s.textLayers) : next } : s)))
+  }, [active])
+  const setOverlayDescriptor = useCallback((next: OverlayLayer | null | ((o: OverlayLayer | null) => OverlayLayer | null)) => {
+    setSlides((ss) => ss.map((s, i) => (i === active ? { ...s, overlay: typeof next === "function" ? next(s.overlay) : next } : s)))
+  }, [active])
+
+  /** Aspecto é compartilhado: troca em TODOS os slides de uma vez. */
+  const setSharedAspect = useCallback((ratio: number) => {
+    setSlides((ss) => ss.map((s) => ({ ...s, crop: { ...s.crop, aspect: ratio } })))
+  }, [])
+
   const allowedAspects = aspectsFor(mode)
   const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
   const trampoBlocked = mode === "story" && initialKind === "trampo" && !!selectedProfile?.is_clan
 
-  // ── reset ao fechar ────────────────────────────────────────────────────────
-  const hardReset = useCallback(() => {
-    if (draft?.url) URL.revokeObjectURL(draft.url)
-    setStep("pick"); setEditTab("filtro"); setDraft(null); setCrop(NEUTRAL_CROP)
-    setPresetId(DEFAULT_PRESET_ID); setFilter(getPreset(DEFAULT_PRESET_ID).filter)
-    setTextLayers([]); setActiveTextId(null)
-    if (overlay?.url) URL.revokeObjectURL(overlay.url)
-    const el = overlayElRef.current
-    if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
+  // ── limpeza de slides (revoga object URLs) ───────────────────────────────────
+  const revokeSlides = useCallback((list: Slide[]) => {
+    list.forEach((s) => {
+      if (s.draft.url) URL.revokeObjectURL(s.draft.url)
+      if (s.overlay?.url) URL.revokeObjectURL(s.overlay.url)
+    })
+    const prev = overlayElRef.current
+    if (prev instanceof HTMLVideoElement) { prev.pause(); prev.src = "" }
     overlayElRef.current = null
-    setOverlay(null)
+  }, [])
+
+  const clearSlides = useCallback(() => {
+    setSlides((ss) => { revokeSlides(ss); return [] })
+    setActive(0)
+    setActiveTextId(null)
+  }, [revokeSlides])
+
+  // ── reset ao fechar ──────────────────────────────────────────────────────────
+  const hardReset = useCallback(() => {
+    revokeSlides(slides)
+    setSlides([]); setActive(0); setStep("pick"); setEditTab("filtro"); setActiveTextId(null)
     setAudioPick(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null); setVideoNotice(null)
     setCameraOpen(false)
-  }, [draft?.url, overlay?.url])
+  }, [slides, revokeSlides])
 
   useEffect(() => {
     if (!open) hardReset()
@@ -123,10 +238,10 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
 
   // ── abre o seletor nativo automaticamente no mobile ao abrir ─────────────────
   useEffect(() => {
-    if (!open || draft) return
+    if (!open || slides.length > 0) return
     const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches
     if (isTouch) fileRef.current?.click()
-  }, [open, draft])
+  }, [open, slides.length])
 
   // ── carrega subperfis ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -141,11 +256,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         if (cancelled) return
         const list: ProfileLite[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
         setProfiles(list)
-        setSelectedProfileId((cur) => {
-          if (cur && list.some((p) => p.id_profile === cur)) return cur
+        setSelectedProfileId((curId) => {
+          if (curId && list.some((p) => p.id_profile === curId)) return curId
           if (initialProfileId && list.some((p) => p.id_profile === initialProfileId)) return initialProfileId
-          // Default: primeiro subperfil (não a conta). A conta fica selecionável,
-          // sempre primeira na lista, mas não é auto-selecionada quando há subperfil.
           const preferred = list.find((p) => !p.is_user_account) ?? list[0]
           return preferred?.id_profile ?? null
         })
@@ -156,56 +269,167 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, status, user?.id_user, initialProfileId])
 
-  // ── seleção de arquivo ───────────────────────────────────────────────────────
-  const handleFile = (f: File | null) => {
-    setError(null)
-    if (!f) return
-    const isImg = f.type.startsWith("image/")
-    const isVid = f.type.startsWith("video/")
-    if (!isImg && !isVid) { setError(t("errors.pickMedia", "Selecione uma imagem ou um vídeo.")); return }
-    if (f.size > MAX_BYTES) { setOversize(true); return }
-    const url = URL.createObjectURL(f)
-    const kind: MediaKind = isImg ? "image" : "video"
-    setVideoNotice(null)
-    const aspect = ASPECTS[allowedAspects[0]].ratio
-    setCrop({ ...NEUTRAL_CROP, aspect })
+  // ── construtores de slides ───────────────────────────────────────────────────
+  const makeImageSlide = (file: File, url: string, dim: { w: number; h: number }, aspect: number): Slide => ({
+    id: crypto.randomUUID(),
+    draft: { file, kind: "image", url, width: dim.w, height: dim.h },
+    crop: { ...NEUTRAL_CROP, aspect },
+    presetId: DEFAULT_PRESET_ID,
+    filter: { ...getPreset(DEFAULT_PRESET_ID).filter },
+    textLayers: [],
+    overlay: null,
+  })
 
-    if (kind === "image") {
-      const img = new Image()
-      img.onload = () => {
-        setDraft({ file: f, kind, url, width: img.naturalWidth, height: img.naturalHeight })
-        setStep("crop")
+  const buildImageSlides = async (files: File[], append: boolean) => {
+    const aspect = append && slides[0] ? slides[0].crop.aspect : ASPECTS[allowedAspects[0]].ratio
+    const built: Slide[] = []
+    for (const f of files) {
+      const url = URL.createObjectURL(f)
+      try {
+        const dim = await readImageDim(url)
+        built.push(makeImageSlide(f, url, dim, aspect))
+      } catch {
+        URL.revokeObjectURL(url)
       }
-      img.onerror = () => setError(t("errors.readImage", "Não consegui ler essa imagem."))
-      img.src = url
+    }
+    if (built.length === 0) { setError(t("errors.readImage", "Não consegui ler essa imagem.")); return }
+    if (append) {
+      setSlides((ss) => {
+        const merged = [...ss, ...built]
+        const extra = merged.slice(MAX_SLIDES)
+        revokeSlides(extra)
+        return merged.slice(0, MAX_SLIDES)
+      })
     } else {
-      const caps = detectCapabilities()
-      if (mode !== "story" && !caps.mediaRecorderMp4 && caps.mediaRecorderWebm) {
-        setVideoNotice(t("capabilities.webmFallback", "Seu navegador vai exportar este vídeo em WebM; Post e Bee aceitam esse fallback."))
-      } else if (caps.recordPath === "mediarecorder") {
-        setVideoNotice(t("capabilities.mediaRecorderFallback", "WebCodecs indisponível; usando MediaRecorder como fallback."))
-      } else if (caps.recordPath === "none") {
-        setVideoNotice(t("capabilities.noVideoExport", "Este navegador pode não conseguir exportar vídeo editado."))
-      }
-      const v = document.createElement("video")
-      v.preload = "metadata"
-      v.onloadedmetadata = () => {
-        setDraft({ file: f, kind, url, width: v.videoWidth, height: v.videoHeight, durationSec: Math.round(v.duration) })
-        setStep("crop")
-      }
-      v.onerror = () => setError(t("errors.readVideo", "Não consegui ler esse vídeo."))
-      v.src = url
+      setSlides(built); setActive(0); setStep("crop")
     }
   }
 
+  const buildVideoSlide = (f: File) => {
+    const url = URL.createObjectURL(f)
+    setVideoNotice(null)
+    const caps = detectCapabilities()
+    if (mode !== "story" && !caps.mediaRecorderMp4 && caps.mediaRecorderWebm) {
+      setVideoNotice(t("capabilities.webmFallback", "Seu navegador vai exportar este vídeo em WebM; Post e Bee aceitam esse fallback."))
+    } else if (caps.recordPath === "mediarecorder") {
+      setVideoNotice(t("capabilities.mediaRecorderFallback", "WebCodecs indisponível; usando MediaRecorder como fallback."))
+    } else if (caps.recordPath === "none") {
+      setVideoNotice(t("capabilities.noVideoExport", "Este navegador pode não conseguir exportar vídeo editado."))
+    }
+    const v = document.createElement("video")
+    v.preload = "metadata"
+    v.onloadedmetadata = () => {
+      const aspect = ASPECTS[allowedAspects[0]].ratio
+      setSlides([{
+        id: crypto.randomUUID(),
+        draft: { file: f, kind: "video", url, width: v.videoWidth, height: v.videoHeight, durationSec: Math.round(v.duration) },
+        crop: { ...NEUTRAL_CROP, aspect },
+        presetId: DEFAULT_PRESET_ID,
+        filter: { ...getPreset(DEFAULT_PRESET_ID).filter },
+        textLayers: [],
+        overlay: null,
+      }])
+      setActive(0); setStep("crop")
+    }
+    v.onerror = () => { URL.revokeObjectURL(url); setError(t("errors.readVideo", "Não consegui ler esse vídeo.")) }
+    v.src = url
+  }
+
+  // ── seleção de arquivo(s) inicial ────────────────────────────────────────────
+  const handleFiles = (fileList: FileList | null) => {
+    setError(null)
+    const files = fileList ? Array.from(fileList) : []
+    if (files.length === 0) return
+    const images = files.filter((f) => f.type.startsWith("image/"))
+    const videos = files.filter((f) => f.type.startsWith("video/"))
+    if (images.length === 0 && videos.length === 0) {
+      setError(t("errors.pickMedia", "Selecione uma imagem ou um vídeo.")); return
+    }
+    // Vídeo nunca entra em carrossel: vira mídia única (usa o primeiro).
+    if (videos.length > 0) {
+      const f = videos[0]
+      if (f.size > MAX_BYTES) { setOversize(true); return }
+      buildVideoSlide(f)
+      return
+    }
+    // Imagens: post → carrossel (várias); bee/story → única (primeira).
+    const usable = (mode === "post" ? images : images.slice(0, 1)).filter((f) => f.size <= MAX_BYTES)
+    if (usable.length === 0) { setOversize(true); return }
+    buildImageSlides(usable.slice(0, MAX_SLIDES), false)
+  }
+
+  // Adicionar mais fotos ao carrossel (botão + na bandeja).
+  const handleAddImages = (fileList: FileList | null) => {
+    setError(null)
+    const files = fileList ? Array.from(fileList).filter((f) => f.type.startsWith("image/") && f.size <= MAX_BYTES) : []
+    if (files.length === 0) return
+    const room = MAX_SLIDES - slides.length
+    if (room <= 0) return
+    void buildImageSlides(files.slice(0, room), true)
+  }
+
+  const removeSlide = (idx: number) => {
+    if (slides.length <= 1) return
+    setSlides((ss) => {
+      const target = ss[idx]
+      if (target) {
+        if (target.draft.url) URL.revokeObjectURL(target.draft.url)
+        if (target.overlay?.url) URL.revokeObjectURL(target.overlay.url)
+      }
+      return ss.filter((_, i) => i !== idx)
+    })
+    setActive((a) => (idx < a ? a - 1 : Math.min(a, slides.length - 2)))
+    setActiveTextId(null)
+  }
+
+  const moveSlide = (idx: number, dir: -1 | 1) => {
+    const to = idx + dir
+    if (to < 0 || to >= slides.length) return
+    setSlides((ss) => {
+      const next = [...ss]
+      const [m] = next.splice(idx, 1)
+      next.splice(to, 0, m)
+      return next
+    })
+    setActive(to)
+  }
+
+  const selectSlide = (idx: number) => { setActive(idx); setActiveTextId(null) }
+
+  // ── carrega o elemento de sobreposição do slide ATIVO no overlayElRef ─────────
+  useEffect(() => {
+    const prev = overlayElRef.current
+    if (prev instanceof HTMLVideoElement) { prev.pause(); prev.src = "" }
+    overlayElRef.current = null
+    if (!overlay) return
+    let cancelled = false
+    if (overlay.kind === "image") {
+      const img = new Image(); img.crossOrigin = "anonymous"
+      img.onload = () => { if (!cancelled) overlayElRef.current = img }
+      img.src = overlay.url
+    } else {
+      const v = document.createElement("video")
+      v.src = overlay.url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
+      v.onloadeddata = () => { if (!cancelled) { v.play().catch(() => {}); overlayElRef.current = v } }
+    }
+    return () => { cancelled = true }
+    // recarrega ao trocar de slide ou quando a fonte da sobreposição muda — NÃO
+    // depende de `overlay` inteiro de propósito: arrastar (x/y/scale) não deve
+    // recarregar o elemento, só os campos id/url disparam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, overlay?.id, overlay?.url])
+
   // ── preview ao vivo (crop + edit) ────────────────────────────────────────────
+  const drawOverlayLive = useCallback((ctx: CanvasRenderingContext2D, W: number, H: number) => {
+    paintOverlay(ctx, W, H, overlayRef.current, overlayElRef.current)
+  }, [])
+
   useEffect(() => {
     const live = step === "crop" || step === "edit"
     if (!live || !draft || !canvasRef.current) return
     let disposed = false
 
     const setup = async () => {
-      // monta a fonte
       let source: HTMLImageElement | HTMLVideoElement
       if (draft.kind === "image") {
         const img = new Image()
@@ -222,11 +446,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
       if (disposed) return
       sourceRef.current = source
       const r = new ComposerRenderer(canvasRef.current!, filterRef.current, cropRef.current)
-      // tamanho do preview proporcional ao aspect
       const baseW = 720
       r.setSize(baseW, Math.round(baseW / cropRef.current.aspect))
-      // texto sobreposto desenhado por cima da cor (mesmo no preview e no export)
-      r.afterCompose = (ctx, w, h) => { drawOverlayLayer(ctx, w, h); drawTextLayers(ctx, w, h, textRef.current) }
+      r.afterCompose = (ctx, w, h) => { drawOverlayLive(ctx, w, h); drawTextLayers(ctx, w, h, textRef.current) }
       rendererRef.current = r
 
       const loop = () => {
@@ -255,12 +477,11 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, draft?.url])
 
-  // ── arraste no preview: pan (crop) ou mover texto (edit) ─────────────────────
+  // ── arraste no preview: pan (crop) ou mover texto/overlay (edit) ─────────────
   const dragRef = useRef<{ x: number; y: number; textId?: string; overlay?: boolean } | null>(null)
   const onPointerDown = (e: React.PointerEvent) => {
     const canvas = canvasRef.current
     if (step === "edit" && canvas) {
-      // hit-test em camadas de texto (de cima p/ baixo) → texto tem prioridade
       const rect = canvas.getBoundingClientRect()
       const px = ((e.clientX - rect.left) / rect.width) * canvas.width
       const py = ((e.clientY - rect.top) / rect.height) * canvas.height
@@ -276,7 +497,6 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           }
         }
       }
-      // hit-test no overlay PiP
       const ov = overlayRef.current
       const el = overlayElRef.current
       if (ov && el) {
@@ -306,7 +526,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
       const dx = (e.clientX - dragRef.current.x) / rect.width
       const dy = (e.clientY - dragRef.current.y) / rect.height
       dragRef.current = { ...dragRef.current, x: e.clientX, y: e.clientY }
-      setOverlay((o) => o ? { ...o, x: Math.max(0, Math.min(1, o.x + dx)), y: Math.max(0, Math.min(1, o.y + dy)) } : o)
+      setOverlayDescriptor((o) => o ? { ...o, x: Math.max(0, Math.min(1, o.x + dx)), y: Math.max(0, Math.min(1, o.y + dy)) } : o)
       return
     }
     if (dragRef.current.textId && canvas) {
@@ -328,59 +548,20 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const onPointerUp = () => { dragRef.current = null }
 
   // ── overlay PiP (imagem/vídeo) ───────────────────────────────────────────────
-  const drawOverlayLayer = useCallback((ctx: CanvasRenderingContext2D, W: number, H: number) => {
-    const ov = overlayRef.current
-    const el = overlayElRef.current
-    if (!ov || !el) return
-    const natW = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth
-    const natH = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight
-    if (!natW || !natH) return
-    const w = ov.scale * W
-    const h = w * (natH / natW)
-    const x = ov.x * W - w / 2
-    const y = ov.y * H - h / 2
-    try {
-      ctx.save()
-      ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = w * 0.06; ctx.shadowOffsetY = w * 0.03
-      ctx.drawImage(el, x, y, w, h)
-      ctx.restore()
-      ctx.lineWidth = Math.max(2, w * 0.02)
-      ctx.strokeStyle = "#F2B705"
-      ctx.strokeRect(x, y, w, h)
-    } catch { /* frame não decodável ainda */ }
-  }, [])
-
   const handleOverlayFile = (f: File | null) => {
     if (!f) return
     const isImg = f.type.startsWith("image/")
     const isVid = f.type.startsWith("video/")
     if (!isImg && !isVid) { setError(t("errors.overlayMedia", "Sobreposição deve ser imagem ou vídeo.")); return }
     if (f.size > MAX_BYTES) { setOversize(true); return }
-    // limpa anterior
     if (overlay?.url) URL.revokeObjectURL(overlay.url)
-    const prev = overlayElRef.current
-    if (prev instanceof HTMLVideoElement) { prev.pause(); prev.src = "" }
     const url = URL.createObjectURL(f)
     const kind: MediaKind = isImg ? "image" : "video"
-    const layer: OverlayLayer = { id: crypto.randomUUID(), kind, url, x: 0.7, y: 0.7, scale: 0.32 }
-    if (kind === "image") {
-      const img = new Image(); img.crossOrigin = "anonymous"
-      img.onload = () => { overlayElRef.current = img; setOverlay(layer) }
-      img.onerror = () => setError(t("errors.readOverlayImage", "Não consegui ler a imagem de sobreposição."))
-      img.src = url
-    } else {
-      const v = document.createElement("video")
-      v.src = url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
-      v.onloadeddata = () => { v.play().catch(() => {}); overlayElRef.current = v; setOverlay(layer) }
-      v.onerror = () => setError(t("errors.readOverlayVideo", "Não consegui ler o vídeo de sobreposição."))
-    }
+    setOverlayDescriptor({ id: crypto.randomUUID(), kind, url, x: 0.7, y: 0.7, scale: 0.32 })
   }
   const removeOverlay = () => {
     if (overlay?.url) URL.revokeObjectURL(overlay.url)
-    const el = overlayElRef.current
-    if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
-    overlayElRef.current = null
-    setOverlay(null)
+    setOverlayDescriptor(null)
   }
 
   // ── helpers de texto ─────────────────────────────────────────────────────────
@@ -396,33 +577,38 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     setTextLayers((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)))
   const removeText = (id: string) => {
     setTextLayers((ls) => ls.filter((l) => l.id !== id))
-    setActiveTextId((cur) => (cur === id ? null : cur))
+    setActiveTextId((curId) => (curId === id ? null : curId))
   }
 
   // ── publicar ─────────────────────────────────────────────────────────────────
-  const applyPreset = (id: string) => { setPresetId(id); setFilter({ ...getPreset(id).filter }) }
+  const applyPreset = (id: string) => {
+    setSlides((ss) => ss.map((s, i) => (i === active ? { ...s, presetId: id, filter: { ...getPreset(id).filter } } : s)))
+  }
   const setAdj = (k: keyof FilterState, v: number) => setFilter((f) => ({ ...f, [k]: v }))
 
   const effectiveKind = trampoBlocked ? "rest" : initialKind
 
   const publish = async () => {
-    if (!draft || !selectedProfileId) return
+    if (slides.length === 0 || !selectedProfileId) return
     const token = getToken()
     if (!token) { setError(t("errors.sessionExpired", "Sessão expirada. Faça login novamente.")); return }
     setStep("publish"); setSubmitting(true); setProgress(0); setError(null)
     try {
-      // garante que as fontes estão carregadas antes de queimar o texto no canvas
       try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready } catch { /* noop */ }
-      const layers = textLayers
-      const result = await compose({
-        draft, filter, crop,
-        afterCompose: (ctx, w, h) => { drawOverlayLayer(ctx, w, h); drawTextLayers(ctx, w, h, layers) },
-        allowWebmFallback: mode !== "story",
-        onProgress: (f) => setProgress(f * 0.5),
-      })
+
+      // ── Story: fluxo único (sem carrossel) ──────────────────────────────────
       if (mode === "story") {
+        const s = slides[0]
+        const el = await loadOverlayEl(s.overlay)
+        const result = await compose({
+          draft: s.draft, filter: s.filter, crop: s.crop,
+          afterCompose: (ctx, w, h) => { paintOverlay(ctx, w, h, s.overlay, el); drawTextLayers(ctx, w, h, s.textLayers) },
+          allowWebmFallback: false,
+          onProgress: (f) => setProgress(f * 0.5),
+        })
+        if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
         const filterMeta: FilterMeta = {
-          preset: presetId, filter,
+          preset: s.presetId, filter: s.filter,
           overlay: { frame: "none", watermark: false, sticker_count: 0, accessory: "none" },
           makeup: { skin_smooth: 0, lipstick: 0, blush: 0 },
           encoder: result.encoder === "image" ? "webcodecs" : result.encoder,
@@ -432,62 +618,83 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           token, id_profile: selectedProfileId, kind: effectiveKind,
           mediaType: isImageStory ? "image" : "video",
           videoBlob: result.blob, posterBlob: result.posterBlob,
-          // Foto não tem duração própria — o backend aplica o tempo padrão de exibição.
           durationSeconds: isImageStory ? 7 : result.durationSec,
           width: result.width, height: result.height,
           caption: caption.trim() || undefined, filterMeta,
           audioTrackId: audioPick?.trackId || null, audioStartMs: audioPick?.startMs ?? 0,
           onProgress: (f) => setProgress(0.5 + f * 0.5),
         })
-      } else {
-        const portfolioKind = mode === "bee" ? "bees" : "feed"
-        const renderMeta = {
-          composer: "media-composer",
-          preset: presetId,
-          filter,
-          crop,
-          text_layers: textLayers.map((layer) => ({
-            text: layer.text,
-            font: layer.font,
-            color: layer.color,
-            box: layer.box,
-            boxColor: layer.boxColor,
-            x: layer.x,
-            y: layer.y,
-            size: layer.size,
-          })),
-          overlay: overlay ? { kind: overlay.kind, x: overlay.x, y: overlay.y, scale: overlay.scale } : null,
-          encoder: result.encoder,
+        onPosted?.(); onClose(); router.refresh()
+        return
+      }
+
+      // ── Post/Bee: compõe cada slide → cria 1 item → sobe N mídias ────────────
+      const portfolioKind = mode === "bee" ? "bees" : "feed"
+      const n = slides.length
+
+      const results: ComposedResult[] = []
+      for (let i = 0; i < n; i++) {
+        const s = slides[i]
+        const el = await loadOverlayEl(s.overlay)
+        try {
+          const r = await compose({
+            draft: s.draft, filter: s.filter, crop: s.crop,
+            afterCompose: (ctx, w, h) => { paintOverlay(ctx, w, h, s.overlay, el); drawTextLayers(ctx, w, h, s.textLayers) },
+            allowWebmFallback: true,
+            onProgress: (f) => setProgress(((i + f) / n) * 0.5),
+          })
+          results.push(r)
+        } finally {
+          if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
         }
-        const itemRes = await fetch(`/api/profile/${selectedProfileId}/portfolio`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            feed_kind: portfolioKind,
-            title: title.trim() || null,
-            description: description.trim() || null,
-            is_featured: false,
-            sort_order: 0,
-            audio_track_id: audioPick?.trackId || null,
-            audio_start_ms: audioPick?.startMs ?? 0,
-            render_meta: renderMeta,
-          }),
-        })
-        const itemData = await itemRes.json().catch(() => ({}))
-        if (!itemRes.ok) throw new Error(itemData?.error || t("errors.createItem", "Erro ao criar item."))
+      }
 
-        const itemId: string | undefined = itemData?.id_portfolio_item ?? itemData?.item?.id_portfolio_item
-        if (!itemId) throw new Error(t("errors.createItemResponse", "Resposta inesperada ao criar item."))
+      const renderMeta = {
+        composer: "media-composer",
+        carousel: n > 1,
+        count: n,
+        slides: slides.map((s, i) => ({
+          preset: s.presetId,
+          filter: s.filter,
+          crop: s.crop,
+          text_layers: s.textLayers.map((layer) => ({
+            text: layer.text, font: layer.font, color: layer.color,
+            box: layer.box, boxColor: layer.boxColor, x: layer.x, y: layer.y, size: layer.size,
+          })),
+          overlay: s.overlay ? { kind: s.overlay.kind, x: s.overlay.x, y: s.overlay.y, scale: s.overlay.scale } : null,
+          encoder: results[i]?.encoder,
+        })),
+      }
 
+      const itemRes = await fetch(`/api/profile/${selectedProfileId}/portfolio`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          feed_kind: portfolioKind,
+          title: title.trim() || null,
+          description: description.trim() || null,
+          is_featured: false,
+          sort_order: 0,
+          audio_track_id: audioPick?.trackId || null,
+          audio_start_ms: audioPick?.startMs ?? 0,
+          render_meta: renderMeta,
+        }),
+      })
+      const itemData = await itemRes.json().catch(() => ({}))
+      if (!itemRes.ok) throw new Error(itemData?.error || t("errors.createItem", "Erro ao criar item."))
+
+      const itemId: string | undefined = itemData?.id_portfolio_item ?? itemData?.item?.id_portfolio_item
+      if (!itemId) throw new Error(t("errors.createItemResponse", "Resposta inesperada ao criar item."))
+
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i]
         const mime = result.mimeType || result.blob.type || (result.kind === "image" ? "image/webp" : "video/mp4")
         const ext = result.kind === "image" ? "webp" : (mime.includes("webm") ? "webm" : "mp4")
-        const file = new File([result.blob], `freelandoo-${portfolioKind}-${itemId}.${ext}`, { type: mime })
+        const file = new File([result.blob], `freelandoo-${portfolioKind}-${itemId}-${i}.${ext}`, { type: mime })
         const fd = new FormData()
         fd.append("file", file)
         fd.append("media_type", result.kind)
+        fd.append("sort_order", String(i))
 
         const shouldBypassProxy = result.kind === "video" || result.blob.size > SERVERLESS_UPLOAD_LIMIT
         const uploadUrl = shouldBypassProxy
@@ -502,20 +709,20 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           const uploadData = await uploadRes.json().catch(() => ({}))
           throw new Error(uploadData?.error || t("errors.uploadMedia", "Item criado, mas o upload da mídia falhou."))
         }
-
-        // Feed de comunidade: liga o post recém-criado ao feed do grupo. Não-fatal
-        // (o post já existe no perfil do membro mesmo que o link falhe).
-        if (communityId) {
-          try {
-            await fetch(`/api/communities/${communityId}/feed`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ id_portfolio_item: itemId }),
-            })
-          } catch { /* noop */ }
-        }
-        setProgress(1)
+        setProgress(0.5 + ((i + 1) / results.length) * 0.5)
       }
+
+      // Feed de comunidade: liga o post recém-criado ao feed do grupo (não-fatal).
+      if (communityId) {
+        try {
+          await fetch(`/api/communities/${communityId}/feed`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ id_portfolio_item: itemId }),
+          })
+        } catch { /* noop */ }
+      }
+      setProgress(1)
       onPosted?.(); onClose(); router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.publish", "Falha ao publicar."))
@@ -528,14 +735,18 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   if (!open) return null
 
   const modeLabel = mode === "post" ? t("mode.post", "Novo Post") : mode === "bee" ? t("mode.bee", "Novo Bee") : t("mode.story", "Story")
-  const canAdvanceFromCrop = !!draft
-  const canPublish = !!draft && !!selectedProfileId && !trampoBlockedFatal(mode, profiles, selectedProfile)
+  const canAdvanceFromCrop = slides.length > 0
+  const canPublish = slides.length > 0 && !!selectedProfileId
 
   return (
     <div className="fl-root fixed inset-0 z-[95] flex items-stretch justify-center bg-[#0b0804]">
       <input
-        ref={fileRef} type="file" accept="image/*,video/*" className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0] || null)}
+        ref={fileRef} type="file" accept="image/*,video/*" multiple={mode === "post"} className="hidden"
+        onChange={(e) => { handleFiles(e.target.files); e.target.value = "" }}
+      />
+      <input
+        ref={addImagesRef} type="file" accept="image/*" multiple className="hidden"
+        onChange={(e) => { handleAddImages(e.target.files); e.target.value = "" }}
       />
       <input
         ref={overlayInputRef} type="file" accept="image/*,video/*" className="hidden"
@@ -548,7 +759,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           <button
             type="button"
             onClick={() => {
-              if (step === "crop") { setStep("pick"); if (draft?.url) URL.revokeObjectURL(draft.url); setDraft(null) }
+              if (step === "crop") { clearSlides(); setStep("pick") }
               else if (step === "edit") setStep("crop")
               else if (step === "details") setStep("edit")
               else onClose()
@@ -560,6 +771,11 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
           </button>
           <h2 className="flex items-center gap-2 font-[family-name:var(--font-anton)] text-lg uppercase text-[#F2B705]">
             {modeLabel}
+            {isCarousel && (
+              <span className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] text-[#0B0B0D]">
+                {t("carousel.badge", "Carrossel")} {active + 1}/{slides.length}
+              </span>
+            )}
             {mode === "story" && (
               <span className={cn(
                 "border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em]",
@@ -587,6 +803,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
             <PickStep
               onPick={() => fileRef.current?.click()}
               onCamera={mode === "story" && selectedProfileId ? () => setCameraOpen(true) : undefined}
+              showCarouselHint={mode === "post"}
               error={error}
             />
           )}
@@ -604,13 +821,22 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
                 {step === "crop" && allowedAspects.length > 1 && (
                   <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
                     {allowedAspects.map((a) => (
-                      <Chip key={a} on={Math.abs(crop.aspect - ASPECTS[a].ratio) < 0.001} onClick={() => setCrop((c) => ({ ...c, aspect: ASPECTS[a].ratio }))}>
+                      <Chip key={a} on={Math.abs(crop.aspect - ASPECTS[a].ratio) < 0.001} onClick={() => setSharedAspect(ASPECTS[a].ratio)}>
                         {ASPECTS[a].label}
                       </Chip>
                     ))}
                   </div>
                 )}
               </div>
+
+              {showTray && (
+                <SlideTray
+                  slides={slides} active={active} canAddMore={canAddMore}
+                  onSelect={selectSlide} onRemove={removeSlide} onMove={moveSlide}
+                  onAdd={() => addImagesRef.current?.click()}
+                />
+              )}
+
               {draft.kind === "video" && videoNotice && (
                 <div className="flex items-start gap-2 border-t-2 border-[#0B0B0D] bg-[#201a10] px-4 py-2 text-[11px] font-bold text-[#d6cfbf]">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
@@ -638,7 +864,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
                   textLayers={textLayers} activeTextId={activeTextId} setActiveTextId={setActiveTextId}
                   onAddText={addText} onUpdateText={updateText} onRemoveText={removeText}
                   overlay={overlay} onPickOverlay={() => overlayInputRef.current?.click()}
-                  onOverlayScale={(s) => setOverlay((o) => (o ? { ...o, scale: s } : o))}
+                  onOverlayScale={(s) => setOverlayDescriptor((o) => (o ? { ...o, scale: s } : o))}
                   onRemoveOverlay={removeOverlay}
                   audioPick={audioPick} onAudioChange={setAudioPick}
                 />
@@ -690,12 +916,87 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   )
 }
 
-/** Story trampo bloqueado em clan não é fatal (vira rest); nunca trava publish. */
-function trampoBlockedFatal(_mode: string, _profiles: ProfileLite[], _p: ProfileLite | null): boolean {
-  return false
-}
-
 // ─── peças ──────────────────────────────────────────────────────────────────
+
+/** Bandeja de slides do carrossel (selecionar · adicionar · remover · reordenar). */
+function SlideTray({
+  slides, active, canAddMore, onSelect, onRemove, onMove, onAdd,
+}: {
+  slides: Slide[]; active: number; canAddMore: boolean
+  onSelect: (i: number) => void; onRemove: (i: number) => void
+  onMove: (i: number, dir: -1 | 1) => void; onAdd: () => void
+}) {
+  const t = useTranslations("Composer")
+  return (
+    <div className="border-t-2 border-[#0B0B0D] bg-[#15110a] px-3 py-2.5">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {slides.map((s, i) => {
+          const on = i === active
+          return (
+            <div key={s.id} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => onSelect(i)}
+                className={cn(
+                  "relative block h-16 w-16 overflow-hidden border-2",
+                  on ? "border-[#F2B705] shadow-[0_0_0_2px_#F2B705]" : "border-[#0B0B0D]",
+                )}
+                aria-label={t("carousel.slide", "Foto {n}").replace("{n}", String(i + 1))}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.draft.url} alt="" className="h-full w-full object-cover" />
+                <span className="absolute bottom-0 left-0 bg-[#0B0B0D]/80 px-1 text-[9px] font-black text-[#F1EDE2]">{i + 1}</span>
+              </button>
+              {slides.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(i)}
+                  className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center border-2 border-[#0B0B0D] bg-[#c2371f] text-white"
+                  aria-label={t("carousel.remove", "Remover foto")}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {on && slides.length > 1 && (
+                <div className="mt-1 flex items-center justify-center gap-1">
+                  <button
+                    type="button" onClick={() => onMove(i, -1)} disabled={i === 0}
+                    className="grid h-5 w-5 place-items-center border border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] disabled:opacity-30"
+                    aria-label={t("carousel.moveLeft", "Mover para a esquerda")}
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button" onClick={() => onMove(i, 1)} disabled={i === slides.length - 1}
+                    className="grid h-5 w-5 place-items-center border border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] disabled:opacity-30"
+                    aria-label={t("carousel.moveRight", "Mover para a direita")}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {canAddMore && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="grid h-16 w-16 shrink-0 place-items-center border-2 border-dashed border-[#F2B705]/60 bg-[#1D1810] text-[#F2B705]"
+            aria-label={t("carousel.add", "Adicionar fotos")}
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-[#a89f8d]">
+        {slides.length > 1
+          ? t("carousel.hintMulti", "Cada foto tem seu próprio corte, filtro e texto.")
+          : t("carousel.hintAdd", "Toque em + para montar um carrossel (até {max} fotos).").replace("{max}", String(MAX_SLIDES))}
+      </p>
+    </div>
+  )
+}
 
 function StepAction({ step, disabledNext, onNext, mode }: { step: Step; disabledNext: boolean; onNext: () => void; mode: string }) {
   const t = useTranslations("Composer")
@@ -714,12 +1015,15 @@ function StepAction({ step, disabledNext, onNext, mode }: { step: Step; disabled
   )
 }
 
-function PickStep({ onPick, onCamera, error }: { onPick: () => void; onCamera?: () => void; error: string | null }) {
+function PickStep({ onPick, onCamera, showCarouselHint, error }: { onPick: () => void; onCamera?: () => void; showCarouselHint?: boolean; error: string | null }) {
   const t = useTranslations("Composer")
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <div className="font-[family-name:var(--font-anton)] text-4xl uppercase text-[#F2B705]">{t("pick.kicker", "EXTRA!")}</div>
       <p className="max-w-xs text-sm text-[#d6cfbf]">{t("pick.description", "Toque para escolher uma foto ou vídeo da sua galeria.")}</p>
+      {showCarouselHint && (
+        <p className="max-w-xs text-[11px] uppercase tracking-[0.08em] text-[#a89f8d]">{t("pick.carouselHint", "Dica: escolha várias fotos para montar um carrossel.")}</p>
+      )}
       <button
         type="button" onClick={onPick}
         className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D]"
@@ -808,15 +1112,15 @@ function EditPanel({
         )}
       </div>
       <div className="flex items-stretch border-t-2 border-[#0B0B0D]">
-        {tabs.map((t) => (
+        {tabs.map((tb) => (
           <button
-            key={t.id} type="button" onClick={() => onTab(t.id)}
+            key={tb.id} type="button" onClick={() => onTab(tb.id)}
             className={cn(
               "flex flex-1 flex-col items-center gap-1 py-2.5 text-[9px] font-black uppercase tracking-[0.05em] transition",
-              tab === t.id ? "bg-[#F2B705] text-[#0B0B0D]" : "text-[#a89f8d]",
+              tab === tb.id ? "bg-[#F2B705] text-[#0B0B0D]" : "text-[#a89f8d]",
             )}
           >
-            {t.icon}{t.label}
+            {tb.icon}{tb.label}
           </button>
         ))}
       </div>
