@@ -22,6 +22,7 @@ import {
   Wallet,
   Home,
   Compass,
+  HeartHandshake,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -60,6 +61,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const tAcc = useTranslations("Account")
   const tCommon = useTranslations("Common")
   const storeOn = useFeature("store")
+  const vaquinhaOn = useFeature("vaquinha")
 
   // Abrir chamado (serviço / produto / curso) — mesmo fluxo das Mensagens.
   const [chamadoExpanded, setChamadoExpanded] = useState(false)
@@ -131,6 +133,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   ]
   // Itens abaixo do "Abrir chamado".
   const actionsBottom: Action[] = [
+    ...(vaquinhaOn
+      ? [{ href: "/vaquinha/nova", label: tAcc("vaquinhaLabel", "Vaquinha"), icon: HeartHandshake }]
+      : []),
     {
       href: "/loja-polens",
       label: tAcc("polenLabel", "Seus Pólens"),
