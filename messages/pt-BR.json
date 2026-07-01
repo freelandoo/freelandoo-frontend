@@ -3839,5 +3839,12 @@
   },
   "Nav": {
     "reviewTour": "Rever tour"
+  },
+  "Follow": {
+    "follow": "Acompanhar",
+    "following": "Acompanhando",
+    "unfollow": "Deixar de acompanhar",
+    "errorUpdate": "Não foi possível atualizar agora.",
+    "errorSelf": "A entidade não pode acompanhar ela mesma."
   }
 }

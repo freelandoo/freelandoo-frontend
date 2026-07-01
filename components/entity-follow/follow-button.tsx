@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import type { EntityFollowType, FollowActor, FollowCounts } from "@/lib/types/entity-follow"
@@ -20,11 +21,6 @@ function actorKey(actor: Pick<FollowActor, "type" | "id">) {
   return `${actor.type}:${actor.id}`
 }
 
-function actorLabel(actor: FollowActor) {
-  const kind = actor.type === "clan" ? "Clan" : "Perfil"
-  return `${kind}: ${actor.display_name || "Sem nome"}`
-}
-
 export function FollowButton({
   targetType,
   targetId,
@@ -33,6 +29,7 @@ export function FollowButton({
   onChanged,
 }: FollowButtonProps) {
   const router = useRouter()
+  const t = useTranslations("Follow")
   const [actors, setActors] = useState<FollowActor[]>([])
   const [selectedKey, setSelectedKey] = useState("")
   const [isFollowing, setIsFollowing] = useState(false)
@@ -130,12 +127,12 @@ export function FollowButton({
     }
 
     if (!selectedActor || pending || loadingActors || loadingStatus) {
-      setError("Não foi possível atualizar agora.")
+      setError(t("errorUpdate", "Não foi possível atualizar agora."))
       return
     }
 
     if (selectedActor.type === targetType && selectedActor.id === targetId) {
-      setError("A entidade não pode acompanhar ela mesma.")
+      setError(t("errorSelf", "A entidade não pode acompanhar ela mesma."))
       return
     }
 
@@ -167,7 +164,7 @@ export function FollowButton({
       onChanged?.({ isFollowing: finalState, counts: data.counts })
     } catch {
       setIsFollowing(previous)
-      setError("Não foi possível atualizar agora.")
+      setError(t("errorUpdate", "Não foi possível atualizar agora."))
     } finally {
       setPending(false)
     }
@@ -176,34 +173,13 @@ export function FollowButton({
   const busy = pending || loadingActors || loadingStatus
   const label = isFollowing
     ? hoveringActive
-      ? "Deixar de acompanhar"
-      : "Acompanhando"
-    : "Acompanhar"
+      ? t("unfollow", "Deixar de acompanhar")
+      : t("following", "Acompanhando")
+    : t("follow", "Acompanhar")
 
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", compact && "w-full")}>
       <div className={cn("flex items-center gap-2", compact && "w-full")}>
-        {actors.length > 1 && (
-          <select
-            value={selectedKey}
-            onChange={(event) => {
-              setError("")
-              setSelectedKey(event.target.value)
-            }}
-            className={cn(
-              "h-9 max-w-[180px] rounded-md border border-border bg-background px-2 text-xs font-medium outline-none transition-colors hover:bg-muted",
-              compact && "h-8 max-w-[130px]"
-            )}
-            aria-label="Acompanhar como"
-          >
-            {actors.map((actor) => (
-              <option key={actorKey(actor)} value={actorKey(actor)}>
-                {actorLabel(actor)}
-              </option>
-            ))}
-          </select>
-        )}
-
         <Button
           type="button"
           size={compact ? "sm" : "default"}

@@ -4405,5 +4405,12 @@
   },
   "Nav": {
     "reviewTour": "Repasar tour"
+  },
+  "Follow": {
+    "follow": "Seguir",
+    "following": "Siguiendo",
+    "unfollow": "Dejar de seguir",
+    "errorUpdate": "No se pudo actualizar ahora.",
+    "errorSelf": "La entidad no puede seguirse a sí misma."
   }
 }

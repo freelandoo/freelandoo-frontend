@@ -4425,5 +4425,12 @@
   },
   "Nav": {
     "reviewTour": "Review tour"
+  },
+  "Follow": {
+    "follow": "Follow",
+    "following": "Following",
+    "unfollow": "Unfollow",
+    "errorUpdate": "Couldn't update right now.",
+    "errorSelf": "An entity can't follow itself."
   }
 }
