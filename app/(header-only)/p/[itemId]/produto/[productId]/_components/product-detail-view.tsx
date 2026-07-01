@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, MapPin, MessageCircle, Package, ShoppingCart, Store, Truck } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BuyProductDialog } from "./buy-product-dialog"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
 interface Media {
   id_product_media: number
@@ -71,6 +73,12 @@ function maskCep(value: string) {
 export function ProductDetailView({ profileId, productId }: { profileId: string; productId: string }) {
   const t = useTranslations("Product")
   const locale = useLocale()
+  const router = useRouter()
+  // Loja/Produtos desligada no Painel de Controle → página de produto some.
+  const storeOn = useFeature("store")
+  useEffect(() => {
+    if (!storeOn) router.replace("/")
+  }, [storeOn, router])
   const [product, setProduct] = useState<Product | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -143,6 +151,8 @@ export function ProductDetailView({ profileId, productId }: { profileId: string;
     if (!shipping || !selectedShippingId) return null
     return shipping.options.find((o) => String(o.service_id) === selectedShippingId) || null
   }, [shipping, selectedShippingId])
+
+  if (!storeOn) return null
 
   if (state === "loading") {
     return (

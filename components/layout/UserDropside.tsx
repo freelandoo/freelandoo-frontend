@@ -28,6 +28,7 @@ import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-cha
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -58,6 +59,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const tNav = useTranslations("Navigation")
   const tAcc = useTranslations("Account")
   const tCommon = useTranslations("Common")
+  const storeOn = useFeature("store")
 
   // Abrir chamado (serviço / produto / curso) — mesmo fluxo das Mensagens.
   const [chamadoExpanded, setChamadoExpanded] = useState(false)
@@ -146,9 +148,10 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     },
   ]
 
+  // Loja/Produtos desligada no Painel de Controle → sem "Pedir Produto".
   const chamadoOptions: { mode: ChamadoMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { mode: "service", label: tAcc("chamadoModeService", "Serviço"), icon: Briefcase },
-    { mode: "product", label: tAcc("chamadoModeProduct", "Produto"), icon: Package },
+    ...(storeOn ? [{ mode: "product" as ChamadoMode, label: tAcc("chamadoModeProduct", "Produto"), icon: Package }] : []),
     { mode: "course", label: tAcc("chamadoModeCourse", "Curso"), icon: GraduationCap },
   ]
 

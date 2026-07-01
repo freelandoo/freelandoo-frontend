@@ -54,6 +54,7 @@ import { profileAllowsPublicBooking } from "@/lib/booking-public"
 import { RateProfile } from "@/components/profile/rate-profile"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ShareIconButton } from "@/components/share/share-icon-button"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { buildProfileUrl } from "@/lib/slug"
 import type { ComposerMode } from "@/lib/composer/types"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -188,6 +189,11 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
+  const storeOn = useFeature("store")
+  // Loja desligada no Painel de Controle → nunca fica na aba Loja.
+  useEffect(() => {
+    if (!storeOn && portfolioTab === "shop") setPortfolioTab("feed")
+  }, [storeOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
   const { ensureConsent } = useActionConsent()
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
@@ -871,7 +877,7 @@ export default function FreelancerProfileView({
                 <GraduationCap className="h-3.5 w-3.5" />
                 {t("tabCourses", "Cursos")}
               </button>
-              {!isClan && (
+              {!isClan && storeOn && (
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("shop")}

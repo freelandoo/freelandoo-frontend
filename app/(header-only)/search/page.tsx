@@ -27,6 +27,7 @@ import {
   type ProductSubfilterState,
 } from "@/components/search/product-subfilters"
 import { getAttributeSchema } from "@/lib/product-attributes"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
@@ -256,11 +257,19 @@ function SearchPageInner() {
     setProductFilterSheetOpen(false)
   }, [])
 
-  // URL state sync: ?tab=
+  const storeOn = useFeature("store")
+
+  // URL state sync: ?tab= (Produtos só se a Loja estiver ligada).
   useEffect(() => {
     const raw = searchParams.get("tab")
+    if (raw === "products" && !storeOn) { setTab("services"); return }
     if (raw === "services" || raw === "products" || raw === "courses" || raw === "communities") setTab(raw)
-  }, [searchParams])
+  }, [searchParams, storeOn])
+
+  // Loja desligada em runtime enquanto a aba Produtos estava aberta → volta p/ Serviços.
+  useEffect(() => {
+    if (!storeOn && tab === "products") setTab("services")
+  }, [storeOn, tab])
 
   const handleTabChange = useCallback((next: SearchTab) => {
     setTab(next)

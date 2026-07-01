@@ -2,6 +2,7 @@
 
 import { Briefcase, Package, GraduationCap, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { cn } from "@/lib/utils"
 
 export type SearchTab = "services" | "products" | "courses" | "communities"
@@ -21,10 +22,13 @@ const TABS: { id: SearchTab; labelKey: string; labelPt: string; icon: React.Comp
 
 export function SearchTabsBar({ tab, onTabChange }: Props) {
   const t = useTranslations("Search")
+  const storeOn = useFeature("store")
+  // Loja/Produtos desligada no Painel de Controle → some a aba Produtos.
+  const tabs = storeOn ? TABS : TABS.filter((x) => x.id !== "products")
   return (
     <div className="fl-root sticky top-0 z-30 border-b-2 border-[#0B0B0D] bg-[#0b0804]/95 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-[640px] items-stretch gap-1.5 px-3 py-2.5 md:max-w-[760px] lg:max-w-[1080px]">
-        {TABS.map((tabItem) => {
+        {tabs.map((tabItem) => {
           const active = tabItem.id === tab
           const Icon = tabItem.icon
           return (
