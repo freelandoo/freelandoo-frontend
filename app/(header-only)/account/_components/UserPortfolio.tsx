@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { MediaComposer } from "@/components/composer/MediaComposer"
 import type { ComposerMode } from "@/lib/composer/types"
@@ -124,6 +125,14 @@ export function UserPortfolio({
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("feed")
+  // Chaves do Painel de Controle: Cursos e Comunidade podem estar desligadas.
+  const coursesOn = useFeature("courses")
+  const communitiesOn = useFeature("communities")
+  useEffect(() => {
+    if ((!coursesOn && portfolioTab === "courses") || (!communitiesOn && portfolioTab === "clans")) {
+      setPortfolioTab("feed")
+    }
+  }, [coursesOn, communitiesOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
@@ -569,16 +578,18 @@ export function UserPortfolio({
               <Hexagon className="h-4 w-4" />
             </button>
           </HoverHint>
-          <HoverHint id="account-tab-courses" side="bottom">
-            <button
-              type="button"
-              onClick={() => setPortfolioTab("courses")}
-              className={tabBtn(portfolioTab === "courses")}
-            >
-              <GraduationCap className="h-3.5 w-3.5" />
-              {tr("tabCourses", "Cursos")}
-            </button>
-          </HoverHint>
+          {coursesOn && (
+            <HoverHint id="account-tab-courses" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("courses")}
+                className={tabBtn(portfolioTab === "courses")}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                {tr("tabCourses", "Cursos")}
+              </button>
+            </HoverHint>
+          )}
           <HoverHint id="account-tab-saved" side="bottom">
             <button
               type="button"
@@ -601,7 +612,7 @@ export function UserPortfolio({
               </button>
             </HoverHint>
           )}
-          {myClansSlot !== undefined && (
+          {myClansSlot !== undefined && communitiesOn && (
             <HoverHint id="account-tab-clans" side="bottom">
               <button
                 type="button"

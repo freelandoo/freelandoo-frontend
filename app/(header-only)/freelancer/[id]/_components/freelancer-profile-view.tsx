@@ -189,11 +189,20 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
+  // Chaves do Painel de Controle por aba do perfil.
   const storeOn = useFeature("store")
-  // Loja desligada no Painel de Controle → nunca fica na aba Loja.
+  const servicesOn = useFeature("services")
+  const coursesOn = useFeature("courses")
+  // Aba desligada → volta pro Portfólio (feed).
   useEffect(() => {
-    if (!storeOn && portfolioTab === "shop") setPortfolioTab("feed")
-  }, [storeOn, portfolioTab])
+    if (
+      (!storeOn && portfolioTab === "shop") ||
+      (!servicesOn && portfolioTab === "services") ||
+      (!coursesOn && portfolioTab === "courses")
+    ) {
+      setPortfolioTab("feed")
+    }
+  }, [storeOn, servicesOn, coursesOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
   const { ensureConsent } = useActionConsent()
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
@@ -853,30 +862,34 @@ export default function FreelancerProfileView({
               >
                 <Hexagon className="h-4 w-4" />
               </button>
-              <button
-                type="button"
-                onClick={() => setPortfolioTab("services")}
-                className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
-                  portfolioTab === "services"
-                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                }`}
-              >
-                <Briefcase className="h-3.5 w-3.5" />
-                {t("tabServices", "Serviços")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPortfolioTab("courses")}
-                className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
-                  portfolioTab === "courses"
-                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                }`}
-              >
-                <GraduationCap className="h-3.5 w-3.5" />
-                {t("tabCourses", "Cursos")}
-              </button>
+              {servicesOn && (
+                <button
+                  type="button"
+                  onClick={() => setPortfolioTab("services")}
+                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
+                    portfolioTab === "services"
+                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
+                  }`}
+                >
+                  <Briefcase className="h-3.5 w-3.5" />
+                  {t("tabServices", "Serviços")}
+                </button>
+              )}
+              {coursesOn && (
+                <button
+                  type="button"
+                  onClick={() => setPortfolioTab("courses")}
+                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
+                    portfolioTab === "courses"
+                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
+                  }`}
+                >
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {t("tabCourses", "Cursos")}
+                </button>
+              )}
               {!isClan && storeOn && (
                 <button
                   type="button"

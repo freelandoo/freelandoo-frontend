@@ -257,19 +257,39 @@ function SearchPageInner() {
     setProductFilterSheetOpen(false)
   }, [])
 
+  // Chaves do Painel de Controle: cada aba pode estar desligada.
+  const servicesOn = useFeature("services")
   const storeOn = useFeature("store")
+  const coursesOn = useFeature("courses")
+  const communitiesOn = useFeature("communities")
+  const isTabEnabled = useCallback(
+    (x: SearchTab) =>
+      x === "services" ? servicesOn : x === "products" ? storeOn : x === "courses" ? coursesOn : communitiesOn,
+    [servicesOn, storeOn, coursesOn, communitiesOn],
+  )
+  // Primeira aba ligada (fallback quando a atual/padrão está desligada).
+  const firstEnabledTab: SearchTab = servicesOn
+    ? "services"
+    : storeOn
+      ? "products"
+      : coursesOn
+        ? "courses"
+        : communitiesOn
+          ? "communities"
+          : "services"
 
-  // URL state sync: ?tab= (Produtos só se a Loja estiver ligada).
+  // URL state sync: ?tab= — respeita as chaves ligadas.
   useEffect(() => {
     const raw = searchParams.get("tab")
-    if (raw === "products" && !storeOn) { setTab("services"); return }
-    if (raw === "services" || raw === "products" || raw === "courses" || raw === "communities") setTab(raw)
-  }, [searchParams, storeOn])
+    const candidate: SearchTab =
+      raw === "services" || raw === "products" || raw === "courses" || raw === "communities" ? raw : "services"
+    setTab(isTabEnabled(candidate) ? candidate : firstEnabledTab)
+  }, [searchParams, isTabEnabled, firstEnabledTab])
 
-  // Loja desligada em runtime enquanto a aba Produtos estava aberta → volta p/ Serviços.
+  // Chave desligada em runtime enquanto a aba estava aberta → cai na 1ª ligada.
   useEffect(() => {
-    if (!storeOn && tab === "products") setTab("services")
-  }, [storeOn, tab])
+    if (!isTabEnabled(tab)) setTab(firstEnabledTab)
+  }, [tab, isTabEnabled, firstEnabledTab])
 
   const handleTabChange = useCallback((next: SearchTab) => {
     setTab(next)
