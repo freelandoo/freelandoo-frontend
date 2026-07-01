@@ -4474,6 +4474,23 @@
     "deadlineRequired": "Define el plazo.",
     "created": "¡Vaquita creada!",
     "saved": "Cambios guardados.",
-    "saveError": "No se pudo guardar."
+    "saveError": "No se pudo guardar.",
+    "updates": "Publicaciones",
+    "kindText": "Texto",
+    "kindPost": "Foto",
+    "kindBee": "Bee",
+    "noPosts": "Aún no hay publicaciones.",
+    "writePh": "Escribe una actualización…",
+    "captionPh": "Leyenda (opcional)…",
+    "pickPhoto": "Elegir foto",
+    "pickVideo": "Elegir video",
+    "pickMedia": "Selecciona un archivo.",
+    "writeSomething": "Escribe algo.",
+    "publish": "Publicar",
+    "posted": "¡Publicado!",
+    "postError": "No se pudo publicar.",
+    "delete": "Eliminar",
+    "confirmDeletePost": "¿Eliminar esta publicación?",
+    "deleteError": "Error al eliminar."
   }
 }

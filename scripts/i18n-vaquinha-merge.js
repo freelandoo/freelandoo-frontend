@@ -61,6 +61,24 @@ const V = {
   created: ["Vaquinha criada!", "Campaign created!", "¡Vaquita creada!"],
   saved: ["Alterações salvas.", "Changes saved.", "Cambios guardados."],
   saveError: ["Não foi possível salvar.", "Could not save.", "No se pudo guardar."],
+  // Publicações
+  updates: ["Publicações", "Updates", "Publicaciones"],
+  kindText: ["Texto", "Text", "Texto"],
+  kindPost: ["Foto", "Photo", "Foto"],
+  kindBee: ["Bee", "Bee", "Bee"],
+  noPosts: ["Nenhuma publicação ainda.", "No updates yet.", "Aún no hay publicaciones."],
+  writePh: ["Escreva uma atualização…", "Write an update…", "Escribe una actualización…"],
+  captionPh: ["Legenda (opcional)…", "Caption (optional)…", "Leyenda (opcional)…"],
+  pickPhoto: ["Escolher foto", "Choose photo", "Elegir foto"],
+  pickVideo: ["Escolher vídeo", "Choose video", "Elegir video"],
+  pickMedia: ["Selecione uma mídia.", "Select a media file.", "Selecciona un archivo."],
+  writeSomething: ["Escreva algo.", "Write something.", "Escribe algo."],
+  publish: ["Publicar", "Publish", "Publicar"],
+  posted: ["Publicado!", "Published!", "¡Publicado!"],
+  postError: ["Não foi possível publicar.", "Could not publish.", "No se pudo publicar."],
+  delete: ["Apagar", "Delete", "Eliminar"],
+  confirmDeletePost: ["Apagar esta publicação?", "Delete this post?", "¿Eliminar esta publicación?"],
+  deleteError: ["Falha ao apagar.", "Failed to delete.", "Error al eliminar."],
 }
 
 // Entrada no menu (ns Account, reusa o vocabulário da conta).

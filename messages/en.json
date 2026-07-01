@@ -4494,6 +4494,23 @@
     "deadlineRequired": "Set the deadline.",
     "created": "Campaign created!",
     "saved": "Changes saved.",
-    "saveError": "Could not save."
+    "saveError": "Could not save.",
+    "updates": "Updates",
+    "kindText": "Text",
+    "kindPost": "Photo",
+    "kindBee": "Bee",
+    "noPosts": "No updates yet.",
+    "writePh": "Write an update…",
+    "captionPh": "Caption (optional)…",
+    "pickPhoto": "Choose photo",
+    "pickVideo": "Choose video",
+    "pickMedia": "Select a media file.",
+    "writeSomething": "Write something.",
+    "publish": "Publish",
+    "posted": "Published!",
+    "postError": "Could not publish.",
+    "delete": "Delete",
+    "confirmDeletePost": "Delete this post?",
+    "deleteError": "Failed to delete."
   }
 }

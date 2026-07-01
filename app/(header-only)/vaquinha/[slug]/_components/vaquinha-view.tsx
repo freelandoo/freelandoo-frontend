@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Pencil, Square, ArrowLeft } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Pencil, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -22,6 +22,15 @@ type Vaquinha = {
   status: "active" | "ended" | "canceled"
 }
 type Donor = { id_donation: string; donor_name: string; message: string | null; amount_cents: number; paid_at: string }
+type Post = {
+  id_post: string
+  kind: "post" | "bee" | "text"
+  caption: string | null
+  media_url: string | null
+  thumbnail_url: string | null
+  media_type: "image" | "video" | null
+  created_at: string
+}
 
 const PRESETS = [1000, 2500, 5000, 10000, 20000]
 
@@ -42,6 +51,14 @@ export function VaquinhaView({ slug }: { slug: string }) {
   const [donorName, setDonorName] = useState("")
   const [message, setMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
+
+  // Publicações da vaquinha
+  const [posts, setPosts] = useState<Post[]>([])
+  const [composerKind, setComposerKind] = useState<"text" | "post" | "bee" | null>(null)
+  const [caption, setCaption] = useState("")
+  const [file, setFile] = useState<File | null>(null)
+  const [posting, setPosting] = useState(false)
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   const money = useCallback(
     (cents: number) => (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" }),
@@ -67,9 +84,20 @@ export function VaquinhaView({ slug }: { slug: string }) {
     }
   }, [slug])
 
+  const loadPosts = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/vaquinhas/${encodeURIComponent(slug)}/posts`, { cache: "no-store" })
+      const data = await res.json()
+      setPosts(Array.isArray(data.posts) ? data.posts : [])
+    } catch {
+      setPosts([])
+    }
+  }, [slug])
+
   useEffect(() => {
     void load()
-  }, [load])
+    void loadPosts()
+  }, [load, loadPosts])
 
   // Descobre se o visitante é o dono (mostra controles).
   useEffect(() => {
@@ -145,6 +173,49 @@ export function VaquinhaView({ slug }: { slug: string }) {
     } else {
       toast.error(t("closeError", "Falha ao encerrar."))
     }
+  }
+
+  function openComposer(kind: "text" | "post" | "bee") {
+    setComposerKind(kind)
+    setCaption("")
+    setFile(null)
+  }
+
+  async function submitPost() {
+    if (!v) return
+    if (composerKind === "text" && !caption.trim()) return toast.error(t("writeSomething", "Escreva algo."))
+    if (composerKind !== "text" && !file) return toast.error(t("pickMedia", "Selecione uma mídia."))
+    setPosting(true)
+    try {
+      const token = getToken()
+      const fd = new FormData()
+      fd.append("kind", composerKind || "text")
+      fd.append("caption", caption)
+      if (file) fd.append("media", file)
+      const res = await fetch(`/api/me/vaquinha/${v.id_vaquinha}/posts`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || "post")
+      toast.success(t("posted", "Publicado!"))
+      setComposerKind(null)
+      setCaption("")
+      setFile(null)
+      void loadPosts()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("postError", "Não foi possível publicar."))
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  async function deletePost(id: string) {
+    if (!confirm(t("confirmDeletePost", "Apagar esta publicação?"))) return
+    const token = getToken()
+    const res = await fetch(`/api/me/vaquinha/posts/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    if (res.ok) { setPosts((p) => p.filter((x) => x.id_post !== id)) } else toast.error(t("deleteError", "Falha ao apagar."))
   }
 
   if (state === "loading") {
@@ -272,6 +343,90 @@ export function VaquinhaView({ slug }: { slug: string }) {
           </section>
         )}
 
+        {/* Publicações da vaquinha (só aqui, não entram no feed) */}
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="fl-display text-xl text-foreground">{t("updates", "Publicações")}</h2>
+            {isOwner && (
+              <div className="flex gap-1.5">
+                <ComposerBtn icon={Type} label={t("kindText", "Texto")} onClick={() => openComposer("text")} />
+                <ComposerBtn icon={ImageIcon} label={t("kindPost", "Foto")} onClick={() => openComposer("post")} />
+                <ComposerBtn icon={Hexagon} label={t("kindBee", "Bee")} onClick={() => openComposer("bee")} />
+              </div>
+            )}
+          </div>
+
+          {/* Composer inline */}
+          {isOwner && composerKind && (
+            <div className="mb-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
+              <p className="fl-display text-lg">
+                {composerKind === "text" ? t("kindText", "Texto") : composerKind === "post" ? t("kindPost", "Foto") : t("kindBee", "Bee")}
+              </p>
+              <textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                maxLength={3000}
+                rows={3}
+                placeholder={composerKind === "text" ? t("writePh", "Escreva uma atualização…") : t("captionPh", "Legenda (opcional)…")}
+                className="mt-2 w-full resize-none border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+              />
+              {composerKind !== "text" && (
+                <div className="mt-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={composerKind === "bee" ? "video/*" : "image/*"}
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="inline-flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/40 bg-white px-3 py-2 text-sm font-bold transition hover:border-[#0B0B0D]"
+                  >
+                    <Plus className="h-4 w-4" /> {file ? file.name.slice(0, 28) : composerKind === "bee" ? t("pickVideo", "Escolher vídeo") : t("pickPhoto", "Escolher foto")}
+                  </button>
+                </div>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => setComposerKind(null)} disabled={posting} className="flex-1 border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm font-bold transition hover:bg-[#0B0B0D]/5 disabled:opacity-50">
+                  {t("cancel", "Cancelar")}
+                </button>
+                <button type="button" onClick={submitPost} disabled={posting} className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60">
+                  {posting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {t("publish", "Publicar")}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {posts.length === 0 ? (
+            <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
+              {t("noPosts", "Nenhuma publicação ainda.")}
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {posts.map((p) => (
+                <li key={p.id_post} className="relative border-2 border-[#0B0B0D] bg-[#1D1810] p-3 text-[#F1EDE2]">
+                  {isOwner && (
+                    <button type="button" onClick={() => deletePost(p.id_post)} aria-label={t("delete", "Apagar")} className="absolute right-2 top-2 border border-[#F1EDE2]/20 bg-black/40 p-1 text-[#F1EDE2]/60 transition hover:text-red-300">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {p.kind !== "text" && p.media_url && (
+                    p.media_type === "video" ? (
+                      <video src={p.media_url} poster={p.thumbnail_url || undefined} controls className={`w-full ${p.kind === "bee" ? "aspect-[9/16]" : "aspect-[4/5]"} bg-black object-contain`} />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.media_url} alt={p.caption || ""} loading="lazy" className="w-full object-cover" />
+                    )
+                  )}
+                  {p.caption && <p className="mt-2 whitespace-pre-wrap text-sm text-[#F1EDE2]/90">{p.caption}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         {/* Doadores */}
         <section className="mt-8">
           <h2 className="fl-display mb-3 text-xl text-foreground">{t("recentDonors", "Doações recentes")}</h2>
@@ -369,5 +524,17 @@ export function VaquinhaView({ slug }: { slug: string }) {
         </div>
       )}
     </main>
+  )
+}
+
+function ComposerBtn({ icon: Icon, label, onClick }: { icon: typeof Type; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-2 py-1 text-[11px] font-bold text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+    >
+      <Icon className="h-3.5 w-3.5" /> {label}
+    </button>
   )
 }
