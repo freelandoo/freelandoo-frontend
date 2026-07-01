@@ -809,7 +809,7 @@ export default function FreelancerProfileView({
                     path={sharePath}
                     title={`${profile.display_name} no Freelandoo`}
                     description={profile.bio?.slice(0, 140) || undefined}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-white/85 transition hover:bg-white/[0.08]"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2] active:scale-[0.96]"
                   />
                 )
               })(),
