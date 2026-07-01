@@ -10,6 +10,7 @@ import { CouponCapture } from "@/components/share/coupon-capture"
 import { GlobalOverlays } from "@/components/global-overlays"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
+import { FeatureFlagsProvider } from "@/components/feature-flags/FeatureFlagsProvider"
 import "./globals.css"
 
 // TOUR DESLIGADO (2026-06-14) e TourProvider REMOVIDO do shell (2026-06-15,
@@ -127,6 +128,11 @@ export default function RootLayout({
           {/* TourProvider removido (tour desligado desde 2026-06-14): saía em
               toda rota sem função. useTour() tem fallback no-op, então HoverHint
               e o profile-sidebar seguem funcionando sem o provider. */}
+          {/* FeatureFlagsProvider: mapa global de liga/desliga por
+              responsabilidade (Painel de Controle). Envolve TODA a árvore para
+              que qualquer superfície (nav, busca, perfil, páginas) consiga
+              esconder-se via useFeature(). Client-only, não re-dinamiza rotas. */}
+          <FeatureFlagsProvider>
           {/* ConsentProvider precisa envolver TODA a árvore (children + os
                 componentes globais abaixo): a ProfileSidebar/UserDropside monta
                 o OpenChamadoModal, que chama useConsentContext(). Com o provider
@@ -143,6 +149,7 @@ export default function RootLayout({
                   votação, prompts PWA) carregados lazy via client wrapper. */}
               <GlobalOverlays />
             </ConsentProvider>
+          </FeatureFlagsProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
             tag do Google carregar (LGPD). O banner de cookies atualiza para
