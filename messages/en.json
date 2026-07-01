@@ -1410,7 +1410,8 @@
     "originNumber": "Number",
     "originNumberPlaceholder": "No.",
     "originComplement": "Complement",
-    "originComplementPlaceholder": "Apt, block… (optional)"
+    "originComplementPlaceholder": "Apt, block… (optional)",
+    "myLearning": "My learning"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3518,7 +3519,11 @@
     "videoValidateError": "Couldn't validate the video.",
     "view": "View",
     "viewMembers": "View members",
-    "communities": "Community"
+    "communities": "Community",
+    "newCourseInline": "New course",
+    "createCourseNeedsPaid": "Activate this profile to create courses.",
+    "noCoursesOwnerHintPaid": "Create a course to show it here.",
+    "activateProfile": "Activate profile"
   },
   "Bees": {
     "chat": "Chat",

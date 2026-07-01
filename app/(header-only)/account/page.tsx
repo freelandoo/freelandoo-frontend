@@ -1497,16 +1497,9 @@ export default function PerfilPage() {
                 <Users className="h-4 w-4" />
                 {t("menuCommunity", "Comunidade")}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() =>
-                  window.dispatchEvent(
-                    new CustomEvent("freelandoo:create", { detail: { kind: "curso" } }),
-                  )
-                }
-              >
-                <Crown className="h-4 w-4" />
-                {t("menuCourse", "Curso")}
-              </DropdownMenuItem>
+              {/* "Curso" saiu daqui: cursos agora nascem DENTRO de um subperfil
+                  pago (regra Alex 2026-07-01). Criar curso é pelo "+" do
+                  subperfil, não pelo nível do user. */}
             </DropdownMenuContent>
           </DropdownMenu>
         }

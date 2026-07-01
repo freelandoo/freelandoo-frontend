@@ -1410,7 +1410,8 @@
     "originNumber": "Número",
     "originNumberPlaceholder": "Nº",
     "originComplement": "Complemento",
-    "originComplementPlaceholder": "Apto, bloco… (opcional)"
+    "originComplementPlaceholder": "Apto, bloco… (opcional)",
+    "myLearning": "Meu aprendizado"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -2932,7 +2933,11 @@
     "videoValidateError": "Não foi possível validar o vídeo.",
     "view": "Ver",
     "viewMembers": "Ver membros",
-    "communities": "Comunidade"
+    "communities": "Comunidade",
+    "newCourseInline": "Novo curso",
+    "createCourseNeedsPaid": "Ative este perfil para criar cursos.",
+    "noCoursesOwnerHintPaid": "Crie um curso para mostrá-lo aqui.",
+    "activateProfile": "Ativar perfil"
   },
   "Bees": {
     "chat": "Chat",

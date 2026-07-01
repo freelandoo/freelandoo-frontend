@@ -586,7 +586,7 @@ export function UserPortfolio({
                 className={tabBtn(portfolioTab === "courses")}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                {tr("tabCourses", "Cursos")}
+                {tr("myLearning", "Meu aprendizado")}
               </button>
             </HoverHint>
           )}
@@ -629,7 +629,7 @@ export function UserPortfolio({
       {/* Botões "Novo item" e "Novo Bees" migraram pro + do RetractableProfileHeader. */}
 
       {portfolioTab === "courses" ? (
-        <CoursesSection profileOptions={coursesProfileOptions} />
+        <CoursesSection profileOptions={coursesProfileOptions} purchasedOnly />
       ) : portfolioTab === "saved" ? (
         <SavedSection />
       ) : portfolioTab === "profiles" ? (

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -206,6 +207,7 @@ export default function FreelancerProfileView({
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
   const { ensureConsent } = useActionConsent()
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
+  const [createCourseTrigger, setCreateCourseTrigger] = useState(0)
   const searchParams = useSearchParams()
 
   const refetchPortfolio = async () => {
@@ -479,15 +481,15 @@ export default function FreelancerProfileView({
         // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
         setCreateServiceTrigger((n) => n + 1)
       } else if (detail.kind === "curso") {
+        // Curso agora nasce DENTRO do subperfil (pago). Abre a aba e dispara a
+        // criação vinculada a este perfil (o ProfileCoursesTab cria + navega).
         setPortfolioTab("courses")
-        // Curso é criado em /account, então redireciona.
-        router.push("/account?tab=cursos")
+        setCreateCourseTrigger((n) => n + 1)
       }
     }
     window.addEventListener("freelandoo:create-subprofile", onCreate)
     return () => window.removeEventListener("freelandoo:create-subprofile", onCreate)
     // ensureConsent muda quando os aceites carregam — re-vincula pra não usar closure obsoleto.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ensureConsent])
 
   const handleEditPortfolioItem = (item: PortfolioItem) => {
@@ -738,16 +740,18 @@ export default function FreelancerProfileView({
                   <Briefcase className="h-4 w-4" />
                   {t("menuService", "Serviço")}
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() =>
-                    window.dispatchEvent(
-                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "curso" } }),
-                    )
-                  }
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  {t("menuCourse", "Curso")}
-                </DropdownMenuItem>
+                {!isClan && !!profile.is_paid && (
+                  <DropdownMenuItem
+                    onSelect={() =>
+                      window.dispatchEvent(
+                        new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "curso" } }),
+                      )
+                    }
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    {t("menuCourse", "Curso")}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : undefined
@@ -931,6 +935,8 @@ export default function FreelancerProfileView({
               profileId={profileId}
               isOwnProfile={isOwnProfile}
               isClan={isClan}
+              isPaid={!!profile.is_paid}
+              openCreateTrigger={createCourseTrigger}
               clanMembers={isClan ? (members as ProfileServiceEditClanMember[]) : []}
             />
           )}
@@ -1618,19 +1624,54 @@ function ProfileCoursesTab({
   profileId,
   isOwnProfile,
   isClan = false,
+  isPaid = false,
+  openCreateTrigger = 0,
   clanMembers = [],
 }: {
   profileId: string
   isOwnProfile: boolean
   isClan?: boolean
+  /** Subperfil pago (assinatura ativa) — só ele pode criar cursos. */
+  isPaid?: boolean
+  /** Incrementado pelo "+" do header para disparar a criação vinculada. */
+  openCreateTrigger?: number
   clanMembers?: ProfileServiceEditClanMember[]
 }) {
   // Dono usa o catálogo "meus cursos" (inclui rascunhos/pausados).
   // Visitante busca o endpoint público (só publicados).
   const t = useTranslations("Profile")
+  const router = useRouter()
   const myCoursesHook = useMyCourses()
   const [publicCourses, setPublicCourses] = useState<PublicCourseLite[]>([])
   const [publicLoading, setPublicLoading] = useState(!isOwnProfile)
+  const [creating, setCreating] = useState(false)
+  const creatingRef = useRef(false)
+
+  // Cria um rascunho JÁ vinculado a este subperfil e abre o editor. Só o dono de
+  // um subperfil pago (não-clan) cria — o backend também exige is_paid.
+  const canCreate = isOwnProfile && !isClan && isPaid
+  const createAndGo = useCallback(async () => {
+    if (!canCreate || creatingRef.current) return
+    creatingRef.current = true
+    setCreating(true)
+    try {
+      const created = await myCoursesHook.createCourse({
+        title: t("newCourseInline", "Novo curso"),
+        profile_id: profileId,
+      })
+      router.push(`/account/courses/${created.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("createCourseError", "Falha ao criar curso"))
+      creatingRef.current = false
+      setCreating(false)
+    }
+  }, [canCreate, myCoursesHook, profileId, router, t])
+
+  // Dispara ao clicar "+ Curso" no header do subperfil.
+  useEffect(() => {
+    if (openCreateTrigger > 0 && canCreate) void createAndGo()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCreateTrigger])
 
   useEffect(() => {
     if (isOwnProfile) return
@@ -1675,16 +1716,28 @@ function ProfileCoursesTab({
           icon={<GraduationCap className="h-7 w-7" />}
           title={isOwnProfile ? t("noCoursesLinked", "Nenhum curso vinculado") : t("comingSoon", "Em breve")}
           description={
-            isOwnProfile
-              ? t("noCoursesOwnerHint", "Vincule um curso a este perfil para mostrá-lo aqui.")
-              : t("noCoursesVisitorHint", "Este perfil ainda não publicou cursos.")
+            !isOwnProfile
+              ? t("noCoursesVisitorHint", "Este perfil ainda não publicou cursos.")
+              : canCreate
+                ? t("noCoursesOwnerHintPaid", "Crie um curso para mostrá-lo aqui.")
+                : t("createCourseNeedsPaid", "Ative este perfil para criar cursos.")
           }
           action={
-            isOwnProfile ? (
-              <GoldButton href="/account?tab=courses" className="px-5 py-2.5 text-sm">
-                {t("createCourseCta", "Criar curso na sua conta")}
+            canCreate ? (
+              <button
+                type="button"
+                onClick={createAndGo}
+                disabled={creating}
+                className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-5 py-2.5 text-sm font-bold text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {t("newCourseInline", "Novo curso")}
+              </button>
+            ) : !isOwnProfile ? undefined : (
+              <GoldButton href={`/payment/taxa?profile_id=${encodeURIComponent(profileId)}`} className="px-5 py-2.5 text-sm">
+                {t("activateProfile", "Ativar perfil")}
               </GoldButton>
-            ) : undefined
+            )
           }
         />
       </div>
@@ -1692,7 +1745,21 @@ function ProfileCoursesTab({
   }
 
   return (
-    <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+    <>
+      {canCreate && (
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={createAndGo}
+            disabled={creating}
+            className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[13px] font-bold text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+          >
+            {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+            {t("newCourseInline", "Novo curso")}
+          </button>
+        </div>
+      )}
+    <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
       {linked.map((c) => (
         <Link
           key={c.id}
@@ -1762,5 +1829,6 @@ function ProfileCoursesTab({
         </Link>
       ))}
     </div>
+    </>
   )
 }

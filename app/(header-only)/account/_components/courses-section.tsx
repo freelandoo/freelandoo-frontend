@@ -61,6 +61,11 @@ interface Props {
    * "Perfil vinculado". Quando vazio, o campo fica oculto.
    */
   profileOptions?: ProfileOption[]
+  /**
+   * No nível do user cursos viraram "Meu aprendizado": mostra só os
+   * comprados e esconde criação/aba "Criados" (cursos nascem no subperfil).
+   */
+  purchasedOnly?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -381,7 +386,7 @@ function EmptyState({
 // Componente principal
 // ---------------------------------------------------------------------------
 
-export function CoursesSection(_props: Props) {
+export function CoursesSection({ purchasedOnly = false }: Props) {
   const router = useRouter()
   const t = useTranslations("Account")
   const { courses, isLoading, error, createCourse, deleteCourse } =
@@ -393,7 +398,8 @@ export function CoursesSection(_props: Props) {
   } = usePurchasedCourses()
 
   const { ensureConsent } = useActionConsent()
-  const [tab, setTab] = useState<CoursesTab>("created")
+  // No nível do user só há "comprados" (cursos criados moram nos subperfis).
+  const [tab, setTab] = useState<CoursesTab>(purchasedOnly ? "purchased" : "created")
   const [creating, setCreating] = useState(false)
   const creatingRef = useRef(false)
 
@@ -425,7 +431,9 @@ export function CoursesSection(_props: Props) {
   }, [createCourse, router, ensureConsent, t])
 
   // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
+  // No modo "Meu aprendizado" (nível do user) não cria — cursos nascem no subperfil.
   useEffect(() => {
+    if (purchasedOnly) return
     const onCreate = (e: Event) => {
       const detail = (e as CustomEvent<{ kind: string }>).detail
       if (detail?.kind === "curso" || detail?.kind === "cursos") {
@@ -435,7 +443,7 @@ export function CoursesSection(_props: Props) {
     }
     window.addEventListener("freelandoo:create", onCreate)
     return () => window.removeEventListener("freelandoo:create", onCreate)
-  }, [createAndGo])
+  }, [createAndGo, purchasedOnly])
 
   const counts = useMemo(
     () => ({
@@ -502,11 +510,11 @@ export function CoursesSection(_props: Props) {
           <div>
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white">
               <GraduationCap className="h-4 w-4 text-primary" />
-              {t("myCourses", "Meus Cursos")}
+              {purchasedOnly ? t("myLearning", "Meu aprendizado") : t("myCourses", "Meus Cursos")}
             </h2>
             <p className="mt-1 text-xs text-white/50">{subline}</p>
           </div>
-          {tab === "created" && (
+          {!purchasedOnly && tab === "created" && (
             <button
               type="button"
               onClick={createAndGo}
@@ -527,8 +535,8 @@ export function CoursesSection(_props: Props) {
           )}
         </header>
 
-        {/* Segmented tabs */}
-        <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.03] p-1">
+        {/* Segmented tabs — "Criados" só quando não é modo aprendizado */}
+        <div className={`mb-5 inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.03] p-1 ${purchasedOnly ? "hidden" : ""}`}>
           <button
             type="button"
             onClick={() => setTab("created")}
