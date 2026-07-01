@@ -79,6 +79,18 @@ const V = {
   delete: ["Apagar", "Delete", "Eliminar"],
   confirmDeletePost: ["Apagar esta publicação?", "Delete this post?", "¿Eliminar esta publicación?"],
   deleteError: ["Falha ao apagar.", "Failed to delete.", "Error al eliminar."],
+  // Edição "na própria pele" (inline)
+  startError: ["Não foi possível abrir sua vaquinha.", "Could not open your campaign.", "No se pudo abrir tu vaquita."],
+  saving: ["Salvando…", "Saving…", "Guardando…"],
+  editHint: ["Sua vaquinha está no ar · edite tudo aqui", "Your campaign is live · edit everything here", "Tu vaquita está en el aire · edita todo aquí"],
+  titlePlaceholder: ["Nome da sua campanha", "Your campaign name", "Nombre de tu campaña"],
+  bioPlaceholder: ["Conte a história: para que serve a arrecadação, quem é ajudado, como o dinheiro será usado…", "Tell the story: what the funds are for, who is helped, how the money will be used…", "Cuenta la historia: para qué es la recaudación, a quién ayuda, cómo se usará el dinero…"],
+  deadlineLabel: ["Prazo", "Deadline", "Plazo"],
+  deadlineHint: ["Máx. 90 dias", "Max 90 days", "Máx. 90 días"],
+  changeCover: ["Trocar capa", "Change cover", "Cambiar portada"],
+  addCover: ["Adicionar capa", "Add cover", "Añadir portada"],
+  coverUpdated: ["Capa atualizada!", "Cover updated!", "¡Portada actualizada!"],
+  coverError: ["Não foi possível enviar a capa.", "Could not upload the cover.", "No se pudo subir la portada."],
 }
 
 // Entrada no menu (ns Account, reusa o vocabulário da conta).

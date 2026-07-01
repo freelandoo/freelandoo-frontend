@@ -4511,6 +4511,17 @@
     "postError": "Could not publish.",
     "delete": "Delete",
     "confirmDeletePost": "Delete this post?",
-    "deleteError": "Failed to delete."
+    "deleteError": "Failed to delete.",
+    "startError": "Could not open your campaign.",
+    "saving": "Saving…",
+    "editHint": "Your campaign is live · edit everything here",
+    "titlePlaceholder": "Your campaign name",
+    "bioPlaceholder": "Tell the story: what the funds are for, who is helped, how the money will be used…",
+    "deadlineLabel": "Deadline",
+    "deadlineHint": "Max 90 days",
+    "changeCover": "Change cover",
+    "addCover": "Add cover",
+    "coverUpdated": "Cover updated!",
+    "coverError": "Could not upload the cover."
   }
 }

@@ -4491,6 +4491,17 @@
     "postError": "No se pudo publicar.",
     "delete": "Eliminar",
     "confirmDeletePost": "¿Eliminar esta publicación?",
-    "deleteError": "Error al eliminar."
+    "deleteError": "Error al eliminar.",
+    "startError": "No se pudo abrir tu vaquita.",
+    "saving": "Guardando…",
+    "editHint": "Tu vaquita está en el aire · edita todo aquí",
+    "titlePlaceholder": "Nombre de tu campaña",
+    "bioPlaceholder": "Cuenta la historia: para qué es la recaudación, a quién ayuda, cómo se usará el dinero…",
+    "deadlineLabel": "Plazo",
+    "deadlineHint": "Máx. 90 días",
+    "changeCover": "Cambiar portada",
+    "addCover": "Añadir portada",
+    "coverUpdated": "¡Portada actualizada!",
+    "coverError": "No se pudo subir la portada."
   }
 }

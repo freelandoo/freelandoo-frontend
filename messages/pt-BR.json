@@ -3925,6 +3925,17 @@
     "postError": "Não foi possível publicar.",
     "delete": "Apagar",
     "confirmDeletePost": "Apagar esta publicação?",
-    "deleteError": "Falha ao apagar."
+    "deleteError": "Falha ao apagar.",
+    "startError": "Não foi possível abrir sua vaquinha.",
+    "saving": "Salvando…",
+    "editHint": "Sua vaquinha está no ar · edite tudo aqui",
+    "titlePlaceholder": "Nome da sua campanha",
+    "bioPlaceholder": "Conte a história: para que serve a arrecadação, quem é ajudado, como o dinheiro será usado…",
+    "deadlineLabel": "Prazo",
+    "deadlineHint": "Máx. 90 dias",
+    "changeCover": "Trocar capa",
+    "addCover": "Adicionar capa",
+    "coverUpdated": "Capa atualizada!",
+    "coverError": "Não foi possível enviar a capa."
   }
 }

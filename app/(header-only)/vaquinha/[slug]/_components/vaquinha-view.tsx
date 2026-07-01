@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Pencil, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus, UploadCloud } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -33,6 +33,12 @@ type Post = {
 }
 
 const PRESETS = [1000, 2500, 5000, 10000, 20000]
+const MAX_DEADLINE_DAYS = 90
+
+function toDateInput(iso: string) {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10)
+}
 
 export function VaquinhaView({ slug }: { slug: string }) {
   const t = useTranslations("Vaquinha")
@@ -59,6 +65,12 @@ export function VaquinhaView({ slug }: { slug: string }) {
   const [file, setFile] = useState<File | null>(null)
   const [posting, setPosting] = useState(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
+
+  // Edição inline do dono ("na própria pele"): a página é o editor.
+  const [form, setForm] = useState({ title: "", bio: "", goalText: "", deadline: "" })
+  const [savingField, setSavingField] = useState<string | null>(null)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const coverRef = useRef<HTMLInputElement | null>(null)
 
   const money = useCallback(
     (cents: number) => (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" }),
@@ -136,6 +148,96 @@ export function VaquinhaView({ slug }: { slug: string }) {
 
   const isOwner = !!v && !!meId && v.id_user === meId
   const isActive = !!v && v.status === "active" && daysLeft > 0
+
+  // Sincroniza o form de edição só quando troca de vaquinha (não sobrescreve
+  // edição em andamento quando o contador recarrega).
+  const vId = v?.id_vaquinha
+  useEffect(() => {
+    if (!v) return
+    setForm({
+      title: v.title || "",
+      bio: v.bio || "",
+      goalText: v.goal_cents ? String(Math.round(v.goal_cents / 100)) : "",
+      deadline: toDateInput(v.deadline),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vId])
+
+  const patchField = useCallback(
+    async (field: "title" | "bio" | "goal_cents" | "deadline", value: unknown) => {
+      if (!v) return
+      setSavingField(field)
+      try {
+        const token = getToken()
+        const res = await fetch(`/api/me/vaquinha/${v.id_vaquinha}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ [field]: value }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || "save")
+        if (data?.vaquinha) setV((prev) => (prev ? { ...prev, ...data.vaquinha } : data.vaquinha))
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+      } finally {
+        setSavingField(null)
+      }
+    },
+    [v, t],
+  )
+
+  const saveTitle = useCallback(() => {
+    if (!v) return
+    const val = form.title.trim()
+    if (!val || val === (v.title || "")) return
+    void patchField("title", val)
+  }, [form.title, v, patchField])
+
+  const saveBio = useCallback(() => {
+    if (!v) return
+    if (form.bio === (v.bio || "")) return
+    void patchField("bio", form.bio)
+  }, [form.bio, v, patchField])
+
+  const saveGoal = useCallback(() => {
+    if (!v) return
+    const cents = Math.round(Number(form.goalText) * 100)
+    if (!Number.isFinite(cents) || cents <= 0 || cents === v.goal_cents) return
+    void patchField("goal_cents", cents)
+  }, [form.goalText, v, patchField])
+
+  const saveDeadline = useCallback(() => {
+    if (!v || !form.deadline) return
+    const iso = new Date(`${form.deadline}T23:59:59`).toISOString()
+    if (toDateInput(iso) === toDateInput(v.deadline)) return
+    void patchField("deadline", iso)
+  }, [form.deadline, v, patchField])
+
+  async function uploadCover(f: File) {
+    if (!v) return
+    setUploadingCover(true)
+    try {
+      const token = getToken()
+      const fd = new FormData()
+      fd.append("cover", f)
+      const res = await fetch(`/api/me/vaquinha/${v.id_vaquinha}/cover`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || "cover")
+      if (data?.vaquinha) setV((prev) => (prev ? { ...prev, ...data.vaquinha } : data.vaquinha))
+      toast.success(t("coverUpdated", "Capa atualizada!"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("coverError", "Não foi possível enviar a capa."))
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
+  const maxDeadline = useMemo(() => toDateInput(new Date(Date.now() + MAX_DEADLINE_DAYS * 864e5).toISOString()), [])
+  const minDeadline = useMemo(() => toDateInput(new Date(Date.now() + 864e5).toISOString()), [])
 
   async function submitDonation() {
     if (amount < minCents) {
@@ -252,6 +354,30 @@ export function VaquinhaView({ slug }: { slug: string }) {
             </div>
           )}
         </div>
+        {isOwner && (
+          <>
+            <input
+              ref={coverRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void uploadCover(f)
+                e.target.value = ""
+              }}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => coverRef.current?.click()}
+              disabled={uploadingCover}
+              className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              {uploadingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+              {v.cover_url ? t("changeCover", "Trocar capa") : t("addCover", "Adicionar capa")}
+            </button>
+          </>
+        )}
       </div>
 
       <div className="mx-auto max-w-3xl px-4">
@@ -263,9 +389,27 @@ export function VaquinhaView({ slug }: { slug: string }) {
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </button>
 
+        {/* Dica de edição (só dono) */}
+        {isOwner && isActive && (
+          <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+            <HeartHandshake className="h-3.5 w-3.5" /> {t("editHint", "Sua vaquinha está no ar · edite tudo aqui")}
+          </p>
+        )}
+
         {/* Cabeçalho + status */}
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="fl-display text-4xl leading-none text-foreground md:text-5xl">{v.title}</h1>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+          {isOwner && isActive ? (
+            <input
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              onBlur={saveTitle}
+              maxLength={120}
+              placeholder={t("titlePlaceholder", "Nome da sua campanha")}
+              className="fl-display w-full flex-1 bg-transparent text-4xl leading-none text-foreground outline-none placeholder:text-muted-foreground/40 md:text-5xl"
+            />
+          ) : (
+            <h1 className="fl-display text-4xl leading-none text-foreground md:text-5xl">{v.title}</h1>
+          )}
           {!isActive && (
             <span className="border-2 border-[#0B0B0D] bg-[#dc2626] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[#F1EDE2]">
               {t("ended", "Encerrada")}
@@ -274,18 +418,17 @@ export function VaquinhaView({ slug }: { slug: string }) {
         </div>
 
         {isOwner && (
-          <div className="mt-3 flex gap-2">
-            <Link
-              href={`/vaquinha/nova?edit=${v.id_vaquinha}`}
-              className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-            >
-              <Pencil className="h-3.5 w-3.5" /> {t("edit", "Editar")}
-            </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {savingField && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" /> {t("saving", "Salvando…")}
+              </span>
+            )}
             {isActive && (
               <button
                 type="button"
                 onClick={closeCampaign}
-                className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[12px] font-bold text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                className="ml-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[12px] font-bold text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
               >
                 <Square className="h-3.5 w-3.5" /> {t("close", "Encerrar")}
               </button>
@@ -302,9 +445,42 @@ export function VaquinhaView({ slug }: { slug: string }) {
             </div>
             <div className="text-right">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#0B0B0D]/60">{t("goal", "Meta")}</p>
-              <p className="fl-display text-2xl leading-none">{money(v.goal_cents)}</p>
+              {isOwner && isActive ? (
+                <div className="flex items-center justify-end gap-1">
+                  <span className="fl-display text-2xl leading-none text-[#0B0B0D]/70">R$</span>
+                  <input
+                    inputMode="numeric"
+                    value={form.goalText}
+                    onChange={(e) => setForm((f) => ({ ...f, goalText: e.target.value.replace(/[^\d]/g, "") }))}
+                    onBlur={saveGoal}
+                    placeholder="1000"
+                    className="fl-display w-28 border-b-2 border-[#0B0B0D]/40 bg-transparent text-right text-2xl leading-none outline-none focus:border-[#0B0B0D]"
+                  />
+                </div>
+              ) : (
+                <p className="fl-display text-2xl leading-none">{money(v.goal_cents)}</p>
+              )}
             </div>
           </div>
+
+          {/* Editor de prazo (só dono) */}
+          {isOwner && isActive && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-2 border-dashed border-[#0B0B0D]/30 p-2.5">
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">
+                <Clock className="h-3.5 w-3.5" /> {t("deadlineLabel", "Prazo")}
+              </label>
+              <input
+                type="date"
+                min={minDeadline}
+                max={maxDeadline}
+                value={form.deadline}
+                onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
+                onBlur={saveDeadline}
+                className="border-2 border-[#0B0B0D] bg-white px-2 py-1 text-sm outline-none"
+              />
+              <span className="text-[11px] text-[#0B0B0D]/50">{t("deadlineHint", "Máx. 90 dias")}</span>
+            </div>
+          )}
 
           {/* Barra */}
           <div className="mt-4 h-4 w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#0B0B0D]/10">
@@ -334,12 +510,24 @@ export function VaquinhaView({ slug }: { slug: string }) {
         </section>
 
         {/* Bio */}
-        {v.bio && (
+        {(v.bio || (isOwner && isActive)) && (
           <section className="mt-6">
             <h2 className="fl-display mb-2 inline-flex items-center gap-2 text-xl text-foreground">
               <Target className="h-4 w-4 text-primary" /> {t("about", "Sobre a campanha")}
             </h2>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{v.bio}</p>
+            {isOwner && isActive ? (
+              <textarea
+                value={form.bio}
+                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+                onBlur={saveBio}
+                maxLength={3000}
+                rows={5}
+                placeholder={t("bioPlaceholder", "Conte a história: para que serve a arrecadação, quem é ajudado, como o dinheiro será usado…")}
+                className="w-full resize-y border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm leading-relaxed text-[#0B0B0D] outline-none placeholder:text-[#0B0B0D]/40 focus:shadow-[3px_3px_0_0_#0B0B0D]"
+              />
+            ) : (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{v.bio}</p>
+            )}
           </section>
         )}
 
