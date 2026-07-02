@@ -1936,7 +1936,9 @@
     "sideLabelResponded": "Respondí",
     "sideLabelRequested": "Pedí",
     "productRequestFallback": "Pedido de producto",
-    "machineHasUnread": "Conversación nueva"
+    "machineHasUnread": "Conversación nueva",
+    "apiConnectionsButton": "Conectar atención",
+    "viaApiBadge": "vía atención"
   },
   "Conversation": {
     "deleteMessageConfirm": "¿Borrar este mensaje?",
@@ -4503,5 +4505,35 @@
     "addCover": "Añadir portada",
     "coverUpdated": "¡Portada actualizada!",
     "coverError": "No se pudo subir la portada."
+  },
+  "ApiConnections": {
+    "title": "Conectar atención",
+    "close": "Cerrar",
+    "intro": "Genera un token y pégalo en tu software de atención para que lea y responda tus conversaciones comerciales. Solo responde: nunca inicia una conversación.",
+    "loadError": "Error al cargar conexiones",
+    "createError": "Error al crear la conexión",
+    "revokeError": "Error al revocar",
+    "revokeConfirm": "¿Revocar esta conexión? El software conectado pierde el acceso al instante.",
+    "revoke": "Revocar",
+    "empty": "Ninguna conexión activa.",
+    "newConnection": "Nueva conexión",
+    "limitHint": "Límite de 3 conexiones activas. Revoca una para crear otra.",
+    "nameLabel": "Nombre de la conexión",
+    "namePlaceholder": "Ej.: Bot de atención de la tienda",
+    "scopeLabel": "Incluir mis mensajes personales",
+    "scopeHint": "Sin esto, el software solo ve órdenes de servicio y conversaciones nuevas que lleguen después de conectar.",
+    "createSubmit": "Generar token",
+    "cancel": "Cancelar",
+    "tokenOnceTitle": "Guarda este token ahora",
+    "tokenOnceHint": "No se mostrará de nuevo. Pégalo en tu software de atención.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "tokenDone": "Ya lo guardé, volver a la lista",
+    "scopeFull": "Órdenes + nuevas + personales",
+    "scopeCommercial": "Órdenes + conversaciones nuevas",
+    "lastUsed": "último uso:",
+    "never": "nunca",
+    "webhookOn": "Webhook configurado",
+    "webhookOff": "Esperando que el software configure el webhook"
   }
 }

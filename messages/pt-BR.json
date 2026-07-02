@@ -1936,7 +1936,9 @@
     "sideLabelResponded": "Respondi",
     "sideLabelRequested": "Pedi",
     "productRequestFallback": "Pedido de produto",
-    "machineHasUnread": "Conversa nova"
+    "machineHasUnread": "Conversa nova",
+    "apiConnectionsButton": "Conectar atendimento",
+    "viaApiBadge": "via atendimento"
   },
   "Conversation": {
     "deleteMessageConfirm": "Apagar essa mensagem?",
@@ -3937,5 +3939,35 @@
     "addCover": "Adicionar capa",
     "coverUpdated": "Capa atualizada!",
     "coverError": "Não foi possível enviar a capa."
+  },
+  "ApiConnections": {
+    "title": "Conectar atendimento",
+    "close": "Fechar",
+    "intro": "Gere um token e cole no seu software de atendimento para ele ler e responder suas conversas comerciais. Só responde — nunca inicia conversa.",
+    "loadError": "Erro ao carregar conexões",
+    "createError": "Erro ao criar conexão",
+    "revokeError": "Erro ao revogar",
+    "revokeConfirm": "Revogar esta conexão? O software conectado perde o acesso na hora.",
+    "revoke": "Revogar",
+    "empty": "Nenhuma conexão ativa.",
+    "newConnection": "Nova conexão",
+    "limitHint": "Limite de 3 conexões ativas. Revogue uma para criar outra.",
+    "nameLabel": "Nome da conexão",
+    "namePlaceholder": "Ex.: AtendeBot da loja",
+    "scopeLabel": "Incluir minhas mensagens pessoais",
+    "scopeHint": "Sem isso, o software só vê O.S. e conversas novas que chegarem depois de conectar.",
+    "createSubmit": "Gerar token",
+    "cancel": "Cancelar",
+    "tokenOnceTitle": "Guarde este token agora",
+    "tokenOnceHint": "Ele não será mostrado de novo. Cole no seu software de atendimento.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "tokenDone": "Já guardei, voltar à lista",
+    "scopeFull": "O.S. + novas + pessoais",
+    "scopeCommercial": "O.S. + conversas novas",
+    "lastUsed": "último uso:",
+    "never": "nunca",
+    "webhookOn": "Webhook configurado",
+    "webhookOff": "Aguardando o software configurar o webhook"
   }
 }

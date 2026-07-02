@@ -48,6 +48,7 @@ export interface MessageItem {
   body: string | null
   kind?: "text" | "audio"
   status: string
+  sent_via?: "app" | "api"
   audio_url?: string | null
   audio_duration_seconds?: number | null
   audio_size_bytes?: number | null

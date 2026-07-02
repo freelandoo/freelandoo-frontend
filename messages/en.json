@@ -1936,7 +1936,9 @@
     "sideLabelResponded": "I answered",
     "sideLabelRequested": "I requested",
     "productRequestFallback": "Product request",
-    "machineHasUnread": "New activity"
+    "machineHasUnread": "New activity",
+    "apiConnectionsButton": "Connect support tool",
+    "viaApiBadge": "via support tool"
   },
   "Conversation": {
     "deleteMessageConfirm": "Delete this message?",
@@ -4523,5 +4525,35 @@
     "addCover": "Add cover",
     "coverUpdated": "Cover updated!",
     "coverError": "Could not upload the cover."
+  },
+  "ApiConnections": {
+    "title": "Connect support tool",
+    "close": "Close",
+    "intro": "Generate a token and paste it into your support software so it can read and reply to your business conversations. Reply-only — it never starts a conversation.",
+    "loadError": "Error loading connections",
+    "createError": "Error creating connection",
+    "revokeError": "Error revoking",
+    "revokeConfirm": "Revoke this connection? The connected software loses access immediately.",
+    "revoke": "Revoke",
+    "empty": "No active connections.",
+    "newConnection": "New connection",
+    "limitHint": "Limit of 3 active connections. Revoke one to create another.",
+    "nameLabel": "Connection name",
+    "namePlaceholder": "E.g.: Store support bot",
+    "scopeLabel": "Include my personal messages",
+    "scopeHint": "Without this, the software only sees work orders and new conversations that arrive after connecting.",
+    "createSubmit": "Generate token",
+    "cancel": "Cancel",
+    "tokenOnceTitle": "Save this token now",
+    "tokenOnceHint": "It will not be shown again. Paste it into your support software.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "tokenDone": "Saved it, back to the list",
+    "scopeFull": "Work orders + new + personal",
+    "scopeCommercial": "Work orders + new conversations",
+    "lastUsed": "last used:",
+    "never": "never",
+    "webhookOn": "Webhook configured",
+    "webhookOff": "Waiting for the software to configure the webhook"
   }
 }

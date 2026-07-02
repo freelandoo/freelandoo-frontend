@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   ArrowLeft,
   Briefcase,
+  Cable,
   ChevronDown,
   ClipboardList,
   GraduationCap,
@@ -49,6 +50,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useNavCounts, refreshNavCounts } from "@/components/navigation/use-nav-counts"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import type {
   ConversationDetail,
   ConversationListItem,
@@ -72,6 +74,10 @@ const ChatRoomPanel = dynamic(
 )
 const CreateGroupModal = dynamic(
   () => import("@/components/mensagens/CreateGroupModal").then((m) => m.CreateGroupModal),
+  { ssr: false }
+)
+const ApiConnectionsModal = dynamic(
+  () => import("@/components/mensagens/ApiConnectionsModal").then((m) => m.ApiConnectionsModal),
   { ssr: false }
 )
 const OpenChamadoModal = dynamic(
@@ -298,6 +304,7 @@ interface OsMessageItem {
   id_response: string
   sender: "USER" | "PRO"
   content: string
+  sent_via?: "app" | "api"
   created_at: string
 }
 
@@ -376,6 +383,8 @@ export default function MensagensClient() {
   const [composer, setComposer] = useState("")
   const [sending, setSending] = useState(false)
   const [audioRecorderActive, setAudioRecorderActive] = useState(false)
+  const [apiConnOpen, setApiConnOpen] = useState(false)
+  const apiFeatureOn = useFeature("atendimento_api")
 
   // Search inline para encontrar perfis/clans pra começar nova conversa.
   const [convSearch, setConvSearch] = useState("")
@@ -1208,6 +1217,17 @@ export default function MensagensClient() {
             </div>
             {tab === "conv" ? (
               <div className="flex items-center gap-1.5">
+                {apiFeatureOn && (
+                  <button
+                    type="button"
+                    onClick={() => setApiConnOpen(true)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/60 transition-colors hover:border-[#F2B705]/60 hover:text-[#F2B705]"
+                    title={t("apiConnectionsButton", "Conectar atendimento")}
+                    aria-label={t("apiConnectionsButton", "Conectar atendimento")}
+                  >
+                    <Cable className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setCreateGroupOpen(true)}
@@ -1830,6 +1850,7 @@ export default function MensagensClient() {
                                     </MarkdownText>
                                   </div>
                                   <span className={cn("mt-0.5 px-1 text-[10px] tabular-nums", mine ? "text-white/40" : "text-white/35")}>
+                                    {mine && m.sent_via === "api" ? `${t("viaApiBadge", "via atendimento")} · ` : ""}
                                     {formatTime(m.created_at, locale)}
                                   </span>
                                 </div>
@@ -2042,6 +2063,7 @@ export default function MensagensClient() {
                                     mine ? "text-white/40" : "text-white/35"
                                   )}
                                 >
+                                  {mine && m.sent_via === "api" ? `${t("viaApiBadge", "via atendimento")} · ` : ""}
                                   {formatTime(m.created_at, locale)}
                                 </span>
                               </div>
@@ -2122,6 +2144,8 @@ export default function MensagensClient() {
         </section>
         )}
       </div>
+
+      <ApiConnectionsModal open={apiConnOpen} onClose={() => setApiConnOpen(false)} />
 
       <CreateGroupModal
         open={createGroupOpen}
