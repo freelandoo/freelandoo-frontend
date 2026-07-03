@@ -1412,7 +1412,9 @@
     "originComplement": "Complement",
     "originComplementPlaceholder": "Apt, block… (optional)",
     "myLearning": "My learning",
-    "vaquinhaLabel": "Fundraiser"
+    "vaquinhaLabel": "Fundraiser",
+    "dataApi": "Data connections",
+    "dataApiAria": "Data connections: generate an API token to read your account data"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -4555,5 +4557,29 @@
     "never": "never",
     "webhookOn": "Webhook configured",
     "webhookOff": "Waiting for the software to configure the webhook"
+  },
+  "DataConnections": {
+    "title": "Data connections",
+    "close": "Close",
+    "intro": "Generate a token and paste it into an external tool (ERP, BI, spreadsheet) so it can READ your account data: profiles, services, courses, products, social links, level and metrics. Read-only — it never changes anything and does not expose financial data.",
+    "loadError": "Error loading connections",
+    "createError": "Error creating connection",
+    "revokeError": "Error revoking",
+    "revokeConfirm": "Revoke this connection? The connected software loses access immediately.",
+    "revoke": "Revoke",
+    "empty": "No active connections.",
+    "newConnection": "New connection",
+    "limitHint": "Limit of 3 active connections. Revoke one to create another.",
+    "nameLabel": "Connection name",
+    "namePlaceholder": "E.g.: My BI dashboard",
+    "createSubmit": "Generate token",
+    "cancel": "Cancel",
+    "tokenOnceTitle": "Save this token now",
+    "tokenOnceHint": "It will not be shown again. Paste it into your ERP/BI or external dashboard.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "tokenDone": "Saved it, back to the list",
+    "lastUsed": "last used:",
+    "never": "never"
   }
 }

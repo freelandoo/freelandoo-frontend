@@ -25,7 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database } from "lucide-react"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { CommunityTile } from "@/components/community/community-tile"
 import { HoverHint } from "@/features/tour/HoverHint"
@@ -87,6 +88,10 @@ const MediaCropModal = dynamic(
   () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
   { ssr: false }
 )
+const DataConnectionsModal = dynamic(
+  () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
+  { ssr: false }
+)
 
 function mbLabel(bytes: number) {
   return `${Math.round(bytes / (1024 * 1024))}MB`
@@ -115,6 +120,8 @@ export default function PerfilPage() {
     }>
   >([])
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
+  const [dataConnOpen, setDataConnOpen] = useState(false)
+  const dataApiOn = useFeature("data_api")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -1739,6 +1746,18 @@ export default function PerfilPage() {
                   <Wallet className="h-4 w-4" />
                   {t("wallet", "Carteira")}
                 </button>
+                {dataApiOn && (
+                  <button
+                    type="button"
+                    onClick={() => setDataConnOpen(true)}
+                    aria-label={t("dataApiAria", "Conexões de Dados: gerar token de API para ler os dados da conta")}
+                    title={t("dataApi", "Conexões de Dados")}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                  >
+                    <Database className="h-4 w-4" />
+                    {t("dataApi", "Conexões de Dados")}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setFollowingModalOpen(true)}
@@ -2711,6 +2730,8 @@ export default function PerfilPage() {
       />
 
       <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />
+
+      {dataApiOn && <DataConnectionsModal open={dataConnOpen} onClose={() => setDataConnOpen(false)} />}
     </div>
   )
 }

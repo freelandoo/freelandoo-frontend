@@ -1412,7 +1412,9 @@
     "originComplement": "Complemento",
     "originComplementPlaceholder": "Apto, bloque… (opcional)",
     "myLearning": "Mi aprendizaje",
-    "vaquinhaLabel": "Vaquita"
+    "vaquinhaLabel": "Vaquita",
+    "dataApi": "Conexiones de datos",
+    "dataApiAria": "Conexiones de datos: generar token de API para leer los datos de la cuenta"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -4535,5 +4537,29 @@
     "never": "nunca",
     "webhookOn": "Webhook configurado",
     "webhookOff": "Esperando que el software configure el webhook"
+  },
+  "DataConnections": {
+    "title": "Conexiones de datos",
+    "close": "Cerrar",
+    "intro": "Genera un token y pégalo en un software externo (ERP, BI, planilla) para que LEA los datos de tu cuenta: perfiles, servicios, cursos, productos, redes sociales, nivel y métricas. Solo lectura: nunca modifica nada ni expone datos financieros.",
+    "loadError": "Error al cargar conexiones",
+    "createError": "Error al crear la conexión",
+    "revokeError": "Error al revocar",
+    "revokeConfirm": "¿Revocar esta conexión? El software conectado pierde el acceso al instante.",
+    "revoke": "Revocar",
+    "empty": "Ninguna conexión activa.",
+    "newConnection": "Nueva conexión",
+    "limitHint": "Límite de 3 conexiones activas. Revoca una para crear otra.",
+    "nameLabel": "Nombre de la conexión",
+    "namePlaceholder": "Ej.: Mi panel de BI",
+    "createSubmit": "Generar token",
+    "cancel": "Cancelar",
+    "tokenOnceTitle": "Guarda este token ahora",
+    "tokenOnceHint": "No se mostrará de nuevo. Pégalo en tu ERP/BI o panel externo.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "tokenDone": "Ya lo guardé, volver a la lista",
+    "lastUsed": "último uso:",
+    "never": "nunca"
   }
 }
