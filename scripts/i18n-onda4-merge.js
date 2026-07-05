@@ -1331,6 +1331,21 @@ Object.assign(ACCOUNT, {
   brandPlaceholder: ["Ex.: marca do produto", "E.g.: product brand", "Ej.: marca del producto"],
 })
 
+// Aviso de frete sem etiqueta (Melhor Envio desligado por enquanto) — 2026-07-05
+Object.assign(ACCOUNT, {
+  freightNoticeTitle: [
+    "Frete sem etiqueta (por enquanto)",
+    "Shipping without a label (for now)",
+    "Envío sin etiqueta (por ahora)",
+  ],
+  freightNoticeBody: [
+    "Por enquanto NÃO geramos a etiqueta do Melhor Envio. O cálculo do frete serve apenas como base para a formação do preço que o comprador paga — o envio e a postagem ficam por sua conta.",
+    "For now we do NOT generate the Melhor Envio shipping label. The freight calculation is only used as a base to build the price the buyer pays — shipping and posting are up to you.",
+    "Por ahora NO generamos la etiqueta de Melhor Envio. El cálculo del envío solo sirve como base para formar el precio que paga el comprador — el envío y el despacho quedan por tu cuenta.",
+  ],
+  freightNoticeOk: ["Entendi", "Got it", "Entendido"],
+})
+
 const GROUPS = { Account: ACCOUNT }
 
 function load(file) {

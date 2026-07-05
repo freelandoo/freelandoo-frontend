@@ -1414,7 +1414,10 @@
     "myLearning": "Meu aprendizado",
     "vaquinhaLabel": "Vaquinha",
     "dataApi": "Conexões de Dados",
-    "dataApiAria": "Conexões de Dados: gerar token de API para ler os dados da conta"
+    "dataApiAria": "Conexões de Dados: gerar token de API para ler os dados da conta",
+    "freightNoticeTitle": "Frete sem etiqueta (por enquanto)",
+    "freightNoticeBody": "Por enquanto NÃO geramos a etiqueta do Melhor Envio. O cálculo do frete serve apenas como base para a formação do preço que o comprador paga — o envio e a postagem ficam por sua conta.",
+    "freightNoticeOk": "Entendi"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

@@ -274,6 +274,11 @@ export function ProfileProductEditModal({
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null)
   // Caixa de envio: força "Personalizada" mesmo se as dimensões baterem com um preset.
   const [forceCustomBox, setForceCustomBox] = useState(false)
+  // Aviso: por enquanto NÃO geramos etiqueta (Melhor Envio) — o cálculo de
+  // frete serve só como base da formação do preço. Mostra 1x por sessão do
+  // modal, ao escolher "Enviar com frete".
+  const [freightNoticeOpen, setFreightNoticeOpen] = useState(false)
+  const freightNoticeSeen = useRef(false)
 
   const previewCoverUrl = useMemo(() => {
     if (pendingPreviewUrl) return pendingPreviewUrl
@@ -969,7 +974,13 @@ export function ProfileProductEditModal({
                 <OptionChip
                   label={t("shipWithFreight", "📦 Enviar com frete")}
                   active={form.delivery_mode === "shipping"}
-                  onClick={() => setForm((f) => ({ ...f, delivery_mode: "shipping" }))}
+                  onClick={() => {
+                    setForm((f) => ({ ...f, delivery_mode: "shipping" }))
+                    if (!freightNoticeSeen.current) {
+                      freightNoticeSeen.current = true
+                      setFreightNoticeOpen(true)
+                    }
+                  }}
                 />
               </div>
 
@@ -1159,6 +1170,40 @@ export function ProfileProductEditModal({
           </button>
         </div>
       </div>
+
+      {/* Aviso: sem etiqueta Melhor Envio por enquanto — o cálculo do frete
+          serve só como base da formação do preço. UI nova nasce reta. */}
+      {freightNoticeOpen && (
+        <div
+          className="fl-sharp fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="freight-notice-title"
+          onClick={() => setFreightNoticeOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="freight-notice-title" className="fl-display text-xl leading-tight">
+              📦 {t("freightNoticeTitle", "Frete sem etiqueta (por enquanto)")}
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-[#0B0B0D]/80">
+              {t(
+                "freightNoticeBody",
+                "Por enquanto NÃO geramos a etiqueta do Melhor Envio. O cálculo do frete serve apenas como base para a formação do preço que o comprador paga — o envio e a postagem ficam por sua conta."
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setFreightNoticeOpen(false)}
+              className="mt-5 w-full border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2.5 text-sm font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+            >
+              {t("freightNoticeOk", "Entendi")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

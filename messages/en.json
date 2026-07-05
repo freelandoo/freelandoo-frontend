@@ -1414,7 +1414,10 @@
     "myLearning": "My learning",
     "vaquinhaLabel": "Fundraiser",
     "dataApi": "Data connections",
-    "dataApiAria": "Data connections: generate an API token to read your account data"
+    "dataApiAria": "Data connections: generate an API token to read your account data",
+    "freightNoticeTitle": "Shipping without a label (for now)",
+    "freightNoticeBody": "For now we do NOT generate the Melhor Envio shipping label. The freight calculation is only used as a base to build the price the buyer pays — shipping and posting are up to you.",
+    "freightNoticeOk": "Got it"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
