@@ -288,6 +288,68 @@ const ONBOARDING = {
   socialSubtitle: ["Para mais gente te encontrar.", "So more people can find you.", "Para que más gente te encuentre."],
 }
 
+// Comunidade privada com mensalidade (mig 173 / slice C2)
+Object.assign(COMMUNITY, {
+  privateBadge: ["Privada", "Private", "Privada"],
+  perMonthShort: ["mês", "mo", "mes"],
+  subscribeJoin: ["Assinar", "Subscribe", "Suscribirse"],
+  subscribeError: [
+    "Não foi possível iniciar a assinatura.",
+    "Could not start the subscription.",
+    "No se pudo iniciar la suscripción.",
+  ],
+  subscribeSuccess: [
+    "Assinatura confirmada! Bem-vindo(a) à comunidade.",
+    "Subscription confirmed! Welcome to the community.",
+    "¡Suscripción confirmada! Bienvenido(a) a la comunidad.",
+  ],
+  subscribeCanceled: [
+    "Assinatura cancelada — você não foi cobrado.",
+    "Subscription canceled — you were not charged.",
+    "Suscripción cancelada — no se te cobró.",
+  ],
+  privacyTitle: ["Privacidade", "Privacy", "Privacidad"],
+  privacyPublic: ["Pública", "Public", "Pública"],
+  privacyPrivate: ["Privada", "Private", "Privada"],
+  privacyPriceLabel: ["Mensalidade R$", "Monthly fee R$", "Mensualidad R$"],
+  privacyApply: ["Aplicar", "Apply", "Aplicar"],
+  privacyPriceInvalid: [
+    "Informe o valor da mensalidade.",
+    "Enter the monthly fee.",
+    "Ingresa el valor de la mensualidad.",
+  ],
+  privacySavedPrivate: [
+    "Comunidade agora é privada.",
+    "The community is now private.",
+    "La comunidad ahora es privada.",
+  ],
+  privacySavedPublic: [
+    "Comunidade agora é pública.",
+    "The community is now public.",
+    "La comunidad ahora es pública.",
+  ],
+  privacyPrivateHint: [
+    "Privada: os posts ficam só aqui dentro (não vão pro feed nem pros bees) e entrar exige assinatura mensal. Membros atuais continuam sem pagar.",
+    "Private: posts stay inside only (they don't go to the feed or bees) and joining requires a monthly subscription. Current members keep free access.",
+    "Privada: las publicaciones se quedan solo aquí dentro (no van al feed ni a los bees) y entrar requiere una suscripción mensual. Los miembros actuales siguen sin pagar.",
+  ],
+  privacyPublicHint: [
+    "Pública: qualquer pessoa entra de graça e os posts também aparecem no feed. Assinaturas existentes param de cobrar no fim do ciclo.",
+    "Public: anyone joins for free and posts also appear in the feed. Existing subscriptions stop charging at the end of the cycle.",
+    "Pública: cualquiera entra gratis y las publicaciones también aparecen en el feed. Las suscripciones existentes dejan de cobrar al final del ciclo.",
+  ],
+  summarySubs: ["Assinantes", "Subscribers", "Suscriptores"],
+  summaryWaiting: ["Em liberação", "On hold", "En liberación"],
+  summaryAvailable: ["Liberado", "Available", "Liberado"],
+  summaryTotal: ["Total líquido", "Net total", "Total neto"],
+  lockedTitle: ["Comunidade privada", "Private community", "Comunidad privada"],
+  lockedText: [
+    "O feed é exclusivo para membros. Assine para entrar e ver tudo que acontece aqui dentro.",
+    "The feed is members-only. Subscribe to join and see everything happening inside.",
+    "El feed es exclusivo para miembros. Suscríbete para entrar y ver todo lo que pasa aquí dentro.",
+  ],
+})
+
 const GROUPS = { Community: COMMUNITY, Profile: PROFILE, Account: ACCOUNT, Post: POST, Search: SEARCH, Ranking: RANKING, Onboarding: ONBOARDING }
 
 function load(file) {

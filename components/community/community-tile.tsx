@@ -5,7 +5,7 @@
 // Reusado em: aba "Comunidades" do enxame, /comunidades e a aba do /account.
 
 import Link from "next/link"
-import { Users, Trophy, Crown, Shield } from "lucide-react"
+import { Users, Trophy, Crown, Shield, Lock } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
@@ -19,6 +19,8 @@ export type CommunityTileData = {
   xp_level: number
   community_theme?: { accent?: string } | null
   role?: "leader" | "vice" | "member" | null
+  privacy?: "public" | "private"
+  monthly_cents?: number | null
 }
 
 // Mesma paleta de accent da página da comunidade (detalhe recolorível).
@@ -72,6 +74,11 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
         <span className="absolute right-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
           <Trophy className="h-3 w-3" style={{ color: accent }} /> {community.xp_level}
         </span>
+        {community.privacy === "private" && (
+          <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
+            <Lock className="h-3 w-3" style={{ color: accent }} /> {t("privateBadge", "Privada")}
+          </span>
+        )}
 
         {/* avatar sobreposto */}
         <span

@@ -7,6 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, PenSquare, Film, X, MessageSquare,
+  Lock, Globe,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -40,6 +41,19 @@ type Community = {
   xp_total: number
   xp_level: number
   member_count: number
+  privacy?: "public" | "private"
+  monthly_cents?: number | null
+  viewer_is_member?: boolean
+  viewer_sub_status?: string | null
+}
+type MembershipSummary = {
+  active_subs: number
+  past_due_subs: number
+  waiting_cents: number
+  available_cents: number
+  paid_cents: number
+  total_net_cents: number
+  payments_count: number
 }
 type Member = {
   id_user: string
@@ -83,6 +97,9 @@ function compact(n: number): string {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
   if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}k`
   return String(Math.round(v))
+}
+function fmtBRL(cents: number): string {
+  return (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
 const FEED_FILTERS: FeedFilters = { id_machine: null, id_category: null, estado: null, municipio: null, level_min: null }
@@ -132,6 +149,12 @@ export default function CommunityDetailPage() {
   const seeded = useRef(false)
   const autoEdited = useRef(false)
 
+  // Privacidade (comunidade privada com mensalidade)
+  const [privacyDraft, setPrivacyDraft] = useState<"public" | "private">("public")
+  const [monthlyDraft, setMonthlyDraft] = useState("") // em reais, ex.: "19,90"
+  const [savingPrivacy, setSavingPrivacy] = useState(false)
+  const [membershipSummary, setMembershipSummary] = useState<MembershipSummary | null>(null)
+
   // Meta + mural
   const [goalFormOpen, setGoalFormOpen] = useState(false)
   const [goalTitle, setGoalTitle] = useState("")
@@ -148,9 +171,12 @@ export default function CommunityDetailPage() {
     () => members.find((m) => m.id_user === currentUserId) || null,
     [members, currentUserId]
   )
-  const isMember = isLeader || !!myMembership
+  const isMember = isLeader || !!myMembership || !!community?.viewer_is_member
   const accent = accentHex(accentDraft)
   const showAsLeaderEdit = isLeader && edit
+  const isPrivate = community?.privacy === "private"
+  const feedLocked = isPrivate && !isMember
+  const monthlyCents = Number(community?.monthly_cents || 0)
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -214,7 +240,7 @@ export default function CommunityDetailPage() {
       const tk = getToken()
       const authHeaders = tk ? { Authorization: `Bearer ${tk}` } : undefined
       const [cRes, mRes, gRes, aRes, bmRes] = await Promise.all([
-        fetch(`/api/communities/${id}`),
+        fetch(`/api/communities/${id}`, authHeaders ? { headers: authHeaders } : undefined),
         fetch(`/api/communities/${id}/members`),
         fetch(`/api/communities/${id}/goal`),
         fetch(`/api/communities/${id}/announcements`, authHeaders ? { headers: authHeaders } : undefined),
@@ -230,6 +256,8 @@ export default function CommunityDetailPage() {
         setAccentDraft(c.community_theme?.accent || "gold")
         seeded.current = true
       }
+      setPrivacyDraft(c.privacy === "private" ? "private" : "public")
+      if (c.monthly_cents) setMonthlyDraft((Number(c.monthly_cents) / 100).toFixed(2).replace(".", ","))
       const mData = await mRes.json(); setMembers(Array.isArray(mData.members) ? mData.members : [])
       const gData = await gRes.json(); setGoal(gData.goal || null)
       const aData = await aRes.json(); setAnnouncements(Array.isArray(aData.announcements) ? aData.announcements : [])
@@ -247,6 +275,24 @@ export default function CommunityDetailPage() {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
 
+  // Comunidade privada: cria o checkout da assinatura mensal e redireciona.
+  const startMembershipCheckout = useCallback(async () => {
+    const token = getToken()
+    if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
+    setBusy(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/membership/checkout`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok || !data.checkout_url) throw new Error(data.error || t("subscribeError", "Não foi possível iniciar a assinatura."))
+      window.location.href = data.checkout_url
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("subscribeError", "Não foi possível iniciar a assinatura."))
+      setBusy(false)
+    }
+  }, [id, t])
+
   const joinOrLeave = async (action: "join" | "leave") => {
     const token = getToken()
     if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
@@ -254,6 +300,11 @@ export default function CommunityDetailPage() {
     try {
       const res = await fetch(`/api/communities/${id}/${action}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
+      // Comunidade privada: o join devolve requires_payment → vai pro checkout.
+      if (action === "join" && data?.requires_payment) {
+        await startMembershipCheckout()
+        return
+      }
       if (!res.ok) throw new Error(data.error || t("joinError", "Não foi possível entrar."))
       setActionMsg(action === "join" ? t("joinSuccess", "Você entrou na comunidade!") : t("leaveSuccess", "Você saiu da comunidade."))
       await loadAll()
@@ -261,6 +312,55 @@ export default function CommunityDetailPage() {
       setActionMsg(err instanceof Error ? err.message : t("joinError", "Não foi possível entrar."))
     } finally { setBusy(false) }
   }
+
+  // Volta do checkout da assinatura (?assinatura=sucesso).
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const sp = new URLSearchParams(window.location.search)
+    const st = sp.get("assinatura")
+    if (!st) return
+    if (st === "sucesso") setActionMsg(t("subscribeSuccess", "Assinatura confirmada! Bem-vindo(a) à comunidade."))
+    else if (st === "cancelada") setActionMsg(t("subscribeCanceled", "Assinatura cancelada — você não foi cobrado."))
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [t])
+
+  // Privacidade (líder): salvar público/privado + mensalidade.
+  const savePrivacy = async () => {
+    const token = getToken()
+    if (!token) return
+    let monthly_cents: number | undefined
+    if (privacyDraft === "private") {
+      monthly_cents = Math.round(Number(monthlyDraft.replace(/\./g, "").replace(",", ".")) * 100)
+      if (!Number.isFinite(monthly_cents) || monthly_cents <= 0) {
+        setActionMsg(t("privacyPriceInvalid", "Informe o valor da mensalidade."))
+        return
+      }
+    }
+    setSavingPrivacy(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/privacy`, {
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ privacy: privacyDraft, ...(monthly_cents ? { monthly_cents } : {}) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setActionMsg(privacyDraft === "private" ? t("privacySavedPrivate", "Comunidade agora é privada.") : t("privacySavedPublic", "Comunidade agora é pública."))
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingPrivacy(false) }
+  }
+
+  // Resumo das mensalidades (líder de comunidade privada).
+  useEffect(() => {
+    if (!isLeader || !isPrivate || !id) { setMembershipSummary(null); return }
+    const token = getToken()
+    if (!token) return
+    fetch(`/api/communities/${id}/membership/summary`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setMembershipSummary(d.summary || null))
+      .catch(() => setMembershipSummary(null))
+  }, [isLeader, isPrivate, id])
 
   const uploadImage = async (kind: "banner" | "avatar", file: File) => {
     const token = getToken()
@@ -478,6 +578,12 @@ export default function CommunityDetailPage() {
                 {tx.enxame(null, community.enxame_name)}
               </span>
             )}
+            {isPrivate && (
+              <span className="absolute left-4 top-12 z-20 inline-flex -rotate-2 items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F5F1E8]">
+                <Lock className="h-3 w-3" style={{ color: accent }} /> {t("privateBadge", "Privada")}
+                {monthlyCents > 0 && <span style={{ color: accent }}>· {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}</span>}
+              </span>
+            )}
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
               <span className="text-[8px] font-bold uppercase text-[#9A938A]">{t("level", "Nível")}</span>
               <span className="fl-display text-2xl leading-none" style={{ color: accent }}>{community.xp_level}</span>
@@ -509,9 +615,13 @@ export default function CommunityDetailPage() {
                   </button>
                 ) : null
               ) : (
-                <button type="button" disabled={busy} onClick={() => joinOrLeave("join")}
+                <button type="button" disabled={busy} onClick={() => (isPrivate ? startMembershipCheckout() : joinOrLeave("join"))}
                   className="border-2 border-[#0B0B0D] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60" style={{ background: accent }}>
-                  {busy ? t("joining", "Entrando...") : t("join", "Entrar")}
+                  {busy
+                    ? t("joining", "Entrando...")
+                    : isPrivate
+                      ? `${t("subscribeJoin", "Assinar")} · ${fmtBRL(monthlyCents)}/${t("perMonthShort", "mês")}`
+                      : t("join", "Entrar")}
                 </button>
               )}
             </div>
@@ -538,6 +648,49 @@ export default function CommunityDetailPage() {
       <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
         {/* coluna principal */}
         <div className="space-y-6 md:col-span-2">
+          {/* Privacidade + mensalidade (só líder em edição) */}
+          {showAsLeaderEdit && (
+            <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
+              <div className="flex flex-wrap items-center gap-2">
+                {([
+                  ["public", t("privacyPublic", "Pública"), <Globe key="g" className="h-4 w-4" />],
+                  ["private", t("privacyPrivate", "Privada"), <Lock key="l" className="h-4 w-4" />],
+                ] as const).map(([key, label, icon]) => (
+                  <button key={key} type="button" onClick={() => setPrivacyDraft(key)}
+                    className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                    style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                    {icon} {label}
+                  </button>
+                ))}
+                {privacyDraft === "private" && (
+                  <label className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("privacyPriceLabel", "Mensalidade R$")}</span>
+                    <input value={monthlyDraft} onChange={(e) => setMonthlyDraft(e.target.value)} inputMode="decimal" placeholder="19,90"
+                      className="w-20 bg-transparent text-sm font-bold text-[#F5F1E8] outline-none" />
+                    <span className="text-[10px] font-bold uppercase text-[#9A938A]">/{t("perMonthShort", "mês")}</span>
+                  </label>
+                )}
+                <button type="button" disabled={savingPrivacy} onClick={savePrivacy}
+                  className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                  {savingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("privacyApply", "Aplicar")}
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                {privacyDraft === "private"
+                  ? t("privacyPrivateHint", "Privada: os posts ficam só aqui dentro (não vão pro feed nem pros bees) e entrar exige assinatura mensal. Membros atuais continuam sem pagar.")
+                  : t("privacyPublicHint", "Pública: qualquer pessoa entra de graça e os posts também aparecem no feed. Assinaturas existentes param de cobrar no fim do ciclo.")}
+              </p>
+              {isPrivate && membershipSummary && (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <MiniStat label={t("summarySubs", "Assinantes")} value={String(membershipSummary.active_subs)} accent={accent} />
+                  <MiniStat label={t("summaryWaiting", "Em liberação")} value={fmtBRL(Number(membershipSummary.waiting_cents))} accent={accent} />
+                  <MiniStat label={t("summaryAvailable", "Liberado")} value={fmtBRL(Number(membershipSummary.available_cents))} accent={accent} />
+                  <MiniStat label={t("summaryTotal", "Total líquido")} value={fmtBRL(Number(membershipSummary.total_net_cents))} accent={accent} />
+                </div>
+              )}
+            </Block>
+          )}
+
           {/* Temporada (meta com prazo + ranking + prêmio) */}
           {(showAsLeaderEdit || goal) && (
             <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
@@ -695,6 +848,19 @@ export default function CommunityDetailPage() {
                     ))}
                   </div>
                 )
+              ) : feedLocked ? (
+                <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
+                  <Lock className="mx-auto h-10 w-10" style={{ color: accent }} />
+                  <p className="mt-4 fl-display text-2xl text-[#F5F1E8]">{t("lockedTitle", "Comunidade privada")}</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-[#9A938A]">
+                    {t("lockedText", "O feed é exclusivo para membros. Assine para entrar e ver tudo que acontece aqui dentro.")}
+                  </p>
+                  <button type="button" disabled={busy} onClick={startMembershipCheckout}
+                    className="mt-5 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-6 py-2.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60"
+                    style={{ background: accent }}>
+                    <Lock className="h-4 w-4" /> {t("subscribeJoin", "Assinar")} · {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {/* Composer "Poste ou escreva aqui" */}
@@ -914,6 +1080,15 @@ function Block({ title, icon, accent, children }: { title: string; icon: React.R
         <span className="flex flex-1 items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"><span style={{ color: accent }}>{icon}</span>{title}</span>
       </div>
       {children}
+    </div>
+  )
+}
+
+function MiniStat({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-extrabold" style={{ color: accent }}>{value}</p>
     </div>
   )
 }
