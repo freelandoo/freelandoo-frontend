@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus, UploadCloud } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 type Vaquinha = {
   id_vaquinha: string
   id_user: string
+  kind: "vaquinha" | "bolsa"
   title: string
   slug: string
   bio: string | null
@@ -18,10 +19,12 @@ type Vaquinha = {
   goal_cents: number
   raised_cents: number
   donors_count: number
-  deadline: string
+  deadline: string | null
   status: "active" | "ended" | "canceled"
 }
 type Donor = { id_donation: string; donor_name: string; message: string | null; amount_cents: number; paid_at: string }
+type Sponsor = { id_sponsorship: string; sponsor_name: string; monthly_cents: number; since: string | null }
+type MySponsorship = { id_sponsorship: string; monthly_cents: number; status: string }
 type Post = {
   id_post: string
   kind: "post" | "bee" | "text"
@@ -58,6 +61,13 @@ export function VaquinhaView({ slug }: { slug: string }) {
   const [message, setMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
+  // Bolsa Patrocínio (assinatura mensal)
+  const [sponsors, setSponsors] = useState<Sponsor[]>([])
+  const [mySponsorship, setMySponsorship] = useState<MySponsorship | null>(null)
+  const [sponsorOpen, setSponsorOpen] = useState(false)
+  const [cancelingSponsor, setCancelingSponsor] = useState(false)
+  const [switchingKind, setSwitchingKind] = useState(false)
+
   // Publicações da vaquinha
   const [posts, setPosts] = useState<Post[]>([])
   const [composerKind, setComposerKind] = useState<"text" | "post" | "bee" | null>(null)
@@ -89,6 +99,8 @@ export function VaquinhaView({ slug }: { slug: string }) {
       const data = await res.json()
       setV(data.vaquinha)
       setDonors(Array.isArray(data.donors) ? data.donors : [])
+      setSponsors(Array.isArray(data.sponsors) ? data.sponsors : [])
+      setMySponsorship(data.my_sponsorship || null)
       setMinCents(Number(data.min_donation_cents) || 500)
       setState("loaded")
     } catch {
@@ -132,6 +144,15 @@ export function VaquinhaView({ slug }: { slug: string }) {
     } else if (d === "cancelada") {
       toast.info(t("canceled", "Doação cancelada."))
     }
+    const p = searchParams.get("patrocinio")
+    if (p === "sucesso") {
+      toast.success(t("sponsorThanksTitle", "Patrocínio confirmado!"), {
+        description: t("sponsorThanksBody", "Obrigado por apoiar todo mês. Pode levar alguns segundos para aparecer."),
+      })
+      setTimeout(() => void load(), 2500)
+    } else if (p === "cancelado") {
+      toast.info(t("sponsorCanceledCheckout", "Patrocínio cancelado — você não foi cobrado."))
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
@@ -141,13 +162,16 @@ export function VaquinhaView({ slug }: { slug: string }) {
   }, [v])
 
   const daysLeft = useMemo(() => {
-    if (!v) return 0
+    if (!v || !v.deadline) return 0
     const ms = new Date(v.deadline).getTime() - Date.now()
     return Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)))
   }, [v])
 
+  const isBolsa = v?.kind === "bolsa"
   const isOwner = !!v && !!meId && v.id_user === meId
-  const isActive = !!v && v.status === "active" && daysLeft > 0
+  // Bolsa não tem prazo — ativa até ser encerrada manualmente.
+  const isActive = !!v && v.status === "active" && (isBolsa || daysLeft > 0)
+  const monthlyTotal = useMemo(() => sponsors.reduce((s, x) => s + (Number(x.monthly_cents) || 0), 0), [sponsors])
 
   // Sincroniza o form de edição só quando troca de vaquinha (não sobrescreve
   // edição em andamento quando o contador recarrega).
@@ -158,7 +182,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
       title: v.title || "",
       bio: v.bio || "",
       goalText: v.goal_cents ? String(Math.round(v.goal_cents / 100)) : "",
-      deadline: toDateInput(v.deadline),
+      deadline: v.deadline ? toDateInput(v.deadline) : "",
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vId])
@@ -209,9 +233,91 @@ export function VaquinhaView({ slug }: { slug: string }) {
   const saveDeadline = useCallback(() => {
     if (!v || !form.deadline) return
     const iso = new Date(`${form.deadline}T23:59:59`).toISOString()
-    if (toDateInput(iso) === toDateInput(v.deadline)) return
+    if (v.deadline && toDateInput(iso) === toDateInput(v.deadline)) return
     void patchField("deadline", iso)
   }, [form.deadline, v, patchField])
+
+  // Troca vaquinha ⇄ bolsa patrocínio. Voltar pra vaquinha exige um prazo novo
+  // (mandamos +30 dias; o dono ajusta depois) e zero patrocínios ativos.
+  const switchKind = useCallback(
+    async (kind: "vaquinha" | "bolsa") => {
+      if (!v || v.kind === kind) return
+      setSwitchingKind(true)
+      try {
+        const token = getToken()
+        const body: Record<string, unknown> = { kind }
+        if (kind === "vaquinha") {
+          body.deadline = new Date(Date.now() + 30 * 864e5).toISOString()
+        }
+        const res = await fetch(`/api/me/vaquinha/${v.id_vaquinha}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || "kind")
+        if (data?.vaquinha) setV((prev) => (prev ? { ...prev, ...data.vaquinha } : data.vaquinha))
+        toast.success(
+          kind === "bolsa"
+            ? t("kindSwitchedBolsa", "Agora é uma Bolsa Patrocínio — sem prazo, apoio mensal.")
+            : t("kindSwitchedVaquinha", "Agora é uma Vaquinha — doações únicas com prazo.")
+        )
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+      } finally {
+        setSwitchingKind(false)
+      }
+    },
+    [v, t],
+  )
+
+  // Patrocínio mensal (bolsa): cria o checkout recorrente e redireciona.
+  async function submitSponsorship() {
+    const token = getToken()
+    if (!token) {
+      toast.error(t("sponsorLogin", "Entre na sua conta para patrocinar."))
+      return
+    }
+    if (amount < minCents) {
+      toast.error(t("minError", "Valor abaixo do mínimo."))
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/vaquinhas/${encodeURIComponent(slug)}/sponsor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount_cents: amount, sponsor_name: donorName.trim() || undefined }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.checkout_url) throw new Error(data?.error || "sponsor")
+      window.location.href = data.checkout_url
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("sponsorError", "Não foi possível iniciar o patrocínio."))
+      setSubmitting(false)
+    }
+  }
+
+  async function cancelMySponsorship() {
+    if (!mySponsorship) return
+    if (!confirm(t("sponsorCancelConfirm", "Cancelar seu patrocínio mensal? O mês já pago não é estornado."))) return
+    setCancelingSponsor(true)
+    try {
+      const token = getToken()
+      const res = await fetch(`/api/vaquinhas/${encodeURIComponent(slug)}/sponsor/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || "cancel")
+      toast.success(t("sponsorCanceled", "Patrocínio cancelado."))
+      void load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("sponsorCancelError", "Não foi possível cancelar."))
+    } finally {
+      setCancelingSponsor(false)
+    }
+  }
 
   async function uploadCover(f: File) {
     if (!v) return
@@ -396,6 +502,35 @@ export function VaquinhaView({ slug }: { slug: string }) {
           </p>
         )}
 
+        {/* Tipo da campanha (só dono): Vaquinha ⇄ Bolsa Patrocínio */}
+        {isOwner && isActive && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{t("kindLabel", "Tipo")}</span>
+            <button
+              type="button"
+              disabled={switchingKind}
+              onClick={() => switchKind("vaquinha")}
+              className={`inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[12px] font-bold transition disabled:opacity-60 ${!isBolsa ? "bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]" : "bg-[#1D1810] text-[#F1EDE2]/70"}`}
+            >
+              <HeartHandshake className="h-3.5 w-3.5" /> {t("kindVaquinha", "Vaquinha")}
+            </button>
+            <button
+              type="button"
+              disabled={switchingKind}
+              onClick={() => switchKind("bolsa")}
+              className={`inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-3 py-1.5 text-[12px] font-bold transition disabled:opacity-60 ${isBolsa ? "bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]" : "bg-[#1D1810] text-[#F1EDE2]/70"}`}
+            >
+              <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
+            </button>
+            {switchingKind && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+            <span className="basis-full text-[11px] text-muted-foreground">
+              {isBolsa
+                ? t("kindBolsaHint", "Bolsa: sem prazo — patrocinadores apoiam com um valor mensal recorrente.")
+                : t("kindVaquinhaHint", "Vaquinha: doações únicas com meta e prazo.")}
+            </span>
+          </div>
+        )}
+
         {/* Cabeçalho + status */}
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           {isOwner && isActive ? (
@@ -409,6 +544,11 @@ export function VaquinhaView({ slug }: { slug: string }) {
             />
           ) : (
             <h1 className="fl-display text-4xl leading-none text-foreground md:text-5xl">{v.title}</h1>
+          )}
+          {isBolsa && (
+            <span className="inline-flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[#0B0B0D]">
+              <Award className="h-3.5 w-3.5" /> {t("kindBolsa", "Bolsa Patrocínio")}
+            </span>
           )}
           {!isActive && (
             <span className="border-2 border-[#0B0B0D] bg-[#dc2626] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[#F1EDE2]">
@@ -463,8 +603,8 @@ export function VaquinhaView({ slug }: { slug: string }) {
             </div>
           </div>
 
-          {/* Editor de prazo (só dono) */}
-          {isOwner && isActive && (
+          {/* Editor de prazo (só dono; bolsa não tem prazo) */}
+          {isOwner && isActive && !isBolsa && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border-2 border-dashed border-[#0B0B0D]/30 p-2.5">
               <label className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">
                 <Clock className="h-3.5 w-3.5" /> {t("deadlineLabel", "Prazo")}
@@ -488,23 +628,61 @@ export function VaquinhaView({ slug }: { slug: string }) {
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[12px] font-bold text-[#0B0B0D]/70">
             <span>{progress}% {t("ofGoal", "da meta")}</span>
-            <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {v.donors_count} {t("donors", "doadores")}</span>
             <span className="inline-flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" /> {isActive ? `${daysLeft} ${t("daysLeft", "dias restantes")}` : t("finished", "finalizada")}
+              <Users className="h-3.5 w-3.5" /> {v.donors_count} {isBolsa ? t("supporters", "apoiadores") : t("donors", "doadores")}
             </span>
+            {isBolsa ? (
+              <span className="inline-flex items-center gap-1">
+                <Repeat className="h-3.5 w-3.5" /> {isActive ? `${money(monthlyTotal)}/${t("perMonthShort", "mês")} · ${t("noDeadline", "sem prazo")}` : t("finished", "finalizada")}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> {isActive ? `${daysLeft} ${t("daysLeft", "dias restantes")}` : t("finished", "finalizada")}
+              </span>
+            )}
           </div>
 
           {isActive ? (
-            <button
-              type="button"
-              onClick={() => { setAmount(2500); setDonateOpen(true) }}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-            >
-              <HeartHandshake className="h-4 w-4" /> {t("donate", "Doar")}
-            </button>
+            isBolsa ? (
+              mySponsorship ? (
+                <div className="mt-5 border-2 border-[#0B0B0D] bg-white p-3">
+                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[#0B0B0D]">
+                    <Award className="h-4 w-4 text-[#16a34a]" />
+                    {t("youSponsor", "Você patrocina esta bolsa")} · {money(mySponsorship.monthly_cents)}/{t("perMonthShort", "mês")}
+                    {mySponsorship.status === "past_due" && (
+                      <span className="border border-[#dc2626] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#dc2626]">{t("pastDue", "Pagamento pendente")}</span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={cancelingSponsor}
+                    onClick={cancelMySponsorship}
+                    className="mt-2 inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-white px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#0B0B0D]/5 disabled:opacity-60"
+                  >
+                    {cancelingSponsor ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} {t("sponsorCancel", "Cancelar patrocínio")}
+                  </button>
+                </div>
+              ) : !isOwner ? (
+                <button
+                  type="button"
+                  onClick={() => { setAmount(2500); setSponsorOpen(true) }}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                >
+                  <Repeat className="h-4 w-4" /> {t("sponsorCta", "Patrocinar mensalmente")}
+                </button>
+              ) : null
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setAmount(2500); setDonateOpen(true) }}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-sm font-black uppercase tracking-wide text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+              >
+                <HeartHandshake className="h-4 w-4" /> {t("donate", "Doar")}
+              </button>
+            )
           ) : (
             <p className="mt-5 border-2 border-dashed border-[#0B0B0D]/30 py-3 text-center text-sm font-bold text-[#0B0B0D]/60">
-              {t("endedHint", "Esta vaquinha não está mais recebendo doações.")}
+              {isBolsa ? t("bolsaEndedHint", "Esta bolsa não está mais recebendo patrocínios.") : t("endedHint", "Esta vaquinha não está mais recebendo doações.")}
             </p>
           )}
         </section>
@@ -615,9 +793,39 @@ export function VaquinhaView({ slug }: { slug: string }) {
           )}
         </section>
 
+        {/* Patrocinadores (bolsa) */}
+        {isBolsa && (
+          <section className="mt-8">
+            <h2 className="fl-display mb-3 inline-flex items-center gap-2 text-xl text-foreground">
+              <Award className="h-4 w-4 text-primary" /> {t("sponsorsTitle", "Patrocinadores")}
+            </h2>
+            {sponsors.length === 0 ? (
+              <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
+                {t("noSponsors", "Seja o primeiro a patrocinar.")}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {sponsors.map((s) => (
+                  <li key={s.id_sponsorship} className="flex items-center justify-between gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[#F1EDE2]">{s.sponsor_name}</p>
+                      {s.since && (
+                        <p className="mt-0.5 text-xs text-[#F1EDE2]/60">
+                          {t("sponsorSince", "Apoia desde")} {new Date(s.since).toLocaleDateString(locale)}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 font-mono text-sm font-bold text-[#16a34a]">{money(s.monthly_cents)}/{t("perMonthShort", "mês")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
         {/* Doadores */}
         <section className="mt-8">
-          <h2 className="fl-display mb-3 text-xl text-foreground">{t("recentDonors", "Doações recentes")}</h2>
+          <h2 className="fl-display mb-3 text-xl text-foreground">{isBolsa ? t("recentPayments", "Apoios recentes") : t("recentDonors", "Doações recentes")}</h2>
           {donors.length === 0 ? (
             <p className="border-2 border-dashed border-foreground/15 py-8 text-center text-sm text-muted-foreground">
               {t("noDonors", "Seja o primeiro a doar.")}
@@ -637,6 +845,73 @@ export function VaquinhaView({ slug }: { slug: string }) {
           )}
         </section>
       </div>
+
+      {/* Modal de patrocínio mensal (bolsa) */}
+      {sponsorOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={() => !submitting && setSponsorOpen(false)}>
+          <div
+            className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="fl-display text-2xl">{t("sponsorTo", "Patrocinar")} “{v.title}”</h3>
+            <p className="mt-1 text-xs text-[#0B0B0D]/60">
+              {t("sponsorMonthlyNote", "Cobrança recorrente todo mês. Cancele quando quiser.")} · {t("minLabel", "Mínimo")}: {money(minCents)}
+            </p>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setAmount(p)}
+                  className={`border-2 border-[#0B0B0D] px-2 py-2 text-sm font-bold transition ${amount === p ? "bg-[#F2B705]" : "bg-white hover:bg-[#F2B705]/20"}`}
+                >
+                  {money(p)}/{t("perMonthShort", "mês")}
+                </button>
+              ))}
+            </div>
+
+            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("otherMonthlyAmount", "Outro valor mensal (R$)")}</label>
+            <input
+              type="number"
+              min={minCents / 100}
+              step="1"
+              value={(amount / 100).toString()}
+              onChange={(e) => setAmount(Math.round(Number(e.target.value) * 100) || 0)}
+              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+            />
+
+            <label className="mt-3 block text-[11px] font-bold uppercase tracking-wide text-[#0B0B0D]/60">{t("yourName", "Seu nome (opcional)")}</label>
+            <input
+              value={donorName}
+              onChange={(e) => setDonorName(e.target.value)}
+              maxLength={80}
+              placeholder={t("anon", "Anônimo")}
+              className="mt-1 w-full border-2 border-[#0B0B0D] bg-white px-3 py-2 text-sm outline-none"
+            />
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSponsorOpen(false)}
+                disabled={submitting}
+                className="flex-1 border-2 border-[#0B0B0D] bg-white px-3 py-2.5 text-sm font-bold transition hover:bg-[#0B0B0D]/5 disabled:opacity-50"
+              >
+                {t("cancel", "Cancelar")}
+              </button>
+              <button
+                type="button"
+                onClick={submitSponsorship}
+                disabled={submitting}
+                className="flex-[2] inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#16a34a] px-3 py-2.5 text-sm font-black uppercase tracking-wide text-white shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Repeat className="h-4 w-4" />}
+                {t("continueToPay", "Ir para o pagamento")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de doação */}
       {donateOpen && (

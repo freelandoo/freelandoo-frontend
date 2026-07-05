@@ -93,6 +93,84 @@ const V = {
   coverError: ["Não foi possível enviar a capa.", "Could not upload the cover.", "No se pudo subir la portada."],
 }
 
+// Bolsa Patrocínio (mig 174 / slice B2): kind toggle + patrocínio mensal.
+Object.assign(V, {
+  kindLabel: ["Tipo", "Type", "Tipo"],
+  kindVaquinha: ["Vaquinha", "Fundraiser", "Vaquita"],
+  kindBolsa: ["Bolsa Patrocínio", "Sponsorship Fund", "Beca de Patrocinio"],
+  kindVaquinhaHint: [
+    "Vaquinha: doações únicas com meta e prazo.",
+    "Fundraiser: one-time donations with a goal and deadline.",
+    "Vaquita: donaciones únicas con meta y plazo.",
+  ],
+  kindBolsaHint: [
+    "Bolsa: sem prazo — patrocinadores apoiam com um valor mensal recorrente.",
+    "Fund: no deadline — sponsors support with a recurring monthly amount.",
+    "Beca: sin plazo — los patrocinadores apoyan con un monto mensual recurrente.",
+  ],
+  kindSwitchedBolsa: [
+    "Agora é uma Bolsa Patrocínio — sem prazo, apoio mensal.",
+    "It's now a Sponsorship Fund — no deadline, monthly support.",
+    "Ahora es una Beca de Patrocinio — sin plazo, apoyo mensual.",
+  ],
+  kindSwitchedVaquinha: [
+    "Agora é uma Vaquinha — doações únicas com prazo.",
+    "It's now a Fundraiser — one-time donations with a deadline.",
+    "Ahora es una Vaquita — donaciones únicas con plazo.",
+  ],
+  supporters: ["apoiadores", "supporters", "apoyadores"],
+  perMonthShort: ["mês", "mo", "mes"],
+  noDeadline: ["sem prazo", "no deadline", "sin plazo"],
+  sponsorCta: ["Patrocinar mensalmente", "Sponsor monthly", "Patrocinar mensualmente"],
+  sponsorTo: ["Patrocinar", "Sponsor", "Patrocinar"],
+  sponsorMonthlyNote: [
+    "Cobrança recorrente todo mês. Cancele quando quiser.",
+    "Recurring charge every month. Cancel anytime.",
+    "Cobro recurrente cada mes. Cancela cuando quieras.",
+  ],
+  otherMonthlyAmount: ["Outro valor mensal (R$)", "Other monthly amount (R$)", "Otro monto mensual (R$)"],
+  sponsorLogin: [
+    "Entre na sua conta para patrocinar.",
+    "Sign in to sponsor.",
+    "Inicia sesión para patrocinar.",
+  ],
+  sponsorError: [
+    "Não foi possível iniciar o patrocínio.",
+    "Could not start the sponsorship.",
+    "No se pudo iniciar el patrocinio.",
+  ],
+  sponsorThanksTitle: ["Patrocínio confirmado!", "Sponsorship confirmed!", "¡Patrocinio confirmado!"],
+  sponsorThanksBody: [
+    "Obrigado por apoiar todo mês. Pode levar alguns segundos para aparecer.",
+    "Thanks for supporting every month. It may take a few seconds to show up.",
+    "Gracias por apoyar cada mes. Puede tardar unos segundos en aparecer.",
+  ],
+  sponsorCanceledCheckout: [
+    "Patrocínio cancelado — você não foi cobrado.",
+    "Sponsorship canceled — you were not charged.",
+    "Patrocinio cancelado — no se te cobró.",
+  ],
+  youSponsor: ["Você patrocina esta bolsa", "You sponsor this fund", "Tú patrocinas esta beca"],
+  pastDue: ["Pagamento pendente", "Payment past due", "Pago pendiente"],
+  sponsorCancel: ["Cancelar patrocínio", "Cancel sponsorship", "Cancelar patrocinio"],
+  sponsorCancelConfirm: [
+    "Cancelar seu patrocínio mensal? O mês já pago não é estornado.",
+    "Cancel your monthly sponsorship? The month already paid is not refunded.",
+    "¿Cancelar tu patrocinio mensual? El mes ya pagado no se reembolsa.",
+  ],
+  sponsorCanceled: ["Patrocínio cancelado.", "Sponsorship canceled.", "Patrocinio cancelado."],
+  sponsorCancelError: ["Não foi possível cancelar.", "Could not cancel.", "No se pudo cancelar."],
+  sponsorsTitle: ["Patrocinadores", "Sponsors", "Patrocinadores"],
+  noSponsors: ["Seja o primeiro a patrocinar.", "Be the first to sponsor.", "Sé el primero en patrocinar."],
+  sponsorSince: ["Apoia desde", "Supporting since", "Apoya desde"],
+  recentPayments: ["Apoios recentes", "Recent support", "Apoyos recientes"],
+  bolsaEndedHint: [
+    "Esta bolsa não está mais recebendo patrocínios.",
+    "This fund is no longer accepting sponsorships.",
+    "Esta beca ya no recibe patrocinios.",
+  ],
+})
+
 // Entrada no menu (ns Account, reusa o vocabulário da conta).
 const ACCOUNT = {
   vaquinhaLabel: ["Vaquinha", "Fundraiser", "Vaquita"],
