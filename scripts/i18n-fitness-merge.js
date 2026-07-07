@@ -121,6 +121,97 @@ const ACADEMIES = {
   colProfessor: ["Professor", "Trainer", "Profesor"],
 }
 
+const FITNESS = {
+  eyebrow: ["Painel Fitness", "Fitness Panel", "Panel Fitness"],
+  title: ["Meu dia", "My day", "Mi día"],
+  disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
+  loadError: ["Erro ao carregar o painel. Tente novamente.", "Error loading the panel. Try again.", "Error al cargar el panel. Inténtalo de nuevo."],
+  prevDay: ["Dia anterior", "Previous day", "Día anterior"],
+  nextDay: ["Próximo dia", "Next day", "Día siguiente"],
+  lockedTitle: ["Painel Fitness", "Fitness Panel", "Panel Fitness"],
+  lockedText: [
+    "O painel fitness é para quem está matriculado numa academia parceira (vincule pelo CPF) ou tem um subperfil assinante.",
+    "The fitness panel is for members of a partner gym (link with your CPF) or subscribers with a paid sub-profile.",
+    "El panel fitness es para matriculados en un gimnasio socio (vincula con tu CPF) o suscriptores con subperfil de pago.",
+  ],
+  lockedCtaGym: ["Vincular minha academia", "Link my gym", "Vincular mi gimnasio"],
+  lockedCtaSub: ["Assinar um subperfil", "Subscribe a sub-profile", "Suscribir un subperfil"],
+  kcalTitle: ["Calorias", "Calories", "Calorías"],
+  waterTitle: ["Água", "Water", "Agua"],
+  waterCup: ["Copo 250ml", "Cup 250ml", "Vaso 250ml"],
+  waterMinus: ["Remover copo", "Remove cup", "Quitar vaso"],
+  measureTitle: ["Peso & altura", "Weight & height", "Peso y altura"],
+  measureEmpty: ["Nenhuma medição ainda.", "No measurements yet.", "Ninguna medición aún."],
+  measureCta: ["Registrar", "Log", "Registrar"],
+  measureModalTitle: ["Registrar medição", "Log measurement", "Registrar medición"],
+  weightLabel: ["Peso (kg)", "Weight (kg)", "Peso (kg)"],
+  heightLabel: ["Altura (cm)", "Height (cm)", "Altura (cm)"],
+  measureMissing: ["Informe peso e/ou altura", "Enter weight and/or height", "Ingresa peso y/o altura"],
+  measureSaved: ["Medição registrada!", "Measurement logged!", "¡Medición registrada!"],
+  measureError: ["Erro ao registrar medição", "Error logging measurement", "Error al registrar medición"],
+  measureSubmit: ["Salvar", "Save", "Guardar"],
+  diaryTitle: ["Diário de refeições", "Meal diary", "Diario de comidas"],
+  mealCafe: ["Café da manhã", "Breakfast", "Desayuno"],
+  mealAlmoco: ["Almoço", "Lunch", "Almuerzo"],
+  mealLanche: ["Lanche", "Snack", "Merienda"],
+  mealJantar: ["Jantar", "Dinner", "Cena"],
+  mealEmpty: ["Nada registrado.", "Nothing logged.", "Nada registrado."],
+  addFood: ["Adicionar alimento", "Add food", "Agregar alimento"],
+  removeLog: ["Remover", "Remove", "Quitar"],
+  logAdded: ["Adicionado ao diário!", "Added to the diary!", "¡Agregado al diario!"],
+  logError: ["Erro ao adicionar", "Error adding", "Error al agregar"],
+  invalidGrams: ["Quantidade inválida", "Invalid amount", "Cantidad inválida"],
+  searchTitle: ["Adicionar alimento", "Add food", "Agregar alimento"],
+  tabLocal: ["Alimentos", "Foods", "Alimentos"],
+  tabOff: ["Produtos (código de barras)", "Products (barcode)", "Productos (código de barras)"],
+  searchLocalPh: ["Ex.: arroz, frango, banana...", "E.g.: rice, chicken, banana...", "Ej.: arroz, pollo, plátano..."],
+  searchOffPh: ["Nome do produto ou marca", "Product or brand name", "Nombre del producto o marca"],
+  searchCta: ["Buscar", "Search", "Buscar"],
+  searchError: ["Erro na busca", "Search error", "Error en la búsqueda"],
+  localHint: [
+    "Base TACO (alimentos brasileiros) + itens já usados.",
+    "TACO database (Brazilian foods) + previously used items.",
+    "Base TACO (alimentos brasileños) + ítems ya usados.",
+  ],
+  offHint: [
+    "Busca no Open Food Facts — produtos industrializados do mundo todo.",
+    "Searches Open Food Facts — packaged products from around the world.",
+    "Busca en Open Food Facts: productos industrializados de todo el mundo.",
+  ],
+  gramsLabel: ["Quantidade (g)", "Amount (g)", "Cantidad (g)"],
+  back: ["Voltar", "Back", "Volver"],
+  addSubmit: ["Adicionar", "Add", "Agregar"],
+  close: ["Fechar", "Close", "Cerrar"],
+  cancel: ["Cancelar", "Cancel", "Cancelar"],
+  gymTitle: ["Minha academia", "My gym", "Mi gimnasio"],
+  gymEmpty: ["Você ainda não vinculou nenhuma academia.", "You haven't linked a gym yet.", "Todavía no vinculaste ningún gimnasio."],
+  gymEmptyCta: ["Vincular agora", "Link now", "Vincular ahora"],
+  gymNoPlan: ["Sem plano informado", "No plan informed", "Sin plan informado"],
+  gymFreq30: ["dias / 30d", "days / 30d", "días / 30d"],
+  gymMonthLabel: ["Presenças no mês", "Attendance this month", "Asistencias del mes"],
+  gymPayments: ["Mensalidades", "Payments", "Mensualidades"],
+  payPaid: ["Pago", "Paid", "Pagado"],
+  payPending: ["Pendente", "Pending", "Pendiente"],
+  payOverdue: ["Atrasado", "Overdue", "Atrasado"],
+  goalsTitle: ["Metas", "Goals", "Metas"],
+  goalKcalLabel: ["Meta diária de calorias (kcal)", "Daily calorie goal (kcal)", "Meta diaria de calorías (kcal)"],
+  goalWaterLabel: ["Meta diária de água (ml)", "Daily water goal (ml)", "Meta diaria de agua (ml)"],
+  goalsSubmit: ["Salvar metas", "Save goals", "Guardar metas"],
+  goalsSaved: ["Metas atualizadas!", "Goals updated!", "¡Metas actualizadas!"],
+  goalsError: ["Erro ao salvar metas", "Error saving goals", "Error al guardar metas"],
+}
+
+const WORKOUTS = {
+  todayTitle: ["Treino de hoje", "Today's workout", "Entrenamiento de hoy"],
+  todayEmpty: [
+    "Nenhuma ficha ativa. Seu professor pode montar seu treino na academia.",
+    "No active plan. Your trainer can build your workout at the gym.",
+    "Ninguna ficha activa. Tu profesor puede armar tu entrenamiento en el gimnasio.",
+  ],
+  daysOnPlan: ["{n} dias com esta ficha", "{n} days on this plan", "{n} días con esta ficha"],
+  sessionDone: ["Treino concluído!", "Workout complete!", "¡Entrenamiento completado!"],
+}
+
 const LOCALES = ["pt-BR", "en", "es"]
 
 function mergeNamespace(json, ns, keys, localeIndex) {
@@ -135,7 +226,11 @@ function mergeNamespace(json, ns, keys, localeIndex) {
   return added
 }
 
-const NAMESPACES = [["Academies", ACADEMIES]]
+const NAMESPACES = [
+  ["Academies", ACADEMIES],
+  ["Fitness", FITNESS],
+  ["Workouts", WORKOUTS],
+]
 
 for (let i = 0; i < LOCALES.length; i++) {
   const file = path.join(dir, `${LOCALES[i]}.json`)
