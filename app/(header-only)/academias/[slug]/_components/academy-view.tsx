@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import {
@@ -18,10 +18,12 @@ import {
   Users,
   X,
 } from "lucide-react"
-import { getToken } from "@/lib/auth"
+import { getStoredUser, getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { TrainingGrid } from "./training-grid"
+import { AcademyFeed } from "./academy-feed"
+import { AcademyRanking } from "./academy-ranking"
 
 type Professor = { id_user: string; username: string | null; nome: string | null }
 type MyMembership = {
@@ -86,6 +88,9 @@ export function AcademyView({ slug }: { slug: string }) {
   const [linking, setLinking] = useState(false)
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [uploadingMedia, setUploadingMedia] = useState<"avatar" | "cover" | null>(null)
+  const avatarRef = useRef<HTMLInputElement | null>(null)
+  const coverRef = useRef<HTMLInputElement | null>(null)
 
   const authHeaders = useCallback((): Record<string, string> => {
     const token = getToken()
@@ -196,6 +201,32 @@ export function AcademyView({ slug }: { slug: string }) {
     }
   }, [academy, authHeaders, load, t])
 
+  const uploadMedia = useCallback(
+    async (kind: "avatar" | "cover", file: File) => {
+      if (!academy) return
+      setUploadingMedia(kind)
+      try {
+        const fd = new FormData()
+        fd.set("kind", kind)
+        fd.set("media", file)
+        const res = await fetch(`/api/academies/${academy.id_academy}/media`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: fd,
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error)
+        toast.success(t("mediaOk", "Imagem atualizada!"))
+        void load()
+      } catch (err) {
+        toast.error(err instanceof Error && err.message ? err.message : t("mediaError", "Erro ao enviar imagem"))
+      } finally {
+        setUploadingMedia(null)
+      }
+    },
+    [academy, authHeaders, load, t]
+  )
+
   const toggleProfessor = useCallback(
     async (member: Member) => {
       if (!academy) return
@@ -264,6 +295,8 @@ export function AcademyView({ slug }: { slug: string }) {
   const ms = academy.my_membership
   const statusMeta = ms ? STATUS_KEYS[ms.membership_status] || STATUS_KEYS.pending : null
   const isStaff = academy.is_owner || academy.is_professor
+  const canPost = academy.is_owner || academy.is_professor || !!ms
+  const meId = getStoredUser()?.id_user || null
 
   return (
     <div className="fl-sharp mx-auto max-w-5xl px-4 pb-24 pt-6">
@@ -397,9 +430,53 @@ export function AcademyView({ slug }: { slug: string }) {
               {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
               {t("syncCta", "Sincronizar agora")}
             </button>
+            <button
+              onClick={() => avatarRef.current?.click()}
+              disabled={uploadingMedia !== null}
+              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
+            >
+              {uploadingMedia === "avatar" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {t("mediaAvatarCta", "Trocar avatar")}
+            </button>
+            <button
+              onClick={() => coverRef.current?.click()}
+              disabled={uploadingMedia !== null}
+              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
+            >
+              {uploadingMedia === "cover" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {t("mediaCoverCta", "Trocar capa")}
+            </button>
+            <input
+              ref={avatarRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void uploadMedia("avatar", f)
+                e.target.value = ""
+              }}
+            />
+            <input
+              ref={coverRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void uploadMedia("cover", f)
+                e.target.value = ""
+              }}
+            />
           </div>
         </section>
       )}
+
+      {/* Ranking do mês (público) */}
+      <AcademyRanking academyId={academy.id_academy} isOwner={academy.is_owner} />
+
+      {/* Mural social (público; postar = vinculado/staff) */}
+      <AcademyFeed academyId={academy.id_academy} slug={academy.slug} canPost={canPost} isOwner={academy.is_owner} meId={meId} />
 
       {/* Treinos por data (staff) */}
       {isStaff && <TrainingGrid academyId={academy.id_academy} />}

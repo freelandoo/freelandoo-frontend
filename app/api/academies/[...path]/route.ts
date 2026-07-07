@@ -16,16 +16,25 @@ async function forward(request: Request, method: string, pathParts: string[]) {
     const incoming = new URL(request.url)
     const url = `${getBackendApiUrl()}/academies/${sub}${incoming.search}`
 
+    const contentType = request.headers.get("Content-Type") || ""
+    const isMultipart = contentType.toLowerCase().startsWith("multipart/form-data")
+
     const init: RequestInit = {
       method,
       headers: {
-        "Content-Type": "application/json",
+        // Em multipart preservamos o Content-Type original (com boundary) e
+        // encaminhamos os bytes crus; em JSON forçamos application/json.
+        ...(isMultipart ? { "Content-Type": contentType } : { "Content-Type": "application/json" }),
         ...(auth ? { Authorization: auth } : {}),
       },
     }
     if (method === "POST" || method === "PATCH" || method === "PUT") {
-      const text = await request.text()
-      if (text) init.body = text
+      if (isMultipart) {
+        init.body = Buffer.from(await request.arrayBuffer())
+      } else {
+        const text = await request.text()
+        if (text) init.body = text
+      }
     }
 
     const response = await fetch(url, init)
