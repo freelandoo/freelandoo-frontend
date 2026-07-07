@@ -6,6 +6,7 @@ import { Loader2, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
+import { onRealtime } from "@/lib/realtime"
 import { cn } from "@/lib/utils"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
@@ -52,8 +53,9 @@ function BeesPageInner() {
   const [view, setView] = useState<"bees" | "lives">("bees")
   const [liveCount, setLiveCount] = useState(0)
 
-  // Conta lives ativas para o selo no botão. Poll leve (60s) que SÓ roda com a
-  // aba visível — em segundo plano não bate na API (economia de invocações Vercel).
+  // Conta lives ativas para o selo no botão. O backend empurra "lives:changed"
+  // via WebSocket quando uma live abre/encerra — o poll virou só fallback
+  // raro (10 min). Fetch direto no Railway (fora da Vercel).
   useEffect(() => {
     let active = true
     const token = getToken()
@@ -61,8 +63,6 @@ function BeesPageInner() {
     const tick = async () => {
       if (document.visibilityState !== "visible") return
       try {
-        // Direto no Railway (fora da Vercel) — poll de 60s enquanto a aba
-        // está visível somaria 60 edge requests/h por usuário no /bees.
         const res = await fetch(`${getPublicBackendUrl()}/lives`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -73,13 +73,15 @@ function BeesPageInner() {
       } catch { /* silencioso */ }
     }
     tick()
-    const id = setInterval(tick, 60_000)
+    const id = setInterval(tick, 600_000)
+    const offLives = onRealtime("lives:changed", () => { void tick() })
     // Ao voltar pra aba, atualiza na hora (sem esperar o intervalo).
     const onVisibility = () => { if (document.visibilityState === "visible") tick() }
     document.addEventListener("visibilitychange", onVisibility)
     return () => {
       active = false
       clearInterval(id)
+      offLives()
       document.removeEventListener("visibilitychange", onVisibility)
     }
   }, [])

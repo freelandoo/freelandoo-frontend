@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2, Send, Lock, CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { onRealtime } from "@/lib/realtime"
 
 interface Message {
   id_message: string
@@ -51,6 +53,8 @@ export function ServiceChatModal({
   viewerSide, responseStatus, idRequest, onFinalize, onReject,
   previewRequest, onPreviewAccepted,
 }: Props) {
+  const t = useTranslations("Chamado")
+  const locale = useLocale()
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [text, setText] = useState("")
@@ -122,16 +126,17 @@ export function ServiceChatModal({
           setLockedByOther(true)
         } else {
           setLockedByOther(false)
-          const msg = (d as { error?: string }).error || `Erro ao abrir o chat (HTTP ${res.status}).`
+          const msg = (d as { error?: string }).error ||
+            t("osChatOpenErrorHttp", "Erro ao abrir o chat (HTTP {status}).").replace("{status}", String(res.status))
           setOpenError(msg)
         }
       } catch {
-        setOpenError("Erro de rede ao abrir o chat.")
+        setOpenError(t("osChatOpenErrorNetwork", "Erro de rede ao abrir o chat."))
       }
       setOpening(false)
       openingRef.current = false
     })()
-  }, [open, previewRequest, effectiveIdResponse])
+  }, [open, previewRequest, effectiveIdResponse, t])
 
   const fetchMessages = useCallback(async () => {
     const token = getToken()
@@ -149,8 +154,9 @@ export function ServiceChatModal({
     } catch { /* silent */ }
   }, [effectiveIdResponse])
 
-  // Fetch inicial + poll bem espaçado (modal raramente fica aberto).
-  // 30s era agressivo; 90s já cobre o caso comum sem martelar o backend.
+  // Fetch inicial + realtime: o backend já emite "os:message" pro comprador e
+  // pro profissional a cada mensagem de O.S. — o poll (que era 90s via proxy
+  // Vercel) virou só fallback raro de 10 min pra WS quebrado.
   useEffect(() => {
     if (!open) return
 
@@ -159,10 +165,18 @@ export function ServiceChatModal({
 
     setLoading(true)
     fetchMessages().finally(() => setLoading(false))
+    const off = onRealtime("os:message", (raw) => {
+      const payload = raw as { id_response?: string }
+      if (payload?.id_response !== effectiveIdResponse) return
+      void fetchMessages()
+    })
     const interval = setInterval(() => {
       if (!document.hidden) fetchMessages()
-    }, 90000)
-    return () => clearInterval(interval)
+    }, 600_000)
+    return () => {
+      off()
+      clearInterval(interval)
+    }
   }, [open, effectiveIdResponse, fetchMessages])
 
   // Scroll to bottom on new messages
@@ -220,9 +234,9 @@ export function ServiceChatModal({
         onOpenChange(false)
       } else {
         const d = await res.json().catch(() => ({}))
-        alert((d as { error?: string }).error || "Erro ao finalizar")
+        alert((d as { error?: string }).error || t("osChatFinalizeError", "Erro ao finalizar"))
       }
-    } catch { alert("Erro de rede") }
+    } catch { alert(t("osChatNetworkError", "Erro de rede")) }
     setFinalizing(false)
   }
 
@@ -242,9 +256,9 @@ export function ServiceChatModal({
         onOpenChange(false)
       } else {
         const d = await res.json().catch(() => ({}))
-        alert((d as { error?: string }).error || "Erro ao rejeitar")
+        alert((d as { error?: string }).error || t("osChatRejectError", "Erro ao rejeitar"))
       }
-    } catch { alert("Erro de rede") }
+    } catch { alert(t("osChatNetworkError", "Erro de rede")) }
     setRejecting(false)
   }
 
@@ -257,12 +271,12 @@ export function ServiceChatModal({
   const formatTime = (iso: string) => {
     try {
       const d = new Date(iso)
-      return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
     } catch { return "" }
   }
 
   const formatDate = (iso: string) => {
-    try { return new Date(iso).toLocaleDateString("pt-BR") } catch { return "" }
+    try { return new Date(iso).toLocaleDateString(locale) } catch { return "" }
   }
 
   // Group messages by date
@@ -280,14 +294,14 @@ export function ServiceChatModal({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 flex flex-col max-h-[85vh] gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
+      <DialogContent className="fl-sharp sm:max-w-[480px] p-0 flex flex-col max-h-[85vh] gap-0 border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b-2 border-[#0B0B0D]/15 bg-[#e8e2d4]">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#0B0B0D]/70 transition hover:bg-[#0B0B0D]/10 hover:text-[#0B0B0D]"
-            aria-label="Voltar"
+            aria-label={t("back", "Voltar")}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -299,7 +313,7 @@ export function ServiceChatModal({
             <p className="text-sm font-bold truncate text-[#0B0B0D]">{peerName}</p>
             {isTerminal && (
               <p className="text-[10px] text-[#5b554b] flex items-center gap-1">
-                <Lock className="h-3 w-3" /> Conversa encerrada
+                <Lock className="h-3 w-3" /> {t("osChatClosed", "Conversa encerrada")}
               </p>
             )}
           </div>
@@ -311,7 +325,7 @@ export function ServiceChatModal({
           {previewRequest && (
             <div className="bg-[#0B0B0D]/[0.04] border-2 border-[#0B0B0D]/15 rounded-lg p-3 space-y-2 mb-3">
               <p className="text-xs font-bold text-[#5b554b] uppercase tracking-wide">
-                Solicitação de serviço
+                {t("osChatRequestCardTitle", "Solicitação de serviço")}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {previewRequest.machineName && (
@@ -341,23 +355,23 @@ export function ServiceChatModal({
           {!loading && !opening && !lockedByOther && messages.length === 0 && (
             <div className="text-center py-8 text-[#5b554b] text-xs">
               {viewerSide === "PRO"
-                ? "Mande uma mensagem para iniciar a negociação."
-                : "Nenhuma mensagem ainda."}
+                ? t("osChatProEmptyHint", "Mande uma mensagem para iniciar a negociação.")
+                : t("osChatUserEmptyHint", "Nenhuma mensagem ainda.")}
             </div>
           )}
           {lockedByOther && (
             <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
               <Lock className="h-8 w-8 text-[#5b554b]" />
-              <p className="text-sm font-bold text-[#0B0B0D]">Alguém já respondeu a essa solicitação</p>
+              <p className="text-sm font-bold text-[#0B0B0D]">{t("osChatLockedTitle", "Alguém já respondeu a essa solicitação")}</p>
               <p className="text-xs text-[#5b554b] max-w-xs">
-                Aguarde — se o usuário rejeitar a outra resposta, a O.S. fica disponível para você.
+                {t("osChatLockedHint", "Aguarde — se o usuário rejeitar a outra resposta, a O.S. fica disponível para você.")}
               </p>
             </div>
           )}
           {openError && !lockedByOther && (
             <div className="flex flex-col items-center justify-center text-center py-12 px-4 gap-2">
               <Lock className="h-8 w-8 text-[#b91c1c]" />
-              <p className="text-sm font-bold text-[#b91c1c]">Não foi possível abrir o chat</p>
+              <p className="text-sm font-bold text-[#b91c1c]">{t("osChatOpenErrorTitle", "Não foi possível abrir o chat")}</p>
               <p className="text-xs text-[#5b554b] max-w-xs">{openError}</p>
             </div>
           )}
@@ -402,7 +416,7 @@ export function ServiceChatModal({
                 disabled={finalizing || rejecting}
               >
                 <XCircle className="h-3.5 w-3.5" />
-                Rejeitar
+                {t("osChatReject", "Rejeitar")}
               </button>
               <button
                 type="button"
@@ -411,7 +425,7 @@ export function ServiceChatModal({
                 disabled={finalizing || rejecting}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Aceitar
+                {t("osChatAccept", "Aceitar")}
               </button>
             </div>
           )}
@@ -421,12 +435,12 @@ export function ServiceChatModal({
             {isTerminal ? (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-[#5b554b]">
                 <Lock className="h-4 w-4" />
-                Conversa encerrada
+                {t("osChatClosed", "Conversa encerrada")}
               </div>
             ) : lockedByOther ? (
               <div className="flex items-center justify-center gap-2 py-2 text-xs text-[#5b554b]">
                 <Lock className="h-3.5 w-3.5" />
-                Aguarde a decisão do usuário
+                {t("osChatAwaitingDecision", "Aguarde a decisão do usuário")}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -435,7 +449,7 @@ export function ServiceChatModal({
                   value={text}
                   onChange={e => setText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Digite uma mensagem..."
+                  placeholder={t("osChatInputPlaceholder", "Digite uma mensagem...")}
                   className="fl-input flex-1"
                   disabled={sending || !effectiveIdResponse}
                 />
@@ -456,15 +470,15 @@ export function ServiceChatModal({
 
     {/* Modal de confirmação Aceitar / Rejeitar */}
     <Dialog open={!!confirmType} onOpenChange={(v) => { if (!v) setConfirmType(null) }}>
-      <DialogContent className="sm:max-w-[420px] border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
+      <DialogContent className="fl-sharp sm:max-w-[420px] border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]">
         <DialogHeader>
           <DialogTitle className="fl-display text-xl text-[#0B0B0D]">
-            {confirmType === "finalize" && "Aceitar este profissional?"}
-            {confirmType === "reject" && "Rejeitar este profissional?"}
+            {confirmType === "finalize" && t("osChatConfirmFinalizeTitle", "Aceitar este profissional?")}
+            {confirmType === "reject" && t("osChatConfirmRejectTitle", "Rejeitar este profissional?")}
           </DialogTitle>
           <DialogDescription className="text-[#5b554b]">
-            {confirmType === "finalize" && "Você está aceitando esse serviço. Você não receberá mais freelancers para essa O.S. e as outras conversas serão encerradas. Confirma?"}
-            {confirmType === "reject" && "A conversa com este profissional será encerrada. Outros profissionais ainda podem responder à sua O.S."}
+            {confirmType === "finalize" && t("osChatConfirmFinalizeDesc", "Você está aceitando esse serviço. Você não receberá mais freelancers para essa O.S. e as outras conversas serão encerradas. Confirma?")}
+            {confirmType === "reject" && t("osChatConfirmRejectDesc", "A conversa com este profissional será encerrada. Outros profissionais ainda podem responder à sua O.S.")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
@@ -474,7 +488,7 @@ export function ServiceChatModal({
             onClick={() => setConfirmType(null)}
             disabled={finalizing || rejecting}
           >
-            Cancelar
+            {t("cancel", "Cancelar")}
           </button>
           <button
             type="button"
@@ -490,7 +504,7 @@ export function ServiceChatModal({
             disabled={finalizing || rejecting}
           >
             {(finalizing || rejecting) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Confirmar
+            {t("osChatConfirm", "Confirmar")}
           </button>
         </DialogFooter>
       </DialogContent>
