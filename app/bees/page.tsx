@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { Loader2, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 import { cn } from "@/lib/utils"
 import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
 import { BeesPost } from "@/components/bees/bees-post"
@@ -60,7 +61,9 @@ function BeesPageInner() {
     const tick = async () => {
       if (document.visibilityState !== "visible") return
       try {
-        const res = await fetch("/api/lives", {
+        // Direto no Railway (fora da Vercel) — poll de 60s enquanto a aba
+        // está visível somaria 60 edge requests/h por usuário no /bees.
+        const res = await fetch(`${getPublicBackendUrl()}/lives`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         })

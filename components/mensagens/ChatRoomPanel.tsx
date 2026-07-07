@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useAuth } from "@/hooks/use-auth"
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { EmojiPickerButton } from "./EmojiPickerButton"
@@ -83,6 +84,13 @@ function authHeaders(): HeadersInit {
   return t ? { Authorization: `Bearer ${t}` } : {}
 }
 
+// Chat ao vivo fala DIRETO com o Railway (fora da Vercel): heartbeat + poll
+// somavam ~120 requests/h por usuário dentro de uma sala passando pelo
+// rewrite /api/* — custo puro de edge request sem nenhum benefício.
+function chatUrl(path: string): string {
+  return `${getPublicBackendUrl()}${path}`
+}
+
 function timeOnly(iso: string, locale: string = "pt-BR"): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
@@ -136,7 +144,7 @@ export function ChatRoomPanel({
     setConnState("connecting")
     ;(async () => {
       try {
-        const res = await fetch("/api/chat/join", {
+        const res = await fetch(chatUrl("/chat/join"), {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/json" },
           body: JSON.stringify({ type: kind, id_machine: machineId ?? undefined }),
@@ -173,7 +181,7 @@ export function ChatRoomPanel({
     if (!room) return
     const ping = async () => {
       try {
-        const res = await fetch(`/api/chat/rooms/${room.id_chat_room}/heartbeat`, {
+        const res = await fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/heartbeat`), {
           method: "POST",
           headers: authHeaders(),
         })
@@ -198,7 +206,7 @@ export function ChatRoomPanel({
     return () => {
       if (!room) return
       try {
-        fetch(`/api/chat/rooms/${room.id_chat_room}/leave`, {
+        fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/leave`), {
           method: "POST",
           headers: authHeaders(),
           keepalive: true,
@@ -211,7 +219,7 @@ export function ChatRoomPanel({
     if (!room) return
     const onBeforeUnload = () => {
       try {
-        fetch(`/api/chat/rooms/${room.id_chat_room}/leave`, {
+        fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/leave`), {
           method: "POST",
           headers: authHeaders(),
           keepalive: true,
@@ -227,7 +235,7 @@ export function ChatRoomPanel({
     if (!opts.silent) setLoadingMessages(true)
     try {
       const res = await fetch(
-        `/api/chat/rooms/${room.id_chat_room}/messages?limit=50`,
+        chatUrl(`/chat/rooms/${room.id_chat_room}/messages?limit=50`),
         { headers: authHeaders(), cache: "no-store" }
       )
       if (!res.ok) {
@@ -297,7 +305,7 @@ export function ChatRoomPanel({
     setSending(true)
     setSendError(null)
     try {
-      const res = await fetch(`/api/chat/rooms/${room.id_chat_room}/messages`, {
+      const res = await fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/messages`), {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -326,7 +334,7 @@ export function ChatRoomPanel({
     if (!room) return
     if (!confirm(t("deleteMessageConfirm", "Apagar essa mensagem?"))) return
     try {
-      const res = await fetch(`/api/chat/messages/${id}`, {
+      const res = await fetch(chatUrl(`/chat/messages/${id}`), {
         method: "DELETE",
         headers: authHeaders(),
       })
@@ -342,7 +350,7 @@ export function ChatRoomPanel({
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     if (!reportingId) return
-    const res = await fetch(`/api/chat/messages/${reportingId}/report`, {
+    const res = await fetch(chatUrl(`/chat/messages/${reportingId}/report`), {
       method: "POST",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ reason_category, reason }),

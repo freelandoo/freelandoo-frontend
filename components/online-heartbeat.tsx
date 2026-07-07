@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 
 // Heartbeat global de tempo online — conta o tempo enquanto o usuário
 // está logado e com a aba visível em QUALQUER página. Antes, o heartbeat
@@ -28,7 +29,10 @@ export function OnlineHeartbeat() {
       const now = Date.now()
       if (now - lastSentRef.current < HEARTBEAT_INTERVAL_MS - 5_000) return
       lastSentRef.current = now
-      fetch("/api/ranking/heartbeat", {
+      // Direto no Railway: é a chamada recorrente mais frequente do site
+      // (todo user logado, 12×/h) — via proxy /api ela cobraria uma
+      // invocação serverless na Vercel a cada tick.
+      fetch(`${getPublicBackendUrl()}/ranking/heartbeat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
