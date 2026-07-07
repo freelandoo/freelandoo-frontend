@@ -21,6 +21,7 @@ import {
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { TrainingGrid } from "./training-grid"
 
 type Professor = { id_user: string; username: string | null; nome: string | null }
 type MyMembership = {
@@ -399,6 +400,9 @@ export function AcademyView({ slug }: { slug: string }) {
           </div>
         </section>
       )}
+
+      {/* Treinos por data (staff) */}
+      {isStaff && <TrainingGrid academyId={academy.id_academy} />}
 
       {/* Membros (staff) */}
       {isStaff && (
