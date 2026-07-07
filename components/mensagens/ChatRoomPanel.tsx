@@ -20,11 +20,14 @@ import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { emitRealtime, onRealtime } from "@/lib/realtime"
 import { EmojiPickerButton } from "./EmojiPickerButton"
 import { ReportMessageDialog } from "./ReportMessageDialog"
 
-const POLL_MS = 60_000
-const HEARTBEAT_MS = 60_000
+// Realtime (socket.io em /realtime, direto no Railway) cobre o caso normal:
+// chat:message empurra mensagens, chat:presence empurra o contador de online.
+// O poll é só rede de segurança pra WS quebrado.
+const POLL_MS = 600_000 // 10 min (fallback)
 const MAX_LENGTH = 500
 const SPRING = { type: "spring" as const, stiffness: 200, damping: 22 }
 
@@ -177,57 +180,42 @@ export function ChatRoomPanel({
     return () => { cancelled = true }
   }, [status, kind, machineId, onNeedsMachinePick, t])
 
+  // Presença via WebSocket: inscreve na sala e o backend renova a presença
+  // enquanto o socket viver (substitui o POST /heartbeat de 60s e os POSTs
+  // /leave — desconectar/desinscrever já derruba a presença no servidor).
   useEffect(() => {
     if (!room) return
-    const ping = async () => {
-      try {
-        const res = await fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/heartbeat`), {
-          method: "POST",
-          headers: authHeaders(),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (typeof data?.current_users === "number") setOnline(data.current_users)
-          setConnState("online")
-        } else {
-          setConnState("reconnecting")
-        }
-      } catch {
-        setConnState("reconnecting")
-      }
-    }
-    const t = setInterval(() => {
-      if (!document.hidden) ping()
-    }, HEARTBEAT_MS)
-    return () => clearInterval(t)
-  }, [room])
+    const id_chat_room = room.id_chat_room
+    emitRealtime("chat:subscribe", { id_chat_room })
 
-  useEffect(() => {
+    const offMsg = onRealtime("chat:message", (raw) => {
+      const payload = raw as { id_chat_room?: string; message?: ChatMessage }
+      if (payload?.id_chat_room !== id_chat_room || !payload.message) return
+      const incoming = payload.message
+      setMessages((prev) => {
+        if (prev.some((m) => m.id_chat_message === incoming.id_chat_message)) return prev
+        return [...prev, incoming]
+      })
+      setConnState("online")
+    })
+    const offDeleted = onRealtime("chat:message:deleted", (raw) => {
+      const payload = raw as { id_chat_room?: string; id_chat_message?: string }
+      if (payload?.id_chat_room !== id_chat_room || !payload.id_chat_message) return
+      setMessages((prev) => prev.filter((m) => m.id_chat_message !== payload.id_chat_message))
+    })
+    const offPresence = onRealtime("chat:presence", (raw) => {
+      const payload = raw as { id_chat_room?: string; current_users?: number }
+      if (payload?.id_chat_room !== id_chat_room) return
+      if (typeof payload.current_users === "number") setOnline(payload.current_users)
+      setConnState("online")
+    })
+
     return () => {
-      if (!room) return
-      try {
-        fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/leave`), {
-          method: "POST",
-          headers: authHeaders(),
-          keepalive: true,
-        })
-      } catch { /* silent */ }
+      emitRealtime("chat:unsubscribe", { id_chat_room })
+      offMsg()
+      offDeleted()
+      offPresence()
     }
-  }, [room])
-
-  useEffect(() => {
-    if (!room) return
-    const onBeforeUnload = () => {
-      try {
-        fetch(chatUrl(`/chat/rooms/${room.id_chat_room}/leave`), {
-          method: "POST",
-          headers: authHeaders(),
-          keepalive: true,
-        })
-      } catch { /* silent */ }
-    }
-    window.addEventListener("beforeunload", onBeforeUnload)
-    return () => window.removeEventListener("beforeunload", onBeforeUnload)
   }, [room])
 
   const loadMessages = useCallback(async (opts: { silent?: boolean } = {}) => {
@@ -259,6 +247,7 @@ export function ChatRoomPanel({
     loadMessages()
   }, [room, loadMessages])
 
+  // Fallback raro (10 min): re-sincroniza se o WebSocket perdeu algo.
   useEffect(() => {
     if (!room) return
     const t = setInterval(() => {
@@ -415,7 +404,7 @@ export function ChatRoomPanel({
   if (!room) return null
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="fl-sharp flex min-w-0 flex-1 flex-col overflow-hidden">
       {/* Header glass */}
       <header className="relative flex flex-col gap-2 border-b border-white/[0.06] bg-gradient-to-b from-black/40 to-black/10 px-4 py-3 backdrop-blur-xl">
         {(pageTitle || pageSubtitle) && (

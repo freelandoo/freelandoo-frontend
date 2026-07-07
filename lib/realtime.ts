@@ -45,9 +45,10 @@ function subscriptionKey(event: string, payload: unknown): string {
     return `${event}:?`
   }
 }
-const SUBSCRIBE_EVENTS = new Set(["conversation:subscribe"])
+const SUBSCRIBE_EVENTS = new Set(["conversation:subscribe", "chat:subscribe"])
 const UNSUBSCRIBE_OF: Record<string, string> = {
   "conversation:unsubscribe": "conversation:subscribe",
+  "chat:unsubscribe": "chat:subscribe",
 }
 
 function dispatch(event: string, payload: unknown) {
@@ -123,6 +124,10 @@ async function ensureSocket(): Promise<Socket | null> {
     "os:message",
     "notification:new",
     "nav-counts:changed",
+    "chat:message",
+    "chat:message:deleted",
+    "chat:presence",
+    "lives:changed",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

@@ -12,6 +12,9 @@ function Avatar({
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
+      // data-avatar: exceção do .fl-sharp — avatar circular continua redondo
+      // dentro de áreas com cantos quadrados (regra "sem cantos arredondados").
+      data-avatar=""
       className={cn(
         'relative flex size-8 shrink-0 overflow-hidden rounded-full',
         className,
