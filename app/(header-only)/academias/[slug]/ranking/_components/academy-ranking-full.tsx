@@ -15,6 +15,7 @@ type RankMember = {
   id_member: string
   nome: string | null
   username: string | null
+  avatar_url: string | null
   freq_days: number
   posts_count: number
   shares_count: number
@@ -158,9 +159,14 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
                 return (
                   <li key={m.id_member} className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] p-3">
                     <span className="w-8 shrink-0 fl-display text-2xl leading-none text-[#F1EDE2]/40">{i + 4}</span>
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810] fl-display text-sm text-[#F2B705]">
-                      {initials(m.nome || m.username)}
-                    </span>
+                    {m.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.avatar_url} alt="" loading="lazy" className="h-10 w-10 shrink-0 border-2 border-[#0B0B0D] object-cover" />
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810] fl-display text-sm text-[#F2B705]">
+                        {initials(m.nome || m.username)}
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1 truncate text-sm font-bold text-[#F1EDE2]">{m.nome || m.username || "—"}</span>
                     <div className="hidden h-2 w-32 border-2 border-[#0B0B0D] bg-[#1D1810] sm:block">
                       <div className="h-full bg-[#F2B705]" style={{ width: `${pct}%` }} />
@@ -221,11 +227,21 @@ function PodiumCol({
           {rank}
         </span>
 
-        {/* "Foto" — inicial em card rasgado */}
+        {/* Foto do perfil (1º subperfil) em card rasgado — fallback: iniciais */}
         <div className="fl-torn-1 fl-cut relative overflow-hidden p-2" style={{ background: frame }}>
-          <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-[#F2B705]", isFirst ? "aspect-[4/5] text-6xl" : "aspect-square text-5xl")}>
-            {initials(row.nome || row.username)}
-          </div>
+          {row.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.avatar_url}
+              alt={row.nome || row.username || ""}
+              loading="lazy"
+              className={cn("w-full object-cover", isFirst ? "aspect-[4/5]" : "aspect-square")}
+            />
+          ) : (
+            <div className={cn("flex w-full items-center justify-center bg-[#1D1810] fl-display text-[#F2B705]", isFirst ? "aspect-[4/5] text-6xl" : "aspect-square text-5xl")}>
+              {initials(row.nome || row.username)}
+            </div>
+          )}
         </div>
 
         {/* Nome + valor */}

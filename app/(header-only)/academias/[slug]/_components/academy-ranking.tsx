@@ -11,6 +11,7 @@ type RankMember = {
   id_member: string
   nome: string | null
   username: string | null
+  avatar_url: string | null
   freq_days: number
   posts_count: number
   shares_count: number
@@ -188,8 +189,14 @@ export function AcademyRanking({ academyId, slug, isOwner }: { academyId: string
         return (
           <div className="mt-3">
             <div className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]">
-                <Medal className="h-4 w-4" />
+              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] text-[#F2B705]">
+                {m.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                ) : (
+                  <Medal className="h-4 w-4" />
+                )}
+                <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[10px] font-black text-[#0B0B0D]">1</span>
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black uppercase">{m.nome || m.username || "—"}</p>
