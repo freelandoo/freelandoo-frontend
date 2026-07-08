@@ -4256,7 +4256,15 @@
     "seasonEnd": "Encerrar",
     "seasonStarted": "Temporada iniciada!",
     "seasonEnded": "Temporada encerrada.",
-    "seasonActiveLabel": "Temporada ativa"
+    "seasonActiveLabel": "Temporada ativa",
+    "rankingFullCta": "Ranking da academia",
+    "rankingSeeAll": "Ver ranking completo",
+    "podiumEyebrow": "o topo do mês",
+    "podiumHeading": "O pódio.",
+    "listHeading": "A lista inteira",
+    "badgeMember": "Membro",
+    "daysWord": "dias",
+    "backToAcademy": "Voltar"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

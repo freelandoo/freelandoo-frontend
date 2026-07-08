@@ -517,7 +517,7 @@ export function AcademyView({ slug }: { slug: string }) {
         )}
 
         {/* Ranking do mês (público) */}
-        <AcademyRanking academyId={academy.id_academy} isOwner={academy.is_owner} />
+        <AcademyRanking academyId={academy.id_academy} slug={academy.slug} isOwner={academy.is_owner} />
 
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} canPost={canPost} isOwner={academy.is_owner} meId={meId} />

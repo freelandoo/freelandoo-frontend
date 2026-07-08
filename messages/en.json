@@ -4842,7 +4842,15 @@
     "seasonEnd": "End",
     "seasonStarted": "Season started!",
     "seasonEnded": "Season ended.",
-    "seasonActiveLabel": "Season active"
+    "seasonActiveLabel": "Season active",
+    "rankingFullCta": "Gym ranking",
+    "rankingSeeAll": "See full ranking",
+    "podiumEyebrow": "top of the month",
+    "podiumHeading": "The podium.",
+    "listHeading": "The full list",
+    "badgeMember": "Member",
+    "daysWord": "days",
+    "backToAcademy": "Back"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

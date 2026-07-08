@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { toast } from "sonner"
-import { Loader2, Medal, Settings2, Trophy } from "lucide-react"
+import { ListOrdered, Loader2, Medal, Settings2, Trophy } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -30,7 +31,7 @@ type RankingData = { month: string | null; season: Season; goals: Goals; members
 type Tab = "freq" | "posts" | "shares"
 
 /** Ranking mensal da academia (frequência pela catraca / posts / shares). */
-export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOwner: boolean }) {
+export function AcademyRanking({ academyId, slug, isOwner }: { academyId: string; slug: string; isOwner: boolean }) {
   const t = useTranslations("Academies")
 
   const [data, setData] = useState<RankingData | null>(null)
@@ -134,12 +135,21 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
             data?.month && <span className="text-[10px] text-[#9A938A]">({data.month})</span>
           )}
         </h2>
-        {isOwner && (
-          <button onClick={() => setGoalsOpen(true)} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[10px] font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
-            <Settings2 className="h-3 w-3" />
-            {t("goalsCta", "Metas")}
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          <Link
+            href={`/academias/${slug}/ranking`}
+            className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[10px] font-extrabold uppercase text-[#0B0B0D] hover:-translate-y-0.5"
+          >
+            <ListOrdered className="h-3 w-3" />
+            {t("rankingFullCta", "Ranking da academia")}
+          </Link>
+          {isOwner && (
+            <button onClick={() => setGoalsOpen(true)} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[10px] font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
+              <Settings2 className="h-3 w-3" />
+              {t("goalsCta", "Metas")}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 flex gap-1">
@@ -170,29 +180,40 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
         <p className="mt-3 text-xs text-[#9A938A]">{t("rankingEmpty", "Sem membros no ranking ainda.")}</p>
       )}
 
-      {sorted.length > 0 && (
-        <ol className="mt-3 space-y-1">
-          {sorted.slice(0, 20).map((m, i) => {
-            const v = value(m)
-            const pct = target > 0 ? Math.min(100, Math.round((v / target) * 100)) : 0
-            return (
-              <li key={m.id_member} className="flex items-center gap-3 border-b border-[#F5F1E8]/10 py-1.5">
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[#0B0B0D] text-xs font-black ${i === 0 ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}>
-                  {i < 3 ? <Medal className="h-3.5 w-3.5" /> : i + 1}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-bold">{m.nome || m.username || "—"}</span>
-                <div className="hidden h-2 w-28 border-2 border-[#0B0B0D] bg-[#1D1810] sm:block">
+      {/* Só o líder (top 1) nesta seção — a lista completa fica na página de ranking. */}
+      {sorted.length > 0 && (() => {
+        const m = sorted[0]
+        const v = value(m)
+        const pct = target > 0 ? Math.min(100, Math.round((v / target) * 100)) : 0
+        return (
+          <div className="mt-3">
+            <div className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]">
+                <Medal className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black uppercase">{m.nome || m.username || "—"}</p>
+                <div className="mt-1 h-2 w-full max-w-[220px] border-2 border-[#0B0B0D] bg-[#15120E]">
                   <div className="h-full bg-[#F2B705]" style={{ width: `${pct}%` }} />
                 </div>
-                <span className="w-16 text-right text-sm font-black">
-                  {v}
-                  <span className="text-[10px] font-bold text-[#9A938A]">/{target}</span>
-                </span>
-              </li>
-            )
-          })}
-        </ol>
-      )}
+              </div>
+              <span className="shrink-0 text-right text-lg font-black text-[#F2B705]">
+                {v}
+                <span className="text-[10px] font-bold text-[#9A938A]">/{target}</span>
+              </span>
+            </div>
+            {sorted.length > 1 && (
+              <Link
+                href={`/academias/${slug}/ranking`}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A] hover:text-[#F2B705]"
+              >
+                <ListOrdered className="h-3.5 w-3.5" />
+                {t("rankingSeeAll", "Ver ranking completo")} ({sorted.length})
+              </Link>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Modal metas (dono) */}
       {goalsOpen && (
