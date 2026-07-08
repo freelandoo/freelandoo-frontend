@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Dumbbell, Loader2, MapPin, Plus, Search, Users, X, PlugZap } from "lucide-react"
+import { ArrowLeft, Dumbbell, Loader2, MapPin, Plus, Search, Users, X, PlugZap } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
@@ -95,6 +95,14 @@ export function AcademiesView() {
   return (
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
       <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
+      {/* Voltar pro painel pessoal (calorias/água/treinos) */}
+      <Link
+        href="/fitness"
+        className="mb-3 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        {t("backToFitness", "Voltar pro painel fitness")}
+      </Link>
       {/* Masthead tabloide */}
       <header className="border-b-2 border-[#0B0B0D] pb-4">
         <p className="inline-block -rotate-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#0B0B0D]">

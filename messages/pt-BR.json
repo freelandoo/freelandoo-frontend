@@ -4236,7 +4236,8 @@
     "mediaError": "Erro ao enviar imagem",
     "mediaAvatarCta": "Trocar avatar",
     "mediaCoverCta": "Trocar capa",
-    "chipAcademy": "Academia parceira"
+    "chipAcademy": "Academia parceira",
+    "backToFitness": "Voltar pro painel fitness"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

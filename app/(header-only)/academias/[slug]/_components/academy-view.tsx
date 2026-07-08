@@ -318,13 +318,21 @@ export function AcademyView({ slug }: { slug: string }) {
   return (
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
       <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
-        <Link
-          href="/academias"
-          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {t("backToList", "Ver academias")}
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link
+            href="/fitness"
+            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {t("backToFitness", "Voltar pro painel fitness")}
+          </Link>
+          <Link
+            href="/academias"
+            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
+          >
+            {t("backToList", "Ver academias")}
+          </Link>
+        </div>
 
         {/* Cabeçalho estilo comunidade: capa + chips + avatar sobreposto */}
         <header className="mt-3 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>

@@ -353,6 +353,7 @@ const ACCOUNT = {
 // Redesign identidade (2026-07-08): chip da capa da academia.
 Object.assign(ACADEMIES, {
   chipAcademy: ["Academia parceira", "Partner gym", "Gimnasio asociado"],
+  backToFitness: ["Voltar pro painel fitness", "Back to fitness panel", "Volver al panel fitness"],
 })
 
 // Propostas do professor (mig 180) + painel pessoal aberto (gate removido).
