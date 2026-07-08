@@ -25,7 +25,7 @@ type Plan = {
 }
 
 /** Card "Treino de hoje" do painel /fitness (dados da fase 3 — fichas). */
-export function WorkoutTodayCard({ date }: { date: string }) {
+export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refreshKey?: number }) {
   const t = useTranslations("Workouts")
   const [plans, setPlans] = useState<Plan[]>([])
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
@@ -50,7 +50,7 @@ export function WorkoutTodayCard({ date }: { date: string }) {
 
   useEffect(() => {
     void load()
-  }, [load])
+  }, [load, refreshKey])
 
   const toggle = useCallback(
     async (plan: Plan, ex: PlanExercise) => {

@@ -26,6 +26,7 @@ import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { WorkoutTodayCard } from "./workout-today-card"
+import { FitnessProposalsGate } from "./proposals-modal"
 
 type Food = {
   id_food?: string
@@ -97,6 +98,7 @@ export function FitnessView() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "locked" | "error">("loading")
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const [searchOpen, setSearchOpen] = useState<FoodLog["meal"] | null>(null)
   const [tab, setTab] = useState<"local" | "off">("local")
@@ -129,10 +131,6 @@ export function FitnessView() {
     }
     try {
       const res = await fetch(`/api/fitness/summary?date=${date}`, { headers: authHeaders() })
-      if (res.status === 403) {
-        setState("locked")
-        return
-      }
       if (!res.ok) throw new Error()
       const data = (await res.json()) as Summary
       setSummary(data)
@@ -298,6 +296,7 @@ export function FitnessView() {
     )
   }
 
+  // Sem login: o painel fitness é pessoal — só precisa entrar na conta.
   if (state === "locked") {
     return (
       <div className="fl-sharp mx-auto max-w-2xl px-4 py-16 text-center">
@@ -306,17 +305,11 @@ export function FitnessView() {
         </span>
         <h1 className="mt-5 text-3xl font-black uppercase">{t("lockedTitle", "Painel Fitness")}</h1>
         <p className="mx-auto mt-3 max-w-md text-sm opacity-70">
-          {t(
-            "lockedText",
-            "O painel fitness é para quem está matriculado numa academia parceira (vincule pelo CPF) ou tem um subperfil assinante."
-          )}
+          {t("loginText", "Entre na sua conta para acompanhar calorias, água, peso e treinos.")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/academias" className="border-2 border-current bg-yellow-400 px-5 py-3 text-xs font-black uppercase text-black">
-            {t("lockedCtaGym", "Vincular minha academia")}
-          </Link>
-          <Link href="/account" className="border-2 border-current px-5 py-3 text-xs font-black uppercase">
-            {t("lockedCtaSub", "Assinar um subperfil")}
+          <Link href="/login" className="border-2 border-current bg-yellow-400 px-5 py-3 text-xs font-black uppercase text-black">
+            {t("loginCta", "Entrar")}
           </Link>
         </div>
       </div>
@@ -344,6 +337,14 @@ export function FitnessView() {
 
   return (
     <div className="fl-sharp mx-auto max-w-5xl px-4 pb-24 pt-6">
+      {/* Propostas pendentes do professor (confirmar/recusar) */}
+      <FitnessProposalsGate
+        onApplied={() => {
+          setRefreshKey((k) => k + 1)
+          void load()
+        }}
+      />
+
       {/* Masthead + navegação de dia */}
       <header className="border-b-4 border-current pb-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-60">{t("eyebrow", "Painel Fitness")}</p>
@@ -427,7 +428,7 @@ export function FitnessView() {
         </div>
 
         {/* Treino de hoje (fase 3) */}
-        <WorkoutTodayCard date={date} />
+        <WorkoutTodayCard date={date} refreshKey={refreshKey} />
       </div>
 
       {/* Diário de refeições */}
@@ -489,10 +490,19 @@ export function FitnessView() {
           <CalendarDays className="h-4 w-4" /> {t("gymTitle", "Minha academia")}
         </h2>
         {summary.academies.length === 0 ? (
-          <div className="mt-4 border-2 border-dashed border-current p-6 text-center text-sm opacity-70">
-            {t("gymEmpty", "Você ainda não vinculou nenhuma academia.")}{" "}
-            <Link href="/academias" className="font-black underline">
-              {t("gymEmptyCta", "Vincular agora")}
+          <div className="mt-4 border-2 border-dashed border-current p-8 text-center">
+            <Dumbbell className="mx-auto h-8 w-8 opacity-40" />
+            <p className="mx-auto mt-3 max-w-md text-sm opacity-70">
+              {t(
+                "connectText",
+                "Seu painel funciona sozinho. Conectando a uma academia parceira, você ganha frequência da catraca, mensalidades e um professor que monta seus treinos."
+              )}
+            </p>
+            <Link
+              href="/academias"
+              className="mt-4 inline-block border-2 border-current bg-yellow-400 px-6 py-3 text-xs font-black uppercase text-black"
+            >
+              {t("connectCta", "Conecte-se a uma academia")}
             </Link>
           </div>
         ) : (

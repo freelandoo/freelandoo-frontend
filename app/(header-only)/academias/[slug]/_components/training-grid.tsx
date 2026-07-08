@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ClipboardList,
   Dumbbell,
+  Flame,
   Loader2,
   Pencil,
   Plus,
@@ -54,10 +55,19 @@ type Plan = {
   exercises: (PlanExercise & { id_plan_exercise: string })[]
 }
 
+type PendingProposal = {
+  id_proposal: string
+  kind: "measurement" | "kcal_goal" | "plan_create" | "plan_update" | "plan_delete"
+  payload: { nome?: string; plan_nome?: string | null; daily_kcal_goal?: number; weight_kg?: number | null; height_cm?: number | null }
+  created_at: string
+  professor_nome: string | null
+}
+
 type MemberDetail = {
-  member: { id_member: string; member_name: string | null; membership_status: string }
+  member: { id_member: string; member_name: string | null; membership_status: string; daily_kcal_goal: number | null }
   plans: Plan[]
   measurements: { weight_kg: number | null; height_cm: number | null; measured_at: string }[]
+  proposals: PendingProposal[]
 }
 
 const MUSCLES = [
@@ -109,6 +119,10 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
   const [measH, setMeasH] = useState("")
   const [savingMeas, setSavingMeas] = useState(false)
 
+  // limite de calorias pelo professor
+  const [kcalGoal, setKcalGoal] = useState("")
+  const [savingKcal, setSavingKcal] = useState(false)
+
   const authHeaders = useCallback((): Record<string, string> => {
     const token = getToken()
     return token ? { Authorization: `Bearer ${token}` } : {}
@@ -139,6 +153,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
         setDetail(data)
+        setKcalGoal(data?.member?.daily_kcal_goal ? String(data.member.daily_kcal_goal) : "")
       } catch (err) {
         toast.error(err instanceof Error && err.message ? err.message : t("memberError", "Erro ao abrir aluno"))
       } finally {
@@ -224,7 +239,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
           })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast.success(t("planSaved", "Ficha salva!"))
+      toast.success(t("proposalSent", "Enviado! O aluno precisa confirmar a alteração."))
       setEditorOpen(false)
       void openMember(detail.member.id_member)
       void loadGrid()
@@ -246,6 +261,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
+        toast.success(t("proposalSent", "Enviado! O aluno precisa confirmar a alteração."))
         void openMember(detail.member.id_member)
       } catch (err) {
         toast.error(err instanceof Error && err.message ? err.message : t("planError", "Erro ao salvar ficha"))
@@ -257,7 +273,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
   const deletePlan = useCallback(
     async (plan: Plan) => {
       if (!detail) return
-      if (!window.confirm(t("planDeleteConfirm", "Excluir esta ficha? Os checks do aluno somem junto."))) return
+      if (!window.confirm(t("planDeleteConfirmProposal", "Propor a exclusão desta ficha? O aluno precisa confirmar."))) return
       try {
         const res = await fetch(`/api/academies/${academyId}/plans/${plan.id_plan}`, {
           method: "DELETE",
@@ -265,7 +281,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
-        toast.success(t("planDeleted", "Ficha excluída."))
+        toast.success(t("proposalSent", "Enviado! O aluno precisa confirmar a alteração."))
         void openMember(detail.member.id_member)
         void loadGrid()
       } catch (err) {
@@ -292,7 +308,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      toast.success(t("measureSaved", "Medição registrada!"))
+      toast.success(t("proposalSent", "Enviado! O aluno precisa confirmar a alteração."))
       setMeasW("")
       setMeasH("")
       void openMember(detail.member.id_member)
@@ -303,6 +319,49 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
       setSavingMeas(false)
     }
   }, [detail, measW, measH, academyId, authHeaders, openMember, loadGrid, t])
+
+  const saveKcalGoal = useCallback(async () => {
+    if (!detail) return
+    const kcal = Number(kcalGoal)
+    if (!Number.isFinite(kcal) || kcal < 500 || kcal > 10000) {
+      toast.error(t("kcalGoalInvalid", "Limite de calorias inválido (500–10000)"))
+      return
+    }
+    setSavingKcal(true)
+    try {
+      const res = await fetch(`/api/academies/${academyId}/members/${detail.member.id_member}/proposals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ kind: "kcal_goal", daily_kcal_goal: kcal }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success(t("proposalSent", "Enviado! O aluno precisa confirmar a alteração."))
+      void openMember(detail.member.id_member)
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : t("kcalGoalError", "Erro ao enviar limite"))
+    } finally {
+      setSavingKcal(false)
+    }
+  }, [detail, kcalGoal, academyId, authHeaders, openMember, t])
+
+  const cancelProposal = useCallback(
+    async (id_proposal: string) => {
+      if (!detail) return
+      try {
+        const res = await fetch(`/api/academies/${academyId}/proposals/${id_proposal}`, {
+          method: "DELETE",
+          headers: authHeaders(),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error)
+        void openMember(detail.member.id_member)
+      } catch (err) {
+        toast.error(err instanceof Error && err.message ? err.message : t("proposalCancelError", "Erro ao cancelar proposta"))
+      }
+    },
+    [detail, academyId, authHeaders, openMember, t]
+  )
 
   return (
     <section className="mt-6 border-4 border-current p-4">
@@ -392,6 +451,38 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                   </button>
                 </div>
 
+                {/* Alterações do staff viram proposta: aviso permanente */}
+                <p className="mt-3 border-2 border-yellow-400 bg-yellow-400/10 px-3 py-2 text-[11px] font-bold">
+                  {t("proposalNotice", "Peso, altura, limite de calorias e fichas só entram em vigor depois que o aluno confirmar no painel dele.")}
+                </p>
+
+                {/* Propostas aguardando o aluno */}
+                {detail.proposals.length > 0 && (
+                  <div className="mt-3 border-2 border-current p-3">
+                    <p className="text-xs font-black uppercase">{t("pendingTitle", "Aguardando confirmação do aluno")}</p>
+                    <ul className="mt-2 space-y-1">
+                      {detail.proposals.map((pr) => (
+                        <li key={pr.id_proposal} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="min-w-0 flex-1 truncate">
+                            {pr.kind === "measurement" && t("pendingMeasurement", "Peso/altura")}
+                            {pr.kind === "kcal_goal" && `${t("pendingKcal", "Limite de calorias")} (${pr.payload.daily_kcal_goal} kcal)`}
+                            {pr.kind === "plan_create" && `${t("pendingPlanCreate", "Nova ficha")} "${pr.payload.nome || ""}"`}
+                            {pr.kind === "plan_update" && `${t("pendingPlanUpdate", "Alteração da ficha")} "${pr.payload.nome || pr.payload.plan_nome || ""}"`}
+                            {pr.kind === "plan_delete" && `${t("pendingPlanDelete", "Exclusão da ficha")} "${pr.payload.plan_nome || ""}"`}
+                          </span>
+                          <span className="shrink-0 opacity-50">{new Date(pr.created_at).toLocaleDateString(locale)}</span>
+                          <button
+                            onClick={() => void cancelProposal(pr.id_proposal)}
+                            className="shrink-0 border border-current px-2 py-0.5 text-[10px] font-black uppercase opacity-70 hover:opacity-100"
+                          >
+                            {t("pendingCancel", "Cancelar")}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Medição pelo professor */}
                 <div className="mt-4 border-2 border-current p-3">
                   <p className="flex items-center gap-1.5 text-xs font-black uppercase">
@@ -423,6 +514,36 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                         .join(" · ")}
                     </p>
                   )}
+                </div>
+
+                {/* Limite de calorias pelo professor */}
+                <div className="mt-3 border-2 border-current p-3">
+                  <p className="flex items-center gap-1.5 text-xs font-black uppercase">
+                    <Flame className="h-4 w-4" /> {t("kcalGoalTitle", "Limite diário de calorias")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-end gap-2">
+                    <label className="block">
+                      <span className="text-[10px] font-bold uppercase opacity-60">{t("kcalGoalLabel", "kcal / dia")}</span>
+                      <input
+                        value={kcalGoal}
+                        onChange={(e) => setKcalGoal(e.target.value)}
+                        inputMode="numeric"
+                        className="mt-0.5 w-28 border-2 border-current bg-transparent px-2 py-1 text-sm outline-none"
+                      />
+                    </label>
+                    <button
+                      onClick={() => void saveKcalGoal()}
+                      disabled={savingKcal}
+                      className="border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black disabled:opacity-50"
+                    >
+                      {savingKcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("kcalGoalSubmit", "Enviar")}
+                    </button>
+                  </div>
+                  {detail.member.daily_kcal_goal ? (
+                    <p className="mt-2 text-[11px] opacity-60">
+                      {t("kcalGoalCurrent", "Meta atual do aluno")}: {detail.member.daily_kcal_goal} kcal
+                    </p>
+                  ) : null}
                 </div>
 
                 {/* Fichas */}
@@ -591,7 +712,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {t("planSubmit", "Salvar ficha")}
+                {t("planSubmitProposal", "Enviar pro aluno")}
               </button>
             </div>
           </div>

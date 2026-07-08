@@ -128,6 +128,7 @@ async function ensureSocket(): Promise<Socket | null> {
     "chat:message:deleted",
     "chat:presence",
     "lives:changed",
+    "fitness:proposal",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))

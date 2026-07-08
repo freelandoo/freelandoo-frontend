@@ -343,6 +343,77 @@ const ACCOUNT = {
   ],
 }
 
+// Propostas do professor (mig 180) + painel pessoal aberto (gate removido).
+Object.assign(FITNESS, {
+  loginText: [
+    "Entre na sua conta para acompanhar calorias, água, peso e treinos.",
+    "Sign in to track calories, water, weight and workouts.",
+    "Inicia sesión para seguir calorías, agua, peso y entrenamientos.",
+  ],
+  loginCta: ["Entrar", "Sign in", "Entrar"],
+  connectText: [
+    "Seu painel funciona sozinho. Conectando a uma academia parceira, você ganha frequência da catraca, mensalidades e um professor que monta seus treinos.",
+    "Your panel works on its own. By connecting to a partner gym you get turnstile attendance, payments and a trainer who builds your workouts.",
+    "Tu panel funciona solo. Al conectarte a un gimnasio asociado obtienes asistencia del torniquete, mensualidades y un profesor que arma tus entrenamientos.",
+  ],
+  connectCta: ["Conecte-se a uma academia", "Connect to a gym", "Conéctate a un gimnasio"],
+  propEyebrow: ["Alteração do professor", "Trainer change", "Cambio del profesor"],
+  propTitle: ["{who} sugeriu alterações", "{who} suggested changes", "{who} sugirió cambios"],
+  propProfessor: ["Professor", "Trainer", "Profesor"],
+  propWeight: ["Peso", "Weight", "Peso"],
+  propHeight: ["Altura", "Height", "Altura"],
+  propKcal: ["Limite diário de calorias", "Daily calorie limit", "Límite diario de calorías"],
+  propPlanCreate: ['Nova ficha "{name}"', 'New workout plan "{name}"', 'Nueva ficha "{name}"'],
+  propPlanUpdate: ['Ficha "{name}" alterada', 'Workout plan "{name}" changed', 'Ficha "{name}" modificada'],
+  propPlanDelete: ['Excluir a ficha "{name}"', 'Delete workout plan "{name}"', 'Eliminar la ficha "{name}"'],
+  propPlanOn: ["(ativar)", "(activate)", "(activar)"],
+  propPlanOff: ["(desativar)", "(deactivate)", "(desactivar)"],
+  propHint: [
+    "Nada muda no seu painel até você confirmar. Se recusar, o professor é quem refaz.",
+    "Nothing changes in your panel until you confirm. If you decline, the trainer redoes it.",
+    "Nada cambia en tu panel hasta que confirmes. Si rechazas, el profesor lo rehace.",
+  ],
+  propChat: ["Chat", "Chat", "Chat"],
+  propDecline: ["Recusar", "Decline", "Rechazar"],
+  propAccept: ["Confirmar", "Confirm", "Confirmar"],
+  propAccepted: ["Alterações aplicadas!", "Changes applied!", "¡Cambios aplicados!"],
+  propDeclined: ["Alterações recusadas.", "Changes declined.", "Cambios rechazados."],
+  propError: ["Erro ao responder", "Error responding", "Error al responder"],
+})
+
+Object.assign(WORKOUTS, {
+  proposalSent: [
+    "Enviado! O aluno precisa confirmar a alteração.",
+    "Sent! The student must confirm the change.",
+    "¡Enviado! El alumno debe confirmar el cambio.",
+  ],
+  proposalNotice: [
+    "Peso, altura, limite de calorias e fichas só entram em vigor depois que o aluno confirmar no painel dele.",
+    "Weight, height, calorie limit and plans only take effect after the student confirms in their panel.",
+    "Peso, altura, límite de calorías y fichas solo entran en vigor cuando el alumno confirma en su panel.",
+  ],
+  pendingTitle: ["Aguardando confirmação do aluno", "Awaiting student confirmation", "Esperando confirmación del alumno"],
+  pendingMeasurement: ["Peso/altura", "Weight/height", "Peso/altura"],
+  pendingKcal: ["Limite de calorias", "Calorie limit", "Límite de calorías"],
+  pendingPlanCreate: ["Nova ficha", "New plan", "Nueva ficha"],
+  pendingPlanUpdate: ["Alteração da ficha", "Plan change", "Cambio de la ficha"],
+  pendingPlanDelete: ["Exclusão da ficha", "Plan deletion", "Eliminación de la ficha"],
+  pendingCancel: ["Cancelar", "Cancel", "Cancelar"],
+  proposalCancelError: ["Erro ao cancelar proposta", "Error canceling proposal", "Error al cancelar la propuesta"],
+  planDeleteConfirmProposal: [
+    "Propor a exclusão desta ficha? O aluno precisa confirmar.",
+    "Propose deleting this plan? The student must confirm.",
+    "¿Proponer eliminar esta ficha? El alumno debe confirmar.",
+  ],
+  planSubmitProposal: ["Enviar pro aluno", "Send to student", "Enviar al alumno"],
+  kcalGoalTitle: ["Limite diário de calorias", "Daily calorie limit", "Límite diario de calorías"],
+  kcalGoalLabel: ["kcal / dia", "kcal / day", "kcal / día"],
+  kcalGoalSubmit: ["Enviar", "Send", "Enviar"],
+  kcalGoalCurrent: ["Meta atual do aluno", "Student's current goal", "Meta actual del alumno"],
+  kcalGoalInvalid: ["Limite de calorias inválido (500–10000)", "Invalid calorie limit (500–10000)", "Límite de calorías inválido (500–10000)"],
+  kcalGoalError: ["Erro ao enviar limite", "Error sending limit", "Error al enviar el límite"],
+})
+
 const NAMESPACES = [
   ["Academies", ACADEMIES],
   ["Fitness", FITNESS],
