@@ -335,17 +335,30 @@ export function FitnessView() {
   }, [lookupByBarcode, t])
 
   // Câmera: usa BarcodeDetector nativo quando disponível (Chrome/Edge/Android
-  // + desktop). Ausente (ex.: iOS Safari) → só entrada manual, sem erro.
+  // + desktop) — leve e sem lib. Ausente (ex.: iOS Safari) → carrega o ZXing
+  // sob demanda (dynamic import, só nesses browsers) como fallback. Sem câmera
+  // de jeito nenhum → só entrada manual, sem erro.
   useEffect(() => {
     if (!scanOpen) return
+    if (!navigator.mediaDevices?.getUserMedia) return
     const Ctor = (typeof window !== "undefined"
       ? (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector
       : undefined)
-    if (!Ctor || !navigator.mediaDevices?.getUserMedia) return
     let cancelled = false
     let raf = 0
-    const detector = new Ctor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] })
-    const start = async () => {
+    let zxingControls: { stop: () => void } | null = null
+
+    const onDetected = (value: string) => {
+      if (cancelled) return
+      cancelled = true
+      void lookupRef.current(value)
+    }
+    const camError = () =>
+      setScanErr(tRef.current("scanCamDenied", "Não foi possível abrir a câmera. Digite o código abaixo."))
+
+    // Caminho 1: BarcodeDetector nativo.
+    const startNative = async (Detector: BarcodeDetectorCtor) => {
+      const detector = new Detector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] })
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
         if (cancelled) {
@@ -366,8 +379,7 @@ export function FitnessView() {
             try {
               const codes = await detector.detect(vid)
               if (codes && codes.length && codes[0].rawValue) {
-                cancelled = true
-                void lookupRef.current(codes[0].rawValue)
+                onDetected(codes[0].rawValue)
                 return
               }
             } catch {
@@ -378,13 +390,48 @@ export function FitnessView() {
         }
         raf = requestAnimationFrame(tick)
       } catch {
-        setScanErr(tRef.current("scanCamDenied", "Não foi possível abrir a câmera. Digite o código abaixo."))
+        camError()
       }
     }
-    void start()
+
+    // Caminho 2: fallback ZXing (iOS Safari etc.) — decodifica em JS puro.
+    const startZxing = async () => {
+      try {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser")
+        if (cancelled) return
+        const reader = new BrowserMultiFormatReader()
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: "environment" } },
+          videoRef.current ?? undefined,
+          (result) => {
+            if (result) onDetected(result.getText())
+          }
+        )
+        if (cancelled) {
+          controls.stop()
+          return
+        }
+        zxingControls = controls
+        setCamActive(true)
+      } catch {
+        camError()
+      }
+    }
+
+    if (Ctor) void startNative(Ctor)
+    else void startZxing()
+
     return () => {
       cancelled = true
       cancelAnimationFrame(raf)
+      if (zxingControls) {
+        try {
+          zxingControls.stop()
+        } catch {
+          /* já parado */
+        }
+        zxingControls = null
+      }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((tr) => tr.stop())
         streamRef.current = null
