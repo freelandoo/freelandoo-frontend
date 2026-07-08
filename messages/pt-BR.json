@@ -4237,7 +4237,8 @@
     "mediaAvatarCta": "Trocar avatar",
     "mediaCoverCta": "Trocar capa",
     "chipAcademy": "Academia parceira",
-    "backToFitness": "Voltar pro painel fitness"
+    "backToFitness": "Voltar pro painel fitness",
+    "messageCta": "Enviar mensagem"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

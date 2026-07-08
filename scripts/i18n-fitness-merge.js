@@ -26,6 +26,7 @@ const ACADEMIES = {
   ],
   cityUnknown: ["Cidade não informada", "City not provided", "Ciudad no informada"],
   membersSuffix: ["vinculados", "linked members", "vinculados"],
+  messageCta: ["Enviar mensagem", "Send message", "Enviar mensaje"],
   disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
   loginRequired: [
     "Entre na sua conta para cadastrar uma academia.",

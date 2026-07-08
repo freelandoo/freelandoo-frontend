@@ -4803,7 +4803,8 @@
     "mediaAvatarCta": "Cambiar avatar",
     "mediaCoverCta": "Cambiar portada",
     "chipAcademy": "Gimnasio asociado",
-    "backToFitness": "Volver al panel fitness"
+    "backToFitness": "Volver al panel fitness",
+    "messageCta": "Enviar mensaje"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

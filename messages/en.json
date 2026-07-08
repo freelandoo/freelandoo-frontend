@@ -4823,7 +4823,8 @@
     "mediaAvatarCta": "Change avatar",
     "mediaCoverCta": "Change cover",
     "chipAcademy": "Partner gym",
-    "backToFitness": "Back to fitness panel"
+    "backToFitness": "Back to fitness panel",
+    "messageCta": "Send message"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

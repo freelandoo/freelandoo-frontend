@@ -15,6 +15,7 @@ import {
   IdCard,
   Loader2,
   MapPin,
+  MessageCircle,
   PlugZap,
   RefreshCcw,
   ShieldAlert,
@@ -48,6 +49,7 @@ type Academy = {
   member_count: number
   is_owner: boolean
   is_professor: boolean
+  owner_profile_id: string | null
   professors: Professor[]
   my_membership: MyMembership
   // campos do dono
@@ -362,7 +364,7 @@ export function AcademyView({ slug }: { slug: string }) {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-end gap-4">
                 <div
-                  className="-mt-10 h-24 w-24 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:-mt-14 md:h-32 md:w-32"
+                  className="relative z-30 -mt-10 h-24 w-24 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:-mt-14 md:h-32 md:w-32"
                   style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
                 >
                   {academy.avatar_url ? (
@@ -375,7 +377,19 @@ export function AcademyView({ slug }: { slug: string }) {
                   )}
                 </div>
                 <div className="pb-1">
-                  <h1 className="text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">{academy.nome}</h1>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className="text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">{academy.nome}</h1>
+                    {academy.owner_profile_id && (
+                      <Link
+                        href={`/mensagens?with=${encodeURIComponent(academy.owner_profile_id)}`}
+                        aria-label={t("messageCta", "Enviar mensagem")}
+                        title={t("messageCta", "Enviar mensagem")}
+                        className={`${BTN_DARK} h-9 w-9 shrink-0`}
+                      >
+                        <MessageCircle className="h-4 w-4 text-[#F2B705]" />
+                      </Link>
+                    )}
+                  </div>
                   {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
                 </div>
               </div>
