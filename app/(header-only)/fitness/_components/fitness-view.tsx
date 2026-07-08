@@ -360,7 +360,9 @@ export function FitnessView() {
     const startNative = async (Detector: BarcodeDetectorCtor) => {
       const detector = new Detector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] })
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        })
         if (cancelled) {
           stream.getTracks().forEach((tr) => tr.stop())
           return
@@ -394,14 +396,29 @@ export function FitnessView() {
       }
     }
 
-    // Caminho 2: fallback ZXing (iOS Safari etc.) — decodifica em JS puro.
+    // Caminho 2: fallback ZXing (iOS Safari, Windows Chrome etc.) — decodifica
+    // em JS puro. Precisa de dicas (TRY_HARDER + formatos 1D) e resolução alta,
+    // senão não lê código de barras ao vivo.
     const startZxing = async () => {
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser")
+        const [{ BrowserMultiFormatReader }, { DecodeHintType, BarcodeFormat }] = await Promise.all([
+          import("@zxing/browser"),
+          import("@zxing/library"),
+        ])
         if (cancelled) return
-        const reader = new BrowserMultiFormatReader()
+        const hints = new Map()
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+        ])
+        hints.set(DecodeHintType.TRY_HARDER, true)
+        const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 })
         const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: "environment" } },
+          { video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } },
           videoRef.current ?? undefined,
           (result) => {
             if (result) onDetected(result.getText())
