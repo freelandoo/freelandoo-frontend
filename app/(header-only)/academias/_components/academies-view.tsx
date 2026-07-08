@@ -51,6 +51,16 @@ export function AcademiesView() {
     if (enabled) void load()
   }, [enabled, load])
 
+  // Atalho vindo do /fitness ("Criar academia"): abre o modal de cadastro.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get("criar") === "1") {
+      setCreateOpen(true)
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [])
+
   const create = useCallback(async () => {
     const token = getToken()
     if (!token) {

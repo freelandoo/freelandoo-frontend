@@ -4955,7 +4955,8 @@
     "searchUnifiedHint": "Busca mientras escribes: alimentos brasileños (TACO) y productos industrializados juntos.",
     "searchNoResults": "No se encontró nada. Prueba otro nombre.",
     "srcProduct": "Producto",
-    "searchingProducts": "Buscando productos industrializados..."
+    "searchingProducts": "Buscando productos industrializados...",
+    "createAcademyCta": "Crear gimnasio"
   },
   "Workouts": {
     "todayTitle": "Entrenamiento de hoy",

@@ -4975,7 +4975,8 @@
     "searchUnifiedHint": "Searches as you type: Brazilian foods (TACO) and packaged products together.",
     "searchNoResults": "Nothing found. Try another name.",
     "srcProduct": "Product",
-    "searchingProducts": "Searching packaged products..."
+    "searchingProducts": "Searching packaged products...",
+    "createAcademyCta": "Create gym"
   },
   "Workouts": {
     "todayTitle": "Today's workout",

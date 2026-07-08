@@ -180,6 +180,7 @@ const ACADEMIES = {
 const FITNESS = {
   eyebrow: ["Painel Fitness", "Fitness Panel", "Panel Fitness"],
   title: ["Meu dia", "My day", "Mi día"],
+  createAcademyCta: ["Criar academia", "Create gym", "Crear gimnasio"],
   disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
   loadError: ["Erro ao carregar o painel. Tente novamente.", "Error loading the panel. Try again.", "Error al cargar el panel. Inténtalo de nuevo."],
   prevDay: ["Dia anterior", "Previous day", "Día anterior"],
