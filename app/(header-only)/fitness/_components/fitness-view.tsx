@@ -5,7 +5,7 @@
 // com borda #0B0B0D e sombra dura dourada, chips rotacionados. Header estilo
 // perfil com a foto do usuário; academia é opcional (CTA "Conecte-se").
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import {
@@ -123,10 +123,14 @@ export function FitnessView() {
   const [view, setView] = useState<"day" | "indicators">("day")
 
   const [searchOpen, setSearchOpen] = useState<FoodLog["meal"] | null>(null)
-  const [tab, setTab] = useState<"local" | "off">("local")
   const [q, setQ] = useState("")
-  const [results, setResults] = useState<Food[]>([])
+  // Busca unificada com typeahead: TACO/custom (rápida) e Open Food Facts
+  // (lenta) alimentam a MESMA lista conforme cada uma responde.
+  const [localResults, setLocalResults] = useState<Food[]>([])
+  const [offResults, setOffResults] = useState<Food[]>([])
   const [searching, setSearching] = useState(false)
+  const [searchingOff, setSearchingOff] = useState(false)
+  const searchSeq = useRef(0)
   const [picked, setPicked] = useState<Food | null>(null)
   const [grams, setGrams] = useState("100")
   const [adding, setAdding] = useState(false)
@@ -182,24 +186,51 @@ export function FitnessView() {
       .catch(() => {})
   }, [])
 
-  const doSearch = useCallback(
-    async (which: "local" | "off") => {
-      if (q.trim().length < 2) return
+  // Typeahead: debounce de 350ms, uma sequência por digitação — resposta de
+  // busca antiga é descartada. TACO preenche na hora; produtos (OFF) chegam
+  // depois e se somam à mesma lista.
+  useEffect(() => {
+    if (!searchOpen) return
+    const query = q.trim()
+    if (query.length < 2) {
+      setLocalResults([])
+      setOffResults([])
+      setSearching(false)
+      setSearchingOff(false)
+      return
+    }
+    const seq = ++searchSeq.current
+    const timer = setTimeout(() => {
       setSearching(true)
-      try {
-        const path = which === "local" ? `/api/fitness/foods?q=` : `/api/fitness/foods/off?q=`
-        const res = await fetch(`${path}${encodeURIComponent(q.trim())}`, { headers: authHeaders() })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        setResults(Array.isArray(data.foods) ? data.foods : [])
-      } catch (err) {
-        toast.error(err instanceof Error && err.message ? err.message : t("searchError", "Erro na busca"))
-      } finally {
-        setSearching(false)
+      fetch(`/api/fitness/foods?q=${encodeURIComponent(query)}`, { headers: authHeaders() })
+        .then((r) => r.json())
+        .then((d) => {
+          if (seq !== searchSeq.current) return
+          setLocalResults(Array.isArray(d.foods) ? d.foods : [])
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (seq === searchSeq.current) setSearching(false)
+        })
+
+      if (query.length >= 3) {
+        setSearchingOff(true)
+        fetch(`/api/fitness/foods/off?q=${encodeURIComponent(query)}`, { headers: authHeaders() })
+          .then((r) => r.json())
+          .then((d) => {
+            if (seq !== searchSeq.current) return
+            setOffResults(Array.isArray(d.foods) ? d.foods : [])
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (seq === searchSeq.current) setSearchingOff(false)
+          })
+      } else {
+        setOffResults([])
       }
-    },
-    [q, authHeaders, t]
-  )
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [q, searchOpen, authHeaders])
 
   const addLog = useCallback(async () => {
     if (!picked || !searchOpen) return
@@ -232,7 +263,8 @@ export function FitnessView() {
       toast.success(t("logAdded", "Adicionado ao diário!"))
       setPicked(null)
       setSearchOpen(null)
-      setResults([])
+      setLocalResults([])
+      setOffResults([])
       setQ("")
       void load()
     } catch (err) {
@@ -536,9 +568,9 @@ export function FitnessView() {
                       <button
                         onClick={() => {
                           setSearchOpen(meal.id)
-                          setTab("local")
                           setQ("")
-                          setResults([])
+                          setLocalResults([])
+                          setOffResults([])
                           setPicked(null)
                           setGrams("100")
                         }}
@@ -667,60 +699,57 @@ export function FitnessView() {
 
             {!picked ? (
               <>
-                <div className="flex border-b-2 border-[#0B0B0D]">
-                  <button
-                    onClick={() => {
-                      setTab("local")
-                      setResults([])
-                    }}
-                    className={`flex-1 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] ${tab === "local" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
-                  >
-                    {t("tabLocal", "Alimentos")}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTab("off")
-                      setResults([])
-                    }}
-                    className={`flex-1 border-l-2 border-[#0B0B0D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] ${tab === "off" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
-                  >
-                    {t("tabOff", "Produtos (código de barras)")}
-                  </button>
-                </div>
                 <div className="flex items-center gap-2 border-b-2 border-[#0B0B0D] p-3">
-                  <Search className="h-4 w-4 text-[#9A938A]" />
+                  {searching ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" />
+                  ) : (
+                    <Search className="h-4 w-4 text-[#9A938A]" />
+                  )}
                   <input
                     autoFocus
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && void doSearch(tab)}
-                    placeholder={tab === "local" ? t("searchLocalPh", "Ex.: arroz, frango, banana...") : t("searchOffPh", "Nome do produto ou marca")}
+                    placeholder={t("searchUnifiedPh", "Digite: arroz, frango, whey, coca-cola...")}
                     className="w-full bg-transparent text-sm outline-none placeholder:text-[#9A938A]"
                   />
-                  <button onClick={() => void doSearch(tab)} disabled={searching} className={`${BTN_GOLD} px-3 py-1 text-[11px]`}>
-                    {searching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("searchCta", "Buscar")}
-                  </button>
                 </div>
                 <div className="min-h-40 flex-1 overflow-y-auto">
-                  {results.length === 0 ? (
+                  {q.trim().length < 2 ? (
                     <p className="p-4 text-xs text-[#9A938A]">
-                      {tab === "off"
-                        ? t("offHint", "Busca no Open Food Facts — produtos industrializados do mundo todo.")
-                        : t("localHint", "Base TACO (alimentos brasileiros) + itens já usados.")}
+                      {t(
+                        "searchUnifiedHint",
+                        "Vai buscando enquanto você digita: alimentos brasileiros (TACO) e produtos industrializados juntos."
+                      )}
                     </p>
+                  ) : localResults.length === 0 && offResults.length === 0 && !searching && !searchingOff ? (
+                    <p className="p-4 text-xs text-[#9A938A]">{t("searchNoResults", "Nada encontrado. Tente outro nome.")}</p>
                   ) : (
                     <ul>
-                      {results.map((f, i) => (
-                        <li key={f.id_food || f.external_ref || i}>
-                          <button
-                            onClick={() => setPicked(f)}
-                            className="flex w-full items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-4 py-2.5 text-left text-sm hover:bg-[#1D1810]"
-                          >
-                            <span className="min-w-0 flex-1 truncate">{f.nome}</span>
-                            <span className="text-xs font-bold text-[#9A938A]">{Math.round(f.kcal_100g)} kcal/100g</span>
-                          </button>
+                      {[...localResults, ...offResults].map((f, i) => {
+                        const isProduct = !f.id_food && !!f.external_ref
+                        return (
+                          <li key={f.id_food || f.external_ref || i}>
+                            <button
+                              onClick={() => setPicked(f)}
+                              className="flex w-full items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-4 py-2.5 text-left text-sm hover:bg-[#1D1810]"
+                            >
+                              <span className="min-w-0 flex-1 truncate">{f.nome}</span>
+                              {isProduct && (
+                                <span className="shrink-0 border border-[#9A938A]/40 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">
+                                  {t("srcProduct", "Produto")}
+                                </span>
+                              )}
+                              <span className="shrink-0 text-xs font-bold text-[#9A938A]">{Math.round(f.kcal_100g)} kcal/100g</span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                      {searchingOff && (
+                        <li className="flex items-center gap-2 px-4 py-2.5 text-xs text-[#9A938A]">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          {t("searchingProducts", "Buscando produtos industrializados...")}
                         </li>
-                      ))}
+                      )}
                     </ul>
                   )}
                 </div>

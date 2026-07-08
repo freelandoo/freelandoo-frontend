@@ -394,6 +394,27 @@ Object.assign(FITNESS, {
   propError: ["Erro ao responder", "Error responding", "Error al responder"],
 })
 
+// Busca unificada com typeahead (2026-07-08)
+Object.assign(FITNESS, {
+  searchUnifiedPh: [
+    "Digite: arroz, frango, whey, coca-cola...",
+    "Type: rice, chicken, whey, coke...",
+    "Escribe: arroz, pollo, whey, coca-cola...",
+  ],
+  searchUnifiedHint: [
+    "Vai buscando enquanto você digita: alimentos brasileiros (TACO) e produtos industrializados juntos.",
+    "Searches as you type: Brazilian foods (TACO) and packaged products together.",
+    "Busca mientras escribes: alimentos brasileños (TACO) y productos industrializados juntos.",
+  ],
+  searchNoResults: ["Nada encontrado. Tente outro nome.", "Nothing found. Try another name.", "No se encontró nada. Prueba otro nombre."],
+  srcProduct: ["Produto", "Product", "Producto"],
+  searchingProducts: [
+    "Buscando produtos industrializados...",
+    "Searching packaged products...",
+    "Buscando productos industrializados...",
+  ],
+})
+
 // Aba Indicadores (2026-07-08)
 Object.assign(FITNESS, {
   tabDay: ["Meu dia", "My day", "Mi día"],

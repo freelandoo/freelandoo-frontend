@@ -4931,7 +4931,12 @@
     "indMacroC": "Carbohidratos",
     "indMacroF": "Grasas",
     "indMacrosHint": "% de las calorías (proteína y carbo 4 kcal/g, grasa 9 kcal/g).",
-    "indMacrosEmpty": "Registra comidas en el diario para ver la distribución."
+    "indMacrosEmpty": "Registra comidas en el diario para ver la distribución.",
+    "searchUnifiedPh": "Escribe: arroz, pollo, whey, coca-cola...",
+    "searchUnifiedHint": "Busca mientras escribes: alimentos brasileños (TACO) y productos industrializados juntos.",
+    "searchNoResults": "No se encontró nada. Prueba otro nombre.",
+    "srcProduct": "Producto",
+    "searchingProducts": "Buscando productos industrializados..."
   },
   "Workouts": {
     "todayTitle": "Entrenamiento de hoy",

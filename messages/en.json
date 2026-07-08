@@ -4951,7 +4951,12 @@
     "indMacroC": "Carbs",
     "indMacroF": "Fat",
     "indMacrosHint": "% of calories (protein & carbs 4 kcal/g, fat 9 kcal/g).",
-    "indMacrosEmpty": "Log meals in the diary to see the split."
+    "indMacrosEmpty": "Log meals in the diary to see the split.",
+    "searchUnifiedPh": "Type: rice, chicken, whey, coke...",
+    "searchUnifiedHint": "Searches as you type: Brazilian foods (TACO) and packaged products together.",
+    "searchNoResults": "Nothing found. Try another name.",
+    "srcProduct": "Product",
+    "searchingProducts": "Searching packaged products..."
   },
   "Workouts": {
     "todayTitle": "Today's workout",
