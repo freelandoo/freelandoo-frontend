@@ -27,6 +27,10 @@ const ACADEMIES = {
   cityUnknown: ["Cidade não informada", "City not provided", "Ciudad no informada"],
   membersSuffix: ["vinculados", "linked members", "vinculados"],
   messageCta: ["Enviar mensagem", "Send message", "Enviar mensaje"],
+  composerCta: ["Poste ou escreva aqui", "Post or write here", "Publica o escribe aquí"],
+  postLabel: ["Post", "Post", "Post"],
+  beeLabel: ["Bee", "Bee", "Bee"],
+  loadMore: ["Ver mais", "Load more", "Ver más"],
   disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
   loginRequired: [
     "Entre na sua conta para cadastrar uma academia.",
@@ -516,11 +520,18 @@ Object.assign(WORKOUTS, {
   kcalGoalError: ["Erro ao enviar limite", "Error sending limit", "Error al enviar el límite"],
 })
 
+// Chip "Acessar academia" no header do card do /feed (mig 181) — ns Post,
+// espelha accessCommunity.
+const POST = {
+  accessAcademy: ["Acessar academia", "Open gym", "Abrir gimnasio"],
+}
+
 const NAMESPACES = [
   ["Academies", ACADEMIES],
   ["Fitness", FITNESS],
   ["Workouts", WORKOUTS],
   ["Account", ACCOUNT],
+  ["Post", POST],
 ]
 
 for (let i = 0; i < LOCALES.length; i++) {

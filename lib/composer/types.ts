@@ -121,6 +121,8 @@ export interface ComposerProps {
   initialProfileId?: string | null
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta comunidade. */
   communityId?: string | null
+  /** Post/Bee: quando definido, o item publicado é ligado ao feed desta academia (mig 181). */
+  academyId?: string | null
   onClose: () => void
   onPosted?: () => void
 }

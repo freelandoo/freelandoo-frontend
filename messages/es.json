@@ -1710,7 +1710,8 @@
     "unmuteMusic": "Activar música",
     "accessCommunity": "Abrir comunidad",
     "recadoLabel": "Recado",
-    "deleteRecado": "Eliminar"
+    "deleteRecado": "Eliminar",
+    "accessAcademy": "Abrir gimnasio"
   },
   "Stories": {
     "createStoryLabel": "Publicar",
@@ -4804,7 +4805,11 @@
     "mediaCoverCta": "Cambiar portada",
     "chipAcademy": "Gimnasio asociado",
     "backToFitness": "Volver al panel fitness",
-    "messageCta": "Enviar mensaje"
+    "messageCta": "Enviar mensaje",
+    "composerCta": "Publica o escribe aquí",
+    "postLabel": "Post",
+    "beeLabel": "Bee",
+    "loadMore": "Ver más"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

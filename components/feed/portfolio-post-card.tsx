@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight } from "lucide-react"
+import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -385,6 +385,33 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
     </Link>
   ) : null
 
+  // Academia à qual o post está ligado (mig 181) — chip "Acessar academia".
+  const showAcademyLink = !!post.academy && !!post.academy.slug
+  const academyChipFeed = showAcademyLink ? (
+    <Link
+      href={`/academias/${post.academy!.slug}`}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessAcademy", "Acessar academia")}
+      className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#0B0B0D] transition hover:-translate-y-0.5"
+    >
+      <Dumbbell className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessAcademy", "Acessar academia")}</span>
+      <ArrowUpRight className="h-3 w-3" />
+    </Link>
+  ) : null
+  const academyChipPaged = showAcademyLink ? (
+    <Link
+      href={`/academias/${post.academy!.slug}`}
+      onClick={(e) => e.stopPropagation()}
+      title={t("accessAcademy", "Acessar academia")}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold"
+      style={{ color: machineColor, background: `${machineColor}14`, border: `1px solid ${machineColor}33` }}
+    >
+      <Dumbbell className="h-3 w-3" />
+      <span className="hidden sm:inline">{t("accessAcademy", "Acessar academia")}</span>
+    </Link>
+  ) : null
+
   // ── Recado: nota só-texto exclusiva do feed da comunidade (sem mídia). ──────
   if (post.is_recado) {
     return (
@@ -427,6 +454,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             <MessageSquare className="h-3 w-3" /> {t("recadoLabel", "Recado")}
           </span>
           {communityChipFeed}
+          {academyChipFeed}
         </div>
 
         {/* Corpo: texto do recado */}
@@ -540,6 +568,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </span>
           )}
           {communityChipPaged}
+          {academyChipPaged}
         </div>
       ) : (
         <div className="flex w-full min-w-0 shrink-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
@@ -602,6 +631,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
             </span>
           )}
           {communityChipFeed}
+          {academyChipFeed}
         </div>
       )}
 

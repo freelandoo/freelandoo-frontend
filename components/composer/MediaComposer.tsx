@@ -122,7 +122,7 @@ function paintOverlay(
   } catch { /* frame não decodável ainda */ }
 }
 
-export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, communityId = null, onClose, onPosted }: ComposerProps) {
+export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
   const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
@@ -716,6 +716,17 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
       if (communityId) {
         try {
           await fetch(`/api/communities/${communityId}/feed`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ id_portfolio_item: itemId }),
+          })
+        } catch { /* noop */ }
+      }
+      // Feed de academia (mig 181): liga o post ao feed da academia — sobe
+      // também no /feed global com a tag da academia (não-fatal).
+      if (academyId) {
+        try {
+          await fetch(`/api/academies/${academyId}/feed`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify({ id_portfolio_item: itemId }),

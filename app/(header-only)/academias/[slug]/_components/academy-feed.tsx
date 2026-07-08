@@ -1,30 +1,37 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
-import { ImageIcon, Loader2, Megaphone, Send, Share2, Trash2, X } from "lucide-react"
+// Feed social da academia no MESMO motor do /feed (mig 181): posts/bees dos
+// membros vinculados (ou staff) viram itens de portfólio ligados à academia —
+// aparecem aqui E no /feed global com a tag "Acessar academia". Espelha o feed
+// das comunidades (PortfolioPostCard + MediaComposer + CommentsPanel).
+
+import { useCallback, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
+import { Film, ImagePlus, Loader2, Megaphone, PenSquare, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
-import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 
-type Post = {
-  id_post: string
-  id_user: string
-  author: string | null
-  caption: string | null
-  media_url: string | null
-  thumbnail_url: string | null
-  media_kind: "image" | "video" | null
-  share_count: number
-  created_at: string
-}
+const PortfolioPostCard = dynamic(
+  () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
+  { ssr: false }
+)
+const CommentsPanel = dynamic(
+  () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
+  { ssr: false }
+)
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
 
-/** Feed social da academia: posts de texto/imagem/vídeo dos membros. */
+const FEED_FILTERS: FeedFilters = { id_machine: null, id_category: null, estado: null, municipio: null, level_min: null }
+
+/** Feed da academia (posts + bees dos membros) — cards padrão do Freelandoo. */
 export function AcademyFeed({
   academyId,
   slug,
   canPost,
-  isOwner,
-  meId,
 }: {
   academyId: string
   slug: string
@@ -33,204 +40,144 @@ export function AcademyFeed({
   meId: string | null
 }) {
   const t = useTranslations("Academies")
-  const locale = useLocale()
 
-  const [posts, setPosts] = useState<Post[]>([])
-  const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
-  const [caption, setCaption] = useState("")
-  const [file, setFile] = useState<File | null>(null)
-  const [posting, setPosting] = useState(false)
-  const fileRef = useRef<HTMLInputElement | null>(null)
+  const [posts, setPosts] = useState<FeedPost[]>([])
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
+  const [chooserOpen, setChooserOpen] = useState(false)
 
-  const authHeaders = useCallback((): Record<string, string> => {
-    const token = getToken()
-    return token ? { Authorization: `Bearer ${token}` } : {}
-  }, [])
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/academies/${academyId}/posts`)
-      if (!res.ok) throw new Error()
-      const data = await res.json()
-      setPosts(Array.isArray(data.posts) ? data.posts : [])
-      setState("loaded")
-    } catch {
-      setState("error")
-    }
-  }, [academyId])
+  const fetchPosts = useCallback(
+    async (reset: boolean, cur?: string | null) => {
+      if (reset) setLoading(true)
+      else setLoadingMore(true)
+      try {
+        const sp = new URLSearchParams({ limit: "10" })
+        if (!reset && cur) sp.set("cursor", cur)
+        const token = getToken()
+        const res = await fetch(`/api/academies/${academyId}/feed-posts?${sp.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          cache: "no-store",
+        })
+        const data = await res.json().catch(() => ({}))
+        const items: FeedPost[] = Array.isArray(data.items) ? data.items : []
+        setPosts((prev) => (reset ? items : [...prev, ...items]))
+        setCursor(data.next_cursor || null)
+        setHasMore(!!data.has_more)
+      } finally {
+        if (reset) setLoading(false)
+        else setLoadingMore(false)
+      }
+    },
+    [academyId]
+  )
 
   useEffect(() => {
-    void load()
-  }, [load])
+    void fetchPosts(true)
+  }, [fetchPosts])
 
-  const publish = useCallback(async () => {
-    if (!caption.trim() && !file) {
-      toast.error(t("postMissing", "Escreva algo ou anexe uma mídia."))
-      return
-    }
-    setPosting(true)
-    try {
-      const fd = new FormData()
-      if (caption.trim()) fd.set("caption", caption.trim())
-      if (file) fd.set("media", file)
-      const res = await fetch(`/api/academies/${academyId}/posts`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: fd,
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      toast.success(t("postOk", "Publicado!"))
-      setCaption("")
-      setFile(null)
-      if (fileRef.current) fileRef.current.value = ""
-      void load()
-    } catch (err) {
-      toast.error(err instanceof Error && err.message ? err.message : t("postError", "Erro ao publicar"))
-    } finally {
-      setPosting(false)
-    }
-  }, [caption, file, academyId, authHeaders, load, t])
-
-  const remove = useCallback(
-    async (post: Post) => {
-      if (!window.confirm(t("postDeleteConfirm", "Excluir esta publicação?"))) return
-      try {
-        const res = await fetch(`/api/academies/${academyId}/posts/${post.id_post}`, {
-          method: "DELETE",
-          headers: authHeaders(),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        void load()
-      } catch (err) {
-        toast.error(err instanceof Error && err.message ? err.message : t("postError", "Erro ao publicar"))
-      }
-    },
-    [academyId, authHeaders, load, t]
-  )
-
-  const share = useCallback(
-    async (post: Post) => {
-      const url = `${window.location.origin}/academias/${slug}`
-      try {
-        if (navigator.share) {
-          await navigator.share({ url, text: post.caption || undefined })
-        } else {
-          await navigator.clipboard.writeText(url)
-          toast.success(t("shareCopied", "Link copiado!"))
-        }
-        await fetch(`/api/academies/${academyId}/posts/${post.id_post}/share`, {
-          method: "POST",
-          headers: authHeaders(),
-        })
-        void load()
-      } catch {
-        /* share cancelado pelo usuário */
-      }
-    },
-    [academyId, slug, authHeaders, load, t]
-  )
+  const openComposer = (kind: "post" | "bee") => {
+    setChooserOpen(false)
+    setComposerKind(kind)
+    setComposerOpen(true)
+  }
 
   return (
-    <section className="mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+    <section className="fl-sharp mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
       <h2 className="flex items-center gap-2 border-b-2 border-[#0B0B0D] pb-2 text-xs font-extrabold uppercase tracking-[0.16em]">
         <Megaphone className="h-4 w-4 text-[#F2B705]" />
         {t("feedTitle", "Mural da academia")}
       </h2>
 
-      {/* Composer (membros) */}
+      {/* Composer — vinculados/staff publicam post ou bee */}
       {canPost && (
-        <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
-          <textarea
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            rows={2}
-            placeholder={t("composerPh", "Compartilhe com a galera da academia...")}
-            className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#9A938A]"
-          />
-          <div className="mt-2 flex items-center justify-between border-t border-[#F5F1E8]/10 pt-2">
-            <div className="flex items-center gap-2">
-              <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-2 py-1 text-[11px] font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
-                <ImageIcon className="h-3.5 w-3.5" />
-                {t("composerMedia", "Foto/vídeo")}
+        <div className="relative mt-3">
+          <button
+            type="button"
+            onClick={() => setChooserOpen((v) => !v)}
+            className="flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3 text-left"
+          >
+            <PenSquare className="h-5 w-5 shrink-0 text-[#F2B705]" />
+            <span className="text-sm font-semibold text-[#9A938A]">{t("composerCta", "Poste ou escreva aqui")}</span>
+          </button>
+          {chooserOpen && (
+            <div className="absolute left-0 right-0 top-full z-30 mt-1 flex gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
+              <button type="button" onClick={() => openComposer("post")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*,video/*"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-              {file && (
-                <span className="flex items-center gap-1 text-[11px] text-[#9A938A]">
-                  {file.name.slice(0, 24)}
-                  <button
-                    onClick={() => {
-                      setFile(null)
-                      if (fileRef.current) fileRef.current.value = ""
-                    }}
-                    aria-label={t("composerRemoveMedia", "Remover mídia")}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
+              <button type="button" onClick={() => openComposer("bee")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                <Film className="h-4 w-4" /> {t("beeLabel", "Bee")}
+              </button>
+              <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[#F5F1E8]/20 px-2 text-[#9A938A]">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={() => void publish()}
-              disabled={posting}
-              className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
-            >
-              {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              {t("composerSubmit", "Publicar")}
-            </button>
-          </div>
+          )}
         </div>
       )}
 
       {/* Lista */}
-      {state === "loading" && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-[#9A938A]" />
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+        </div>
+      ) : posts.length === 0 ? (
+        <p className="mt-4 text-xs text-[#9A938A]">{t("feedEmpty", "Nenhuma publicação ainda. Seja o primeiro!")}</p>
+      ) : (
+        <div className="mt-4 overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
+          {posts.map((post) => (
+            <PortfolioPostCard
+              key={post.post_id}
+              post={post}
+              filters={FEED_FILTERS}
+              commentsCount={post.comments_count ?? 0}
+              onOpenComments={(pid) => setOpenCommentsFor(pid)}
+              onLikeChange={(pid, liked, likes_count) => {
+                setPosts((prev) => prev.map((p) => (p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p)))
+              }}
+            />
+          ))}
         </div>
       )}
-      {state === "error" && <p className="mt-3 text-xs text-[#9A938A]">{t("feedError", "Erro ao carregar o mural.")}</p>}
-      {state === "loaded" && posts.length === 0 && (
-        <p className="mt-3 text-xs text-[#9A938A]">{t("feedEmpty", "Nenhuma publicação ainda. Seja o primeiro!")}</p>
+      {hasMore && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            disabled={loadingMore}
+            onClick={() => void fetchPosts(false, cursor)}
+            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] disabled:opacity-60"
+          >
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t("loadMore", "Ver mais")}
+          </button>
+        </div>
       )}
-      <ul className="mt-3 space-y-4">
-        {posts.map((p) => (
-          <li key={p.id_post} className="border-2 border-[#0B0B0D] bg-[#1D1810]">
-            <div className="flex items-center justify-between border-b border-[#F5F1E8]/10 px-3 py-2">
-              <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[#F2B705]">{p.author || t("postAnon", "Membro")}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#9A938A]">{new Date(p.created_at).toLocaleDateString(locale)}</span>
-                {(isOwner || (meId && p.id_user === meId)) && (
-                  <button onClick={() => void remove(p)} aria-label={t("postDelete", "Excluir")}>
-                    <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
-                  </button>
-                )}
-              </div>
-            </div>
-            {p.caption && <p className="whitespace-pre-wrap px-3 py-2 text-sm">{p.caption}</p>}
-            {p.media_url && p.media_kind === "image" && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.media_url} alt="" loading="lazy" className="max-h-[480px] w-full object-cover" />
-            )}
-            {p.media_url && p.media_kind === "video" && (
-              <video src={p.media_url} poster={p.thumbnail_url || undefined} controls preload="none" className="max-h-[480px] w-full" />
-            )}
-            <div className="flex items-center justify-end border-t border-[#F5F1E8]/10 px-3 py-1.5">
-              <button onClick={() => void share(p)} className="flex items-center gap-1 text-[11px] font-bold uppercase text-[#9A938A] hover:text-[#F2B705]">
-                <Share2 className="h-3.5 w-3.5" />
-                {t("postShare", "Compartilhar")}
-                {p.share_count > 0 && <span>({p.share_count})</span>}
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+
+      {/* Comentários + composer */}
+      <CommentsPanel
+        postId={openCommentsFor}
+        open={!!openCommentsFor}
+        onClose={() => setOpenCommentsFor(null)}
+        loginNextPath={`/academias/${slug}`}
+        onCountChange={(pid, delta) =>
+          setPosts((prev) => prev.map((p) => (p.post_id === pid ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) } : p)))
+        }
+      />
+      {composerOpen && (
+        <MediaComposer
+          open
+          mode={composerKind}
+          academyId={academyId}
+          onClose={() => setComposerOpen(false)}
+          onPosted={() => {
+            setComposerOpen(false)
+            void fetchPosts(true)
+          }}
+        />
+      )}
     </section>
   )
 }

@@ -1710,7 +1710,8 @@
     "unmuteMusic": "Unmute music",
     "accessCommunity": "Open community",
     "recadoLabel": "Note",
-    "deleteRecado": "Delete"
+    "deleteRecado": "Delete",
+    "accessAcademy": "Open gym"
   },
   "Stories": {
     "createStoryLabel": "Post",
@@ -4824,7 +4825,11 @@
     "mediaCoverCta": "Change cover",
     "chipAcademy": "Partner gym",
     "backToFitness": "Back to fitness panel",
-    "messageCta": "Send message"
+    "messageCta": "Send message",
+    "composerCta": "Post or write here",
+    "postLabel": "Post",
+    "beeLabel": "Bee",
+    "loadMore": "Load more"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",
