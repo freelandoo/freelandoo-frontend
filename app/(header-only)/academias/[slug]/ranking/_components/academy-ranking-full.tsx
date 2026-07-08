@@ -98,7 +98,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
   const rest = sorted.slice(3)
 
   return (
-    <div className="min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]">
+    <div className="fl-root min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]">
       <div className="mx-auto max-w-4xl px-4 pt-6 md:px-6">
         {/* Voltar + nome */}
         <Link href={`/academias/${slug}`} className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F2B705]">
@@ -254,9 +254,10 @@ function PodiumCol({
           </h3>
           <div className="mt-1.5 fl-display leading-none text-[#E0A500] md:mt-2">
             <span className={isFirst ? "text-xl md:text-5xl" : "text-lg md:text-4xl"}>{value}</span>
-            <span className="text-[11px] font-bold text-[#6B6457]">/{target}</span>
           </div>
-          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">{unitWord}</p>
+          <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#6B6457] md:text-[10px]">
+            {unitWord} · {t("goalWord", "meta")} {target}
+          </p>
         </div>
       </div>
 

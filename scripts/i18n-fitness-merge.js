@@ -55,6 +55,7 @@ const ACADEMIES = {
   listHeading: ["A lista inteira", "The full list", "La lista completa"],
   badgeMember: ["Membro", "Member", "Miembro"],
   daysWord: ["dias", "days", "días"],
+  goalWord: ["meta", "goal", "meta"],
   backToAcademy: ["Voltar", "Back", "Volver"],
   disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
   loginRequired: [
