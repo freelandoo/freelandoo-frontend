@@ -1419,7 +1419,9 @@
     "freightNoticeBody": "Por ahora NO generamos la etiqueta de Melhor Envio. El cálculo del envío solo sirve como base para formar el precio que paga el comprador — el envío y el despacho quedan por tu cuenta.",
     "freightNoticeOk": "Entendido",
     "atendimentoIa": "Atención IA",
-    "atendimentoIaAria": "Atención IA: bot que responde tus conversaciones"
+    "atendimentoIaAria": "Atención IA: bot que responde tus conversaciones",
+    "academias": "Gimnasios",
+    "academiasAria": "Gimnasios: vincula tu matrícula y abre el panel fitness"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

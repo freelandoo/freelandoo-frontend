@@ -1419,7 +1419,9 @@
     "freightNoticeBody": "Por enquanto NÃO geramos a etiqueta do Melhor Envio. O cálculo do frete serve apenas como base para a formação do preço que o comprador paga — o envio e a postagem ficam por sua conta.",
     "freightNoticeOk": "Entendi",
     "atendimentoIa": "Atendimento IA",
-    "atendimentoIaAria": "Atendimento IA: bot que responde suas conversas"
+    "atendimentoIaAria": "Atendimento IA: bot que responde suas conversas",
+    "academias": "Academias",
+    "academiasAria": "Academias: vincular matrícula e acessar o painel fitness"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

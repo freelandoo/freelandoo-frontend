@@ -332,10 +332,22 @@ function mergeNamespace(json, ns, keys, localeIndex) {
   return added
 }
 
+// Botão "Academias" na toolbar do headcard do /account (gated pela flag
+// fitness_academias) — chaves no ns Account pra seguir o vocabulário da área.
+const ACCOUNT = {
+  academias: ["Academias", "Gyms", "Gimnasios"],
+  academiasAria: [
+    "Academias: vincular matrícula e acessar o painel fitness",
+    "Gyms: link your membership and open the fitness panel",
+    "Gimnasios: vincula tu matrícula y abre el panel fitness",
+  ],
+}
+
 const NAMESPACES = [
   ["Academies", ACADEMIES],
   ["Fitness", FITNESS],
   ["Workouts", WORKOUTS],
+  ["Account", ACCOUNT],
 ]
 
 for (let i = 0; i < LOCALES.length; i++) {

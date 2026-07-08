@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell } from "lucide-react"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { CommunityTile } from "@/components/community/community-tile"
@@ -123,6 +123,7 @@ export default function PerfilPage() {
   const [dataConnOpen, setDataConnOpen] = useState(false)
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
+  const academiasOn = useFeature("fitness_academias")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -1769,6 +1770,18 @@ export default function PerfilPage() {
                   >
                     <Bot className="h-4 w-4" />
                     {t("atendimentoIa", "Atendimento IA")}
+                  </button>
+                )}
+                {academiasOn && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/academias")}
+                    aria-label={t("academiasAria", "Academias: vincular matrícula e acessar o painel fitness")}
+                    title={t("academias", "Academias")}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                  >
+                    <Dumbbell className="h-4 w-4" />
+                    {t("academias", "Academias")}
                   </button>
                 )}
                 <button

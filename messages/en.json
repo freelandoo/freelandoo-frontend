@@ -1419,7 +1419,9 @@
     "freightNoticeBody": "For now we do NOT generate the Melhor Envio shipping label. The freight calculation is only used as a base to build the price the buyer pays — shipping and posting are up to you.",
     "freightNoticeOk": "Got it",
     "atendimentoIa": "AI Assistant",
-    "atendimentoIaAria": "AI Assistant: a bot that answers your conversations"
+    "atendimentoIaAria": "AI Assistant: a bot that answers your conversations",
+    "academias": "Gyms",
+    "academiasAria": "Gyms: link your membership and open the fitness panel"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
