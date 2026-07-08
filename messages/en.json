@@ -4985,7 +4985,16 @@
     "searchNoResults": "Nothing found. Try another name.",
     "srcProduct": "Product",
     "searchingProducts": "Searching packaged products...",
-    "createAcademyCta": "Create gym"
+    "createAcademyCta": "Create gym",
+    "scanCta": "Scan barcode",
+    "searchNoResultsScan": "Nothing found by name. Try scanning the package barcode.",
+    "scanTitle": "Barcode",
+    "scanCamHint": "Point the camera at the barcode. If the camera doesn't open, type the code below.",
+    "scanManualPh": "Type the code (e.g. 7891000100103)",
+    "scanLookupBtn": "Search",
+    "scanInvalid": "Invalid code. Point the camera or type at least 8 digits.",
+    "scanNotFound": "No product found for this code",
+    "scanCamDenied": "Couldn't open the camera. Type the code below."
   },
   "Workouts": {
     "todayTitle": "Today's workout",

@@ -447,6 +447,44 @@ Object.assign(FITNESS, {
   ],
 })
 
+// Scanner de código de barras (2026-07-08): quando não acha pelo nome, abre a
+// câmera (BarcodeDetector) ou digita o EAN e busca direto no Open Food Facts.
+Object.assign(FITNESS, {
+  scanCta: ["Escanear código de barras", "Scan barcode", "Escanear código de barras"],
+  searchNoResultsScan: [
+    "Nada encontrado pelo nome. Tente escanear o código de barras da embalagem.",
+    "Nothing found by name. Try scanning the package barcode.",
+    "No se encontró por nombre. Prueba escanear el código de barras del envase.",
+  ],
+  scanTitle: ["Código de barras", "Barcode", "Código de barras"],
+  scanCamHint: [
+    "Aponte a câmera para o código de barras. Se a câmera não abrir, digite o código abaixo.",
+    "Point the camera at the barcode. If the camera doesn't open, type the code below.",
+    "Apunta la cámara al código de barras. Si la cámara no abre, escribe el código abajo.",
+  ],
+  scanManualPh: [
+    "Digite o código (ex: 7891000100103)",
+    "Type the code (e.g. 7891000100103)",
+    "Escribe el código (ej: 7891000100103)",
+  ],
+  scanLookupBtn: ["Buscar", "Search", "Buscar"],
+  scanInvalid: [
+    "Código inválido. Aponte a câmera ou digite ao menos 8 dígitos.",
+    "Invalid code. Point the camera or type at least 8 digits.",
+    "Código inválido. Apunta la cámara o escribe al menos 8 dígitos.",
+  ],
+  scanNotFound: [
+    "Produto não encontrado para este código",
+    "No product found for this code",
+    "No se encontró producto para este código",
+  ],
+  scanCamDenied: [
+    "Não foi possível abrir a câmera. Digite o código abaixo.",
+    "Couldn't open the camera. Type the code below.",
+    "No se pudo abrir la cámara. Escribe el código abajo.",
+  ],
+})
+
 // Aba Indicadores (2026-07-08)
 Object.assign(FITNESS, {
   tabDay: ["Meu dia", "My day", "Mi día"],

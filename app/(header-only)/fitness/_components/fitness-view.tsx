@@ -22,6 +22,7 @@ import {
   Minus,
   Plus,
   Ruler,
+  ScanBarcode,
   Search,
   Settings2,
   Trash2,
@@ -33,6 +34,14 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { WorkoutTodayCard } from "./workout-today-card"
 import { FitnessProposalsGate } from "./proposals-modal"
 import { IndicatorsTab } from "./indicators-tab"
+
+// BarcodeDetector é nativo em Chrome/Edge/Android e não faz parte da lib TS.
+// Declaração mínima do que usamos; quando ausente, caímos na entrada manual.
+type DetectedBarcode = { rawValue: string }
+interface BarcodeDetectorInstance {
+  detect(source: CanvasImageSource): Promise<DetectedBarcode[]>
+}
+type BarcodeDetectorCtor = new (opts?: { formats?: string[] }) => BarcodeDetectorInstance
 
 type Food = {
   id_food?: string
@@ -134,6 +143,15 @@ export function FitnessView() {
   const [picked, setPicked] = useState<Food | null>(null)
   const [grams, setGrams] = useState("100")
   const [adding, setAdding] = useState(false)
+
+  // Scanner de código de barras (câmera nativa BarcodeDetector + digitação)
+  const [scanOpen, setScanOpen] = useState(false)
+  const [barcode, setBarcode] = useState("")
+  const [scanLookup, setScanLookup] = useState(false)
+  const [scanErr, setScanErr] = useState<string | null>(null)
+  const [camActive, setCamActive] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   const [measureOpen, setMeasureOpen] = useState(false)
   const [weight, setWeight] = useState("")
@@ -263,6 +281,9 @@ export function FitnessView() {
       toast.success(t("logAdded", "Adicionado ao diário!"))
       setPicked(null)
       setSearchOpen(null)
+      setScanOpen(false)
+      setBarcode("")
+      setScanErr(null)
       setLocalResults([])
       setOffResults([])
       setQ("")
@@ -273,6 +294,104 @@ export function FitnessView() {
       setAdding(false)
     }
   }, [picked, searchOpen, grams, date, authHeaders, load, t])
+
+  // Busca o produto pelo código (EAN/UPC) direto no Open Food Facts. Sucesso
+  // → vira o item selecionado (picked) e fecha o scanner; o resto do fluxo
+  // (definir gramas + adicionar) é o mesmo da busca por nome.
+  const lookupByBarcode = useCallback(
+    async (code: string) => {
+      const clean = String(code || "").replace(/\D/g, "")
+      if (clean.length < 8) {
+        setScanErr(t("scanInvalid", "Código inválido. Aponte a câmera ou digite ao menos 8 dígitos."))
+        return
+      }
+      setScanLookup(true)
+      setScanErr(null)
+      try {
+        const res = await fetch(`/api/fitness/foods/off/barcode?code=${encodeURIComponent(clean)}`, {
+          headers: authHeaders(),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || t("scanNotFound", "Produto não encontrado para este código"))
+        setPicked(data.food)
+        setScanOpen(false)
+        setBarcode("")
+      } catch (err) {
+        setScanErr(err instanceof Error && err.message ? err.message : t("scanNotFound", "Produto não encontrado para este código"))
+      } finally {
+        setScanLookup(false)
+      }
+    },
+    [authHeaders, t]
+  )
+
+  // Refs para o loop da câmera não reiniciar a cada render (t/lookup mudam de
+  // identidade), mantendo o stream estável enquanto o scanner está aberto.
+  const lookupRef = useRef(lookupByBarcode)
+  const tRef = useRef(t)
+  useEffect(() => {
+    lookupRef.current = lookupByBarcode
+    tRef.current = t
+  }, [lookupByBarcode, t])
+
+  // Câmera: usa BarcodeDetector nativo quando disponível (Chrome/Edge/Android
+  // + desktop). Ausente (ex.: iOS Safari) → só entrada manual, sem erro.
+  useEffect(() => {
+    if (!scanOpen) return
+    const Ctor = (typeof window !== "undefined"
+      ? (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector
+      : undefined)
+    if (!Ctor || !navigator.mediaDevices?.getUserMedia) return
+    let cancelled = false
+    let raf = 0
+    const detector = new Ctor({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"] })
+    const start = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        if (cancelled) {
+          stream.getTracks().forEach((tr) => tr.stop())
+          return
+        }
+        streamRef.current = stream
+        setCamActive(true)
+        const v = videoRef.current
+        if (v) {
+          v.srcObject = stream
+          await v.play().catch(() => {})
+        }
+        const tick = async () => {
+          if (cancelled) return
+          const vid = videoRef.current
+          if (vid && vid.readyState >= 2) {
+            try {
+              const codes = await detector.detect(vid)
+              if (codes && codes.length && codes[0].rawValue) {
+                cancelled = true
+                void lookupRef.current(codes[0].rawValue)
+                return
+              }
+            } catch {
+              /* frame ignorado */
+            }
+          }
+          raf = requestAnimationFrame(tick)
+        }
+        raf = requestAnimationFrame(tick)
+      } catch {
+        setScanErr(tRef.current("scanCamDenied", "Não foi possível abrir a câmera. Digite o código abaixo."))
+      }
+    }
+    void start()
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((tr) => tr.stop())
+        streamRef.current = null
+      }
+      setCamActive(false)
+    }
+  }, [scanOpen])
 
   const removeLog = useCallback(
     async (id: string) => {
@@ -688,7 +807,13 @@ export function FitnessView() {
 
       {/* Modal busca de alimento */}
       {searchOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setSearchOpen(null)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => {
+            setSearchOpen(null)
+            setScanOpen(false)
+          }}
+        >
           <div
             className={`fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col ${PANEL} text-[#F5F1E8]`}
             style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
@@ -696,7 +821,13 @@ export function FitnessView() {
           >
             <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] p-4">
               <h2 className="text-lg font-black uppercase">{t("searchTitle", "Adicionar alimento")}</h2>
-              <button onClick={() => setSearchOpen(null)} aria-label={t("close", "Fechar")}>
+              <button
+                onClick={() => {
+                  setSearchOpen(null)
+                  setScanOpen(false)
+                }}
+                aria-label={t("close", "Fechar")}
+              >
                 <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
               </button>
             </div>
@@ -717,6 +848,18 @@ export function FitnessView() {
                     className="w-full bg-transparent text-sm outline-none placeholder:text-[#9A938A]"
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScanErr(null)
+                    setBarcode("")
+                    setScanOpen(true)
+                  }}
+                  className="flex w-full items-center gap-2 border-b-2 border-[#0B0B0D] px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[0.1em] text-[#F2B705] hover:bg-[#1D1810]"
+                >
+                  <ScanBarcode className="h-4 w-4" />
+                  {t("scanCta", "Escanear código de barras")}
+                </button>
                 <div className="min-h-40 flex-1 overflow-y-auto">
                   {q.trim().length < 2 ? (
                     <p className="p-4 text-xs text-[#9A938A]">
@@ -726,7 +869,9 @@ export function FitnessView() {
                       )}
                     </p>
                   ) : localResults.length === 0 && offResults.length === 0 && !searching && !searchingOff ? (
-                    <p className="p-4 text-xs text-[#9A938A]">{t("searchNoResults", "Nada encontrado. Tente outro nome.")}</p>
+                    <p className="p-4 text-xs text-[#9A938A]">
+                      {t("searchNoResultsScan", "Nada encontrado pelo nome. Tente escanear o código de barras da embalagem.")}
+                    </p>
                   ) : (
                     <ul>
                       {[...localResults, ...offResults].map((f, i) => {
@@ -789,6 +934,62 @@ export function FitnessView() {
               </div>
             )}
           </div>
+
+          {/* Overlay do scanner de código de barras (sobre o modal de busca) */}
+          {scanOpen && (
+            <div
+              className="absolute inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+              onClick={() => setScanOpen(false)}
+            >
+              <div
+                className={`fl-sharp flex w-full max-w-md flex-col ${PANEL} text-[#F5F1E8]`}
+                style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] p-4">
+                  <h2 className="text-lg font-black uppercase">{t("scanTitle", "Código de barras")}</h2>
+                  <button onClick={() => setScanOpen(false)} aria-label={t("close", "Fechar")}>
+                    <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <div className="relative aspect-video w-full overflow-hidden border-2 border-[#0B0B0D] bg-black">
+                    <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
+                    {!camActive && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                        <ScanBarcode className="h-8 w-8 text-[#9A938A]" />
+                        <p className="text-xs text-[#9A938A]">
+                          {t("scanCamHint", "Aponte a câmera para o código de barras. Se a câmera não abrir, digite o código abaixo.")}
+                        </p>
+                      </div>
+                    )}
+                    {camActive && (
+                      <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-3/4 -translate-x-1/2 -translate-y-1/2 border-2 border-[#F2B705]" />
+                    )}
+                  </div>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      void lookupByBarcode(barcode)
+                    }}
+                    className="mt-4 flex gap-2"
+                  >
+                    <input
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      inputMode="numeric"
+                      placeholder={t("scanManualPh", "Digite o código (ex: 7891000100103)")}
+                      className={INPUT}
+                    />
+                    <button type="submit" disabled={scanLookup} className={`${BTN_GOLD} shrink-0 px-4 py-2 text-xs`}>
+                      {scanLookup ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("scanLookupBtn", "Buscar")}
+                    </button>
+                  </form>
+                  {scanErr && <p className="mt-2 text-xs font-bold text-red-400">{scanErr}</p>}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -4965,7 +4965,16 @@
     "searchNoResults": "No se encontró nada. Prueba otro nombre.",
     "srcProduct": "Producto",
     "searchingProducts": "Buscando productos industrializados...",
-    "createAcademyCta": "Crear gimnasio"
+    "createAcademyCta": "Crear gimnasio",
+    "scanCta": "Escanear código de barras",
+    "searchNoResultsScan": "No se encontró por nombre. Prueba escanear el código de barras del envase.",
+    "scanTitle": "Código de barras",
+    "scanCamHint": "Apunta la cámara al código de barras. Si la cámara no abre, escribe el código abajo.",
+    "scanManualPh": "Escribe el código (ej: 7891000100103)",
+    "scanLookupBtn": "Buscar",
+    "scanInvalid": "Código inválido. Apunta la cámara o escribe al menos 8 dígitos.",
+    "scanNotFound": "No se encontró producto para este código",
+    "scanCamDenied": "No se pudo abrir la cámara. Escribe el código abajo."
   },
   "Workouts": {
     "todayTitle": "Entrenamiento de hoy",
