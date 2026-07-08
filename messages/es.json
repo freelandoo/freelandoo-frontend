@@ -4809,7 +4809,20 @@
     "composerCta": "Publica o escribe aquí",
     "postLabel": "Post",
     "beeLabel": "Bee",
-    "loadMore": "Ver más"
+    "loadMore": "Ver más",
+    "rankingSeasonTitle": "Ranking de la temporada",
+    "daysLeft": "días restantes",
+    "seasonTitle": "Temporada",
+    "seasonHint": "Aplica las metas en una ventana fija desde hoy (como en las comunidades). Sin temporada, el ranking usa el mes.",
+    "goalDays30": "30 días",
+    "goalDays60": "60 días",
+    "goalDays90": "90 días",
+    "seasonStart": "Iniciar temporada",
+    "seasonRestart": "Reiniciar temporada",
+    "seasonEnd": "Finalizar",
+    "seasonStarted": "¡Temporada iniciada!",
+    "seasonEnded": "Temporada finalizada.",
+    "seasonActiveLabel": "Temporada activa"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",
