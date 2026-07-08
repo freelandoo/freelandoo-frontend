@@ -32,6 +32,7 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { WorkoutTodayCard } from "./workout-today-card"
 import { FitnessProposalsGate } from "./proposals-modal"
+import { IndicatorsTab } from "./indicators-tab"
 
 type Food = {
   id_food?: string
@@ -119,6 +120,7 @@ export function FitnessView() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [refreshKey, setRefreshKey] = useState(0)
   const [me, setMe] = useState<Me | null>(null)
+  const [view, setView] = useState<"day" | "indicators">("day")
 
   const [searchOpen, setSearchOpen] = useState<FoodLog["meal"] | null>(null)
   const [tab, setTab] = useState<"local" | "off">("local")
@@ -426,6 +428,26 @@ export function FitnessView() {
           </div>
         </header>
 
+        {/* Abas: Meu dia / Indicadores */}
+        <div className="mt-6 flex gap-[2px] border-2 border-[#0B0B0D] bg-[#0B0B0D]">
+          <button
+            onClick={() => setView("day")}
+            className={`flex-1 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${view === "day" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#15120E] text-[#9A938A] hover:bg-[#1D1810]"}`}
+          >
+            {t("tabDay", "Meu dia")}
+          </button>
+          <button
+            onClick={() => setView("indicators")}
+            className={`flex-1 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${view === "indicators" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#15120E] text-[#9A938A] hover:bg-[#1D1810]"}`}
+          >
+            {t("tabIndicators", "Indicadores")}
+          </button>
+        </div>
+
+        {view === "indicators" && <IndicatorsTab />}
+
+        {view === "day" && (
+          <>
         {/* Cards do dia */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Calorias */}
@@ -624,6 +646,8 @@ export function FitnessView() {
             </div>
           )}
         </section>
+          </>
+        )}
       </div>
 
       {/* Modal busca de alimento */}

@@ -394,6 +394,73 @@ Object.assign(FITNESS, {
   propError: ["Erro ao responder", "Error responding", "Error al responder"],
 })
 
+// Aba Indicadores (2026-07-08)
+Object.assign(FITNESS, {
+  tabDay: ["Meu dia", "My day", "Mi día"],
+  tabIndicators: ["Indicadores", "Indicators", "Indicadores"],
+  indLoadError: ["Erro ao carregar os indicadores.", "Error loading indicators.", "Error al cargar los indicadores."],
+  indBmi: ["IMC", "BMI", "IMC"],
+  bmiUnder: ["Abaixo do peso", "Underweight", "Bajo peso"],
+  bmiNormal: ["Peso normal", "Normal weight", "Peso normal"],
+  bmiOver: ["Sobrepeso", "Overweight", "Sobrepeso"],
+  bmiOb1: ["Obesidade I", "Obesity I", "Obesidad I"],
+  bmiOb2: ["Obesidade II", "Obesity II", "Obesidad II"],
+  bmiOb3: ["Obesidade III", "Obesity III", "Obesidad III"],
+  indBmiEmpty: ["Registre peso e altura pra calcular.", "Log weight and height to calculate.", "Registra peso y altura para calcular."],
+  indWeightTrend: ["Peso (30 dias)", "Weight (30 days)", "Peso (30 días)"],
+  indWeightTrendSub: [
+    "Variação desde a medição de 30 dias atrás.",
+    "Change since the measurement 30 days ago.",
+    "Variación desde la medición de hace 30 días.",
+  ],
+  indKcalAvg: ["Calorias — média 7d", "Calories — 7d avg", "Calorías — media 7d"],
+  indGoal: ["Meta", "Goal", "Meta"],
+  indOnTarget: ["{n}/{d} dias na meta (30d)", "{n}/{d} days on target (30d)", "{n}/{d} días en la meta (30d)"],
+  indProtein: ["Proteína", "Protein", "Proteína"],
+  indProteinAvg: ["Média {n} g/dia", "Avg {n} g/day", "Media {n} g/día"],
+  indProteinRef: ["referência 1,2–2,0 g/kg", "reference 1.2–2.0 g/kg", "referencia 1,2–2,0 g/kg"],
+  indProteinEmpty: ["Registre refeições pra calcular.", "Log meals to calculate.", "Registra comidas para calcular."],
+  indWaterAvg: ["Água — média 7d", "Water — 7d avg", "Agua — media 7d"],
+  indWaterTarget: ["{n} dias na meta (30d)", "{n} days on target (30d)", "{n} días en la meta (30d)"],
+  indStreak: ["Sequência do diário", "Logging streak", "Racha del diario"],
+  indDays: ["dias", "days", "días"],
+  indStreakSub: [
+    "Dias seguidos registrando comida ou água.",
+    "Consecutive days logging food or water.",
+    "Días seguidos registrando comida o agua.",
+  ],
+  indWorkouts: ["Treinos concluídos", "Workouts completed", "Entrenamientos completados"],
+  indWorkouts7: ["{n} nos últimos 7 dias", "{n} in the last 7 days", "{n} en los últimos 7 días"],
+  indFrequency: ["Frequência na academia", "Gym attendance", "Asistencia al gimnasio"],
+  indFrequencySub: [
+    "Giros de catraca nos últimos 30 dias.",
+    "Turnstile entries in the last 30 days.",
+    "Giros de torniquete en los últimos 30 días.",
+  ],
+  indKcalChart: ["Calorias — últimos 14 dias", "Calories — last 14 days", "Calorías — últimos 14 días"],
+  indWaterChart: ["Água — últimos 14 dias", "Water — last 14 days", "Agua — últimos 14 días"],
+  indWeightChart: ["Evolução do peso", "Weight over time", "Evolución del peso"],
+  indWeightChartEmpty: [
+    "Registre pelo menos 2 medições de peso pra ver a curva.",
+    "Log at least 2 weight measurements to see the curve.",
+    "Registra al menos 2 mediciones de peso para ver la curva.",
+  ],
+  indMacros: ["Distribuição de macros (30d)", "Macro split (30d)", "Distribución de macros (30d)"],
+  indMacroP: ["Proteína", "Protein", "Proteína"],
+  indMacroC: ["Carboidratos", "Carbs", "Carbohidratos"],
+  indMacroF: ["Gorduras", "Fat", "Grasas"],
+  indMacrosHint: [
+    "% das calorias (proteína e carbo 4 kcal/g, gordura 9 kcal/g).",
+    "% of calories (protein & carbs 4 kcal/g, fat 9 kcal/g).",
+    "% de las calorías (proteína y carbo 4 kcal/g, grasa 9 kcal/g).",
+  ],
+  indMacrosEmpty: [
+    "Registre refeições no diário pra ver a distribuição.",
+    "Log meals in the diary to see the split.",
+    "Registra comidas en el diario para ver la distribución.",
+  ],
+})
+
 Object.assign(WORKOUTS, {
   proposalSent: [
     "Enviado! O aluno precisa confirmar a alteração.",
