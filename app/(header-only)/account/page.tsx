@@ -1801,9 +1801,9 @@ export default function PerfilPage() {
                   {academiasOn && (
                     <button
                       type="button"
-                      onClick={() => router.push("/academias")}
-                      aria-label={t("academiasAria", "Academias: vincular matrícula e acessar o painel fitness")}
-                      title={t("academias", "Academias")}
+                      onClick={() => router.push("/fitness")}
+                      aria-label={t("fitnessAria", "Painel fitness: calorias, água, peso e treinos")}
+                      title={t("fitnessTool", "Fitness")}
                       className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
                     >
                       <Dumbbell className="h-4 w-4" />

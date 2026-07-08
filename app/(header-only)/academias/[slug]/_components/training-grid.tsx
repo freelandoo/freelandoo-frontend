@@ -364,20 +364,20 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
   )
 
   return (
-    <section className="mt-6 border-4 border-current p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-current pb-3">
-        <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-          <ClipboardList className="h-4 w-4" />
+    <section className="mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] pb-3">
+        <h2 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em]">
+          <ClipboardList className="h-4 w-4 text-[#F2B705]" />
           {t("gridTitle", "Treinos por data")}
         </h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => setDate((d) => shiftDate(d, -1))} className="border-2 border-current p-1.5" aria-label={t("prevDay", "Dia anterior")}>
+          <button onClick={() => setDate((d) => shiftDate(d, -1))} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5" aria-label={t("prevDay", "Dia anterior")}>
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="border-2 border-current px-3 py-1.5 text-xs font-black uppercase">
+          <span className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-xs font-black uppercase">
             {new Date(`${date}T12:00:00Z`).toLocaleDateString(locale)}
           </span>
-          <button onClick={() => setDate((d) => shiftDate(d, 1))} className="border-2 border-current p-1.5" aria-label={t("nextDay", "Próximo dia")}>
+          <button onClick={() => setDate((d) => shiftDate(d, 1))} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5" aria-label={t("nextDay", "Próximo dia")}>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -396,7 +396,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b-2 border-current font-black uppercase">
+              <tr className="border-b-2 border-[#0B0B0D] font-black uppercase">
                 <th className="py-2 pr-3">{t("colAluno", "Aluno")}</th>
                 <th className="py-2 pr-3">{t("colPeso", "Peso")}</th>
                 <th className="py-2 pr-3">{t("colAltura", "Altura")}</th>
@@ -413,7 +413,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 <tr
                   key={r.id_member}
                   onClick={() => void openMember(r.id_member)}
-                  className="cursor-pointer border-b border-current/20 hover:bg-current/5"
+                  className="cursor-pointer border-b border-[#F5F1E8]/10 hover:bg-[#1D1810]"
                 >
                   <td className="py-2 pr-3 font-bold">{r.nome || "—"}</td>
                   <td className="py-2 pr-3">{r.weight_kg ? `${Number(r.weight_kg).toFixed(1)}kg` : "—"}</td>
@@ -433,15 +433,15 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
 
       {/* Painel do aluno */}
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setDetail(null)}>
-          <div className="fl-sharp flex max-h-[92vh] w-full max-w-2xl flex-col overflow-y-auto border-4 border-current bg-background p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setDetail(null)}>
+          <div className="fl-sharp flex max-h-[92vh] w-full max-w-2xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
             {detailLoading || !detail ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="h-5 w-5 animate-spin opacity-50" />
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between border-b-2 border-current pb-3">
+                <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
                   <div>
                     <h3 className="text-xl font-black uppercase">{detail.member.member_name || t("memberFallback", "Aluno")}</h3>
                     <p className="text-xs opacity-60">{detail.member.membership_status}</p>
@@ -452,13 +452,13 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 </div>
 
                 {/* Alterações do staff viram proposta: aviso permanente */}
-                <p className="mt-3 border-2 border-yellow-400 bg-yellow-400/10 px-3 py-2 text-[11px] font-bold">
+                <p className="mt-3 border-2 border-[#F2B705] bg-[#F2B705]/10 px-3 py-2 text-[11px] font-bold text-[#F2B705]">
                   {t("proposalNotice", "Peso, altura, limite de calorias e fichas só entram em vigor depois que o aluno confirmar no painel dele.")}
                 </p>
 
                 {/* Propostas aguardando o aluno */}
                 {detail.proposals.length > 0 && (
-                  <div className="mt-3 border-2 border-current p-3">
+                  <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
                     <p className="text-xs font-black uppercase">{t("pendingTitle", "Aguardando confirmação do aluno")}</p>
                     <ul className="mt-2 space-y-1">
                       {detail.proposals.map((pr) => (
@@ -473,7 +473,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                           <span className="shrink-0 opacity-50">{new Date(pr.created_at).toLocaleDateString(locale)}</span>
                           <button
                             onClick={() => void cancelProposal(pr.id_proposal)}
-                            className="shrink-0 border border-current px-2 py-0.5 text-[10px] font-black uppercase opacity-70 hover:opacity-100"
+                            className="shrink-0 border border-[#0B0B0D] bg-[#15120E] px-2 py-0.5 text-[10px] font-black uppercase opacity-70 hover:opacity-100"
                           >
                             {t("pendingCancel", "Cancelar")}
                           </button>
@@ -484,23 +484,23 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 )}
 
                 {/* Medição pelo professor */}
-                <div className="mt-4 border-2 border-current p-3">
+                <div className="mt-4 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
                   <p className="flex items-center gap-1.5 text-xs font-black uppercase">
                     <Ruler className="h-4 w-4" /> {t("measureByProf", "Avaliação física (registrar)")}
                   </p>
                   <div className="mt-2 flex flex-wrap items-end gap-2">
                     <label className="block">
-                      <span className="text-[10px] font-bold uppercase opacity-60">{t("weightLabel", "Peso (kg)")}</span>
-                      <input value={measW} onChange={(e) => setMeasW(e.target.value)} inputMode="decimal" className="mt-0.5 w-24 border-2 border-current bg-transparent px-2 py-1 text-sm outline-none" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("weightLabel", "Peso (kg)")}</span>
+                      <input value={measW} onChange={(e) => setMeasW(e.target.value)} inputMode="decimal" className="mt-0.5 w-24 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-sm outline-none" />
                     </label>
                     <label className="block">
-                      <span className="text-[10px] font-bold uppercase opacity-60">{t("heightLabel", "Altura (cm)")}</span>
-                      <input value={measH} onChange={(e) => setMeasH(e.target.value)} inputMode="decimal" className="mt-0.5 w-24 border-2 border-current bg-transparent px-2 py-1 text-sm outline-none" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("heightLabel", "Altura (cm)")}</span>
+                      <input value={measH} onChange={(e) => setMeasH(e.target.value)} inputMode="decimal" className="mt-0.5 w-24 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-sm outline-none" />
                     </label>
                     <button
                       onClick={() => void saveMemberMeasurement()}
                       disabled={savingMeas}
-                      className="border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black disabled:opacity-50"
+                      className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-[#0B0B0D] disabled:opacity-50"
                     >
                       {savingMeas ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("measureSubmit", "Salvar")}
                     </button>
@@ -517,24 +517,24 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 </div>
 
                 {/* Limite de calorias pelo professor */}
-                <div className="mt-3 border-2 border-current p-3">
+                <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
                   <p className="flex items-center gap-1.5 text-xs font-black uppercase">
                     <Flame className="h-4 w-4" /> {t("kcalGoalTitle", "Limite diário de calorias")}
                   </p>
                   <div className="mt-2 flex flex-wrap items-end gap-2">
                     <label className="block">
-                      <span className="text-[10px] font-bold uppercase opacity-60">{t("kcalGoalLabel", "kcal / dia")}</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("kcalGoalLabel", "kcal / dia")}</span>
                       <input
                         value={kcalGoal}
                         onChange={(e) => setKcalGoal(e.target.value)}
                         inputMode="numeric"
-                        className="mt-0.5 w-28 border-2 border-current bg-transparent px-2 py-1 text-sm outline-none"
+                        className="mt-0.5 w-28 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-sm outline-none"
                       />
                     </label>
                     <button
                       onClick={() => void saveKcalGoal()}
                       disabled={savingKcal}
-                      className="border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black disabled:opacity-50"
+                      className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-[#0B0B0D] disabled:opacity-50"
                     >
                       {savingKcal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("kcalGoalSubmit", "Enviar")}
                     </button>
@@ -551,7 +551,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                   <p className="flex items-center gap-1.5 text-xs font-black uppercase">
                     <Dumbbell className="h-4 w-4" /> {t("plansTitle", "Fichas de treino")}
                   </p>
-                  <button onClick={startCreate} className="flex items-center gap-1 border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black">
+                  <button onClick={startCreate} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase text-black">
                     <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
                   </button>
                 </div>
@@ -560,20 +560,20 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                 ) : (
                   <ul className="mt-2 space-y-2">
                     {detail.plans.map((p) => (
-                      <li key={p.id_plan} className={`border-2 border-current p-3 ${p.is_active ? "" : "opacity-50"}`}>
+                      <li key={p.id_plan} className={`border-2 border-[#0B0B0D] bg-[#1D1810] p-3 ${p.is_active ? "" : "opacity-50"}`}>
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-black uppercase">
                             {p.nome}
                             {!p.is_active && <span className="ml-2 text-[10px]">{t("planInactive", "(inativa)")}</span>}
                           </p>
                           <div className="flex gap-1.5">
-                            <button onClick={() => startEdit(p)} className="border-2 border-current p-1" aria-label={t("editPlan", "Editar")}>
+                            <button onClick={() => startEdit(p)} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1" aria-label={t("editPlan", "Editar")}>
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => void togglePlanActive(p)} className="border-2 border-current px-2 py-1 text-[10px] font-black uppercase">
+                            <button onClick={() => void togglePlanActive(p)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[10px] font-black uppercase">
                               {p.is_active ? t("deactivate", "Desativar") : t("activate", "Ativar")}
                             </button>
-                            <button onClick={() => void deletePlan(p)} className="border-2 border-current p-1" aria-label={t("deletePlan", "Excluir")}>
+                            <button onClick={() => void deletePlan(p)} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1" aria-label={t("deletePlan", "Excluir")}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -595,8 +595,8 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
       {/* Editor de ficha */}
       {editorOpen && detail && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setEditorOpen(false)}>
-          <div className="fl-sharp flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto border-4 border-current bg-background p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between border-b-2 border-current pb-3">
+          <div className="fl-sharp flex max-h-[92vh] w-full max-w-3xl flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
               <h3 className="text-lg font-black uppercase">
                 {editingPlanId ? t("editPlanTitle", "Editar ficha") : t("newPlanTitle", "Nova ficha")} — {detail.member.member_name || t("memberFallback", "Aluno")}
               </h3>
@@ -607,23 +607,23 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className="text-[11px] font-bold uppercase opacity-70">{t("planNameLabel", "Nome da ficha")}</span>
-                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 text-sm outline-none" />
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNameLabel", "Nome da ficha")}</span>
+                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none" />
               </label>
               <label className="block">
-                <span className="text-[11px] font-bold uppercase opacity-70">{t("planNotesLabel", "Observações")}</span>
-                <input value={planNotes} onChange={(e) => setPlanNotes(e.target.value)} className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 text-sm outline-none" />
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNotesLabel", "Observações")}</span>
+                <input value={planNotes} onChange={(e) => setPlanNotes(e.target.value)} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none" />
               </label>
             </div>
 
             {/* Exercícios escolhidos */}
-            <p className="mt-4 text-[11px] font-black uppercase opacity-70">{t("chosenExercises", "Exercícios da ficha")}</p>
+            <p className="mt-4 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("chosenExercises", "Exercícios da ficha")}</p>
             {planExercises.length === 0 ? (
               <p className="mt-1 text-xs opacity-50">{t("chosenEmpty", "Escolha exercícios na biblioteca abaixo.")}</p>
             ) : (
               <ul className="mt-1 space-y-1">
                 {planExercises.map((ex, i) => (
-                  <li key={`${ex.id_exercise}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-current px-2 py-1.5 text-xs">
+                  <li key={`${ex.id_exercise}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs">
                     <span className="min-w-0 flex-1 truncate font-bold">{ex.exercise_nome}</span>
                     <label className="flex items-center gap-1">
                       <span className="opacity-50">{t("setsShort", "séries")}</span>
@@ -631,7 +631,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                         value={String(ex.sets)}
                         onChange={(e) => setPlanExercises((prev) => prev.map((p, j) => (j === i ? { ...p, sets: Number(e.target.value) || 1 } : p)))}
                         inputMode="numeric"
-                        className="w-10 border border-current bg-transparent px-1 py-0.5 text-center outline-none"
+                        className="w-10 border border-[#0B0B0D] bg-[#15120E] px-1 py-0.5 text-center outline-none"
                       />
                     </label>
                     <label className="flex items-center gap-1">
@@ -639,7 +639,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                       <input
                         value={ex.reps}
                         onChange={(e) => setPlanExercises((prev) => prev.map((p, j) => (j === i ? { ...p, reps: e.target.value } : p)))}
-                        className="w-14 border border-current bg-transparent px-1 py-0.5 text-center outline-none"
+                        className="w-14 border border-[#0B0B0D] bg-[#15120E] px-1 py-0.5 text-center outline-none"
                       />
                     </label>
                     <label className="flex items-center gap-1">
@@ -648,7 +648,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                         value={ex.load_kg === null ? "" : String(ex.load_kg)}
                         onChange={(e) => setPlanExercises((prev) => prev.map((p, j) => (j === i ? { ...p, load_kg: e.target.value.trim() === "" ? null : Number(e.target.value.replace(",", ".")) } : p)))}
                         inputMode="decimal"
-                        className="w-14 border border-current bg-transparent px-1 py-0.5 text-center outline-none"
+                        className="w-14 border border-[#0B0B0D] bg-[#15120E] px-1 py-0.5 text-center outline-none"
                       />
                     </label>
                     <button
@@ -663,23 +663,23 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
             )}
 
             {/* Biblioteca */}
-            <p className="mt-4 text-[11px] font-black uppercase opacity-70">{t("libraryTitle", "Biblioteca de exercícios")}</p>
+            <p className="mt-4 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("libraryTitle", "Biblioteca de exercícios")}</p>
             <div className="mt-1 flex flex-wrap gap-1">
               {MUSCLES.map(([value, key, fallback]) => (
                 <button
                   key={value || "all"}
                   onClick={() => setMuscle(value)}
-                  className={`border border-current px-2 py-0.5 text-[10px] font-black uppercase ${muscle === value ? "bg-yellow-400 text-black" : "opacity-60"}`}
+                  className={`border border-[#0B0B0D] bg-[#15120E] px-2 py-0.5 text-[10px] font-black uppercase ${muscle === value ? "bg-[#F2B705] text-[#0B0B0D]" : "opacity-60"}`}
                 >
                   {t(key, fallback)}
                 </button>
               ))}
             </div>
-            <div className="mt-2 flex items-center gap-2 border-2 border-current px-2 py-1.5">
+            <div className="mt-2 flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5">
               <Search className="h-3.5 w-3.5 opacity-50" />
               <input value={exQ} onChange={(e) => setExQ(e.target.value)} placeholder={t("librarySearchPh", "Buscar exercício")} className="w-full bg-transparent text-xs outline-none" />
             </div>
-            <ul className="mt-2 max-h-48 overflow-y-auto border-2 border-current">
+            <ul className="mt-2 max-h-48 overflow-y-auto border-2 border-[#0B0B0D] bg-[#1D1810]">
               {library.length === 0 ? (
                 <li className="p-3 text-xs opacity-50">{t("libraryEmpty", "Nenhum exercício encontrado.")}</li>
               ) : (
@@ -692,7 +692,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                           { id_exercise: ex.id_exercise, exercise_nome: ex.nome, sets: 3, reps: "10", load_kg: null, rest_seconds: 60 },
                         ])
                       }
-                      className="flex w-full items-center justify-between border-b border-current/20 px-3 py-1.5 text-left text-xs hover:bg-current/5"
+                      className="flex w-full items-center justify-between border-b border-[#F5F1E8]/10 px-3 py-1.5 text-left text-xs hover:bg-[#1D1810]"
                     >
                       <span>{ex.nome}</span>
                       <Plus className="h-3.5 w-3.5 opacity-60" />
@@ -702,14 +702,14 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
               )}
             </ul>
 
-            <div className="mt-4 flex justify-end gap-2 border-t-2 border-current pt-3">
-              <button onClick={() => setEditorOpen(false)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+            <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
+              <button onClick={() => setEditorOpen(false)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-xs font-black uppercase">
                 {t("cancel", "Cancelar")}
               </button>
               <button
                 onClick={() => void savePlan()}
                 disabled={saving}
-                className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
+                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-black uppercase text-[#0B0B0D] disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("planSubmitProposal", "Enviar pro aluno")}

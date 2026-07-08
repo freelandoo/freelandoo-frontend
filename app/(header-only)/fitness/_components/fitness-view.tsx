@@ -1,5 +1,10 @@
 "use client"
 
+// Painel Fitness PESSOAL — identidade Freelandoo (tabloide escuro/dourado,
+// mesma linguagem da página de comunidade): canvas #0b0804, painéis #15120E
+// com borda #0B0B0D e sombra dura dourada, chips rotacionados. Header estilo
+// perfil com a foto do usuário; academia é opcional (CTA "Conecte-se").
+
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -22,7 +27,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
-import { getToken } from "@/lib/auth"
+import { getToken, getStoredUser } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { WorkoutTodayCard } from "./workout-today-card"
@@ -71,6 +76,8 @@ type Summary = {
   academies: AcademySummary[]
 }
 
+type Me = { nome: string | null; username: string | null; avatar: string | null }
+
 const MEALS: Array<{ id: FoodLog["meal"]; key: string; fallback: string }> = [
   { id: "cafe", key: "mealCafe", fallback: "Café da manhã" },
   { id: "almoco", key: "mealAlmoco", fallback: "Almoço" },
@@ -83,6 +90,18 @@ const PAY_STATUS: Record<string, [string, string]> = {
   pending: ["payPending", "Pendente"],
   overdue: ["payOverdue", "Atrasado"],
 }
+
+// Identidade (mesma da página de comunidade)
+const GOLD = "#F2B705"
+const CYAN = "#16c8e8"
+const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
+const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
+const BTN_GOLD =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
+const BTN_DARK =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
+const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
+const INPUT = "w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none placeholder:text-[#9A938A]"
 
 function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T12:00:00Z`)
@@ -99,6 +118,7 @@ export function FitnessView() {
   const [state, setState] = useState<"loading" | "loaded" | "locked" | "error">("loading")
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [refreshKey, setRefreshKey] = useState(0)
+  const [me, setMe] = useState<Me | null>(null)
 
   const [searchOpen, setSearchOpen] = useState<FoodLog["meal"] | null>(null)
   const [tab, setTab] = useState<"local" | "off">("local")
@@ -145,6 +165,20 @@ export function FitnessView() {
   useEffect(() => {
     if (enabled) void load()
   }, [enabled, load])
+
+  // Foto/nome do usuário pro header de perfil (fallback: localStorage).
+  useEffect(() => {
+    const stored = getStoredUser()
+    if (stored) setMe({ nome: stored.nome || null, username: null, avatar: stored.avatar || null })
+    const token = getToken()
+    if (!token) return
+    fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setMe({ nome: d.nome || null, username: d.username || null, avatar: d.avatar || null })
+      })
+      .catch(() => {})
+  }, [])
 
   const doSearch = useCallback(
     async (which: "local" | "off") => {
@@ -289,9 +323,11 @@ export function FitnessView() {
 
   if (!enabled) {
     return (
-      <div className="fl-sharp mx-auto max-w-3xl px-4 py-20 text-center">
-        <Dumbbell className="mx-auto h-10 w-10 opacity-40" />
-        <p className="mt-4 text-sm opacity-70">{t("disabled", "Recurso indisponível no momento.")}</p>
+      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
+        <div>
+          <Dumbbell className="mx-auto h-10 w-10 text-[#9A938A]" />
+          <p className="mt-4 text-sm text-[#9A938A]">{t("disabled", "Recurso indisponível no momento.")}</p>
+        </div>
       </div>
     )
   }
@@ -299,16 +335,16 @@ export function FitnessView() {
   // Sem login: o painel fitness é pessoal — só precisa entrar na conta.
   if (state === "locked") {
     return (
-      <div className="fl-sharp mx-auto max-w-2xl px-4 py-16 text-center">
-        <span className="inline-flex h-16 w-16 items-center justify-center border-4 border-current">
-          <Lock className="h-7 w-7" />
-        </span>
-        <h1 className="mt-5 text-3xl font-black uppercase">{t("lockedTitle", "Painel Fitness")}</h1>
-        <p className="mx-auto mt-3 max-w-md text-sm opacity-70">
-          {t("loginText", "Entre na sua conta para acompanhar calorias, água, peso e treinos.")}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/login" className="border-2 border-current bg-yellow-400 px-5 py-3 text-xs font-black uppercase text-black">
+      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-[#F5F1E8]">
+        <div className={`${PANEL} max-w-md px-8 py-12 text-center`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
+          <span className="inline-flex h-16 w-16 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810]">
+            <Lock className="h-7 w-7 text-[#F2B705]" />
+          </span>
+          <h1 className="mt-5 text-3xl font-black uppercase leading-none">{t("lockedTitle", "Painel Fitness")}</h1>
+          <p className="mx-auto mt-3 max-w-md text-sm text-[#9A938A]">
+            {t("loginText", "Entre na sua conta para acompanhar calorias, água, peso e treinos.")}
+          </p>
+          <Link href="/login" className={`${BTN_GOLD} mt-6 px-6 py-3 text-xs`}>
             {t("loginCta", "Entrar")}
           </Link>
         </div>
@@ -318,15 +354,15 @@ export function FitnessView() {
 
   if (state === "loading" || !summary) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin opacity-50" />
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
       </div>
     )
   }
 
   if (state === "error") {
     return (
-      <div className="fl-sharp mx-auto max-w-3xl px-4 py-20 text-center text-sm opacity-70">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-sm text-[#9A938A]">
         {t("loadError", "Erro ao carregar o painel. Tente novamente.")}
       </div>
     )
@@ -336,250 +372,284 @@ export function FitnessView() {
   const waterPct = Math.min(100, Math.round((summary.water_ml / summary.goals.water_goal_ml) * 100))
 
   return (
-    <div className="fl-sharp mx-auto max-w-5xl px-4 pb-24 pt-6">
-      {/* Propostas pendentes do professor (confirmar/recusar) */}
-      <FitnessProposalsGate
-        onApplied={() => {
-          setRefreshKey((k) => k + 1)
-          void load()
-        }}
-      />
+    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
+      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
+        {/* Propostas pendentes do professor (confirmar/recusar) */}
+        <FitnessProposalsGate
+          onApplied={() => {
+            setRefreshKey((k) => k + 1)
+            void load()
+          }}
+        />
 
-      {/* Masthead + navegação de dia */}
-      <header className="border-b-4 border-current pb-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.25em] opacity-60">{t("eyebrow", "Painel Fitness")}</p>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-4xl font-black uppercase leading-none tracking-tight">{t("title", "Meu dia")}</h1>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setDate((d) => shiftDate(d, -1))} className="border-2 border-current p-2" aria-label={t("prevDay", "Dia anterior")}>
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="border-2 border-current px-3 py-2 text-xs font-black uppercase">{fmtDay}</span>
-            <button onClick={() => setDate((d) => shiftDate(d, 1))} className="border-2 border-current p-2" aria-label={t("nextDay", "Próximo dia")}>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <button onClick={() => setGoalsOpen(true)} className="border-2 border-current p-2" aria-label={t("goalsTitle", "Metas")}>
-              <Settings2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Cards do dia */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Calorias */}
-        <div className="border-2 border-current p-4">
-          <p className="flex items-center gap-1.5 text-xs font-black uppercase">
-            <Flame className="h-4 w-4" /> {t("kcalTitle", "Calorias")}
-          </p>
-          <p className="mt-2 text-3xl font-black">
-            {Math.round(summary.totals.kcal)}
-            <span className="text-sm font-bold opacity-50"> / {summary.goals.daily_kcal_goal} kcal</span>
-          </p>
-          <div className="mt-2 h-3 border-2 border-current">
-            <div className="h-full bg-yellow-400" style={{ width: `${kcalPct}%` }} />
-          </div>
-          <p className="mt-2 text-[11px] opacity-60">
-            P {Math.round(summary.totals.protein_g)}g · C {Math.round(summary.totals.carbs_g)}g · G {Math.round(summary.totals.fat_g)}g
-          </p>
-        </div>
-
-        {/* Água */}
-        <div className="border-2 border-current p-4">
-          <p className="flex items-center gap-1.5 text-xs font-black uppercase">
-            <Droplets className="h-4 w-4" /> {t("waterTitle", "Água")}
-          </p>
-          <p className="mt-2 text-3xl font-black">
-            {(summary.water_ml / 1000).toFixed(1)}
-            <span className="text-sm font-bold opacity-50"> / {(summary.goals.water_goal_ml / 1000).toFixed(1)} L</span>
-          </p>
-          <div className="mt-2 h-3 border-2 border-current">
-            <div className="h-full bg-sky-400" style={{ width: `${waterPct}%` }} />
-          </div>
-          <div className="mt-2 flex gap-2">
-            <button onClick={() => void setWater(-250)} className="border-2 border-current p-1.5" aria-label={t("waterMinus", "Remover copo")}>
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <button onClick={() => void setWater(250)} className="flex items-center gap-1 border-2 border-current bg-sky-400 px-3 py-1.5 text-[11px] font-black uppercase text-black">
-              <Plus className="h-3.5 w-3.5" /> {t("waterCup", "Copo 250ml")}
-            </button>
-          </div>
-        </div>
-
-        {/* Medidas */}
-        <div className="border-2 border-current p-4">
-          <p className="flex items-center gap-1.5 text-xs font-black uppercase">
-            <Ruler className="h-4 w-4" /> {t("measureTitle", "Peso & altura")}
-          </p>
-          {summary.latest_measurement ? (
-            <p className="mt-2 text-3xl font-black">
-              {summary.latest_measurement.weight_kg ? `${Number(summary.latest_measurement.weight_kg).toFixed(1)}kg` : "—"}
-              <span className="text-sm font-bold opacity-50">
-                {" "}
-                {summary.latest_measurement.height_cm ? `· ${Number(summary.latest_measurement.height_cm).toFixed(0)}cm` : ""}
-              </span>
-            </p>
-          ) : (
-            <p className="mt-2 text-sm opacity-60">{t("measureEmpty", "Nenhuma medição ainda.")}</p>
-          )}
-          <button onClick={() => setMeasureOpen(true)} className="mt-3 border-2 border-current px-3 py-1.5 text-[11px] font-black uppercase">
-            {t("measureCta", "Registrar")}
-          </button>
-        </div>
-
-        {/* Treino de hoje (fase 3) */}
-        <WorkoutTodayCard date={date} refreshKey={refreshKey} />
-      </div>
-
-      {/* Diário de refeições */}
-      <section className="mt-8">
-        <h2 className="flex items-center gap-2 border-b-2 border-current pb-2 text-sm font-black uppercase tracking-wide">
-          <Apple className="h-4 w-4" /> {t("diaryTitle", "Diário de refeições")}
-        </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {MEALS.map((meal) => {
-            const logs = summary.logs.filter((l) => l.meal === meal.id)
-            const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
-            return (
-              <div key={meal.id} className="border-2 border-current">
-                <div className="flex items-center justify-between border-b-2 border-current px-3 py-2">
-                  <p className="text-xs font-black uppercase">{t(meal.key, meal.fallback)}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold opacity-60">{Math.round(mealKcal)} kcal</span>
-                    <button
-                      onClick={() => {
-                        setSearchOpen(meal.id)
-                        setTab("local")
-                        setQ("")
-                        setResults([])
-                        setPicked(null)
-                        setGrams("100")
-                      }}
-                      className="border-2 border-current bg-yellow-400 p-1 text-black"
-                      aria-label={t("addFood", "Adicionar alimento")}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {logs.length === 0 ? (
-                  <p className="px-3 py-4 text-xs opacity-50">{t("mealEmpty", "Nada registrado.")}</p>
+        {/* Header estilo perfil */}
+        <header className={`relative ${PANEL}`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
+          <span className="absolute -top-3 left-4 z-10 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+            {t("eyebrow", "Painel Fitness")}
+          </span>
+          <div className="flex flex-wrap items-center justify-between gap-4 p-5 pt-7">
+            <div className="flex items-center gap-4">
+              <div
+                className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#0B0B0D] bg-[#1D1810] md:h-24 md:w-24"
+                style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
+                data-avatar
+              >
+                {me?.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={me.avatar} alt="" className="h-full w-full rounded-full object-cover" data-avatar />
                 ) : (
-                  <ul>
-                    {logs.map((l) => (
-                      <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-current/20 px-3 py-2 text-sm last:border-b-0">
-                        <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
-                        <span className="text-xs opacity-60">{Math.round(l.quantity_g)}g</span>
-                        <span className="text-xs font-bold">{Math.round(l.kcal)} kcal</span>
-                        <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
-                          <Trash2 className="h-3.5 w-3.5 opacity-50 hover:opacity-100" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <span className="flex h-full w-full items-center justify-center">
+                    <Dumbbell className="h-8 w-8 text-[#9A938A]" />
+                  </span>
                 )}
               </div>
-            )
-          })}
-        </div>
-      </section>
+              <div>
+                <h1 className="text-2xl font-black uppercase leading-none tracking-tight md:text-3xl">
+                  {me?.nome || t("title", "Meu dia")}
+                </h1>
+                {me?.username && <p className="mt-1 text-xs font-bold text-[#9A938A]">@{me.username}</p>}
+                <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#F2B705]">{fmtDay}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_DARK} p-2`} aria-label={t("nextDay", "Próximo dia")}>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button onClick={() => setGoalsOpen(true)} className={`${BTN_DARK} px-3 py-2 text-[11px]`} aria-label={t("goalsTitle", "Metas")}>
+                <Settings2 className="h-4 w-4" />
+                {t("goalsTitle", "Metas")}
+              </button>
+            </div>
+          </div>
+        </header>
 
-      {/* Academia: frequência + matrícula */}
-      <section className="mt-8">
-        <h2 className="flex items-center gap-2 border-b-2 border-current pb-2 text-sm font-black uppercase tracking-wide">
-          <CalendarDays className="h-4 w-4" /> {t("gymTitle", "Minha academia")}
-        </h2>
-        {summary.academies.length === 0 ? (
-          <div className="mt-4 border-2 border-dashed border-current p-8 text-center">
-            <Dumbbell className="mx-auto h-8 w-8 opacity-40" />
-            <p className="mx-auto mt-3 max-w-md text-sm opacity-70">
-              {t(
-                "connectText",
-                "Seu painel funciona sozinho. Conectando a uma academia parceira, você ganha frequência da catraca, mensalidades e um professor que monta seus treinos."
-              )}
+        {/* Cards do dia */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Calorias */}
+          <div className={`${PANEL} p-4`}>
+            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+              <Flame className="h-4 w-4 text-[#F2B705]" /> {t("kcalTitle", "Calorias")}
             </p>
-            <Link
-              href="/academias"
-              className="mt-4 inline-block border-2 border-current bg-yellow-400 px-6 py-3 text-xs font-black uppercase text-black"
-            >
-              {t("connectCta", "Conecte-se a uma academia")}
-            </Link>
+            <p className="mt-2 text-3xl font-black">
+              {Math.round(summary.totals.kcal)}
+              <span className="text-sm font-bold text-[#9A938A]"> / {summary.goals.daily_kcal_goal} kcal</span>
+            </p>
+            <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
+              <div className="h-full" style={{ width: `${kcalPct}%`, background: GOLD }} />
+            </div>
+            <p className="mt-2 text-[11px] text-[#9A938A]">
+              P {Math.round(summary.totals.protein_g)}g · C {Math.round(summary.totals.carbs_g)}g · G {Math.round(summary.totals.fat_g)}g
+            </p>
           </div>
-        ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            {summary.academies.map((a) => (
-              <div key={a.id_member} className="border-2 border-current p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <Link href={`/academias/${a.academy.slug}`} className="text-lg font-black uppercase leading-tight hover:underline">
-                      {a.academy.nome}
-                    </Link>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs opacity-60">
-                      <BadgeCheck className="h-3.5 w-3.5" />
-                      {a.plan_name || t("gymNoPlan", "Sem plano informado")} · {a.membership_status}
-                    </p>
-                  </div>
-                  <div className="border-2 border-current px-3 py-1 text-center">
-                    <p className="text-2xl font-black">{a.frequency_days_30d}</p>
-                    <p className="text-[10px] font-bold uppercase opacity-60">{t("gymFreq30", "dias / 30d")}</p>
-                  </div>
-                </div>
 
-                {/* Calendário do mês (dias com giro) */}
-                <MonthDots date={date} days={a.month_days} label={t("gymMonthLabel", "Presenças no mês")} />
+          {/* Água */}
+          <div className={`${PANEL} p-4`}>
+            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+              <Droplets className="h-4 w-4" style={{ color: CYAN }} /> {t("waterTitle", "Água")}
+            </p>
+            <p className="mt-2 text-3xl font-black">
+              {(summary.water_ml / 1000).toFixed(1)}
+              <span className="text-sm font-bold text-[#9A938A]"> / {(summary.goals.water_goal_ml / 1000).toFixed(1)} L</span>
+            </p>
+            <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
+              <div className="h-full" style={{ width: `${waterPct}%`, background: CYAN }} />
+            </div>
+            <div className="mt-2 flex gap-2">
+              <button onClick={() => void setWater(-250)} className={`${BTN_DARK} p-1.5`} aria-label={t("waterMinus", "Remover copo")}>
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => void setWater(250)}
+                className="flex items-center gap-1 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
+                style={{ background: CYAN }}
+              >
+                <Plus className="h-3.5 w-3.5" /> {t("waterCup", "Copo 250ml")}
+              </button>
+            </div>
+          </div>
 
-                {/* Mensalidades */}
-                {a.payments.length > 0 && (
-                  <div className="mt-3 border-t-2 border-current pt-2">
-                    <p className="text-[11px] font-black uppercase opacity-60">{t("gymPayments", "Mensalidades")}</p>
-                    <ul className="mt-1 space-y-1">
-                      {a.payments.slice(0, 4).map((p) => {
-                        const meta = PAY_STATUS[p.status] || PAY_STATUS.pending
-                        return (
-                          <li key={p.external_id} className="flex items-center justify-between text-xs">
-                            <span className="opacity-70">
-                              {p.due_date ? new Date(p.due_date).toLocaleDateString(locale) : "—"}
-                            </span>
-                            <span className="font-bold">
-                              {(p.amount_cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}
-                            </span>
-                            <span
-                              className={`border px-1.5 py-0.5 text-[10px] font-black uppercase ${p.status === "paid" ? "border-green-600 text-green-600" : p.status === "overdue" ? "border-red-600 text-red-600" : "border-current opacity-60"}`}
-                            >
-                              {t(meta[0], meta[1])}
-                            </span>
-                          </li>
-                        )
-                      })}
+          {/* Medidas */}
+          <div className={`${PANEL} p-4`}>
+            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+              <Ruler className="h-4 w-4 text-[#F2B705]" /> {t("measureTitle", "Peso & altura")}
+            </p>
+            {summary.latest_measurement ? (
+              <p className="mt-2 text-3xl font-black">
+                {summary.latest_measurement.weight_kg ? `${Number(summary.latest_measurement.weight_kg).toFixed(1)}kg` : "—"}
+                <span className="text-sm font-bold text-[#9A938A]">
+                  {" "}
+                  {summary.latest_measurement.height_cm ? `· ${Number(summary.latest_measurement.height_cm).toFixed(0)}cm` : ""}
+                </span>
+              </p>
+            ) : (
+              <p className="mt-2 text-sm text-[#9A938A]">{t("measureEmpty", "Nenhuma medição ainda.")}</p>
+            )}
+            <button onClick={() => setMeasureOpen(true)} className={`${BTN_DARK} mt-3 px-3 py-1.5 text-[11px]`}>
+              {t("measureCta", "Registrar")}
+            </button>
+          </div>
+
+          {/* Treino de hoje (fase 3) */}
+          <WorkoutTodayCard date={date} refreshKey={refreshKey} />
+        </div>
+
+        {/* Diário de refeições */}
+        <section className="mt-10">
+          <h2 className={H_SECTION}>
+            <Apple className="h-4 w-4 text-[#F2B705]" /> {t("diaryTitle", "Diário de refeições")}
+          </h2>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            {MEALS.map((meal) => {
+              const logs = summary.logs.filter((l) => l.meal === meal.id)
+              const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
+              return (
+                <div key={meal.id} className={PANEL}>
+                  <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-[#9A938A]">{Math.round(mealKcal)} kcal</span>
+                      <button
+                        onClick={() => {
+                          setSearchOpen(meal.id)
+                          setTab("local")
+                          setQ("")
+                          setResults([])
+                          setPicked(null)
+                          setGrams("100")
+                        }}
+                        className="border-2 border-[#0B0B0D] bg-[#F2B705] p-1 text-[#0B0B0D]"
+                        aria-label={t("addFood", "Adicionar alimento")}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  {logs.length === 0 ? (
+                    <p className="px-3 py-4 text-xs text-[#9A938A]">{t("mealEmpty", "Nada registrado.")}</p>
+                  ) : (
+                    <ul>
+                      {logs.map((l) => (
+                        <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0">
+                          <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
+                          <span className="text-xs text-[#9A938A]">{Math.round(l.quantity_g)}g</span>
+                          <span className="text-xs font-bold text-[#F2B705]">{Math.round(l.kcal)} kcal</span>
+                          <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
+                            <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
+                          </button>
+                        </li>
+                      ))}
                     </ul>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              )
+            })}
           </div>
-        )}
-      </section>
+        </section>
+
+        {/* Academia: frequência + matrícula */}
+        <section className="mt-10">
+          <h2 className={H_SECTION}>
+            <CalendarDays className="h-4 w-4 text-[#F2B705]" /> {t("gymTitle", "Minha academia")}
+          </h2>
+          {summary.academies.length === 0 ? (
+            <div className={`${PANEL} mt-3 px-6 py-12 text-center`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
+              <span className="inline-flex h-14 w-14 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810]">
+                <Dumbbell className="h-6 w-6 text-[#F2B705]" />
+              </span>
+              <p className="mx-auto mt-4 max-w-md text-sm text-[#9A938A]">
+                {t(
+                  "connectText",
+                  "Seu painel funciona sozinho. Conectando a uma academia parceira, você ganha frequência da catraca, mensalidades e um professor que monta seus treinos."
+                )}
+              </p>
+              <Link href="/academias" className={`${BTN_GOLD} mt-5 px-6 py-3 text-xs`}>
+                <Dumbbell className="h-4 w-4" />
+                {t("connectCta", "Conecte-se a uma academia")}
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-3 grid gap-4 lg:grid-cols-2">
+              {summary.academies.map((a) => (
+                <div key={a.id_member} className={`${PANEL} p-4`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Link href={`/academias/${a.academy.slug}`} className="text-lg font-black uppercase leading-tight hover:text-[#F2B705]">
+                        {a.academy.nome}
+                      </Link>
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9A938A]">
+                        <BadgeCheck className="h-3.5 w-3.5 text-[#F2B705]" />
+                        {a.plan_name || t("gymNoPlan", "Sem plano informado")} · {a.membership_status}
+                      </p>
+                    </div>
+                    <div className={`${INNER} px-3 py-1 text-center`}>
+                      <p className="text-2xl font-black text-[#F2B705]">{a.frequency_days_30d}</p>
+                      <p className="text-[10px] font-bold uppercase text-[#9A938A]">{t("gymFreq30", "dias / 30d")}</p>
+                    </div>
+                  </div>
+
+                  {/* Calendário do mês (dias com giro) */}
+                  <MonthDots date={date} days={a.month_days} label={t("gymMonthLabel", "Presenças no mês")} />
+
+                  {/* Mensalidades */}
+                  {a.payments.length > 0 && (
+                    <div className="mt-3 border-t-2 border-[#0B0B0D] pt-2">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gymPayments", "Mensalidades")}</p>
+                      <ul className="mt-1 space-y-1">
+                        {a.payments.slice(0, 4).map((p) => {
+                          const meta = PAY_STATUS[p.status] || PAY_STATUS.pending
+                          return (
+                            <li key={p.external_id} className="flex items-center justify-between text-xs">
+                              <span className="text-[#9A938A]">
+                                {p.due_date ? new Date(p.due_date).toLocaleDateString(locale) : "—"}
+                              </span>
+                              <span className="font-bold">
+                                {(p.amount_cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}
+                              </span>
+                              <span
+                                className={`border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${p.status === "paid" ? "bg-[#4fc95a] text-[#0B0B0D]" : p.status === "overdue" ? "bg-[#ff5a44] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
+                              >
+                                {t(meta[0], meta[1])}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Modal busca de alimento */}
       {searchOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setSearchOpen(null)}>
-          <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col border-4 border-current bg-background" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between border-b-2 border-current p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setSearchOpen(null)}>
+          <div
+            className={`fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col ${PANEL} text-[#F5F1E8]`}
+            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] p-4">
               <h2 className="text-lg font-black uppercase">{t("searchTitle", "Adicionar alimento")}</h2>
               <button onClick={() => setSearchOpen(null)} aria-label={t("close", "Fechar")}>
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
               </button>
             </div>
 
             {!picked ? (
               <>
-                <div className="flex border-b-2 border-current">
+                <div className="flex border-b-2 border-[#0B0B0D]">
                   <button
                     onClick={() => {
                       setTab("local")
                       setResults([])
                     }}
-                    className={`flex-1 px-3 py-2 text-xs font-black uppercase ${tab === "local" ? "bg-yellow-400 text-black" : ""}`}
+                    className={`flex-1 px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] ${tab === "local" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
                   >
                     {t("tabLocal", "Alimentos")}
                   </button>
@@ -588,28 +658,28 @@ export function FitnessView() {
                       setTab("off")
                       setResults([])
                     }}
-                    className={`flex-1 border-l-2 border-current px-3 py-2 text-xs font-black uppercase ${tab === "off" ? "bg-yellow-400 text-black" : ""}`}
+                    className={`flex-1 border-l-2 border-[#0B0B0D] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] ${tab === "off" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
                   >
                     {t("tabOff", "Produtos (código de barras)")}
                   </button>
                 </div>
-                <div className="flex items-center gap-2 border-b-2 border-current p-3">
-                  <Search className="h-4 w-4 opacity-50" />
+                <div className="flex items-center gap-2 border-b-2 border-[#0B0B0D] p-3">
+                  <Search className="h-4 w-4 text-[#9A938A]" />
                   <input
                     autoFocus
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && void doSearch(tab)}
                     placeholder={tab === "local" ? t("searchLocalPh", "Ex.: arroz, frango, banana...") : t("searchOffPh", "Nome do produto ou marca")}
-                    className="w-full bg-transparent text-sm outline-none"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-[#9A938A]"
                   />
-                  <button onClick={() => void doSearch(tab)} disabled={searching} className="border-2 border-current px-3 py-1 text-[11px] font-black uppercase">
+                  <button onClick={() => void doSearch(tab)} disabled={searching} className={`${BTN_GOLD} px-3 py-1 text-[11px]`}>
                     {searching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("searchCta", "Buscar")}
                   </button>
                 </div>
                 <div className="min-h-40 flex-1 overflow-y-auto">
                   {results.length === 0 ? (
-                    <p className="p-4 text-xs opacity-50">
+                    <p className="p-4 text-xs text-[#9A938A]">
                       {tab === "off"
                         ? t("offHint", "Busca no Open Food Facts — produtos industrializados do mundo todo.")
                         : t("localHint", "Base TACO (alimentos brasileiros) + itens já usados.")}
@@ -620,10 +690,10 @@ export function FitnessView() {
                         <li key={f.id_food || f.external_ref || i}>
                           <button
                             onClick={() => setPicked(f)}
-                            className="flex w-full items-center justify-between gap-2 border-b border-current/20 px-4 py-2.5 text-left text-sm hover:bg-current/5"
+                            className="flex w-full items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-4 py-2.5 text-left text-sm hover:bg-[#1D1810]"
                           >
                             <span className="min-w-0 flex-1 truncate">{f.nome}</span>
-                            <span className="text-xs font-bold opacity-60">{Math.round(f.kcal_100g)} kcal/100g</span>
+                            <span className="text-xs font-bold text-[#9A938A]">{Math.round(f.kcal_100g)} kcal/100g</span>
                           </button>
                         </li>
                       ))}
@@ -634,31 +704,27 @@ export function FitnessView() {
             ) : (
               <div className="p-4">
                 <p className="text-sm font-black">{picked.nome}</p>
-                <p className="mt-1 text-xs opacity-60">
+                <p className="mt-1 text-xs text-[#9A938A]">
                   {Math.round(picked.kcal_100g)} kcal · P {picked.protein_g}g · C {picked.carbs_g}g · G {picked.fat_g}g (100g)
                 </p>
                 <label className="mt-4 block">
-                  <span className="text-[11px] font-bold uppercase opacity-70">{t("gramsLabel", "Quantidade (g)")}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("gramsLabel", "Quantidade (g)")}</span>
                   <input
                     autoFocus
                     value={grams}
                     onChange={(e) => setGrams(e.target.value)}
                     inputMode="numeric"
-                    className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 text-lg font-black outline-none"
+                    className={`${INPUT} mt-1 text-lg font-black`}
                   />
                 </label>
-                <p className="mt-2 text-sm font-bold">
+                <p className="mt-2 text-sm font-bold text-[#F2B705]">
                   = {Math.round((picked.kcal_100g * (Number(grams) || 0)) / 100)} kcal
                 </p>
-                <div className="mt-4 flex justify-end gap-2 border-t-2 border-current pt-3">
-                  <button onClick={() => setPicked(null)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+                <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
+                  <button onClick={() => setPicked(null)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                     {t("back", "Voltar")}
                   </button>
-                  <button
-                    onClick={() => void addLog()}
-                    disabled={adding}
-                    className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
-                  >
+                  <button onClick={() => void addLog()} disabled={adding} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
                     {adding && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     {t("addSubmit", "Adicionar")}
                   </button>
@@ -671,26 +737,26 @@ export function FitnessView() {
 
       {/* Modal medição */}
       {measureOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setMeasureOpen(false)}>
-          <div className="fl-sharp w-full max-w-sm border-4 border-current bg-background p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 className="border-b-2 border-current pb-2 text-lg font-black uppercase">{t("measureModalTitle", "Registrar medição")}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setMeasureOpen(false)}>
+          <div
+            className={`fl-sharp w-full max-w-sm ${PANEL} p-5 text-[#F5F1E8]`}
+            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("measureModalTitle", "Registrar medição")}</h2>
             <label className="mt-4 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("weightLabel", "Peso (kg)")}</span>
-              <input value={weight} onChange={(e) => setWeight(e.target.value)} inputMode="decimal" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("weightLabel", "Peso (kg)")}</span>
+              <input value={weight} onChange={(e) => setWeight(e.target.value)} inputMode="decimal" className={`${INPUT} mt-1`} />
             </label>
             <label className="mt-3 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("heightLabel", "Altura (cm)")}</span>
-              <input value={height} onChange={(e) => setHeight(e.target.value)} inputMode="decimal" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("heightLabel", "Altura (cm)")}</span>
+              <input value={height} onChange={(e) => setHeight(e.target.value)} inputMode="decimal" className={`${INPUT} mt-1`} />
             </label>
-            <div className="mt-4 flex justify-end gap-2 border-t-2 border-current pt-3">
-              <button onClick={() => setMeasureOpen(false)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+            <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
+              <button onClick={() => setMeasureOpen(false)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                 {t("cancel", "Cancelar")}
               </button>
-              <button
-                onClick={() => void saveMeasurement()}
-                disabled={savingMeasure}
-                className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
-              >
+              <button onClick={() => void saveMeasurement()} disabled={savingMeasure} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
                 {savingMeasure && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("measureSubmit", "Salvar")}
               </button>
@@ -701,22 +767,26 @@ export function FitnessView() {
 
       {/* Modal metas */}
       {goalsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setGoalsOpen(false)}>
-          <div className="fl-sharp w-full max-w-sm border-4 border-current bg-background p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 className="border-b-2 border-current pb-2 text-lg font-black uppercase">{t("goalsTitle", "Metas")}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setGoalsOpen(false)}>
+          <div
+            className={`fl-sharp w-full max-w-sm ${PANEL} p-5 text-[#F5F1E8]`}
+            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("goalsTitle", "Metas")}</h2>
             <label className="mt-4 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("goalKcalLabel", "Meta diária de calorias (kcal)")}</span>
-              <input value={kcalGoal} onChange={(e) => setKcalGoal(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalKcalLabel", "Meta diária de calorias (kcal)")}</span>
+              <input value={kcalGoal} onChange={(e) => setKcalGoal(e.target.value)} inputMode="numeric" className={`${INPUT} mt-1`} />
             </label>
             <label className="mt-3 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("goalWaterLabel", "Meta diária de água (ml)")}</span>
-              <input value={waterGoal} onChange={(e) => setWaterGoal(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalWaterLabel", "Meta diária de água (ml)")}</span>
+              <input value={waterGoal} onChange={(e) => setWaterGoal(e.target.value)} inputMode="numeric" className={`${INPUT} mt-1`} />
             </label>
-            <div className="mt-4 flex justify-end gap-2 border-t-2 border-current pt-3">
-              <button onClick={() => setGoalsOpen(false)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+            <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
+              <button onClick={() => setGoalsOpen(false)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                 {t("cancel", "Cancelar")}
               </button>
-              <button onClick={() => void saveGoals()} className="border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black">
+              <button onClick={() => void saveGoals()} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
                 {t("goalsSubmit", "Salvar metas")}
               </button>
             </div>
@@ -735,7 +805,7 @@ function MonthDots({ date, days, label }: { date: string; days: string[]; label:
   const present = new Set(days.map((d) => String(d).slice(0, 10)))
   return (
     <div className="mt-3">
-      <p className="text-[11px] font-black uppercase opacity-60">{label}</p>
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{label}</p>
       <div className="mt-1 flex flex-wrap gap-1">
         {Array.from({ length: total }, (_, i) => {
           const dayStr = `${date.slice(0, 7)}-${String(i + 1).padStart(2, "0")}`
@@ -744,7 +814,7 @@ function MonthDots({ date, days, label }: { date: string; days: string[]; label:
             <span
               key={dayStr}
               title={dayStr}
-              className={`flex h-6 w-6 items-center justify-center border text-[10px] font-bold ${hit ? "border-current bg-yellow-400 text-black" : "border-current/30 opacity-40"}`}
+              className={`flex h-6 w-6 items-center justify-center border-2 text-[10px] font-bold ${hit ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#0B0B0D] bg-[#1D1810] text-[#9A938A]"}`}
             >
               {i + 1}
             </span>

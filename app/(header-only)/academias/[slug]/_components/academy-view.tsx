@@ -1,5 +1,9 @@
 "use client"
 
+// Página da academia — identidade Freelandoo (tabloide escuro/dourado, mesma
+// linguagem da página de comunidade): capa com chips rotacionados, avatar
+// sobreposto com outline dourado, tiles de estatística, painéis #15120E.
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -73,6 +77,15 @@ const STATUS_KEYS: Record<string, [string, string]> = {
   expired: ["statusExpired", "Matrícula vencida"],
   pending: ["statusPending", "Matrícula pendente"],
 }
+
+const GOLD = "#F2B705"
+const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
+const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
+const BTN_GOLD =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
+const BTN_DARK =
+  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
+const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
 
 export function AcademyView({ slug }: { slug: string }) {
   const t = useTranslations("Academies")
@@ -267,27 +280,31 @@ export function AcademyView({ slug }: { slug: string }) {
 
   if (!enabled) {
     return (
-      <div className="fl-sharp mx-auto max-w-3xl px-4 py-20 text-center">
-        <Dumbbell className="mx-auto h-10 w-10 opacity-40" />
-        <p className="mt-4 text-sm opacity-70">{t("disabled", "Recurso indisponível no momento.")}</p>
+      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
+        <div>
+          <Dumbbell className="mx-auto h-10 w-10 text-[#9A938A]" />
+          <p className="mt-4 text-sm text-[#9A938A]">{t("disabled", "Recurso indisponível no momento.")}</p>
+        </div>
       </div>
     )
   }
   if (state === "loading") {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin opacity-50" />
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
       </div>
     )
   }
   if (state === "error" || !academy) {
     return (
-      <div className="fl-sharp mx-auto max-w-3xl px-4 py-20 text-center">
-        <ShieldAlert className="mx-auto h-10 w-10 opacity-40" />
-        <p className="mt-4 text-sm opacity-70">{t("notFound", "Academia não encontrada.")}</p>
-        <Link href="/academias" className="mt-4 inline-block border-2 border-current px-4 py-2 text-xs font-black uppercase">
-          {t("backToList", "Ver academias")}
-        </Link>
+      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
+        <div>
+          <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
+          <p className="mt-4 text-sm text-[#9A938A]">{t("notFound", "Academia não encontrada.")}</p>
+          <Link href="/academias" className={`${BTN_DARK} mt-4 px-4 py-2 text-xs`}>
+            {t("backToList", "Ver academias")}
+          </Link>
+        </div>
       </div>
     )
   }
@@ -299,282 +316,288 @@ export function AcademyView({ slug }: { slug: string }) {
   const meId = getStoredUser()?.id_user || null
 
   return (
-    <div className="fl-sharp mx-auto max-w-5xl px-4 pb-24 pt-6">
-      <Link href="/academias" className="inline-flex items-center gap-1 text-xs font-bold uppercase opacity-60 hover:opacity-100">
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {t("backToList", "Ver academias")}
-      </Link>
+    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
+      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
+        <Link
+          href="/academias"
+          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {t("backToList", "Ver academias")}
+        </Link>
 
-      {/* Cabeçalho */}
-      <header className="mt-3 border-4 border-current">
-        {academy.cover_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={academy.cover_url} alt="" loading="lazy" className="h-40 w-full object-cover" />
-        )}
-        <div className="flex flex-wrap items-start justify-between gap-4 p-5">
-          <div className="flex items-start gap-4">
-            {academy.avatar_url ? (
+        {/* Cabeçalho estilo comunidade: capa + chips + avatar sobreposto */}
+        <header className="mt-3 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
+          <div className="relative h-40 bg-[#1D1810] md:h-52">
+            {academy.cover_url && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={academy.avatar_url} alt="" loading="lazy" className="h-16 w-16 rounded-full object-cover" data-avatar />
-            ) : (
-              <span className="flex h-16 w-16 items-center justify-center border-2 border-current">
-                <Dumbbell className="h-7 w-7 opacity-50" />
+              <img src={academy.cover_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+            )}
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+              {t("chipAcademy", "Academia parceira")}
+            </span>
+            {academy.cidade && (
+              <span className="absolute left-4 top-12 z-20 inline-flex -rotate-2 items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F5F1E8]">
+                <MapPin className="h-3 w-3 text-[#F2B705]" />
+                {academy.cidade}
               </span>
             )}
-            <div>
-              <h1 className="text-3xl font-black uppercase leading-none tracking-tight">{academy.nome}</h1>
-              <p className="mt-1 flex items-center gap-1 text-xs opacity-60">
-                <MapPin className="h-3 w-3" />
-                {academy.cidade || t("cityUnknown", "Cidade não informada")}
-                <span className="mx-1">·</span>
-                <Users className="h-3 w-3" />
-                {String(academy.member_count)} {t("membersSuffix", "vinculados")}
-              </p>
-              {academy.descricao && <p className="mt-2 max-w-xl text-sm opacity-75">{academy.descricao}</p>}
-            </div>
+            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
+              <span className="text-lg font-black leading-none text-[#F2B705]">{academy.member_count}</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
+                {t("membersSuffix", "vinculados")}
+              </span>
+            </span>
           </div>
 
-          {/* Meu vínculo */}
-          <div className="min-w-[220px]">
-            {ms ? (
-              <div className="border-2 border-current p-3">
-                <p className="flex items-center gap-1.5 text-xs font-black uppercase">
-                  <BadgeCheck className="h-4 w-4" />
-                  {statusMeta ? t(statusMeta[0], statusMeta[1]) : ms.membership_status}
-                </p>
-                {ms.plan_name && <p className="mt-1 text-xs opacity-70">{ms.plan_name}</p>}
-                <p className="mt-1 text-[11px] opacity-50">
-                  {t("linkedSince", "Vinculado desde")} {fmtDate(ms.linked_at)}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <Link href="/fitness" className="border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black">
-                    {t("goFitness", "Meu painel fitness")}
-                  </Link>
-                  <button onClick={() => void unlink()} className="border-2 border-current px-2 py-1.5" aria-label={t("unlinkCta", "Desvincular")}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+          <div className="bg-[#15120E] px-5 pb-5">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="flex items-end gap-4">
+                <div
+                  className="-mt-10 h-24 w-24 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:-mt-14 md:h-32 md:w-32"
+                  style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
+                >
+                  {academy.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={academy.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center">
+                      <Dumbbell className="h-9 w-9 text-[#9A938A]" />
+                    </span>
+                  )}
+                </div>
+                <div className="pb-1">
+                  <h1 className="text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">{academy.nome}</h1>
+                  {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
                 </div>
               </div>
-            ) : (
-              <button
-                onClick={() => setLinkOpen(true)}
-                className="flex w-full items-center justify-center gap-2 border-2 border-current bg-yellow-400 px-4 py-3 text-xs font-black uppercase text-black hover:bg-yellow-300"
-              >
-                <IdCard className="h-4 w-4" />
-                {t("linkCta", "Vincular matrícula (CPF)")}
-              </button>
-            )}
+
+              {/* Meu vínculo */}
+              <div className="min-w-[220px] pt-4">
+                {ms ? (
+                  <div className={`${INNER} p-3`}>
+                    <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
+                      <BadgeCheck className="h-4 w-4" />
+                      {statusMeta ? t(statusMeta[0], statusMeta[1]) : ms.membership_status}
+                    </p>
+                    {ms.plan_name && <p className="mt-1 text-xs text-[#9A938A]">{ms.plan_name}</p>}
+                    <p className="mt-1 text-[11px] text-[#9A938A]">
+                      {t("linkedSince", "Vinculado desde")} {fmtDate(ms.linked_at)}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <Link href="/fitness" className={`${BTN_GOLD} px-3 py-1.5 text-[11px]`}>
+                        {t("goFitness", "Meu painel fitness")}
+                      </Link>
+                      <button onClick={() => void unlink()} className={`${BTN_DARK} px-2 py-1.5`} aria-label={t("unlinkCta", "Desvincular")}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setLinkOpen(true)} className={`${BTN_GOLD} w-full px-4 py-3 text-xs`}>
+                    <IdCard className="h-4 w-4" />
+                    {t("linkCta", "Vincular matrícula (CPF)")}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Professores */}
-      <section className="mt-6 border-2 border-current p-4">
-        <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-          <GraduationCap className="h-4 w-4" />
-          {t("professorsTitle", "Professores")}
-        </h2>
-        {academy.professors.length === 0 ? (
-          <p className="mt-2 text-xs opacity-60">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
-        ) : (
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {academy.professors.map((p) => (
-              <li key={p.id_user} className="border-2 border-current px-3 py-1 text-xs font-bold">
-                {p.nome || p.username || p.id_user.slice(0, 8)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Painel do dono */}
-      {academy.is_owner && (
-        <section className="mt-6 border-4 border-current p-4">
-          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-            <PlugZap className="h-4 w-4" />
-            {t("ownerPanelTitle", "Gestão — conexão com o software da academia")}
+        {/* Professores */}
+        <section className={`${PANEL} mt-6 p-4`}>
+          <h2 className={H_SECTION}>
+            <GraduationCap className="h-4 w-4 text-[#F2B705]" />
+            {t("professorsTitle", "Professores")}
           </h2>
-          <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-            <div>
-              <dt className="font-bold uppercase opacity-60">{t("ownerApiUrl", "URL da API")}</dt>
-              <dd className="mt-0.5 break-all font-mono">{academy.api_base_url}</dd>
-            </div>
-            <div>
-              <dt className="font-bold uppercase opacity-60">{t("ownerSyncStatus", "Status do sync")}</dt>
-              <dd className="mt-0.5">
-                <span className={`inline-block border-2 border-current px-2 py-0.5 font-black uppercase ${academy.sync_status === "ok" ? "bg-green-400 text-black" : academy.sync_status === "never" ? "" : "bg-red-500 text-white"}`}>
-                  {academy.sync_status}
-                </span>
-                {academy.sync_error && <span className="ml-2 opacity-70">{academy.sync_error}</span>}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-bold uppercase opacity-60">{t("ownerLastSync", "Última sincronização")}</dt>
-              <dd className="mt-0.5">{academy.last_sync_at ? new Date(academy.last_sync_at).toLocaleString(locale) : "—"}</dd>
-            </div>
-          </dl>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              onClick={() => void testConnection()}
-              disabled={testing}
-              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
-            >
-              {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlugZap className="h-3.5 w-3.5" />}
-              {t("testCta", "Testar conexão")}
-            </button>
-            <button
-              onClick={() => void syncNow()}
-              disabled={syncing}
-              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
-            >
-              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-              {t("syncCta", "Sincronizar agora")}
-            </button>
-            <button
-              onClick={() => avatarRef.current?.click()}
-              disabled={uploadingMedia !== null}
-              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
-            >
-              {uploadingMedia === "avatar" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t("mediaAvatarCta", "Trocar avatar")}
-            </button>
-            <button
-              onClick={() => coverRef.current?.click()}
-              disabled={uploadingMedia !== null}
-              className="flex items-center gap-2 border-2 border-current px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
-            >
-              {uploadingMedia === "cover" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t("mediaCoverCta", "Trocar capa")}
-            </button>
-            <input
-              ref={avatarRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void uploadMedia("avatar", f)
-                e.target.value = ""
-              }}
-            />
-            <input
-              ref={coverRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void uploadMedia("cover", f)
-                e.target.value = ""
-              }}
-            />
-          </div>
-        </section>
-      )}
-
-      {/* Ranking do mês (público) */}
-      <AcademyRanking academyId={academy.id_academy} isOwner={academy.is_owner} />
-
-      {/* Mural social (público; postar = vinculado/staff) */}
-      <AcademyFeed academyId={academy.id_academy} slug={academy.slug} canPost={canPost} isOwner={academy.is_owner} meId={meId} />
-
-      {/* Treinos por data (staff) */}
-      {isStaff && <TrainingGrid academyId={academy.id_academy} />}
-
-      {/* Membros (staff) */}
-      {isStaff && (
-        <section className="mt-6 border-2 border-current p-4">
-          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-            <Users className="h-4 w-4" />
-            {t("membersTitle", "Membros vinculados")}
-          </h2>
-          {members.length === 0 ? (
-            <p className="mt-2 text-xs opacity-60">
-              {t("membersEmpty", "Ninguém vinculou a matrícula ainda. Divulgue a página da academia!")}
-            </p>
+          {academy.professors.length === 0 ? (
+            <p className="mt-2 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
           ) : (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[560px] border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b-2 border-current font-black uppercase">
-                    <th className="py-2 pr-3">{t("colMember", "Membro")}</th>
-                    <th className="py-2 pr-3">{t("colStatus", "Status")}</th>
-                    <th className="py-2 pr-3">{t("colPlan", "Plano")}</th>
-                    <th className="py-2 pr-3">{t("colLinked", "Vínculo")}</th>
-                    {academy.is_owner && <th className="py-2">{t("colProfessor", "Professor")}</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((m) => {
-                    const meta = STATUS_KEYS[m.membership_status] || STATUS_KEYS.pending
-                    return (
-                      <tr key={m.id_member} className="border-b border-current/30">
-                        <td className="py-2 pr-3 font-bold">
-                          {m.nome || m.username || m.member_name || "—"}
-                          {m.is_professor && (
-                            <span className="ml-2 border border-current px-1 text-[10px] font-black uppercase">
-                              {t("professorBadge", "Prof")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3">{t(meta[0], meta[1])}</td>
-                        <td className="py-2 pr-3">{m.plan_name || "—"}</td>
-                        <td className="py-2 pr-3">{fmtDate(m.linked_at)}</td>
-                        {academy.is_owner && (
-                          <td className="py-2">
-                            <button
-                              onClick={() => void toggleProfessor(m)}
-                              className={`border-2 border-current px-2 py-1 text-[10px] font-black uppercase ${m.is_professor ? "bg-current/10" : ""}`}
-                            >
-                              {m.is_professor ? t("demoteCta", "Remover") : t("promoteCta", "Promover")}
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {academy.professors.map((p) => (
+                <li key={p.id_user} className={`${INNER} px-3 py-1 text-xs font-bold`}>
+                  {p.nome || p.username || p.id_user.slice(0, 8)}
+                </li>
+              ))}
+            </ul>
           )}
         </section>
-      )}
+
+        {/* Painel do dono */}
+        {academy.is_owner && (
+          <section className={`${PANEL} mt-6 p-4`}>
+            <h2 className={H_SECTION}>
+              <PlugZap className="h-4 w-4 text-[#F2B705]" />
+              {t("ownerPanelTitle", "Gestão — conexão com o software da academia")}
+            </h2>
+            <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+              <div>
+                <dt className="font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("ownerApiUrl", "URL da API")}</dt>
+                <dd className="mt-0.5 break-all font-mono text-[#F5F1E8]">{academy.api_base_url}</dd>
+              </div>
+              <div>
+                <dt className="font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("ownerSyncStatus", "Status do sync")}</dt>
+                <dd className="mt-0.5">
+                  <span
+                    className={`inline-block border-2 border-[#0B0B0D] px-2 py-0.5 font-extrabold uppercase ${academy.sync_status === "ok" ? "bg-[#4fc95a] text-[#0B0B0D]" : academy.sync_status === "never" ? "bg-[#1D1810] text-[#9A938A]" : "bg-[#ff5a44] text-[#0B0B0D]"}`}
+                  >
+                    {academy.sync_status}
+                  </span>
+                  {academy.sync_error && <span className="ml-2 text-[#9A938A]">{academy.sync_error}</span>}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("ownerLastSync", "Última sincronização")}</dt>
+                <dd className="mt-0.5">{academy.last_sync_at ? new Date(academy.last_sync_at).toLocaleString(locale) : "—"}</dd>
+              </div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button onClick={() => void testConnection()} disabled={testing} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlugZap className="h-3.5 w-3.5" />}
+                {t("testCta", "Testar conexão")}
+              </button>
+              <button onClick={() => void syncNow()} disabled={syncing} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+                {t("syncCta", "Sincronizar agora")}
+              </button>
+              <button onClick={() => avatarRef.current?.click()} disabled={uploadingMedia !== null} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {uploadingMedia === "avatar" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t("mediaAvatarCta", "Trocar avatar")}
+              </button>
+              <button onClick={() => coverRef.current?.click()} disabled={uploadingMedia !== null} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {uploadingMedia === "cover" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {t("mediaCoverCta", "Trocar capa")}
+              </button>
+              <input
+                ref={avatarRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void uploadMedia("avatar", f)
+                  e.target.value = ""
+                }}
+              />
+              <input
+                ref={coverRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void uploadMedia("cover", f)
+                  e.target.value = ""
+                }}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Ranking do mês (público) */}
+        <AcademyRanking academyId={academy.id_academy} isOwner={academy.is_owner} />
+
+        {/* Mural social (público; postar = vinculado/staff) */}
+        <AcademyFeed academyId={academy.id_academy} slug={academy.slug} canPost={canPost} isOwner={academy.is_owner} meId={meId} />
+
+        {/* Treinos por data (staff) */}
+        {isStaff && <TrainingGrid academyId={academy.id_academy} />}
+
+        {/* Membros (staff) */}
+        {isStaff && (
+          <section className={`${PANEL} mt-6 p-4`}>
+            <h2 className={H_SECTION}>
+              <Users className="h-4 w-4 text-[#F2B705]" />
+              {t("membersTitle", "Membros vinculados")}
+            </h2>
+            {members.length === 0 ? (
+              <p className="mt-2 text-xs text-[#9A938A]">
+                {t("membersEmpty", "Ninguém vinculou a matrícula ainda. Divulgue a página da academia!")}
+              </p>
+            ) : (
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full min-w-[560px] border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="border-b-2 border-[#0B0B0D] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
+                      <th className="py-2 pr-3">{t("colMember", "Membro")}</th>
+                      <th className="py-2 pr-3">{t("colStatus", "Status")}</th>
+                      <th className="py-2 pr-3">{t("colPlan", "Plano")}</th>
+                      <th className="py-2 pr-3">{t("colLinked", "Vínculo")}</th>
+                      {academy.is_owner && <th className="py-2">{t("colProfessor", "Professor")}</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((m) => {
+                      const meta = STATUS_KEYS[m.membership_status] || STATUS_KEYS.pending
+                      return (
+                        <tr key={m.id_member} className="border-b border-[#F5F1E8]/10">
+                          <td className="py-2 pr-3 font-bold">
+                            {m.nome || m.username || m.member_name || "—"}
+                            {m.is_professor && (
+                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-1 text-[10px] font-extrabold uppercase text-[#0B0B0D]">
+                                {t("professorBadge", "Prof")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 pr-3">{t(meta[0], meta[1])}</td>
+                          <td className="py-2 pr-3">{m.plan_name || "—"}</td>
+                          <td className="py-2 pr-3">{fmtDate(m.linked_at)}</td>
+                          {academy.is_owner && (
+                            <td className="py-2">
+                              <button
+                                onClick={() => void toggleProfessor(m)}
+                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}
+                              >
+                                {m.is_professor ? t("demoteCta", "Remover") : t("promoteCta", "Promover")}
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
 
       {/* Modal vincular CPF */}
       {linkOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setLinkOpen(false)}>
-          <div className="fl-sharp w-full max-w-md border-4 border-current bg-background p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between border-b-2 border-current pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setLinkOpen(false)}>
+          <div
+            className={`fl-sharp w-full max-w-md ${PANEL} p-6 text-[#F5F1E8]`}
+            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
               <h2 className="text-xl font-black uppercase">{t("linkTitle", "Vincular matrícula")}</h2>
               <button onClick={() => setLinkOpen(false)} aria-label={t("close", "Fechar")}>
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
               </button>
             </div>
-            <p className="mt-3 text-xs opacity-70">
+            <p className="mt-3 text-xs text-[#9A938A]">
               {t(
                 "linkIntro",
                 "Digite o CPF cadastrado na academia. Vamos confirmar sua matrícula direto no sistema dela — na hora."
               )}
             </p>
             <label className="mt-4 block">
-              <span className="text-[11px] font-bold uppercase tracking-wide opacity-70">{t("cpfLabel", "CPF")}</span>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("cpfLabel", "CPF")}</span>
               <input
                 value={cpf}
                 onChange={(e) => setCpf(e.target.value)}
                 placeholder="000.000.000-00"
                 inputMode="numeric"
-                className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 font-mono text-lg outline-none"
+                className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 font-mono text-lg text-[#F5F1E8] outline-none placeholder:text-[#9A938A]"
               />
             </label>
-            <div className="mt-5 flex justify-end gap-2 border-t-2 border-current pt-4">
-              <button onClick={() => setLinkOpen(false)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+            <div className="mt-5 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-4">
+              <button onClick={() => setLinkOpen(false)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                 {t("cancel", "Cancelar")}
               </button>
-              <button
-                onClick={() => void link()}
-                disabled={linking}
-                className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
-              >
+              <button onClick={() => void link()} disabled={linking} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
                 {linking && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("linkSubmit", "Vincular")}
               </button>

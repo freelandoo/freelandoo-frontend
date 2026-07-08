@@ -1423,7 +1423,9 @@
     "academias": "Gimnasios",
     "academiasAria": "Gimnasios: vincula tu matrícula y abre el panel fitness",
     "toolsButton": "Herramientas",
-    "toolsClose": "Cerrar herramientas"
+    "toolsClose": "Cerrar herramientas",
+    "fitnessTool": "Fitness",
+    "fitnessAria": "Panel fitness: calorías, agua, peso y entrenamientos"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -4799,7 +4801,8 @@
     "mediaOk": "¡Imagen actualizada!",
     "mediaError": "Error al subir imagen",
     "mediaAvatarCta": "Cambiar avatar",
-    "mediaCoverCta": "Cambiar portada"
+    "mediaCoverCta": "Cambiar portada",
+    "chipAcademy": "Gimnasio asociado"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

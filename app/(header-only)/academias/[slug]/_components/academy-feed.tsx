@@ -133,25 +133,25 @@ export function AcademyFeed({
   )
 
   return (
-    <section className="mt-6 border-2 border-current p-4">
-      <h2 className="flex items-center gap-2 border-b-2 border-current pb-2 text-sm font-black uppercase tracking-wide">
-        <Megaphone className="h-4 w-4" />
+    <section className="mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+      <h2 className="flex items-center gap-2 border-b-2 border-[#0B0B0D] pb-2 text-xs font-extrabold uppercase tracking-[0.16em]">
+        <Megaphone className="h-4 w-4 text-[#F2B705]" />
         {t("feedTitle", "Mural da academia")}
       </h2>
 
       {/* Composer (membros) */}
       {canPost && (
-        <div className="mt-3 border-2 border-current p-3">
+        <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
           <textarea
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             rows={2}
             placeholder={t("composerPh", "Compartilhe com a galera da academia...")}
-            className="w-full resize-none bg-transparent text-sm outline-none"
+            className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#9A938A]"
           />
-          <div className="mt-2 flex items-center justify-between border-t border-current/30 pt-2">
+          <div className="mt-2 flex items-center justify-between border-t border-[#F5F1E8]/10 pt-2">
             <div className="flex items-center gap-2">
-              <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1 border-2 border-current px-2 py-1 text-[11px] font-black uppercase">
+              <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-2 py-1 text-[11px] font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
                 <ImageIcon className="h-3.5 w-3.5" />
                 {t("composerMedia", "Foto/vídeo")}
               </button>
@@ -163,7 +163,7 @@ export function AcademyFeed({
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
               {file && (
-                <span className="flex items-center gap-1 text-[11px] opacity-70">
+                <span className="flex items-center gap-1 text-[11px] text-[#9A938A]">
                   {file.name.slice(0, 24)}
                   <button
                     onClick={() => {
@@ -180,7 +180,7 @@ export function AcademyFeed({
             <button
               onClick={() => void publish()}
               disabled={posting}
-              className="flex items-center gap-1.5 border-2 border-current bg-yellow-400 px-3 py-1.5 text-[11px] font-black uppercase text-black disabled:opacity-50"
+              className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
             >
               {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               {t("composerSubmit", "Publicar")}
@@ -192,23 +192,23 @@ export function AcademyFeed({
       {/* Lista */}
       {state === "loading" && (
         <div className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin opacity-50" />
+          <Loader2 className="h-5 w-5 animate-spin text-[#9A938A]" />
         </div>
       )}
-      {state === "error" && <p className="mt-3 text-xs opacity-60">{t("feedError", "Erro ao carregar o mural.")}</p>}
+      {state === "error" && <p className="mt-3 text-xs text-[#9A938A]">{t("feedError", "Erro ao carregar o mural.")}</p>}
       {state === "loaded" && posts.length === 0 && (
-        <p className="mt-3 text-xs opacity-60">{t("feedEmpty", "Nenhuma publicação ainda. Seja o primeiro!")}</p>
+        <p className="mt-3 text-xs text-[#9A938A]">{t("feedEmpty", "Nenhuma publicação ainda. Seja o primeiro!")}</p>
       )}
       <ul className="mt-3 space-y-4">
         {posts.map((p) => (
-          <li key={p.id_post} className="border-2 border-current">
-            <div className="flex items-center justify-between border-b border-current/30 px-3 py-2">
-              <p className="text-xs font-black uppercase">{p.author || t("postAnon", "Membro")}</p>
+          <li key={p.id_post} className="border-2 border-[#0B0B0D] bg-[#1D1810]">
+            <div className="flex items-center justify-between border-b border-[#F5F1E8]/10 px-3 py-2">
+              <p className="text-xs font-extrabold uppercase tracking-[0.08em] text-[#F2B705]">{p.author || t("postAnon", "Membro")}</p>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] opacity-50">{new Date(p.created_at).toLocaleDateString(locale)}</span>
+                <span className="text-[10px] text-[#9A938A]">{new Date(p.created_at).toLocaleDateString(locale)}</span>
                 {(isOwner || (meId && p.id_user === meId)) && (
                   <button onClick={() => void remove(p)} aria-label={t("postDelete", "Excluir")}>
-                    <Trash2 className="h-3.5 w-3.5 opacity-50 hover:opacity-100" />
+                    <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
                   </button>
                 )}
               </div>
@@ -221,8 +221,8 @@ export function AcademyFeed({
             {p.media_url && p.media_kind === "video" && (
               <video src={p.media_url} poster={p.thumbnail_url || undefined} controls preload="none" className="max-h-[480px] w-full" />
             )}
-            <div className="flex items-center justify-end border-t border-current/30 px-3 py-1.5">
-              <button onClick={() => void share(p)} className="flex items-center gap-1 text-[11px] font-bold uppercase opacity-70 hover:opacity-100">
+            <div className="flex items-center justify-end border-t border-[#F5F1E8]/10 px-3 py-1.5">
+              <button onClick={() => void share(p)} className="flex items-center gap-1 text-[11px] font-bold uppercase text-[#9A938A] hover:text-[#F2B705]">
                 <Share2 className="h-3.5 w-3.5" />
                 {t("postShare", "Compartilhar")}
                 {p.share_count > 0 && <span>({p.share_count})</span>}

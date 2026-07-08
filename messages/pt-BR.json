@@ -1423,7 +1423,9 @@
     "academias": "Academias",
     "academiasAria": "Academias: vincular matrícula e acessar o painel fitness",
     "toolsButton": "Ferramentas",
-    "toolsClose": "Fechar ferramentas"
+    "toolsClose": "Fechar ferramentas",
+    "fitnessTool": "Fitness",
+    "fitnessAria": "Painel fitness: calorias, água, peso e treinos"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -4233,7 +4235,8 @@
     "mediaOk": "Imagem atualizada!",
     "mediaError": "Erro ao enviar imagem",
     "mediaAvatarCta": "Trocar avatar",
-    "mediaCoverCta": "Trocar capa"
+    "mediaCoverCta": "Trocar capa",
+    "chipAcademy": "Academia parceira"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

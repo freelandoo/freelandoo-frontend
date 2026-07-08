@@ -99,15 +99,15 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
   const sorted = data ? [...data.members].sort((a, b) => value(b) - value(a)) : []
 
   return (
-    <section className="mt-6 border-2 border-current p-4">
-      <div className="flex items-center justify-between border-b-2 border-current pb-2">
-        <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide">
-          <Trophy className="h-4 w-4" />
+    <section className="mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] pb-2">
+        <h2 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em]">
+          <Trophy className="h-4 w-4 text-[#F2B705]" />
           {t("rankingTitle", "Ranking do mês")}
-          {data && <span className="text-[10px] opacity-50">({data.month})</span>}
+          {data && <span className="text-[10px] text-[#9A938A]">({data.month})</span>}
         </h2>
         {isOwner && (
-          <button onClick={() => setGoalsOpen(true)} className="flex items-center gap-1 border-2 border-current px-2 py-1 text-[10px] font-black uppercase">
+          <button onClick={() => setGoalsOpen(true)} className="flex items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[10px] font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
             <Settings2 className="h-3 w-3" />
             {t("goalsCta", "Metas")}
           </button>
@@ -125,7 +125,7 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`border-2 border-current px-3 py-1 text-[11px] font-black uppercase ${tab === id ? "bg-yellow-400 text-black" : "opacity-60"}`}
+            className={`border-2 border-[#0B0B0D] px-3 py-1 text-[11px] font-extrabold uppercase ${tab === id ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
           >
             {t(key, fallback)}
           </button>
@@ -134,12 +134,12 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
 
       {state === "loading" && (
         <div className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin opacity-50" />
+          <Loader2 className="h-5 w-5 animate-spin text-[#9A938A]" />
         </div>
       )}
-      {state === "error" && <p className="mt-3 text-xs opacity-60">{t("rankingError", "Erro ao carregar o ranking.")}</p>}
+      {state === "error" && <p className="mt-3 text-xs text-[#9A938A]">{t("rankingError", "Erro ao carregar o ranking.")}</p>}
       {state === "loaded" && sorted.length === 0 && (
-        <p className="mt-3 text-xs opacity-60">{t("rankingEmpty", "Sem membros no ranking ainda.")}</p>
+        <p className="mt-3 text-xs text-[#9A938A]">{t("rankingEmpty", "Sem membros no ranking ainda.")}</p>
       )}
 
       {sorted.length > 0 && (
@@ -148,17 +148,17 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
             const v = value(m)
             const pct = target > 0 ? Math.min(100, Math.round((v / target) * 100)) : 0
             return (
-              <li key={m.id_member} className="flex items-center gap-3 border-b border-current/20 py-1.5">
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 border-current text-xs font-black ${i === 0 ? "bg-yellow-400 text-black" : ""}`}>
+              <li key={m.id_member} className="flex items-center gap-3 border-b border-[#F5F1E8]/10 py-1.5">
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[#0B0B0D] text-xs font-black ${i === 0 ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}>
                   {i < 3 ? <Medal className="h-3.5 w-3.5" /> : i + 1}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm font-bold">{m.nome || m.username || "—"}</span>
-                <div className="hidden h-2 w-28 border border-current sm:block">
-                  <div className="h-full bg-yellow-400" style={{ width: `${pct}%` }} />
+                <div className="hidden h-2 w-28 border-2 border-[#0B0B0D] bg-[#1D1810] sm:block">
+                  <div className="h-full bg-[#F2B705]" style={{ width: `${pct}%` }} />
                 </div>
                 <span className="w-16 text-right text-sm font-black">
                   {v}
-                  <span className="text-[10px] font-bold opacity-50">/{target}</span>
+                  <span className="text-[10px] font-bold text-[#9A938A]">/{target}</span>
                 </span>
               </li>
             )
@@ -168,29 +168,29 @@ export function AcademyRanking({ academyId, isOwner }: { academyId: string; isOw
 
       {/* Modal metas (dono) */}
       {goalsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setGoalsOpen(false)}>
-          <div className="fl-sharp w-full max-w-sm border-4 border-current bg-background p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="border-b-2 border-current pb-2 text-lg font-black uppercase">{t("goalsModalTitle", "Metas mensais")}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setGoalsOpen(false)}>
+          <div className="fl-sharp w-full max-w-sm border-2 border-[#0B0B0D] bg-[#15120E] p-5 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("goalsModalTitle", "Metas mensais")}</h3>
             <label className="mt-4 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("goalFreqLabel", "Frequência (dias no mês)")}</span>
-              <input value={gFreq} onChange={(e) => setGFreq(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalFreqLabel", "Frequência (dias no mês)")}</span>
+              <input value={gFreq} onChange={(e) => setGFreq(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none" />
             </label>
             <label className="mt-3 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("goalPostsLabel", "Posts no mês")}</span>
-              <input value={gPosts} onChange={(e) => setGPosts(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalPostsLabel", "Posts no mês")}</span>
+              <input value={gPosts} onChange={(e) => setGPosts(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none" />
             </label>
             <label className="mt-3 block">
-              <span className="text-[11px] font-bold uppercase opacity-70">{t("goalSharesLabel", "Compartilhamentos no mês")}</span>
-              <input value={gShares} onChange={(e) => setGShares(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-current bg-transparent px-3 py-2 outline-none" />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("goalSharesLabel", "Compartilhamentos no mês")}</span>
+              <input value={gShares} onChange={(e) => setGShares(e.target.value)} inputMode="numeric" className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none" />
             </label>
-            <div className="mt-4 flex justify-end gap-2 border-t-2 border-current pt-3">
-              <button onClick={() => setGoalsOpen(false)} className="border-2 border-current px-4 py-2 text-xs font-black uppercase">
+            <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
+              <button onClick={() => setGoalsOpen(false)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-xs font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]">
                 {t("cancel", "Cancelar")}
               </button>
               <button
                 onClick={() => void saveGoals()}
                 disabled={savingGoals}
-                className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
+                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
               >
                 {savingGoals && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("goalsSubmit", "Salvar metas")}

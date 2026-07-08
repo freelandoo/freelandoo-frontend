@@ -54,7 +54,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
       parts.push(`${t("propHeight", "Altura")}: ${Number(payload.height_cm).toFixed(0)} cm`)
     return (
       <div className="flex items-start gap-2">
-        <Ruler className="mt-0.5 h-4 w-4 shrink-0" />
+        <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
         <p className="text-sm font-bold">{parts.join(" · ")}</p>
       </div>
     )
@@ -63,7 +63,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
   if (p.kind === "kcal_goal") {
     return (
       <div className="flex items-start gap-2">
-        <Flame className="mt-0.5 h-4 w-4 shrink-0" />
+        <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
         <p className="text-sm font-bold">
           {t("propKcal", "Limite diário de calorias")}: {payload.daily_kcal_goal} kcal
         </p>
@@ -74,7 +74,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
   if (p.kind === "plan_delete") {
     return (
       <div className="flex items-start gap-2">
-        <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+        <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-[#ff5a44]" />
         <p className="text-sm font-bold">
           {t("propPlanDelete", 'Excluir a ficha "{name}"').replace("{name}", payload.plan_nome || "")}
         </p>
@@ -89,19 +89,19 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
       : t("propPlanUpdate", 'Ficha "{name}" alterada').replace("{name}", payload.nome || payload.plan_nome || "")
   return (
     <div className="flex items-start gap-2">
-      <Dumbbell className="mt-0.5 h-4 w-4 shrink-0" />
+      <Dumbbell className="mt-0.5 h-4 w-4 shrink-0 text-[#F2B705]" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold">
           {title}
           {p.kind === "plan_update" && payload.is_active === false && (
-            <span className="ml-2 text-[10px] font-black uppercase opacity-60">{t("propPlanOff", "(desativar)")}</span>
+            <span className="ml-2 text-[10px] font-extrabold uppercase text-[#9A938A]">{t("propPlanOff", "(desativar)")}</span>
           )}
           {p.kind === "plan_update" && payload.is_active === true && (
-            <span className="ml-2 text-[10px] font-black uppercase opacity-60">{t("propPlanOn", "(ativar)")}</span>
+            <span className="ml-2 text-[10px] font-extrabold uppercase text-[#9A938A]">{t("propPlanOn", "(ativar)")}</span>
           )}
         </p>
         {Array.isArray(payload.exercises) && payload.exercises.length > 0 && (
-          <ul className="mt-1 space-y-0.5 text-xs opacity-70">
+          <ul className="mt-1 space-y-0.5 text-xs text-[#9A938A]">
             {payload.exercises.map((ex, i) => (
               <li key={i} className="truncate">
                 {ex.exercise_nome} — {ex.sets}×{ex.reps}
@@ -110,7 +110,7 @@ function ProposalLine({ p }: { p: FitnessProposal }) {
             ))}
           </ul>
         )}
-        {payload.notes ? <p className="mt-1 text-xs italic opacity-60">{payload.notes}</p> : null}
+        {payload.notes ? <p className="mt-1 text-xs italic text-[#9A938A]">{payload.notes}</p> : null}
       </div>
     </div>
   )
@@ -187,36 +187,36 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
   const professorLabel = head.professor_nome || head.professor_username || t("propProfessor", "Professor")
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-4 border-current bg-background">
-        <div className="border-b-2 border-current p-4">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] opacity-60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div className="fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }}>
+        <div className="border-b-2 border-[#0B0B0D] p-4">
+          <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#F2B705]">
             <ClipboardCheck className="h-4 w-4" /> {t("propEyebrow", "Alteração do professor")}
           </p>
           <h2 className="mt-1 text-xl font-black uppercase leading-tight">
             {t("propTitle", "{who} sugeriu alterações").replace("{who}", professorLabel)}
           </h2>
-          <p className="mt-1 text-xs opacity-60">
+          <p className="mt-1 text-xs text-[#9A938A]">
             {head.academy_nome} · {new Date(head.created_at).toLocaleDateString(locale)}
           </p>
         </div>
 
         <div className="flex-1 space-y-3 p-4">
           {group.map((p) => (
-            <div key={p.id_proposal} className="border-2 border-current p-3">
+            <div key={p.id_proposal} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
               <ProposalLine p={p} />
             </div>
           ))}
-          <p className="text-xs opacity-60">
+          <p className="text-xs text-[#9A938A]">
             {t("propHint", "Nada muda no seu painel até você confirmar. Se recusar, o professor é quem refaz.")}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-current p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-[#0B0B0D] p-4">
           {head.professor_profile_id ? (
             <Link
               href={`/mensagens?with=${encodeURIComponent(head.professor_profile_id)}`}
-              className="flex items-center gap-1.5 border-2 border-current px-4 py-2 text-xs font-black uppercase"
+              className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]"
             >
               <MessageSquare className="h-3.5 w-3.5" /> {t("propChat", "Chat")}
             </Link>
@@ -227,7 +227,7 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
             <button
               onClick={() => void resolve("decline")}
               disabled={resolving !== null}
-              className="flex items-center gap-2 border-2 border-red-600 bg-red-600 px-4 py-2 text-xs font-black uppercase text-white disabled:opacity-50"
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#ff5a44] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] disabled:opacity-50"
             >
               {resolving === "decline" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t("propDecline", "Recusar")}
@@ -235,7 +235,7 @@ export function FitnessProposalsGate({ onApplied }: { onApplied: () => void }) {
             <button
               onClick={() => void resolve("accept")}
               disabled={resolving !== null}
-              className="flex items-center gap-2 border-2 border-current bg-yellow-400 px-4 py-2 text-xs font-black uppercase text-black disabled:opacity-50"
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] disabled:opacity-50"
             >
               {resolving === "accept" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t("propAccept", "Confirmar")}

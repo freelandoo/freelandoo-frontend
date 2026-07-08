@@ -335,6 +335,13 @@ function mergeNamespace(json, ns, keys, localeIndex) {
 // Botão "Academias" na toolbar do headcard do /account (gated pela flag
 // fitness_academias) — chaves no ns Account pra seguir o vocabulário da área.
 const ACCOUNT = {
+  // Botão do halter agora abre o painel /fitness direto (2026-07-08).
+  fitnessTool: ["Fitness", "Fitness", "Fitness"],
+  fitnessAria: [
+    "Painel fitness: calorias, água, peso e treinos",
+    "Fitness panel: calories, water, weight and workouts",
+    "Panel fitness: calorías, agua, peso y entrenamientos",
+  ],
   academias: ["Academias", "Gyms", "Gimnasios"],
   academiasAria: [
     "Academias: vincular matrícula e acessar o painel fitness",
@@ -342,6 +349,11 @@ const ACCOUNT = {
     "Gimnasios: vincula tu matrícula y abre el panel fitness",
   ],
 }
+
+// Redesign identidade (2026-07-08): chip da capa da academia.
+Object.assign(ACADEMIES, {
+  chipAcademy: ["Academia parceira", "Partner gym", "Gimnasio asociado"],
+})
 
 // Propostas do professor (mig 180) + painel pessoal aberto (gate removido).
 Object.assign(FITNESS, {

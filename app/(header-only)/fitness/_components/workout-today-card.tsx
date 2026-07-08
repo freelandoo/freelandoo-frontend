@@ -80,19 +80,19 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
   const plan = plans[active]
 
   return (
-    <div className="border-2 border-current p-4">
-      <p className="flex items-center gap-1.5 text-xs font-black uppercase">
-        <Dumbbell className="h-4 w-4" /> {t("todayTitle", "Treino de hoje")}
+    <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
+      <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+        <Dumbbell className="h-4 w-4 text-[#F2B705]" /> {t("todayTitle", "Treino de hoje")}
       </p>
 
       {state === "loading" && (
         <div className="flex justify-center py-6">
-          <Loader2 className="h-4 w-4 animate-spin opacity-50" />
+          <Loader2 className="h-4 w-4 animate-spin text-[#9A938A]" />
         </div>
       )}
 
       {state !== "loading" && (!plan || plans.length === 0) && (
-        <p className="mt-2 text-xs opacity-60">
+        <p className="mt-2 text-xs text-[#9A938A]">
           {t("todayEmpty", "Nenhuma ficha ativa. Seu professor pode montar seu treino na academia.")}
         </p>
       )}
@@ -105,7 +105,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                 <button
                   key={p.id_plan}
                   onClick={() => setActive(i)}
-                  className={`border border-current px-2 py-0.5 text-[10px] font-black uppercase ${i === active ? "bg-yellow-400 text-black" : "opacity-60"}`}
+                  className={`border-2 border-[#0B0B0D] px-2 py-0.5 text-[10px] font-extrabold uppercase ${i === active ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
                 >
                   {p.nome}
                 </button>
@@ -113,21 +113,21 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
             </div>
           )}
           <p className="mt-1 text-sm font-black">{plan.nome}</p>
-          <p className="text-[10px] font-bold uppercase opacity-50">
+          <p className="text-[10px] font-bold uppercase text-[#9A938A]">
             {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
           </p>
           {plan.completed_at && (
-            <p className="mt-1 border-2 border-green-600 px-2 py-0.5 text-center text-[10px] font-black uppercase text-green-600">
+            <p className="mt-1 border-2 border-[#0B0B0D] bg-[#4fc95a] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
               {t("sessionDone", "Treino concluído!")}
             </p>
           )}
           <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
             {plan.exercises.map((ex) => (
               <li key={ex.id_plan_exercise}>
-                <button onClick={() => void toggle(plan, ex)} className="flex w-full items-center gap-2 text-left text-xs hover:bg-current/5">
-                  {ex.checked ? <CheckSquare className="h-4 w-4 shrink-0 text-green-600" /> : <Square className="h-4 w-4 shrink-0 opacity-50" />}
-                  <span className={`min-w-0 flex-1 truncate ${ex.checked ? "line-through opacity-50" : ""}`}>{ex.exercise_nome}</span>
-                  <span className="shrink-0 font-bold opacity-60">
+                <button onClick={() => void toggle(plan, ex)} className="flex w-full items-center gap-2 text-left text-xs hover:bg-[#1D1810]">
+                  {ex.checked ? <CheckSquare className="h-4 w-4 shrink-0 text-[#4fc95a]" /> : <Square className="h-4 w-4 shrink-0 text-[#9A938A]" />}
+                  <span className={`min-w-0 flex-1 truncate ${ex.checked ? "line-through text-[#9A938A]" : ""}`}>{ex.exercise_nome}</span>
+                  <span className="shrink-0 font-bold text-[#9A938A]">
                     {ex.sets}×{ex.reps}
                     {ex.load_kg ? ` · ${ex.load_kg}kg` : ""}
                   </span>

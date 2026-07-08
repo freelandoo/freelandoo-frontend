@@ -1423,7 +1423,9 @@
     "academias": "Gyms",
     "academiasAria": "Gyms: link your membership and open the fitness panel",
     "toolsButton": "Tools",
-    "toolsClose": "Close tools"
+    "toolsClose": "Close tools",
+    "fitnessTool": "Fitness",
+    "fitnessAria": "Fitness panel: calories, water, weight and workouts"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -4819,7 +4821,8 @@
     "mediaOk": "Image updated!",
     "mediaError": "Error uploading image",
     "mediaAvatarCta": "Change avatar",
-    "mediaCoverCta": "Change cover"
+    "mediaCoverCta": "Change cover",
+    "chipAcademy": "Partner gym"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",
