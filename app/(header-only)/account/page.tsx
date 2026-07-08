@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell, Wrench } from "lucide-react"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { CommunityTile } from "@/components/community/community-tile"
@@ -124,6 +124,9 @@ export default function PerfilPage() {
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
   const academiasOn = useFeature("fitness_academias")
+  // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
+  // do subperfil: hover expande, click alterna).
+  const [toolsOpen, setToolsOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -1705,85 +1708,108 @@ export default function PerfilPage() {
                 )}
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]">
+              {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
+                  (hover abre, click alterna — mesmo comportamento da engrenagem
+                  do subperfil). Botões só-ícone; o nome vive no title/aria. */}
+              <div
+                className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]"
+                onMouseEnter={() => setToolsOpen(true)}
+                onMouseLeave={() => setToolsOpen(false)}
+              >
                 <button
                   type="button"
-                  onClick={() => router.push("/mensagens?tab=os")}
-                  aria-label={t("openMessages", "Abrir mensagens")}
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  title={t("messages", "Mensagens")}
+                  onClick={() => setToolsOpen((v) => !v)}
+                  aria-expanded={toolsOpen}
+                  aria-label={toolsOpen ? t("toolsClose", "Fechar ferramentas") : t("toolsButton", "Ferramentas")}
+                  title={toolsOpen ? t("toolsClose", "Fechar ferramentas") : t("toolsButton", "Ferramentas")}
+                  className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#ffc81f] active:scale-[0.96]"
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
+                  <Wrench className="h-4 w-4" />
+                  {unreadMessages > 0 && !toolsOpen && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
                   )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/account/xp")}
-                  aria-label={t("viewMetricsAria", "Ver métricas e XP")}
-                  title={t("metrics", "Métricas")}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                <div
+                  aria-hidden={!toolsOpen}
+                  className={`flex items-center gap-3 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${
+                    toolsOpen
+                      ? "max-w-[640px] translate-x-0 opacity-100"
+                      : "pointer-events-none max-w-0 -translate-x-1 opacity-0"
+                  }`}
                 >
-                  <BarChart3 className="h-4 w-4" />
-                  {t("metrics", "Métricas")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/account/gerenciamento")}
-                  aria-label={t("mgmtButtonAria", "Gerenciamento da conta: subperfis, serviços, cursos e produtos")}
-                  title={t("mgmtButton", "Gerenciar")}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                >
-                  <FolderCog className="h-4 w-4" />
-                  {t("mgmtButton", "Gerenciar")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/wallet")}
-                  aria-label={t("openWallet", "Abrir minha Carteira")}
-                  title={t("myWallet", "Minha Carteira")}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                >
-                  <Wallet className="h-4 w-4" />
-                  {t("wallet", "Carteira")}
-                </button>
-                {dataApiOn && (
                   <button
                     type="button"
-                    onClick={() => setDataConnOpen(true)}
-                    aria-label={t("dataApiAria", "Conexões de Dados: gerar token de API para ler os dados da conta")}
-                    title={t("dataApi", "Conexões de Dados")}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    onClick={() => router.push("/mensagens?tab=os")}
+                    aria-label={t("openMessages", "Abrir mensagens")}
+                    className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    title={t("messages", "Mensagens")}
                   >
-                    <Database className="h-4 w-4" />
-                    {t("dataApi", "Conexões de Dados")}
+                    <MessageCircle className="h-4 w-4" />
+                    {unreadMessages > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
+                    )}
                   </button>
-                )}
-                {atendimentoIaOn && (
                   <button
                     type="button"
-                    onClick={() => router.push("/account/atendimento-ia")}
-                    aria-label={t("atendimentoIaAria", "Atendimento IA: bot que responde suas conversas")}
-                    title={t("atendimentoIa", "Atendimento IA")}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    onClick={() => router.push("/account/xp")}
+                    aria-label={t("viewMetricsAria", "Ver métricas e XP")}
+                    title={t("metrics", "Métricas")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
                   >
-                    <Bot className="h-4 w-4" />
-                    {t("atendimentoIa", "Atendimento IA")}
+                    <BarChart3 className="h-4 w-4" />
                   </button>
-                )}
-                {academiasOn && (
                   <button
                     type="button"
-                    onClick={() => router.push("/academias")}
-                    aria-label={t("academiasAria", "Academias: vincular matrícula e acessar o painel fitness")}
-                    title={t("academias", "Academias")}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] px-3 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    onClick={() => router.push("/account/gerenciamento")}
+                    aria-label={t("mgmtButtonAria", "Gerenciamento da conta: subperfis, serviços, cursos e produtos")}
+                    title={t("mgmtButton", "Gerenciar")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
                   >
-                    <Dumbbell className="h-4 w-4" />
-                    {t("academias", "Academias")}
+                    <FolderCog className="h-4 w-4" />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/wallet")}
+                    aria-label={t("openWallet", "Abrir minha Carteira")}
+                    title={t("myWallet", "Minha Carteira")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                  >
+                    <Wallet className="h-4 w-4" />
+                  </button>
+                  {dataApiOn && (
+                    <button
+                      type="button"
+                      onClick={() => setDataConnOpen(true)}
+                      aria-label={t("dataApiAria", "Conexões de Dados: gerar token de API para ler os dados da conta")}
+                      title={t("dataApi", "Conexões de Dados")}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <Database className="h-4 w-4" />
+                    </button>
+                  )}
+                  {atendimentoIaOn && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/account/atendimento-ia")}
+                      aria-label={t("atendimentoIaAria", "Atendimento IA: bot que responde suas conversas")}
+                      title={t("atendimentoIa", "Atendimento IA")}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <Bot className="h-4 w-4" />
+                    </button>
+                  )}
+                  {academiasOn && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/academias")}
+                      aria-label={t("academiasAria", "Academias: vincular matrícula e acessar o painel fitness")}
+                      title={t("academias", "Academias")}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <Dumbbell className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setFollowingModalOpen(true)}

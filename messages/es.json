@@ -1421,7 +1421,9 @@
     "atendimentoIa": "Atención IA",
     "atendimentoIaAria": "Atención IA: bot que responde tus conversaciones",
     "academias": "Gimnasios",
-    "academiasAria": "Gimnasios: vincula tu matrícula y abre el panel fitness"
+    "academiasAria": "Gimnasios: vincula tu matrícula y abre el panel fitness",
+    "toolsButton": "Herramientas",
+    "toolsClose": "Cerrar herramientas"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

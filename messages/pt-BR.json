@@ -1421,7 +1421,9 @@
     "atendimentoIa": "Atendimento IA",
     "atendimentoIaAria": "Atendimento IA: bot que responde suas conversas",
     "academias": "Academias",
-    "academiasAria": "Academias: vincular matrícula e acessar o painel fitness"
+    "academiasAria": "Academias: vincular matrícula e acessar o painel fitness",
+    "toolsButton": "Ferramentas",
+    "toolsClose": "Fechar ferramentas"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

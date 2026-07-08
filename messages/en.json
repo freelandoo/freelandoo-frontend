@@ -1421,7 +1421,9 @@
     "atendimentoIa": "AI Assistant",
     "atendimentoIaAria": "AI Assistant: a bot that answers your conversations",
     "academias": "Gyms",
-    "academiasAria": "Gyms: link your membership and open the fitness panel"
+    "academiasAria": "Gyms: link your membership and open the fitness panel",
+    "toolsButton": "Tools",
+    "toolsClose": "Close tools"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
