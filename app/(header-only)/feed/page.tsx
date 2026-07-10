@@ -348,7 +348,6 @@ function FeedPageInner() {
         <MediaComposer
           open
           mode={composerMode}
-          initialKind="rest"
           onClose={() => setCreatorOpen(false)}
           onPosted={() => setStoryBarKey((k) => k + 1)}
         />

@@ -1,7 +1,9 @@
 // lib/camera/types.ts
 // Tipos compartilhados do módulo de câmera (Stories/Bees).
 
-export type StoryKind = "trampo" | "rest"
+// Bees v2: todo story novo é 'bee' (trampo/rest morreram; o backend ignora
+// o kind do body e força 'bee' de qualquer forma).
+export type StoryKind = "bee"
 
 export type FrameStyle = "none" | "classic" | "tabloide" | "polaroid"
 

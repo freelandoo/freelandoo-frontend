@@ -98,6 +98,10 @@ async function loadOverlayEl(desc: OverlayLayer | null): Promise<HTMLImageElemen
   return v
 }
 
+/** Link estilizado anexado a um bee (máx 3 — validado no cliente e no backend). */
+type BeeComposerLink = { label: string; url: string; style: "gold" | "paper" | "ink" }
+const MAX_BEE_LINKS = 3
+
 /** Desenha uma sobreposição PiP no canvas (mesma matemática do preview e export). */
 function paintOverlay(
   ctx: CanvasRenderingContext2D, W: number, H: number,
@@ -122,7 +126,7 @@ function paintOverlay(
   } catch { /* frame não decodável ainda */ }
 }
 
-export function MediaComposer({ open, mode, initialKind = "rest", initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
+export function MediaComposer({ open, mode, initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
   const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
@@ -141,6 +145,9 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [caption, setCaption] = useState("")
+  // Bee (story): localização livre + até 3 links estilizados.
+  const [beeLocation, setBeeLocation] = useState("")
+  const [beeLinks, setBeeLinks] = useState<BeeComposerLink[]>([])
 
   const [progress, setProgress] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -202,8 +209,6 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   }, [])
 
   const allowedAspects = aspectsFor(mode)
-  const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
-  const trampoBlocked = mode === "story" && initialKind === "trampo" && !!selectedProfile?.is_clan
 
   // ── limpeza de slides (revoga object URLs) ───────────────────────────────────
   const revokeSlides = useCallback((list: Slide[]) => {
@@ -228,6 +233,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
     setSlides([]); setActive(0); setStep("pick"); setEditTab("filtro"); setActiveTextId(null)
     setAudioPick(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null); setVideoNotice(null)
+    setBeeLocation(""); setBeeLinks([])
     setCameraOpen(false)
   }, [slides, revokeSlides])
 
@@ -586,8 +592,6 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
   }
   const setAdj = (k: keyof FilterState, v: number) => setFilter((f) => ({ ...f, [k]: v }))
 
-  const effectiveKind = trampoBlocked ? "rest" : initialKind
-
   const publish = async () => {
     if (slides.length === 0 || !selectedProfileId) return
     const token = getToken()
@@ -615,12 +619,15 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         }
         const isImageStory = result.kind === "image"
         await uploadStory({
-          token, id_profile: selectedProfileId, kind: effectiveKind,
+          token, id_profile: selectedProfileId, kind: "bee",
           mediaType: isImageStory ? "image" : "video",
           videoBlob: result.blob, posterBlob: result.posterBlob,
           durationSeconds: isImageStory ? 7 : result.durationSec,
           width: result.width, height: result.height,
-          caption: caption.trim() || undefined, filterMeta,
+          caption: caption.trim() || undefined,
+          location: beeLocation.trim() || undefined,
+          links: beeLinks.length ? beeLinks : undefined,
+          filterMeta,
           audioTrackId: audioPick?.trackId || null, audioStartMs: audioPick?.startMs ?? 0,
           onProgress: (f) => setProgress(0.5 + f * 0.5),
         })
@@ -788,11 +795,8 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
               </span>
             )}
             {mode === "story" && (
-              <span className={cn(
-                "border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em]",
-                effectiveKind === "trampo" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#F1EDE2] text-[#0B0B0D]",
-              )}>
-                {effectiveKind}
+              <span className="border-2 border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] text-[#0B0B0D]">
+                {t("bee.badge", "Bee")}
               </span>
             )}
           </h2>
@@ -888,9 +892,11 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
               mode={mode} userName={user?.nome || null}
               profiles={profiles} loadingProfiles={loadingProfiles}
               selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId}
-              ineligible={(p) => (mode === "story" && initialKind === "trampo" && p.is_clan ? t("profile.clanNoTrampo", "Clan não posta Trampo — só Rest") : null)}
+              ineligible={() => null}
               title={title} setTitle={setTitle} description={description} setDescription={setDescription}
               caption={caption} setCaption={setCaption}
+              beeLocation={beeLocation} setBeeLocation={setBeeLocation}
+              beeLinks={beeLinks} setBeeLinks={setBeeLinks}
               error={error}
             />
           )}
@@ -917,7 +923,7 @@ export function MediaComposer({ open, mode, initialKind = "rest", initialProfile
         <CameraStudio
           open={cameraOpen}
           profileId={selectedProfileId}
-          kind={effectiveKind}
+          kind="bee"
           caption={caption.trim() || undefined}
           onClose={() => setCameraOpen(false)}
           onPosted={() => { setCameraOpen(false); onPosted?.(); onClose(); router.refresh() }}
@@ -1311,7 +1317,8 @@ function Swatches({ value, onPick }: { value: string; onPick: (c: string) => voi
 
 function DetailsStep({
   mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile, ineligible,
-  title, setTitle, description, setDescription, caption, setCaption, error,
+  title, setTitle, description, setDescription, caption, setCaption,
+  beeLocation, setBeeLocation, beeLinks, setBeeLinks, error,
 }: {
   mode: string; userName: string | null
   profiles: ProfileLite[]; loadingProfiles: boolean
@@ -1320,9 +1327,37 @@ function DetailsStep({
   title: string; setTitle: (s: string) => void
   description: string; setDescription: (s: string) => void
   caption: string; setCaption: (s: string) => void
+  beeLocation: string; setBeeLocation: (s: string) => void
+  beeLinks: BeeComposerLink[]; setBeeLinks: React.Dispatch<React.SetStateAction<BeeComposerLink[]>>
   error: string | null
 }) {
   const t = useTranslations("Composer")
+  const [linkLabel, setLinkLabel] = useState("")
+  const [linkUrl, setLinkUrl] = useState("")
+  const [linkStyle, setLinkStyle] = useState<BeeComposerLink["style"]>("gold")
+  const [linkError, setLinkError] = useState<string | null>(null)
+
+  const addLink = () => {
+    const label = linkLabel.trim().slice(0, 30)
+    const url = linkUrl.trim()
+    if (!label) { setLinkError(t("bee.linkLabelRequired", "Dê um rótulo pro link")); return }
+    let parsed: URL
+    try { parsed = new URL(url) } catch { setLinkError(t("bee.linkInvalid", "URL inválida — use http(s)://")); return }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      setLinkError(t("bee.linkInvalid", "URL inválida — use http(s)://")); return
+    }
+    setLinkError(null)
+    setBeeLinks((prev) => [...prev, { label, url: parsed.toString(), style: linkStyle }])
+    setLinkLabel(""); setLinkUrl("")
+  }
+
+  const linkChipClass = (style: BeeComposerLink["style"]) => cn(
+    "inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wide",
+    style === "gold" && "bg-[#F2B705] text-[#0B0B0D]",
+    style === "paper" && "bg-[#F1EDE2] text-[#0B0B0D]",
+    style === "ink" && "border border-white/40 bg-black/60 text-white",
+  )
+
   return (
     <div className="h-full overflow-y-auto px-4 py-4">
       <Label>{t("details.publishAs", "Publicar como")}</Label>
@@ -1345,6 +1380,81 @@ function DetailsStep({
             className="fl-input mt-2 w-full resize-none border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
           />
           <Counter n={caption.length} max={MAX_CAPTION} />
+
+          {/* Localização do bee (opcional) */}
+          <div className="mt-4">
+            <Label>{t("bee.locationLabel", "Localização (opcional)")}</Label>
+            <input
+              value={beeLocation}
+              onChange={(e) => setBeeLocation(e.target.value.slice(0, 80))}
+              placeholder={t("bee.locationPlaceholder", "Ex.: São Bernardo do Campo/SP")}
+              className="mt-2 w-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
+            />
+            <Counter n={beeLocation.length} max={80} />
+          </div>
+
+          {/* Links estilizados do bee (máx 3) */}
+          <div className="mt-4">
+            <Label>{t("bee.linksTitle", "Links estilizados (até 3)")}</Label>
+            {beeLinks.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {beeLinks.map((link, i) => (
+                  <span key={`${link.url}-${i}`} className={linkChipClass(link.style)}>
+                    {link.label}
+                    <button
+                      type="button"
+                      onClick={() => setBeeLinks((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={t("bee.linkRemove", "Remover link")}
+                      className="ml-1 opacity-70 transition hover:opacity-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {beeLinks.length < MAX_BEE_LINKS && (
+              <div className="mt-2 space-y-2">
+                <input
+                  value={linkLabel}
+                  onChange={(e) => setLinkLabel(e.target.value.slice(0, 30))}
+                  placeholder={t("bee.linkLabel", "Rótulo (ex.: Orçamento)")}
+                  className="w-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
+                />
+                <input
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value.slice(0, 500))}
+                  placeholder={t("bee.linkUrl", "URL (https://…)")}
+                  inputMode="url"
+                  className="w-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2 text-sm text-[#0B0B0D] placeholder:text-[#0B0B0D]/40 focus:outline-none"
+                />
+                <div className="flex items-center gap-2">
+                  {(["gold", "paper", "ink"] as const).map((style) => (
+                    <button
+                      key={style}
+                      type="button"
+                      onClick={() => setLinkStyle(style)}
+                      className={cn(
+                        linkChipClass(style),
+                        "border-2",
+                        linkStyle === style ? "border-[#F2B705]" : "border-transparent opacity-60",
+                      )}
+                    >
+                      {style === "gold" ? t("bee.styleGold", "Dourado") : style === "paper" ? t("bee.stylePaper", "Papel") : t("bee.styleInk", "Tinta")}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addLink}
+                    className="ml-auto border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[11px] font-black uppercase tracking-[0.06em] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] active:translate-x-px active:translate-y-px active:shadow-none"
+                  >
+                    {t("bee.linkAdd", "Adicionar")}
+                  </button>
+                </div>
+                {linkError && <p className="text-xs text-red-300">{linkError}</p>}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <>

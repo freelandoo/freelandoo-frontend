@@ -64,10 +64,28 @@ const ACCOUNT = {
   openBee: ["Abrir bee", "Open bee", "Abrir bee"],
 }
 
+// ── F3: composer do bee (ns Composer) — localização + links estilizados ─────
+const COMPOSER = {
+  "bee.badge": ["Bee", "Bee", "Bee"],
+  "bee.locationLabel": ["Localização (opcional)", "Location (optional)", "Ubicación (opcional)"],
+  "bee.locationPlaceholder": ["Ex.: São Bernardo do Campo/SP", "E.g.: São Bernardo do Campo/SP", "Ej.: São Bernardo do Campo/SP"],
+  "bee.linksTitle": ["Links estilizados (até 3)", "Styled links (up to 3)", "Enlaces con estilo (hasta 3)"],
+  "bee.linkLabel": ["Rótulo (ex.: Orçamento)", "Label (e.g.: Quote)", "Etiqueta (ej.: Presupuesto)"],
+  "bee.linkUrl": ["URL (https://…)", "URL (https://…)", "URL (https://…)"],
+  "bee.linkAdd": ["Adicionar", "Add", "Añadir"],
+  "bee.linkRemove": ["Remover link", "Remove link", "Quitar enlace"],
+  "bee.linkInvalid": ["URL inválida — use http(s)://", "Invalid URL — use http(s)://", "URL inválida — usa http(s)://"],
+  "bee.linkLabelRequired": ["Dê um rótulo pro link", "Give the link a label", "Ponle una etiqueta al enlace"],
+  "bee.styleGold": ["Dourado", "Gold", "Dorado"],
+  "bee.stylePaper": ["Papel", "Paper", "Papel"],
+  "bee.styleInk": ["Tinta", "Ink", "Tinta"],
+}
+
 const NAMESPACES = [
   ["Bees", BEES],
   ["Stories", STORIES],
   ["Account", ACCOUNT],
+  ["Composer", COMPOSER],
 ]
 
 function mergeNamespace(json, ns, keys, localeIndex) {

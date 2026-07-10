@@ -2756,7 +2756,20 @@
     "carousel.moveRight": "Mover a la derecha",
     "carousel.hintMulti": "Cada foto tiene su propio recorte, filtro y texto.",
     "carousel.hintAdd": "Toca + para crear un carrusel (hasta {max} fotos).",
-    "pick.carouselHint": "Consejo: elige varias fotos para crear un carrusel."
+    "pick.carouselHint": "Consejo: elige varias fotos para crear un carrusel.",
+    "bee.badge": "Bee",
+    "bee.locationLabel": "Ubicación (opcional)",
+    "bee.locationPlaceholder": "Ej.: São Bernardo do Campo/SP",
+    "bee.linksTitle": "Enlaces con estilo (hasta 3)",
+    "bee.linkLabel": "Etiqueta (ej.: Presupuesto)",
+    "bee.linkUrl": "URL (https://…)",
+    "bee.linkAdd": "Añadir",
+    "bee.linkRemove": "Quitar enlace",
+    "bee.linkInvalid": "URL inválida — usa http(s)://",
+    "bee.linkLabelRequired": "Ponle una etiqueta al enlace",
+    "bee.styleGold": "Dorado",
+    "bee.stylePaper": "Papel",
+    "bee.styleInk": "Tinta"
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",

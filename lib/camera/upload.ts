@@ -63,6 +63,10 @@ export interface UploadStoryParams {
   width: number
   height: number
   caption?: string
+  /** Localização livre do bee (≤80 chars). Opcional. */
+  location?: string
+  /** Links estilizados do bee (máx 3). Opcional. */
+  links?: { label: string; url: string; style: "gold" | "paper" | "ink" }[]
   filterMeta: FilterMeta
   /** Música anexada (metadado — não queimada). Opcional. */
   audioTrackId?: string | null
@@ -112,6 +116,8 @@ export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory>
     width: p.width,
     height: p.height,
     caption: p.caption || undefined,
+    location: p.location || undefined,
+    links: p.links && p.links.length ? p.links : undefined,
     filter_meta: p.filterMeta,
     audio_track_id: p.audioTrackId || undefined,
     audio_start_ms: p.audioTrackId ? (p.audioStartMs ?? 0) : undefined,

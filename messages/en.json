@@ -2776,7 +2776,20 @@
     "carousel.moveRight": "Move right",
     "carousel.hintMulti": "Each photo has its own crop, filter and text.",
     "carousel.hintAdd": "Tap + to build a carousel (up to {max} photos).",
-    "pick.carouselHint": "Tip: pick several photos to build a carousel."
+    "pick.carouselHint": "Tip: pick several photos to build a carousel.",
+    "bee.badge": "Bee",
+    "bee.locationLabel": "Location (optional)",
+    "bee.locationPlaceholder": "E.g.: São Bernardo do Campo/SP",
+    "bee.linksTitle": "Styled links (up to 3)",
+    "bee.linkLabel": "Label (e.g.: Quote)",
+    "bee.linkUrl": "URL (https://…)",
+    "bee.linkAdd": "Add",
+    "bee.linkRemove": "Remove link",
+    "bee.linkInvalid": "Invalid URL — use http(s)://",
+    "bee.linkLabelRequired": "Give the link a label",
+    "bee.styleGold": "Gold",
+    "bee.stylePaper": "Paper",
+    "bee.styleInk": "Ink"
   },
   "Chamado": {
     "titleService": "Open a service request",

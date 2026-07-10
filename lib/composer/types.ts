@@ -116,8 +116,6 @@ export function targetWidthFor(mode: ComposerMode, kind: MediaKind): number {
 export interface ComposerProps {
   open: boolean
   mode: ComposerMode
-  /** Só story: canal herdado do lugar (feed→rest / enxame→trampo). */
-  initialKind?: StoryKind
   initialProfileId?: string | null
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta comunidade. */
   communityId?: string | null
