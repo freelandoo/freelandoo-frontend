@@ -79,6 +79,9 @@ const ACCOUNT = {
   chCurtos: ["Curtos", "Shorts", "Cortos"],
   kindCurto: ["Curto", "Short", "Corto"],
   kindStoryBee: ["Bee", "Bee", "Bee"],
+  // Anel neon do avatar (/account) — clique vai pro /bees quando há bees vivos
+  viewBees: ["Ver bees", "View bees", "Ver bees"],
+  avatarViewBees: ["Ver seus bees", "View your bees", "Ver tus bees"],
 }
 
 // ── F4: perfil público (ns Profile) — aba/validações de Curtos ──────────────

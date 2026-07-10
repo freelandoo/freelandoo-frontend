@@ -1438,7 +1438,9 @@
     "chStoryBees": "Bees (stories)",
     "chCurtos": "Shorts",
     "kindCurto": "Short",
-    "kindStoryBee": "Bee"
+    "kindStoryBee": "Bee",
+    "viewBees": "View bees",
+    "avatarViewBees": "View your bees"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

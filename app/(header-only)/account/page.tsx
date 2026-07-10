@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell, Wrench } from "lucide-react"
+import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { CommunityTile } from "@/components/community/community-tile"
@@ -138,6 +139,9 @@ export default function PerfilPage() {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
   const [fotoTemp, setFotoTemp] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  // ids dos bees vivos do usuário (ORDER BY created_at ASC no backend —
+  // o último da lista é o mais recente, usado no deep-link do anel neon).
+  const [myBees, setMyBees] = useState<string[]>([])
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
@@ -231,6 +235,24 @@ export default function PerfilPage() {
     fetch("/api/manifestations/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setManifestation(data) })
+      .catch(() => {})
+  }, [])
+
+  // Bees vivos do usuário: acende o anel neon no avatar e o clique vai pro /bees
+  // (deep-link no bee mais recente). Sem bees, o clique segue trocando a foto.
+  React.useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+    fetch("/api/me/stories", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { items?: Array<{ id_story: string; kind?: string }> } | null) => {
+        if (data && Array.isArray(data.items)) {
+          setMyBees(data.items.filter((s) => s.kind === "bee").map((s) => s.id_story))
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -1590,30 +1612,82 @@ export default function PerfilPage() {
             <div className="relative px-5 pb-6 md:px-7">
               <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
                 <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    aria-label={t("changeAvatar", "Trocar foto de perfil")}
-                    title={t("changeAvatar", "Trocar foto de perfil")}
-                    className="group relative flex aspect-[4/5] w-24 shrink-0 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] transition-transform duration-300 hover:rotate-0 md:w-28"
-                  >
-                    <Avatar className="h-full w-full rounded-none">
-                      {perfil.avatar && (
-                        <AvatarImage
-                          src={perfil.avatar}
-                          alt={perfil.nome}
-                          className="rounded-none object-cover"
-                        />
-                      )}
-                      <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
-                        {getInitials(perfil.nome)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <Camera className="h-5 w-5" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">{t("changePhoto", "Trocar foto")}</span>
-                    </span>
-                  </button>
+                  <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
+                    {/* Anel neon rosa quando há bees vivos: conic-gradient com um
+                        facho quase branco que gira (framer-motion) + camada
+                        desfocada por baixo fazendo o glow. Some sem bees. */}
+                    {myBees.length > 0 && (
+                      <>
+                        <div className="pointer-events-none absolute -inset-2.5 overflow-hidden rounded-2xl opacity-80 blur-[7px]">
+                          <motion.div
+                            className="absolute -inset-[120%]"
+                            style={{
+                              background:
+                                "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)",
+                            }}
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
+                          />
+                        </div>
+                        <div className="pointer-events-none absolute -inset-1.5 overflow-hidden rounded-2xl">
+                          <motion.div
+                            className="absolute -inset-[120%]"
+                            style={{
+                              background:
+                                "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)",
+                            }}
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
+                          />
+                        </div>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (myBees.length > 0) {
+                          router.push(`/bees?bee=${myBees[myBees.length - 1]}`)
+                        } else {
+                          setIsUploadModalOpen(true)
+                        }
+                      }}
+                      aria-label={myBees.length > 0 ? t("avatarViewBees", "Ver seus bees") : t("changeAvatar", "Trocar foto de perfil")}
+                      title={myBees.length > 0 ? t("avatarViewBees", "Ver seus bees") : t("changeAvatar", "Trocar foto de perfil")}
+                      className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D]"
+                    >
+                      <Avatar className="h-full w-full rounded-none">
+                        {perfil.avatar && (
+                          <AvatarImage
+                            src={perfil.avatar}
+                            alt={perfil.nome}
+                            className="rounded-none object-cover"
+                          />
+                        )}
+                        <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
+                          {getInitials(perfil.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        {myBees.length > 0 ? <Sparkles className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          {myBees.length > 0 ? t("viewBees", "Ver bees") : t("changePhoto", "Trocar foto")}
+                        </span>
+                      </span>
+                    </button>
+                    {/* Com o anel ativo o clique no avatar vai pro /bees — este
+                        badge vira a única entrada pra trocar a foto. */}
+                    {myBees.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsUploadModalOpen(true)}
+                        aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                        title={t("changeAvatar", "Trocar foto de perfil")}
+                        className="absolute -bottom-2 -right-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705]"
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
                     {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto.

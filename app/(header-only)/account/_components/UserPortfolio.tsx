@@ -13,6 +13,7 @@ import {
   Heart,
   X,
   AlertCircle,
+  Clapperboard,
   Hexagon,
   GraduationCap,
   UserRound,
@@ -590,7 +591,7 @@ export function UserPortfolio({
               aria-label={tr("curtosLabel", "Curtos")}
               className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
             >
-              <Hexagon className="h-4 w-4" />
+              <Clapperboard className="h-4 w-4" />
             </button>
           </HoverHint>
           {coursesOn && (
