@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Check, Loader2, MoreHorizontal, Radio, Sparkles } from "lucide-react"
+import { Loader2, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
@@ -23,8 +23,6 @@ const LivesView = dynamic(
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
-
-type BeeScope = "global" | "following"
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -62,12 +60,6 @@ function BeesPageInner() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [muted, setMuted] = useState(true)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
-  // Filtro da timeline (3 pontinhos): Global (padrão) ou Quem acompanho.
-  const [scope, setScope] = useState<BeeScope>(() => {
-    if (typeof window === "undefined") return "global"
-    return window.localStorage.getItem("bees_scope") === "following" ? "following" : "global"
-  })
-  const [menuOpen, setMenuOpen] = useState(false)
   // Aba Lives dentro do próprio /bees (sem header de site): só um botão flutuante
   // que troca o conteúdo para a lista de lives.
   const [view, setView] = useState<"bees" | "lives">("bees")
@@ -117,7 +109,6 @@ function BeesPageInner() {
     const sp = new URLSearchParams()
     if (nextCursor) sp.set("cursor", nextCursor)
     sp.set("limit", String(PAGE_LIMIT))
-    sp.set("scope", scope)
 
     const res = await fetch(`/api/bees/timeline?${sp.toString()}`, {
       method: "GET",
@@ -133,13 +124,10 @@ function BeesPageInner() {
     setItems((prev) => (replace ? data.items : dedupeBees(prev, data.items)))
     setCursor(data.next_cursor)
     setHasMore(!!data.has_more)
-  }, [scope])
+  }, [])
 
-  // Carga inicial + recarga ao trocar o scope (persiste a escolha).
+  // Carga inicial
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("bees_scope", scope)
-    }
     let cancelled = false
     setLoadingInitial(true)
     setError(null)
@@ -154,7 +142,7 @@ function BeesPageInner() {
     return () => {
       cancelled = true
     }
-  }, [fetchPage, scope, t])
+  }, [fetchPage, t])
 
   // Deep-link: busca o bee apontado e coloca no topo da timeline.
   useEffect(() => {
@@ -216,39 +204,6 @@ function BeesPageInner() {
         <Radio className={cn("h-4 w-4", liveCount > 0 && "animate-pulse")} /> {t("liveButton", "Live")}
       </motion.button>
 
-      {/* Menu 3 pontinhos brancos — filtro Global / Quem acompanho */}
-      <div className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-50">
-        <button
-          type="button"
-          aria-label={t("filterMenuAria", "Filtrar timeline")}
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
-        >
-          <MoreHorizontal className="h-7 w-7" />
-        </button>
-        {menuOpen && (
-          <div className="fl-sharp absolute left-0 top-10 w-52 border-2 border-[#0B0B0D] bg-[#15120E] shadow-[4px_4px_0_#F2B705]">
-            {(["global", "following"] as const).map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false)
-                  if (opt !== scope) setScope(opt)
-                }}
-                className={cn(
-                  "flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold",
-                  scope === opt ? "bg-[#F2B705] text-[#0B0B0D]" : "text-white/85 hover:bg-white/5",
-                )}
-              >
-                {opt === "global" ? t("scopeGlobal", "Global") : t("scopeFollowing", "Quem acompanho")}
-                {scope === opt && <Check className="h-4 w-4" />}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {needsLogin ? (
         <LoginState
           title={t("loginTitle", "Entre pra ver os bees")}
@@ -262,12 +217,8 @@ function BeesPageInner() {
         <ErrorState message={error} onRetry={() => fetchPage(null, true)} retryLabel={t("retry", "Tentar de novo")} />
       ) : items.length === 0 ? (
         <EmptyState
-          title={scope === "following" ? t("emptyFollowingTitle", "Nada por aqui ainda") : t("emptyTimelineTitle", "Ainda não tem bees por aqui")}
-          description={
-            scope === "following"
-              ? t("emptyFollowing", "Ninguém que você acompanha postou um bee. Mude pra Global no menu acima.")
-              : t("emptyTimelineDescription", "Bees são os stories da Freelandoo. Quando alguém publicar, eles aparecem aqui — os melhores ficam no ar por até 7 dias.")
-          }
+          title={t("emptyTimelineTitle", "Ainda não tem bees por aqui")}
+          description={t("emptyTimelineDescription", "Bees são os stories da Freelandoo. Quando alguém publicar, eles aparecem aqui — os melhores ficam no ar por até 7 dias.")}
         />
       ) : (
         <>
