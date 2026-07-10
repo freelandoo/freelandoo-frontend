@@ -246,8 +246,8 @@ function FeedPageInner() {
             defaultAccent={accent}
             showCreateSlot
             onCreate={() => { setComposerMode("story"); setCreatorOpen(true) }}
-            onOpenProfile={(entry, all) => {
-              const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
+            onOpenUser={(entry, all) => {
+              const idx = all.findIndex((e) => e.id_user === entry.id_user)
               setStoryOpen({ entries: all, index: Math.max(0, idx) })
             }}
           />

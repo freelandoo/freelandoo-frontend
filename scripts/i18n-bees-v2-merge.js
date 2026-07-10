@@ -44,6 +44,7 @@ const BEES = {
 
 // ── F2: barra de ações do StoryPlayer (ns Stories) ──────────────────────────
 const STORIES = {
+  yourBees: ["Seus bees", "Your bees", "Tus bees"],
   like: ["Curtir", "Like", "Me gusta"],
   unlike: ["Descurtir", "Unlike", "Quitar me gusta"],
   comments: ["Comentários", "Comments", "Comentarios"],

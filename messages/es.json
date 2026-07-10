@@ -1773,7 +1773,8 @@
     "unlike": "Quitar me gusta",
     "comments": "Comentarios",
     "share": "Compartir",
-    "linkOpenAria": "Abrir enlace"
+    "linkOpenAria": "Abrir enlace",
+    "yourBees": "Tus bees"
   },
   "Search": {
     "noResultsMessage": "Ningún profesional con estos filtros.",

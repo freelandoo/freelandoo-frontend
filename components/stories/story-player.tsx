@@ -46,8 +46,8 @@ interface StoryPlayerProps {
   entries: StoryBarEntry[]
   initialIndex: number
   onClose: () => void
-  /** Chamado quando uma story do perfil é vista, para atualizar borda da StoryBar */
-  onProfileViewed?: (id_profile: string) => void
+  /** Chamado quando uma story do user é vista, para atualizar borda da StoryBar */
+  onUserViewed?: (id_user: string) => void
 }
 
 function initials(name: string | null | undefined) {
@@ -66,7 +66,7 @@ function formatRelative(iso: string) {
   return `${Math.floor(h / 24)}d`
 }
 
-export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }: StoryPlayerProps) {
+export function StoryPlayer({ entries, initialIndex, onClose, onUserViewed }: StoryPlayerProps) {
   const t = useTranslations("Stories")
   const [profileIndex, setProfileIndex] = useState(initialIndex)
   const [storyIndex, setStoryIndex] = useState(0)
@@ -83,7 +83,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
 
   const activeEntry = entries[profileIndex]
   const activeStory = stories[storyIndex]
-  const machineAccent = activeEntry?.machine?.color_accent || "#fbbf24"
+  const machineAccent = "#fbbf24"
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const reportedRef = useRef<Set<string>>(new Set())
@@ -102,7 +102,7 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
       return
     }
 
-    fetch(`/api/stories/by-profile/${encodeURIComponent(activeEntry.id_profile)}`, {
+    fetch(`/api/stories/by-user/${encodeURIComponent(activeEntry.id_user)}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     })
@@ -148,9 +148,9 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
         next.add(id_story)
         return next
       })
-      if (activeEntry) onProfileViewed?.(activeEntry.id_profile)
+      if (activeEntry) onUserViewed?.(activeEntry.id_user)
     } catch { /* silent */ }
-  }, [activeEntry, onProfileViewed])
+  }, [activeEntry, onUserViewed])
 
   const goNextStory = useCallback(() => {
     if (storyIndex < stories.length - 1) {
@@ -406,20 +406,27 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
             ))}
           </div>
 
+          {/* Header mostra o SUBPERFIL que postou o bee ativo (a faixa agrupa
+              por user, então cada bee pode vir de um subperfil diferente). */}
           <div className="pointer-events-auto mt-3 flex items-center gap-2">
             <Avatar
               className="h-8 w-8 ring-1"
               style={{ ["--tw-ring-color" as never]: `${machineAccent}aa` } as React.CSSProperties}
             >
-              {activeEntry.profile.avatar_url && (
-                <AvatarImage src={activeEntry.profile.avatar_url} alt={activeEntry.profile.display_name || ""} />
+              {(activeStory?.profile?.avatar_url || activeEntry.user.avatar_url) && (
+                <AvatarImage
+                  src={activeStory?.profile?.avatar_url || activeEntry.user.avatar_url || undefined}
+                  alt={activeStory?.profile?.display_name || activeEntry.user.name || ""}
+                />
               )}
               <AvatarFallback className="bg-zinc-800 text-[10px] font-semibold text-white">
-                {initials(activeEntry.profile.display_name)}
+                {initials(activeStory?.profile?.display_name || activeEntry.user.name)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">{activeEntry.profile.display_name || "Perfil"}</p>
+              <p className="truncate text-sm font-semibold text-white">
+                {activeStory?.profile?.display_name || activeEntry.user.name || activeEntry.user.username || "Perfil"}
+              </p>
               {activeStory && (
                 <p className="text-[11px] text-white/65">{formatRelative(activeStory.created_at)}</p>
               )}
