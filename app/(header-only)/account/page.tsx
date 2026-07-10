@@ -1491,7 +1491,7 @@ export default function PerfilPage() {
                 }
               >
                 <Sparkles className="h-4 w-4" />
-                {t("menuBees", "Bees")}
+                {t("menuCurtos", "Curto")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {

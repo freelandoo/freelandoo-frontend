@@ -167,7 +167,7 @@ export function AdminAlerts() {
                         {p.title || <span className="italic text-muted-foreground">Sem título</span>}
                       </p>
                       <p className="truncate text-[11px] text-muted-foreground">
-                        {(p.owner_name || p.owner_username || "—")} · {p.feed_kind === "bees" ? "Bees" : "Feed"}
+                        {(p.owner_name || p.owner_username || "—")} · {p.feed_kind === "bees" ? "Curtos" : "Feed"}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-300">

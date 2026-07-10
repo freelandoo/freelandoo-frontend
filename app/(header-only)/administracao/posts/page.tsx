@@ -300,7 +300,7 @@ function AdminPostsInner({ embedded = false }: { embedded?: boolean }) {
                             {it.title || <span className="text-muted-foreground italic">Sem título</span>}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {it.feed_kind === "bees" ? "Bees" : "Feed"}
+                            {it.feed_kind === "bees" ? "Curtos" : "Feed"}
                           </p>
                         </div>
                       </button>
@@ -432,6 +432,9 @@ function AdminPostsInner({ embedded = false }: { embedded?: boolean }) {
             </button>
           </div>
         )}
+
+        {/* Bees (stories) denunciados — Bees v2, tb_story_report */}
+        <BeeReportsSection />
       </main>
 
       {previewId && (
@@ -542,6 +545,157 @@ function AdminPostsInner({ embedded = false }: { embedded?: boolean }) {
         </div>
       )}
     </div>
+  )
+}
+
+// ── Bees (stories) denunciados — Bees v2 ────────────────────────────────────
+// Listagem simples (admin pt-only): GET /bees/admin/reports; ações Remover
+// (soft delete + resolve) e Resolver (só limpa as denúncias pendentes).
+type BeeReportRow = {
+  id_story: string
+  caption: string | null
+  thumbnail_url: string | null
+  video_url: string
+  created_at: string
+  deleted_at: string | null
+  likes_count: number
+  comments_count: number
+  profile_display_name: string | null
+  username: string | null
+  reports_count: number
+  last_reported_at: string
+  categories: string[]
+}
+
+function BeeReportsSection() {
+  const [rows, setRows] = useState<BeeReportRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actingId, setActingId] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    const tk = getToken()
+    if (!tk) { setLoading(false); return }
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/bees/admin/reports`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setRows(Array.isArray(data.items) ? data.items : [])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar bees denunciados")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const act = async (id_story: string, action: "remove" | "resolve") => {
+    const tk = getToken()
+    if (!tk) return
+    if (action === "remove" && !confirm("Remover esse bee? Ele some da timeline imediatamente.")) return
+    setActingId(id_story)
+    try {
+      const res = await fetch(`/api/bees/admin/${id_story}/${action}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tk}` },
+      })
+      if (res.ok) setRows((prev) => prev.filter((r) => r.id_story !== id_story))
+    } finally {
+      setActingId(null)
+    }
+  }
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        <Flag className="h-4 w-4" /> Bees denunciados
+      </h2>
+      {loading ? (
+        <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+        </div>
+      ) : error ? (
+        <p className="py-4 text-sm text-red-300">{error}</p>
+      ) : rows.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
+          Nenhum bee denunciado pendente.
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead className="bg-muted/30 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Bee</th>
+                <th className="px-3 py-2">Autor</th>
+                <th className="px-3 py-2 text-right">Denúncias</th>
+                <th className="px-3 py-2">Categorias</th>
+                <th className="px-3 py-2 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id_story} className="border-t border-border hover:bg-muted/20">
+                  <td className="px-3 py-2">
+                    <a
+                      href={r.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 hover:text-primary"
+                    >
+                      <div className="h-12 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
+                        {r.thumbnail_url ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={r.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                        ) : null}
+                      </div>
+                      <span className="max-w-[220px] truncate">
+                        {r.caption || <span className="italic text-muted-foreground">Sem legenda</span>}
+                      </span>
+                    </a>
+                  </td>
+                  <td className="px-3 py-2">{r.profile_display_name || r.username || "—"}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    <span className="inline-flex min-w-7 justify-center rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+                      {r.reports_count}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                    {(r.categories || []).map((c) => REASON_LABEL[c] || c).join(", ") || "—"}
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => act(r.id_story, "resolve")}
+                        disabled={actingId === r.id_story}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[12px] font-medium text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50"
+                      >
+                        {actingId === r.id_story ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                        Resolver
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => act(r.id_story, "remove")}
+                        disabled={actingId === r.id_story}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[12px] font-medium text-red-300 hover:bg-red-500/20 disabled:opacity-50"
+                      >
+                        {actingId === r.id_story ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                        Remover
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   )
 }
 

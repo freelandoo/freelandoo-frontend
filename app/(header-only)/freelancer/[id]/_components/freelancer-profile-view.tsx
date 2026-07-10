@@ -346,14 +346,14 @@ export default function FreelancerProfileView({
 
   const validateBeesVideo = async (file: File): Promise<string | null> => {
     if (!file.type.startsWith("video/")) {
-      return t("beesVideoOnly", "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
+      return t("curtosVideoOnly", "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
     }
     const v = validateVideoFile(file)
     if (!v.ok) return v.error
     try {
       const dim = await getVideoDimensions(file)
       if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
-        return t("beesVideoNotVertical", "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16).")
+        return t("curtosVideoNotVertical", "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).")
       }
     } catch (err) {
       return err instanceof Error ? err.message : t("videoValidateError", "Não foi possível validar o vídeo.")
@@ -856,8 +856,8 @@ export default function FreelancerProfileView({
               <button
                 type="button"
                 onClick={() => setPortfolioTab("bees")}
-                aria-label="Bees"
-                title="Bees"
+                aria-label={t("curtosTab", "Curtos")}
+                title={t("curtosTab", "Curtos")}
                 className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
                   portfolioTab === "bees"
                     ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
@@ -954,7 +954,7 @@ export default function FreelancerProfileView({
             const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
             const emptyLabel =
               portfolioTab === "bees"
-                ? t("noBeesYet", "Nenhum Bees ainda.")
+                ? t("noCurtosYet", "Nenhum Curto ainda.")
                 : t("noPortfolioYet", "Nenhum item no portfólio ainda.")
             return filteredItems.length > 0 ? (
             <div className="-mx-4 grid grid-cols-3 gap-px md:mx-0">

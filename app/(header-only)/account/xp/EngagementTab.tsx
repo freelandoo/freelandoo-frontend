@@ -53,18 +53,20 @@ const RANGES: { value: Range; days: number }[] = [
   { value: "90d", days: 90 },
 ]
 
+// Bees v2: o canal story_rest agrega os bees (stories) — o backend soma
+// kind='bee' nele; trampo é legado que zera sozinho. "bees" físico = Curtos.
 const CHANNEL_META: Record<string, { labelKey: string; label: string; icon: typeof Film }> = {
   story_trampo: { labelKey: "chStoryTrampo", label: "Stories Trampo", icon: Briefcase },
-  story_rest:   { labelKey: "chStoryRest", label: "Stories Rest", icon: Coffee },
-  bees:         { labelKey: "chBees", label: "Bees", icon: Film },
+  story_rest:   { labelKey: "chStoryBees", label: "Bees (stories)", icon: Coffee },
+  bees:         { labelKey: "chCurtos", label: "Curtos", icon: Film },
   feed:         { labelKey: "chFeed", label: "Feed", icon: LayoutGrid },
 }
 
 const KIND_LABEL: Record<string, { labelKey: string; label: string }> = {
   feed: { labelKey: "kindFeed", label: "Feed" },
-  bees: { labelKey: "kindBee", label: "Bee" },
+  bees: { labelKey: "kindCurto", label: "Curto" },
   story_trampo: { labelKey: "kindStoryTrampo", label: "Story · Trampo" },
-  story_rest: { labelKey: "kindStoryRest", label: "Story · Rest" },
+  story_rest: { labelKey: "kindStoryBee", label: "Bee" },
 }
 
 function fmt(n: number, intlTag: string): string {

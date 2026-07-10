@@ -51,7 +51,7 @@ const STORIES = {
   linkOpenAria: ["Abrir link", "Open link", "Abrir enlace"],
 }
 
-// ── F2: aba Salvos (ns Account) — chips Posts/Curtos/Bees ───────────────────
+// ── F2/F4: aba Salvos + renames Curtos (ns Account) ─────────────────────────
 const ACCOUNT = {
   curtosLabel: ["Curtos", "Shorts", "Cortos"],
   savedKindBees: ["Bees", "Bees", "Bees"],
@@ -62,6 +62,39 @@ const ACCOUNT = {
     "Los bees guardados desaparecen al expirar — los mejores quedan hasta 7 días.",
   ],
   openBee: ["Abrir bee", "Open bee", "Abrir bee"],
+  menuCurtos: ["Curto", "Short", "Corto"],
+  noCurtosYet: ["Nenhum Curto ainda.", "No Shorts yet.", "Ningún Corto todavía."],
+  curtosVideoOnly: [
+    "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.",
+    "Shorts only accept 9:16 videos. Upload an MP4 or WebM file.",
+    "Los Cortos solo aceptan videos 9:16. Sube un archivo MP4 o WebM.",
+  ],
+  curtosVideoNotVertical: [
+    "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).",
+    "This video isn't 9:16. Shorts only accept vertical (9:16) videos.",
+    "Ese video no está en 9:16. Los Cortos solo aceptan videos verticales (9:16).",
+  ],
+  // Aba Engajamento (XP): canais renomeados no Bees v2
+  chStoryBees: ["Bees (stories)", "Bees (stories)", "Bees (stories)"],
+  chCurtos: ["Curtos", "Shorts", "Cortos"],
+  kindCurto: ["Curto", "Short", "Corto"],
+  kindStoryBee: ["Bee", "Bee", "Bee"],
+}
+
+// ── F4: perfil público (ns Profile) — aba/validações de Curtos ──────────────
+const PROFILE = {
+  curtosTab: ["Curtos", "Shorts", "Cortos"],
+  noCurtosYet: ["Nenhum Curto ainda.", "No Shorts yet.", "Ningún Corto todavía."],
+  curtosVideoOnly: [
+    "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.",
+    "Shorts only accept 9:16 videos. Upload an MP4 or WebM file.",
+    "Los Cortos solo aceptan videos 9:16. Sube un archivo MP4 o WebM.",
+  ],
+  curtosVideoNotVertical: [
+    "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).",
+    "This video isn't 9:16. Shorts only accept vertical (9:16) videos.",
+    "Ese video no está en 9:16. Los Cortos solo aceptan videos verticales (9:16).",
+  ],
 }
 
 // ── F3: composer do bee (ns Composer) — localização + links estilizados ─────
@@ -86,6 +119,7 @@ const NAMESPACES = [
   ["Stories", STORIES],
   ["Account", ACCOUNT],
   ["Composer", COMPOSER],
+  ["Profile", PROFILE],
 ]
 
 function mergeNamespace(json, ns, keys, localeIndex) {

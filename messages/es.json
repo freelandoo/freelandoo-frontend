@@ -1430,7 +1430,15 @@
     "savedKindBees": "Bees",
     "noSavedBeesTitle": "Ningún bee guardado",
     "noSavedBees": "Los bees guardados desaparecen al expirar — los mejores quedan hasta 7 días.",
-    "openBee": "Abrir bee"
+    "openBee": "Abrir bee",
+    "menuCurtos": "Corto",
+    "noCurtosYet": "Ningún Corto todavía.",
+    "curtosVideoOnly": "Los Cortos solo aceptan videos 9:16. Sube un archivo MP4 o WebM.",
+    "curtosVideoNotVertical": "Ese video no está en 9:16. Los Cortos solo aceptan videos verticales (9:16).",
+    "chStoryBees": "Bees (stories)",
+    "chCurtos": "Cortos",
+    "kindCurto": "Corto",
+    "kindStoryBee": "Bee"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3586,7 +3594,11 @@
     "newCourseInline": "Nuevo curso",
     "createCourseNeedsPaid": "Activa este perfil para crear cursos.",
     "noCoursesOwnerHintPaid": "Crea un curso para mostrarlo aquí.",
-    "activateProfile": "Activar perfil"
+    "activateProfile": "Activar perfil",
+    "curtosTab": "Cortos",
+    "noCurtosYet": "Ningún Corto todavía.",
+    "curtosVideoOnly": "Los Cortos solo aceptan videos 9:16. Sube un archivo MP4 o WebM.",
+    "curtosVideoNotVertical": "Ese video no está en 9:16. Los Cortos solo aceptan videos verticales (9:16)."
   },
   "Bees": {
     "chat": "Chat",

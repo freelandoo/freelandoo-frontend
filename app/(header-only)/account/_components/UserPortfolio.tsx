@@ -241,7 +241,7 @@ export function UserPortfolio({
   )
   const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
   const emptyLabel =
-    portfolioTab === "bees" ? tr("noBeesYet", "Nenhum Bees ainda.") : tr("noPortfolioYet", "Nenhum item no portfólio ainda.")
+    portfolioTab === "bees" ? tr("noCurtosYet", "Nenhum Curto ainda.") : tr("noPortfolioYet", "Nenhum item no portfólio ainda.")
 
   const handleAddItem = () => {
     if (portfolioTab === "feed" || portfolioTab === "bees") {
@@ -269,14 +269,14 @@ export function UserPortfolio({
 
   const validateBeesVideo = useCallback(async (file: File): Promise<string | null> => {
     if (!file.type.startsWith("video/")) {
-      return tr("beesVideoOnly", "Bees aceita apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
+      return tr("curtosVideoOnly", "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.")
     }
     const v = validateVideoFile(file)
     if (!v.ok) return v.error
     try {
       const dim = await getVideoDimensions(file)
       if (dim.aspectRatio > BEES_VIDEO_ASPECT_RATIO_MAX) {
-        return tr("beesVideoNotVertical", "Esse vídeo não está em 9:16. Bees aceita apenas vídeos verticais (9:16).")
+        return tr("curtosVideoNotVertical", "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).")
       }
     } catch (err) {
       return err instanceof Error ? err.message : tr("videoValidateError", "Não foi possível validar o vídeo.")
@@ -587,7 +587,7 @@ export function UserPortfolio({
             <button
               type="button"
               onClick={() => setPortfolioTab("bees")}
-              aria-label={tr("menuBees", "Bees")}
+              aria-label={tr("curtosLabel", "Curtos")}
               className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
             >
               <Hexagon className="h-4 w-4" />

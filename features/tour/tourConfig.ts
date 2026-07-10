@@ -117,7 +117,6 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "search-tab-services", target: "[data-tour='search-tab-services']", title: "Aba Serviços", content: "Profissionais por Enxame e profissão para contratar serviços.", placement: "bottom" },
       { id: "search-tab-products", target: "[data-tour='search-tab-products']", title: "Aba Produtos", content: "Produtos à venda na plataforma, filtrados por categoria e cidade.", placement: "bottom" },
       { id: "search-tab-courses", target: "[data-tour='search-tab-courses']", title: "Aba Cursos", content: "Cursos para aprender uma habilidade, filtrados por Enxame e profissão.", placement: "bottom" },
-      { id: "search-stories", target: "[data-tour='search-stories-trampo']", title: "Trampos", content: "Stories tipo Trampo: profissionais mostram trabalhos curtos em vídeo (24h). Aparece quem você acompanha.", placement: "bottom" },
       { id: "search-2", target: "[data-tour='search-filter-machine']", title: "Filtrar por Enxame", content: "Escolhe a área (Views, Limpeza, Construção, etc.). Define quais profissões aparecem.", placement: "bottom" },
       { id: "search-3", target: "[data-tour='search-filter-profession']", title: "Profissão", content: "Profissão específica dentro do Enxame escolhido. Ative um Enxame primeiro.", placement: "bottom" },
       { id: "search-4", target: "[data-tour='search-filter-city']", title: "Cidade", content: "Estado ou cidade do profissional. Combinável com Enxame e profissão.", placement: "bottom" },
@@ -273,8 +272,8 @@ export const TOUR_CONFIGS: TourConfig[] = [
     steps: [
       {
         id: "explore-path-bees-1",
-        title: "Bees: vídeos curtos, vertical",
-        content: "Feed estilo TikTok com vídeos da plataforma — incluindo os Trampos dos profissionais. Role pra descobrir gente nova.",
+        title: "Bees: os stories da Freelandoo",
+        content: "Timeline vertical com os bees de todo mundo — duram de 24h a 7 dias conforme o engajamento. Use os 3 pontinhos pra filtrar quem você acompanha.",
         placement: "center",
       },
     ],
