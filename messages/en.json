@@ -2799,7 +2799,9 @@
     "bee.linkLabelRequired": "Give the link a label",
     "bee.styleGold": "Gold",
     "bee.stylePaper": "Paper",
-    "bee.styleInk": "Ink"
+    "bee.styleInk": "Ink",
+    "mode.curto": "New Short",
+    "mode.beeStory": "New Bee"
   },
   "Chamado": {
     "titleService": "Open a service request",
@@ -3620,7 +3622,10 @@
     "curtosTab": "Shorts",
     "noCurtosYet": "No Shorts yet.",
     "curtosVideoOnly": "Shorts only accept 9:16 videos. Upload an MP4 or WebM file.",
-    "curtosVideoNotVertical": "This video isn't 9:16. Shorts only accept vertical (9:16) videos."
+    "curtosVideoNotVertical": "This video isn't 9:16. Shorts only accept vertical (9:16) videos.",
+    "menuPost": "Post",
+    "menuCurtos": "Short",
+    "menuBee": "Bee"
   },
   "Bees": {
     "chat": "Chat",

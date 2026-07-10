@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   ArrowLeft,
   Briefcase,
+  Clapperboard,
   Crown,
   Crop,
   Edit2,
@@ -476,6 +477,12 @@ export default function FreelancerProfileView({
         void ensureConsent("publish_content").then((ok) => {
           if (ok) setComposerMode("bee")
         })
+      } else if (detail.kind === "bee") {
+        // Bee = story (tb_story). Não tem aba própria — abre o composer direto.
+        setPortfolioError(null)
+        void ensureConsent("publish_content").then((ok) => {
+          if (ok) setComposerMode("story")
+        })
       } else if (detail.kind === "servico") {
         setPortfolioTab("services")
         // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
@@ -718,7 +725,7 @@ export default function FreelancerProfileView({
                   }
                 >
                   <ImageIcon className="h-4 w-4" />
-                  Post
+                  {t("menuPost", "Post")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() =>
@@ -727,8 +734,18 @@ export default function FreelancerProfileView({
                     )
                   }
                 >
+                  <Clapperboard className="h-4 w-4" />
+                  {t("menuCurtos", "Curto")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "bee" } }),
+                    )
+                  }
+                >
                   <Hexagon className="h-4 w-4" />
-                  Bees
+                  {t("menuBee", "Bee")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() =>

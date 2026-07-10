@@ -87,6 +87,10 @@ const ACCOUNT = {
 // ── F4: perfil público (ns Profile) — aba/validações de Curtos ──────────────
 const PROFILE = {
   curtosTab: ["Curtos", "Shorts", "Cortos"],
+  // Menu "+" do subperfil: Curto (vídeo permanente) e Bee (story)
+  menuPost: ["Post", "Post", "Post"],
+  menuCurtos: ["Curto", "Short", "Corto"],
+  menuBee: ["Bee", "Bee", "Bee"],
   noCurtosYet: ["Nenhum Curto ainda.", "No Shorts yet.", "Ningún Corto todavía."],
   curtosVideoOnly: [
     "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.",
@@ -102,6 +106,10 @@ const PROFILE = {
 
 // ── F3: composer do bee (ns Composer) — localização + links estilizados ─────
 const COMPOSER = {
+  // Rótulos novos dos modos (mode.bee/mode.story antigos tinham o nome velho):
+  // mode "bee" publica Curto; mode "story" publica o bee (story).
+  "mode.curto": ["Novo Curto", "New Short", "Nuevo Corto"],
+  "mode.beeStory": ["Novo Bee", "New Bee", "Nuevo Bee"],
   "bee.badge": ["Bee", "Bee", "Bee"],
   "bee.locationLabel": ["Localização (opcional)", "Location (optional)", "Ubicación (opcional)"],
   "bee.locationPlaceholder": ["Ex.: São Bernardo do Campo/SP", "E.g.: São Bernardo do Campo/SP", "Ej.: São Bernardo do Campo/SP"],

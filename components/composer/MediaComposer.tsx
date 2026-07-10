@@ -63,9 +63,11 @@ type Slide = {
   overlay: OverlayLayer | null // descritor; o elemento vivo é carregado quando ativo
 }
 
-/** Proporções permitidas por modo. */
+/** Proporções permitidas por modo. Curto (mode "bee") aceita 9:16 e 4:5. */
 function aspectsFor(mode: ComposerProps["mode"]): string[] {
-  return mode === "post" ? ["4:5", "1:1", "16:9"] : ["9:16"]
+  if (mode === "post") return ["4:5", "1:1", "16:9"]
+  if (mode === "bee") return ["9:16", "4:5"]
+  return ["9:16"]
 }
 
 /** Lê dimensões naturais de uma imagem a partir de um object URL. */
@@ -752,7 +754,9 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
 
   if (!open) return null
 
-  const modeLabel = mode === "post" ? t("mode.post", "Novo Post") : mode === "bee" ? t("mode.bee", "Novo Bee") : t("mode.story", "Story")
+  // Bees v2: mode "bee" publica CURTO (vídeo permanente) e mode "story" publica
+  // o bee de verdade (tb_story) — chaves novas pq as antigas têm o rótulo velho.
+  const modeLabel = mode === "post" ? t("mode.post", "Novo Post") : mode === "bee" ? t("mode.curto", "Novo Curto") : t("mode.beeStory", "Novo Bee")
   const canAdvanceFromCrop = slides.length > 0
   const canPublish = slides.length > 0 && !!selectedProfileId
 

@@ -2776,7 +2776,9 @@
     "bee.linkLabelRequired": "Dê um rótulo pro link",
     "bee.styleGold": "Dourado",
     "bee.stylePaper": "Papel",
-    "bee.styleInk": "Tinta"
+    "bee.styleInk": "Tinta",
+    "mode.curto": "Novo Curto",
+    "mode.beeStory": "Novo Bee"
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",
@@ -3034,7 +3036,10 @@
     "curtosTab": "Curtos",
     "noCurtosYet": "Nenhum Curto ainda.",
     "curtosVideoOnly": "Curtos aceitam apenas vídeos 9:16. Envie um arquivo MP4 ou WebM.",
-    "curtosVideoNotVertical": "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16)."
+    "curtosVideoNotVertical": "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).",
+    "menuPost": "Post",
+    "menuCurtos": "Curto",
+    "menuBee": "Bee"
   },
   "Bees": {
     "chat": "Chat",
