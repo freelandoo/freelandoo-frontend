@@ -243,7 +243,6 @@ function FeedPageInner() {
         <div className="border-b border-white/[0.06] bg-black/35 backdrop-blur-sm">
           <StoryBar
             key={storyBarKey}
-            kind="rest"
             defaultAccent={accent}
             showCreateSlot
             onCreate={() => { setComposerMode("story"); setCreatorOpen(true) }}

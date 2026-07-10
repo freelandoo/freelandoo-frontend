@@ -10,9 +10,6 @@ import {
 import { MACHINES, type MachineId } from "@/components/home/machines/tokens"
 import { FreelancerTile } from "@/components/freelancer/freelancer-tile"
 import { SearchRetractableHeader } from "@/components/search/search-retractable-header"
-import { StoryBar, type StoryBarEntry } from "@/components/stories/story-bar"
-import { StoryPlayer } from "@/components/stories/story-player"
-import { MediaComposer } from "@/components/composer/MediaComposer"
 import { OpenChamadoModal } from "@/components/search/open-chamado-modal"
 import { SearchTabsBar, type SearchTab } from "@/components/search/search-tabs-bar"
 import { ProductsGrid } from "@/components/search/products-grid"
@@ -239,10 +236,7 @@ function SearchPageInner() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [storyOpen, setStoryOpen] = useState<{ entries: StoryBarEntry[]; index: number } | null>(null)
-  const [creatorOpen, setCreatorOpen] = useState(false)
   const [openChamadoOpen, setOpenChamadoOpen] = useState(false)
-  const [storyBarKey, setStoryBarKey] = useState(0)
   const [tab, setTab] = useState<SearchTab>("services")
   const [productCategoryId, setProductCategoryId] = useState<number | null>(null)
   const [productCategories, setProductCategories] = useState<ProductCategoryEntry[]>([])
@@ -523,24 +517,6 @@ function SearchPageInner() {
           />
 
           <div className="min-w-0 flex-1">
-        {tab === "services" && (
-          <div className="border-b-2 border-[#0B0B0D] bg-[#0b0804]/60 backdrop-blur-sm">
-            <div className="mx-auto w-full max-w-[640px] md:max-w-[760px] lg:max-w-[1080px]">
-              <StoryBar
-                key={storyBarKey}
-                kind="trampo"
-                defaultAccent={accent}
-                showCreateSlot
-                onCreate={() => setCreatorOpen(true)}
-                onOpenProfile={(entry, all) => {
-                  const idx = all.findIndex((e) => e.id_profile === entry.id_profile)
-                  setStoryOpen({ entries: all, index: Math.max(0, idx) })
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {tab === "services" && (loading ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
@@ -681,25 +657,6 @@ function SearchPageInner() {
           </div>
         </div>
       </div>
-
-      {storyOpen && (
-        <StoryPlayer
-          entries={storyOpen.entries}
-          initialIndex={storyOpen.index}
-          onClose={() => setStoryOpen(null)}
-          onProfileViewed={() => {
-            // força refresh da StoryBar pra remover borda metálica
-          }}
-        />
-      )}
-
-      <MediaComposer
-        open={creatorOpen}
-        mode="story"
-        initialKind="trampo"
-        onClose={() => setCreatorOpen(false)}
-        onPosted={() => setStoryBarKey((k) => k + 1)}
-      />
 
       {/* FAB: Abrir chamado — broadcast pra todo o Enxame escolhido (não na aba Comunidades) */}
       {tab !== "communities" && (

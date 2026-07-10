@@ -1425,7 +1425,12 @@
     "toolsButton": "Ferramentas",
     "toolsClose": "Fechar ferramentas",
     "fitnessTool": "Fitness",
-    "fitnessAria": "Painel fitness: calorias, água, peso e treinos"
+    "fitnessAria": "Painel fitness: calorias, água, peso e treinos",
+    "curtosLabel": "Curtos",
+    "savedKindBees": "Bees",
+    "noSavedBeesTitle": "Nenhum bee salvo",
+    "noSavedBees": "Bees salvos somem quando expiram — os melhores ficam no ar por até 7 dias.",
+    "openBee": "Abrir bee"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -1753,7 +1758,12 @@
     "previousProfile": "Perfil anterior",
     "nextProfile": "Próximo perfil",
     "musicLabel": "Música",
-    "recordWithCamera": "Gravar com a câmera (filtros)"
+    "recordWithCamera": "Gravar com a câmera (filtros)",
+    "like": "Curtir",
+    "unlike": "Descurtir",
+    "comments": "Comentários",
+    "share": "Compartilhar",
+    "linkOpenAria": "Abrir link"
   },
   "Search": {
     "noResultsMessage": "Nenhum profissional com esses filtros.",

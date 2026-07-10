@@ -7,8 +7,6 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
-export type StoryKind = "trampo" | "rest"
-
 export interface StoryBarEntry {
   id_profile: string
   has_unviewed: boolean
@@ -34,12 +32,11 @@ export interface StoryBarEntry {
 }
 
 interface StoryBarProps {
-  kind: StoryKind
   /** Cor padrão se a entry não tiver enxame associado */
   defaultAccent?: string
   onOpenProfile: (entry: StoryBarEntry, all: StoryBarEntry[]) => void
   onCreate?: () => void
-  /** Mostrar primeiro slot "+" para criar story (apenas se houver subperfis elegíveis) */
+  /** Mostrar primeiro slot "+" para criar bee (apenas se houver subperfis elegíveis) */
   showCreateSlot?: boolean
 }
 
@@ -49,10 +46,10 @@ function initials(name: string | null | undefined) {
 }
 
 /**
- * Faixa horizontal de stories. Square avatars com borda metálica na cor
- * do enxame quando há story não-visto, transparente quando não tem.
+ * Faixa horizontal de bees (stories). Square avatars com borda metálica na
+ * cor do enxame quando há bee não-visto, transparente quando não tem.
  */
-export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCreate, showCreateSlot }: StoryBarProps) {
+export function StoryBar({ defaultAccent = "#fbbf24", onOpenProfile, onCreate, showCreateSlot }: StoryBarProps) {
   const t = useTranslations("Stories")
   const [entries, setEntries] = useState<StoryBarEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +62,7 @@ export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCre
       return
     }
     try {
-      const res = await fetch(`/api/stories/feed?kind=${kind}`, {
+      const res = await fetch(`/api/stories/feed`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       })
@@ -85,13 +82,12 @@ export function StoryBar({ kind, defaultAccent = "#fbbf24", onOpenProfile, onCre
   useEffect(() => {
     setLoading(true)
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind])
+  }, [])
 
   if (!showCreateSlot && entries.length === 0 && !loading) return null
 
   return (
-    <div className="relative w-full" data-tour={kind === "rest" ? "feed-stories-rest" : "search-stories-trampo"}>
+    <div className="relative w-full" data-tour="feed-stories-rest">
       <div className="flex gap-3 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {showCreateSlot && (
           <StoryTile

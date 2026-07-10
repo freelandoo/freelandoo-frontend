@@ -1425,7 +1425,12 @@
     "toolsButton": "Tools",
     "toolsClose": "Close tools",
     "fitnessTool": "Fitness",
-    "fitnessAria": "Fitness panel: calories, water, weight and workouts"
+    "fitnessAria": "Fitness panel: calories, water, weight and workouts",
+    "curtosLabel": "Shorts",
+    "savedKindBees": "Bees",
+    "noSavedBeesTitle": "No saved bees",
+    "noSavedBees": "Saved bees disappear when they expire — the best ones stay up for up to 7 days.",
+    "openBee": "Open bee"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -1753,7 +1758,12 @@
     "previousProfile": "Previous profile",
     "nextProfile": "Next profile",
     "musicLabel": "Music",
-    "recordWithCamera": "Record with the camera (filters)"
+    "recordWithCamera": "Record with the camera (filters)",
+    "like": "Like",
+    "unlike": "Unlike",
+    "comments": "Comments",
+    "share": "Share",
+    "linkOpenAria": "Open link"
   },
   "Search": {
     "noResultsMessage": "No professionals match these filters.",

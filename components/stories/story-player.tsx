@@ -1,20 +1,23 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Pause, Play, Music } from "lucide-react"
+import { ChevronLeft, ChevronRight, X, Pause, Play, Music, Heart, MessageSquare, Send, Check, MapPin, Link as LinkIcon } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getToken } from "@/lib/auth"
+import { getFeedSessionId } from "@/lib/feed-events"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 import type { StoryBarEntry } from "./story-bar"
-import type { FeedAudio } from "@/lib/types/portfolio-feed"
+import type { BeeLink, FeedAudio } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
+import { CommentsPanel } from "@/components/comments/comments-panel"
 
 export interface StoryItem {
   id_story: string
   id_profile: string
   id_user: string
-  kind: "trampo" | "rest"
+  // 'bee' (v2); 'trampo'/'rest' são legado que expira em 24h pós-deploy.
+  kind: string
   media_type?: "video" | "image"
   video_url: string
   thumbnail_url: string | null
@@ -22,6 +25,10 @@ export interface StoryItem {
   width: number | null
   height: number | null
   caption: string | null
+  location?: string | null
+  links?: BeeLink[]
+  likes_count?: number
+  comments_count?: number
   created_at: string
   expires_at: string
   audio?: FeedAudio | null
@@ -68,6 +75,11 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
   const [loading, setLoading] = useState(true)
   const [paused, setPaused] = useState(false)
   const [reactingEmoji, setReactingEmoji] = useState<string | null>(null)
+  // Engajamento do bee no player (like otimista por story + comentários).
+  const [likeState, setLikeState] = useState<Record<string, { liked: boolean; count: number }>>({})
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
+  const [commentsFor, setCommentsFor] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const activeEntry = entries[profileIndex]
   const activeStory = stories[storyIndex]
@@ -100,6 +112,16 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
         const items: StoryItem[] = Array.isArray(data?.items) ? data.items : []
         setStories(items)
         setViewedIds(new Set(Array.isArray(data?.viewed_ids) ? data.viewed_ids : []))
+        // Estado inicial de like/comentários por bee (liked_ids veio do back).
+        const likedSet = new Set(Array.isArray(data?.liked_ids) ? data.liked_ids : [])
+        const likes: Record<string, { liked: boolean; count: number }> = {}
+        const comments: Record<string, number> = {}
+        for (const s of items) {
+          likes[s.id_story] = { liked: likedSet.has(s.id_story), count: s.likes_count ?? 0 }
+          comments[s.id_story] = s.comments_count ?? 0
+        }
+        setLikeState(likes)
+        setCommentCounts(comments)
         // Começa na primeira não-vista, se houver
         const viewedSet = new Set(Array.isArray(data?.viewed_ids) ? data.viewed_ids : [])
         const firstUnviewed = items.findIndex((s) => !viewedSet.has(s.id_story))
@@ -241,7 +263,80 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
     }
   }
 
+  // Curtida do bee — otimista, endpoint /bees/:id/like (mesmo poder da timeline).
+  const toggleLike = async () => {
+    if (!activeStory) return
+    const token = getToken()
+    if (!token) return
+    const id = activeStory.id_story
+    const prev = likeState[id] || { liked: false, count: activeStory.likes_count ?? 0 }
+    const optimistic = { liked: !prev.liked, count: Math.max(0, prev.count + (prev.liked ? -1 : 1)) }
+    setLikeState((s) => ({ ...s, [id]: optimistic }))
+    try {
+      const res = await fetch(`/api/bees/${encodeURIComponent(id)}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setLikeState((s) => ({
+        ...s,
+        [id]: {
+          liked: !!data.liked,
+          count: typeof data.likes_count === "number" ? data.likes_count : optimistic.count,
+        },
+      }))
+    } catch {
+      setLikeState((s) => ({ ...s, [id]: prev }))
+    }
+  }
+
+  // Compartilhar — copia o deep-link da timeline e registra o evento share.
+  const shareStory = async () => {
+    if (!activeStory) return
+    const url = typeof window !== "undefined"
+      ? `${window.location.origin}/bees?bee=${activeStory.id_story}`
+      : ""
+    let shared = false
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "Freelandoo", url })
+        shared = true
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        shared = true
+      }
+    } catch { /* cancelado */ }
+    if (shared) {
+      const token = getToken()
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (token) headers["Authorization"] = `Bearer ${token}`
+      fetch(`/api/bees/events`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          id_story: activeStory.id_story,
+          event_type: "share",
+          session_id: getFeedSessionId(),
+        }),
+        keepalive: true,
+      }).catch(() => {})
+    }
+  }
+
+  const openComments = () => {
+    if (!activeStory) return
+    setPaused(true)
+    setCommentsFor(activeStory.id_story)
+  }
+
   if (!activeEntry) return null
+
+  const activeLike = activeStory
+    ? likeState[activeStory.id_story] || { liked: false, count: activeStory.likes_count ?? 0 }
+    : { liked: false, count: 0 }
 
   return (
     <div
@@ -348,11 +443,79 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
           </div>
         </div>
 
-        {activeStory?.caption && (
+        {(activeStory?.caption || activeStory?.location || (activeStory?.links?.length ?? 0) > 0) && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/85 to-transparent px-4 pb-20 pt-12">
-            <p className="text-balance text-sm leading-relaxed text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.85)]">
-              {activeStory.caption}
-            </p>
+            {/* Localização + links estilizados do bee */}
+            {(activeStory?.location || (activeStory?.links?.length ?? 0) > 0) && (
+              <div className="fl-sharp pointer-events-auto mb-2 flex flex-wrap items-center gap-2">
+                {activeStory?.location && (
+                  <span className="inline-flex items-center gap-1 border border-white/20 bg-black/50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
+                    <MapPin className="h-3 w-3" /> {activeStory.location}
+                  </span>
+                )}
+                {(activeStory?.links || []).map((link, i) => (
+                  <a
+                    key={`${link.url}-${i}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={t("linkOpenAria", "Abrir link")}
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold uppercase tracking-wide",
+                      link.style === "gold" && "bg-[#F2B705] text-[#0B0B0D]",
+                      link.style === "paper" && "bg-[#F1EDE2] text-[#0B0B0D]",
+                      link.style === "ink" && "border border-white/40 bg-black/60 text-white",
+                    )}
+                  >
+                    <LinkIcon className="h-3 w-3" /> {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+            {activeStory?.caption && (
+              <p className="text-balance text-sm leading-relaxed text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.85)]">
+                {activeStory.caption}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Barra de ações do bee — mesmos poderes da timeline /bees */}
+        {activeStory && (
+          <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleLike}
+              aria-label={activeLike.liked ? t("unlike", "Descurtir") : t("like", "Curtir")}
+              className="flex flex-col items-center gap-0.5 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] transition active:scale-90"
+            >
+              <Heart className={cn("h-7 w-7", activeLike.liked && "fill-current text-yellow-400")} />
+              {activeLike.count > 0 && (
+                <span className="text-[11px] font-medium text-white/85">{activeLike.count}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={openComments}
+              aria-label={t("comments", "Comentários")}
+              className="flex flex-col items-center gap-0.5 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] transition active:scale-90"
+            >
+              <MessageSquare className="h-7 w-7" />
+              {(commentCounts[activeStory.id_story] ?? 0) > 0 && (
+                <span className="text-[11px] font-medium text-white/85">
+                  {commentCounts[activeStory.id_story]}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={shareStory}
+              aria-label={t("share", "Compartilhar")}
+              className="flex flex-col items-center gap-0.5 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] transition active:scale-90"
+            >
+              {copied ? <Check className="h-7 w-7 text-emerald-400" /> : <Send className="h-7 w-7" />}
+            </button>
           </div>
         )}
 
@@ -422,6 +585,24 @@ export function StoryPlayer({ entries, initialIndex, onClose, onProfileViewed }:
           </button>
         )}
       </div>
+
+      {/* Comentários do bee — pausa o story enquanto o painel está aberto. */}
+      <CommentsPanel
+        postId={commentsFor}
+        open={!!commentsFor}
+        onClose={() => {
+          setCommentsFor(null)
+          setPaused(false)
+        }}
+        loginNextPath="/feed"
+        apiBase="/api/bees"
+        onCountChange={(idStory, delta) => {
+          setCommentCounts((prev) => ({
+            ...prev,
+            [idStory]: Math.max(0, (prev[idStory] ?? 0) + delta),
+          }))
+        }}
+      />
 
       <style jsx global>{`
         .story-progress-bar {

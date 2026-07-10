@@ -94,14 +94,16 @@ interface UserPortfolioProps {
 
 type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans" | "saved"
 
-type SavedKind = "feed" | "bees"
+// "feed"/"bees" = bookmarks de posts (bees = Curtos, vídeos permanentes);
+// "bee_story" = bees salvos (stories v2 — somem quando o bee expira).
+type SavedKind = "feed" | "bees" | "bee_story"
 
 type SavedItem = {
   id_bookmark: string
   bookmarked_at: string
   post_id: string
   title: string | null
-  feed_kind: SavedKind
+  feed_kind: "feed" | "bees"
   display_name: string | null
   avatar_url: string | null
   username: string | null
@@ -112,6 +114,19 @@ type SavedItem = {
     type: "image" | "video"
     thumbnail_url: string | null
   } | null
+}
+
+// Bee salvo (GET /bees/bookmarks) — só os campos que a grade usa.
+type SavedBee = {
+  id_story: string
+  caption: string | null
+  thumbnail_url: string | null
+  video_url: string
+  media_type: "image" | "video"
+  profile_name: string | null
+  username: string | null
+  effective_expires_at: string
+  machine: { color_accent: string | null; name: string | null } | null
 }
 
 export function UserPortfolio({
@@ -1151,6 +1166,7 @@ function SavedSection() {
   const tr = useTranslations("Account")
   const [savedKind, setSavedKind] = useState<SavedKind>("feed")
   const [items, setItems] = useState<SavedItem[]>([])
+  const [beeItems, setBeeItems] = useState<SavedBee[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<Record<string, boolean>>({})
@@ -1165,12 +1181,22 @@ function SavedSection() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/me/bookmarks?kind=${kind}&per_page=48`, {
-        headers: { Authorization: `Bearer ${tk}` },
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      setItems(Array.isArray(data.items) ? data.items : [])
+      if (kind === "bee_story") {
+        // Bees salvos (stories v2) — o backend já filtra os expirados.
+        const res = await fetch(`/api/bees/bookmarks`, {
+          headers: { Authorization: `Bearer ${tk}` },
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        setBeeItems(Array.isArray(data.items) ? data.items : [])
+      } else {
+        const res = await fetch(`/api/me/bookmarks?kind=${kind}&per_page=48`, {
+          headers: { Authorization: `Bearer ${tk}` },
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        setItems(Array.isArray(data.items) ? data.items : [])
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : tr("loadSavedError", "Erro ao carregar salvos"))
     } finally {
@@ -1202,7 +1228,29 @@ function SavedSection() {
     }
   }
 
-  const aspectClass = savedKind === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+  // Remove um bee salvo (toggle do bookmark de story).
+  const handleRemoveBee = async (id_story: string) => {
+    const tk = token()
+    if (!tk) return
+    setRemoving((r) => ({ ...r, [id_story]: true }))
+    try {
+      const res = await fetch(`/api/bees/${encodeURIComponent(id_story)}/bookmark`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tk}` },
+      })
+      if (res.ok) {
+        setBeeItems((prev) => prev.filter((b) => b.id_story !== id_story))
+      }
+    } finally {
+      setRemoving((r) => {
+        const next = { ...r }
+        delete next[id_story]
+        return next
+      })
+    }
+  }
+
+  const aspectClass = savedKind === "feed" ? "aspect-[4/5]" : "aspect-[9/16]"
 
   return (
     <div className="pt-3">
@@ -1228,8 +1276,20 @@ function SavedSection() {
               : "text-[#9A938A] hover:text-[#F5F1E8]"
           }`}
         >
+          <ImageIcon className="h-3.5 w-3.5" />
+          {tr("curtosLabel", "Curtos")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSavedKind("bee_story")}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+            savedKind === "bee_story"
+              ? "bg-[#F2B705]/15 text-[#F2B705]"
+              : "text-[#9A938A] hover:text-[#F5F1E8]"
+          }`}
+        >
           <Hexagon className="h-3.5 w-3.5" />
-          {tr("menuBees", "Bees")}
+          {tr("savedKindBees", "Bees")}
         </button>
       </div>
 
@@ -1242,6 +1302,78 @@ function SavedSection() {
           <Loader2 className="h-4 w-4 animate-spin" />
           {tr("loadingSaved", "Carregando salvos…")}
         </div>
+      ) : savedKind === "bee_story" ? (
+        beeItems.length === 0 ? (
+          <div className="fl-sharp mx-3 flex flex-col items-center justify-center border border-dashed border-[#F5F1E8]/12 py-16 text-center text-[#9A938A]">
+            <Bookmark className="mb-3 h-7 w-7 opacity-60" />
+            <p className="text-sm font-medium text-[#F5F1E8]">{tr("noSavedBeesTitle", "Nenhum bee salvo")}</p>
+            <p className="mt-1 text-xs text-[#9A938A]">
+              {tr("noSavedBees", "Bees salvos somem quando expiram — os melhores ficam no ar por até 7 dias.")}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-px">
+            {beeItems.map((bee) => {
+              const thumb = bee.media_type === "image" ? bee.video_url : bee.thumbnail_url
+              return (
+                <div
+                  key={bee.id_story}
+                  className={`group relative overflow-hidden bg-[#1d1810] ${aspectClass}`}
+                >
+                  <Link
+                    href={`/bees?bee=${bee.id_story}`}
+                    aria-label={bee.caption || bee.profile_name || tr("openBee", "Abrir bee")}
+                    className="absolute inset-0 z-0"
+                  >
+                    {thumb ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={thumb}
+                        alt={bee.caption || bee.profile_name || tr("savedAlt", "Salvo")}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Hexagon className="h-8 w-8 text-white/15" />
+                      </div>
+                    )}
+                  </Link>
+
+                  {bee.machine?.color_accent && (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute left-2 top-2 z-10 h-2 w-2 rounded-full ring-2 ring-zinc-950"
+                      style={{ backgroundColor: bee.machine.color_accent }}
+                      title={bee.machine.name || ""}
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveBee(bee.id_story)}
+                    disabled={!!removing[bee.id_story]}
+                    aria-label={tr("removeFromSaved", "Remover dos salvos")}
+                    title={tr("removeFromSaved", "Remover dos salvos")}
+                    className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:border-rose-400/40 hover:text-rose-300 disabled:opacity-40"
+                  >
+                    {removing[bee.id_story] ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-2 py-2 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                    <p className="truncate font-medium">
+                      {bee.profile_name || bee.username || tr("menuProfile", "Perfil")}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
       ) : items.length === 0 ? (
         <div className="mx-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-[#F5F1E8]/12 py-16 text-center text-[#9A938A]">
           <Bookmark className="mb-3 h-7 w-7 opacity-60" />

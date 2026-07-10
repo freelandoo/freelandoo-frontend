@@ -42,8 +42,32 @@ const BEES = {
   linkOpenAria: ["Abrir link", "Open link", "Abrir enlace"],
 }
 
+// ── F2: barra de ações do StoryPlayer (ns Stories) ──────────────────────────
+const STORIES = {
+  like: ["Curtir", "Like", "Me gusta"],
+  unlike: ["Descurtir", "Unlike", "Quitar me gusta"],
+  comments: ["Comentários", "Comments", "Comentarios"],
+  share: ["Compartilhar", "Share", "Compartir"],
+  linkOpenAria: ["Abrir link", "Open link", "Abrir enlace"],
+}
+
+// ── F2: aba Salvos (ns Account) — chips Posts/Curtos/Bees ───────────────────
+const ACCOUNT = {
+  curtosLabel: ["Curtos", "Shorts", "Cortos"],
+  savedKindBees: ["Bees", "Bees", "Bees"],
+  noSavedBeesTitle: ["Nenhum bee salvo", "No saved bees", "Ningún bee guardado"],
+  noSavedBees: [
+    "Bees salvos somem quando expiram — os melhores ficam no ar por até 7 dias.",
+    "Saved bees disappear when they expire — the best ones stay up for up to 7 days.",
+    "Los bees guardados desaparecen al expirar — los mejores quedan hasta 7 días.",
+  ],
+  openBee: ["Abrir bee", "Open bee", "Abrir bee"],
+}
+
 const NAMESPACES = [
   ["Bees", BEES],
+  ["Stories", STORIES],
+  ["Account", ACCOUNT],
 ]
 
 function mergeNamespace(json, ns, keys, localeIndex) {
