@@ -50,6 +50,59 @@ function putToR2(slot: PresignSlot, blob: Blob, onProgress?: (frac: number) => v
   })
 }
 
+// Fallback do PUT direto: o browser manda o blob pro backend, que grava no R2
+// na MESMA key assinada. Necessário enquanto o bucket não tiver regra de CORS
+// (preflight do PUT presigned é bloqueado e o xhr cai em onerror).
+function putViaProxy(
+  token: string,
+  id_profile: string,
+  slot: PresignSlot,
+  blob: Blob,
+  onProgress?: (frac: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData()
+    fd.append("file", new File([blob], slot.key.split("/").pop() || "media", { type: slot.content_type }))
+    fd.append("id_profile", id_profile)
+    fd.append("key", slot.key)
+    const xhr = new XMLHttpRequest()
+    xhr.open("POST", `${getPublicBackendUrl()}/me/stories/upload-proxy`, true)
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total)
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve()
+      let msg = `Falha no upload (${xhr.status})`
+      try {
+        msg = (JSON.parse(xhr.responseText) as { error?: string })?.error || msg
+      } catch { /* non-json */ }
+      reject(new Error(msg))
+    }
+    xhr.onerror = () => reject(new Error("Falha de rede no upload"))
+    xhr.send(fd)
+  })
+}
+
+// PUT direto no R2 com fallback pro proxy quando a falha é de rede (CORS).
+async function putSlot(
+  token: string,
+  id_profile: string,
+  slot: PresignSlot,
+  blob: Blob,
+  onProgress?: (frac: number) => void,
+): Promise<void> {
+  try {
+    await putToR2(slot, blob, onProgress)
+  } catch (err) {
+    if (err instanceof Error && err.message === "Falha de rede no upload") {
+      await putViaProxy(token, id_profile, slot, blob, onProgress)
+      return
+    }
+    throw err
+  }
+}
+
 export interface UploadStoryParams {
   token: string
   id_profile: string
@@ -94,12 +147,12 @@ export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory>
     media_type: isImage ? "image" : "video",
   })
 
-  // 2) PUT direto pro R2 (mídia principal = 85% da barra; poster = 15%)
-  await putToR2(urls.video, p.videoBlob, (f) => p.onProgress?.(f * 0.85))
+  // 2) PUT direto pro R2 com fallback via backend (mídia = 85%; poster = 15%)
+  await putSlot(p.token, p.id_profile, urls.video, p.videoBlob, (f) => p.onProgress?.(f * 0.85))
   let thumbnailKey: string | null = null
   if (p.posterBlob && p.posterBlob.size <= urls.poster.max_bytes) {
     try {
-      await putToR2(urls.poster, p.posterBlob, (f) => p.onProgress?.(0.85 + f * 0.15))
+      await putSlot(p.token, p.id_profile, urls.poster, p.posterBlob, (f) => p.onProgress?.(0.85 + f * 0.15))
       thumbnailKey = urls.poster.key
     } catch {
       thumbnailKey = null // poster é best-effort

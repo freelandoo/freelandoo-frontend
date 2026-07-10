@@ -881,7 +881,7 @@ export default function FreelancerProfileView({
                     : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
                 }`}
               >
-                <Hexagon className="h-4 w-4" />
+                <Clapperboard className="h-4 w-4" />
               </button>
               {servicesOn && (
                 <button
