@@ -124,3 +124,56 @@ export type FeedEventType =
   | "social_click"
   | "view_more_caption"
   | "content_retention"
+
+// ── Bees v2 (stories) ────────────────────────────────────────────────────────
+
+/** Link estilizado anexado a um bee (máx. 3 por bee). */
+export interface BeeLink {
+  label: string
+  url: string
+  style: "gold" | "paper" | "ink"
+}
+
+/** Item da timeline /bees — GET /bees/timeline. post_id === id_story
+ *  (espelha o FeedPost pra reaproveitar CommentsPanel e a anatomia do card). */
+export interface BeeItem {
+  id_story: string
+  post_id: string
+  profile_id: string
+  profile_name: string | null
+  avatar_url: string | null
+  username: string | null
+  is_clan: boolean
+  sub_profile_slug: string | null
+  machine: FeedMachine | null
+  city: string | null
+  state: string | null
+  caption: string | null
+  media_type: FeedMediaType
+  video_url: string
+  thumbnail_url: string | null
+  duration_seconds: number
+  width: number | null
+  height: number | null
+  location: string | null
+  links: BeeLink[]
+  audio: FeedAudio | null
+  likes_count: number
+  comments_count: number
+  shares_count: number
+  impressions_count: number
+  engagement_score: number
+  created_at: string
+  published_at: string
+  effective_expires_at: string
+  viewer_has_liked: boolean
+  viewer_has_bookmarked: boolean
+  public_profile_url: string | null
+}
+
+export interface BeeTimelineResponse {
+  items: BeeItem[]
+  next_cursor: string | null
+  has_more: boolean
+  scope: "global" | "following"
+}

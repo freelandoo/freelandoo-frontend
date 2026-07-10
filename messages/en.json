@@ -3605,7 +3605,20 @@
     "share": "Share",
     "unlike": "Unlike",
     "unmute": "Unmute",
-    "viewLives": "View lives"
+    "viewLives": "View lives",
+    "scopeGlobal": "Global",
+    "scopeFollowing": "Following",
+    "filterMenuAria": "Filter timeline",
+    "emptyTimelineTitle": "No bees around here yet",
+    "emptyTimelineDescription": "Bees are Freelandoo's stories. When someone posts, they show up here — the best ones stay up for up to 7 days.",
+    "emptyFollowingTitle": "Nothing here yet",
+    "emptyFollowing": "Nobody you follow posted a bee. Switch to Global in the menu above.",
+    "loginTitle": "Sign in to see the bees",
+    "loginDescription": "Bees are Freelandoo's stories — videos that last from 24h to 7 days, depending on engagement.",
+    "loginCta": "Sign in",
+    "reactAria": "React with emoji",
+    "reactWith": "React with {emoji}",
+    "linkOpenAria": "Open link"
   },
   "Comments": {
     "beFirst": "Be the first to comment.",

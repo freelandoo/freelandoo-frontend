@@ -36,6 +36,9 @@ interface CommentsPanelProps {
   onCountChange?: (postId: string, delta: number) => void
   /** Override pro fallback de "Entre pra comentar" */
   loginNextPath?: string
+  /** Base da API de comentários. Posts usam o default; bees passam "/api/bees"
+   *  (o backend do bee devolve o MESMO shape, com aliases id_portfolio_*). */
+  apiBase?: string
 }
 
 function timeAgo(iso: string, t: TFn): string {
@@ -90,6 +93,7 @@ export function CommentsPanel({
   onClose,
   onCountChange,
   loginNextPath,
+  apiBase = "/api/portfolio",
 }: CommentsPanelProps) {
   const t = useTranslations("Comments")
   const [mounted, setMounted] = useState(false)
@@ -132,7 +136,7 @@ export function CommentsPanel({
       const headers: Record<string, string> = {}
       const token = getToken()
       if (token) headers["Authorization"] = `Bearer ${token}`
-      const res = await fetch(`/api/portfolio/items/${postId}/comments?${sp.toString()}`, {
+      const res = await fetch(`${apiBase}/items/${postId}/comments?${sp.toString()}`, {
         method: "GET",
         headers,
         cache: "no-store",
@@ -147,7 +151,7 @@ export function CommentsPanel({
       setHasMore(!!data.has_more)
       setCursor(data.next_cursor ?? null)
     },
-    [postId],
+    [postId, apiBase],
   )
 
   useEffect(() => {
@@ -197,7 +201,7 @@ export function CommentsPanel({
     setSubmitting(true)
     setError(null)
     try {
-      const res = await fetch(`/api/portfolio/items/${postId}/comments`, {
+      const res = await fetch(`${apiBase}/items/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -229,7 +233,7 @@ export function CommentsPanel({
     if (!token) return
     if (!confirm(t("confirmDelete", "Remover esse comentário?"))) return
     try {
-      const res = await fetch(`/api/portfolio/comments/${commentId}`, {
+      const res = await fetch(`${apiBase}/comments/${commentId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -269,7 +273,7 @@ export function CommentsPanel({
       }),
     )
     try {
-      const res = await fetch(`/api/portfolio/comments/${commentId}/like`, {
+      const res = await fetch(`${apiBase}/comments/${commentId}/like`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       })

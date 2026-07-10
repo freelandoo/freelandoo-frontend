@@ -3585,7 +3585,20 @@
     "share": "Compartir",
     "unlike": "Quitar me gusta",
     "unmute": "Activar sonido",
-    "viewLives": "Ver lives"
+    "viewLives": "Ver lives",
+    "scopeGlobal": "Global",
+    "scopeFollowing": "A quien sigo",
+    "filterMenuAria": "Filtrar la línea de tiempo",
+    "emptyTimelineTitle": "Todavía no hay bees por aquí",
+    "emptyTimelineDescription": "Los bees son los stories de Freelandoo. Cuando alguien publique, aparecen aquí — los mejores quedan hasta 7 días.",
+    "emptyFollowingTitle": "Nada por aquí todavía",
+    "emptyFollowing": "Nadie a quien sigues publicó un bee. Cambia a Global en el menú de arriba.",
+    "loginTitle": "Entra para ver los bees",
+    "loginDescription": "Los bees son los stories de Freelandoo — videos que duran de 24h a 7 días, según el engagement.",
+    "loginCta": "Entrar",
+    "reactAria": "Reaccionar con emoji",
+    "reactWith": "Reaccionar con {emoji}",
+    "linkOpenAria": "Abrir enlace"
   },
   "Comments": {
     "beFirst": "Sé la primera persona en comentar.",

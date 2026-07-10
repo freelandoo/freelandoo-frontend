@@ -2,14 +2,15 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
-import { Loader2, Radio, Sparkles } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Check, Loader2, MoreHorizontal, Radio, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 import { onRealtime } from "@/lib/realtime"
 import { cn } from "@/lib/utils"
-import type { FeedFilters, FeedPost, FeedResponse } from "@/lib/types/portfolio-feed"
-import { BeesPost } from "@/components/bees/bees-post"
+import type { BeeItem, BeeTimelineResponse } from "@/lib/types/portfolio-feed"
+import { BeePost } from "@/components/bees/bee-post"
 import { CommentsPanel } from "@/components/comments/comments-panel"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -22,6 +23,16 @@ const LivesView = dynamic(
 
 const PAGE_LIMIT = 6
 const PREFETCH_THRESHOLD = 2
+
+type BeeScope = "global" | "following"
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function dedupeBees(prev: BeeItem[], next: BeeItem[]) {
+  const seen = new Set(prev.map((b) => b.id_story))
+  return [...prev, ...next.filter((b) => !seen.has(b.id_story))]
+}
 
 export default function BeesPage() {
   return (
@@ -39,19 +50,30 @@ export default function BeesPage() {
 
 function BeesPageInner() {
   const t = useTranslations("Bees")
-  const [items, setItems] = useState<FeedPost[]>([])
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [items, setItems] = useState<BeeItem[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [needsLogin, setNeedsLogin] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const [muted, setMuted] = useState(true)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  // Filtro da timeline (3 pontinhos): Global (padrão) ou Quem acompanho.
+  const [scope, setScope] = useState<BeeScope>(() => {
+    if (typeof window === "undefined") return "global"
+    return window.localStorage.getItem("bees_scope") === "following" ? "following" : "global"
+  })
+  const [menuOpen, setMenuOpen] = useState(false)
   // Aba Lives dentro do próprio /bees (sem header de site): só um botão flutuante
   // que troca o conteúdo para a lista de lives.
   const [view, setView] = useState<"bees" | "lives">("bees")
   const [liveCount, setLiveCount] = useState(0)
+  // Deep-link ?bee=<id> (share/Salvos/notificações) — prepend do bee na lista.
+  const deepLinkBee = searchParams.get("bee")
 
   // Conta lives ativas para o selo no botão. O backend empurra "lives:changed"
   // via WebSocket quando uma live abre/encerra — o poll virou só fallback
@@ -87,33 +109,44 @@ function BeesPageInner() {
   }, [])
 
   const fetchPage = useCallback(async (nextCursor: string | null, replace: boolean) => {
+    const token = getToken()
+    if (!token) {
+      setNeedsLogin(true)
+      return
+    }
     const sp = new URLSearchParams()
     if (nextCursor) sp.set("cursor", nextCursor)
     sp.set("limit", String(PAGE_LIMIT))
+    sp.set("scope", scope)
 
-    const headers: Record<string, string> = {}
-    const token = getToken()
-    if (token) headers["Authorization"] = `Bearer ${token}`
-
-    const res = await fetch(`/api/feed/bees?${sp.toString()}`, {
+    const res = await fetch(`/api/bees/timeline?${sp.toString()}`, {
       method: "GET",
-      headers,
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     })
+    if (res.status === 401) {
+      setNeedsLogin(true)
+      return
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = (await res.json()) as FeedResponse
-    setItems((prev) => (replace ? data.items : [...prev, ...data.items]))
+    const data = (await res.json()) as BeeTimelineResponse
+    setItems((prev) => (replace ? data.items : dedupeBees(prev, data.items)))
     setCursor(data.next_cursor)
     setHasMore(!!data.has_more)
-  }, [])
+  }, [scope])
 
+  // Carga inicial + recarga ao trocar o scope (persiste a escolha).
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("bees_scope", scope)
+    }
     let cancelled = false
     setLoadingInitial(true)
     setError(null)
+    setActiveIndex(0)
     fetchPage(null, true)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar Bees"))
+        if (!cancelled) setError(e instanceof Error ? e.message : t("loadError", "Erro ao carregar os bees"))
       })
       .finally(() => {
         if (!cancelled) setLoadingInitial(false)
@@ -121,7 +154,30 @@ function BeesPageInner() {
     return () => {
       cancelled = true
     }
-  }, [fetchPage, t])
+  }, [fetchPage, scope, t])
+
+  // Deep-link: busca o bee apontado e coloca no topo da timeline.
+  useEffect(() => {
+    if (!deepLinkBee || !UUID_RE.test(deepLinkBee)) return
+    const token = getToken()
+    if (!token) return
+    let cancelled = false
+    fetch(`/api/bees/${encodeURIComponent(deepLinkBee)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { item?: BeeItem } | null) => {
+        if (cancelled || !data?.item) return
+        const item = data.item
+        setItems((prev) => [item, ...prev.filter((b) => b.id_story !== item.id_story)])
+        setActiveIndex(0)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [deepLinkBee])
 
   // Prefetch quando estiver perto do fim
   useEffect(() => {
@@ -132,14 +188,6 @@ function BeesPageInner() {
       .catch(() => {})
       .finally(() => setLoadingMore(false))
   }, [activeIndex, items.length, cursor, hasMore, loadingInitial, loadingMore, fetchPage])
-
-  const filtersForEvents: FeedFilters = {
-    id_machine: null,
-    id_category: null,
-    estado: null,
-    municipio: null,
-    level_min: null,
-  }
 
   if (view === "lives") {
     return (
@@ -168,35 +216,78 @@ function BeesPageInner() {
         <Radio className={cn("h-4 w-4", liveCount > 0 && "animate-pulse")} /> {t("liveButton", "Live")}
       </motion.button>
 
-      {loadingInitial ? (
+      {/* Menu 3 pontinhos brancos — filtro Global / Quem acompanho */}
+      <div className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-50">
+        <button
+          type="button"
+          aria-label={t("filterMenuAria", "Filtrar timeline")}
+          onClick={() => setMenuOpen((v) => !v)}
+          className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+        >
+          <MoreHorizontal className="h-7 w-7" />
+        </button>
+        {menuOpen && (
+          <div className="fl-sharp absolute left-0 top-10 w-52 border-2 border-[#0B0B0D] bg-[#15120E] shadow-[4px_4px_0_#F2B705]">
+            {(["global", "following"] as const).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  if (opt !== scope) setScope(opt)
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold",
+                  scope === opt ? "bg-[#F2B705] text-[#0B0B0D]" : "text-white/85 hover:bg-white/5",
+                )}
+              >
+                {opt === "global" ? t("scopeGlobal", "Global") : t("scopeFollowing", "Quem acompanho")}
+                {scope === opt && <Check className="h-4 w-4" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {needsLogin ? (
+        <LoginState
+          title={t("loginTitle", "Entre pra ver os bees")}
+          description={t("loginDescription", "Os bees são os stories da Freelandoo — vídeos que duram de 24h a 7 dias, dependendo do engajamento.")}
+          cta={t("loginCta", "Entrar")}
+          onLogin={() => router.push(`/login?next=${encodeURIComponent("/bees")}`)}
+        />
+      ) : loadingInitial ? (
         <LoadingState />
       ) : error && items.length === 0 ? (
         <ErrorState message={error} onRetry={() => fetchPage(null, true)} retryLabel={t("retry", "Tentar de novo")} />
       ) : items.length === 0 ? (
         <EmptyState
-          title={t("emptyTitle", "Ainda não tem Bees por aqui")}
-          description={t("emptyDescription", "Bees é o feed vertical 9:16. Quando alguém publicar um vídeo nesse formato, ele aparece aqui automaticamente.")}
+          title={scope === "following" ? t("emptyFollowingTitle", "Nada por aqui ainda") : t("emptyTimelineTitle", "Ainda não tem bees por aqui")}
+          description={
+            scope === "following"
+              ? t("emptyFollowing", "Ninguém que você acompanha postou um bee. Mude pra Global no menu acima.")
+              : t("emptyTimelineDescription", "Bees são os stories da Freelandoo. Quando alguém publicar, eles aparecem aqui — os melhores ficam no ar por até 7 dias.")
+          }
         />
       ) : (
         <>
           <BeesScroller
             items={items}
-            filtersForEvents={filtersForEvents}
             muted={muted}
             onToggleMute={() => setMuted((m) => !m)}
             activeIndex={activeIndex}
             onActiveChange={setActiveIndex}
-            onOpenComments={(postId) => setOpenCommentsFor(postId)}
-            onLikeChange={(postId, liked, likes_count) => {
+            onOpenComments={(idStory) => setOpenCommentsFor(idStory)}
+            onLikeChange={(idStory, liked, likes_count) => {
               setItems((prev) =>
-                prev.map((p) =>
-                  p.post_id === postId
+                prev.map((b) =>
+                  b.id_story === idStory
                     ? {
-                        ...p,
+                        ...b,
                         viewer_has_liked: liked,
-                        likes_count: likes_count ?? p.likes_count,
+                        likes_count: likes_count ?? b.likes_count,
                       }
-                    : p,
+                    : b,
                 ),
               )
             }}
@@ -206,15 +297,16 @@ function BeesPageInner() {
             open={!!openCommentsFor}
             onClose={() => setOpenCommentsFor(null)}
             loginNextPath="/bees"
-            onCountChange={(postId, delta) => {
+            apiBase="/api/bees"
+            onCountChange={(idStory, delta) => {
               setItems((prev) =>
-                prev.map((p) =>
-                  p.post_id === postId
+                prev.map((b) =>
+                  b.id_story === idStory
                     ? {
-                        ...p,
-                        comments_count: Math.max(0, (p.comments_count ?? 0) + delta),
+                        ...b,
+                        comments_count: Math.max(0, (b.comments_count ?? 0) + delta),
                       }
-                    : p,
+                    : b,
                 ),
               )
             }}
@@ -227,7 +319,6 @@ function BeesPageInner() {
 
 function BeesScroller({
   items,
-  filtersForEvents,
   muted,
   onToggleMute,
   activeIndex,
@@ -235,14 +326,13 @@ function BeesScroller({
   onLikeChange,
   onOpenComments,
 }: {
-  items: FeedPost[]
-  filtersForEvents: FeedFilters
+  items: BeeItem[]
   muted: boolean
   onToggleMute: () => void
   activeIndex: number
   onActiveChange: (i: number) => void
-  onLikeChange: (postId: string, liked: boolean, likes_count: number | null) => void
-  onOpenComments: (postId: string) => void
+  onLikeChange: (idStory: string, liked: boolean, likes_count: number | null) => void
+  onOpenComments: (idStory: string) => void
 }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
@@ -257,11 +347,10 @@ function BeesScroller({
           display: none;
         }
       `}</style>
-      {items.map((post, idx) => (
-        <BeesPost
-          key={post.post_id}
-          post={post}
-          filters={filtersForEvents}
+      {items.map((bee, idx) => (
+        <BeePost
+          key={bee.id_story}
+          bee={bee}
           isActive={idx === activeIndex}
           muted={muted}
           onToggleMute={onToggleMute}
@@ -270,7 +359,7 @@ function BeesScroller({
           }}
           onLikeChange={onLikeChange}
           onOpenComments={onOpenComments}
-          commentsCount={post.comments_count ?? 0}
+          commentsCount={bee.comments_count ?? 0}
         />
       ))}
     </div>
@@ -292,7 +381,7 @@ function ErrorState({ message, onRetry, retryLabel }: { message: string; onRetry
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
+        className="fl-sharp border border-white/20 bg-white/5 px-4 py-2 text-sm transition hover:bg-white/10"
       >
         {retryLabel}
       </button>
@@ -308,6 +397,23 @@ function EmptyState({ title, description }: { title: string; description: string
       <p className="max-w-xs text-sm text-white/55">
         {description}
       </p>
+    </div>
+  )
+}
+
+function LoginState({ title, description, cta, onLogin }: { title: string; description: string; cta: string; onLogin: () => void }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-6 text-center text-white/80">
+      <Sparkles className="h-10 w-10 text-[#F2B705]" />
+      <p className="text-base font-semibold">{title}</p>
+      <p className="max-w-xs text-sm text-white/55">{description}</p>
+      <button
+        type="button"
+        onClick={onLogin}
+        className="fl-sharp bg-[#F2B705] px-5 py-2 text-sm font-bold uppercase tracking-wide text-[#0B0B0D] transition active:scale-95"
+      >
+        {cta}
+      </button>
     </div>
   )
 }
