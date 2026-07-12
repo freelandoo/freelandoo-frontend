@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Hexagon, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle } from "lucide-react"
+import { HeartHandshake, Loader2, Users, Clock, Target, Square, ArrowLeft, ImageIcon, Clapperboard, Type, Trash2, Plus, UploadCloud, Repeat, Award, XCircle } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -717,7 +717,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
               <div className="flex gap-1.5">
                 <ComposerBtn icon={Type} label={t("kindText", "Texto")} onClick={() => openComposer("text")} />
                 <ComposerBtn icon={ImageIcon} label={t("kindPost", "Foto")} onClick={() => openComposer("post")} />
-                <ComposerBtn icon={Hexagon} label={t("kindBee", "Bee")} onClick={() => openComposer("bee")} />
+                <ComposerBtn icon={Clapperboard} label={t("kindCurto", "Curto")} onClick={() => openComposer("bee")} />
               </div>
             )}
           </div>
@@ -726,7 +726,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
           {isOwner && composerKind && (
             <div className="mb-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
               <p className="fl-display text-lg">
-                {composerKind === "text" ? t("kindText", "Texto") : composerKind === "post" ? t("kindPost", "Foto") : t("kindBee", "Bee")}
+                {composerKind === "text" ? t("kindText", "Texto") : composerKind === "post" ? t("kindPost", "Foto") : t("kindCurto", "Curto")}
               </p>
               <textarea
                 value={caption}

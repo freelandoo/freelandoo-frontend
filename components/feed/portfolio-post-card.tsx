@@ -948,11 +948,11 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               </button>
             )}
 
-            {/* Rodapé — selo Bee / assinatura tabloide */}
+            {/* Rodapé — selo Curto / assinatura tabloide */}
             <div className="mt-2 flex items-center justify-between border-t border-[#F5F1E8]/10 px-3 py-2">
               {post.feed_kind === "bees" ? (
                 <span className="inline-flex -rotate-1 items-center gap-1 border border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
-                  <Sparkles className="h-3 w-3" /> {t("beeLabel", "Bee")}
+                  <Sparkles className="h-3 w-3" /> {t("curtoLabel", "Curto")}
                 </span>
               ) : (
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#F5F1E8]/30">

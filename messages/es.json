@@ -1726,7 +1726,8 @@
     "accessCommunity": "Abrir comunidad",
     "recadoLabel": "Recado",
     "deleteRecado": "Eliminar",
-    "accessAcademy": "Abrir gimnasio"
+    "accessAcademy": "Abrir gimnasio",
+    "curtoLabel": "Corto"
   },
   "Stories": {
     "createStoryLabel": "Publicar",
@@ -2493,7 +2494,8 @@
     "summaryAvailable": "Liberado",
     "summaryTotal": "Total neto",
     "lockedTitle": "Comunidad privada",
-    "lockedText": "El feed es exclusivo para miembros. Suscríbete para entrar y ver todo lo que pasa aquí dentro."
+    "lockedText": "El feed es exclusivo para miembros. Suscríbete para entrar y ver todo lo que pasa aquí dentro.",
+    "curtoLabel": "Corto"
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -4647,7 +4649,8 @@
     "noSponsors": "Sé el primero en patrocinar.",
     "sponsorSince": "Apoya desde",
     "recentPayments": "Apoyos recientes",
-    "bolsaEndedHint": "Esta beca ya no recibe patrocinios."
+    "bolsaEndedHint": "Esta beca ya no recibe patrocinios.",
+    "kindCurto": "Corto"
   },
   "ApiConnections": {
     "title": "Conectar atención",
@@ -4895,7 +4898,8 @@
     "selectCity": "Selecciona la ciudad",
     "createMissingCity": "Completa nombre, estado, ciudad, URL de la API y token.",
     "testDotOk": "Conectado",
-    "testDotFail": "Sin conexión"
+    "testDotFail": "Sin conexión",
+    "curtoLabel": "Corto"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

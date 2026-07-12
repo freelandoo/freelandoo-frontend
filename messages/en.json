@@ -1726,7 +1726,8 @@
     "accessCommunity": "Open community",
     "recadoLabel": "Note",
     "deleteRecado": "Delete",
-    "accessAcademy": "Open gym"
+    "accessAcademy": "Open gym",
+    "curtoLabel": "Short"
   },
   "Stories": {
     "createStoryLabel": "Post",
@@ -2493,7 +2494,8 @@
     "summaryAvailable": "Available",
     "summaryTotal": "Net total",
     "lockedTitle": "Private community",
-    "lockedText": "The feed is members-only. Subscribe to join and see everything happening inside."
+    "lockedText": "The feed is members-only. Subscribe to join and see everything happening inside.",
+    "curtoLabel": "Short"
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -4667,7 +4669,8 @@
     "noSponsors": "Be the first to sponsor.",
     "sponsorSince": "Supporting since",
     "recentPayments": "Recent support",
-    "bolsaEndedHint": "This fund is no longer accepting sponsorships."
+    "bolsaEndedHint": "This fund is no longer accepting sponsorships.",
+    "kindCurto": "Short"
   },
   "ApiConnections": {
     "title": "Connect support tool",
@@ -4915,7 +4918,8 @@
     "selectCity": "Select the city",
     "createMissingCity": "Fill in name, state, city, API URL and token.",
     "testDotOk": "Connected",
-    "testDotFail": "No connection"
+    "testDotFail": "No connection",
+    "curtoLabel": "Short"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

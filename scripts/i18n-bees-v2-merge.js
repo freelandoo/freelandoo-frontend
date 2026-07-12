@@ -126,12 +126,32 @@ const COMPOSER = {
   "bee.styleInk": ["Tinta", "Ink", "Tinta"],
 }
 
+// ── Escoteiro 2026-07-12: superfícies que escaparam do rename Curtos ────────
+// Botões/selos que ainda diziam "Bee" mas publicam/exibem VÍDEO (Curto):
+// mural da academia, composer da comunidade, selo do card do feed e vaquinha.
+const POST = {
+  curtoLabel: ["Curto", "Short", "Corto"],
+}
+const COMMUNITY = {
+  curtoLabel: ["Curto", "Short", "Corto"],
+}
+const ACADEMIES = {
+  curtoLabel: ["Curto", "Short", "Corto"],
+}
+const VAQUINHA = {
+  kindCurto: ["Curto", "Short", "Corto"],
+}
+
 const NAMESPACES = [
   ["Bees", BEES],
   ["Stories", STORIES],
   ["Account", ACCOUNT],
   ["Composer", COMPOSER],
   ["Profile", PROFILE],
+  ["Post", POST],
+  ["Community", COMMUNITY],
+  ["Academies", ACADEMIES],
+  ["Vaquinha", VAQUINHA],
 ]
 
 function mergeNamespace(json, ns, keys, localeIndex) {

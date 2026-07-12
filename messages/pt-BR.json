@@ -1726,7 +1726,8 @@
     "accessCommunity": "Acessar comunidade",
     "recadoLabel": "Recado",
     "deleteRecado": "Apagar",
-    "accessAcademy": "Acessar academia"
+    "accessAcademy": "Acessar academia",
+    "curtoLabel": "Curto"
   },
   "Stories": {
     "createStoryLabel": "Postar",
@@ -2480,7 +2481,8 @@
     "summaryAvailable": "Liberado",
     "summaryTotal": "Total líquido",
     "lockedTitle": "Comunidade privada",
-    "lockedText": "O feed é exclusivo para membros. Assine para entrar e ver tudo que acontece aqui dentro."
+    "lockedText": "O feed é exclusivo para membros. Assine para entrar e ver tudo que acontece aqui dentro.",
+    "curtoLabel": "Curto"
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -4081,7 +4083,8 @@
     "noSponsors": "Seja o primeiro a patrocinar.",
     "sponsorSince": "Apoia desde",
     "recentPayments": "Apoios recentes",
-    "bolsaEndedHint": "Esta bolsa não está mais recebendo patrocínios."
+    "bolsaEndedHint": "Esta bolsa não está mais recebendo patrocínios.",
+    "kindCurto": "Curto"
   },
   "ApiConnections": {
     "title": "Conectar atendimento",
@@ -4329,7 +4332,8 @@
     "selectCity": "Selecione a cidade",
     "createMissingCity": "Preencha nome, estado, cidade, URL da API e token.",
     "testDotOk": "Conectado",
-    "testDotFail": "Sem conexão"
+    "testDotFail": "Sem conexão",
+    "curtoLabel": "Curto"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

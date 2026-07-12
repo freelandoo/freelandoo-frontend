@@ -876,7 +876,7 @@ export default function CommunityDetailPage() {
                           <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
                         </button>
                         <button type="button" onClick={() => openComposer("bee")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                          <Film className="h-4 w-4" /> {t("beeLabel", "Bee")}
+                          <Film className="h-4 w-4" /> {t("curtoLabel", "Curto")}
                         </button>
                         <button type="button" onClick={openRecado} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                           <MessageSquare className="h-4 w-4" /> {t("recadoLabel", "Recado")}
