@@ -199,7 +199,13 @@ export function FitnessView() {
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (d) setMe({ nome: d.nome || null, username: d.username || null, avatar: d.avatar || null })
+        if (!d) return
+        // Sem foto no user (tb_user.avatar), espelha a do subperfil mais
+        // recente que tiver uma — /users/me já devolve profiles[].avatar_url.
+        const profileAvatar = Array.isArray(d.profiles)
+          ? d.profiles.find((p: { avatar_url?: string | null; deleted_at?: string | null }) => p?.avatar_url && !p.deleted_at)?.avatar_url ?? null
+          : null
+        setMe({ nome: d.nome || null, username: d.username || null, avatar: d.avatar || profileAvatar })
       })
       .catch(() => {})
   }, [])
