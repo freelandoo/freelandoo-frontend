@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import {
   ChevronLeft,
@@ -108,6 +108,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
   const [planNotes, setPlanNotes] = useState("")
   const [planExercises, setPlanExercises] = useState<PlanExercise[]>([])
   const [saving, setSaving] = useState(false)
+  const planNameRef = useRef<HTMLInputElement | null>(null)
 
   // biblioteca
   const [library, setLibrary] = useState<Exercise[]>([])
@@ -217,6 +218,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
     if (!detail) return
     if (!planName.trim()) {
       toast.error(t("planNameMissing", "Dê um nome à ficha (ex.: Treino A)"))
+      planNameRef.current?.focus()
       return
     }
     if (planExercises.length === 0) {
@@ -608,7 +610,7 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNameLabel", "Nome da ficha")}</span>
-                <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none" />
+                <input ref={planNameRef} autoFocus value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder={t("planNamePh", "Treino A")} className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm outline-none focus:border-[#F2B705]" />
               </label>
               <label className="block">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#9A938A]">{t("planNotesLabel", "Observações")}</span>
