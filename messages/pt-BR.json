@@ -4321,7 +4321,13 @@
     "badgeMember": "Membro",
     "daysWord": "dias",
     "backToAcademy": "Voltar",
-    "goalWord": "meta"
+    "goalWord": "meta",
+    "fieldState": "Estado",
+    "selectState": "Selecione o estado",
+    "selectStateFirst": "Escolha o estado primeiro",
+    "loadingCities": "Carregando cidades…",
+    "selectCity": "Selecione a cidade",
+    "createMissingCity": "Preencha nome, estado, cidade, URL da API e token."
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
@@ -4456,6 +4462,7 @@
     "srcProduct": "Produto",
     "searchingProducts": "Buscando produtos industrializados...",
     "createAcademyCta": "Criar academia",
+    "academiesCta": "Academias",
     "scanCta": "Escanear código de barras",
     "searchNoResultsScan": "Nada encontrado pelo nome. Tente escanear o código de barras da embalagem.",
     "scanTitle": "Código de barras",

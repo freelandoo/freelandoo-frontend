@@ -190,6 +190,7 @@ const FITNESS = {
   eyebrow: ["Painel Fitness", "Fitness Panel", "Panel Fitness"],
   title: ["Meu dia", "My day", "Mi día"],
   createAcademyCta: ["Criar academia", "Create gym", "Crear gimnasio"],
+  academiesCta: ["Academias", "Gyms", "Gimnasios"],
   disabled: ["Recurso indisponível no momento.", "Feature unavailable right now.", "Recurso no disponible por ahora."],
   loadError: ["Erro ao carregar o painel. Tente novamente.", "Error loading the panel. Try again.", "Error al cargar el panel. Inténtalo de nuevo."],
   prevDay: ["Dia anterior", "Previous day", "Día anterior"],
@@ -386,6 +387,20 @@ const ACCOUNT = {
 Object.assign(ACADEMIES, {
   chipAcademy: ["Academia parceira", "Partner gym", "Gimnasio asociado"],
   backToFitness: ["Voltar pro painel fitness", "Back to fitness panel", "Volver al panel fitness"],
+})
+
+// Cidade estruturada no cadastro (mig 184): seletor de Estado + Município IBGE.
+Object.assign(ACADEMIES, {
+  fieldState: ["Estado", "State", "Estado"],
+  selectState: ["Selecione o estado", "Select the state", "Selecciona el estado"],
+  selectStateFirst: ["Escolha o estado primeiro", "Choose the state first", "Elige el estado primero"],
+  loadingCities: ["Carregando cidades…", "Loading cities…", "Cargando ciudades…"],
+  selectCity: ["Selecione a cidade", "Select the city", "Selecciona la ciudad"],
+  createMissingCity: [
+    "Preencha nome, estado, cidade, URL da API e token.",
+    "Fill in name, state, city, API URL and token.",
+    "Completa nombre, estado, ciudad, URL de la API y token.",
+  ],
 })
 
 // Propostas do professor (mig 180) + painel pessoal aberto (gate removido).

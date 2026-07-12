@@ -4907,7 +4907,13 @@
     "badgeMember": "Member",
     "daysWord": "days",
     "backToAcademy": "Back",
-    "goalWord": "goal"
+    "goalWord": "goal",
+    "fieldState": "State",
+    "selectState": "Select the state",
+    "selectStateFirst": "Choose the state first",
+    "loadingCities": "Loading cities…",
+    "selectCity": "Select the city",
+    "createMissingCity": "Fill in name, state, city, API URL and token."
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",
@@ -5042,6 +5048,7 @@
     "srcProduct": "Product",
     "searchingProducts": "Searching packaged products...",
     "createAcademyCta": "Create gym",
+    "academiesCta": "Gyms",
     "scanCta": "Scan barcode",
     "searchNoResultsScan": "Nothing found by name. Try scanning the package barcode.",
     "scanTitle": "Barcode",

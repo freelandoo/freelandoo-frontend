@@ -7,6 +7,7 @@ import { ArrowLeft, Dumbbell, Loader2, MapPin, Plus, Search, Users, X, PlugZap }
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 
 type Academy = {
   id_academy: string
@@ -14,6 +15,7 @@ type Academy = {
   slug: string
   descricao: string | null
   cidade: string | null
+  uf: string | null
   avatar_url: string | null
   member_count: number
 }
@@ -29,7 +31,34 @@ export function AcademiesView() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ nome: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
+  const [form, setForm] = useState({ nome: "", uf: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
+  // Municípios do estado escolhido (IBGE) — cidade estruturada pra indicadores.
+  const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
+
+  useEffect(() => {
+    const estado = ESTADOS_BRASIL.find((e) => e.uf === form.uf)
+    if (!estado) {
+      setMunicipios([])
+      return
+    }
+    let cancelled = false
+    setLoadingCities(true)
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estado.id}/municipios`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: { id: number; nome: string }[]) => {
+        if (!cancelled) setMunicipios(Array.isArray(data) ? data : [])
+      })
+      .catch(() => {
+        if (!cancelled) setMunicipios([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCities(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [form.uf])
 
   const load = useCallback(async () => {
     setState("loading")
@@ -67,8 +96,8 @@ export function AcademiesView() {
       toast.error(t("loginRequired", "Entre na sua conta para cadastrar uma academia."))
       return
     }
-    if (!form.nome.trim() || !form.api_base_url.trim() || !form.api_token.trim()) {
-      toast.error(t("createMissing", "Preencha nome, URL da API e token."))
+    if (!form.nome.trim() || !form.uf || !form.cidade || !form.api_base_url.trim() || !form.api_token.trim()) {
+      toast.error(t("createMissingCity", "Preencha nome, estado, cidade, URL da API e token."))
       return
     }
     setCreating(true)
@@ -82,7 +111,7 @@ export function AcademiesView() {
       if (!res.ok) throw new Error(data.error)
       toast.success(t("createOk", "Academia cadastrada!"))
       setCreateOpen(false)
-      setForm({ nome: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
+      setForm({ nome: "", uf: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
       void load()
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : t("createError", "Erro ao cadastrar academia"))
@@ -208,7 +237,7 @@ export function AcademiesView() {
                     <h2 className="truncate text-lg font-black uppercase leading-tight">{a.nome}</h2>
                     <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9A938A]">
                       <MapPin className="h-3 w-3 text-[#F2B705]" />
-                      {a.cidade || t("cityUnknown", "Cidade não informada")}
+                      {a.cidade ? `${a.cidade}${a.uf ? ` · ${a.uf}` : ""}` : t("cityUnknown", "Cidade não informada")}
                     </p>
                     <p className="mt-1 flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[#F2B705]">
                       <Users className="h-3 w-3" />
@@ -253,14 +282,41 @@ export function AcademiesView() {
                   className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
                 />
               </label>
-              <label className="block">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldCity", "Cidade")}</span>
-                <input
-                  value={form.cidade}
-                  onChange={(e) => setForm((f) => ({ ...f, cidade: e.target.value }))}
-                  className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
-                />
-              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldState", "Estado")}</span>
+                  <select
+                    value={form.uf}
+                    onChange={(e) => setForm((f) => ({ ...f, uf: e.target.value, cidade: "" }))}
+                    className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
+                  >
+                    <option value="">{t("selectState", "Selecione o estado")}</option>
+                    {ESTADOS_BRASIL.map((e) => (
+                      <option key={e.uf} value={e.uf}>{e.nome}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldCity", "Cidade")}</span>
+                  <select
+                    value={form.cidade}
+                    onChange={(e) => setForm((f) => ({ ...f, cidade: e.target.value }))}
+                    disabled={!form.uf || loadingCities}
+                    className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none disabled:opacity-50"
+                  >
+                    <option value="">
+                      {!form.uf
+                        ? t("selectStateFirst", "Escolha o estado primeiro")
+                        : loadingCities
+                          ? t("loadingCities", "Carregando cidades…")
+                          : t("selectCity", "Selecione a cidade")}
+                    </option>
+                    {municipios.map((m) => (
+                      <option key={m.id} value={m.nome}>{m.nome}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <label className="block">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldDescription", "Descrição")}</span>
                 <textarea
