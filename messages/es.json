@@ -4893,7 +4893,9 @@
     "selectStateFirst": "Elige el estado primero",
     "loadingCities": "Cargando ciudades…",
     "selectCity": "Selecciona la ciudad",
-    "createMissingCity": "Completa nombre, estado, ciudad, URL de la API y token."
+    "createMissingCity": "Completa nombre, estado, ciudad, URL de la API y token.",
+    "testDotOk": "Conectado",
+    "testDotFail": "Sin conexión"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

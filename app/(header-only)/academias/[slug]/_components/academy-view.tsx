@@ -102,6 +102,8 @@ export function AcademyView({ slug }: { slug: string }) {
   const [cpf, setCpf] = useState("")
   const [linking, setLinking] = useState(false)
   const [testing, setTesting] = useState(false)
+  // Resultado do último "Testar conexão": bolinha verde (ok) / vermelha (falha).
+  const [testResult, setTestResult] = useState<"ok" | "fail" | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState<"avatar" | "cover" | null>(null)
   const avatarRef = useRef<HTMLInputElement | null>(null)
@@ -189,8 +191,10 @@ export function AcademyView({ slug }: { slug: string }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      setTestResult("ok")
       toast.success(t("testOk", "Conexão OK — a API da academia respondeu."))
     } catch (err) {
+      setTestResult("fail")
       toast.error(err instanceof Error && err.message ? err.message : t("testError", "Falha no teste de conexão"))
     } finally {
       setTesting(false)
@@ -477,6 +481,15 @@ export function AcademyView({ slug }: { slug: string }) {
               <button onClick={() => void testConnection()} disabled={testing} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlugZap className="h-3.5 w-3.5" />}
                 {t("testCta", "Testar conexão")}
+                {!testing && testResult && (
+                  <span
+                    data-dot
+                    className={`ml-1 inline-block h-2.5 w-2.5 shrink-0 ${testResult === "ok" ? "bg-[#4fc95a]" : "bg-[#ff5a44]"}`}
+                    role="status"
+                    aria-label={testResult === "ok" ? t("testDotOk", "Conectado") : t("testDotFail", "Sem conexão")}
+                    title={testResult === "ok" ? t("testDotOk", "Conectado") : t("testDotFail", "Sem conexão")}
+                  />
+                )}
               </button>
               <button onClick={() => void syncNow()} disabled={syncing} className={`${BTN_DARK} px-4 py-2 text-xs`}>
                 {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}

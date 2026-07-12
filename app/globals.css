@@ -656,3 +656,5 @@ body.camera-active { overflow: hidden; }
 .fl-sharp *::after { border-radius: 0 !important; }
 .fl-sharp img[class*="rounded-full"],
 .fl-sharp [data-avatar] { border-radius: 9999px !important; }
+/* Bolinhas de status (verde/vermelha) também são círculos, não cantos. */
+.fl-sharp [data-dot] { border-radius: 9999px !important; }

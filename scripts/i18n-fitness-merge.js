@@ -403,6 +403,12 @@ Object.assign(ACADEMIES, {
   ],
 })
 
+// Bolinha de status no "Testar conexão" do painel do dono (2026-07-12).
+Object.assign(ACADEMIES, {
+  testDotOk: ["Conectado", "Connected", "Conectado"],
+  testDotFail: ["Sem conexão", "No connection", "Sin conexión"],
+})
+
 // Propostas do professor (mig 180) + painel pessoal aberto (gate removido).
 Object.assign(FITNESS, {
   loginText: [
