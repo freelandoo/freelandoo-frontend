@@ -256,10 +256,10 @@ export function AcademiesView() {
 
       {/* Modal de cadastro */}
       {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setCreateOpen(false)}>
+        {/* Cadastro em andamento: clicar fora NÃO fecha (só o X ou Cancelar). */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div
             className="fl-sharp max-h-[90vh] w-full max-w-lg overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }}
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b-2 border-[#0B0B0D] pb-3">
               <h2 className="text-xl font-black uppercase">{t("createTitle", "Cadastrar academia")}</h2>
