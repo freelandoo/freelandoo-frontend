@@ -9,6 +9,7 @@ import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { GlobalOverlays } from "@/components/global-overlays"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
+import { Toaster } from "sonner"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { FeatureFlagsProvider } from "@/components/feature-flags/FeatureFlagsProvider"
 import "./globals.css"
@@ -148,6 +149,15 @@ export default function RootLayout({
               {/* Overlays não-críticos (heartbeat, alertas admin, modal de
                   votação, prompts PWA) carregados lazy via client wrapper. */}
               <GlobalOverlays />
+              {/* Sem este Toaster, TODO toast.error/success do sonner (20+
+                  arquivos) dispara no vazio — erros de validação ficavam mudos
+                  e botões pareciam quebrados. borderRadius 0 = regra fl-sharp. */}
+              <Toaster
+                theme="dark"
+                position="top-center"
+                richColors
+                toastOptions={{ style: { borderRadius: 0 } }}
+              />
             </ConsentProvider>
           </FeatureFlagsProvider>
         </I18nProvider>
