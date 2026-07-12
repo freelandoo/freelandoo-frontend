@@ -4568,6 +4568,11 @@
     "kcalGoalSubmit": "Enviar",
     "kcalGoalCurrent": "Meta atual do aluno",
     "kcalGoalInvalid": "Limite de calorias inválido (500–10000)",
-    "kcalGoalError": "Erro ao enviar limite"
+    "kcalGoalError": "Erro ao enviar limite",
+    "openPlanModal": "Abrir ficha em tela cheia",
+    "progressCount": "{done}/{total} exercícios feitos",
+    "restLabel": "descanso {s}s",
+    "seriesLabel": "séries",
+    "loadLabel": "carga"
   }
 }

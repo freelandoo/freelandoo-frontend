@@ -5154,6 +5154,11 @@
     "kcalGoalSubmit": "Send",
     "kcalGoalCurrent": "Student's current goal",
     "kcalGoalInvalid": "Invalid calorie limit (500–10000)",
-    "kcalGoalError": "Error sending limit"
+    "kcalGoalError": "Error sending limit",
+    "openPlanModal": "Open plan full screen",
+    "progressCount": "{done}/{total} exercises done",
+    "restLabel": "rest {s}s",
+    "seriesLabel": "sets",
+    "loadLabel": "load"
   }
 }

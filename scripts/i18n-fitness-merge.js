@@ -606,6 +606,16 @@ Object.assign(WORKOUTS, {
   kcalGoalError: ["Erro ao enviar limite", "Error sending limit", "Error al enviar el límite"],
 })
 
+// Modal grande da ficha no card "Treino de hoje" do /fitness (2026-07-12):
+// clicar na ficha expande pra ler bem e marcar os checks.
+Object.assign(WORKOUTS, {
+  openPlanModal: ["Abrir ficha em tela cheia", "Open plan full screen", "Abrir ficha en pantalla completa"],
+  progressCount: ["{done}/{total} exercícios feitos", "{done}/{total} exercises done", "{done}/{total} ejercicios hechos"],
+  restLabel: ["descanso {s}s", "rest {s}s", "descanso {s}s"],
+  seriesLabel: ["séries", "sets", "series"],
+  loadLabel: ["carga", "load", "carga"],
+})
+
 // Chip "Acessar academia" no header do card do /feed (mig 181) — ns Post,
 // espelha accessCommunity.
 const POST = {
