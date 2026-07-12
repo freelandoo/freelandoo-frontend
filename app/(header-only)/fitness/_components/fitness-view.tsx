@@ -629,9 +629,9 @@ export function FitnessView() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/academias?criar=1" className={`${BTN_GOLD} px-3 py-2 text-[11px]`} aria-label={t("createAcademyCta", "Criar academia")}>
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("createAcademyCta", "Criar academia")}</span>
+              <Link href="/academias" className={`${BTN_GOLD} px-3 py-2 text-[11px]`} aria-label={t("academiesCta", "Academias")}>
+                <Dumbbell className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("academiesCta", "Academias")}</span>
               </Link>
               <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
                 <ChevronLeft className="h-4 w-4" />
