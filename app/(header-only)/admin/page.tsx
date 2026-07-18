@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -51,6 +51,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   // Conteúdo & Comunidade
   { section: "Conteúdo & Comunidade", hint: "admin-ranking", href: "/admin/ranking", icon: Trophy, title: "Ranking", body: "Configurar pesos, período e visualizar posições por enxame, cidade e geral." },
   { section: "Conteúdo & Comunidade", href: "/blog", icon: Newspaper, title: "Blog", body: "CMS do blog: criar, editar e publicar guias e conteúdo." },
+  { section: "Conteúdo & Comunidade", href: "/administracao/clusters", icon: Radio, title: "Clusters de Live", body: "Sala de comando de lives sincronizadas: adicione usuários, aperte Iniciar pra todo mundo começar junto e dispare botões e textos gigantes na tela de todos.", badge: "novo" },
 
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },
