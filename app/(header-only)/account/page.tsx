@@ -157,6 +157,7 @@ export default function PerfilPage() {
   // entradas correspondentes só da experiência deste usuário.
   const walletFeatOn = useUserFeature("wallet")
   const fitnessFeatOn = useUserFeature("fitness_academias")
+  const communitiesFeatOn = useUserFeature("communities")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
   // do subperfil: hover expande, click alterna).
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -1609,10 +1610,12 @@ export default function PerfilPage() {
                 <UserRound className="h-4 w-4" />
                 {t("menuProfile", "Perfil")}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/comunidades")}>
-                <Users className="h-4 w-4" />
-                {t("menuCommunity", "Comunidade")}
-              </DropdownMenuItem>
+              {communitiesFeatOn && (
+                <DropdownMenuItem onSelect={() => router.push("/comunidades")}>
+                  <Users className="h-4 w-4" />
+                  {t("menuCommunity", "Comunidade")}
+                </DropdownMenuItem>
+              )}
               {/* "Curso" saiu daqui: cursos agora nascem DENTRO de um subperfil
                   pago (regra Alex 2026-07-01). Criar curso é pelo "+" do
                   subperfil, não pelo nível do user. */}

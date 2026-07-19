@@ -25,6 +25,7 @@ import {
 import { HoverHint } from "@/features/tour/HoverHint"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { MediaComposer } from "@/components/composer/MediaComposer"
 import type { ComposerMode } from "@/lib/composer/types"
@@ -150,8 +151,14 @@ export function UserPortfolio({
     onPostsCount?.(items.length)
   }, [items.length, onPostsCount])
   // Chaves do Painel de Controle: Cursos e Comunidade podem estar desligadas.
-  const coursesOn = useFeature("courses")
-  const communitiesOn = useFeature("communities")
+  // Flag global do admin E preferência pessoal (seção "Funções" do menu):
+  // qualquer uma desligada esconde a aba. Hooks chamados incondicionalmente.
+  const coursesFlagOn = useFeature("courses")
+  const coursesPrefOn = useUserFeature("courses")
+  const communitiesFlagOn = useFeature("communities")
+  const communitiesPrefOn = useUserFeature("communities")
+  const coursesOn = coursesFlagOn && coursesPrefOn
+  const communitiesOn = communitiesFlagOn && communitiesPrefOn
   useEffect(() => {
     if ((!coursesOn && portfolioTab === "courses") || (!communitiesOn && portfolioTab === "clans")) {
       setPortfolioTab("feed")

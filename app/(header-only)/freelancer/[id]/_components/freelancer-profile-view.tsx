@@ -57,6 +57,7 @@ import { RateProfile } from "@/components/profile/rate-profile"
 import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { buildProfileUrl } from "@/lib/slug"
 import type { ComposerMode } from "@/lib/composer/types"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -191,10 +192,16 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
-  // Chaves do Painel de Controle por aba do perfil.
-  const storeOn = useFeature("store")
+  // Chaves do Painel de Controle por aba do perfil, combinadas com a
+  // preferência pessoal do VIEWER (seção "Funções" do menu lateral).
+  // Hooks chamados incondicionalmente (rules-of-hooks).
+  const storeFlagOn = useFeature("store")
+  const storePrefOn = useUserFeature("store")
   const servicesOn = useFeature("services")
-  const coursesOn = useFeature("courses")
+  const coursesFlagOn = useFeature("courses")
+  const coursesPrefOn = useUserFeature("courses")
+  const storeOn = storeFlagOn && storePrefOn
+  const coursesOn = coursesFlagOn && coursesPrefOn
   // Abas 1:1 com a barra do UserPortfolio do /account (esqueleto unificado).
   const tabBtn = (active: boolean) =>
     `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
@@ -764,7 +771,7 @@ export default function FreelancerProfileView({
                   <Briefcase className="h-4 w-4" />
                   {t("menuService", "Serviço")}
                 </DropdownMenuItem>
-                {!isClan && !!profile.is_paid && (
+                {!isClan && !!profile.is_paid && coursesOn && (
                   <DropdownMenuItem
                     onSelect={() =>
                       window.dispatchEvent(
