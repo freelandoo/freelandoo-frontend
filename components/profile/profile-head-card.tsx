@@ -44,6 +44,14 @@ const DataConnectionsModal = dynamic(
   () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
   { ssr: false },
 )
+const UserDropside = dynamic(
+  () => import("@/components/layout/UserDropside").then((m) => m.UserDropside),
+  { ssr: false },
+)
+const NotificationBell = dynamic(
+  () => import("@/components/notifications/notification-bell").then((m) => m.NotificationBell),
+  { ssr: false },
+)
 
 type EntityType = "profile" | "clan"
 
@@ -115,6 +123,8 @@ interface ProfileHeadCardProps {
   }
   /** Rótulo do botão principal para visitantes (ex.: rolar à secção de serviços). */
   visitorScheduleButtonLabel?: string
+  /** Nível de XP do perfil — chip dourado na fila de badges (paridade com /account). */
+  xpLevel?: number | null
   className?: string
 }
 
@@ -212,6 +222,7 @@ export function ProfileHeadCard({
   ownerActions,
   visitorActions,
   visitorScheduleButtonLabel = "Agendar",
+  xpLevel = null,
   className,
 }: ProfileHeadCardProps) {
   const t = useTranslations("Profile")
@@ -228,6 +239,28 @@ export function ProfileHeadCard({
   // Paridade user≡subperfil: a engrenagem do subperfil carrega as mesmas
   // ferramentas da conta (menu do /account) além dos itens do próprio perfil.
   const [dataConnOpen, setDataConnOpen] = useState(false)
+  // Sino + menu lateral da conta no banner (visão do dono) — igual /account.
+  const [dropsideOpen, setDropsideOpen] = useState(false)
+  const [lsUser, setLsUser] = useState<{
+    nome?: string
+    email?: string
+    is_admin?: boolean
+    roles?: { desc_role?: string }[]
+  } | null>(null)
+  useEffect(() => {
+    if (!isOwnProfile) return
+    try {
+      const raw = localStorage.getItem("user")
+      if (raw) setLsUser(JSON.parse(raw))
+    } catch {
+      /* user do LS corrompido — dropside abre sem cabeçalho personalizado */
+    }
+  }, [isOwnProfile])
+  const handleAccountLogout = () => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    router.push("/login")
+  }
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
   const academiasOn = useFeature("fitness_academias")
@@ -354,8 +387,14 @@ export function ProfileHeadCard({
           ) : (
             <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.30),transparent_38%),linear-gradient(135deg,#2a2212,#141009)]" />
           )}
-          {statusBadge && (
-            <div className="absolute right-3 top-3">
+          <div className="absolute left-3 top-3 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
+            {profile.manifestation?.tag_label && !isClan && (
+              <div className="inline-flex max-w-full items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-1.5 text-xs font-bold text-[#F2B705] shadow-[2px_2px_0_0_rgba(242,183,5,0.5)]">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{profile.manifestation.tag_label}</span>
+              </div>
+            )}
+            {statusBadge && (
               <span
                 className={cn(
                   "rounded-full border-2 border-[#0B0B0D] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] shadow-[2px_2px_0_0_#0B0B0D]",
@@ -364,12 +403,24 @@ export function ProfileHeadCard({
               >
                 {statusBadge.label}
               </span>
-            </div>
-          )}
-          {profile.manifestation?.tag_label && !isClan && (
-            <div className="absolute left-3 top-3 inline-flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-1.5 text-xs font-bold text-[#F2B705] shadow-[2px_2px_0_0_rgba(242,183,5,0.5)]">
-              <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{profile.manifestation.tag_label}</span>
+            )}
+          </div>
+          {/* Sino + menu da conta (visão do dono) — mesmos botões do banner
+              do /account: as duas páginas têm a mesma função. */}
+          {isOwnProfile && (
+            <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+              <NotificationBell />
+              <button
+                type="button"
+                onClick={() => setDropsideOpen(true)}
+                aria-label={t("openAccountMenu", "Abrir menu da conta")}
+                aria-haspopup="dialog"
+                aria-expanded={dropsideOpen}
+                title={t("openSettings", "Abrir configurações")}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
             </div>
           )}
         </div>
@@ -480,13 +531,30 @@ export function ProfileHeadCard({
             </div>
           </div>
 
-          {/* Nome — display Anton */}
-          <h1 className="fl-display mt-4 break-words text-2xl leading-[0.95] text-[#0B0B0D] md:text-3xl">
-            {displayName}
-          </h1>
+          {/* Nome pequeno — o nome grande vive no header retrátil, igual ao
+              @username do /account (esqueleto unificado user≡subperfil). */}
+          <p className="mt-3 text-sm font-medium text-[#5b554b]">{displayName}</p>
 
-          {((isOwnProfile && ownerActions?.onShowMural) || socials.length > 0) && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+          {profile.bio && (
+            <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-[#2b2b2e] md:text-sm">
+              {profile.bio}
+            </MarkdownText>
+          )}
+
+          {/* Fila de chips (mesma do /account): nível + Mural + redes. */}
+          {((!isClan && xpLevel !== null) ||
+            (isOwnProfile && ownerActions?.onShowMural) ||
+            socials.length > 0) && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {!isClan && xpLevel !== null && (
+                <span
+                  title={t("accountLevelHint", "Nível da conta — sobe com o engajamento")}
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D]"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  {t("accountLevel", "Nível {level}").replace("{level}", String(xpLevel ?? 0))}
+                </span>
+              )}
               {isOwnProfile && ownerActions?.onShowMural && (
                 <MuralPill
                   onClick={ownerActions.onShowMural}
@@ -502,12 +570,6 @@ export function ProfileHeadCard({
               )}
               <SocialIcons socials={socials} socialFallback={t("socialNetwork", "Rede social")} />
             </div>
-          )}
-
-          {profile.bio && (
-            <MarkdownText className="mt-4 max-w-2xl break-words text-[13px] leading-relaxed text-[#2b2b2e] md:text-sm">
-              {profile.bio}
-            </MarkdownText>
           )}
 
           {/* FOOTER — engrenagem: hover no container expande o menu; click vai pro editar. */}
@@ -692,6 +754,15 @@ export function ProfileHeadCard({
 
       {isOwnProfile && dataApiOn && (
         <DataConnectionsModal open={dataConnOpen} onClose={() => setDataConnOpen(false)} />
+      )}
+
+      {isOwnProfile && (
+        <UserDropside
+          open={dropsideOpen}
+          onClose={() => setDropsideOpen(false)}
+          user={lsUser}
+          onLogout={handleAccountLogout}
+        />
       )}
     </>
   )

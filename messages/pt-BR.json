@@ -3077,7 +3077,9 @@
     "myWallet": "Minha Carteira",
     "dataApi": "Conexões de Dados",
     "atendimentoIa": "Atendimento IA",
-    "fitnessTool": "Fitness"
+    "fitnessTool": "Fitness",
+    "openAccountMenu": "Abrir menu da conta",
+    "openSettings": "Abrir configurações"
   },
   "Bees": {
     "chat": "Chat",

@@ -3643,7 +3643,9 @@
     "myWallet": "Mi Billetera",
     "dataApi": "Conexiones de Datos",
     "atendimentoIa": "Atención IA",
-    "fitnessTool": "Fitness"
+    "fitnessTool": "Fitness",
+    "openAccountMenu": "Abrir menú de la cuenta",
+    "openSettings": "Abrir configuración"
   },
   "Bees": {
     "chat": "Chat",

@@ -804,6 +804,7 @@ export default function FreelancerProfileView({
             isClan={isClan}
             isOwnProfile={isOwnProfile}
             portfolioCount={portfolioItems.length}
+            xpLevel={!isClan && xpData ? xpData.xp_level : null}
             followRefreshKey={followRefreshKey}
             onFollowChanged={() => setFollowRefreshKey((value) => value + 1)}
             ownerActions={{

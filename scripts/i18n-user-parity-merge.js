@@ -41,6 +41,9 @@ const PROFILE = {
   statCourses: ["Cursos", "Courses", "Cursos"],
   coursesTitle: ["Meus cursos", "My courses", "Mis cursos"],
   coursePublished: ["Publicado", "Published", "Publicado"],
+  // Esqueleto unificado (L1): sino + menu da conta no banner do subperfil.
+  openAccountMenu: ["Abrir menu da conta", "Open account menu", "Abrir menú de la cuenta"],
+  openSettings: ["Abrir configurações", "Open settings", "Abrir configuración"],
   // Engrenagem do subperfil = ferramentas da conta (paridade user≡subperfil).
   metrics: ["Métricas", "Metrics", "Métricas"],
   myWallet: ["Minha Carteira", "My Wallet", "Mi Billetera"],

@@ -3663,7 +3663,9 @@
     "myWallet": "My Wallet",
     "dataApi": "Data Connections",
     "atendimentoIa": "AI Assistant",
-    "fitnessTool": "Fitness"
+    "fitnessTool": "Fitness",
+    "openAccountMenu": "Open account menu",
+    "openSettings": "Open settings"
   },
   "Bees": {
     "chat": "Chat",
