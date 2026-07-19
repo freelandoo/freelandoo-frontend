@@ -195,6 +195,13 @@ export default function FreelancerProfileView({
   const storeOn = useFeature("store")
   const servicesOn = useFeature("services")
   const coursesOn = useFeature("courses")
+  // Abas 1:1 com a barra do UserPortfolio do /account (esqueleto unificado).
+  const tabBtn = (active: boolean) =>
+    `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${
+      active
+        ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
+        : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
+    }`
   // Aba desligada → volta pro Portfólio (feed).
   useEffect(() => {
     if (
@@ -863,11 +870,7 @@ export default function FreelancerProfileView({
                 onClick={() => setPortfolioTab("feed")}
                 aria-label={t("tabPortfolio", "Portfólio")}
                 title={t("tabPortfolio", "Portfólio")}
-                className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
-                  portfolioTab === "feed"
-                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                }`}
+                className={tabBtn(portfolioTab === "feed") + " w-10 px-0"}
               >
                 <ImageIcon className="h-4 w-4" />
               </button>
@@ -876,11 +879,7 @@ export default function FreelancerProfileView({
                 onClick={() => setPortfolioTab("bees")}
                 aria-label={t("curtosTab", "Curtos")}
                 title={t("curtosTab", "Curtos")}
-                className={`inline-flex h-10 w-11 items-center justify-center border-b-2 transition ${
-                  portfolioTab === "bees"
-                    ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                    : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                }`}
+                className={tabBtn(portfolioTab === "bees") + " w-10 px-0"}
               >
                 <Clapperboard className="h-4 w-4" />
               </button>
@@ -888,11 +887,7 @@ export default function FreelancerProfileView({
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("services")}
-                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
-                    portfolioTab === "services"
-                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                  }`}
+                  className={tabBtn(portfolioTab === "services")}
                 >
                   <Briefcase className="h-3.5 w-3.5" />
                   {t("tabServices", "Serviços")}
@@ -902,11 +897,7 @@ export default function FreelancerProfileView({
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("courses")}
-                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
-                    portfolioTab === "courses"
-                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                  }`}
+                  className={tabBtn(portfolioTab === "courses")}
                 >
                   <GraduationCap className="h-3.5 w-3.5" />
                   {t("tabCourses", "Cursos")}
@@ -916,11 +907,7 @@ export default function FreelancerProfileView({
                 <button
                   type="button"
                   onClick={() => setPortfolioTab("shop")}
-                  className={`inline-flex h-10 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-bold uppercase tracking-wide transition ${
-                    portfolioTab === "shop"
-                      ? "border-[#F2B705] bg-[#F2B705]/10 text-[#F2B705]"
-                      : "border-transparent text-[#9A938A] hover:bg-[#F5F1E8]/[0.04] hover:text-[#F5F1E8]"
-                  }`}
+                  className={tabBtn(portfolioTab === "shop")}
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
                   {t("tabShop", "Loja")}
