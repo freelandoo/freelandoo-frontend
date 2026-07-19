@@ -298,6 +298,26 @@ export default function PerfilPage() {
 
   // Seguidores do perfil-conta (paridade user≡subperfil): quem acompanha VOCÊ.
   const accountProfileId = perfil?.account_profile?.id_profile || null
+
+  // XP/nível do perfil-conta no header retrátil (igual ao header do subperfil).
+  const [accountXp, setAccountXp] = useState<{
+    xp_level: number
+    xp_total: number
+    xp_progress_percent: number
+  } | null>(null)
+  React.useEffect(() => {
+    if (!accountProfileId) return
+    let cancelled = false
+    fetch(`/api/subprofiles/${accountProfileId}/xp-summary`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setAccountXp(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [accountProfileId])
   React.useEffect(() => {
     if (!accountProfileId) return
     const qs = new URLSearchParams({ entity_type: "profile", entity_id: accountProfileId })
@@ -1501,16 +1521,12 @@ export default function PerfilPage() {
     perfil.statuses.some((s) =>
       String(s.desc_status || "").toLowerCase().includes("email")
     )
-  const totalProfiles = (perfil.profiles || []).filter((p) => !p.is_clan).length
-  const visibleProfiles = (perfil.profiles || []).filter(
-    (p) => !p.is_clan && p.is_published
-  ).length
-
   return (
     <div className="fl-root fl-paper-texture min-h-[100dvh] overflow-x-hidden">
       <RetractableProfileHeader
         targetRef={headcardRef}
         name={perfil.nome || perfil.username || ""}
+        progress={accountXp ? accountXp.xp_progress_percent : undefined}
         addMenu={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1566,40 +1582,19 @@ export default function PerfilPage() {
           </DropdownMenu>
         }
       >
-        <HoverHint id="account-counter-profiles" side="bottom">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countProfiles", "Perfis")}</span>
-            <span className="font-semibold tabular-nums text-[#F5F1E8]">{totalProfiles}</span>
-          </span>
-        </HoverHint>
-        <HoverHint id="account-counter-visible" side="bottom">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countVisible", "Visíveis")}</span>
-            <span className="font-semibold tabular-nums text-[#F5F1E8]">{visibleProfiles}</span>
-          </span>
-        </HoverHint>
-        <HoverHint id="account-counter-clans" side="bottom">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countCommunities", "Comunidades")}</span>
-            <span className="font-semibold tabular-nums text-[#F5F1E8]">{myCommunities.length}</span>
-          </span>
-        </HoverHint>
-        <HoverHint id="account-counter-following" side="bottom">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countFollowing", "Acompanhando")}</span>
-            <span className="font-semibold tabular-nums text-[#F5F1E8]">{followedProfilesCount}</span>
-          </span>
-        </HoverHint>
-        <HoverHint id="account-counter-unread" side="bottom">
-          <span className="inline-flex items-center gap-1">
-            <span className="text-[#9A938A] uppercase tracking-wide">{t("countUnread", "Não lidas")}</span>
-            <span
-              className={`font-semibold tabular-nums ${unreadMessages > 0 ? "text-[#F2B705]" : "text-[#F5F1E8]"}`}
-            >
-              {unreadMessages}
+        {/* Paridade user≡subperfil: mesmo bloco Nv + XP do header do subperfil
+            (os contadores antigos saíram — decisão Alex 2026-07-19). */}
+        {(accountXp || perfil.account_profile) && (
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+              {t("levelShort", "Nv")} {accountXp?.xp_level ?? perfil.account_profile?.xp_level ?? 0}
             </span>
-          </span>
-        </HoverHint>
+            <span className="text-[11px] font-semibold tabular-nums text-primary">
+              {(accountXp?.xp_total ?? perfil.account_profile?.xp_total ?? 0).toLocaleString("pt-BR")}{" "}
+              XP
+            </span>
+          </div>
+        )}
       </RetractableProfileHeader>
       <main className="container mx-auto px-0 py-10 md:px-4 md:py-12 overflow-x-hidden">
         <div className="mx-auto grid w-full min-w-0 max-w-[1100px] gap-5 md:gap-6">

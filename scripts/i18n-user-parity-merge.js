@@ -17,6 +17,7 @@ const ACCOUNT = {
   seeYourFollowers: ["Ver quem acompanha você", "See who follows you", "Ver quién te sigue"],
   followersCountLabel: ["seguidores", "followers", "seguidores"],
   accountProfileOption: ["Meu perfil (conta)", "My profile (account)", "Mi perfil (cuenta)"],
+  // levelShort ("NV"/"LV") já existia no ns Account de onda anterior — reusada.
 }
 
 const PROFILE = {
