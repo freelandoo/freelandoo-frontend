@@ -3,12 +3,18 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   BarChart2,
+  BarChart3,
+  Bot,
   CalendarDays,
   Camera,
   Cog,
+  Database,
+  Dumbbell,
+  FolderCog,
   Instagram,
   MapPin,
   Megaphone,
@@ -19,6 +25,7 @@ import {
   Trophy,
   Users,
   UserRound,
+  Wallet,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { MarkdownText } from "@/components/ui/markdown-text"
@@ -30,6 +37,12 @@ import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+
+const DataConnectionsModal = dynamic(
+  () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
+  { ssr: false },
+)
 
 type EntityType = "profile" | "clan"
 
@@ -211,6 +224,12 @@ export function ProfileHeadCard({
   const [bannerFailed, setBannerFailed] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  // Paridade user≡subperfil: a engrenagem do subperfil carrega as mesmas
+  // ferramentas da conta (menu do /account) além dos itens do próprio perfil.
+  const [dataConnOpen, setDataConnOpen] = useState(false)
+  const dataApiOn = useFeature("data_api")
+  const atendimentoIaOn = useFeature("atendimento_ia_venda")
+  const academiasOn = useFeature("fitness_academias")
 
   const handleAvatarSelect = () => {
     if (!isOwnProfile || uploadingAvatar) return
@@ -564,6 +583,48 @@ export function ProfileHeadCard({
                       hint="headcard-agenda"
                     />
                   )}
+                  {/* Ferramentas da conta (paridade user≡subperfil): os mesmos
+                      itens do menu de ferramentas do /account. */}
+                  {!isClan && (
+                    <>
+                      <IconAction
+                        href="/account/xp"
+                        icon={BarChart3}
+                        label={t("metrics", "Métricas")}
+                      />
+                      <IconAction
+                        href="/account/gerenciamento"
+                        icon={FolderCog}
+                        label={t("manage", "Gerenciar")}
+                      />
+                      <IconAction
+                        href="/wallet"
+                        icon={Wallet}
+                        label={t("myWallet", "Minha Carteira")}
+                      />
+                      {dataApiOn && (
+                        <IconAction
+                          onClick={() => setDataConnOpen(true)}
+                          icon={Database}
+                          label={t("dataApi", "Conexões de Dados")}
+                        />
+                      )}
+                      {atendimentoIaOn && (
+                        <IconAction
+                          href="/account/atendimento-ia"
+                          icon={Bot}
+                          label={t("atendimentoIa", "Atendimento IA")}
+                        />
+                      )}
+                      {academiasOn && (
+                        <IconAction
+                          href="/fitness"
+                          icon={Dumbbell}
+                          label={t("fitnessTool", "Fitness")}
+                        />
+                      )}
+                    </>
+                  )}
                 </RetractableIcons>
               </>
             ) : (
@@ -621,6 +682,10 @@ export function ProfileHeadCard({
         entityId={profileId}
         mode="followers"
       />
+
+      {isOwnProfile && dataApiOn && (
+        <DataConnectionsModal open={dataConnOpen} onClose={() => setDataConnOpen(false)} />
+      )}
     </>
   )
 }
@@ -717,7 +782,7 @@ function RetractableIcons({ open, children }: { open: boolean; children: React.R
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out",
+        "flex flex-wrap items-center gap-1.5 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out",
         open
           ? "max-w-[640px] translate-x-0 opacity-100"
           : "pointer-events-none max-w-0 -translate-x-1 opacity-0",

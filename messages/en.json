@@ -3645,7 +3645,12 @@
     "statClans": "Clans",
     "statCourses": "Courses",
     "coursesTitle": "My courses",
-    "coursePublished": "Published"
+    "coursePublished": "Published",
+    "metrics": "Metrics",
+    "myWallet": "My Wallet",
+    "dataApi": "Data Connections",
+    "atendimentoIa": "AI Assistant",
+    "fitnessTool": "Fitness"
   },
   "Bees": {
     "chat": "Chat",

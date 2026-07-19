@@ -40,6 +40,12 @@ const PROFILE = {
   statCourses: ["Cursos", "Courses", "Cursos"],
   coursesTitle: ["Meus cursos", "My courses", "Mis cursos"],
   coursePublished: ["Publicado", "Published", "Publicado"],
+  // Engrenagem do subperfil = ferramentas da conta (paridade user≡subperfil).
+  metrics: ["Métricas", "Metrics", "Métricas"],
+  myWallet: ["Minha Carteira", "My Wallet", "Mi Billetera"],
+  dataApi: ["Conexões de Dados", "Data Connections", "Conexiones de Datos"],
+  atendimentoIa: ["Atendimento IA", "AI Assistant", "Atención IA"],
+  fitnessTool: ["Fitness", "Fitness", "Fitness"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

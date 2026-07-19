@@ -3059,7 +3059,12 @@
     "statClans": "Clans",
     "statCourses": "Cursos",
     "coursesTitle": "Meus cursos",
-    "coursePublished": "Publicado"
+    "coursePublished": "Publicado",
+    "metrics": "Métricas",
+    "myWallet": "Minha Carteira",
+    "dataApi": "Conexões de Dados",
+    "atendimentoIa": "Atendimento IA",
+    "fitnessTool": "Fitness"
   },
   "Bees": {
     "chat": "Chat",

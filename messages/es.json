@@ -3625,7 +3625,12 @@
     "statClans": "Clanes",
     "statCourses": "Cursos",
     "coursesTitle": "Mis cursos",
-    "coursePublished": "Publicado"
+    "coursePublished": "Publicado",
+    "metrics": "Métricas",
+    "myWallet": "Mi Billetera",
+    "dataApi": "Conexiones de Datos",
+    "atendimentoIa": "Atención IA",
+    "fitnessTool": "Fitness"
   },
   "Bees": {
     "chat": "Chat",
