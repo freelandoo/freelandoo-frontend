@@ -81,6 +81,10 @@ const FollowingModal = dynamic(
   () => import("@/components/profile/following-modal").then((m) => m.FollowingModal),
   { ssr: false }
 )
+const EntityFollowModal = dynamic(
+  () => import("@/components/entity-follow/entity-follow-modal").then((m) => m.EntityFollowModal),
+  { ssr: false }
+)
 const PremiumProfileModal = dynamic(
   () => import("@/components/premium/PremiumProfileModal").then((m) => m.PremiumProfileModal),
   { ssr: false }
@@ -96,6 +100,20 @@ const DataConnectionsModal = dynamic(
 
 function mbLabel(bytes: number) {
   return `${Math.round(bytes / (1024 * 1024))}MB`
+}
+
+// Redes do perfil-conta: `account` pode ser URL completa (onboarding) ou
+// handle legado — resolve os dois.
+function socialUrlFor(rede: RedeSocial): string | null {
+  const account = (rede.account || "").trim()
+  if (!account) return null
+  if (/^https?:\/\//i.test(account)) return account
+  const handle = account.replace("@", "")
+  const p = (rede.platform || "").toLowerCase()
+  if (p === "instagram") return `https://instagram.com/${handle}`
+  if (p === "youtube") return `https://youtube.com/@${handle}`
+  if (p === "tiktok") return `https://tiktok.com/@${handle}`
+  return `https://${handle}`
 }
 
 export default function PerfilPage() {
@@ -121,6 +139,9 @@ export default function PerfilPage() {
     }>
   >([])
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
+  // Paridade user≡subperfil: seguidores do perfil-conta no headcard
+  const [accountFollowersCount, setAccountFollowersCount] = useState(0)
+  const [followersModalOpen, setFollowersModalOpen] = useState(false)
   const [dataConnOpen, setDataConnOpen] = useState(false)
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
@@ -269,6 +290,19 @@ export default function PerfilPage() {
       })
       .catch(() => {})
   }, [])
+
+  // Seguidores do perfil-conta (paridade user≡subperfil): quem acompanha VOCÊ.
+  const accountProfileId = perfil?.account_profile?.id_profile || null
+  React.useEffect(() => {
+    if (!accountProfileId) return
+    const qs = new URLSearchParams({ entity_type: "profile", entity_id: accountProfileId })
+    fetch(`/api/entity-follows/counts?${qs}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setAccountFollowersCount(Number(data.followers_count) || 0)
+      })
+      .catch(() => {})
+  }, [accountProfileId])
 
   React.useEffect(() => {
     const token = localStorage.getItem("token")
@@ -558,7 +592,7 @@ export default function PerfilPage() {
     return t("genderOther", "Outros")
   }
 
-  const renderRedeSocial = (rede: RedeSocial & { id?: string }) => {
+  const renderRedeSocial = (rede: RedeSocial) => {
     if (!rede.platform) {
       return null
     }
@@ -581,18 +615,7 @@ export default function PerfilPage() {
         key={rede.id || rede.platform}
         className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
         onClick={() => {
-          // Construir URL da rede social baseado na plataforma
-          let url = ""
-          const account = rede.account.replace("@", "")
-
-          if (rede.platform.toLowerCase() === "instagram") {
-            url = `https://instagram.com/${account}`
-          } else if (rede.platform.toLowerCase() === "youtube") {
-            url = `https://youtube.com/@${account}`
-          } else if (rede.platform.toLowerCase() === "tiktok") {
-            url = `https://tiktok.com/@${account}`
-          }
-
+          const url = socialUrlFor(rede)
           if (url) {
             window.open(url, "_blank")
           }
@@ -615,7 +638,7 @@ export default function PerfilPage() {
                 onClick={(e) => {
                   e.stopPropagation()
                   setNovaRede({
-                    id: rede.id || "",
+                    id: String(rede.id || ""),
                     platform: rede.platform,
                     account: rede.account,
                     followers_range: rede.followers_range,
@@ -631,7 +654,7 @@ export default function PerfilPage() {
                 variant="destructive"
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleDeleteRede(rede.id)
+                  handleDeleteRede(String(rede.id))
                 }}
               >
                 <Trash2 className="h-4 w-4" />
@@ -1723,6 +1746,19 @@ export default function PerfilPage() {
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                {/* Nível do perfil-conta (paridade user≡subperfil) */}
+                {perfil.account_profile && (
+                  <span
+                    title={t("accountLevelHint", "Nível da sua conta — sobe com curtidas, seguidores e compartilhamentos")}
+                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D]"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {t("accountLevel", "Nível {level}").replace(
+                      "{level}",
+                      String(perfil.account_profile.xp_level ?? 0)
+                    )}
+                  </span>
+                )}
                 {manifestation?.active && (
                   <HoverHint id="account-manifestation-tag" side="bottom">
                     <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
@@ -1780,6 +1816,26 @@ export default function PerfilPage() {
                     </button>
                   </HoverHint>
                 )}
+                {/* Redes sociais do user (perfil-conta) — mesmos ícones do subperfil */}
+                {(perfil.redes_sociais || []).map((rede) => {
+                  const url = socialUrlFor(rede)
+                  if (!url) return null
+                  const p = (rede.platform || "").toLowerCase()
+                  const RIcon = p === "youtube" ? Youtube : p === "tiktok" ? Video : Instagram
+                  return (
+                    <a
+                      key={`sm-${rede.id || rede.platform}`}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={rede.platform}
+                      aria-label={rede.platform}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] text-[#0B0B0D] transition hover:bg-[#F2B705]/25"
+                    >
+                      <RIcon className="h-3.5 w-3.5" />
+                    </a>
+                  )
+                })}
               </div>
 
               {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
@@ -1884,6 +1940,15 @@ export default function PerfilPage() {
                     </button>
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => accountProfileId && setFollowersModalOpen(true)}
+                  className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
+                  title={t("seeYourFollowers", "Ver quem acompanha você")}
+                >
+                  <span className="font-bold text-[#0B0B0D]">{accountFollowersCount}</span>{" "}
+                  <span className="text-[#5b554b]">{t("followersCountLabel", "seguidores")}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setFollowingModalOpen(true)}
@@ -2854,6 +2919,16 @@ export default function PerfilPage() {
         open={followingModalOpen}
         onClose={() => setFollowingModalOpen(false)}
       />
+
+      {accountProfileId && (
+        <EntityFollowModal
+          open={followersModalOpen}
+          onOpenChange={setFollowersModalOpen}
+          entityType="profile"
+          entityId={accountProfileId}
+          mode="followers"
+        />
+      )}
 
       <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />
 

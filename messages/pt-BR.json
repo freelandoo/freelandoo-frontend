@@ -1440,7 +1440,12 @@
     "kindCurto": "Curto",
     "kindStoryBee": "Bee",
     "viewBees": "Ver bees",
-    "avatarViewBees": "Ver seus bees"
+    "avatarViewBees": "Ver seus bees",
+    "accountLevel": "Nível {level}",
+    "accountLevelHint": "Nível da sua conta — sobe com curtidas, seguidores e compartilhamentos",
+    "seeYourFollowers": "Ver quem acompanha você",
+    "followersCountLabel": "seguidores",
+    "accountProfileOption": "Meu perfil (conta)"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -3042,7 +3047,19 @@
     "curtosVideoNotVertical": "Esse vídeo não está em 9:16. Curtos aceitam apenas vídeos verticais (9:16).",
     "menuPost": "Post",
     "menuCurtos": "Curto",
-    "menuBee": "Bee"
+    "menuBee": "Bee",
+    "accountLevel": "Nível {level}",
+    "accountLevelHint": "Nível da conta — sobe com o engajamento",
+    "seeFollowers": "Ver quem acompanha",
+    "followersLabel": "seguidores",
+    "followingLabel": "acompanhados",
+    "sendMessageTo": "Enviar mensagem para {name}",
+    "coursePriceFree": "Gratuito",
+    "statProfiles": "Perfis",
+    "statClans": "Clans",
+    "statCourses": "Cursos",
+    "coursesTitle": "Meus cursos",
+    "coursePublished": "Publicado"
   },
   "Bees": {
     "chat": "Chat",

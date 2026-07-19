@@ -14,7 +14,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const body = await request.json()
-    const url = `${getBackendApiUrl()}/socialmedia/${id}`
+    const url = `${getBackendApiUrl()}/users/me/social-media/${id}`
     const response = await fetch(url, {
       method: "PUT",
       headers: {
@@ -66,7 +66,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return Response.json({ error: "Token não fornecido" }, { status: 401 })
     }
 
-    const url = `${getBackendApiUrl()}/socialmedia/${id}`
+    const url = `${getBackendApiUrl()}/users/me/social-media/${id}`
     const response = await fetch(url, {
       method: "DELETE",
       headers: {

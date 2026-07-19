@@ -1,13 +1,21 @@
 import type { SocialMedia } from "./freelancer-profile"
 
 export interface RedeSocial {
-  id?: string
+  id?: string | number
   platform: string
   account: string
   followers_range: string
   social_media_type?: string
   social_id?: string | number
   url?: string
+  icon?: string | null
+}
+
+// Perfil-conta (is_user_account) — paridade user≡subperfil: XP/nível do user.
+export interface AccountProfileInfo {
+  id_profile: string
+  xp_total?: number
+  xp_level?: number
 }
 
 export interface ProfileSubscription {
@@ -41,6 +49,9 @@ export interface Profile {
   is_paid?: boolean
   is_published?: boolean
   is_clan?: boolean
+  is_user_account?: boolean
+  xp_total?: number
+  xp_level?: number
   origin_zipcode?: string | null
   origin_document?: string | null
   origin_number?: string | null
@@ -68,6 +79,7 @@ export interface PerfilCompleto {
   premium?: boolean
   taxa_paga?: boolean
   redes_sociais?: RedeSocial[]
+  account_profile?: AccountProfileInfo | null
   media?: MediaItem[]
   statuses?: { id_status: string; desc_status: string }[]
   roles?: { id_role: string; desc_role: string }[]

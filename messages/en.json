@@ -1440,7 +1440,12 @@
     "kindCurto": "Short",
     "kindStoryBee": "Bee",
     "viewBees": "View bees",
-    "avatarViewBees": "View your bees"
+    "avatarViewBees": "View your bees",
+    "accountLevel": "Level {level}",
+    "accountLevelHint": "Your account level — grows with likes, followers and shares",
+    "seeYourFollowers": "See who follows you",
+    "followersCountLabel": "followers",
+    "accountProfileOption": "My profile (account)"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3628,7 +3633,19 @@
     "curtosVideoNotVertical": "This video isn't 9:16. Shorts only accept vertical (9:16) videos.",
     "menuPost": "Post",
     "menuCurtos": "Short",
-    "menuBee": "Bee"
+    "menuBee": "Bee",
+    "accountLevel": "Level {level}",
+    "accountLevelHint": "Account level — grows with engagement",
+    "seeFollowers": "See followers",
+    "followersLabel": "followers",
+    "followingLabel": "following",
+    "sendMessageTo": "Send a message to {name}",
+    "coursePriceFree": "Free",
+    "statProfiles": "Profiles",
+    "statClans": "Clans",
+    "statCourses": "Courses",
+    "coursesTitle": "My courses",
+    "coursePublished": "Published"
   },
   "Bees": {
     "chat": "Chat",

@@ -28,6 +28,7 @@ type Profile = {
   display_name: string | null
   avatar_url: string | null
   is_clan?: boolean
+  is_user_account?: boolean
 }
 
 type XpSummary = {
@@ -127,8 +128,21 @@ export default function XpPage() {
       .finally(() => setLoadingProfiles(false))
   }, [token])
 
-  const subprofiles = useMemo(() => profiles.filter((p) => !p.is_clan), [profiles])
+  // Paridade user≡subperfil: o perfil-conta ganha entrada própria no escopo.
+  const accountProfile = useMemo(
+    () => profiles.find((p) => p.is_user_account) || null,
+    [profiles],
+  )
+  const subprofiles = useMemo(
+    () => profiles.filter((p) => !p.is_clan && !p.is_user_account),
+    [profiles],
+  )
   const clans = useMemo(() => profiles.filter((p) => p.is_clan), [profiles])
+  // Grid do escopo "Conta inteira": perfil-conta primeiro, depois subperfis.
+  const overviewProfiles = useMemo(
+    () => (accountProfile ? [accountProfile, ...subprofiles] : subprofiles),
+    [accountProfile, subprofiles],
+  )
 
   return (
     <PageShell>
@@ -163,6 +177,11 @@ export default function XpPage() {
               <option value={ACCOUNT}>
                 {t("wholeAccount", "Conta inteira")}{username ? ` · @${username}` : ""}
               </option>
+              {accountProfile && (
+                <option value={accountProfile.id_profile}>
+                  {t("accountProfileOption", "Meu perfil (conta)")}{username ? ` · @${username}` : ""}
+                </option>
+              )}
               {subprofiles.length > 0 && (
                 <optgroup label={t("subprofilesGroup", "Subperfis")}>
                   {subprofiles.map((p) => (
@@ -215,7 +234,7 @@ export default function XpPage() {
               idProfile={scope === ACCOUNT ? null : scope}
             />
           ) : scope === ACCOUNT ? (
-            <AccountXpOverview subprofiles={subprofiles} userAvatar={userAvatar} token={token} onSelect={setScope} />
+            <AccountXpOverview subprofiles={overviewProfiles} userAvatar={userAvatar} token={token} onSelect={setScope} />
           ) : (
             <ProfileXp
               profile={profiles.find((p) => p.id_profile === scope) ?? null}
