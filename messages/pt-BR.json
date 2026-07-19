@@ -1464,7 +1464,8 @@
     "muralLabel": "Mural",
     "openMuralAria": "Abrir Mural",
     "featureVitrine": "Vitrine",
-    "featureVitrineHint": "Desligada, seus perfis somem da vitrine pra todo mundo."
+    "featureVitrineHint": "Desligada, seus perfis somem da vitrine pra todo mundo.",
+    "featureProfiles": "Perfis"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

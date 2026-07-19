@@ -1464,7 +1464,8 @@
     "muralLabel": "Mural",
     "openMuralAria": "Abrir mural",
     "featureVitrine": "Vitrina",
-    "featureVitrineHint": "Apagada, tus perfiles desaparecen de la vitrina para todos."
+    "featureVitrineHint": "Apagada, tus perfiles desaparecen de la vitrina para todos.",
+    "featureProfiles": "Perfiles"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

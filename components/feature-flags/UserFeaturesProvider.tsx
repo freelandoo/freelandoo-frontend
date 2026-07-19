@@ -24,6 +24,7 @@ export const USER_FEATURE_KEYS = [
   "communities",
   "wallet",
   "fitness_academias",
+  "profiles",
   // Única com efeito server-side: desligada, os perfis do user somem da
   // vitrine pública pra todo mundo (SearchStorage).
   "vitrine",

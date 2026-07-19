@@ -157,13 +157,18 @@ export function UserPortfolio({
   const coursesPrefOn = useUserFeature("courses")
   const communitiesFlagOn = useFeature("communities")
   const communitiesPrefOn = useUserFeature("communities")
+  const profilesPrefOn = useUserFeature("profiles")
   const coursesOn = coursesFlagOn && coursesPrefOn
   const communitiesOn = communitiesFlagOn && communitiesPrefOn
   useEffect(() => {
-    if ((!coursesOn && portfolioTab === "courses") || (!communitiesOn && portfolioTab === "clans")) {
+    if (
+      (!coursesOn && portfolioTab === "courses") ||
+      (!communitiesOn && portfolioTab === "clans") ||
+      (!profilesPrefOn && portfolioTab === "profiles")
+    ) {
       setPortfolioTab("feed")
     }
-  }, [coursesOn, communitiesOn, portfolioTab])
+  }, [coursesOn, communitiesOn, profilesPrefOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
@@ -631,7 +636,7 @@ export function UserPortfolio({
               {tr("tabSaved", "Salvos")}
             </button>
           </HoverHint>
-          {myProfilesSlot !== undefined && (
+          {myProfilesSlot !== undefined && profilesPrefOn && (
             <HoverHint id="account-tab-profiles" side="bottom">
               <button
                 type="button"

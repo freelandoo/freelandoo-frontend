@@ -27,6 +27,7 @@ import {
   Dumbbell,
   SlidersHorizontal,
   Store,
+  UserRound,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -176,6 +177,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     { key: "communities", label: tAcc("featureCommunities", "Comunidade"), icon: Users },
     { key: "wallet", label: tAcc("featureWallet", "Carteira"), icon: Wallet },
     { key: "fitness_academias", label: tAcc("featureFitness", "Academia"), icon: Dumbbell },
+    { key: "profiles", label: tAcc("featureProfiles", "Perfis"), icon: UserRound },
     {
       key: "vitrine",
       label: tAcc("featureVitrine", "Vitrine"),

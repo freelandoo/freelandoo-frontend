@@ -19,6 +19,7 @@ const ACCOUNT = {
   featureCommunities: ["Comunidade", "Community", "Comunidad"],
   featureWallet: ["Carteira", "Wallet", "Billetera"],
   featureFitness: ["Academia", "Gym", "Gimnasio"],
+  featureProfiles: ["Perfis", "Profiles", "Perfiles"],
   featureVitrine: ["Vitrine", "Showcase", "Vitrina"],
   featureVitrineHint: [
     "Desligada, seus perfis somem da vitrine pra todo mundo.",

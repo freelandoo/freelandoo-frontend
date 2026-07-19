@@ -1464,7 +1464,8 @@
     "muralLabel": "Board",
     "openMuralAria": "Open board",
     "featureVitrine": "Showcase",
-    "featureVitrineHint": "When off, your profiles disappear from the showcase for everyone."
+    "featureVitrineHint": "When off, your profiles disappear from the showcase for everyone.",
+    "featureProfiles": "Profiles"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

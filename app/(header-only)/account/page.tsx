@@ -158,6 +158,7 @@ export default function PerfilPage() {
   const walletFeatOn = useUserFeature("wallet")
   const fitnessFeatOn = useUserFeature("fitness_academias")
   const communitiesFeatOn = useUserFeature("communities")
+  const profilesFeatOn = useUserFeature("profiles")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
   // do subperfil: hover expande, click alterna).
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -1598,18 +1599,20 @@ export default function PerfilPage() {
                 <Sparkles className="h-4 w-4" />
                 {t("menuCurtos", "Curto")}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setNewProfileError(null)
-                  setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
-                  setProfessions([])
-                  fetchMachines()
-                  setIsNewProfileModalOpen(true)
-                }}
-              >
-                <UserRound className="h-4 w-4" />
-                {t("menuProfile", "Perfil")}
-              </DropdownMenuItem>
+              {profilesFeatOn && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setNewProfileError(null)
+                    setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
+                    setProfessions([])
+                    fetchMachines()
+                    setIsNewProfileModalOpen(true)
+                  }}
+                >
+                  <UserRound className="h-4 w-4" />
+                  {t("menuProfile", "Perfil")}
+                </DropdownMenuItem>
+              )}
               {communitiesFeatOn && (
                 <DropdownMenuItem onSelect={() => router.push("/comunidades")}>
                   <Users className="h-4 w-4" />
