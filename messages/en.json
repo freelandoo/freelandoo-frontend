@@ -1445,7 +1445,20 @@
     "accountLevelHint": "Your account level — grows with likes, followers and shares",
     "seeYourFollowers": "See who follows you",
     "followersCountLabel": "followers",
-    "accountProfileOption": "My profile (account)"
+    "accountProfileOption": "My profile (account)",
+    "functionsHeading": "Features",
+    "functionsHint": "Turning a feature off hides it from your experience only — nothing is deleted.",
+    "featureCourses": "Courses",
+    "featureStore": "Store",
+    "featureVaquinha": "Crowdfunding",
+    "featureCommunities": "Community",
+    "featureWallet": "Wallet",
+    "featureFitness": "Gym",
+    "featureTurnOn": "Enable {feature}",
+    "featureTurnOff": "Disable {feature}",
+    "featureOn": "Enabled",
+    "featureOff": "Disabled",
+    "accountMenuAria": "Account menu"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

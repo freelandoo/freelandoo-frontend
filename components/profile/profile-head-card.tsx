@@ -38,6 +38,7 @@ import type { HintId } from "@/features/tour/hints"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 
 const DataConnectionsModal = dynamic(
   () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
@@ -230,6 +231,10 @@ export function ProfileHeadCard({
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
   const academiasOn = useFeature("fitness_academias")
+  // Preferências pessoais (seção "Funções" do menu lateral).
+  const walletFeatOn = useUserFeature("wallet")
+  const fitnessFeatOn = useUserFeature("fitness_academias")
+  const communitiesFeatOn = useUserFeature("communities")
 
   const handleAvatarSelect = () => {
     if (!isOwnProfile || uploadingAvatar) return
@@ -535,7 +540,7 @@ export function ProfileHeadCard({
                     label={t("myMessages", "Minhas mensagens")}
                     hint="headcard-messages"
                   />
-                  {!isClan && (
+                  {!isClan && communitiesFeatOn && (
                     <IconAction
                       href="/comunidades"
                       icon={Users}
@@ -597,11 +602,13 @@ export function ProfileHeadCard({
                         icon={FolderCog}
                         label={t("manage", "Gerenciar")}
                       />
-                      <IconAction
-                        href="/wallet"
-                        icon={Wallet}
-                        label={t("myWallet", "Minha Carteira")}
-                      />
+                      {walletFeatOn && (
+                        <IconAction
+                          href="/wallet"
+                          icon={Wallet}
+                          label={t("myWallet", "Minha Carteira")}
+                        />
+                      )}
                       {dataApiOn && (
                         <IconAction
                           onClick={() => setDataConnOpen(true)}
@@ -616,7 +623,7 @@ export function ProfileHeadCard({
                           label={t("atendimentoIa", "Atendimento IA")}
                         />
                       )}
-                      {academiasOn && (
+                      {academiasOn && fitnessFeatOn && (
                         <IconAction
                           href="/fitness"
                           icon={Dumbbell}

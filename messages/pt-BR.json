@@ -1445,7 +1445,20 @@
     "accountLevelHint": "Nível da sua conta — sobe com curtidas, seguidores e compartilhamentos",
     "seeYourFollowers": "Ver quem acompanha você",
     "followersCountLabel": "seguidores",
-    "accountProfileOption": "Meu perfil (conta)"
+    "accountProfileOption": "Meu perfil (conta)",
+    "functionsHeading": "Funções",
+    "functionsHint": "Desativar esconde a função só da sua experiência — nada é apagado.",
+    "featureCourses": "Cursos",
+    "featureStore": "Loja",
+    "featureVaquinha": "Vaquinha",
+    "featureCommunities": "Comunidade",
+    "featureWallet": "Carteira",
+    "featureFitness": "Academia",
+    "featureTurnOn": "Ativar {feature}",
+    "featureTurnOff": "Desativar {feature}",
+    "featureOn": "Ativada",
+    "featureOff": "Desativada",
+    "accountMenuAria": "Menu da conta"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

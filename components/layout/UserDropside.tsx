@@ -23,6 +23,9 @@ import {
   Home,
   Compass,
   HeartHandshake,
+  Users,
+  Dumbbell,
+  SlidersHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -30,6 +33,7 @@ import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { CountrySwitcher } from "@/components/i18n/CountrySwitcher"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeatures } from "@/components/feature-flags/UserFeaturesProvider"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -62,6 +66,10 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const tCommon = useTranslations("Common")
   const storeOn = useFeature("store")
   const vaquinhaOn = useFeature("vaquinha")
+  // Seção "Funções": preferências POR usuário (liga/desliga a própria
+  // experiência). A flag global do admin desligada vence a preferência.
+  const { prefs: userFeats, setPref: setUserFeat } = useUserFeatures()
+  const featOn = (key: string) => userFeats[key] !== false
 
   // Abrir chamado (serviço / produto / curso) — mesmo fluxo das Mensagens.
   const [chamadoExpanded, setChamadoExpanded] = useState(false)
@@ -125,15 +133,13 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       label: tAcc("earningsLabel", "Meus Faturamentos"),
       icon: Briefcase,
     },
-    {
-      href: "/wallet",
-      label: tAcc("wallet", "Carteira"),
-      icon: Wallet,
-    },
+    ...(featOn("wallet")
+      ? [{ href: "/wallet", label: tAcc("wallet", "Carteira"), icon: Wallet }]
+      : []),
   ]
   // Itens abaixo do "Abrir chamado".
   const actionsBottom: Action[] = [
-    ...(vaquinhaOn
+    ...(vaquinhaOn && featOn("vaquinha")
       ? [{ href: "/vaquinha/nova", label: tAcc("vaquinhaLabel", "Vaquinha"), icon: HeartHandshake }]
       : []),
     {
@@ -156,8 +162,18 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   // Loja/Produtos desligada no Painel de Controle → sem "Pedir Produto".
   const chamadoOptions: { mode: ChamadoMode; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { mode: "service", label: tAcc("chamadoModeService", "Serviço"), icon: Briefcase },
-    ...(storeOn ? [{ mode: "product" as ChamadoMode, label: tAcc("chamadoModeProduct", "Produto"), icon: Package }] : []),
-    { mode: "course", label: tAcc("chamadoModeCourse", "Curso"), icon: GraduationCap },
+    ...(storeOn && featOn("store") ? [{ mode: "product" as ChamadoMode, label: tAcc("chamadoModeProduct", "Produto"), icon: Package }] : []),
+    ...(featOn("courses") ? [{ mode: "course" as ChamadoMode, label: tAcc("chamadoModeCourse", "Curso"), icon: GraduationCap }] : []),
+  ]
+
+  // Seção "Funções": cada linha = uma função da conta com liga/desliga pessoal.
+  const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: "courses", label: tAcc("featureCourses", "Cursos"), icon: GraduationCap },
+    { key: "store", label: tAcc("featureStore", "Loja"), icon: Package },
+    { key: "vaquinha", label: tAcc("featureVaquinha", "Vaquinha"), icon: HeartHandshake },
+    { key: "communities", label: tAcc("featureCommunities", "Comunidade"), icon: Users },
+    { key: "wallet", label: tAcc("featureWallet", "Carteira"), icon: Wallet },
+    { key: "fitness_academias", label: tAcc("featureFitness", "Academia"), icon: Dumbbell },
   ]
 
   const isAdmin =
@@ -218,9 +234,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       <aside
         role="dialog"
         aria-modal="true"
-        aria-label="Menu da conta"
+        aria-label={tAcc("accountMenuAria", "Menu da conta")}
         className={cn(
-          "absolute left-0 top-0 flex h-full w-full max-w-[420px] flex-col border-r border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[20px_0_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out",
+          "fl-sharp absolute left-0 top-0 flex h-full w-full max-w-[420px] flex-col border-r border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 shadow-[20px_0_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -240,7 +256,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
             </button>
           </div>
           <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm font-semibold text-primary">
+          <div data-avatar className="flex h-10 w-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm font-semibold text-primary">
             {user?.nome ? user.nome.slice(0, 1).toUpperCase() : "?"}
           </div>
           <div className="min-w-0 flex-1">
@@ -397,6 +413,59 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
               </HoverHint>
             </li>
           </ul>
+
+          {/* Funções — liga/desliga da experiência do PRÓPRIO usuário
+              (análogo pessoal do Painel de Controle do admin). */}
+          <p className="mt-6 flex items-center gap-1.5 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            <SlidersHorizontal className="h-3 w-3" />
+            {tAcc("functionsHeading", "Funções")}
+          </p>
+          <ul className="space-y-1">
+            {featureRows.map((f) => {
+              const FIcon = f.icon
+              const on = featOn(f.key)
+              return (
+                <li key={f.key}>
+                  <div className="flex items-center gap-3 px-3 py-2 text-[13px] text-white/80">
+                    <FIcon className="h-4 w-4 shrink-0 text-white/45" />
+                    <span className="min-w-0 flex-1 truncate font-semibold">{f.label}</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      onClick={() => setUserFeat(f.key, !on)}
+                      aria-label={(on
+                        ? tAcc("featureTurnOff", "Desativar {feature}")
+                        : tAcc("featureTurnOn", "Ativar {feature}")
+                      ).replace("{feature}", f.label)}
+                      title={on ? tAcc("featureOn", "Ativada") : tAcc("featureOff", "Desativada")}
+                      className={cn(
+                        "relative h-5 w-10 shrink-0 border transition-colors",
+                        on
+                          ? "border-amber-400/60 bg-amber-400/80"
+                          : "border-white/15 bg-white/[0.06]",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "absolute top-0.5 h-3.5 w-3.5 transition-transform",
+                          on
+                            ? "left-0.5 translate-x-[22px] bg-zinc-950"
+                            : "left-0.5 translate-x-0 bg-white/55",
+                        )}
+                      />
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="px-3 pb-1 pt-1 text-[10.5px] leading-relaxed text-white/35">
+            {tAcc(
+              "functionsHint",
+              "Desativar esconde a função só da sua experiência — nada é apagado.",
+            )}
+          </p>
 
           {/* Preferências de idioma e país */}
           <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">

@@ -28,6 +28,7 @@ import {
 import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell, Wrench } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { CommunityTile } from "@/components/community/community-tile"
 import { HoverHint } from "@/features/tour/HoverHint"
@@ -146,6 +147,10 @@ export default function PerfilPage() {
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
   const academiasOn = useFeature("fitness_academias")
+  // Preferências pessoais da seção "Funções" (menu lateral): escondem as
+  // entradas correspondentes só da experiência deste usuário.
+  const walletFeatOn = useUserFeature("wallet")
+  const fitnessFeatOn = useUserFeature("fitness_academias")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
   // do subperfil: hover expande, click alterna).
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -1897,15 +1902,17 @@ export default function PerfilPage() {
                   >
                     <FolderCog className="h-4 w-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/wallet")}
-                    aria-label={t("openWallet", "Abrir minha Carteira")}
-                    title={t("myWallet", "Minha Carteira")}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  >
-                    <Wallet className="h-4 w-4" />
-                  </button>
+                  {walletFeatOn && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/wallet")}
+                      aria-label={t("openWallet", "Abrir minha Carteira")}
+                      title={t("myWallet", "Minha Carteira")}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <Wallet className="h-4 w-4" />
+                    </button>
+                  )}
                   {dataApiOn && (
                     <button
                       type="button"
@@ -1928,7 +1935,7 @@ export default function PerfilPage() {
                       <Bot className="h-4 w-4" />
                     </button>
                   )}
-                  {academiasOn && (
+                  {academiasOn && fitnessFeatOn && (
                     <button
                       type="button"
                       onClick={() => router.push("/fitness")}

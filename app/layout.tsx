@@ -12,6 +12,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider"
 import { Toaster } from "sonner"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { FeatureFlagsProvider } from "@/components/feature-flags/FeatureFlagsProvider"
+import { UserFeaturesProvider } from "@/components/feature-flags/UserFeaturesProvider"
 import "./globals.css"
 
 // TOUR DESLIGADO (2026-06-14) e TourProvider REMOVIDO do shell (2026-06-15,
@@ -134,6 +135,9 @@ export default function RootLayout({
               que qualquer superfície (nav, busca, perfil, páginas) consiga
               esconder-se via useFeature(). Client-only, não re-dinamiza rotas. */}
           <FeatureFlagsProvider>
+          {/* UserFeaturesProvider: preferências de funções POR usuário (seção
+              "Funções" do menu). Combina com a flag global via useUserFeature. */}
+          <UserFeaturesProvider>
           {/* ConsentProvider precisa envolver TODA a árvore (children + os
                 componentes globais abaixo): a ProfileSidebar/UserDropside monta
                 o OpenChamadoModal, que chama useConsentContext(). Com o provider
@@ -159,6 +163,7 @@ export default function RootLayout({
                 toastOptions={{ style: { borderRadius: 0 } }}
               />
             </ConsentProvider>
+          </UserFeaturesProvider>
           </FeatureFlagsProvider>
         </I18nProvider>
         {/* Google Consent Mode v2 — estado padrão "denied" antes de qualquer
