@@ -1458,7 +1458,11 @@
     "featureTurnOff": "Desativar {feature}",
     "featureOn": "Ativada",
     "featureOff": "Desativada",
-    "accountMenuAria": "Menu da conta"
+    "accountMenuAria": "Menu da conta",
+    "followersShort": "Acomp.",
+    "followingShort": "Acompanhando",
+    "muralLabel": "Mural",
+    "openMuralAria": "Abrir Mural"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

@@ -30,6 +30,8 @@ import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
+import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
+import { MuralPill } from "@/components/profile/profile-head-card"
 import { CommunityTile } from "@/components/community/community-tile"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
@@ -93,6 +95,10 @@ const PremiumProfileModal = dynamic(
 const MediaCropModal = dynamic(
   () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
   { ssr: false }
+)
+const MuralModal = dynamic(
+  () => import("@/components/profile/mural-modal").then((m) => m.MuralModal),
+  { ssr: false },
 )
 const DataConnectionsModal = dynamic(
   () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
@@ -298,6 +304,38 @@ export default function PerfilPage() {
 
   // Seguidores do perfil-conta (paridade user≡subperfil): quem acompanha VOCÊ.
   const accountProfileId = perfil?.account_profile?.id_profile || null
+
+  // Mural do perfil-conta (paridade user≡subperfil) + contador de posts.
+  const [muralOpen, setMuralOpen] = useState(false)
+  const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
+  const [postsCount, setPostsCount] = useState(0)
+  React.useEffect(() => {
+    if (!accountProfileId) return
+    let cancelled = false
+    const fetchBadge = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+      try {
+        const res = await fetch(`/api/service-requests/badge?id_profile=${encodeURIComponent(accountProfileId)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        setMuralBadge({ has_new: !!data.has_new, chat_unread: data.chat_unread ?? 0 })
+      } catch { /* silencioso */ }
+    }
+    fetchBadge()
+    const onFocus = () => {
+      if (!document.hidden) fetchBadge()
+    }
+    window.addEventListener("focus", onFocus)
+    document.addEventListener("visibilitychange", onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener("focus", onFocus)
+      document.removeEventListener("visibilitychange", onFocus)
+    }
+  }, [accountProfileId])
 
   // XP/nível do perfil-conta no header retrátil (igual ao header do subperfil).
   const [accountXp, setAccountXp] = useState<{
@@ -1635,6 +1673,7 @@ export default function PerfilPage() {
             <div className="relative px-5 pb-6 md:px-7">
               <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
                 <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
+                  <div className="flex shrink-0 flex-col items-center">
                   <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
                     {/* Anel neon rosa quando há bees vivos: conic-gradient com um
                         facho quase branco que gira (framer-motion) + camada
@@ -1711,10 +1750,56 @@ export default function PerfilPage() {
                       </button>
                     )}
                   </div>
+                  {/* Estrelas de avaliação do perfil-conta (paridade subperfil). */}
+                  {accountProfileId && (
+                    <div className="mt-2">
+                      <AvatarRatingStar profileId={accountProfileId} />
+                    </div>
+                  )}
+                  </div>
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
-                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto.
-                        Carteira virou botão no toolbar (junto de Métricas/Gerenciar). */}
+                    {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
+                        headcard do subperfil (esqueleto unificado). */}
+                    <div className="flex items-baseline gap-4">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                          {postsCount}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                          {t("postsLabel", "Posts")}
+                        </span>
+                      </div>
+                      <span className="text-[#0B0B0D]/20">|</span>
+                      <button
+                        type="button"
+                        onClick={() => accountProfileId && setFollowersModalOpen(true)}
+                        className="flex items-baseline gap-1.5 transition hover:opacity-70"
+                        aria-label={t("seeYourFollowers", "Ver quem acompanha você")}
+                      >
+                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                          {accountFollowersCount}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                          {t("followersShort", "Acomp.")}
+                        </span>
+                      </button>
+                      <span className="text-[#0B0B0D]/20">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setFollowingModalOpen(true)}
+                        className="flex items-baseline gap-1.5 transition hover:opacity-70"
+                        aria-label={t("seeWhoYouFollow", "Ver quem você acompanha")}
+                      >
+                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                          {followedProfilesCount}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                          {t("followingShort", "Acompanhando")}
+                        </span>
+                      </button>
+                    </div>
+                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
                     {perfil.username && (
                       <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
                     )}
@@ -1815,6 +1900,15 @@ export default function PerfilPage() {
                       {isGeneratingCoupon ? t("generating", "Gerando...") : t("generateCoupon", "Gerar cupom")}
                     </button>
                   </HoverHint>
+                )}
+                {/* Mural do perfil-conta — mesmo pill do subperfil. */}
+                {accountProfileId && (
+                  <MuralPill
+                    onClick={() => setMuralOpen(true)}
+                    label={t("muralLabel", "Mural")}
+                    ariaLabel={t("openMuralAria", "Abrir Mural")}
+                    hasNew={!!(muralBadge.has_new || muralBadge.chat_unread > 0)}
+                  />
                 )}
                 {/* Redes sociais do user (perfil-conta) — mesmos ícones do subperfil */}
                 {(perfil.redes_sociais || []).map((rede) => {
@@ -1942,29 +2036,14 @@ export default function PerfilPage() {
                     </button>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => accountProfileId && setFollowersModalOpen(true)}
-                  className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
-                  title={t("seeYourFollowers", "Ver quem acompanha você")}
-                >
-                  <span className="font-bold text-[#0B0B0D]">{accountFollowersCount}</span>{" "}
-                  <span className="text-[#5b554b]">{t("followersCountLabel", "seguidores")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFollowingModalOpen(true)}
-                  className="tabular-nums rounded-md px-1 transition hover:bg-[#0B0B0D]/[0.06]"
-                  title={t("seeWhoYouFollow", "Ver quem você acompanha")}
-                >
-                  <span className="font-bold text-[#0B0B0D]">{followedProfilesCount}</span>{" "}
-                  <span className="text-[#5b554b]">{t("followingLabel", "acompanhados")}</span>
-                </button>
+                {/* Contadores de seguidores/acompanhados migraram pra fila
+                    POSTS | ACOMP. ao lado do avatar (esqueleto unificado). */}
               </div>
             </div>
           </article>
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
           <UserPortfolio
+            onPostsCount={setPostsCount}
             coursesProfileOptions={(perfil.profiles || [])
               .filter((p) => !p.is_clan)
               .map((p) => ({
@@ -2930,6 +3009,10 @@ export default function PerfilPage() {
           entityId={accountProfileId}
           mode="followers"
         />
+      )}
+
+      {accountProfileId && (
+        <MuralModal open={muralOpen} onOpenChange={setMuralOpen} profileId={accountProfileId} />
       )}
 
       <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />

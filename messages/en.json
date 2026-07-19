@@ -1458,7 +1458,11 @@
     "featureTurnOff": "Disable {feature}",
     "featureOn": "Enabled",
     "featureOff": "Disabled",
-    "accountMenuAria": "Account menu"
+    "accountMenuAria": "Account menu",
+    "followersShort": "Followers",
+    "followingShort": "Following",
+    "muralLabel": "Board",
+    "openMuralAria": "Open board"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

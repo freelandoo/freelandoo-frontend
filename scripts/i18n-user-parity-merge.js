@@ -18,6 +18,12 @@ const ACCOUNT = {
   followersCountLabel: ["seguidores", "followers", "seguidores"],
   accountProfileOption: ["Meu perfil (conta)", "My profile (account)", "Mi perfil (cuenta)"],
   // levelShort ("NV"/"LV") já existia no ns Account de onda anterior — reusada.
+  // L2 — esqueleto unificado: POSTS | ACOMP. | ACOMPANHANDO + Mural no /account.
+  postsLabel: ["Posts", "Posts", "Posts"],
+  followersShort: ["Acomp.", "Followers", "Seguid."],
+  followingShort: ["Acompanhando", "Following", "Siguiendo"],
+  muralLabel: ["Mural", "Board", "Mural"],
+  openMuralAria: ["Abrir Mural", "Open board", "Abrir mural"],
 }
 
 const PROFILE = {

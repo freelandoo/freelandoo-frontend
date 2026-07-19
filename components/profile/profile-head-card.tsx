@@ -897,7 +897,7 @@ function SocialIcons({ socials, socialFallback }: { socials: ProfileSocialLink[]
   )
 }
 
-function MuralPill({ onClick, hasNew, label, ariaLabel }: { onClick: () => void; hasNew: boolean; label: string; ariaLabel: string }) {
+export function MuralPill({ onClick, hasNew, label, ariaLabel }: { onClick: () => void; hasNew: boolean; label: string; ariaLabel: string }) {
   return (
     <button
       type="button"

@@ -91,6 +91,8 @@ interface UserPortfolioProps {
   myProfilesSlot?: React.ReactNode
   /** Conteúdo da aba "Meus Clans" (só renderizado em /account). */
   myClansSlot?: React.ReactNode
+  /** Reporta a contagem de posts pro headcard (contador POSTS, paridade subperfil). */
+  onPostsCount?: (count: number) => void
 }
 
 type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans" | "saved"
@@ -134,6 +136,7 @@ export function UserPortfolio({
   coursesProfileOptions = [],
   myProfilesSlot,
   myClansSlot,
+  onPostsCount,
 }: UserPortfolioProps = {}) {
   const tr = useTranslations("Account")
   const [items, setItems] = useState<Item[]>([])
@@ -141,6 +144,11 @@ export function UserPortfolio({
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("feed")
+
+  // Contador POSTS do headcard (paridade user≡subperfil).
+  useEffect(() => {
+    onPostsCount?.(items.length)
+  }, [items.length, onPostsCount])
   // Chaves do Painel de Controle: Cursos e Comunidade podem estar desligadas.
   const coursesOn = useFeature("courses")
   const communitiesOn = useFeature("communities")
