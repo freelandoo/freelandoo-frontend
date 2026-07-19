@@ -1462,7 +1462,9 @@
     "followersShort": "Acomp.",
     "followingShort": "Acompanhando",
     "muralLabel": "Mural",
-    "openMuralAria": "Abrir Mural"
+    "openMuralAria": "Abrir Mural",
+    "featureVitrine": "Vitrine",
+    "featureVitrineHint": "Desligada, seus perfis somem da vitrine pra todo mundo."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

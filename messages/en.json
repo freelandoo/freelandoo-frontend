@@ -1462,7 +1462,9 @@
     "followersShort": "Followers",
     "followingShort": "Following",
     "muralLabel": "Board",
-    "openMuralAria": "Open board"
+    "openMuralAria": "Open board",
+    "featureVitrine": "Showcase",
+    "featureVitrineHint": "When off, your profiles disappear from the showcase for everyone."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

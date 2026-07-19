@@ -26,6 +26,7 @@ import {
   Users,
   Dumbbell,
   SlidersHorizontal,
+  Store,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -167,13 +168,20 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   ]
 
   // Seção "Funções": cada linha = uma função da conta com liga/desliga pessoal.
-  const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  // `desc` = aviso extra quando o efeito NÃO é só na própria experiência.
+  const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }>; desc?: string }[] = [
     { key: "courses", label: tAcc("featureCourses", "Cursos"), icon: GraduationCap },
     { key: "store", label: tAcc("featureStore", "Loja"), icon: Package },
     { key: "vaquinha", label: tAcc("featureVaquinha", "Vaquinha"), icon: HeartHandshake },
     { key: "communities", label: tAcc("featureCommunities", "Comunidade"), icon: Users },
     { key: "wallet", label: tAcc("featureWallet", "Carteira"), icon: Wallet },
     { key: "fitness_academias", label: tAcc("featureFitness", "Academia"), icon: Dumbbell },
+    {
+      key: "vitrine",
+      label: tAcc("featureVitrine", "Vitrine"),
+      icon: Store,
+      desc: tAcc("featureVitrineHint", "Desligada, seus perfis somem da vitrine pra todo mundo."),
+    },
   ]
 
   const isAdmin =
@@ -428,7 +436,12 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 <li key={f.key}>
                   <div className="flex items-center gap-3 px-3 py-2 text-[13px] text-white/80">
                     <FIcon className="h-4 w-4 shrink-0 text-white/45" />
-                    <span className="min-w-0 flex-1 truncate font-semibold">{f.label}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">{f.label}</span>
+                      {f.desc && (
+                        <span className="block text-[10.5px] leading-snug text-white/35">{f.desc}</span>
+                      )}
+                    </span>
                     <button
                       type="button"
                       role="switch"

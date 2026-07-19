@@ -19,6 +19,12 @@ const ACCOUNT = {
   featureCommunities: ["Comunidade", "Community", "Comunidad"],
   featureWallet: ["Carteira", "Wallet", "Billetera"],
   featureFitness: ["Academia", "Gym", "Gimnasio"],
+  featureVitrine: ["Vitrine", "Showcase", "Vitrina"],
+  featureVitrineHint: [
+    "Desligada, seus perfis somem da vitrine pra todo mundo.",
+    "When off, your profiles disappear from the showcase for everyone.",
+    "Apagada, tus perfiles desaparecen de la vitrina para todos.",
+  ],
   featureTurnOn: ["Ativar {feature}", "Enable {feature}", "Activar {feature}"],
   featureTurnOff: ["Desativar {feature}", "Disable {feature}", "Desactivar {feature}"],
   featureOn: ["Ativada", "Enabled", "Activada"],

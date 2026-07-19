@@ -25,6 +25,7 @@ import {
 } from "@/components/search/product-subfilters"
 import { getAttributeSchema } from "@/lib/product-attributes"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
@@ -251,11 +252,18 @@ function SearchPageInner() {
     setProductFilterSheetOpen(false)
   }, [])
 
-  // Chaves do Painel de Controle: cada aba pode estar desligada.
+  // Chaves do Painel de Controle combinadas com a preferência pessoal do
+  // viewer (seção "Funções" do menu): qualquer uma desligada esconde a aba.
   const servicesOn = useFeature("services")
-  const storeOn = useFeature("store")
-  const coursesOn = useFeature("courses")
-  const communitiesOn = useFeature("communities")
+  const storeFlagOn = useFeature("store")
+  const storePrefOn = useUserFeature("store")
+  const coursesFlagOn = useFeature("courses")
+  const coursesPrefOn = useUserFeature("courses")
+  const communitiesFlagOn = useFeature("communities")
+  const communitiesPrefOn = useUserFeature("communities")
+  const storeOn = storeFlagOn && storePrefOn
+  const coursesOn = coursesFlagOn && coursesPrefOn
+  const communitiesOn = communitiesFlagOn && communitiesPrefOn
   const isTabEnabled = useCallback(
     (x: SearchTab) =>
       x === "services" ? servicesOn : x === "products" ? storeOn : x === "courses" ? coursesOn : communitiesOn,
