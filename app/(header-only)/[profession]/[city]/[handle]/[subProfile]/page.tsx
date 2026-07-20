@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { getBackendApiUrl } from "@/lib/backend"
 import { slugify, stripHandlePrefix, buildProfileUrl } from "@/lib/slug"
 import FreelancerProfileView from "../../../../freelancer/[id]/_components/freelancer-profile-view"
-import UserAccountPublicView from "./_components/user-account-public-view"
 
 type RouteParams = {
   profession: string
@@ -95,12 +94,17 @@ export async function generateMetadata({
   const cityLabel = profile.municipio || ""
   const stateLabel = profile.estado || ""
   const location = [cityLabel, stateLabel].filter(Boolean).join(", ")
+  // Perfil-conta carrega categoria "fantasma" (AuthStorage) — não expor profissão.
+  const professionLabel = profile.is_user_account ? "" : profile.desc_category
+  const titleBase = professionLabel
+    ? `${profile.display_name} · ${professionLabel}`
+    : profile.display_name
   const title = location
-    ? `${profile.display_name} · ${profile.desc_category} em ${location} | Freelandoo`
-    : `${profile.display_name} · ${profile.desc_category} | Freelandoo`
+    ? `${titleBase} em ${location} | Freelandoo`
+    : `${titleBase} | Freelandoo`
   const description =
     profile.bio?.slice(0, 160) ||
-    `Conheça ${profile.display_name}, ${profile.desc_category}${
+    `Conheça ${profile.display_name}${professionLabel ? `, ${professionLabel}` : ""}${
       location ? ` em ${location}` : ""
     }, no Freelandoo.`
 
@@ -175,7 +179,11 @@ export default async function PublicProfilePage({
     "@context": "https://schema.org",
     "@type": ["Person", "ProfessionalService"],
     name: profile.display_name,
-    description: profile.bio || `Conheça ${profile.display_name}, ${profile.desc_category} no Freelandoo.`,
+    description:
+      profile.bio ||
+      (profile.is_user_account
+        ? `Conheça ${profile.display_name} no Freelandoo.`
+        : `Conheça ${profile.display_name}, ${profile.desc_category} no Freelandoo.`),
     image: profile.avatar_url || undefined,
     url: `https://www.freelandoo.com.br${canonicalPath}`,
     address: {
@@ -211,11 +219,9 @@ export default async function PublicProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
-      {profile.is_user_account ? (
-        <UserAccountPublicView profile={profile} />
-      ) : (
-        <FreelancerProfileView profileId={profile.id_profile} />
-      )}
+      {/* Paridade user≡subperfil: o perfil-conta renderiza a MESMA página do
+          subperfil (decisão Alex 2026-07-20 — "as duas têm que ser idênticas"). */}
+      <FreelancerProfileView profileId={profile.id_profile} />
     </>
   )
 }
