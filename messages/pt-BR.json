@@ -1465,7 +1465,9 @@
     "openMuralAria": "Abrir Mural",
     "featureVitrine": "Vitrine",
     "featureVitrineHint": "Desligada, seus perfis somem da vitrine pra todo mundo.",
-    "featureProfiles": "Perfis"
+    "featureProfiles": "Perfis",
+    "tabServices": "Serviços",
+    "tabShop": "Loja"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

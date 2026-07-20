@@ -2050,6 +2050,7 @@ export default function PerfilPage() {
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
           <UserPortfolio
             onPostsCount={setPostsCount}
+            accountProfileId={accountProfileId}
             coursesProfileOptions={(perfil.profiles || [])
               .filter((p) => !p.is_clan)
               .map((p) => ({

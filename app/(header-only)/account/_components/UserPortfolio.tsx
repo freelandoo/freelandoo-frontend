@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { AnimatePresence, motion } from "framer-motion"
 import {
   ImageIcon,
@@ -13,9 +14,11 @@ import {
   Heart,
   X,
   AlertCircle,
+  Briefcase,
   Clapperboard,
   Hexagon,
   GraduationCap,
+  ShoppingBag,
   UserRound,
   Users,
   Sparkles,
@@ -74,6 +77,20 @@ type Item = {
   media: Media[]
 }
 
+// Abas Serviços/Loja do perfil-conta (paridade user≡subperfil): mesmos
+// componentes da página do subperfil, em chunk lazy (fora do bundle inicial).
+const sectionSkeleton = () => (
+  <div className="mt-8 h-48 w-full animate-pulse bg-white/5" aria-hidden />
+)
+const ProfilePublicServicesSection = dynamic(
+  () => import("@/components/profile/profile-public-services-section").then((m) => m.ProfilePublicServicesSection),
+  { ssr: false, loading: sectionSkeleton }
+)
+const ProfileOwnerProductsSection = dynamic(
+  () => import("@/components/profile/profile-owner-products-section").then((m) => m.ProfileOwnerProductsSection),
+  { ssr: false, loading: sectionSkeleton }
+)
+
 function token() {
   return typeof window !== "undefined" ? localStorage.getItem("token") : null
 }
@@ -94,9 +111,19 @@ interface UserPortfolioProps {
   myClansSlot?: React.ReactNode
   /** Reporta a contagem de posts pro headcard (contador POSTS, paridade subperfil). */
   onPostsCount?: (count: number) => void
+  /** id do perfil-conta (is_user_account) — habilita as abas Serviços/Loja. */
+  accountProfileId?: string | null
 }
 
-type PortfolioTab = "feed" | "bees" | "courses" | "profiles" | "clans" | "saved"
+type PortfolioTab =
+  | "feed"
+  | "bees"
+  | "services"
+  | "courses"
+  | "shop"
+  | "profiles"
+  | "clans"
+  | "saved"
 
 // "feed"/"bees" = bookmarks de posts (bees = Curtos, vídeos permanentes);
 // "bee_story" = bees salvos (stories v2 — somem quando o bee expira).
@@ -138,6 +165,7 @@ export function UserPortfolio({
   myProfilesSlot,
   myClansSlot,
   onPostsCount,
+  accountProfileId = null,
 }: UserPortfolioProps = {}) {
   const tr = useTranslations("Account")
   const [items, setItems] = useState<Item[]>([])
@@ -158,17 +186,25 @@ export function UserPortfolio({
   const communitiesFlagOn = useFeature("communities")
   const communitiesPrefOn = useUserFeature("communities")
   const profilesPrefOn = useUserFeature("profiles")
+  const servicesFlagOn = useFeature("services")
+  const storeFlagOn = useFeature("store")
+  const storePrefOn = useUserFeature("store")
   const coursesOn = coursesFlagOn && coursesPrefOn
   const communitiesOn = communitiesFlagOn && communitiesPrefOn
+  // Serviços/Loja do perfil-conta (paridade user≡subperfil) — precisam do id.
+  const servicesOn = servicesFlagOn && !!accountProfileId
+  const shopOn = storeFlagOn && storePrefOn && !!accountProfileId
   useEffect(() => {
     if (
       (!coursesOn && portfolioTab === "courses") ||
       (!communitiesOn && portfolioTab === "clans") ||
-      (!profilesPrefOn && portfolioTab === "profiles")
+      (!profilesPrefOn && portfolioTab === "profiles") ||
+      (!servicesOn && portfolioTab === "services") ||
+      (!shopOn && portfolioTab === "shop")
     ) {
       setPortfolioTab("feed")
     }
-  }, [coursesOn, communitiesOn, profilesPrefOn, portfolioTab])
+  }, [coursesOn, communitiesOn, profilesPrefOn, servicesOn, shopOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
@@ -614,6 +650,18 @@ export function UserPortfolio({
               <Clapperboard className="h-4 w-4" />
             </button>
           </HoverHint>
+          {servicesOn && (
+            <HoverHint id="account-tab-services" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("services")}
+                className={tabBtn(portfolioTab === "services")}
+              >
+                <Briefcase className="h-3.5 w-3.5" />
+                {tr("tabServices", "Serviços")}
+              </button>
+            </HoverHint>
+          )}
           {coursesOn && (
             <HoverHint id="account-tab-courses" side="bottom">
               <button
@@ -623,6 +671,18 @@ export function UserPortfolio({
               >
                 <GraduationCap className="h-3.5 w-3.5" />
                 {tr("myLearning", "Meu aprendizado")}
+              </button>
+            </HoverHint>
+          )}
+          {shopOn && (
+            <HoverHint id="account-tab-shop" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("shop")}
+                className={tabBtn(portfolioTab === "shop")}
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                {tr("tabShop", "Loja")}
               </button>
             </HoverHint>
           )}
@@ -664,7 +724,17 @@ export function UserPortfolio({
       </div>
       {/* Botões "Novo item" e "Novo Bees" migraram pro + do RetractableProfileHeader. */}
 
-      {portfolioTab === "courses" ? (
+      {portfolioTab === "services" && accountProfileId ? (
+        <ProfilePublicServicesSection
+          profileId={accountProfileId}
+          allowPublicBooking
+          showOwnerControls
+          isClan={false}
+          clanMembers={[]}
+        />
+      ) : portfolioTab === "shop" && accountProfileId ? (
+        <ProfileOwnerProductsSection profileId={accountProfileId} />
+      ) : portfolioTab === "courses" ? (
         <CoursesSection profileOptions={coursesProfileOptions} purchasedOnly />
       ) : portfolioTab === "saved" ? (
         <SavedSection />

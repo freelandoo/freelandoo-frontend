@@ -63,7 +63,9 @@ export type HintId =
   // ── /account — abas do portfólio ───────────────────────────────────────
   | "account-tab-feed"
   | "account-tab-bees"
+  | "account-tab-services"
   | "account-tab-courses"
+  | "account-tab-shop"
   | "account-tab-saved"
   | "account-tab-profiles"
   | "account-tab-clans"
@@ -205,9 +207,17 @@ export const HINTS: Record<HintId, Hint> = {
     title: "Bees",
     text: "Vídeos verticais 9:16 (até 100MB) — aparecem na vitrine Bees estilo TikTok.",
   },
+  "account-tab-services": {
+    title: "Serviços",
+    text: "Serviços da sua conta — com preço e agenda, iguais aos do subperfil.",
+  },
   "account-tab-courses": {
     title: "Cursos",
     text: "Cursos que você criou pra vender conhecimento (módulos, aulas, certificado).",
+  },
+  "account-tab-shop": {
+    title: "Loja",
+    text: "Produtos físicos vendidos pela sua conta — mesma loja do subperfil.",
   },
   "account-tab-saved": {
     title: "Salvos",

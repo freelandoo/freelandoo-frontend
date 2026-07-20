@@ -24,6 +24,9 @@ const ACCOUNT = {
   followingShort: ["Acompanhando", "Following", "Siguiendo"],
   muralLabel: ["Mural", "Board", "Mural"],
   openMuralAria: ["Abrir Mural", "Open board", "Abrir mural"],
+  // S4 — abas Serviços/Loja do perfil-conta no /account (mesmos rótulos do subperfil).
+  tabServices: ["Serviços", "Services", "Servicios"],
+  tabShop: ["Loja", "Shop", "Tienda"],
 }
 
 const PROFILE = {

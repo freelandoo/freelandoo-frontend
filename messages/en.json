@@ -1465,7 +1465,9 @@
     "openMuralAria": "Open board",
     "featureVitrine": "Showcase",
     "featureVitrineHint": "When off, your profiles disappear from the showcase for everyone.",
-    "featureProfiles": "Profiles"
+    "featureProfiles": "Profiles",
+    "tabServices": "Services",
+    "tabShop": "Shop"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
