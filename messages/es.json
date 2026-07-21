@@ -1468,7 +1468,8 @@
     "featureProfiles": "Perfiles",
     "tabServices": "Servicios",
     "tabShop": "Tienda",
-    "settingsMyData": "Mis datos"
+    "settingsMyData": "Mis datos",
+    "featureServices": "Servicios"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

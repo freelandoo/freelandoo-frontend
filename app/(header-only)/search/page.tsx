@@ -254,13 +254,15 @@ function SearchPageInner() {
 
   // Chaves do Painel de Controle combinadas com a preferência pessoal do
   // viewer (seção "Funções" do menu): qualquer uma desligada esconde a aba.
-  const servicesOn = useFeature("services")
+  const servicesFlagOn = useFeature("services")
+  const servicesPrefOn = useUserFeature("services")
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
   const coursesFlagOn = useFeature("courses")
   const coursesPrefOn = useUserFeature("courses")
   const communitiesFlagOn = useFeature("communities")
   const communitiesPrefOn = useUserFeature("communities")
+  const servicesOn = servicesFlagOn && servicesPrefOn
   const storeOn = storeFlagOn && storePrefOn
   const coursesOn = coursesFlagOn && coursesPrefOn
   const communitiesOn = communitiesFlagOn && communitiesPrefOn

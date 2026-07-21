@@ -20,6 +20,7 @@ const LS_KEY = "fl_user_features"
 export const USER_FEATURE_KEYS = [
   "courses",
   "store",
+  "services",
   "vaquinha",
   "communities",
   "wallet",

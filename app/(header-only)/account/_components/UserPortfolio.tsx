@@ -187,12 +187,13 @@ export function UserPortfolio({
   const communitiesPrefOn = useUserFeature("communities")
   const profilesPrefOn = useUserFeature("profiles")
   const servicesFlagOn = useFeature("services")
+  const servicesPrefOn = useUserFeature("services")
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
   const coursesOn = coursesFlagOn && coursesPrefOn
   const communitiesOn = communitiesFlagOn && communitiesPrefOn
   // Serviços/Loja do perfil-conta (paridade user≡subperfil) — precisam do id.
-  const servicesOn = servicesFlagOn && !!accountProfileId
+  const servicesOn = servicesFlagOn && servicesPrefOn && !!accountProfileId
   const shopOn = storeFlagOn && storePrefOn && !!accountProfileId
   useEffect(() => {
     if (

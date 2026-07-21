@@ -15,6 +15,7 @@ const ACCOUNT = {
   ],
   featureCourses: ["Cursos", "Courses", "Cursos"],
   featureStore: ["Loja", "Store", "Tienda"],
+  featureServices: ["Serviços", "Services", "Servicios"],
   featureVaquinha: ["Vaquinha", "Crowdfunding", "Colecta"],
   featureCommunities: ["Comunidade", "Community", "Comunidad"],
   featureWallet: ["Carteira", "Wallet", "Billetera"],

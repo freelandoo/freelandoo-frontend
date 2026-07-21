@@ -177,6 +177,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }>; desc?: string }[] = [
     { key: "courses", label: tAcc("featureCourses", "Cursos"), icon: GraduationCap },
     { key: "store", label: tAcc("featureStore", "Loja"), icon: Package },
+    { key: "services", label: tAcc("featureServices", "Serviços"), icon: Briefcase },
     { key: "vaquinha", label: tAcc("featureVaquinha", "Vaquinha"), icon: HeartHandshake },
     { key: "communities", label: tAcc("featureCommunities", "Comunidade"), icon: Users },
     { key: "wallet", label: tAcc("featureWallet", "Carteira"), icon: Wallet },

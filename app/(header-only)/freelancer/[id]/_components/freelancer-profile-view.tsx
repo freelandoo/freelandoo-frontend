@@ -197,10 +197,12 @@ export default function FreelancerProfileView({
   // Hooks chamados incondicionalmente (rules-of-hooks).
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
-  const servicesOn = useFeature("services")
+  const servicesFlagOn = useFeature("services")
+  const servicesPrefOn = useUserFeature("services")
   const coursesFlagOn = useFeature("courses")
   const coursesPrefOn = useUserFeature("courses")
   const storeOn = storeFlagOn && storePrefOn
+  const servicesOn = servicesFlagOn && servicesPrefOn
   const coursesOn = coursesFlagOn && coursesPrefOn
   // Abas 1:1 com a barra do UserPortfolio do /account (esqueleto unificado).
   const tabBtn = (active: boolean) =>
