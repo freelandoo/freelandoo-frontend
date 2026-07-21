@@ -31,6 +31,8 @@ const ACCOUNT = {
   featureOn: ["Ativada", "Enabled", "Activada"],
   featureOff: ["Desativada", "Disabled", "Desactivada"],
   accountMenuAria: ["Menu da conta", "Account menu", "Menú de la cuenta"],
+  // Sub-item de "Configurações" no menu lateral (as Funções vivem lá dentro).
+  settingsMyData: ["Meus dados", "My data", "Mis datos"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

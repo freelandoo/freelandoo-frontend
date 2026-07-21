@@ -1467,7 +1467,8 @@
     "featureVitrineHint": "Desligada, seus perfis somem da vitrine pra todo mundo.",
     "featureProfiles": "Perfis",
     "tabServices": "Serviços",
-    "tabShop": "Loja"
+    "tabShop": "Loja",
+    "settingsMyData": "Meus dados"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

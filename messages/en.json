@@ -1467,7 +1467,8 @@
     "featureVitrineHint": "When off, your profiles disappear from the showcase for everyone.",
     "featureProfiles": "Profiles",
     "tabServices": "Services",
-    "tabShop": "Shop"
+    "tabShop": "Shop",
+    "settingsMyData": "My data"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

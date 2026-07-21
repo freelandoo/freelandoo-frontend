@@ -1467,7 +1467,8 @@
     "featureVitrineHint": "Apagada, tus perfiles desaparecen de la vitrina para todos.",
     "featureProfiles": "Perfiles",
     "tabServices": "Servicios",
-    "tabShop": "Tienda"
+    "tabShop": "Tienda",
+    "settingsMyData": "Mis datos"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

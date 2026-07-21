@@ -28,6 +28,7 @@ import {
   SlidersHorizontal,
   Store,
   UserRound,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { OpenChamadoModal, type ChamadoMode } from "@/components/search/open-chamado-modal"
@@ -72,6 +73,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   // experiência). A flag global do admin desligada vence a preferência.
   const { prefs: userFeats, setPref: setUserFeat } = useUserFeatures()
   const featOn = (key: string) => userFeats[key] !== false
+
+  // "Configurações" expande e guarda dentro os dados da conta + as Funções.
+  const [settingsExpanded, setSettingsExpanded] = useState(false)
 
   // Abrir chamado (serviço / produto / curso) — mesmo fluxo das Mensagens.
   const [chamadoExpanded, setChamadoExpanded] = useState(false)
@@ -371,18 +375,91 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                 </Link>
               </HoverHint>
             </li>
+            {/* Configurações — expande em "Meus dados" + as Funções da conta */}
             <li>
               <HoverHint id="dropside-settings" side="right" className="block w-full">
-                <Link
-                  href="/account/dados"
-                  onClick={onClose}
+                <button
+                  type="button"
                   data-tour="dropside-settings"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
+                  onClick={() => setSettingsExpanded((v) => !v)}
+                  aria-expanded={settingsExpanded}
+                  className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] text-white/80 transition hover:bg-white/[0.04] hover:text-white"
                 >
-                  <Settings className="h-4 w-4 text-white/45" />
-                  {tCommon("settings", "Configurações")}
-                </Link>
+                  <Settings className="h-4 w-4 shrink-0 text-white/45 transition group-hover:text-white/70" />
+                  <span className="min-w-0 flex-1 truncate">{tCommon("settings", "Configurações")}</span>
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 text-white/40 transition", settingsExpanded && "rotate-180")} />
+                </button>
               </HoverHint>
+              {settingsExpanded && (
+                <div className="mb-1 ml-7 mt-1 space-y-1 border-l border-white/10 pl-3">
+                  <Link
+                    href="/account/dados"
+                    onClick={onClose}
+                    className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12.5px] text-white/70 transition hover:bg-white/[0.04] hover:text-white"
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-white/40 transition group-hover:text-amber-300" />
+                    <span className="truncate">{tAcc("settingsMyData", "Meus dados")}</span>
+                  </Link>
+
+                  {/* Funções — liga/desliga da experiência do PRÓPRIO usuário
+                      (análogo pessoal do Painel de Controle do admin). */}
+                  <p className="flex items-center gap-1.5 px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    <SlidersHorizontal className="h-3 w-3" />
+                    {tAcc("functionsHeading", "Funções")}
+                  </p>
+                  <ul className="space-y-1">
+                    {featureRows.map((f) => {
+                      const FIcon = f.icon
+                      const on = featOn(f.key)
+                      return (
+                        <li key={f.key}>
+                          <div className="flex items-center gap-2.5 px-3 py-1.5 text-[12.5px] text-white/80">
+                            <FIcon className="h-3.5 w-3.5 shrink-0 text-white/45" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-semibold">{f.label}</span>
+                              {f.desc && (
+                                <span className="block text-[10.5px] leading-snug text-white/35">{f.desc}</span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={on}
+                              onClick={() => setUserFeat(f.key, !on)}
+                              aria-label={(on
+                                ? tAcc("featureTurnOff", "Desativar {feature}")
+                                : tAcc("featureTurnOn", "Ativar {feature}")
+                              ).replace("{feature}", f.label)}
+                              title={on ? tAcc("featureOn", "Ativada") : tAcc("featureOff", "Desativada")}
+                              className={cn(
+                                "relative h-5 w-10 shrink-0 border transition-colors",
+                                on
+                                  ? "border-amber-400/60 bg-amber-400/80"
+                                  : "border-white/15 bg-white/[0.06]",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "absolute top-0.5 h-3.5 w-3.5 transition-transform",
+                                  on
+                                    ? "left-0.5 translate-x-[22px] bg-zinc-950"
+                                    : "left-0.5 translate-x-0 bg-white/55",
+                                )}
+                              />
+                            </button>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <p className="px-3 pb-1 pt-1 text-[10.5px] leading-relaxed text-white/35">
+                    {tAcc(
+                      "functionsHint",
+                      "Desativar esconde a função só da sua experiência — nada é apagado.",
+                    )}
+                  </p>
+                </div>
+              )}
             </li>
             <li>
               <Link
@@ -423,64 +500,6 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
               </HoverHint>
             </li>
           </ul>
-
-          {/* Funções — liga/desliga da experiência do PRÓPRIO usuário
-              (análogo pessoal do Painel de Controle do admin). */}
-          <p className="mt-6 flex items-center gap-1.5 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            <SlidersHorizontal className="h-3 w-3" />
-            {tAcc("functionsHeading", "Funções")}
-          </p>
-          <ul className="space-y-1">
-            {featureRows.map((f) => {
-              const FIcon = f.icon
-              const on = featOn(f.key)
-              return (
-                <li key={f.key}>
-                  <div className="flex items-center gap-3 px-3 py-2 text-[13px] text-white/80">
-                    <FIcon className="h-4 w-4 shrink-0 text-white/45" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{f.label}</span>
-                      {f.desc && (
-                        <span className="block text-[10.5px] leading-snug text-white/35">{f.desc}</span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={on}
-                      onClick={() => setUserFeat(f.key, !on)}
-                      aria-label={(on
-                        ? tAcc("featureTurnOff", "Desativar {feature}")
-                        : tAcc("featureTurnOn", "Ativar {feature}")
-                      ).replace("{feature}", f.label)}
-                      title={on ? tAcc("featureOn", "Ativada") : tAcc("featureOff", "Desativada")}
-                      className={cn(
-                        "relative h-5 w-10 shrink-0 border transition-colors",
-                        on
-                          ? "border-amber-400/60 bg-amber-400/80"
-                          : "border-white/15 bg-white/[0.06]",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "absolute top-0.5 h-3.5 w-3.5 transition-transform",
-                          on
-                            ? "left-0.5 translate-x-[22px] bg-zinc-950"
-                            : "left-0.5 translate-x-0 bg-white/55",
-                        )}
-                      />
-                    </button>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-          <p className="px-3 pb-1 pt-1 text-[10.5px] leading-relaxed text-white/35">
-            {tAcc(
-              "functionsHint",
-              "Desativar esconde a função só da sua experiência — nada é apagado.",
-            )}
-          </p>
 
           {/* Preferências de idioma e país */}
           <p className="mt-6 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
