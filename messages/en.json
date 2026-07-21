@@ -5215,7 +5215,16 @@
     "progressCount": "{done}/{total} exercises done",
     "restLabel": "rest {s}s",
     "seriesLabel": "sets",
-    "loadLabel": "load"
+    "loadLabel": "load",
+    "todayEmptyOwn": "No active plan. Build your own here or ask your trainer to set one up at the gym.",
+    "ownPlanBadge": "Made by you",
+    "profPlanBadge": "From your trainer",
+    "planDeleteConfirmOwn": "Delete this plan? Your check-offs on it go with it.",
+    "planDeleteError": "Error deleting the plan",
+    "restShort": "rest (s)",
+    "moveUp": "Move exercise up",
+    "moveDown": "Move exercise down",
+    "byStudentBadge": "by student"
   },
   "Cluster": {
     "title": "Clusters",

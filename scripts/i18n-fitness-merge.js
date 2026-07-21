@@ -616,6 +616,33 @@ Object.assign(WORKOUTS, {
   loadLabel: ["carga", "load", "carga"],
 })
 
+// Ficha própria (mig 189): o usuário monta/edita/exclui o treino dele no
+// /fitness, aplicando direto. `todayEmpty` já existia com o texto antigo ("seu
+// professor pode montar") e o merge é fill-if-absent, então o estado vazio novo
+// entra como chave nova.
+Object.assign(WORKOUTS, {
+  todayEmptyOwn: [
+    "Nenhuma ficha ativa. Monte a sua aqui ou peça pro seu professor montar na academia.",
+    "No active plan. Build your own here or ask your trainer to set one up at the gym.",
+    "Ninguna ficha activa. Arma la tuya aquí o pídele a tu profesor que la monte en el gimnasio.",
+  ],
+  ownPlanBadge: ["Feita por você", "Made by you", "Hecha por ti"],
+  profPlanBadge: ["Do professor", "From your trainer", "Del profesor"],
+  // planDeleteConfirm existente é a fala do professor ("os checks do aluno") —
+  // na visão do dono a frase é na 2ª pessoa.
+  planDeleteConfirmOwn: [
+    "Excluir esta ficha? Seus checks dela somem junto.",
+    "Delete this plan? Your check-offs on it go with it.",
+    "¿Eliminar esta ficha? Tus marcas de ella se van también.",
+  ],
+  planDeleteError: ["Erro ao excluir a ficha", "Error deleting the plan", "Error al eliminar la ficha"],
+  // Grade do professor: marca a ficha que o aluno montou sozinho.
+  byStudentBadge: ["do aluno", "by student", "del alumno"],
+  restShort: ["desc. (s)", "rest (s)", "desc. (s)"],
+  moveUp: ["Subir exercício", "Move exercise up", "Subir ejercicio"],
+  moveDown: ["Descer exercício", "Move exercise down", "Bajar ejercicio"],
+})
+
 // Chip "Acessar academia" no header do card do /feed (mig 181) — ns Post,
 // espelha accessCommunity.
 const POST = {

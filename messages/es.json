@@ -5195,7 +5195,16 @@
     "progressCount": "{done}/{total} ejercicios hechos",
     "restLabel": "descanso {s}s",
     "seriesLabel": "series",
-    "loadLabel": "carga"
+    "loadLabel": "carga",
+    "todayEmptyOwn": "Ninguna ficha activa. Arma la tuya aquí o pídele a tu profesor que la monte en el gimnasio.",
+    "ownPlanBadge": "Hecha por ti",
+    "profPlanBadge": "Del profesor",
+    "planDeleteConfirmOwn": "¿Eliminar esta ficha? Tus marcas de ella se van también.",
+    "planDeleteError": "Error al eliminar la ficha",
+    "restShort": "desc. (s)",
+    "moveUp": "Subir ejercicio",
+    "moveDown": "Bajar ejercicio",
+    "byStudentBadge": "del alumno"
   },
   "Cluster": {
     "title": "Clusters",

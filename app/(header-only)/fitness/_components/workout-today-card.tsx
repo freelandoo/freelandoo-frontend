@@ -1,12 +1,15 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { CheckSquare, Dumbbell, Loader2, Maximize2, Square, X } from "lucide-react"
+import { toast } from "sonner"
+import { CheckSquare, Dumbbell, Loader2, Maximize2, Pencil, Plus, Square, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { WorkoutPlanEditor, type EditablePlan } from "./workout-plan-editor"
 
 type PlanExercise = {
   id_plan_exercise: string
+  id_exercise: string
   exercise_nome: string
   muscle_group: string | null
   sets: number
@@ -19,8 +22,12 @@ type PlanExercise = {
 type Plan = {
   id_plan: string
   nome: string
+  notes: string | null
   days_on_plan: number
   completed_at: string | null
+  /** Autoria (mig 189): ficha que o próprio usuário montou × ficha do professor. */
+  by_student: boolean
+  academy_nome: string | null
   exercises: PlanExercise[]
 }
 
@@ -45,6 +52,9 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
   const [active, setActive] = useState(0)
   const [expanded, setExpanded] = useState(false)
+  // null = fechado; { plan: null } = criando; { plan } = editando
+  const [editor, setEditor] = useState<{ plan: EditablePlan | null } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const authHeaders = useCallback((): Record<string, string> => {
     const token = getToken()
@@ -56,7 +66,10 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
       const res = await fetch(`/api/workouts/today?date=${date}`, { headers: authHeaders() })
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setPlans(Array.isArray(data.plans) ? data.plans : [])
+      const next: Plan[] = Array.isArray(data.plans) ? data.plans : []
+      setPlans(next)
+      // A ficha selecionada pode ter sumido (exclusão) — não deixar índice órfão.
+      setActive((a) => Math.min(a, Math.max(0, next.length - 1)))
       setState("loaded")
     } catch {
       setState("error")
@@ -101,15 +114,65 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
     [authHeaders, date, load]
   )
 
+  const openEditor = useCallback((p: Plan | null) => {
+    setEditor({
+      plan: p
+        ? {
+            id_plan: p.id_plan,
+            nome: p.nome,
+            notes: p.notes,
+            exercises: p.exercises.map((ex) => ({
+              id_exercise: ex.id_exercise,
+              exercise_nome: ex.exercise_nome,
+              sets: ex.sets,
+              reps: ex.reps,
+              load_kg: ex.load_kg,
+              rest_seconds: ex.rest_seconds,
+            })),
+          }
+        : null,
+    })
+  }, [])
+
+  const removePlan = useCallback(
+    async (p: Plan) => {
+      if (!window.confirm(t("planDeleteConfirmOwn", "Excluir esta ficha? Seus checks dela somem junto."))) return
+      setDeleting(true)
+      try {
+        const res = await fetch(`/api/workouts/plans/${p.id_plan}`, { method: "DELETE", headers: authHeaders() })
+        if (!res.ok) throw new Error()
+        toast.success(t("planDeleted", "Ficha excluída"))
+        setExpanded(false)
+        void load()
+      } catch {
+        toast.error(t("planDeleteError", "Erro ao excluir a ficha"))
+      } finally {
+        setDeleting(false)
+      }
+    },
+    [authHeaders, load, t]
+  )
+
   const plan = plans[active]
   const doneCount = plan ? plan.exercises.filter((e) => e.checked).length : 0
   const totalCount = plan ? plan.exercises.length : 0
 
   return (
     <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
-      <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-        <Dumbbell className="h-4 w-4 text-[#F2B705]" /> {t("todayTitle", "Treino de hoje")}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+          <Dumbbell className="h-4 w-4 text-[#F2B705]" /> {t("todayTitle", "Treino de hoje")}
+        </p>
+        <button
+          type="button"
+          onClick={() => openEditor(null)}
+          aria-label={t("newPlan", "Nova ficha")}
+          title={t("newPlan", "Nova ficha")}
+          className="flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
+        >
+          <Plus className="h-3.5 w-3.5" /> {t("newPlan", "Nova ficha")}
+        </button>
+      </div>
 
       {state === "loading" && (
         <div className="flex justify-center py-6">
@@ -119,7 +182,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
 
       {state !== "loading" && (!plan || plans.length === 0) && (
         <p className="mt-2 text-xs text-[#9A938A]">
-          {t("todayEmpty", "Nenhuma ficha ativa. Seu professor pode montar seu treino na academia.")}
+          {t("todayEmptyOwn", "Nenhuma ficha ativa. Monte a sua aqui ou peça pro seu professor montar na academia.")}
         </p>
       )}
 
@@ -151,6 +214,10 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
             </p>
             <p className="text-[10px] font-bold uppercase text-[#9A938A]">
               {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
+              {" · "}
+              <span className={plan.by_student ? "text-[#F2B705]" : ""}>
+                {plan.by_student ? t("ownPlanBadge", "Feita por você") : t("profPlanBadge", "Do professor")}
+              </span>
             </p>
             {plan.completed_at && (
               <p className="mt-1 border-2 border-[#0B0B0D] bg-[#4fc95a] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
@@ -189,11 +256,36 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                 <h3 className="mt-1 text-2xl font-black uppercase leading-tight">{plan.nome}</h3>
                 <p className="text-[11px] font-bold uppercase text-[#9A938A]">
                   {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
+                  {" · "}
+                  {plan.by_student
+                    ? t("ownPlanBadge", "Feita por você")
+                    : plan.academy_nome
+                      ? `${t("profPlanBadge", "Do professor")} · ${plan.academy_nome}`
+                      : t("profPlanBadge", "Do professor")}
                 </p>
               </div>
-              <button onClick={() => setExpanded(false)} aria-label={t("close", "Fechar")} className="shrink-0 p-1">
-                <X className="h-6 w-6" />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={() => openEditor(plan)}
+                  aria-label={t("editPlan", "Editar")}
+                  title={t("editPlan", "Editar")}
+                  className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => void removePlan(plan)}
+                  disabled={deleting}
+                  aria-label={t("deletePlan", "Excluir")}
+                  title={t("deletePlan", "Excluir")}
+                  className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1.5 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button onClick={() => setExpanded(false)} aria-label={t("close", "Fechar")} className="p-1">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
             <div className="p-5 pt-4">
@@ -268,6 +360,11 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
             </div>
           </div>
         </div>
+      )}
+
+      {/* Editor da ficha própria — salva direto, sem passar por aprovação */}
+      {editor && (
+        <WorkoutPlanEditor plan={editor.plan} onClose={() => setEditor(null)} onSaved={() => void load()} />
       )}
     </div>
   )

@@ -29,6 +29,8 @@ type GridRow = {
   kcal_day: number
   water_ml_day: number
   active_plan_nome: string | null
+  /** A ficha ativa foi montada pelo próprio aluno (mig 189). */
+  active_plan_by_student: boolean
   days_on_plan: number | null
   frequency_days_30d: number
   sessions_done_7d: number
@@ -51,6 +53,8 @@ type Plan = {
   nome: string
   notes: string | null
   is_active: boolean
+  /** Ficha montada pelo próprio aluno (mig 189) — alterá-la ainda vira proposta. */
+  by_student: boolean
   days_on_plan: number
   exercises: (PlanExercise & { id_plan_exercise: string })[]
 }
@@ -422,7 +426,20 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                   <td className="py-2 pr-3">{r.height_cm ? `${Number(r.height_cm).toFixed(0)}cm` : "—"}</td>
                   <td className="py-2 pr-3">{r.kcal_day || "—"}</td>
                   <td className="py-2 pr-3">{r.water_ml_day ? `${(r.water_ml_day / 1000).toFixed(1)}L` : "—"}</td>
-                  <td className="py-2 pr-3">{r.active_plan_nome || <span className="opacity-40">{t("noPlan", "sem ficha")}</span>}</td>
+                  <td className="py-2 pr-3">
+                    {r.active_plan_nome ? (
+                      <span className="flex items-center gap-1.5">
+                        {r.active_plan_nome}
+                        {r.active_plan_by_student && (
+                          <span className="shrink-0 border border-[#0B0B0D] bg-[#F2B705] px-1 py-0.5 text-[9px] font-black uppercase text-[#0B0B0D]">
+                            {t("byStudentBadge", "do aluno")}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="opacity-40">{t("noPlan", "sem ficha")}</span>
+                    )}
+                  </td>
                   <td className="py-2 pr-3">{r.days_on_plan ?? "—"}</td>
                   <td className="py-2 pr-3 font-black">{r.frequency_days_30d}</td>
                   <td className="py-2 pr-3">{r.sessions_done_7d}</td>
@@ -564,9 +581,14 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                     {detail.plans.map((p) => (
                       <li key={p.id_plan} className={`border-2 border-[#0B0B0D] bg-[#1D1810] p-3 ${p.is_active ? "" : "opacity-50"}`}>
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-black uppercase">
+                          <p className="flex flex-wrap items-center gap-1.5 font-black uppercase">
                             {p.nome}
-                            {!p.is_active && <span className="ml-2 text-[10px]">{t("planInactive", "(inativa)")}</span>}
+                            {p.by_student && (
+                              <span className="border border-[#0B0B0D] bg-[#F2B705] px-1 py-0.5 text-[9px] font-black uppercase text-[#0B0B0D]">
+                                {t("byStudentBadge", "do aluno")}
+                              </span>
+                            )}
+                            {!p.is_active && <span className="text-[10px]">{t("planInactive", "(inativa)")}</span>}
                           </p>
                           <div className="flex gap-1.5">
                             <button onClick={() => startEdit(p)} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-1" aria-label={t("editPlan", "Editar")}>
