@@ -17,6 +17,7 @@ import {
   Instagram, Youtube, Facebook, Twitter, Linkedin, Music2,
 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { isValidCPF, formatCPF, onlyDigits } from "@/lib/validation/signup"
 
 const PUBLIC_PATHS = new Set([
   "/login",
@@ -57,11 +58,13 @@ function calculateAge(birthdate: string): number | null {
 
 /**
  * Componente global: ao montar em uma página autenticada, verifica em
- * /api/users/me se o usuário tem data_nascimento. Se não, abre um modal
- * não-fechável pedindo a data + (se menor) o código do responsável +
- * (opcional) as redes sociais para mais gente encontrar o perfil.
+ * /api/users/me se o usuário tem data_nascimento e CPF. Se faltar qualquer um,
+ * abre um modal não-fechável pedindo o que falta + (se menor) o código do
+ * responsável + (opcional) as redes sociais para mais gente encontrar o perfil.
  *
- * Útil principalmente para signup pelo Google, que não captura idade.
+ * Útil principalmente para signup pelo Google, que não captura nem idade nem
+ * CPF. A base antiga (que já tem nascimento) cai aqui só pelo CPF — o backend
+ * exige campo a campo, o que já estiver preenchido não é pedido de novo.
  */
 export function BirthdateGate() {
   const t = useTranslations("Onboarding")
@@ -71,6 +74,9 @@ export function BirthdateGate() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [birthdate, setBirthdate] = useState("")
+  const [needBirthdate, setNeedBirthdate] = useState(false)
+  const [needCpf, setNeedCpf] = useState(false)
+  const [cpf, setCpf] = useState("")
   const [responsibleCode, setResponsibleCode] = useState("")
   const [socials, setSocials] = useState<Record<string, string>>({})
   const [codeStatus, setCodeStatus] = useState<
@@ -80,8 +86,13 @@ export function BirthdateGate() {
   const codeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const age = calculateAge(birthdate)
-  const isMinor = age !== null && age < 18
-  const isAdult = age !== null && age >= 18
+  // Menoridade só é cobrada quando a data está sendo informada AGORA; quem já
+  // tinha nascimento na conta não repassa pelo vínculo parental.
+  const isMinor = needBirthdate && age !== null && age < 18
+  const isAdult = !needBirthdate || (age !== null && age >= 18)
+  const cpfDigits = onlyDigits(cpf)
+  const cpfOk = isValidCPF(cpf)
+  const cpfBlocked = cpfDigits.length === 11 && !cpfOk
 
   const isPublic =
     !pathname ||
@@ -113,7 +124,10 @@ export function BirthdateGate() {
       const me = await res.json()
       // data_nascimento existe se for não nula. Idade também é fornecida.
       const hasBirthdate = !!me?.data_nascimento || !!me?.idade
-      setOpen(!hasBirthdate)
+      const hasCpf = !!me?.has_cpf
+      setNeedBirthdate(!hasBirthdate)
+      setNeedCpf(!hasCpf)
+      setOpen(!hasBirthdate || !hasCpf)
     } catch {
       setOpen(false)
     } finally {
@@ -178,8 +192,8 @@ export function BirthdateGate() {
   }
 
   const canSubmit =
-    !!birthdate &&
-    age !== null &&
+    (!needBirthdate || (!!birthdate && age !== null)) &&
+    (!needCpf || cpfOk) &&
     !submitting &&
     (isAdult || (isMinor && codeStatus === "valid"))
 
@@ -195,7 +209,8 @@ export function BirthdateGate() {
         method: "POST",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({
-          data_nascimento: birthdate,
+          data_nascimento: needBirthdate ? birthdate : undefined,
+          cpf: needCpf ? cpfDigits : undefined,
           responsible_code: isMinor ? responsibleCode : undefined,
           social_links: social_links.length > 0 ? social_links : undefined,
         }),
@@ -221,7 +236,7 @@ export function BirthdateGate() {
   return (
     <Dialog open onOpenChange={() => {}}>
       <DialogContent
-        className="max-h-[88vh] max-w-md overflow-y-auto"
+        className="fl-sharp max-h-[88vh] max-w-md overflow-y-auto"
         // Bloqueia fechamento por ESC e click fora — onboarding obrigatório.
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
@@ -233,29 +248,63 @@ export function BirthdateGate() {
             {t("title", "Falta completar seu cadastro")}
           </DialogTitle>
           <DialogDescription>
-            {t("description", "Informe sua data de nascimento para usar a Freelandoo. Se você for menor de 18 anos, vai precisar de um código parental de um responsável adulto.")}
+            {needBirthdate
+              ? t("description", "Informe sua data de nascimento e seu CPF para usar a Freelandoo. Se você for menor de 18 anos, vai precisar de um código parental de um responsável adulto.")
+              : t("descriptionCpfOnly", "Informe seu CPF para continuar usando a Freelandoo. É uma conta por CPF — dentro dela você cria quantos perfis quiser.")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="onboarding-birthdate">{t("birthdateLabel", "Data de nascimento")}</Label>
-            <Input
-              id="onboarding-birthdate"
-              type="date"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
-              autoFocus
-            />
-            {age !== null && age >= 0 && age <= 120 && (
-              <p className="text-xs text-muted-foreground">
-                {t("ageInfo", "Você tem {age} {unit}.")
-                  .replace("{age}", String(age))
-                  .replace("{unit}", age === 1 ? t("yearUnit", "ano") : t("yearsUnit", "anos"))}
+          {needBirthdate && (
+            <div className="space-y-2">
+              <Label htmlFor="onboarding-birthdate">{t("birthdateLabel", "Data de nascimento")}</Label>
+              <Input
+                id="onboarding-birthdate"
+                type="date"
+                value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)}
+                max={new Date().toISOString().split("T")[0]}
+                autoFocus
+              />
+              {age !== null && age >= 0 && age <= 120 && (
+                <p className="border border-amber-500/30 bg-amber-500/5 px-2 py-1.5 text-sm font-semibold text-amber-300">
+                  {t("ageInfo", "Você tem {age} {unit}.")
+                    .replace("{age}", String(age))
+                    .replace("{unit}", age === 1 ? t("yearUnit", "ano") : t("yearsUnit", "anos"))}
+                </p>
+              )}
+            </div>
+          )}
+
+          {needCpf && (
+            <div className="space-y-2">
+              <Label htmlFor="onboarding-cpf">{t("cpfLabel", "CPF")}</Label>
+              <Input
+                id="onboarding-cpf"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="000.000.000-00"
+                maxLength={14}
+                value={cpf}
+                onChange={(e) => setCpf(formatCPF(e.target.value))}
+                aria-invalid={cpfBlocked}
+                autoFocus={!needBirthdate}
+                className={
+                  cpfBlocked
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : cpfOk
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }
+              />
+              <p className={`text-xs ${cpfBlocked ? "font-medium text-red-500" : "text-muted-foreground"}`}>
+                {cpfBlocked
+                  ? t("cpfInvalid", "CPF inválido. Confira os números.")
+                  : t("cpfHint", "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.")}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {isMinor && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
@@ -294,8 +343,11 @@ export function BirthdateGate() {
             </div>
           )}
 
-          {/* Redes sociais (opcional) — para mais gente te encontrar. */}
-          <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+          {/* Redes sociais (opcional) — para mais gente te encontrar. Só no
+              onboarding de verdade; quem só voltou aqui pelo CPF não é
+              incomodado de novo com um formulário que já viu. */}
+          {needBirthdate && (
+          <div className="space-y-2 border border-white/10 bg-white/[0.02] p-3">
             <div>
               <Label className="flex items-center gap-1.5">
                 {t("socialTitle", "Coloque suas redes sociais")}
@@ -328,9 +380,10 @@ export function BirthdateGate() {
               })}
             </div>
           </div>
+          )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
+            <div className="flex items-start gap-2 border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-500">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>

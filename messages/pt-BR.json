@@ -1602,7 +1602,7 @@
     "identityTitle": "Vamos te conhecer",
     "identityDescription": "Comece com o básico — leva menos de um minuto.",
     "accessTitle": "Crie seu acesso",
-    "accessDescription": "Uma senha forte e sua data de nascimento.",
+    "accessDescription": "Uma senha forte, sua data de nascimento e seu CPF.",
     "regionLabel": "Região",
     "regionPlaceholder": "Selecione sua região",
     "regionSelectStateFirst": "Selecione o estado primeiro",
@@ -1618,7 +1618,11 @@
     "blockPasswordMatch": "As senhas não coincidem.",
     "blockTerms": "Aceite os termos de uso para continuar.",
     "createTitlePrefix": "Criar",
-    "createTitleHighlight": "conta"
+    "createTitleHighlight": "conta",
+    "cpfLabel": "CPF",
+    "cpfHint": "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.",
+    "cpfInvalid": "CPF inválido. Confira os números.",
+    "blockCpf": "Informe um CPF válido."
   },
   "ForgotPassword": {
     "title": "Esqueceu sua senha?",
@@ -3948,7 +3952,7 @@
   },
   "Onboarding": {
     "title": "Falta completar seu cadastro",
-    "description": "Informe sua data de nascimento para usar a Freelandoo. Se você for menor de 18 anos, vai precisar de um código parental de um responsável adulto.",
+    "description": "Informe sua data de nascimento e seu CPF para usar a Freelandoo. Se você for menor de 18 anos, vai precisar de um código parental de um responsável adulto.",
     "birthdateLabel": "Data de nascimento",
     "ageInfo": "Você tem {age} {unit}.",
     "yearUnit": "ano",
@@ -3966,7 +3970,11 @@
     "continue": "Continuar",
     "socialTitle": "Coloque suas redes sociais",
     "optional": "(opcional)",
-    "socialSubtitle": "Para mais gente te encontrar."
+    "socialSubtitle": "Para mais gente te encontrar.",
+    "cpfLabel": "CPF",
+    "cpfHint": "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.",
+    "cpfInvalid": "CPF inválido. Confira os números.",
+    "descriptionCpfOnly": "Informe seu CPF para continuar usando a Freelandoo. É uma conta por CPF — dentro dela você cria quantos perfis quiser."
   },
   "Shipping": {
     "badge": "Compra protegida",

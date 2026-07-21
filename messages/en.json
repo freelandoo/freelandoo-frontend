@@ -1602,7 +1602,7 @@
     "identityTitle": "Let's get to know you",
     "identityDescription": "Start with the basics — it takes less than a minute.",
     "accessTitle": "Create your login",
-    "accessDescription": "A strong password and your date of birth.",
+    "accessDescription": "A strong password, your date of birth and your CPF.",
     "regionLabel": "Region",
     "regionPlaceholder": "Select your region",
     "regionSelectStateFirst": "Select the state first",
@@ -1618,7 +1618,11 @@
     "blockPasswordMatch": "Passwords don't match.",
     "blockTerms": "Accept the terms of use to continue.",
     "createTitlePrefix": "Create",
-    "createTitleHighlight": "account"
+    "createTitleHighlight": "account",
+    "cpfLabel": "CPF (Brazilian tax ID)",
+    "cpfHint": "One account per CPF. Inside it you can create as many profiles as you want.",
+    "cpfInvalid": "Invalid CPF. Check the numbers.",
+    "blockCpf": "Enter a valid CPF."
   },
   "ForgotPassword": {
     "title": "Forgot your password?",
@@ -4534,7 +4538,7 @@
   },
   "Onboarding": {
     "title": "Complete your sign-up",
-    "description": "Enter your date of birth to use Freelandoo. If you're under 18, you'll need a parental code from an adult guardian.",
+    "description": "Enter your date of birth and your CPF to use Freelandoo. If you are under 18, you'll need a parental code from an adult guardian.",
     "birthdateLabel": "Date of birth",
     "ageInfo": "You are {age} {unit}.",
     "yearUnit": "year",
@@ -4552,7 +4556,11 @@
     "continue": "Continue",
     "socialTitle": "Add your social networks",
     "optional": "(optional)",
-    "socialSubtitle": "So more people can find you."
+    "socialSubtitle": "So more people can find you.",
+    "cpfLabel": "CPF (Brazilian tax ID)",
+    "cpfHint": "One account per CPF. Inside it you can create as many profiles as you want.",
+    "cpfInvalid": "Invalid CPF. Check the numbers.",
+    "descriptionCpfOnly": "Enter your CPF to keep using Freelandoo. It's one account per CPF — inside it you can create as many profiles as you want."
   },
   "Shipping": {
     "badge": "Protected purchase",

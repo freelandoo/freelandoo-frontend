@@ -1602,7 +1602,7 @@
     "identityTitle": "Vamos a conocerte",
     "identityDescription": "Empieza con lo básico — toma menos de un minuto.",
     "accessTitle": "Crea tu acceso",
-    "accessDescription": "Una contraseña fuerte y tu fecha de nacimiento.",
+    "accessDescription": "Una contraseña fuerte, tu fecha de nacimiento y tu CPF.",
     "regionLabel": "Región",
     "regionPlaceholder": "Selecciona tu región",
     "regionSelectStateFirst": "Selecciona el estado primero",
@@ -1618,7 +1618,11 @@
     "blockPasswordMatch": "Las contraseñas no coinciden.",
     "blockTerms": "Acepta los términos de uso para continuar.",
     "createTitlePrefix": "Crear",
-    "createTitleHighlight": "cuenta"
+    "createTitleHighlight": "cuenta",
+    "cpfLabel": "CPF (documento brasileño)",
+    "cpfHint": "Una cuenta por CPF. Dentro de ella puedes crear todos los perfiles que quieras.",
+    "cpfInvalid": "CPF inválido. Revisa los números.",
+    "blockCpf": "Ingresa un CPF válido."
   },
   "ForgotPassword": {
     "title": "¿Olvidaste tu contraseña?",
@@ -4514,7 +4518,7 @@
   },
   "Onboarding": {
     "title": "Falta completar tu registro",
-    "description": "Indica tu fecha de nacimiento para usar Freelandoo. Si eres menor de 18 años, necesitarás un código parental de un responsable adulto.",
+    "description": "Ingresa tu fecha de nacimiento y tu CPF para usar Freelandoo. Si eres menor de 18 años, necesitarás un código parental de un adulto responsable.",
     "birthdateLabel": "Fecha de nacimiento",
     "ageInfo": "Tienes {age} {unit}.",
     "yearUnit": "año",
@@ -4532,7 +4536,11 @@
     "continue": "Continuar",
     "socialTitle": "Agrega tus redes sociales",
     "optional": "(opcional)",
-    "socialSubtitle": "Para que más gente te encuentre."
+    "socialSubtitle": "Para que más gente te encuentre.",
+    "cpfLabel": "CPF (documento brasileño)",
+    "cpfHint": "Una cuenta por CPF. Dentro de ella puedes crear todos los perfiles que quieras.",
+    "cpfInvalid": "CPF inválido. Revisa los números.",
+    "descriptionCpfOnly": "Ingresa tu CPF para seguir usando Freelandoo. Es una cuenta por CPF — dentro de ella puedes crear todos los perfiles que quieras."
   },
   "Shipping": {
     "badge": "Compra protegida",

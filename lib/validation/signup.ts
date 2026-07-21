@@ -43,3 +43,39 @@ export function isPasswordStrong(password: string): boolean {
   const c = checkPassword(password)
   return c.min_length && c.uppercase && c.number && c.special_character
 }
+
+// ── CPF ──────────────────────────────────────────────────────────────────────
+// Espelha src/utils/documents.js (isValidCPF). Feedback imediato no formulário;
+// a decisão continua sendo do backend, que revalida e checa duplicidade.
+// O número do CPF NÃO carrega data de nascimento — a idade vem sempre do campo
+// de nascimento, nunca daqui.
+
+export function onlyDigits(value: string): string {
+  return (value || "").replace(/\D/g, "")
+}
+
+export function isValidCPF(value: string): boolean {
+  const cpf = onlyDigits(value)
+  if (cpf.length !== 11) return false
+  if (/^(\d)\1{10}$/.test(cpf)) return false // 000..., 111... passam no cálculo
+
+  const calcDigit = (sliceLen: number): number => {
+    let sum = 0
+    for (let i = 0; i < sliceLen; i++) {
+      sum += Number(cpf[i]) * (sliceLen + 1 - i)
+    }
+    const rest = (sum * 10) % 11
+    return rest === 10 ? 0 : rest
+  }
+
+  return calcDigit(9) === Number(cpf[9]) && calcDigit(10) === Number(cpf[10])
+}
+
+// Máscara progressiva para digitação: 123.456.789-01
+export function formatCPF(value: string): string {
+  const d = onlyDigits(value).slice(0, 11)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+}

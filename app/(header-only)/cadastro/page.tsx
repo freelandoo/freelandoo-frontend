@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { machineDescription } from "@/lib/constants/machine-descriptions"
-import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge } from "@/lib/validation/signup"
+import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge, isValidCPF, formatCPF, onlyDigits } from "@/lib/validation/signup"
 import { Check, X, ArrowLeft, ArrowRight, Info, ShieldCheck, Search, TrendingUp } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -61,6 +61,7 @@ export default function CadastroPage() {
     username: "",
     email: "",
     dataNascimento: "",
+    cpf: "",
     sexo: "",
     senha: "",
     confirmarSenha: "",
@@ -104,6 +105,11 @@ export default function CadastroPage() {
   const isAdultBirth = !formData.dataNascimento || isAdult(formData.dataNascimento)
   const isMinorBirth = !!formData.dataNascimento && userAge != null && userAge < 18
   const dateOk = !!formData.dataNascimento && userAge != null
+  // CPF: obrigatório e único por conta (1 CPF = 1 conta; subperfis ficam dentro
+  // dela). Aqui só o dígito verificador — o backend revalida e checa duplicidade.
+  const cpfDigits = onlyDigits(formData.cpf)
+  const cpfOk = isValidCPF(formData.cpf)
+  const cpfBlocked = cpfDigits.length === 11 && !cpfOk
   const emailOk = !formData.email || isValidEmail(formData.email)
   const emailBlocked = !!formData.email && !emailOk
 
@@ -116,6 +122,7 @@ export default function CadastroPage() {
 
   const accessValid =
     dateOk &&
+    cpfOk &&
     (isAdultBirth || (isMinorBirth && codeStatus === "valid")) &&
     passwordStrong &&
     passwordsMatch &&
@@ -134,6 +141,7 @@ export default function CadastroPage() {
 
   const accessBlockReason = (() => {
     if (!dateOk) return t("blockBirth", "Informe sua data de nascimento.")
+    if (!cpfOk) return t("blockCpf", "Informe um CPF válido.")
     if (isMinorBirth && codeStatus !== "valid") return t("blockCode", "Informe um código de responsável válido.")
     if (!passwordStrong) return t("blockPassword", "Sua senha não atende a todos os requisitos.")
     if (!passwordsMatch) return t("blockPasswordMatch", "As senhas não coincidem.")
@@ -275,6 +283,7 @@ export default function CadastroPage() {
       username: formData.username,
       email: formData.email.trim(),
       data_nascimento: formData.dataNascimento,
+      cpf: cpfDigits,
       sexo: formData.sexo || null,
       senha: formData.senha,
     }
@@ -539,7 +548,7 @@ export default function CadastroPage() {
             </button>
             <div className="mb-6">
               <h2 className="fl-display text-2xl text-[var(--fl-ink)]">{t("accessTitle", "Crie seu acesso")}</h2>
-              <p className="mt-1 text-sm text-[#5b554b]">{t("accessDescription", "Uma senha forte e sua data de nascimento.")}</p>
+              <p className="mt-1 text-sm text-[#5b554b]">{t("accessDescription", "Uma senha forte, sua data de nascimento e seu CPF.")}</p>
             </div>
 
             <form className="space-y-5" onSubmit={goAccessNext}>
@@ -553,6 +562,32 @@ export default function CadastroPage() {
                   onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
                   required
                 />
+              </div>
+
+              <div>
+                <label htmlFor="cpf" className="fl-label">{t("cpfLabel", "CPF")}</label>
+                <input
+                  id="cpf"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  className="fl-input"
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  value={formData.cpf}
+                  onChange={(e) => setFormData({ ...formData, cpf: formatCPF(e.target.value) })}
+                  aria-invalid={cpfBlocked}
+                  required
+                />
+                {cpfBlocked ? (
+                  <p className="mt-1 text-xs font-bold text-red-600">
+                    {t("cpfInvalid", "CPF inválido. Confira os números.")}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-[#5b554b]">
+                    {t("cpfHint", "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.")}
+                  </p>
+                )}
               </div>
 
               {/* Bloco Conta Supervisionada — aparece apenas se idade < 18 */}
