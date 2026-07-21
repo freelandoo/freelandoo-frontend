@@ -145,7 +145,17 @@ const AGENDA = {
   ],
 }
 
-const GROUPS = { Agenda: AGENDA }
+// Entrada da agenda na toolbar do headcard do /account (mig 190): antes o user
+// nao tinha nenhuma porta pra agenda, so o subperfil pela engrenagem.
+const ACCOUNT = {
+  openAgendaAria: [
+    "Abrir a agenda da conta (compartilhada por todos os seus perfis)",
+    "Open the account agenda (shared by all your profiles)",
+    "Abrir la agenda de la cuenta (compartida por todos tus perfiles)",
+  ],
+}
+
+const GROUPS = { Agenda: AGENDA, Account: ACCOUNT }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))

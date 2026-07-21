@@ -1469,7 +1469,8 @@
     "tabServices": "Services",
     "tabShop": "Shop",
     "settingsMyData": "My data",
-    "featureServices": "Services"
+    "featureServices": "Services",
+    "openAgendaAria": "Open the account agenda (shared by all your profiles)"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

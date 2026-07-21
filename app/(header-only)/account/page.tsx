@@ -1936,6 +1936,21 @@ export default function PerfilPage() {
                     </a>
                   )
                 })}
+                {/* Adicionar rede direto do headcard — o subperfil já tinha o
+                    atalho aqui; no user o CRUD só existia na seção lá embaixo. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNovaRede({ id: "", platform: "", account: "", followers_range: "" })
+                    setIsEditing(false)
+                    setIsModalOpen(true)
+                  }}
+                  title={t("addSocial", "Adicionar rede social")}
+                  aria-label={t("addSocial", "Adicionar rede social")}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-[#0B0B0D]/30 bg-transparent text-[#0B0B0D] transition hover:bg-[#F2B705]/25"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
               </div>
 
               {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
