@@ -4458,7 +4458,9 @@
     "confirmedTitle": "Attendance confirmed!",
     "confirmedDesc": "Thank you! We'll see you then.",
     "rescheduleTitle": "No problem!",
-    "rescheduleDesc": "We let the professional know you need to reschedule."
+    "rescheduleDesc": "We let the professional know you need to reschedule.",
+    "bookedVia": "booked through the {profile} profile",
+    "sharedAgendaHint": "Single account agenda: all your profiles share these time slots."
   },
   "Mei": {
     "title": "MEI",

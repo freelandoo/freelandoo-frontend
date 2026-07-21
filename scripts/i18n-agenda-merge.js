@@ -131,6 +131,18 @@ const AGENDA = {
   legendTodayDesc: ["contorno forte no número.", "bold outline on the number.", "contorno fuerte en el número."],
   legendDotLabel: ["Ponto sob o dia:", "Dot under the day:", "Punto bajo el día:"],
   legendDotDesc: ["agendamentos (mais intenso = mais cheio).", "bookings (more intense = busier).", "reservas (más intenso = más lleno)."],
+  // Agenda compartilhada da conta (mig 190): uma agenda só, mas cada
+  // agendamento lembra por qual perfil o cliente entrou.
+  bookedVia: [
+    "agendado pelo perfil {profile}",
+    "booked through the {profile} profile",
+    "agendado por el perfil {profile}",
+  ],
+  sharedAgendaHint: [
+    "Agenda única da conta: todos os seus perfis compartilham estes horários.",
+    "Single account agenda: all your profiles share these time slots.",
+    "Agenda única de la cuenta: todos tus perfiles comparten estos horarios.",
+  ],
 }
 
 const GROUPS = { Agenda: AGENDA }

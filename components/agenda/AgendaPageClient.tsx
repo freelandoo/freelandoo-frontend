@@ -60,6 +60,9 @@ interface Booking {
   service_price_amount?: number | null
   client_profile_id?: string | null
   client_profile_display_name?: string | null
+  // Perfil de origem do agendamento (agenda é da conta — mig 190)
+  origin_profile_name?: string | null
+  origin_is_user_account?: boolean
 }
 
 export interface ClanMember {
@@ -367,6 +370,13 @@ export default function AgendaPageClient({
         </aside>
 
         <section className="min-w-0">
+          {/* Agenda é da CONTA (mig 190): editar por qualquer perfil mexe na
+              mesma grade. Clan tem agenda própria e não recebe o aviso. */}
+          {!isClan && (
+            <p className="mb-4 border-2 border-[#F2B705] bg-[#F2B705]/10 px-3 py-2 text-[11px] font-bold text-[#F2B705]">
+              {t("sharedAgendaHint", "Agenda única da conta: todos os seus perfis compartilham estes horários.")}
+            </p>
+          )}
           {/* ─── Disponibilidade ─── */}
           {activeTab === "rules" && (
             <>

@@ -36,6 +36,10 @@ export interface AgendaBookingRow {
   client_profile_display_name?: string | null
   reminder_sent_at?: string | null
   client_confirm_status?: "confirmed" | "reschedule" | null
+  /** Perfil por onde o cliente agendou. A agenda é uma só (conta), mas cada
+   *  agendamento lembra a origem — mig 190. */
+  origin_profile_name?: string | null
+  origin_is_user_account?: boolean
 }
 
 /* Link wa.me pré-preenchido pro profissional lembrar o cliente com 1 toque. */
@@ -274,6 +278,11 @@ function BookingCard({
                   </p>
                   <p className="fl-display mt-1 truncate text-xl leading-none text-[#0B0B0D]">{serviceName}</p>
                 </>
+              )}
+              {b.origin_profile_name && (
+                <p className="mt-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#6B6457]">
+                  {t("bookedVia", "agendado pelo perfil {profile}").replace("{profile}", b.origin_profile_name)}
+                </p>
               )}
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 {b.client_profile_id ? (

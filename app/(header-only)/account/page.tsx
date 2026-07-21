@@ -1997,6 +1997,17 @@ export default function PerfilPage() {
                   >
                     <FolderCog className="h-4 w-4" />
                   </button>
+                  {accountProfileId && (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/account/profile/${accountProfileId}/agenda`)}
+                      aria-label={t("openAgendaAria", "Abrir a agenda da conta (compartilhada por todos os seus perfis)")}
+                      title={t("agenda", "Agenda")}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  )}
                   {walletFeatOn && (
                     <button
                       type="button"

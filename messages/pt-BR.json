@@ -3872,7 +3872,9 @@
     "confirmedTitle": "Presença confirmada!",
     "confirmedDesc": "Obrigado! Te esperamos no horário.",
     "rescheduleTitle": "Tudo bem!",
-    "rescheduleDesc": "Avisamos o profissional que você precisa remarcar."
+    "rescheduleDesc": "Avisamos o profissional que você precisa remarcar.",
+    "bookedVia": "agendado pelo perfil {profile}",
+    "sharedAgendaHint": "Agenda única da conta: todos os seus perfis compartilham estes horários."
   },
   "Mei": {
     "title": "MEI",

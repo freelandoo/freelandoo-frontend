@@ -4438,7 +4438,9 @@
     "confirmedTitle": "¡Asistencia confirmada!",
     "confirmedDesc": "¡Gracias! Te esperamos a la hora.",
     "rescheduleTitle": "¡Sin problema!",
-    "rescheduleDesc": "Avisamos al profesional que necesitas reprogramar."
+    "rescheduleDesc": "Avisamos al profesional que necesitas reprogramar.",
+    "bookedVia": "agendado por el perfil {profile}",
+    "sharedAgendaHint": "Agenda única de la cuenta: todos tus perfiles comparten estos horarios."
   },
   "Mei": {
     "title": "MEI",
