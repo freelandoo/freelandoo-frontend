@@ -1470,7 +1470,8 @@
     "tabShop": "Tienda",
     "settingsMyData": "Mis datos",
     "featureServices": "Servicios",
-    "openAgendaAria": "Abrir la agenda de la cuenta (compartida por todos tus perfiles)"
+    "openAgendaAria": "Abrir la agenda de la cuenta (compartida por todos tus perfiles)",
+    "editProfile": "Editar perfil"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

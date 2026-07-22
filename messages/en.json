@@ -1470,7 +1470,8 @@
     "tabShop": "Shop",
     "settingsMyData": "My data",
     "featureServices": "Services",
-    "openAgendaAria": "Open the account agenda (shared by all your profiles)"
+    "openAgendaAria": "Open the account agenda (shared by all your profiles)",
+    "editProfile": "Edit profile"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

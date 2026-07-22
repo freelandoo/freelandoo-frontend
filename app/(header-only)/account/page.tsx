@@ -2148,6 +2148,12 @@ export default function PerfilPage() {
                               <Edit className="h-4 w-4 mr-2" />
                               {t("manageProfile", "Gerenciar perfil")}
                             </DropdownMenuItem>
+                            {/* Único caminho pro /settings depois que o lápis
+                                saiu da engrenagem do headcard. */}
+                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/settings`)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              {t("editProfile", "Editar perfil")}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}>
                               <CalendarDays className="h-4 w-4 mr-2" />
                               {t("agenda", "Agenda")}

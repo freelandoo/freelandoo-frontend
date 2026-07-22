@@ -148,6 +148,9 @@ const AGENDA = {
 // Entrada da agenda na toolbar do headcard do /account (mig 190): antes o user
 // nao tinha nenhuma porta pra agenda, so o subperfil pela engrenagem.
 const ACCOUNT = {
+  // "Editar perfil" migrou da engrenagem do headcard pro menu de perfis do
+  // /account (o lapis saiu do headcard a pedido do Alex, 2026-07-21).
+  editProfile: ["Editar perfil", "Edit profile", "Editar perfil"],
   openAgendaAria: [
     "Abrir a agenda da conta (compartilhada por todos os seus perfis)",
     "Open the account agenda (shared by all your profiles)",

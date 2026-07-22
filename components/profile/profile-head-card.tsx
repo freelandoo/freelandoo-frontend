@@ -19,7 +19,6 @@ import {
   MapPin,
   Megaphone,
   MessageCircle,
-  Pencil,
   Settings,
   Sparkles,
   Trophy,
@@ -315,16 +314,6 @@ export function ProfileHeadCard({
   // Engrenagem serve apenas como toggle (hover já abre/fecha; click para mobile).
   const handleSettingsClick = () => setMenuOpen((v) => !v)
 
-  // Item "Editar perfil" dentro do menu retrátil.
-  const handleEditClick = () => {
-    setMenuOpen(false)
-    if (ownerActions?.onEdit) {
-      ownerActions.onEdit()
-    } else if (ownerActions?.editHref) {
-      router.push(ownerActions.editHref)
-    }
-  }
-
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -591,12 +580,6 @@ export function ProfileHeadCard({
                 />
                 <RetractableIcons open={menuOpen}>
                   <IconAction
-                    onClick={handleEditClick}
-                    icon={Pencil}
-                    label={isClan ? t("editClan", "Editar clan") : t("editProfile", "Editar perfil")}
-                    hint={isClan ? "headcard-edit-clan" : "headcard-edit-profile"}
-                  />
-                  <IconAction
                     href={"/mensagens"}
                     icon={MessageCircle}
                     label={t("myMessages", "Minhas mensagens")}
@@ -634,15 +617,10 @@ export function ProfileHeadCard({
                       hint="headcard-engagement"
                     />
                   )}
-                  {ownerActions.onShowRanking && (
-                    <IconAction
-                      onClick={ownerActions.onShowRanking}
-                      icon={Trophy}
-                      label={t("ranking", "Ranking")}
-                      hint="headcard-ranking"
-                    />
-                  )}
-                  {ownerActions.agendaHref && (
+                  {/* Agenda: só o clan tem agenda própria (mig 190). A do
+                      subperfil virou a agenda da CONTA e vive no /account —
+                      duplicá-la aqui só confundiria. */}
+                  {isClan && ownerActions.agendaHref && (
                     <IconAction
                       href={ownerActions.agendaHref}
                       icon={CalendarDays}
