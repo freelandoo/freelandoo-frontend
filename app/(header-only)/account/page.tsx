@@ -156,6 +156,7 @@ export default function PerfilPage() {
   // entradas correspondentes só da experiência deste usuário.
   const communitiesFeatOn = useUserFeature("communities")
   const profilesFeatOn = useUserFeature("profiles")
+  const agendaFeatOn = useUserFeature("agenda")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
   // do subperfil: hover expande, click alterna).
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -2111,10 +2112,12 @@ export default function PerfilPage() {
                               <Pencil className="h-4 w-4 mr-2" />
                               {t("editProfile", "Editar perfil")}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}>
-                              <CalendarDays className="h-4 w-4 mr-2" />
-                              {t("agenda", "Agenda")}
-                            </DropdownMenuItem>
+                            {agendaFeatOn && (
+                              <DropdownMenuItem onClick={() => router.push(`/account/profile/${profile.id_profile}/agenda`)}>
+                                <CalendarDays className="h-4 w-4 mr-2" />
+                                {t("agenda", "Agenda")}
+                              </DropdownMenuItem>
+                            )}
                             {!isPaid && (
                               <DropdownMenuItem onClick={() => router.push(`/payment/taxa?profile_id=${profile.id_profile}`)}>
                                 <Briefcase className="h-4 w-4 mr-2" />

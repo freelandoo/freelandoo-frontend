@@ -1472,7 +1472,8 @@
     "featureServices": "Services",
     "openAgendaAria": "Open the account agenda (shared by all your profiles)",
     "editProfile": "Edit profile",
-    "manage": "Manage"
+    "manage": "Manage",
+    "featureAgenda": "Schedule"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

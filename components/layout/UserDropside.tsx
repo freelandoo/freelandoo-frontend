@@ -15,6 +15,7 @@ import {
   LogOut,
   X,
   BarChart3,
+  CalendarDays,
   Sparkles,
   Package,
   GraduationCap,
@@ -183,6 +184,7 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     { key: "wallet", label: tAcc("featureWallet", "Carteira"), icon: Wallet },
     { key: "fitness_academias", label: tAcc("featureFitness", "Academia"), icon: Dumbbell },
     { key: "profiles", label: tAcc("featureProfiles", "Perfis"), icon: UserRound },
+    { key: "agenda", label: tAcc("featureAgenda", "Agenda"), icon: CalendarDays },
     {
       key: "vitrine",
       label: tAcc("featureVitrine", "Vitrine"),

@@ -1472,7 +1472,8 @@
     "featureServices": "Servicios",
     "openAgendaAria": "Abrir la agenda de la cuenta (compartida por todos tus perfiles)",
     "editProfile": "Editar perfil",
-    "manage": "Gestionar"
+    "manage": "Gestionar",
+    "featureAgenda": "Agenda"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

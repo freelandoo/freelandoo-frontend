@@ -21,6 +21,10 @@ const ACCOUNT = {
   featureWallet: ["Carteira", "Wallet", "Billetera"],
   featureFitness: ["Academia", "Gym", "Gimnasio"],
   featureProfiles: ["Perfis", "Profiles", "Perfiles"],
+  // Agenda vira função liga/desliga (2026-07-22): desligada, some a seção
+  // AGENDA da página do perfil, a ferramenta da toolbar/engrenagem e o item
+  // do menu de perfis. A agenda em si continua existindo (é da conta).
+  featureAgenda: ["Agenda", "Schedule", "Agenda"],
   featureVitrine: ["Vitrine", "Showcase", "Vitrina"],
   featureVitrineHint: [
     "Desligada, seus perfis somem da vitrine pra todo mundo.",

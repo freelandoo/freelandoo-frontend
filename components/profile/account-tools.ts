@@ -44,6 +44,9 @@ export function useAccountTools({
   // Carteira não tem flag global hoje — só a preferência do usuário. Não
   // inventar um gate que não existe: espelha as duas superfícies.
   const walletPrefOn = useUserFeature("wallet")
+  // Preferência do usuário (seção "Funções" do menu lateral). Sem flag global:
+  // agenda não tem kill-switch de admin hoje.
+  const agendaPrefOn = useUserFeature("agenda")
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
   const academiasOn = useFeature("fitness_academias")
@@ -66,7 +69,7 @@ export function useAccountTools({
     },
   ]
 
-  if (agendaProfileId) {
+  if (agendaProfileId && agendaPrefOn) {
     tools.push({
       key: "agenda",
       icon: CalendarDays,

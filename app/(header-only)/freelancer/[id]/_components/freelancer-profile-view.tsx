@@ -201,6 +201,7 @@ export default function FreelancerProfileView({
   const servicesPrefOn = useUserFeature("services")
   const coursesFlagOn = useFeature("courses")
   const coursesPrefOn = useUserFeature("courses")
+  const agendaFeatOn = useUserFeature("agenda")
   const storeOn = storeFlagOn && storePrefOn
   const servicesOn = servicesFlagOn && servicesPrefOn
   const coursesOn = coursesFlagOn && coursesPrefOn
@@ -1202,7 +1203,7 @@ export default function FreelancerProfileView({
           </section>
         )}
 
-        {isOwnProfile && (
+        {isOwnProfile && agendaFeatOn && (
           <section id="agenda-section" className="mb-20 scroll-mt-24">
             <div className="mb-6">
               <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("agendaTitle", "Agenda")}</h2>
