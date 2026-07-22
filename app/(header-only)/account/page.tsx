@@ -306,6 +306,12 @@ export default function PerfilPage() {
 
   // Seguidores do perfil-conta (paridade user≡subperfil): quem acompanha VOCÊ.
   const accountProfileId = perfil?.account_profile?.id_profile || null
+  // Perfis que o usuário REALMENTE gerencia. O perfil-conta é o veículo do
+  // próprio user (esta página é a dele) — listá-lo em "Perfis" duplicava a
+  // pessoa e fazia conta nova nascer com "1 perfil" que ela nunca criou.
+  const managedProfiles = (perfil?.profiles || []).filter(
+    (p) => !p.is_clan && !p.is_user_account,
+  )
 
   // Mural do perfil-conta (paridade user≡subperfil) + contador de posts.
   const [muralOpen, setMuralOpen] = useState(false)
@@ -2086,9 +2092,9 @@ export default function PerfilPage() {
             myProfilesSlot={
               <div className="space-y-4">
             <div>
-              {perfil.profiles && perfil.profiles.filter((p) => !p.is_clan).length > 0 ? (
+              {managedProfiles.length > 0 ? (
                 <div className="grid grid-cols-3 gap-px">
-                  {perfil.profiles.filter((p) => !p.is_clan).map((profile) => {
+                  {managedProfiles.map((profile) => {
                     const isPaid = !!profile.is_paid
                     const isVisible = profile.is_visible !== false
                     const isPublished = !!profile.is_published
