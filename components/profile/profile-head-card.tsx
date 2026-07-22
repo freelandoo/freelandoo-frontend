@@ -860,10 +860,15 @@ function RetractableIcons({ open, children }: { open: boolean; children: React.R
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1.5 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out",
+        "flex items-center gap-1.5 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out",
+        // O wrap SÓ vale aberto. Fechado o container tem max-w-0, e aí cada
+        // ícone quebraria numa linha própria: a fila vira uma coluna invisível
+        // de centenas de px e o rodapé (items-center) abre um vão enorme entre
+        // os chips e a engrenagem. Sem wrap, fechado ocupa 1 linha (h-9), a
+        // mesma altura da engrenagem — nada aparece.
         open
-          ? "max-w-[640px] translate-x-0 opacity-100"
-          : "pointer-events-none max-w-0 -translate-x-1 opacity-0",
+          ? "max-w-[640px] translate-x-0 flex-wrap opacity-100"
+          : "pointer-events-none max-w-0 -translate-x-1 flex-nowrap opacity-0",
       )}
       aria-hidden={!open}
     >
