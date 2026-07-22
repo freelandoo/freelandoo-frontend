@@ -19,6 +19,7 @@ import {
   MapPin,
   Megaphone,
   MessageCircle,
+  Plus,
   Settings,
   Sparkles,
   Trophy,
@@ -558,10 +559,24 @@ export function ProfileHeadCard({
                 />
               )}
               <SocialIcons socials={socials} socialFallback={t("socialNetwork", "Rede social")} />
+              {/* "+" de rede social — paridade com o headcard do /account, que
+                  já tinha o atalho. Leva ao settings do perfil, onde as redes
+                  DESTE perfil são geridas (conteúdo é independente por perfil). */}
+              {isOwnProfile && ownerActions?.editHref && (
+                <Link
+                  href={ownerActions.editHref}
+                  title={t("addSocial", "Adicionar rede social")}
+                  aria-label={t("addSocial", "Adicionar rede social")}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-dashed border-[#0B0B0D]/40 bg-transparent text-[#0B0B0D] transition hover:border-solid hover:bg-[#F2B705]/25"
+                >
+                  <Plus className="h-[18px] w-[18px]" />
+                </Link>
+              )}
             </div>
           )}
 
-          {/* FOOTER — engrenagem: hover no container expande o menu; click vai pro editar. */}
+          {/* FOOTER — engrenagem: hover expande o menu; click alterna. NÃO
+              leva pro editar (isso vive no menu de perfis do /account). */}
           <div
             ref={menuRef}
             onMouseEnter={() => setMenuOpen(true)}

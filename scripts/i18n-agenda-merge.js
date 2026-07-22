@@ -158,7 +158,12 @@ const ACCOUNT = {
   ],
 }
 
-const GROUPS = { Agenda: AGENDA, Account: ACCOUNT }
+// "+" de rede social no headcard do subperfil (paridade com o /account).
+const PROFILE = {
+  addSocial: ["Adicionar rede social", "Add social network", "Agregar red social"],
+}
+
+const GROUPS = { Agenda: AGENDA, Account: ACCOUNT, Profile: PROFILE }
 
 function load(file) {
   return JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"))
