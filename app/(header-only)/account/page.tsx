@@ -30,6 +30,10 @@ import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { useAccountTools } from "@/components/profile/account-tools"
+const AgendaBookingsExperience = dynamic(
+  () => import("@/components/agenda/AgendaBookingsExperience").then((m) => m.AgendaBookingsExperience),
+  { ssr: false },
+)
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { MuralPill } from "@/components/profile/profile-head-card"
@@ -2249,6 +2253,26 @@ export default function PerfilPage() {
               </div>
             }
           />
+
+          {/* AGENDA — paridade com a página de perfil, que já tinha esta seção
+              (freelancer-profile-view). O /account não tinha nenhuma: a agenda
+              é da CONTA (mig 190), então é aqui que ela mais faz sentido. */}
+          {accountProfileId && agendaFeatOn && (
+            <section id="agenda-section" className="mb-20 scroll-mt-24">
+              <div className="mb-6">
+                <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">
+                  {t("agendaTitle", "Agenda")}
+                </h2>
+                <p className="mt-1 text-sm text-[#9A938A]">
+                  {t("agendaSubtitle", "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).")}
+                </p>
+              </div>
+              <AgendaBookingsExperience
+                profileId={accountProfileId}
+                settingsHref={`/account/profile/${accountProfileId}/agenda`}
+              />
+            </section>
+          )}
 
         </div>
       </main>

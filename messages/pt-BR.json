@@ -1473,7 +1473,9 @@
     "openAgendaAria": "Abrir a agenda da conta (compartilhada por todos os seus perfis)",
     "editProfile": "Editar perfil",
     "manage": "Gerenciar",
-    "featureAgenda": "Agenda"
+    "featureAgenda": "Agenda",
+    "agendaTitle": "Agenda",
+    "agendaSubtitle": "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda)."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

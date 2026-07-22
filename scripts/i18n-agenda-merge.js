@@ -153,6 +153,13 @@ const ACCOUNT = {
   // "manage" passou a ser lido do ns Account pelo useAccountTools (fonte unica
   // das ferramentas da conta) — antes so existia no ns Profile.
   manage: ["Gerenciar", "Manage", "Gestionar"],
+  // Secao AGENDA do /account (paridade com a pagina de perfil, 2026-07-22).
+  agendaTitle: ["Agenda", "Schedule", "Agenda"],
+  agendaSubtitle: [
+    "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).",
+    "Monthly calendar and list of your bookings (same experience as the Schedule page).",
+    "Calendario mensual y lista de tus reservas (la misma experiencia de la página Agenda).",
+  ],
   editProfile: ["Editar perfil", "Edit profile", "Editar perfil"],
   openAgendaAria: [
     "Abrir a agenda da conta (compartilhada por todos os seus perfis)",

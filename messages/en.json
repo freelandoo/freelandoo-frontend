@@ -1473,7 +1473,9 @@
     "openAgendaAria": "Open the account agenda (shared by all your profiles)",
     "editProfile": "Edit profile",
     "manage": "Manage",
-    "featureAgenda": "Schedule"
+    "featureAgenda": "Schedule",
+    "agendaTitle": "Schedule",
+    "agendaSubtitle": "Monthly calendar and list of your bookings (same experience as the Schedule page)."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
