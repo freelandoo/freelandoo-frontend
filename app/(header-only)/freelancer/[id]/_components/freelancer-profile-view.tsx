@@ -935,7 +935,12 @@ export default function FreelancerProfileView({
           {portfolioTab === "services" && (
             <ProfilePublicServicesSection
               profileId={profileId}
-              allowPublicBooking={profileAllowsPublicBooking(profile)}
+              /* A pref de Agenda é do usuário LOGADO, então só vale quando
+                 ele está olhando o próprio perfil. Pra visitante manda o
+                 allow_booking do dono, que é server-side. */
+              allowPublicBooking={
+                profileAllowsPublicBooking(profile) && (!isOwnProfile || agendaFeatOn)
+              }
               showOwnerControls={isOwnProfile}
               isClan={isClan}
               clanMembers={

@@ -188,6 +188,7 @@ export function UserPortfolio({
   const profilesPrefOn = useUserFeature("profiles")
   const servicesFlagOn = useFeature("services")
   const servicesPrefOn = useUserFeature("services")
+  const agendaPrefOn = useUserFeature("agenda")
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
   const coursesOn = coursesFlagOn && coursesPrefOn
@@ -728,7 +729,10 @@ export function UserPortfolio({
       {portfolioTab === "services" && accountProfileId ? (
         <ProfilePublicServicesSection
           profileId={accountProfileId}
-          allowPublicBooking
+          /* O fluxo de agendar mora dentro da seção de Serviços; sem isto ele
+             aparecia sempre que a aba Serviços aparecia, ignorando a função
+             Agenda. */
+          allowPublicBooking={agendaPrefOn}
           showOwnerControls
           isClan={false}
           clanMembers={[]}
