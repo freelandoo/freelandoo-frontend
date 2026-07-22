@@ -150,6 +150,9 @@ const AGENDA = {
 const ACCOUNT = {
   // "Editar perfil" migrou da engrenagem do headcard pro menu de perfis do
   // /account (o lapis saiu do headcard a pedido do Alex, 2026-07-21).
+  // "manage" passou a ser lido do ns Account pelo useAccountTools (fonte unica
+  // das ferramentas da conta) — antes so existia no ns Profile.
+  manage: ["Gerenciar", "Manage", "Gestionar"],
   editProfile: ["Editar perfil", "Edit profile", "Editar perfil"],
   openAgendaAria: [
     "Abrir a agenda da conta (compartilhada por todos os seus perfis)",

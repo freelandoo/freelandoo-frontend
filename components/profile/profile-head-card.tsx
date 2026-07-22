@@ -7,14 +7,9 @@ import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
   BarChart2,
-  BarChart3,
-  Bot,
   CalendarDays,
   Camera,
   Cog,
-  Database,
-  Dumbbell,
-  FolderCog,
   Instagram,
   MapPin,
   Megaphone,
@@ -25,7 +20,6 @@ import {
   Trophy,
   Users,
   UserRound,
-  Wallet,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { MarkdownText } from "@/components/ui/markdown-text"
@@ -39,6 +33,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { useAccountTools } from "@/components/profile/account-tools"
 
 const DataConnectionsModal = dynamic(
   () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
@@ -262,11 +257,7 @@ export function ProfileHeadCard({
     router.push("/login")
   }
   const dataApiOn = useFeature("data_api")
-  const atendimentoIaOn = useFeature("atendimento_ia_venda")
-  const academiasOn = useFeature("fitness_academias")
   // Preferências pessoais (seção "Funções" do menu lateral).
-  const walletFeatOn = useUserFeature("wallet")
-  const fitnessFeatOn = useUserFeature("fitness_academias")
   const communitiesFeatOn = useUserFeature("communities")
 
   const handleAvatarSelect = () => {
@@ -313,6 +304,12 @@ export function ProfileHeadCard({
   }, [menuOpen])
 
   // Engrenagem serve apenas como toggle (hover já abre/fecha; click para mobile).
+  // Ferramentas da conta: fonte única compartilhada com a toolbar do /account.
+  const accountTools = useAccountTools({
+    agendaProfileId: profileId,
+    onOpenDataConnections: () => setDataConnOpen(true),
+  })
+
   const handleSettingsClick = () => setMenuOpen((v) => !v)
 
   useEffect(() => {
@@ -643,50 +640,18 @@ export function ProfileHeadCard({
                       hint="headcard-agenda"
                     />
                   )}
-                  {/* Ferramentas da conta (paridade user≡subperfil): os mesmos
-                      itens do menu de ferramentas do /account. */}
-                  {!isClan && (
-                    <>
-                      <IconAction
-                        href="/account/xp"
-                        icon={BarChart3}
-                        label={t("metrics", "Métricas")}
-                      />
-                      <IconAction
-                        href="/account/gerenciamento"
-                        icon={FolderCog}
-                        label={t("manage", "Gerenciar")}
-                      />
-                      {walletFeatOn && (
-                        <IconAction
-                          href="/wallet"
-                          icon={Wallet}
-                          label={t("myWallet", "Minha Carteira")}
-                        />
-                      )}
-                      {dataApiOn && (
-                        <IconAction
-                          onClick={() => setDataConnOpen(true)}
-                          icon={Database}
-                          label={t("dataApi", "Conexões de Dados")}
-                        />
-                      )}
-                      {atendimentoIaOn && (
-                        <IconAction
-                          href="/account/atendimento-ia"
-                          icon={Bot}
-                          label={t("atendimentoIa", "Atendimento IA")}
-                        />
-                      )}
-                      {academiasOn && fitnessFeatOn && (
-                        <IconAction
-                          href="/fitness"
-                          icon={Dumbbell}
-                          label={t("fitnessTool", "Fitness")}
-                        />
-                      )}
-                    </>
-                  )}
+                  {/* Ferramentas da conta — lista vinda do useAccountTools,
+                      a MESMA que a toolbar do /account renderiza. Ferramenta
+                      nova entra só lá (components/profile/account-tools.ts). */}
+                  {!isClan && accountTools.map((tool) => (
+                    <IconAction
+                      key={tool.key}
+                      href={tool.href}
+                      onClick={tool.onClick}
+                      icon={tool.icon}
+                      label={tool.label}
+                    />
+                  ))}
                 </RetractableIcons>
               </>
             ) : (

@@ -1471,7 +1471,8 @@
     "settingsMyData": "Mis datos",
     "featureServices": "Servicios",
     "openAgendaAria": "Abrir la agenda de la cuenta (compartida por todos tus perfiles)",
-    "editProfile": "Editar perfil"
+    "editProfile": "Editar perfil",
+    "manage": "Gestionar"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

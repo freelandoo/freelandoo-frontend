@@ -25,10 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, BarChart3, FolderCog, Wallet, Database, Bot, Dumbbell, Wrench } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { useAccountTools } from "@/components/profile/account-tools"
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { MuralPill } from "@/components/profile/profile-head-card"
@@ -151,12 +152,8 @@ export default function PerfilPage() {
   const [followersModalOpen, setFollowersModalOpen] = useState(false)
   const [dataConnOpen, setDataConnOpen] = useState(false)
   const dataApiOn = useFeature("data_api")
-  const atendimentoIaOn = useFeature("atendimento_ia_venda")
-  const academiasOn = useFeature("fitness_academias")
   // Preferências pessoais da seção "Funções" (menu lateral): escondem as
   // entradas correspondentes só da experiência deste usuário.
-  const walletFeatOn = useUserFeature("wallet")
-  const fitnessFeatOn = useUserFeature("fitness_academias")
   const communitiesFeatOn = useUserFeature("communities")
   const profilesFeatOn = useUserFeature("profiles")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
@@ -312,6 +309,13 @@ export default function PerfilPage() {
   const managedProfiles = (perfil?.profiles || []).filter(
     (p) => !p.is_clan && !p.is_user_account,
   )
+
+  // Ferramentas da conta: fonte única compartilhada com a engrenagem do
+  // headcard de perfil (components/profile/account-tools.ts).
+  const accountTools = useAccountTools({
+    agendaProfileId: accountProfileId,
+    onOpenDataConnections: () => setDataConnOpen(true),
+  })
 
   // Mural do perfil-conta (paridade user≡subperfil) + contador de posts.
   const [muralOpen, setMuralOpen] = useState(false)
@@ -2000,79 +2004,26 @@ export default function PerfilPage() {
                       <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
                     )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/account/xp")}
-                    aria-label={t("viewMetricsAria", "Ver métricas e XP")}
-                    title={t("metrics", "Métricas")}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/account/gerenciamento")}
-                    aria-label={t("mgmtButtonAria", "Gerenciamento da conta: subperfis, serviços, cursos e produtos")}
-                    title={t("mgmtButton", "Gerenciar")}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                  >
-                    <FolderCog className="h-4 w-4" />
-                  </button>
-                  {accountProfileId && (
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/account/profile/${accountProfileId}/agenda`)}
-                      aria-label={t("openAgendaAria", "Abrir a agenda da conta (compartilhada por todos os seus perfis)")}
-                      title={t("agenda", "Agenda")}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <CalendarDays className="h-4 w-4" />
-                    </button>
-                  )}
-                  {walletFeatOn && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/wallet")}
-                      aria-label={t("openWallet", "Abrir minha Carteira")}
-                      title={t("myWallet", "Minha Carteira")}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <Wallet className="h-4 w-4" />
-                    </button>
-                  )}
-                  {dataApiOn && (
-                    <button
-                      type="button"
-                      onClick={() => setDataConnOpen(true)}
-                      aria-label={t("dataApiAria", "Conexões de Dados: gerar token de API para ler os dados da conta")}
-                      title={t("dataApi", "Conexões de Dados")}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <Database className="h-4 w-4" />
-                    </button>
-                  )}
-                  {atendimentoIaOn && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/account/atendimento-ia")}
-                      aria-label={t("atendimentoIaAria", "Atendimento IA: bot que responde suas conversas")}
-                      title={t("atendimentoIa", "Atendimento IA")}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <Bot className="h-4 w-4" />
-                    </button>
-                  )}
-                  {academiasOn && fitnessFeatOn && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/fitness")}
-                      aria-label={t("fitnessAria", "Painel fitness: calorias, água, peso e treinos")}
-                      title={t("fitnessTool", "Fitness")}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <Dumbbell className="h-4 w-4" />
-                    </button>
-                  )}
+                  {/* Ferramentas da conta — MESMA lista da engrenagem do
+                      headcard de perfil, via useAccountTools. Ferramenta nova
+                      entra só em components/profile/account-tools.ts. */}
+                  {accountTools.map((tool) => {
+                    const Icon = tool.icon
+                    const cls =
+                      "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    return (
+                      <button
+                        key={tool.key}
+                        type="button"
+                        onClick={() => (tool.href ? router.push(tool.href) : tool.onClick?.())}
+                        aria-label={tool.ariaLabel}
+                        title={tool.label}
+                        className={cls}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </button>
+                    )
+                  })}
                 </div>
                 {/* Contadores de seguidores/acompanhados migraram pra fila
                     POSTS | ACOMP. ao lado do avatar (esqueleto unificado). */}
