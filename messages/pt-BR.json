@@ -1766,7 +1766,8 @@
     "recadoLabel": "Recado",
     "deleteRecado": "Apagar",
     "accessAcademy": "Acessar academia",
-    "curtoLabel": "Curto"
+    "curtoLabel": "Curto",
+    "hotPostAria": "Em alta: recebendo mais que a média do dia"
   },
   "Stories": {
     "createStoryLabel": "Postar",

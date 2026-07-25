@@ -17,6 +17,7 @@ import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
+import { HeatRing } from "./heat-ring"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -106,6 +107,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [audioInView, setAudioInView] = useState(false)
   const [audioMuted, setAudioMuted] = useState(true)
   const hasMusic = !!post.audio?.audio_url
+  // Post acima da média do dia em visualizações+likes: o avatar acende. É por
+  // POST, não por perfil — o mesmo perfil aparece sem anel nos outros cards.
+  const isHot = !!post.is_hot
+  const hotLabel = t("hotPostAria", "Em alta: recebendo mais que a média do dia")
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     const token = getToken()
@@ -428,14 +433,17 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         {/* Header */}
         <div className="flex w-full min-w-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
           <Link href={post.public_profile_url || "#"} onClick={handleProfileClick} className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div
-              className="relative shrink-0 -rotate-2 overflow-hidden border-2 border-[#0B0B0D]"
-              style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
-            >
-              <Avatar className="h-9 w-9 rounded-none">
-                {post.avatar_url ? <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" /> : null}
-                <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">{initials(post.profile_name)}</AvatarFallback>
-              </Avatar>
+            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
+              {isHot && <HeatRing />}
+              <div
+                className="relative overflow-hidden border-2 border-[#0B0B0D]"
+                style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
+              >
+                <Avatar className="h-9 w-9 rounded-none">
+                  {post.avatar_url ? <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" /> : null}
+                  <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">{initials(post.profile_name)}</AvatarFallback>
+                </Avatar>
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <span className="fl-display block truncate text-base leading-none text-[#F5F1E8]">
@@ -513,17 +521,20 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               style={{ backgroundColor: machineColor }}
               title={post.machine?.name || ""}
             />
-            <Avatar
-              className="h-10 w-10 shrink-0 ring-1 transition"
-              style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
-            >
-              {post.avatar_url ? (
-                <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} />
-              ) : null}
-              <AvatarFallback className="bg-white/5 text-xs text-white/70">
-                {initials(post.profile_name)}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative shrink-0" title={isHot ? hotLabel : undefined}>
+              {isHot && <HeatRing shape="circle" />}
+              <Avatar
+                className="relative h-10 w-10 shrink-0 ring-1 transition"
+                style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
+              >
+                {post.avatar_url ? (
+                  <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} />
+                ) : null}
+                <AvatarFallback className="bg-white/5 text-xs text-white/70">
+                  {initials(post.profile_name)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-sm font-semibold text-white">
@@ -583,18 +594,21 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               style={{ backgroundColor: machineColor }}
               title={post.machine?.name || ""}
             />
-            <div
-              className="relative shrink-0 -rotate-2 overflow-hidden border-2 border-[#0B0B0D]"
-              style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
-            >
-              <Avatar className="h-10 w-10 rounded-none">
-                {post.avatar_url ? (
-                  <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
-                  {initials(post.profile_name)}
-                </AvatarFallback>
-              </Avatar>
+            <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
+              {isHot && <HeatRing />}
+              <div
+                className="relative overflow-hidden border-2 border-[#0B0B0D]"
+                style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
+              >
+                <Avatar className="h-10 w-10 rounded-none">
+                  {post.avatar_url ? (
+                    <AvatarImage src={post.avatar_url} alt={post.profile_name || ""} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
+                    {initials(post.profile_name)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">

@@ -68,6 +68,9 @@ export interface FeedPost {
   social_clicks_count: number
   comments_count?: number
   engagement_score: number
+  /** Recebendo mais visualizações+likes que a média do dia: o avatar deste
+   *  card (só dele) acende o anel de "em alta". Calculado em 24h corridas. */
+  is_hot?: boolean
   published_at: string | null
   feed_kind: "feed" | "bees"
   viewer_has_liked: boolean

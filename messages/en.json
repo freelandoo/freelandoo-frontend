@@ -1766,7 +1766,8 @@
     "recadoLabel": "Note",
     "deleteRecado": "Delete",
     "accessAcademy": "Open gym",
-    "curtoLabel": "Short"
+    "curtoLabel": "Short",
+    "hotPostAria": "Trending: getting more than today's average"
   },
   "Stories": {
     "createStoryLabel": "Post",

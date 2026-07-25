@@ -629,12 +629,23 @@
 }
 .fl-like-tape { animation: fl-like-tape-pop 0.42s cubic-bezier(0.16, 1, 0.3, 1); }
 
+/* Anel de "em alta" no avatar do card do feed (components/feed/heat-ring.tsx).
+   Mesma cadência do anel neon de bees (3.2s linear), mas em CSS: o feed é lista
+   e não vale um motor de animação por card. */
+@keyframes fl-heat-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.fl-heat-spin { animation: fl-heat-spin 3.2s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .fl-float, .fl-float-slow { animation: none !important; }
   .fl-hard, .fl-btn-gold { transition: none !important; }
   .mp-card { transition: none !important; }
   .mp-card:hover, .mp-card:focus-within { transform: none; }
   .fl-like-tape { animation: none !important; }
+  /* Sem giro: o anel fica parado, mas o brilho permanece (o sinal não se perde). */
+  .fl-heat-spin { animation: none !important; }
 }
 
 /* Câmera (CameraStudio): oculta a toolbar global enquanto a câmera está ativa */
