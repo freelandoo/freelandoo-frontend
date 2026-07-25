@@ -17,7 +17,7 @@ import { MachineTop10Crown } from "@/components/profile/machine-top10-crown"
 import { cn } from "@/lib/utils"
 import { useShareCoupon, buildShareUrlWithCoupon } from "@/hooks/use-share-coupon"
 import { ReportPostDialog } from "./report-post-dialog"
-import { HeatRing } from "./heat-ring"
+import { HeatRing, type HeatTier } from "./heat-ring"
 import { MarkdownText } from "@/components/ui/markdown-text"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
@@ -107,10 +107,16 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
   const [audioInView, setAudioInView] = useState(false)
   const [audioMuted, setAudioMuted] = useState(true)
   const hasMusic = !!post.audio?.audio_url
-  // Post acima da média do dia em visualizações+likes: o avatar acende. É por
-  // POST, não por perfil — o mesmo perfil aparece sem anel nos outros cards.
-  const isHot = !!post.is_hot
-  const hotLabel = t("hotPostAria", "Em alta: recebendo mais que a média do dia")
+  // Posição no engajamento do dia (views+likes+comentários+salvos): líder acende
+  // laranja/dourado, quem está até 10% dele acende laranja/vermelho. É por POST,
+  // não por perfil — o mesmo perfil aparece sem anel nos outros cards.
+  const hotTier: HeatTier | null =
+    post.hot_tier === "leader" || post.hot_tier === "rising" ? post.hot_tier : null
+  const isHot = hotTier !== null
+  const hotLabel =
+    hotTier === "leader"
+      ? t("hotPostLeaderAria", "Líder do dia em engajamento")
+      : t("hotPostRisingAria", "Em alta: perto do líder do dia")
 
   const submitReport = async ({ reason_category, reason }: { reason_category: string; reason: string }) => {
     const token = getToken()
@@ -434,7 +440,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         <div className="flex w-full min-w-0 items-center gap-2.5 border-b border-[#F5F1E8]/10 bg-[#15120E] px-3 py-2.5">
           <Link href={post.public_profile_url || "#"} onClick={handleProfileClick} className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
-              {isHot && <HeatRing />}
+              {hotTier && <HeatRing tier={hotTier} />}
               <div
                 className="relative overflow-hidden border-2 border-[#0B0B0D]"
                 style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}
@@ -522,7 +528,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               title={post.machine?.name || ""}
             />
             <div className="relative shrink-0" title={isHot ? hotLabel : undefined}>
-              {isHot && <HeatRing shape="circle" />}
+              {hotTier && <HeatRing tier={hotTier} shape="circle" />}
               <Avatar
                 className="relative h-10 w-10 shrink-0 ring-1 transition"
                 style={{ "--tw-ring-color": `${machineColor}38` } as React.CSSProperties}
@@ -595,7 +601,7 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               title={post.machine?.name || ""}
             />
             <div className="relative shrink-0 -rotate-2" title={isHot ? hotLabel : undefined}>
-              {isHot && <HeatRing />}
+              {hotTier && <HeatRing tier={hotTier} />}
               <div
                 className="relative overflow-hidden border-2 border-[#0B0B0D]"
                 style={isHot ? undefined : { outline: "2px solid #F2B705", outlineOffset: "1px" }}

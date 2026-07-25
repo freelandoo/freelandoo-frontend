@@ -1767,7 +1767,9 @@
     "deleteRecado": "Delete",
     "accessAcademy": "Open gym",
     "curtoLabel": "Short",
-    "hotPostAria": "Trending: getting more than today's average"
+    "hotPostAria": "Trending: getting more than today's average",
+    "hotPostLeaderAria": "Today's engagement leader",
+    "hotPostRisingAria": "Trending: close to today's leader"
   },
   "Stories": {
     "createStoryLabel": "Post",

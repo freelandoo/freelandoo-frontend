@@ -68,8 +68,11 @@ export interface FeedPost {
   social_clicks_count: number
   comments_count?: number
   engagement_score: number
-  /** Recebendo mais visualizações+likes que a média do dia: o avatar deste
-   *  card (só dele) acende o anel de "em alta". Calculado em 24h corridas. */
+  /** Posição no engajamento do dia (views+likes+comentários+salvos em 24h):
+   *  "leader" = maior do dia (anel laranja/dourado); "rising" = até 10% abaixo
+   *  dele (anel laranja/vermelho). Null = não acende. */
+  hot_tier?: "leader" | "rising" | null
+  /** Atalho de `hot_tier != null`. */
   is_hot?: boolean
   published_at: string | null
   feed_kind: "feed" | "bees"

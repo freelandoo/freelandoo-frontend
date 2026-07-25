@@ -1767,7 +1767,9 @@
     "deleteRecado": "Eliminar",
     "accessAcademy": "Abrir gimnasio",
     "curtoLabel": "Corto",
-    "hotPostAria": "En alza: recibiendo más que el promedio del día"
+    "hotPostAria": "En alza: recibiendo más que el promedio del día",
+    "hotPostLeaderAria": "Líder del día en interacción",
+    "hotPostRisingAria": "En alza: cerca del líder del día"
   },
   "Stories": {
     "createStoryLabel": "Publicar",

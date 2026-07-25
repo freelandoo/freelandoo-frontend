@@ -1767,7 +1767,9 @@
     "deleteRecado": "Apagar",
     "accessAcademy": "Acessar academia",
     "curtoLabel": "Curto",
-    "hotPostAria": "Em alta: recebendo mais que a média do dia"
+    "hotPostAria": "Em alta: recebendo mais que a média do dia",
+    "hotPostLeaderAria": "Líder do dia em engajamento",
+    "hotPostRisingAria": "Em alta: perto do líder do dia"
   },
   "Stories": {
     "createStoryLabel": "Postar",

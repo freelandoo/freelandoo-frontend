@@ -7,10 +7,22 @@ const path = require("path")
 const dir = path.join(__dirname, "..", "messages")
 
 const POST = {
+  // Legado da 1a versao (regra "acima da media"); mantida no dict pra nao
+  // sumir de traducao ja publicada, mas nao ha mais call-site.
   hotPostAria: [
     "Em alta: recebendo mais que a média do dia",
     "Trending: getting more than today's average",
     "En alza: recibiendo más que el promedio del día",
+  ],
+  hotPostLeaderAria: [
+    "Líder do dia em engajamento",
+    "Today's engagement leader",
+    "Líder del día en interacción",
+  ],
+  hotPostRisingAria: [
+    "Em alta: perto do líder do dia",
+    "Trending: close to today's leader",
+    "En alza: cerca del líder del día",
   ],
 }
 
