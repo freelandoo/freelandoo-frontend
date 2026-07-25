@@ -1889,7 +1889,9 @@
     "backToEnxames": "Volver a los enjambres",
     "tabCommunities": "Comunidades",
     "noCommunitiesTitle": "Ninguna comunidad encontrada",
-    "noCommunitiesHint": "Elige otro enjambre o crea tu comunidad."
+    "noCommunitiesHint": "Elige otro enjambre o crea tu comunidad.",
+    "loadingMore": "Cargando más",
+    "endOfList": "Llegaste al final"
   },
   "Messages": {
     "loginPromptTitle": "Inicia sesión para ver tus mensajes",

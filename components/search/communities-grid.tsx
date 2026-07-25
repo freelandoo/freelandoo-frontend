@@ -3,43 +3,46 @@
 // Aba "Comunidades" do enxame: vitrine de comunidades filtrada por enxame
 // (id_machine). Mesma malha edge-to-edge das outras abas (Cursos/Serviços).
 
-import { useEffect, useState } from "react"
+import { type RefObject } from "react"
 import { Loader2, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
+import { InfiniteFooter } from "@/components/search/infinite-footer"
+import { useInfiniteFetch } from "@/components/search/use-infinite-fetch"
 
 interface Props {
   machineId: number | null
   regionId?: number | null
   q?: string | null
+  /** Container rolável da /search (scroll infinito). */
+  rootRef?: RefObject<HTMLElement | null>
 }
 
-export function CommunitiesGrid({ machineId, regionId, q }: Props) {
+export function CommunitiesGrid({ machineId, regionId, q, rootRef }: Props) {
   const t = useTranslations("Search")
-  const [items, setItems] = useState<CommunityTileData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    setError(null)
+  const query = (() => {
     const params = new URLSearchParams()
     if (machineId) params.set("id_machine", String(machineId))
     if (regionId) params.set("id_region", String(regionId))
     if (q) params.set("q", q)
-    const qs = params.toString()
-    fetch(`/api/communities${qs ? `?${qs}` : ""}`, { cache: "no-store" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`Falha ${r.status}`)
-        const d = await r.json()
-        if (!alive) return
-        setItems(Array.isArray(d?.communities) ? d.communities : [])
-      })
-      .catch((err) => alive && setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar")))
-      .finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [machineId, regionId, q, t])
+    return params.toString()
+  })()
+
+  const { items, loading, loadingMore, error, hasMore, sentinelRef } =
+    useInfiniteFetch<CommunityTileData>({
+      buildUrl: ({ limit, offset }) =>
+        `/api/communities?${query}${query ? "&" : ""}limit=${limit}&offset=${offset}`,
+      extract: (d) =>
+        Array.isArray((d as { communities?: CommunityTileData[] })?.communities)
+          ? (d as { communities: CommunityTileData[] }).communities
+          : [],
+      getId: (c) => c.id_profile,
+      filterKey: query,
+      pageSize: 24,
+      rootRef,
+      errorMessage: t("loadError", "Erro ao carregar"),
+    })
 
   if (loading) {
     return (
@@ -48,7 +51,7 @@ export function CommunitiesGrid({ machineId, regionId, q }: Props) {
       </div>
     )
   }
-  if (error) {
+  if (error && items.length === 0) {
     return <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
   }
   if (items.length === 0) {
@@ -66,10 +69,13 @@ export function CommunitiesGrid({ machineId, regionId, q }: Props) {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[640px] grid-cols-2 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] lg:max-w-none lg:grid-cols-3">
-      {items.map((c) => (
-        <CommunityTile key={c.id_profile} community={c} />
-      ))}
-    </div>
+    <>
+      <div className="mx-auto grid w-full max-w-[640px] grid-cols-2 gap-px bg-white/[0.03] md:max-w-[760px] lg:max-w-none lg:grid-cols-3">
+        {items.map((c) => (
+          <CommunityTile key={c.id_profile} community={c} />
+        ))}
+      </div>
+      <InfiniteFooter ref={sentinelRef} loading={loadingMore} hasMore={hasMore} />
+    </>
   )
 }

@@ -16,6 +16,8 @@ import { ProductsGrid } from "@/components/search/products-grid"
 import { CoursesGrid } from "@/components/search/courses-grid"
 import { CommunitiesGrid } from "@/components/search/communities-grid"
 import { FilterRail, type CoursePriceFilter, type ProductCategoryEntry } from "@/components/search/filter-rail"
+import { InfiniteFooter } from "@/components/search/infinite-footer"
+import { useInfiniteFetch } from "@/components/search/use-infinite-fetch"
 import {
   ProductSubfilterPanel,
   buildSubfilterParams,
@@ -233,10 +235,6 @@ function SearchPageInner() {
   const [premiumOnly, setPremiumOnly] = useState(false)
   const [levelMin, setLevelMin] = useState<number | null>(null)
 
-  const [creators, setCreators] = useState<Creator[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   const [openChamadoOpen, setOpenChamadoOpen] = useState(false)
   const [tab, setTab] = useState<SearchTab>("services")
   const [productCategoryId, setProductCategoryId] = useState<number | null>(null)
@@ -376,72 +374,71 @@ function SearchPageInner() {
     if (!stillValid) setIdCategory(null)
   }, [idMachine, activeMachine, idCategory])
 
-  useEffect(() => {
-    if (slugAwaitingResolution) {
-      setLoading(true)
-      return
-    }
-    let cancelled = false
-    const run = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const params = new URLSearchParams()
-        if (selectedEstado) params.append("estado", selectedEstado)
-        if (selectedRegionId) params.append("id_region", String(selectedRegionId))
-        if (activeMachine) {
-          if (activeMachine.id_machine > 0) {
-            params.append("id_machine", String(activeMachine.id_machine))
-          }
-          params.append("machine_slug", activeMachine.slug)
-        }
-        if (idCategory != null && idCategory > 0) {
-          params.append("id_category", String(idCategory))
-        } else if (activeCategory) {
-          params.append("category", activeCategory.desc_category)
-        }
-        if (levelMin != null) params.append("level_min", String(levelMin))
+  // Semente do embaralhamento da vitrine: uma por visita, repetida em TODAS as
+  // páginas. O backend ordena por hash(seed, id_profile) — antes era RANDOM(),
+  // que re-sorteava a cada página e fazia o LIMIT/OFFSET repetir e pular
+  // perfis (era impossível ver todo mundo de um enxame).
+  const [shuffleSeed] = useState(() => Math.random().toString(36).slice(2, 10))
 
-        const qs = params.toString()
-        const url = `/api/search${qs ? `?${qs}` : ""}`
-        const response = await fetch(url, { cache: "no-store" })
-        if (!response.ok) throw new Error(t("searchError", "Erro ao buscar"))
-        const data = await response.json()
-        let list: Creator[] = Array.isArray(data) ? data : []
-        list.forEach((c) => {
-          if (!c.is_clan && !c.machine_slug) {
-            c.machine_slug = resolveMachineFromCategory(c.category)
-          }
-        })
-        if (activeMachine) {
-          list = list.filter((c) => c.is_clan || c.machine_slug === activeMachine.slug)
-        }
-        if (activeCategory) {
-          list = list.filter(
-            (c) => c.is_clan || (c.category && c.category.toLowerCase() === activeCategory.desc_category.toLowerCase())
-          )
-        }
-        if (!cancelled) setCreators(list)
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : t("searchError", "Erro ao buscar"))
-          setCreators([])
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+  const creatorsQuery = useMemo(() => {
+    const params = new URLSearchParams()
+    if (selectedEstado) params.append("estado", selectedEstado)
+    if (selectedRegionId) params.append("id_region", String(selectedRegionId))
+    if (activeMachine) {
+      if (activeMachine.id_machine > 0) {
+        params.append("id_machine", String(activeMachine.id_machine))
       }
+      params.append("machine_slug", activeMachine.slug)
     }
-    run()
-    return () => { cancelled = true }
-  }, [selectedEstado, selectedRegionId, idMachine, idCategory, activeMachine, activeCategory, slugAwaitingResolution, levelMin, t])
+    if (idCategory != null && idCategory > 0) {
+      params.append("id_category", String(idCategory))
+    } else if (activeCategory) {
+      params.append("category", activeCategory.desc_category)
+    }
+    if (levelMin != null) params.append("level_min", String(levelMin))
+    params.append("seed", shuffleSeed)
+    return params.toString()
+  }, [selectedEstado, selectedRegionId, activeMachine, idCategory, activeCategory, levelMin, shuffleSeed])
+
+  const {
+    items: creators,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    sentinelRef,
+  } = useInfiniteFetch<Creator>({
+    buildUrl: ({ limit, offset }) => `/api/search?${creatorsQuery}&limit=${limit}&offset=${offset}`,
+    extract: (data) => (Array.isArray(data) ? (data as Creator[]) : []),
+    getId: (c) => c.id_profile,
+    filterKey: creatorsQuery,
+    pageSize: 24,
+    rootRef: scrollRef,
+    enabled: !slugAwaitingResolution,
+    errorMessage: t("searchError", "Erro ao buscar"),
+  })
 
   const isPremium = useCallback((c: Creator) =>
     !!c.is_premium || c.profile_statuses?.some((s) => s.desc_status === "destaque_premium"),
     [])
 
   const display = useMemo(() => {
-    return premiumOnly ? creators.filter(isPremium) : creators
-  }, [creators, premiumOnly, isPremium])
+    // Perfis sem id_machine no banco caem na ponte categoria→enxame.
+    let list = creators.map((c) =>
+      !c.is_clan && !c.machine_slug
+        ? { ...c, machine_slug: resolveMachineFromCategory(c.category) }
+        : c
+    )
+    if (activeMachine) {
+      list = list.filter((c) => c.is_clan || c.machine_slug === activeMachine.slug)
+    }
+    if (activeCategory) {
+      list = list.filter(
+        (c) => c.is_clan || (c.category && c.category.toLowerCase() === activeCategory.desc_category.toLowerCase())
+      )
+    }
+    return premiumOnly ? list.filter(isPremium) : list
+  }, [creators, activeMachine, activeCategory, premiumOnly, isPremium])
 
   const clearAll = () => {
     setSelectedEstado(null)
@@ -531,31 +528,42 @@ function SearchPageInner() {
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-white/60" />
           </div>
-        ) : error ? (
+        ) : error && creators.length === 0 ? (
           <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
-        ) : display.length === 0 ? (
-          <div className="fl-root px-4 py-20 text-center">
-            <p className="fl-display text-3xl leading-none text-[#F5F1E8]">
-              {t("noResultsMessage", "Nenhum profissional com esses filtros.")}
-            </p>
-            <button
-              type="button"
-              onClick={clearAll}
-              className="mt-5 inline-flex items-center border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
-            >
-              {t("clearFiltersButton", "Limpar filtros")}
-            </button>
-          </div>
         ) : (
-          <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] md:grid-cols-4 lg:max-w-none lg:grid-cols-4">
-            {display.map((c) => (
-              <FreelancerTile
-                key={c.id_profile}
-                creator={c}
-                featured={isPremium(c)}
-              />
-            ))}
-          </div>
+          <>
+            {display.length === 0 ? (
+              <div className="fl-root px-4 py-20 text-center">
+                <p className="fl-display text-3xl leading-none text-[#F5F1E8]">
+                  {t("noResultsMessage", "Nenhum profissional com esses filtros.")}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="mt-5 inline-flex items-center border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5"
+                >
+                  {t("clearFiltersButton", "Limpar filtros")}
+                </button>
+              </div>
+            ) : (
+              <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] md:max-w-[760px] md:grid-cols-4 lg:max-w-none lg:grid-cols-4">
+                {display.map((c) => (
+                  <FreelancerTile
+                    key={c.id_profile}
+                    creator={c}
+                    featured={isPremium(c)}
+                  />
+                ))}
+              </div>
+            )}
+            {/* Sentinela: chegou aqui, carrega a próxima leva sozinho. */}
+            <InfiniteFooter
+              ref={sentinelRef}
+              loading={loadingMore}
+              hasMore={hasMore}
+              empty={display.length === 0}
+            />
+          </>
         ))}
 
         {tab === "products" && (
@@ -624,6 +632,7 @@ function SearchPageInner() {
               state={selectedEstado}
               regionId={selectedRegionId}
               extraParams={productExtraParams}
+              rootRef={scrollRef}
             />
 
             {/* Sheet mobile de subfiltros da categoria (a coluna lateral só existe em lg+) */}
@@ -658,11 +667,12 @@ function SearchPageInner() {
             machineId={idMachine}
             categoryId={idCategory}
             priceFilter={coursePrice}
+            rootRef={scrollRef}
           />
         )}
 
         {tab === "communities" && (
-          <CommunitiesGrid machineId={idMachine} regionId={selectedRegionId} />
+          <CommunitiesGrid machineId={idMachine} regionId={selectedRegionId} rootRef={scrollRef} />
         )}
           </div>
         </div>

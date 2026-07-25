@@ -1889,7 +1889,9 @@
     "backToEnxames": "Voltar pros enxames",
     "tabCommunities": "Comunidades",
     "noCommunitiesTitle": "Nenhuma comunidade encontrada",
-    "noCommunitiesHint": "Escolha outro enxame ou crie a sua comunidade."
+    "noCommunitiesHint": "Escolha outro enxame ou crie a sua comunidade.",
+    "loadingMore": "Carregando mais",
+    "endOfList": "Você chegou ao fim"
   },
   "Messages": {
     "loginPromptTitle": "Entre para ver suas mensagens",

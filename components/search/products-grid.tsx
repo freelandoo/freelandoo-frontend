@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { type RefObject } from "react"
 import { Loader2, Package } from "lucide-react"
 import { ProductTile } from "@/components/search/product-tile"
+import { InfiniteFooter } from "@/components/search/infinite-footer"
+import { useInfiniteFetch } from "@/components/search/use-infinite-fetch"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 type ProductItem = {
@@ -30,19 +32,15 @@ interface Props {
   q?: string | null
   /** Subfiltros por categoria já normalizados (attr_*, price_min/max). */
   extraParams?: Record<string, string>
+  /** Container rolável da /search (scroll infinito). */
+  rootRef?: RefObject<HTMLElement | null>
 }
 
-export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Props) {
+export function ProductsGrid({ categoryId, state, regionId, q, extraParams, rootRef }: Props) {
   const t = useTranslations("Search")
-  const [items, setItems] = useState<ProductItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const extraKey = JSON.stringify(extraParams ?? {})
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    setError(null)
+  const query = (() => {
     const params = new URLSearchParams()
     if (categoryId) params.set("id_product_category", String(categoryId))
     if (state) params.set("state", state)
@@ -51,17 +49,20 @@ export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Pr
     for (const [k, v] of Object.entries(JSON.parse(extraKey) as Record<string, string>)) {
       params.set(k, v)
     }
-    fetch(`/api/search/products?${params.toString()}`, { cache: "no-store" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`Falha ${r.status}`)
-        const d = await r.json()
-        if (!alive) return
-        setItems(Array.isArray(d?.items) ? d.items : [])
-      })
-      .catch((err) => alive && setError(err instanceof Error ? err.message : t("loadError", "Erro ao carregar")))
-      .finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [categoryId, state, regionId, q, extraKey, t])
+    return params.toString()
+  })()
+
+  const { items, loading, loadingMore, error, hasMore, sentinelRef } =
+    useInfiniteFetch<ProductItem>({
+      buildUrl: ({ limit, offset }) =>
+        `/api/search/products?${query}${query ? "&" : ""}limit=${limit}&offset=${offset}`,
+      extract: (d) => (Array.isArray((d as { items?: ProductItem[] })?.items) ? (d as { items: ProductItem[] }).items : []),
+      getId: (p) => p.id_profile_product,
+      filterKey: query,
+      pageSize: 24,
+      rootRef,
+      errorMessage: t("loadError", "Erro ao carregar"),
+    })
 
   if (loading) {
     return (
@@ -70,7 +71,7 @@ export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Pr
       </div>
     )
   }
-  if (error) {
+  if (error && items.length === 0) {
     return <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
   }
   if (items.length === 0) {
@@ -88,10 +89,13 @@ export function ProductsGrid({ categoryId, state, regionId, q, extraParams }: Pr
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] pb-6 md:max-w-[760px] lg:max-w-none lg:grid-cols-4">
-      {items.map((p) => (
-        <ProductTile key={p.id_profile_product} p={p} />
-      ))}
-    </div>
+    <>
+      <div className="mx-auto grid w-full max-w-[640px] grid-cols-3 gap-px bg-white/[0.03] md:max-w-[760px] lg:max-w-none lg:grid-cols-4">
+        {items.map((p) => (
+          <ProductTile key={p.id_profile_product} p={p} />
+        ))}
+      </div>
+      <InfiniteFooter ref={sentinelRef} loading={loadingMore} hasMore={hasMore} />
+    </>
   )
 }
