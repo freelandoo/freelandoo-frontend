@@ -1475,7 +1475,10 @@
     "manage": "Gestionar",
     "featureAgenda": "Agenda",
     "agendaTitle": "Agenda",
-    "agendaSubtitle": "Calendario mensual y lista de tus reservas (la misma experiencia de la página Agenda)."
+    "agendaSubtitle": "Calendario mensual y lista de tus reservas (la misma experiencia de la página Agenda).",
+    "functionsStoreCta": "Tienda de Funciones",
+    "functionsStoreHint": "Compra nuevas funciones para tu cuenta.",
+    "functionsEmptyOwned": "Todavía no tienes funciones. Visita la Tienda de Funciones."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -5248,5 +5251,40 @@
     "cueOnlyHint": "Sin un subperfil con suscripción activa recibes las señales del administrador, pero no transmites tu propia transmisión.",
     "preparingCamera": "Preparando cámara…",
     "liveFooter": "Tu transmisión está al aire — los comandos del administrador aparecen en pantalla."
+  },
+  "FunctionStore": {
+    "storeName": "Tienda de Funciones",
+    "backToAccount": "Volver a mi cuenta",
+    "navAria": "Funciones",
+    "indicatorsAria": "Indicadores de función",
+    "viewFunction": "Ver función",
+    "ownedBadge": "Tuya",
+    "ownedLine": "Ya tienes esta función",
+    "lifetimeShort": "pago único",
+    "prevAria": "Función anterior",
+    "nextAria": "Siguiente función",
+    "counterAria": "Función {n} de {total}",
+    "goToAria": "Ir a {name}",
+    "activeAria": "Función activa: {name}",
+    "ctaBuy": "Comprar",
+    "ctaOwned": "Ver función",
+    "loading": "Cargando…",
+    "empty": "No hay funciones a la venta por ahora.",
+    "loadError": "Error al cargar la tienda. Inténtalo de nuevo en un momento.",
+    "notFound": "Función no encontrada",
+    "allFunctions": "Todas las funciones",
+    "buy": "Comprar función",
+    "loginToBuy": "Inicia sesión para comprar",
+    "buyError": "Error al iniciar la compra",
+    "lifetime": "Pago único — tuya para siempre.",
+    "aboutTitle": "Qué te llevas",
+    "ownedTitle": "Ya tienes esta función",
+    "ownedHint": "Actívala o desactívala cuando quieras en la sección Funciones del menú lateral.",
+    "goAccount": "Ir a mi cuenta",
+    "successTitle": "¡Compra confirmada!",
+    "successPendingTitle": "Pago recibido",
+    "successBody": "Función desbloqueada en tu cuenta. Ya aparece en la sección Funciones del menú lateral, lista para activar o desactivar.",
+    "successPending": "Estamos confirmando el pago — la función se desbloquea automáticamente en un momento.",
+    "cancelNotice": "Compra cancelada. Puedes intentarlo de nuevo cuando quieras."
   }
 }

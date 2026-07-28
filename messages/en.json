@@ -1475,7 +1475,10 @@
     "manage": "Manage",
     "featureAgenda": "Schedule",
     "agendaTitle": "Schedule",
-    "agendaSubtitle": "Monthly calendar and list of your bookings (same experience as the Schedule page)."
+    "agendaSubtitle": "Monthly calendar and list of your bookings (same experience as the Schedule page).",
+    "functionsStoreCta": "Function Store",
+    "functionsStoreHint": "Buy new functions for your account.",
+    "functionsEmptyOwned": "You do not own any functions yet. Visit the Function Store."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -5268,5 +5271,40 @@
     "cueOnlyHint": "Without a subprofile with an active subscription you receive the administrator's signals but do not broadcast your own live.",
     "preparingCamera": "Preparing camera…",
     "liveFooter": "Your live is on air — the administrator's commands show up on screen."
+  },
+  "FunctionStore": {
+    "storeName": "Function Store",
+    "backToAccount": "Back to my account",
+    "navAria": "Functions",
+    "indicatorsAria": "Function indicators",
+    "viewFunction": "View function",
+    "ownedBadge": "Yours",
+    "ownedLine": "You already own this function",
+    "lifetimeShort": "one-time payment",
+    "prevAria": "Previous function",
+    "nextAria": "Next function",
+    "counterAria": "Function {n} of {total}",
+    "goToAria": "Go to {name}",
+    "activeAria": "Active function: {name}",
+    "ctaBuy": "Buy",
+    "ctaOwned": "View function",
+    "loading": "Loading…",
+    "empty": "No functions for sale right now.",
+    "loadError": "Error loading the store. Try again in a moment.",
+    "notFound": "Function not found",
+    "allFunctions": "All functions",
+    "buy": "Buy function",
+    "loginToBuy": "Sign in to buy",
+    "buyError": "Error starting the purchase",
+    "lifetime": "One-time payment — yours forever.",
+    "aboutTitle": "What you get",
+    "ownedTitle": "You already own this function",
+    "ownedHint": "Turn it on or off anytime in the Functions section of the side menu.",
+    "goAccount": "Go to my account",
+    "successTitle": "Purchase confirmed!",
+    "successPendingTitle": "Payment received",
+    "successBody": "Function unlocked on your account. It now shows in the Functions section of the side menu, ready to turn on or off.",
+    "successPending": "We are confirming the payment — the function unlocks automatically in a moment.",
+    "cancelNotice": "Purchase canceled. You can try again anytime."
   }
 }

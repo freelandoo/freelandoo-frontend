@@ -1475,7 +1475,10 @@
     "manage": "Gerenciar",
     "featureAgenda": "Agenda",
     "agendaTitle": "Agenda",
-    "agendaSubtitle": "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda)."
+    "agendaSubtitle": "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).",
+    "functionsStoreCta": "Loja de Funções",
+    "functionsStoreHint": "Compre novas funções pra sua conta.",
+    "functionsEmptyOwned": "Você ainda não tem funções. Visite a Loja de Funções."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -4682,5 +4685,40 @@
     "cueOnlyHint": "Sem subperfil com assinatura ativa você recebe os sinais do administrador, mas não transmite a sua própria live.",
     "preparingCamera": "Preparando câmera…",
     "liveFooter": "Sua live está no ar — comandos do administrador aparecem na tela."
+  },
+  "FunctionStore": {
+    "storeName": "Loja de Funções",
+    "backToAccount": "Voltar pra minha conta",
+    "navAria": "Funções",
+    "indicatorsAria": "Indicadores de função",
+    "viewFunction": "Ver função",
+    "ownedBadge": "Sua",
+    "ownedLine": "Você já tem esta função",
+    "lifetimeShort": "pagamento único",
+    "prevAria": "Função anterior",
+    "nextAria": "Próxima função",
+    "counterAria": "Função {n} de {total}",
+    "goToAria": "Ir para {name}",
+    "activeAria": "Função ativa: {name}",
+    "ctaBuy": "Comprar",
+    "ctaOwned": "Ver função",
+    "loading": "Carregando…",
+    "empty": "Nenhuma função à venda no momento.",
+    "loadError": "Erro ao carregar a loja. Tente de novo em instantes.",
+    "notFound": "Função não encontrada",
+    "allFunctions": "Todas as funções",
+    "buy": "Comprar função",
+    "loginToBuy": "Entrar pra comprar",
+    "buyError": "Erro ao iniciar a compra",
+    "lifetime": "Pagamento único — sua pra sempre.",
+    "aboutTitle": "O que você leva",
+    "ownedTitle": "Você já tem esta função",
+    "ownedHint": "Ative ou desative quando quiser na seção Funções do menu lateral.",
+    "goAccount": "Ir pra minha conta",
+    "successTitle": "Compra confirmada!",
+    "successPendingTitle": "Pagamento recebido",
+    "successBody": "Função liberada na sua conta. Ela já aparece na seção Funções do menu lateral, pronta pra ativar ou desativar.",
+    "successPending": "Estamos confirmando o pagamento — a função libera automaticamente em instantes.",
+    "cancelNotice": "Compra cancelada. Você pode tentar de novo quando quiser."
   }
 }
