@@ -27,6 +27,7 @@ import {
   Users,
   Dumbbell,
   SlidersHorizontal,
+  ShoppingBag,
   Store,
   UserRound,
   FileText,
@@ -72,8 +73,11 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const vaquinhaOn = useFeature("vaquinha")
   // Seção "Funções": preferências POR usuário (liga/desliga a própria
   // experiência). A flag global do admin desligada vence a preferência.
-  const { prefs: userFeats, setPref: setUserFeat } = useUserFeatures()
-  const featOn = (key: string) => userFeats[key] !== false
+  // Loja de Funções (mig 191): função à venda NÃO comprada (owned=false)
+  // não aparece na lista nem nos pontos de entrada — só depois de comprar.
+  const { prefs: userFeats, owned: userOwned, setPref: setUserFeat } = useUserFeatures()
+  const featOwned = (key: string) => userOwned[key] !== false
+  const featOn = (key: string) => featOwned(key) && userFeats[key] !== false
 
   // "Configurações" expande e guarda dentro os dados da conta + as Funções.
   const [settingsExpanded, setSettingsExpanded] = useState(false)
@@ -410,8 +414,13 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                     <SlidersHorizontal className="h-3 w-3" />
                     {tAcc("functionsHeading", "Funções")}
                   </p>
+                  {featureRows.filter((f) => featOwned(f.key)).length === 0 && (
+                    <p className="px-3 pb-1 pt-0.5 text-[10.5px] leading-relaxed text-white/35">
+                      {tAcc("functionsEmptyOwned", "Você ainda não tem funções. Visite a Loja de Funções.")}
+                    </p>
+                  )}
                   <ul className="space-y-1">
-                    {featureRows.map((f) => {
+                    {featureRows.filter((f) => featOwned(f.key)).map((f) => {
                       const FIcon = f.icon
                       const on = featOn(f.key)
                       return (
@@ -461,6 +470,20 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                       "Desativar esconde a função só da sua experiência — nada é apagado.",
                     )}
                   </p>
+                  {/* Loja de Funções — compre novas funções pra conta */}
+                  <Link
+                    href="/funcoes"
+                    onClick={onClose}
+                    className="group mx-3 mb-1 flex items-center gap-2.5 border border-amber-400/40 bg-amber-400/[0.06] px-3 py-2 text-[12.5px] font-semibold text-amber-300 transition hover:bg-amber-400/[0.14]"
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{tAcc("functionsStoreCta", "Loja de Funções")}</span>
+                      <span className="block text-[10.5px] font-normal leading-snug text-amber-200/60">
+                        {tAcc("functionsStoreHint", "Compre novas funções pra sua conta.")}
+                      </span>
+                    </span>
+                  </Link>
                 </div>
               )}
             </li>

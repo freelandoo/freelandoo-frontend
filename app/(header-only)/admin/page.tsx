@@ -47,6 +47,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   { section: "Catálogo & Vitrine", hint: "admin-enxames", href: "/administracao/enxames", icon: Sparkles, title: "Controle de Enxames", body: "Ativar/desativar enxames, cores e profissões." },
   { section: "Catálogo & Vitrine", href: "/administracao/loja", icon: Store, title: "Loja", body: "Moderação da Loja, categorias e produtos proibidos." },
   { section: "Catálogo & Vitrine", href: "/administracao/casa-loja", icon: ShoppingBag, title: "Conveniência Views", body: "Loja única da Casa (espelhada em cada participante): produtos, galeria e pedidos. Os participantes são editados na própria página (/acasaviews)." },
+  { section: "Catálogo & Vitrine", href: "/administracao/loja-funcoes", icon: ShoppingBag, title: "Loja de Funções", body: "Funções da conta como produtos (vitrine /funcoes): preço, textos, cores e imagem de cada função, compras e concessão manual. 'À venda' desligado = função grátis.", badge: "novo" },
 
   // Conteúdo & Comunidade
   { section: "Conteúdo & Comunidade", hint: "admin-ranking", href: "/admin/ranking", icon: Trophy, title: "Ranking", body: "Configurar pesos, período e visualizar posições por enxame, cidade e geral." },
