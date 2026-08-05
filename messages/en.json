@@ -1478,7 +1478,13 @@
     "agendaSubtitle": "Monthly calendar and list of your bookings (same experience as the Schedule page).",
     "functionsStoreCta": "Function Store",
     "functionsStoreHint": "Buy new functions for your account.",
-    "functionsEmptyOwned": "You do not own any functions yet. Visit the Function Store."
+    "functionsEmptyOwned": "You do not own any functions yet. Visit the Function Store.",
+    "affiliateOptInTitle": "Allow affiliates to sell this item",
+    "affiliateOptInDesc": "Affiliates promote and sell for you. You still receive the same amount — the commission is added on top of your price.",
+    "affiliatePercentLabel": "Commission you offer",
+    "affiliatePercentHint": "Between {min}% and {max}% of your amount. Leave empty to use the platform default ({default}%).",
+    "affiliatePercentPlaceholder": "Default ({default}%)",
+    "affiliatePercentInvalid": "Use a value between {min}% and {max}%."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

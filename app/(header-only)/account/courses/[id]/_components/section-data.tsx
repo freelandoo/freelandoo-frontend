@@ -43,6 +43,7 @@ interface FormState {
   profile_id: string
   status: CourseStatus
   affiliates_allowed: boolean
+  affiliate_percent: number | null
 }
 
 function buildFormFromCourse(course: MyCourse): FormState {
@@ -55,6 +56,7 @@ function buildFormFromCourse(course: MyCourse): FormState {
     profile_id: course.profile_id || "",
     status: course.status,
     affiliates_allowed: course.affiliates_allowed ?? false,
+    affiliate_percent: course.affiliate_percent ?? null,
   }
 }
 
@@ -87,7 +89,8 @@ export function CourseDataSection({
       base.price_text !== form.price_text ||
       base.profile_id !== form.profile_id ||
       base.status !== form.status ||
-      base.affiliates_allowed !== form.affiliates_allowed
+      base.affiliates_allowed !== form.affiliates_allowed ||
+      base.affiliate_percent !== form.affiliate_percent
     )
   }, [course, form])
 
@@ -116,6 +119,7 @@ export function CourseDataSection({
       profile_id: form.profile_id || null,
       status: form.status,
       affiliates_allowed: form.affiliates_allowed,
+      affiliate_percent: form.affiliate_percent,
     }
 
     const token = getToken()
@@ -296,6 +300,8 @@ export function CourseDataSection({
       <AffiliateOptInField
         allowed={form.affiliates_allowed}
         onAllowedChange={(v) => setForm({ ...form, affiliates_allowed: v })}
+        percent={form.affiliate_percent}
+        onPercentChange={(v) => setForm({ ...form, affiliate_percent: v })}
         disabled={isSaving}
       />
 

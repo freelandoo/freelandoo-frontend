@@ -20,9 +20,12 @@ type Pricing = {
 export function CourseFeeBreakdown({
   priceCents,
   affiliatesAllowed,
+  affiliatePercent = null,
 }: {
   priceCents: number | null
   affiliatesAllowed?: boolean
+  /** % do próprio curso (mig 192). null = padrão da plataforma. */
+  affiliatePercent?: number | null
 }) {
   const locale = useLocale()
   const t = useTranslations("Account")
@@ -43,7 +46,10 @@ export function CourseFeeBreakdown({
     setLoading(true)
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
     const params = new URLSearchParams({ seller_cents: String(priceCents) })
-    if (affiliatesAllowed) params.set("affiliates_allowed", "true")
+    if (affiliatesAllowed) {
+      params.set("affiliates_allowed", "true")
+      if (affiliatePercent != null) params.set("affiliate_percent", String(affiliatePercent))
+    }
     fetch(`/api/store/price-preview?${params.toString()}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     })
@@ -60,7 +66,7 @@ export function CourseFeeBreakdown({
     return () => {
       cancelled = true
     }
-  }, [priceCents, affiliatesAllowed])
+  }, [priceCents, affiliatesAllowed, affiliatePercent])
 
   if (!priceCents || priceCents <= 0) {
     return (

@@ -226,6 +226,7 @@ export function CourseLandingView({ courseId }: Props) {
     profile_id: "",
   })
   const [affiliatesAllowed, setAffiliatesAllowed] = useState(false)
+  const [affiliatePercent, setAffiliatePercent] = useState<number | null>(null)
   const [savingField, setSavingField] = useState<string | null>(null)
   const courseSyncId = course?.id
 
@@ -239,6 +240,7 @@ export function CourseLandingView({ courseId }: Props) {
       profile_id: course.profile_id || "",
     })
     setAffiliatesAllowed(course.affiliates_allowed ?? false)
+    setAffiliatePercent(course.affiliate_percent ?? null)
     // sincroniza só quando troca de curso — não sobrescreve edição em andamento
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseSyncId])
@@ -288,6 +290,26 @@ export function CourseLandingView({ courseId }: Props) {
         await updateCourse({ affiliates_allowed: next })
       } catch (err) {
         setAffiliatesAllowed(prev) // reverte se falhar
+        toast.error(err instanceof Error ? err.message : t("saveFailed", "Falha ao salvar"))
+      } finally {
+        setSavingField(null)
+      }
+    },
+    [course, t, updateCourse],
+  )
+
+  // % de afiliado do curso (mig 192). Salva no blur para não bater na API a
+  // cada dígito — o breakdown reage na hora pelo estado local.
+  const saveAffiliatePercent = useCallback(
+    async (next: number | null) => {
+      if (!course) return
+      const prev = course.affiliate_percent ?? null
+      if (next === prev) return
+      setSavingField("affiliates")
+      try {
+        await updateCourse({ affiliate_percent: next })
+      } catch (err) {
+        setAffiliatePercent(prev)
         toast.error(err instanceof Error ? err.message : t("saveFailed", "Falha ao salvar"))
       } finally {
         setSavingField(null)
@@ -720,6 +742,11 @@ export function CourseLandingView({ courseId }: Props) {
             <AffiliateOptInField
               allowed={affiliatesAllowed}
               onAllowedChange={(v) => void saveAffiliates(v)}
+              percent={affiliatePercent}
+              onPercentChange={(v) => {
+                setAffiliatePercent(v)
+                void saveAffiliatePercent(v)
+              }}
               disabled={savingField === "affiliates"}
               className="mt-5 rounded-none border-2 border-white/12 bg-[#0E0B06]"
             />
@@ -728,6 +755,7 @@ export function CourseLandingView({ courseId }: Props) {
             <CourseFeeBreakdown
               priceCents={parsePriceInput(form.price_text)}
               affiliatesAllowed={affiliatesAllowed}
+              affiliatePercent={affiliatePercent}
             />
           </div>
         </section>

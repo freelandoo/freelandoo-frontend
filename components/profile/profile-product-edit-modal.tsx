@@ -62,6 +62,7 @@ export interface ProfileProduct {
   is_active: boolean
   id_product_category: number | null
   affiliates_allowed?: boolean
+  affiliate_percent?: number | null
   delivery_mode?: "shipping" | "local_pickup"
   attributes?: ProductAttributes | null
   created_at?: string
@@ -247,6 +248,7 @@ export function ProfileProductEditModal({
     is_active: true,
     id_product_category: "" as string,
     affiliates_allowed: false,
+    affiliate_percent: null as number | null,
     delivery_mode: "shipping" as "shipping" | "local_pickup",
   })
   const [attrs, setAttrs] = useState<ProductAttributes>({})
@@ -311,6 +313,7 @@ export function ProfileProductEditModal({
       is_active: true,
       id_product_category: "",
       affiliates_allowed: false,
+      affiliate_percent: null,
       delivery_mode: "shipping",
     })
     setAttrs({})
@@ -339,6 +342,7 @@ export function ProfileProductEditModal({
       is_active: product.is_active !== false,
       id_product_category: product.id_product_category != null ? String(product.id_product_category) : "",
       affiliates_allowed: product.affiliates_allowed ?? false,
+      affiliate_percent: product.affiliate_percent ?? null,
       delivery_mode: product.delivery_mode === "local_pickup" ? "local_pickup" : "shipping",
     })
     setAttrs(product.attributes && typeof product.attributes === "object" ? product.attributes : {})
@@ -380,14 +384,19 @@ export function ProfileProductEditModal({
     const t = window.setTimeout(async () => {
       try {
         const params = new URLSearchParams({ seller_cents: String(cents) })
-        if (form.affiliates_allowed) params.set("affiliates_allowed", "true")
+        if (form.affiliates_allowed) {
+          params.set("affiliates_allowed", "true")
+          if (form.affiliate_percent != null) {
+            params.set("affiliate_percent", String(form.affiliate_percent))
+          }
+        }
         const r = await fetch(`/api/store/price-preview?${params.toString()}`, { headers: headers() })
         const d = await r.json()
         if (!cancelled && r.ok) setPricingPreview(d.pricing)
       } catch { /* silencioso */ }
     }, 300)
     return () => { cancelled = true; window.clearTimeout(t) }
-  }, [open, form.price_reais, form.affiliates_allowed])
+  }, [open, form.price_reais, form.affiliates_allowed, form.affiliate_percent])
 
   const isEdit = product !== null
   const mediaUrl = (pid: number) =>
@@ -625,6 +634,7 @@ export function ProfileProductEditModal({
       is_active: form.is_active,
       id_product_category: categoryId,
       affiliates_allowed: form.affiliates_allowed,
+      affiliate_percent: form.affiliate_percent,
       delivery_mode: form.delivery_mode,
       attributes: attrs,
     }
@@ -1148,6 +1158,8 @@ export function ProfileProductEditModal({
             variant="light"
             allowed={form.affiliates_allowed}
             onAllowedChange={(v) => setForm((f) => ({ ...f, affiliates_allowed: v }))}
+            percent={form.affiliate_percent}
+            onPercentChange={(v) => setForm((f) => ({ ...f, affiliate_percent: v }))}
             disabled={saving}
           />
         </div>

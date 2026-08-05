@@ -108,6 +108,7 @@ export function ProfileServiceEditModal({
     is_active: true,
     member_profile_ids: [] as string[],
     affiliates_allowed: false,
+    affiliate_percent: null as number | null,
   })
   const [saving, setSaving] = useState(false)
   const [bookingFees, setBookingFees] = useState({
@@ -150,6 +151,7 @@ export function ProfileServiceEditModal({
       is_active: true,
       member_profile_ids: [],
       affiliates_allowed: false,
+      affiliate_percent: null,
     })
   }, [open, service])
 
@@ -163,6 +165,7 @@ export function ProfileServiceEditModal({
       is_active: service.is_active !== false,
       member_profile_ids: service.member_profile_ids || [],
       affiliates_allowed: service.affiliates_allowed ?? false,
+      affiliate_percent: service.affiliate_percent ?? null,
     })
   }, [open, service])
 
@@ -416,6 +419,7 @@ export function ProfileServiceEditModal({
       price_amount,
       is_active: serviceForm.is_active,
       affiliates_allowed: serviceForm.affiliates_allowed,
+      affiliate_percent: serviceForm.affiliate_percent,
     }
     if (isClan) body.member_profile_ids = serviceForm.member_profile_ids
     try {
@@ -523,12 +527,14 @@ export function ProfileServiceEditModal({
             const stripeFee = Math.round((baseCents * bookingFees.stripe_fee_percent) / 100)
             const serviceFee = bookingFees.service_fee_cents
             const clientTotal = baseCents + stripeFee + serviceFee
-            // Comissão de afiliado (aditiva): % global sobre o preço cheio do
-            // cliente, somada por cima — mesma regra do BookingService no backend.
-            const affiliatePct = bookingFees.affiliate_commission_percent
+            // Comissão de afiliado (aditiva): % do PRÓPRIO serviço (mig 192),
+            // caindo no padrão da plataforma quando o dono não definiu. Base = preço
+            // do serviço, somada por cima — mesma conta do BookingService no backend.
+            const affiliatePct =
+              serviceForm.affiliate_percent ?? bookingFees.affiliate_commission_percent
             const affiliateFee =
               serviceForm.affiliates_allowed && affiliatePct > 0
-                ? Math.round((clientTotal * affiliatePct) / 100)
+                ? Math.round((baseCents * affiliatePct) / 100)
                 : 0
             const clientPays = clientTotal + affiliateFee
             return (
@@ -726,6 +732,8 @@ export function ProfileServiceEditModal({
             variant="light"
             allowed={serviceForm.affiliates_allowed}
             onAllowedChange={(v) => setServiceForm((f) => ({ ...f, affiliates_allowed: v }))}
+            percent={serviceForm.affiliate_percent}
+            onPercentChange={(v) => setServiceForm((f) => ({ ...f, affiliate_percent: v }))}
             disabled={saving}
           />
         </div>

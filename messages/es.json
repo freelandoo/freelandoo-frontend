@@ -1478,7 +1478,13 @@
     "agendaSubtitle": "Calendario mensual y lista de tus reservas (la misma experiencia de la página Agenda).",
     "functionsStoreCta": "Tienda de Funciones",
     "functionsStoreHint": "Compra nuevas funciones para tu cuenta.",
-    "functionsEmptyOwned": "Todavía no tienes funciones. Visita la Tienda de Funciones."
+    "functionsEmptyOwned": "Todavía no tienes funciones. Visita la Tienda de Funciones.",
+    "affiliateOptInTitle": "Acepto que afiliados vendan este artículo",
+    "affiliateOptInDesc": "Los afiliados promocionan y venden por ti. Sigues recibiendo el mismo valor — la comisión se suma por encima de tu precio.",
+    "affiliatePercentLabel": "Comisión que ofreces",
+    "affiliatePercentHint": "Entre {min}% y {max}% de tu valor. Vacío usa el estándar de la plataforma ({default}%).",
+    "affiliatePercentPlaceholder": "Estándar ({default}%)",
+    "affiliatePercentInvalid": "Usa un valor entre {min}% y {max}%."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

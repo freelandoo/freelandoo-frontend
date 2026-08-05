@@ -1478,7 +1478,13 @@
     "agendaSubtitle": "Calendário mensal e lista dos seus agendamentos (mesma experiência da página Agenda).",
     "functionsStoreCta": "Loja de Funções",
     "functionsStoreHint": "Compre novas funções pra sua conta.",
-    "functionsEmptyOwned": "Você ainda não tem funções. Visite a Loja de Funções."
+    "functionsEmptyOwned": "Você ainda não tem funções. Visite a Loja de Funções.",
+    "affiliateOptInTitle": "Aceito que afiliados vendam este item",
+    "affiliateOptInDesc": "Afiliados divulgam e vendem por você. Você continua recebendo o mesmo valor — a comissão entra por cima do seu preço.",
+    "affiliatePercentLabel": "Comissão que você oferece",
+    "affiliatePercentHint": "Entre {min}% e {max}% do seu valor. Vazio usa o padrão da plataforma ({default}%).",
+    "affiliatePercentPlaceholder": "Padrão ({default}%)",
+    "affiliatePercentInvalid": "Use um valor entre {min}% e {max}%."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
