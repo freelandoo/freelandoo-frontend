@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { getVisitorToken } from "@/lib/visitor-token"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -41,7 +42,9 @@ export default function LoginPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, senha: password }),
+          // visitor_token: o backend casa com esta conta as atribuições de
+          // conteúdo feitas antes do login (mig 194).
+          body: JSON.stringify({ email, senha: password, visitor_token: getVisitorToken() }),
         },
         9000
       )
