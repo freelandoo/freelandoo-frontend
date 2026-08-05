@@ -1484,7 +1484,13 @@
     "affiliatePercentLabel": "Comissão que você oferece",
     "affiliatePercentHint": "Entre {min}% e {max}% do seu valor. Vazio usa o padrão da plataforma ({default}%).",
     "affiliatePercentPlaceholder": "Padrão ({default}%)",
-    "affiliatePercentInvalid": "Use um valor entre {min}% e {max}%."
+    "affiliatePercentInvalid": "Use um valor entre {min}% e {max}%.",
+    "myReferralsTitle": "Meus indicados",
+    "myReferralsDesc": "Quem usou seu cupom numa compra da plataforma fica vinculado a você para sempre — toda compra futura dessa pessoa gera comissão.",
+    "myReferralsEmpty": "Ninguém vinculado ainda. Compartilhe seu cupom: o primeiro que comprar algo da plataforma por ele fica seu para sempre.",
+    "myReferralsCount": "Vinculados",
+    "myReferralsRecurring": "Comissão por vínculo (30 dias)",
+    "myReferralsSince": "desde {date}"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

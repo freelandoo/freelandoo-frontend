@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PageShell, TabloidBackLink, TabloidPageIntro } from "@/components/tabloide"
 import { useActionConsent } from "@/hooks/use-action-consent"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 
 /* ──────────────────────────────────────────────────────────────────── */
 /*  Types                                                              */
@@ -558,6 +558,108 @@ function EmptyEarnings({ tab }: { tab: Tab }) {
   )
 }
 
+interface ReferralRow {
+  id_referral: string
+  username: string | null
+  display_name: string | null
+  bound_at: string
+  earned_cents: number
+}
+
+/**
+ * Meus indicados — o ativo do afiliado no modelo vitalício (mig 193). Sem esta
+ * lista ele não tem como saber que segue ganhando de quem indicou meses atrás.
+ */
+function MyReferrals() {
+  const t = useTranslations("Account")
+  const locale = useLocale()
+  const [rows, setRows] = useState<ReferralRow[]>([])
+  const [total, setTotal] = useState(0)
+  const [recurring30d, setRecurring30d] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+    if (!token) { setLoading(false); return }
+    let cancelled = false
+    fetch("/api/me/affiliate/referrals", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        setRows(Array.isArray(d.items) ? d.items : [])
+        setTotal(Number(d.total || 0))
+        setRecurring30d(Number(d.totals?.recurring_cents_30d || 0))
+      })
+      .catch(() => { /* silencioso */ })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const money = (cents: number) =>
+    (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
+
+  return (
+    <Card className="border-white/[0.06] bg-white/[0.02]">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2 text-white">
+          <Users className="h-4 w-4" />
+          {t("myReferralsTitle", "Meus indicados")}
+        </CardTitle>
+        <CardDescription>
+          {t("myReferralsDesc", "Quem usou seu cupom numa compra da plataforma fica vinculado a você para sempre — toda compra futura dessa pessoa gera comissão.")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="py-6 text-center text-sm text-white/45">{t("loading", "Carregando...")}</div>
+        ) : total === 0 ? (
+          <div className="border border-dashed border-white/15 p-6 text-center text-sm text-white/45">
+            {t("myReferralsEmpty", "Ninguém vinculado ainda. Compartilhe seu cupom: o primeiro que comprar algo da plataforma por ele fica seu para sempre.")}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-white/40">
+                  {t("myReferralsCount", "Vinculados")}
+                </p>
+                <p className="text-2xl font-bold text-white">{total}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-white/40">
+                  {t("myReferralsRecurring", "Comissão por vínculo (30 dias)")}
+                </p>
+                <p className="text-2xl font-bold text-yellow-300">{money(recurring30d)}</p>
+              </div>
+            </div>
+            <div className="divide-y divide-white/[0.06]">
+              {rows.map((r) => (
+                <div key={r.id_referral} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">
+                      {r.display_name || r.username || "—"}
+                    </p>
+                    <p className="truncate text-[12px] text-white/40">
+                      {r.username ? `@${r.username} · ` : ""}
+                      {t("myReferralsSince", "desde {date}").replace(
+                        "{date}",
+                        new Date(r.bound_at).toLocaleDateString(locale),
+                      )}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-mono text-sm text-yellow-200">
+                    {money(r.earned_cents)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function AfiliadoPanel({
   affiliate, defaultRule, coupons, pixForm, setPixForm, onSavePix, savingPix, pixSaved,
 }: {
@@ -611,6 +713,8 @@ function AfiliadoPanel({
           )}
         </CardContent>
       </Card>
+
+      <MyReferrals />
 
       {/* Regra */}
       {defaultRule && (

@@ -1484,7 +1484,13 @@
     "affiliatePercentLabel": "Comisión que ofreces",
     "affiliatePercentHint": "Entre {min}% y {max}% de tu valor. Vacío usa el estándar de la plataforma ({default}%).",
     "affiliatePercentPlaceholder": "Estándar ({default}%)",
-    "affiliatePercentInvalid": "Usa un valor entre {min}% y {max}%."
+    "affiliatePercentInvalid": "Usa un valor entre {min}% y {max}%.",
+    "myReferralsTitle": "Mis referidos",
+    "myReferralsDesc": "Quien usó tu cupón en una compra de la plataforma queda vinculado a ti para siempre — cada compra futura de esa persona genera comisión.",
+    "myReferralsEmpty": "Nadie vinculado todavía. Comparte tu cupón: la primera persona que compre algo de la plataforma con él es tuya para siempre.",
+    "myReferralsCount": "Vinculados",
+    "myReferralsRecurring": "Comisión por vínculo (30 días)",
+    "myReferralsSince": "desde {date}"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
