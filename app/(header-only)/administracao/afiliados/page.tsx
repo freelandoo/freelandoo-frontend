@@ -18,7 +18,10 @@ import {
   BarChart3,
   History,
   AlertTriangle,
+  Sliders,
 } from "lucide-react"
+
+import { ProgramSection } from "./_components/program-section"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,7 +43,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
-type Section = "overview" | "affiliates" | "settings" | "conversions" | "payouts" | "audit"
+type Section =
+  | "overview"
+  | "affiliates"
+  | "program"
+  | "settings"
+  | "conversions"
+  | "payouts"
+  | "audit"
 
 interface Affiliate {
   id_affiliate: string
@@ -179,11 +189,18 @@ export default function AdminAfiliadosPage() {
             <Users className="h-4 w-4" /> Afiliados
           </Button>
           <Button
+            variant={section === "program" ? "default" : "outline"}
+            onClick={() => setSection("program")}
+            className="gap-2"
+          >
+            <Sliders className="h-4 w-4" /> Programa
+          </Button>
+          <Button
             variant={section === "settings" ? "default" : "outline"}
             onClick={() => setSection("settings")}
             className="gap-2"
           >
-            <Settings2 className="h-4 w-4" /> Regras
+            <Settings2 className="h-4 w-4" /> Regra legada
           </Button>
           <Button
             variant={section === "conversions" ? "default" : "outline"}
@@ -210,6 +227,7 @@ export default function AdminAfiliadosPage() {
 
         {section === "overview" && <OverviewSection />}
         {section === "affiliates" && <AffiliatesSection />}
+        {section === "program" && <ProgramSection />}
         {section === "settings" && <SettingsSection />}
         {section === "conversions" && <ConversionsSection />}
         {section === "payouts" && <PayoutsSection />}
