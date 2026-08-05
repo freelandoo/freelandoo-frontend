@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 import { machineDescription } from "@/lib/constants/machine-descriptions"
 import { checkPassword, isPasswordStrong, isAdult, isValidEmail, calculateAge, isValidCPF, formatCPF, onlyDigits } from "@/lib/validation/signup"
+import { getVisitorToken } from "@/lib/visitor-token"
 import { Check, X, ArrowLeft, ArrowRight, Info, ShieldCheck, Search, TrendingUp } from "lucide-react"
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -286,6 +287,9 @@ export default function CadastroPage() {
       cpf: cpfDigits,
       sexo: formData.sexo || null,
       senha: formData.senha,
+      // Casa com a conta nova as atribuições de conteúdo compartilhado feitas
+      // antes do cadastro (mig 194).
+      visitor_token: getVisitorToken(),
     }
     if (isMinorBirth) {
       payload.responsible_code = responsibleCode

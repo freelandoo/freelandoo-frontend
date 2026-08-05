@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Script from "next/script"
 import { extractAuthSession, setSession } from "@/lib/auth"
 import { clientFetchWithTimeout, isClientFetchTimeout } from "@/lib/fetch-with-timeout"
+import { getVisitorToken } from "@/lib/visitor-token"
 
 declare global {
   interface Window {
@@ -82,7 +83,10 @@ export function GoogleSignInButton({
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential }),
+            // visitor_token: Google é cadastro e login de uma vez, então é aqui
+            // que o backend casa com a conta as atribuições de conteúdo feitas
+            // antes do login (mig 194).
+            body: JSON.stringify({ credential, visitor_token: getVisitorToken() }),
           },
           9000
         )
