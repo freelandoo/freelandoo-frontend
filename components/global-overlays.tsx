@@ -19,6 +19,12 @@ const CommunityVoteModal = dynamic(
   () => import("@/components/community/community-vote-modal").then((m) => m.CommunityVoteModal),
   { ssr: false }
 )
+// Enquete do condomínio (mig 199) — outra coisa que a votação de liderança
+// acima: consulta entre moradores, voto único, não troca papel de ninguém.
+const CondoPollModal = dynamic(
+  () => import("@/components/condo/condo-poll-modal").then((m) => m.CondoPollModal),
+  { ssr: false }
+)
 const InstallPrompt = dynamic(
   () => import("@/components/pwa/install-prompt").then((m) => m.InstallPrompt),
   { ssr: false }
@@ -34,6 +40,7 @@ export function GlobalOverlays() {
       <OnlineHeartbeat />
       <AdminAlerts />
       <CommunityVoteModal />
+      <CondoPollModal />
       <InstallPrompt />
       <PullToRefresh />
     </>

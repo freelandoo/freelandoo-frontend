@@ -3,7 +3,7 @@
 // Aba "Comunidades" do enxame: vitrine de comunidades filtrada por enxame
 // (id_machine). Mesma malha edge-to-edge das outras abas (Cursos/Serviços).
 
-import { type RefObject } from "react"
+import { useState, type RefObject } from "react"
 import { Loader2, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
@@ -20,14 +20,42 @@ interface Props {
 
 export function CommunitiesGrid({ machineId, regionId, q, rootRef }: Props) {
   const t = useTranslations("Search")
+  const tc = useTranslations("Community")
+  // Modalidade (mig 196): "" = todas. O filtro entra na querystring, então o
+  // scroll infinito recarrega sozinho (filterKey inclui o kind).
+  const [kind, setKind] = useState<"" | "common" | "condo">("")
 
   const query = (() => {
     const params = new URLSearchParams()
     if (machineId) params.set("id_machine", String(machineId))
     if (regionId) params.set("id_region", String(regionId))
     if (q) params.set("q", q)
+    if (kind) params.set("kind", kind)
     return params.toString()
   })()
+
+  const kindChips = (
+    <div className="mx-auto flex w-full max-w-[640px] flex-wrap items-center gap-2 px-3 py-3 md:max-w-[760px] lg:max-w-none">
+      {([
+        ["", tc("kindAll", "Todos")],
+        ["common", tc("kindCommon", "Comunidade")],
+        ["condo", tc("kindCondo", "Condomínio")],
+      ] as const).map(([key, label]) => (
+        <button
+          key={key || "all"}
+          type="button"
+          onClick={() => setKind(key)}
+          className="border-2 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] transition"
+          style={{
+            borderColor: kind === key ? "#F2B705" : "rgba(255,255,255,0.12)",
+            color: kind === key ? "#F2B705" : "rgba(255,255,255,0.65)",
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
 
   const { items, loading, loadingMore, error, hasMore, sentinelRef } =
     useInfiniteFetch<CommunityTileData>({
@@ -46,16 +74,26 @@ export function CommunitiesGrid({ machineId, regionId, q, rootRef }: Props) {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/60" />
-      </div>
+      <>
+        {kindChips}
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+        </div>
+      </>
     )
   }
   if (error && items.length === 0) {
-    return <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
+    return (
+      <>
+        {kindChips}
+        <div className="px-4 py-10 text-center text-sm text-red-300">{error}</div>
+      </>
+    )
   }
   if (items.length === 0) {
     return (
+      <>
+        {kindChips}
       <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center px-6 py-16 text-center">
         <div className="rounded-full border border-white/[0.08] bg-white/[0.02] p-3">
           <Users className="h-5 w-5 text-white/55" />
@@ -65,11 +103,13 @@ export function CommunitiesGrid({ machineId, regionId, q, rootRef }: Props) {
           {t("noCommunitiesHint", "Escolha outro enxame ou crie a sua comunidade.")}
         </p>
       </div>
+      </>
     )
   }
 
   return (
     <>
+      {kindChips}
       <div className="mx-auto grid w-full max-w-[640px] grid-cols-2 gap-px bg-white/[0.03] md:max-w-[760px] lg:max-w-none lg:grid-cols-3">
         {items.map((c) => (
           <CommunityTile key={c.id_profile} community={c} />

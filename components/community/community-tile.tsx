@@ -5,7 +5,7 @@
 // Reusado em: aba "Comunidades" do enxame, /comunidades e a aba do /account.
 
 import Link from "next/link"
-import { Users, Trophy, Crown, Shield, Lock } from "lucide-react"
+import { Users, Trophy, Crown, Shield, Lock, Building2, MapPin } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
@@ -21,6 +21,11 @@ export type CommunityTileData = {
   role?: "leader" | "vice" | "member" | null
   privacy?: "public" | "private"
   monthly_cents?: number | null
+  /** Modalidade (mig 196). Condomínio mostra bairro/cidade no lugar do enxame. */
+  kind?: "common" | "academy" | "condo"
+  condo_neighborhood?: string | null
+  municipio?: string | null
+  estado?: string | null
 }
 
 // Mesma paleta de accent da página da comunidade (detalhe recolorível).
@@ -63,14 +68,21 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
         ) : null}
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-        {community.enxame_name && (
+        {community.kind === "condo" ? (
+          <span
+            className="absolute left-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] backdrop-blur"
+            style={{ color: accent }}
+          >
+            <Building2 className="h-3 w-3" /> {t("kindCondo", "Condomínio")}
+          </span>
+        ) : community.enxame_name ? (
           <span
             className="absolute left-2 top-2 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] backdrop-blur"
             style={{ color: accent }}
           >
             {tx.enxame(null, community.enxame_name)}
           </span>
-        )}
+        ) : null}
         <span className="absolute right-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
           <Trophy className="h-3 w-3" style={{ color: accent }} /> {community.xp_level}
         </span>
@@ -96,9 +108,19 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
 
       <div className="flex flex-1 flex-col gap-1.5 border-t-2 border-[#0B0B0D] bg-[#F1EDE2] p-3">
         <p className="line-clamp-1 text-[13px] font-bold leading-tight text-[#0B0B0D]">{community.display_name}</p>
+        {/* Condomínio: localização pública é bairro/cidade — rua e número nunca
+            saem na vitrine (mig 196). */}
+        {community.kind === "condo" && (community.condo_neighborhood || community.municipio) && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#6B6457]">
+            <MapPin className="h-3 w-3" />
+            {[community.condo_neighborhood, community.municipio, community.estado].filter(Boolean).join(" · ")}
+          </span>
+        )}
         <div className="mt-auto flex items-center justify-between gap-2 text-[10px] font-semibold text-[#6B6457]">
           <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" /> {community.member_count} {t("membersCount", "membros")}
+            <Users className="h-3 w-3" />{" "}
+            {community.member_count}{" "}
+            {community.kind === "condo" ? t("residentsCount", "moradores") : t("membersCount", "membros")}
           </span>
           {roleLabel && (
             <span className="inline-flex items-center gap-1 font-extrabold uppercase tracking-[0.08em]" style={{ color: "#9a7400" }}>

@@ -14,6 +14,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
+import type { CondoCommunity } from "./_components/condo-view"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -25,6 +26,11 @@ const CommentsPanel = dynamic(
 )
 const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
+// Condomínio tem tela própria (migs 196-199): carregada só quando é o caso.
+const CondoView = dynamic(
+  () => import("./_components/condo-view").then((m) => m.CondoView),
   { ssr: false }
 )
 
@@ -45,6 +51,16 @@ type Community = {
   monthly_cents?: number | null
   viewer_is_member?: boolean
   viewer_sub_status?: string | null
+  // Modalidade (mig 196). 'condo' cai numa tela própria (CondoView) logo abaixo
+  // dos guards de loading/erro — regras e privacidade são outras.
+  kind?: "common" | "academy" | "condo"
+  address?: CondoCommunity["address"]
+  address_is_full?: boolean
+  viewer_is_admin?: boolean
+  viewer_is_resident?: boolean
+  viewer_has_pending_claim?: boolean
+  viewer_units?: { id_unit: number; number: string; block_name: string | null }[]
+  viewer_parking?: { id_spot: number; code: string }[]
 }
 type MembershipSummary = {
   active_subs: number
@@ -519,6 +535,13 @@ export default function CommunityDetailPage() {
         </div>
       </div>
     )
+  }
+
+  // Condomínio: modalidade com regras próprias (privacidade de endereço,
+  // unidades, avisos direcionados, enquetes). Sai por outra tela — depois de
+  // todos os hooks, então não viola rules-of-hooks.
+  if (community.kind === "condo") {
+    return <CondoView community={community as CondoCommunity} onReload={loadAll} />
   }
 
   const bannerSrc = bannerPreview || community.banner_url

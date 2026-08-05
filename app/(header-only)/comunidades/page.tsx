@@ -20,12 +20,17 @@ export default function CommunityListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  // Modalidade (mig 196): "" = todas. Condomínio é achado por nome OU endereço.
+  const [kind, setKind] = useState<"" | "common" | "condo">("")
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const qs = search.trim() ? `?q=${encodeURIComponent(search.trim())}` : ""
+      const params = new URLSearchParams()
+      if (search.trim()) params.set("q", search.trim())
+      if (kind) params.set("kind", kind)
+      const qs = params.toString() ? `?${params.toString()}` : ""
       const res = await fetch(`/api/communities${qs}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t("loadError", "Erro ao carregar comunidades"))
@@ -35,7 +40,7 @@ export default function CommunityListPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, t])
+  }, [search, kind, t])
 
   useEffect(() => {
     load()
@@ -55,7 +60,7 @@ export default function CommunityListPage() {
           <div className="relative flex-1">
             <input
               className={inputCls}
-              placeholder={t("searchPlaceholder", "Buscar comunidade...")}
+              placeholder={t("searchPlaceholderWithAddress", "Buscar por nome ou endereço...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && load()}
@@ -81,6 +86,34 @@ export default function CommunityListPage() {
             className="flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#F2B705]/40 px-4 text-sm font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/10"
           >
             <Plus className="h-4 w-4" /> {t("create", "Criar comunidade")}
+          </Link>
+        </div>
+
+        {/* Tipo: comunidade comum × condomínio. Academia tem vitrine própria. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {([
+            ["", t("kindAll", "Todos")],
+            ["common", t("kindCommon", "Comunidade")],
+            ["condo", t("kindCondo", "Condomínio")],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key || "all"}
+              type="button"
+              onClick={() => setKind(key)}
+              className="border-2 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] transition"
+              style={{
+                borderColor: kind === key ? "#F2B705" : "rgba(245,241,232,0.15)",
+                color: kind === key ? "#F2B705" : "rgba(245,241,232,0.7)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          <Link
+            href="/academias"
+            className="border-2 border-[#F5F1E8]/15 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8]/70 transition hover:border-[#F2B705] hover:text-[#F2B705]"
+          >
+            {t("kindAcademy", "Academia")}
           </Link>
         </div>
 

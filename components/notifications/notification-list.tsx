@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock } from "lucide-react"
+import { Heart, MessageSquare, UserPlus, Mail, ShieldCheck, KeyRound, Package, GraduationCap, CalendarCheck, ClipboardList, PackageSearch, Users, Gift, DollarSign, Clock, Building2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
@@ -102,6 +102,31 @@ function labelFor(item: NotificationItem, t: TFn) {
         ? sub("liveGiftNamed", "{who} te enviou {gift} na live").replace("{gift}", giftName)
         : sub("liveGiftReceived", "{who} te enviou um presente na live")
     }
+    // Condomínio (migs 196-199). target_label = "Bloco A · 101" ou "Vaga V1";
+    // o id numérico do aviso/reivindicação viaja no payload, o entity_id é o
+    // condomínio (a coluna é UUID).
+    case "condo_claim_pending": {
+      const target = (item.payload as { target_label?: string })?.target_label || ""
+      return sub("condoClaimPending", "{who} reivindicou {target}").replace("{target}", target)
+    }
+    case "condo_claim_resolved": {
+      const target = (item.payload as { target_label?: string })?.target_label || ""
+      const approved = (item.payload as { status?: string })?.status === "approved"
+      return (approved
+        ? t("condoClaimApproved", "Sua reivindicação de {target} foi aprovada")
+        : t("condoClaimRejected", "Sua reivindicação de {target} foi recusada")
+      ).replace("{target}", target)
+    }
+    case "condo_notice_received": {
+      const preview = (item.payload as { preview?: string })?.preview
+      const base = t("condoNoticeReceived", "Novo aviso para sua unidade")
+      return preview ? `${base}: ${preview}` : base
+    }
+    case "condo_poll_opened": {
+      const preview = (item.payload as { preview?: string })?.preview
+      const base = t("condoPollOpened", "Nova enquete no condomínio")
+      return preview ? `${base}: ${preview}` : base
+    }
     case "affiliate_commission_released":
       return t("affiliateCommission", "Comissão de afiliado confirmada") + moneySuffix(item.payload)
     case "subscription_expiring":
@@ -142,6 +167,10 @@ function iconFor(type: string) {
     case "clan_invite":
     case "clan_member_joined": return <Users className="h-3.5 w-3.5" />
     case "live_gift_received": return <Gift className="h-3.5 w-3.5" />
+    case "condo_claim_pending":
+    case "condo_claim_resolved":
+    case "condo_notice_received":
+    case "condo_poll_opened": return <Building2 className="h-3.5 w-3.5" />
     case "affiliate_commission_released": return <DollarSign className="h-3.5 w-3.5" />
     case "subscription_expiring":
     case "premium_expiring":
@@ -179,6 +208,11 @@ function hrefFor(item: NotificationItem): string {
       return "/account/clans"
     case "live_gift_received":
       return "/account"
+    case "condo_claim_pending":
+    case "condo_claim_resolved":
+    case "condo_notice_received":
+    case "condo_poll_opened":
+      return item.entity_id ? `/comunidades/${item.entity_id}` : "/comunidades"
     case "affiliate_commission_released":
       return "/account/afiliado"
     case "subscription_expiring":
