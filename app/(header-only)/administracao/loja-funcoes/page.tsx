@@ -27,10 +27,13 @@ interface FunctionProductAdmin {
   placeholder_color: string
   image_url: string | null
   price_cents: number
+  /** Preço alternativo em Poléns (mig 195). 0/null = só dinheiro. */
+  price_polens: number | null
   is_for_sale: boolean
   sort_order: number
   owners: number
   revenue_cents: number
+  revenue_polens: number
 }
 
 interface PurchaseRow {
@@ -40,6 +43,7 @@ interface PurchaseRow {
   feature_key: string
   status: string
   amount_cents: number
+  amount_polens: number
   payment_provider: string
   paid_at: string | null
   refunded_at: string | null
@@ -145,6 +149,7 @@ function ProductsSection() {
               <th className="px-2 py-2">Função</th>
               <th className="px-2 py-2">Chave</th>
               <th className="px-2 py-2">Preço</th>
+              <th className="px-2 py-2">Poléns</th>
               <th className="px-2 py-2">À venda</th>
               <th className="px-2 py-2">Donos</th>
               <th className="px-2 py-2">Receita</th>
@@ -159,6 +164,11 @@ function ProductsSection() {
                 <td className="px-2 py-2 font-semibold">{p.nav_label}</td>
                 <td className="px-2 py-2 font-mono text-xs text-muted-foreground">{p.feature_key}</td>
                 <td className="px-2 py-2">{fmtBRL(p.price_cents)}</td>
+                <td className="px-2 py-2 tabular-nums">
+                  {Number(p.price_polens) > 0
+                    ? `${Number(p.price_polens).toLocaleString("pt-BR")} ⬢`
+                    : <span className="text-muted-foreground">—</span>}
+                </td>
                 <td className="px-2 py-2">
                   {p.is_for_sale ? (
                     <span className="inline-flex items-center gap-1 text-green-500"><Check className="h-3.5 w-3.5" /> sim</span>
@@ -167,7 +177,14 @@ function ProductsSection() {
                   )}
                 </td>
                 <td className="px-2 py-2 tabular-nums">{p.owners}</td>
-                <td className="px-2 py-2 tabular-nums">{fmtBRL(p.revenue_cents)}</td>
+                <td className="px-2 py-2 tabular-nums">
+                  {fmtBRL(p.revenue_cents)}
+                  {Number(p.revenue_polens) > 0 && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      + {Number(p.revenue_polens).toLocaleString("pt-BR")} ⬢
+                    </span>
+                  )}
+                </td>
                 <td className="px-2 py-2">
                   <span className="inline-flex gap-1">
                     <span className="h-4 w-4 border border-border" style={{ backgroundColor: p.background_color }} title={`fundo ${p.background_color}`} />
@@ -188,7 +205,7 @@ function ProductsSection() {
               </tr>
             ))}
             {!loading && products.length === 0 && (
-              <tr><td colSpan={9} className="px-2 py-6 text-center text-muted-foreground">Nada aqui — a mig 191 roda no boot do backend.</td></tr>
+              <tr><td colSpan={10} className="px-2 py-6 text-center text-muted-foreground">Nada aqui — a mig 191 roda no boot do backend.</td></tr>
             )}
           </tbody>
         </table>
@@ -225,6 +242,7 @@ function ProductEditModal({
     text_color: product.text_color,
     placeholder_color: product.placeholder_color,
     price_reais: (product.price_cents / 100).toFixed(2).replace(".", ","),
+    price_polens: String(Number(product.price_polens) || 0),
     is_for_sale: product.is_for_sale,
     sort_order: String(product.sort_order),
   })
@@ -256,7 +274,14 @@ function ProductEditModal({
       fd.append("accent_color", form.accent_color)
       fd.append("text_color", form.text_color)
       fd.append("placeholder_color", form.placeholder_color)
+      const pricePolens = Math.round(Number(form.price_polens.replace(/\D/g, "") || 0))
+      if (!Number.isFinite(pricePolens) || pricePolens < 0) {
+        setError("Preço em Poléns inválido")
+        setSaving(false)
+        return
+      }
       fd.append("price_cents", String(priceCents))
+      fd.append("price_polens", String(pricePolens))
       fd.append("is_for_sale", String(form.is_for_sale))
       fd.append("sort_order", form.sort_order)
       if (file) fd.append("image", file)
@@ -344,6 +369,10 @@ function ProductEditModal({
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Preço (R$)
             <input value={form.price_reais} onChange={(e) => set("price_reais", e.target.value)} inputMode="decimal" className="border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Preço em Poléns (0 = não vende por Poléns)
+            <input value={form.price_polens} onChange={(e) => set("price_polens", e.target.value)} inputMode="numeric" className="border border-border bg-background px-2 py-1.5 text-sm text-foreground" />
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Ordem
@@ -544,7 +573,11 @@ function PurchasesSection() {
                     {p.refunded_at ? "reembolsada" : p.status}
                   </span>
                 </td>
-                <td className="px-2 py-2 tabular-nums">{fmtBRL(p.amount_cents)}</td>
+                <td className="px-2 py-2 tabular-nums">
+                  {Number(p.amount_polens) > 0
+                    ? `${Number(p.amount_polens).toLocaleString("pt-BR")} ⬢`
+                    : fmtBRL(p.amount_cents)}
+                </td>
                 <td className="px-2 py-2 text-xs text-muted-foreground">{p.payment_provider}</td>
                 <td className="px-2 py-2 text-xs">{fmtDate(p.paid_at)}</td>
                 <td className="px-2 py-2 text-xs">{fmtDate(p.refunded_at)}</td>

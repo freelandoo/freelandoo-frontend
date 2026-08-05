@@ -27,8 +27,19 @@ export interface FunctionProduct {
   placeholder_color: string
   image_url: string | null
   price_cents: number
+  /** Preço alternativo em Poléns (mig 195). null/0 = só dinheiro. */
+  price_polens: number | null
   is_for_sale: boolean
   sort_order: number
+}
+
+/** A função aceita pagamento pela carteira de Poléns? */
+export function acceptsPolens(product: Pick<FunctionProduct, "price_polens">): boolean {
+  return Number(product.price_polens) > 0
+}
+
+export function formatPolens(polens: number, locale: string): string {
+  return new Intl.NumberFormat(locale).format(Number(polens) || 0)
 }
 
 // Mesmos ícones da seção "Funções" do UserDropside — identidade única.

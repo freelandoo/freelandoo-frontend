@@ -77,6 +77,29 @@ const FUNCTION_STORE = {
     "Purchase canceled. You can try again anytime.",
     "Compra cancelada. Puedes intentarlo de nuevo cuando quieras.",
   ],
+  // Pagamento alternativo pela carteira de Poléns (mig 195). "Polén" é nome
+  // próprio da moeda interna — não se traduz, só a moldura da frase.
+  orPayWith: ["Ou pague com Poléns", "Or pay with Poléns", "O paga con Poléns"],
+  orPolensShort: ["ou {n} Poléns", "or {n} Poléns", "o {n} Poléns"],
+  polensUnit: ["Poléns", "Poléns", "Poléns"],
+  buyWithPolens: ["Comprar com Poléns", "Buy with Poléns", "Comprar con Poléns"],
+  polensBalance: ["Seu saldo: {n} Poléns", "Your balance: {n} Poléns", "Tu saldo: {n} Poléns"],
+  polensNotEnough: [
+    "Você tem {n} Poléns — faltam {missing} pra esta função.",
+    "You have {n} Poléns — {missing} short for this function.",
+    "Tienes {n} Poléns — te faltan {missing} para esta función.",
+  ],
+  getPolens: ["Conseguir Poléns", "Get Poléns", "Conseguir Poléns"],
+  polensSuccessTitle: [
+    "Função liberada com Poléns!",
+    "Function unlocked with Poléns!",
+    "¡Función desbloqueada con Poléns!",
+  ],
+  polensError: [
+    "Erro ao comprar com Poléns",
+    "Error buying with Poléns",
+    "Error al comprar con Poléns",
+  ],
 }
 
 // Integração no menu lateral (ns Account, seção Funções).

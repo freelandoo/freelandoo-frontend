@@ -5323,6 +5323,15 @@
     "cancelNotice": "Purchase canceled. You can try again anytime.",
     "eyebrow": "Store",
     "pageTitle": "FUNCTIONS.",
-    "pageSubtitle": "Each function is a part of Freelandoo you switch on in your account. One-time payment, yours forever."
+    "pageSubtitle": "Each function is a part of Freelandoo you switch on in your account. One-time payment, yours forever.",
+    "orPayWith": "Or pay with Poléns",
+    "orPolensShort": "or {n} Poléns",
+    "polensUnit": "Poléns",
+    "buyWithPolens": "Buy with Poléns",
+    "polensBalance": "Your balance: {n} Poléns",
+    "polensNotEnough": "You have {n} Poléns — {missing} short for this function.",
+    "getPolens": "Get Poléns",
+    "polensSuccessTitle": "Function unlocked with Poléns!",
+    "polensError": "Error buying with Poléns"
   }
 }

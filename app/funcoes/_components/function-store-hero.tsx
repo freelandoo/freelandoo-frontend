@@ -21,6 +21,8 @@ import { Observer } from "gsap/Observer"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import {
   FUNCTION_ICONS,
+  acceptsPolens,
+  formatPolens,
   formatPriceBRL,
   getCardRole,
   getRoleVars,
@@ -723,9 +725,18 @@ export default function FunctionStoreHero({
               <span className="fl-display text-3xl leading-none text-[#F2B705]">
                 {formatPriceBRL(activeSlide.price_cents, locale)}
               </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F1EDE2]/60">
-                {t("lifetimeShort", "pagamento único")}
-              </span>
+              {acceptsPolens(activeSlide) ? (
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F1EDE2]/60">
+                  {t("orPolensShort", "ou {n} Poléns").replace(
+                    "{n}",
+                    formatPolens(Number(activeSlide.price_polens), locale),
+                  )}
+                </span>
+              ) : (
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F1EDE2]/60">
+                  {t("lifetimeShort", "pagamento único")}
+                </span>
+              )}
             </>
           )}
         </p>
