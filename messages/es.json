@@ -2288,7 +2288,10 @@
     "startedAt": "Iniciado a las",
     "trackOnProfile": "Seguir en el perfil",
     "backToHomeLong": "Volver al inicio",
-    "pendingSupportNote": "¿Aún con dudas? Revisa tus correos o contacta a nuestro soporte."
+    "pendingSupportNote": "¿Aún con dudas? Revisa tus correos o contacta a nuestro soporte.",
+    "referralBadgeTitle": "Recomendado por @{who}",
+    "referralBadgeDiscount": "Tu descuento de {value} ya está aplicado — y vale en cada compra, para siempre.",
+    "referralBadgeNoDiscount": "Tu vínculo está activo en esta cuenta."
   },
   "AdvertiseServices": {
     "hero.badge": "Para profesionales",

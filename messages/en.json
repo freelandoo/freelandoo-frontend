@@ -2288,7 +2288,10 @@
     "startedAt": "Started at",
     "trackOnProfile": "Track on profile",
     "backToHomeLong": "Back to home",
-    "pendingSupportNote": "Still have questions? Check your emails or contact our support."
+    "pendingSupportNote": "Still have questions? Check your emails or contact our support.",
+    "referralBadgeTitle": "Referred by @{who}",
+    "referralBadgeDiscount": "Your {value} discount is already applied — and it applies to every purchase, forever.",
+    "referralBadgeNoDiscount": "Your referral link is active on this account."
   },
   "AdvertiseServices": {
     "hero.badge": "For professionals",

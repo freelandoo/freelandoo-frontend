@@ -2277,7 +2277,10 @@
     "startedAt": "Iniciado em",
     "trackOnProfile": "Acompanhar no perfil",
     "backToHomeLong": "Voltar para home",
-    "pendingSupportNote": "Ainda com dúvidas? Verifique seus emails ou entre em contato com nosso suporte."
+    "pendingSupportNote": "Ainda com dúvidas? Verifique seus emails ou entre em contato com nosso suporte.",
+    "referralBadgeTitle": "Indicado por @{who}",
+    "referralBadgeDiscount": "Seu desconto de {value} já está aplicado — e vale em toda compra, para sempre.",
+    "referralBadgeNoDiscount": "Seu vínculo está ativo nesta conta."
   },
   "AdvertiseServices": {
     "hero.badge": "Para profissionais",

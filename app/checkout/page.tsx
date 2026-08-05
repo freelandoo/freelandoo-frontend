@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Loader2, CheckCircle2, X } from "lucide-react"
+import { ArrowLeft, Loader2, CheckCircle2, X, Handshake } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -105,11 +105,37 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Vínculo vitalício (V3): quem tem vínculo não digita cupom — o desconto já
+  // vem aplicado e o selo substitui o campo. Ativação de perfil é regime
+  // plataforma, então é aqui que o benefício aparece.
+  const [referral, setReferral] = useState<{
+    affiliate_username: string | null
+    discount_cents: number
+  } | null>(null)
   const [cupom, setCupom] = useState("")
   const [cupomAplicado, setCupomAplicado] = useState<string | null>(null)
   const [cupomError, setCupomError] = useState<string | null>(null)
   const [isAplicandoCupom, setIsAplicandoCupom] = useState(false)
   const { ensureConsent } = useActionConsent()
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+    if (!token) return
+    let cancelled = false
+    fetch("/api/me/affiliate/referral?source_context=profile_subscription", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.referral) setReferral(d.referral)
+      })
+      .catch(() => {
+        /* silencioso: sem vínculo o checkout segue igual */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const fetchCheckout = async () => {
@@ -340,8 +366,37 @@ function CheckoutContent() {
               </div>
             </div>
 
-            {/* Campo de cupom */}
-            <div className="space-y-2">
+            {/* Vínculo vitalício: vence qualquer cupom, então o campo some. */}
+            {referral ? (
+              <div className="flex items-start gap-2 border-2 border-[#0B0B0D] bg-[#F2B705]/15 px-3 py-2.5">
+                <Handshake className="mt-0.5 h-4 w-4 shrink-0 text-[#b8860b]" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("referralBadgeTitle", "Indicado por @{who}").replace(
+                      "{who}",
+                      referral.affiliate_username || "—",
+                    )}
+                  </p>
+                  <p className="text-[12px] leading-relaxed text-muted-foreground">
+                    {referral.discount_cents > 0
+                      ? t(
+                          "referralBadgeDiscount",
+                          "Seu desconto de {value} já está aplicado — e vale em toda compra, para sempre.",
+                        ).replace(
+                          "{value}",
+                          (referral.discount_cents / 100).toLocaleString(locale, {
+                            style: "currency",
+                            currency: "BRL",
+                          }),
+                        )
+                      : t("referralBadgeNoDiscount", "Seu vínculo está ativo nesta conta.")}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Campo de cupom — só para quem ainda não tem vínculo */}
+            <div className={referral ? "hidden" : "space-y-2"}>
               <p className="text-sm text-muted-foreground">{t("couponSectionTitle", "Cupom de desconto")}</p>
               {cupomError && (
                 <p className="text-sm text-destructive">{cupomError}</p>
