@@ -9,6 +9,14 @@ const dir = path.join(__dirname, "..", "messages")
 
 const FUNCTION_STORE = {
   storeName: ["Loja de Funções", "Function Store", "Tienda de Funciones"],
+  // Vitrine tabloide (redesign 2026-08-05): sobrancelha + manchete + linha fina.
+  eyebrow: ["Loja", "Store", "Tienda"],
+  pageTitle: ["FUNÇÕES.", "FUNCTIONS.", "FUNCIONES."],
+  pageSubtitle: [
+    "Cada função é uma parte da Freelandoo que você liga na sua conta. Pagamento único, sua pra sempre.",
+    "Each function is a part of Freelandoo you switch on in your account. One-time payment, yours forever.",
+    "Cada función es una parte de Freelandoo que activas en tu cuenta. Pago único, tuya para siempre.",
+  ],
   backToAccount: ["Voltar pra minha conta", "Back to my account", "Volver a mi cuenta"],
   navAria: ["Funções", "Functions", "Funciones"],
   indicatorsAria: ["Indicadores de função", "Function indicators", "Indicadores de función"],

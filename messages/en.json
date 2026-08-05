@@ -5320,6 +5320,9 @@
     "successPendingTitle": "Payment received",
     "successBody": "Function unlocked on your account. It now shows in the Functions section of the side menu, ready to turn on or off.",
     "successPending": "We are confirming the payment — the function unlocks automatically in a moment.",
-    "cancelNotice": "Purchase canceled. You can try again anytime."
+    "cancelNotice": "Purchase canceled. You can try again anytime.",
+    "eyebrow": "Store",
+    "pageTitle": "FUNCTIONS.",
+    "pageSubtitle": "Each function is a part of Freelandoo you switch on in your account. One-time payment, yours forever."
   }
 }

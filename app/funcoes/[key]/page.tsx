@@ -1,23 +1,27 @@
 "use client"
 
 // Página inteira do produto da Loja de Funções (/funcoes/[key]) — continuação
-// do carrossel: mesma linguagem visual (cor de fundo do produto, headline
-// display gigante, card janela), com a compra Stripe (vitalícia) embaixo.
+// da vitrine: mesmo sistema tabloide (papel off-white, manchete Anton, sombra
+// dura), com a compra Stripe (vitalícia) embaixo.
 // Retorno do checkout chega por ?compra=success|cancel.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, ArrowRight, BadgeCheck, Loader2 } from "lucide-react"
+import { ArrowRight, BadgeCheck, Loader2 } from "lucide-react"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
+import {
+  PageShell,
+  TabloidPageIntro,
+  TabloidBackLink,
+  ErrorState,
+  LoadingState,
+} from "@/components/tabloide"
 import {
   FUNCTION_ICONS,
   formatPriceBRL,
   type FunctionProduct,
 } from "../_components/function-product"
-
-const GRAIN_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`
-const GRAIN_URL = `url("data:image/svg+xml,${encodeURIComponent(GRAIN_SVG)}")`
 
 type CheckoutReturn = "success" | "cancel" | null
 
@@ -139,143 +143,87 @@ export default function FunctionProductPage() {
 
   if (notFound) {
     return (
-      <main className="fl-sharp flex min-h-[100svh] flex-col items-center justify-center gap-6 bg-[#0b0804] px-6 text-center text-white">
-        <p className="fl-display text-3xl uppercase">{t("notFound", "Função não encontrada")}</p>
-        <Link
-          href="/funcoes"
-          className="inline-flex min-h-[44px] items-center gap-2 border-2 border-white/80 px-5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/[0.14]"
-        >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
-          {t("allFunctions", "Todas as funções")}
-        </Link>
-      </main>
+      <PageShell className="fl-sharp md:pl-[80px]">
+        <div className="mx-auto w-full max-w-3xl px-4 py-16">
+          <ErrorState
+            title={t("notFound", "Função não encontrada")}
+            description={t("empty", "Nenhuma função à venda no momento.")}
+            homeHref="/funcoes"
+            retryLabel={t("allFunctions", "Todas as funções")}
+          />
+        </div>
+      </PageShell>
     )
   }
 
   if (!product) {
     return (
-      <main
-        aria-label={t("loading", "Carregando…")}
-        className="fl-sharp min-h-[100svh] w-full"
-        style={{ backgroundColor: "#0b0804" }}
-      />
+      <PageShell className="fl-sharp md:pl-[80px]">
+        <div className="mx-auto w-full max-w-3xl px-4 py-16">
+          <LoadingState label={t("loading", "Carregando…")} />
+        </div>
+      </PageShell>
     )
   }
 
   const showImage = Boolean(product.image_url)
 
   return (
-    <main
-      className="fl-sharp relative min-h-[100svh] w-full overflow-hidden font-sans text-white"
-      style={{ backgroundColor: product.background_color }}
-    >
-      {/* Grain + glow, mesma atmosfera do carrossel */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[5] opacity-[0.06]"
-        style={{ backgroundImage: GRAIN_URL, backgroundSize: "160px 160px" }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[40%] z-[6] h-[55vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-[140px]"
-        style={{ backgroundColor: product.accent_color }}
-      />
+    <PageShell className="fl-sharp md:pl-[80px]">
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10 md:py-12">
+        <TabloidPageIntro
+          eyebrow={product.eyebrow}
+          title={product.nav_label}
+          subtitle={product.short_description}
+          back={<TabloidBackLink href="/funcoes">{t("allFunctions", "Todas as funções")}</TabloidBackLink>}
+          size="compact"
+          className="mb-8"
+        />
 
-      {/* Header */}
-      <header className="relative z-[80]">
-        <div className="flex items-center justify-between px-5 py-4 sm:px-10 sm:py-6 lg:px-14">
-          <Link
-            href="/funcoes"
-            aria-label={t("allFunctions", "Todas as funções")}
-            className="flex min-h-[44px] items-center gap-3 text-white"
+        <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:items-start">
+          {/* Arte em bloco escuro com moldura de recorte */}
+          <div
+            className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] shadow-[6px_6px_0_0_#0B0B0D]"
+            style={showImage ? undefined : { backgroundColor: product.placeholder_color }}
           >
-            <ArrowLeft aria-hidden="true" className="h-5 w-5" strokeWidth={2.5} />
-            <span className="text-xl font-bold uppercase" style={{ letterSpacing: "-0.04em" }}>
-              {t("storeName", "Loja de Funções")}
-              <span aria-hidden="true" style={{ color: product.accent_color }}>
-                _
-              </span>
-            </span>
-          </Link>
-          <span className="hidden text-[11px] font-bold uppercase tracking-[0.28em] text-white/60 md:block">
-            {product.eyebrow}
-          </span>
-        </div>
-      </header>
-
-      <div className="relative z-[20] mx-auto flex w-full max-w-6xl flex-col gap-10 px-5 pb-20 pt-4 sm:px-10 md:pt-8 lg:px-14">
-        {/* Headline display gigante */}
-        <h1
-          className="fl-display uppercase"
-          style={{
-            fontSize: "clamp(56px, 11vw, 160px)",
-            lineHeight: 0.85,
-            letterSpacing: "-0.035em",
-            whiteSpace: "pre-line",
-            color: product.text_color,
-          }}
-        >
-          {product.headline}
-        </h1>
-
-        <div className="grid gap-10 md:grid-cols-[1.2fr_1fr] md:items-start">
-          {/* Card janela com a arte */}
-          <div className="relative flex aspect-[16/10] w-full flex-col overflow-hidden bg-[#101014] shadow-[0_40px_90px_-24px_rgba(0,0,0,0.55)]">
-            <div className="flex h-9 shrink-0 items-center gap-3 border-b border-white/5 bg-[#17171C] px-4">
-              <div className="flex shrink-0 gap-1.5" aria-hidden="true">
-                <span className="h-2.5 w-2.5 bg-[#FF5F57]" />
-                <span className="h-2.5 w-2.5 bg-[#FEBC2E]" />
-                <span className="h-2.5 w-2.5 bg-[#28C840]" />
-              </div>
-              <div className="flex h-5 max-w-[60%] flex-1 items-center bg-white/[0.07] px-3">
-                <span className="truncate text-[10px] font-medium tracking-wide text-white/45">
-                  freelandoo.com.br/funcoes/{product.feature_key}
-                </span>
-              </div>
-            </div>
-            <div className="relative flex-1" style={{ backgroundColor: product.placeholder_color }}>
-              {showImage ? (
-                // Mídia do R2 — política de imagem: não passa pelo otimizador da Vercel.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={product.image_url ?? undefined}
-                  alt={product.nav_label}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  draggable={false}
+            {showImage ? (
+              // Mídia do R2 — política de imagem: não passa pelo otimizador da Vercel.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product.image_url ?? undefined}
+                alt={product.nav_label}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                draggable={false}
+              />
+            ) : (
+              Icon && (
+                <Icon
+                  aria-hidden="true"
+                  className="h-28 w-28"
+                  strokeWidth={1.1}
+                  style={{ color: product.accent_color }}
                 />
-              ) : (
-                Icon && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Icon
-                      aria-hidden="true"
-                      className="h-32 w-32"
-                      strokeWidth={1.1}
-                      style={{ color: product.accent_color, opacity: 0.85 }}
-                    />
-                  </div>
-                )
-              )}
-            </div>
+              )
+            )}
           </div>
 
-          {/* Coluna de compra */}
-          <div className="flex flex-col gap-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-white/80">
-              {product.eyebrow}
-            </p>
-            <p className="text-[15px] leading-[1.5] text-white/90">{product.short_description}</p>
+          {/* Coluna de compra — papel off-white, o bloco que decide */}
+          <div className="fl-card flex flex-col gap-5 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D]">
+            {product.headline && (
+              <p className="fl-display text-3xl leading-[0.95]">{product.headline}</p>
+            )}
 
             {/* Retorno do checkout */}
             {checkoutReturn === "success" && (
-              <div className="border-2 px-4 py-3" style={{ borderColor: product.accent_color }}>
-                <p className="flex items-center gap-2 text-sm font-bold" style={{ color: product.accent_color }}>
+              <div className="border-2 border-[#0B0B0D] bg-[#F2B705]/25 px-4 py-3">
+                <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.1em]">
                   <BadgeCheck aria-hidden="true" className="h-4 w-4" />
                   {owned
                     ? t("successTitle", "Compra confirmada!")
                     : t("successPendingTitle", "Pagamento recebido")}
                 </p>
-                <p className="mt-1 text-[13px] text-white/80">
+                <p className="mt-1 text-[13px] text-[#0B0B0D]/80">
                   {owned
                     ? t("successBody", "Função liberada na sua conta. Ela já aparece na seção Funções do menu lateral, pronta pra ativar ou desativar.")
                     : t("successPending", "Estamos confirmando o pagamento — a função libera automaticamente em instantes.")}
@@ -283,8 +231,8 @@ export default function FunctionProductPage() {
               </div>
             )}
             {checkoutReturn === "cancel" && !owned && (
-              <div className="border-2 border-white/30 px-4 py-3">
-                <p className="text-[13px] text-white/80">
+              <div className="border-2 border-[#0B0B0D]/30 px-4 py-3">
+                <p className="text-[13px] text-[#0B0B0D]/80">
                   {t("cancelNotice", "Compra cancelada. Você pode tentar de novo quando quiser.")}
                 </p>
               </div>
@@ -293,35 +241,34 @@ export default function FunctionProductPage() {
             {/* Preço + CTA */}
             {owned ? (
               <div className="flex flex-col gap-3">
-                <p className="flex items-center gap-2 text-lg font-bold" style={{ color: product.accent_color }}>
+                <p className="flex items-center gap-2 text-lg font-black uppercase tracking-[0.08em]">
                   <BadgeCheck aria-hidden="true" className="h-5 w-5" />
                   {t("ownedTitle", "Você já tem esta função")}
                 </p>
-                <p className="text-[13px] text-white/75">
+                <p className="text-[13px] text-[#0B0B0D]/75">
                   {t("ownedHint", "Ative ou desative quando quiser na seção Funções do menu lateral.")}
                 </p>
                 <Link
                   href="/account"
-                  className="inline-flex min-h-[48px] w-fit items-center gap-3 border-2 border-white px-6 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/[0.14]"
+                  className="inline-flex min-h-[48px] w-fit items-center gap-3 border-2 border-[#0B0B0D] px-6 text-[12px] font-black uppercase tracking-[0.14em] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
                 >
                   {t("goAccount", "Ir pra minha conta")}
                   <ArrowRight aria-hidden="true" className="h-4 w-4" strokeWidth={2.5} />
                 </Link>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                <p className="fl-display leading-none" style={{ fontSize: "clamp(36px, 5vw, 64px)", color: product.accent_color }}>
+              <div className="flex flex-col gap-3 border-t-2 border-[#0B0B0D]/12 pt-4">
+                <p className="fl-display leading-none" style={{ fontSize: "clamp(36px, 5vw, 64px)" }}>
                   {price}
                 </p>
-                <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#0B0B0D]/60">
                   {t("lifetime", "Pagamento único — sua pra sempre.")}
                 </p>
                 <button
                   type="button"
                   onClick={startCheckout}
                   disabled={buying}
-                  className="group inline-flex min-h-[56px] w-fit items-center gap-4 px-8 text-[14px] font-bold uppercase tracking-[0.14em] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
-                  style={{ backgroundColor: product.accent_color, color: "#111" }}
+                  className="group inline-flex min-h-[52px] w-fit items-center gap-4 border-2 border-[#0B0B0D] bg-[#F2B705] px-7 text-[13px] font-black uppercase tracking-[0.14em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:shadow-[6px_6px_0_0_#0B0B0D] disabled:cursor-not-allowed disabled:opacity-55"
                 >
                   {buying ? (
                     <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
@@ -338,7 +285,9 @@ export default function FunctionProductPage() {
                     </>
                   )}
                 </button>
-                {buyError && <p className="text-[13px] font-semibold text-red-300">{buyError}</p>}
+                {buyError && (
+                  <p className="text-[13px] font-bold text-[#B3261E]">{buyError}</p>
+                )}
               </div>
             )}
           </div>
@@ -346,16 +295,16 @@ export default function FunctionProductPage() {
 
         {/* Descrição longa */}
         {product.full_description && (
-          <section className="max-w-3xl border-t border-white/15 pt-8">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.35em] text-white/70">
+          <section className="mt-10 max-w-3xl border-t-2 border-[#F1EDE2]/12 pt-8">
+            <h2 className="text-[11px] font-black uppercase tracking-[0.35em] text-[#F2B705]">
               {t("aboutTitle", "O que você leva")}
             </h2>
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-[1.6] text-white/90">
+            <p className="mt-4 whitespace-pre-line text-[15px] leading-[1.6] text-[#F1EDE2]/85">
               {product.full_description}
             </p>
           </section>
         )}
       </div>
-    </main>
+    </PageShell>
   )
 }

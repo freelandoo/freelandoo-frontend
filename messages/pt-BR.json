@@ -4734,6 +4734,9 @@
     "successPendingTitle": "Pagamento recebido",
     "successBody": "Função liberada na sua conta. Ela já aparece na seção Funções do menu lateral, pronta pra ativar ou desativar.",
     "successPending": "Estamos confirmando o pagamento — a função libera automaticamente em instantes.",
-    "cancelNotice": "Compra cancelada. Você pode tentar de novo quando quiser."
+    "cancelNotice": "Compra cancelada. Você pode tentar de novo quando quiser.",
+    "eyebrow": "Loja",
+    "pageTitle": "FUNÇÕES.",
+    "pageSubtitle": "Cada função é uma parte da Freelandoo que você liga na sua conta. Pagamento único, sua pra sempre."
   }
 }
