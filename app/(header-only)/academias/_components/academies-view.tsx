@@ -2,12 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { toast } from "sonner"
-import { ArrowLeft, Dumbbell, Loader2, MapPin, Plus, Search, Users, X, PlugZap } from "lucide-react"
-import { getToken } from "@/lib/auth"
+import { ArrowLeft, Dumbbell, Loader2, MapPin, Search, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { ESTADOS_BRASIL } from "@/lib/constants/estados-brasil"
 
 type Academy = {
   id_academy: string
@@ -29,36 +26,8 @@ export function AcademiesView() {
   const [q, setQ] = useState("")
   const [city, setCity] = useState("")
 
-  const [createOpen, setCreateOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ nome: "", uf: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
-  // Municípios do estado escolhido (IBGE) — cidade estruturada pra indicadores.
-  const [municipios, setMunicipios] = useState<{ id: number; nome: string }[]>([])
-  const [loadingCities, setLoadingCities] = useState(false)
-
-  useEffect(() => {
-    const estado = ESTADOS_BRASIL.find((e) => e.uf === form.uf)
-    if (!estado) {
-      setMunicipios([])
-      return
-    }
-    let cancelled = false
-    setLoadingCities(true)
-    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estado.id}/municipios`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: { id: number; nome: string }[]) => {
-        if (!cancelled) setMunicipios(Array.isArray(data) ? data : [])
-      })
-      .catch(() => {
-        if (!cancelled) setMunicipios([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingCities(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [form.uf])
+  // O cadastro de academia mora na criação de comunidade (/comunidades/criar,
+  // tipo "Academia") — esta página é só vitrine/busca.
 
   const load = useCallback(async () => {
     setState("loading")
@@ -79,46 +48,6 @@ export function AcademiesView() {
   useEffect(() => {
     if (enabled) void load()
   }, [enabled, load])
-
-  // Atalho vindo do /fitness ("Criar academia"): abre o modal de cadastro.
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const sp = new URLSearchParams(window.location.search)
-    if (sp.get("criar") === "1") {
-      setCreateOpen(true)
-      window.history.replaceState({}, "", window.location.pathname)
-    }
-  }, [])
-
-  const create = useCallback(async () => {
-    const token = getToken()
-    if (!token) {
-      toast.error(t("loginRequired", "Entre na sua conta para cadastrar uma academia."))
-      return
-    }
-    if (!form.nome.trim() || !form.uf || !form.cidade || !form.api_base_url.trim() || !form.api_token.trim()) {
-      toast.error(t("createMissingCity", "Preencha nome, estado, cidade, URL da API e token."))
-      return
-    }
-    setCreating(true)
-    try {
-      const res = await fetch("/api/academies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      toast.success(t("createOk", "Academia cadastrada!"))
-      setCreateOpen(false)
-      setForm({ nome: "", uf: "", cidade: "", descricao: "", api_base_url: "", api_token: "" })
-      void load()
-    } catch (err) {
-      toast.error(err instanceof Error && err.message ? err.message : t("createError", "Erro ao cadastrar academia"))
-    } finally {
-      setCreating(false)
-    }
-  }, [form, load, t])
 
   if (!enabled) {
     return (
@@ -151,13 +80,6 @@ export function AcademiesView() {
           <h1 className="text-4xl font-black uppercase leading-none tracking-tight">
             {t("title", "Academias")}
           </h1>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
-          >
-            <Plus className="h-4 w-4" />
-            {t("registerCta", "Cadastrar minha academia")}
-          </button>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-[#9A938A]">
           {t(
@@ -212,7 +134,7 @@ export function AcademiesView() {
         <div className="mt-8 border-2 border-dashed border-[#9A938A]/40 bg-[#15120E] p-10 text-center">
           <Dumbbell className="mx-auto h-8 w-8 text-[#9A938A]" />
           <p className="mt-3 text-sm text-[#9A938A]">
-            {t("empty", "Nenhuma academia encontrada. Cadastre a sua ou ajuste a busca.")}
+            {t("emptySearch", "Nenhuma academia encontrada. Ajuste a busca.")}
           </p>
         </div>
       )}
@@ -254,119 +176,6 @@ export function AcademiesView() {
 
       </div>
 
-      {/* Modal de cadastro — clicar fora NÃO fecha (só o X ou Cancelar). */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div
-            className="fl-sharp max-h-[90vh] w-full max-w-lg overflow-y-auto border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-[#F5F1E8]" style={{ boxShadow: "8px 8px 0 0 #F2B705" }}
-          >
-            <div className="flex items-start justify-between gap-4 border-b-2 border-[#0B0B0D] pb-3">
-              <h2 className="text-xl font-black uppercase">{t("createTitle", "Cadastrar academia")}</h2>
-              <button onClick={() => setCreateOpen(false)} aria-label={t("close", "Fechar")}>
-                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-[#9A938A]">
-              {t(
-                "createIntro",
-                "Grátis. Informe a URL e o token da API do software da sua academia (Gym Provider API) — é por ela que puxamos catraca e pagamentos."
-              )}
-            </p>
-            <div className="mt-4 space-y-3">
-              <label className="block">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldName", "Nome da academia")}</span>
-                <input
-                  value={form.nome}
-                  onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-                  className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
-                />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldState", "Estado")}</span>
-                  <select
-                    value={form.uf}
-                    onChange={(e) => setForm((f) => ({ ...f, uf: e.target.value, cidade: "" }))}
-                    className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
-                  >
-                    <option value="">{t("selectState", "Selecione o estado")}</option>
-                    {ESTADOS_BRASIL.map((e) => (
-                      <option key={e.uf} value={e.uf}>{e.nome}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldCity", "Cidade")}</span>
-                  <select
-                    value={form.cidade}
-                    onChange={(e) => setForm((f) => ({ ...f, cidade: e.target.value }))}
-                    disabled={!form.uf || loadingCities}
-                    className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none disabled:opacity-50"
-                  >
-                    <option value="">
-                      {!form.uf
-                        ? t("selectStateFirst", "Escolha o estado primeiro")
-                        : loadingCities
-                          ? t("loadingCities", "Carregando cidades…")
-                          : t("selectCity", "Selecione a cidade")}
-                    </option>
-                    {municipios.map((m) => (
-                      <option key={m.id} value={m.nome}>{m.nome}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <label className="block">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldDescription", "Descrição")}</span>
-                <textarea
-                  value={form.descricao}
-                  onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
-                  rows={2}
-                  className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F5F1E8] outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldApiUrl", "URL da API (Gym Provider)")}</span>
-                <input
-                  value={form.api_base_url}
-                  onChange={(e) => setForm((f) => ({ ...f, api_base_url: e.target.value }))}
-                  placeholder="https://crm.suaacademia.com.br"
-                  className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 font-mono text-sm text-[#F5F1E8] outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">{t("fieldApiToken", "Token da API")}</span>
-                <input
-                  value={form.api_token}
-                  onChange={(e) => setForm((f) => ({ ...f, api_token: e.target.value }))}
-                  type="password"
-                  className="mt-1 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 font-mono text-sm text-[#F5F1E8] outline-none"
-                />
-              </label>
-              <p className="flex items-start gap-2 text-[11px] text-[#9A938A]">
-                <PlugZap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
-                {t("providerHint", "Seu software precisa expor a Gym Provider API. O Coliseu já é compatível; outros softwares podem implementar o contrato público.")}
-              </p>
-            </div>
-            <div className="mt-5 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-4">
-              <button
-                onClick={() => setCreateOpen(false)}
-                className="border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-2 text-xs font-extrabold uppercase text-[#F5F1E8] hover:bg-[#241d12]"
-              >
-                {t("cancel", "Cancelar")}
-              </button>
-              <button
-                onClick={() => void create()}
-                disabled={creating}
-                className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase text-[#0B0B0D] disabled:opacity-50"
-              >
-                {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {t("createSubmit", "Cadastrar")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

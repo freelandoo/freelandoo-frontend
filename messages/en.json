@@ -2584,7 +2584,16 @@
     "numberLabel": "Number",
     "neighborhoodLabel": "Neighbourhood",
     "cepLabel": "Postcode",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "academyCreateIntro": "Free. Enter the URL and token of your gym software API (Gym Provider API) — that is how we pull turnstile and payment data.",
+    "academyNameLabel": "Gym name",
+    "academyNamePlaceholder": "E.g.: Coliseu Gym",
+    "academyApiUrlLabel": "API URL (Gym Provider)",
+    "academyApiTokenLabel": "API token",
+    "academyProviderHint": "Your software must expose the Gym Provider API. Coliseu already supports it; other systems can implement the public contract.",
+    "academyMissing": "Fill in name, state, city, API URL and token.",
+    "academyCreateCta": "Register gym",
+    "academyCreateError": "Could not register the gym."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -5039,7 +5048,8 @@
     "createMissingCity": "Fill in name, state, city, API URL and token.",
     "testDotOk": "Connected",
     "testDotFail": "No connection",
-    "curtoLabel": "Short"
+    "curtoLabel": "Short",
+    "emptySearch": "No gyms found. Adjust your search."
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

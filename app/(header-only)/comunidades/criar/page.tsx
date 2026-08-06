@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Building2, Dumbbell, Plus, Ticket, Users } from "lucide-react"
+import { ArrowLeft, Building2, Dumbbell, PlugZap, Plus, Ticket, Users } from "lucide-react"
 import { PageShell } from "@/components/tabloide"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
@@ -32,6 +32,8 @@ export default function CreateCommunityPage() {
   const router = useRouter()
   // Condomínio tem kill-switch próprio no Painel de Controle (mig 196).
   const condoEnabled = useFeature("condominio")
+  // Academia é cadastrada aqui, mas continua vivendo em /academias (mig 176).
+  const academyEnabled = useFeature("fitness_academias")
 
   const [kind, setKind] = useState<Kind>("common")
   const [enxames, setEnxames] = useState<Enxame[]>([])
@@ -52,6 +54,10 @@ export default function CreateCommunityPage() {
   const [number, setNumber] = useState("")
   const [neighborhood, setNeighborhood] = useState("")
   const [cep, setCep] = useState("")
+
+  // Academia — Gym Provider API (a academia continua sendo entidade própria).
+  const [apiUrl, setApiUrl] = useState("")
+  const [apiToken, setApiToken] = useState("")
 
   const loadElig = useCallback(async () => {
     const token = getToken()
@@ -142,6 +148,42 @@ export default function CreateCommunityPage() {
     }
   }
 
+  // Academia não é comunidade: cria a entidade própria e leva pra página dela.
+  const submitAcademy = async () => {
+    const token = getToken()
+    if (!token) {
+      setMsg(t("loginToJoin", "Entre para participar"))
+      return
+    }
+    if (!name.trim() || !uf || !cidade || !apiUrl.trim() || !apiToken.trim()) {
+      setMsg(t("academyMissing", "Preencha nome, estado, cidade, URL da API e token."))
+      return
+    }
+    setSubmitting(true)
+    setMsg(null)
+    try {
+      const res = await fetch(`/api/academies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          nome: name.trim(),
+          uf,
+          cidade,
+          descricao: bio.trim() || null,
+          api_base_url: apiUrl.trim(),
+          api_token: apiToken.trim(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("academyCreateError", "Não foi possível cadastrar a academia."))
+      router.push(data.academy?.slug ? `/academias/${data.academy.slug}` : "/academias")
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : t("academyCreateError", "Não foi possível cadastrar a academia."))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const buySlot = async () => {
     const token = getToken()
     if (!token) {
@@ -201,7 +243,8 @@ export default function CreateCommunityPage() {
           <div className="grid gap-2 sm:grid-cols-3">
             {kinds.map((k) => {
               const Icon = k.icon
-              const disabled = k.key === "condo" && !condoEnabled
+              const disabled =
+                (k.key === "condo" && !condoEnabled) || (k.key === "academy" && !academyEnabled)
               const active = kind === k.key
               if (disabled) return null
               return (
@@ -225,21 +268,99 @@ export default function CreateCommunityPage() {
           </div>
         </div>
 
-        {/* Academia tem cadastro próprio: manda pra lá em vez de duplicar entidade. */}
+        {/* Academia é entidade própria (mig 176): cadastra aqui e vive em /academias. */}
         {kind === "academy" ? (
-          <div className="mt-6 border-2 border-[#F2B705]/30 bg-[#1D1810]/60 p-4">
-            <p className="flex items-center gap-2 text-sm font-semibold text-[#F2B705]">
-              <Dumbbell className="h-4 w-4" /> {t("academyOwnFlowTitle", "Academia tem cadastro próprio")}
+          <div className="mt-6 space-y-4">
+            <p className="border-2 border-[#F2B705]/30 bg-[#1D1810]/60 px-4 py-3 text-sm text-[#F5F1E8]/70">
+              {t(
+                "academyCreateIntro",
+                "Grátis. Informe a URL e o token da API do software da sua academia (Gym Provider API) — é por ela que puxamos catraca e pagamentos."
+              )}
             </p>
-            <p className="mt-1 text-sm text-[#F5F1E8]/70">
-              {t("academyOwnFlowDesc", "Academias vivem na área de Academias, com alunos, treinos e frequência.")}
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">
+                {t("academyNameLabel", "Nome da academia")}
+              </label>
+              <input
+                className={inputCls}
+                placeholder={t("academyNamePlaceholder", "Ex.: Academia Coliseu")}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">{t("stateLabel", "Estado")}</label>
+                <select className={inputCls} value={uf} onChange={(e) => { setUf(e.target.value); setCidade("") }}>
+                  <option value="">—</option>
+                  {ESTADOS_BRASIL.map((e) => (
+                    <option key={e.uf} value={e.uf}>{e.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">{t("cityLabel", "Cidade")}</label>
+                <select className={inputCls} value={cidade} disabled={!uf || loadingCities} onChange={(e) => setCidade(e.target.value)}>
+                  <option value="">
+                    {!uf ? t("cityPickState", "Escolha o estado") : loadingCities ? t("loading", "Carregando...") : "—"}
+                  </option>
+                  {municipios.map((m) => (
+                    <option key={m.id} value={m.nome}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">{t("bioLabel", "Descrição (opcional)")}</label>
+              <textarea className={`${inputCls} h-24 py-2`} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={200} />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">
+                {t("academyApiUrlLabel", "URL da API (Gym Provider)")}
+              </label>
+              <input
+                className={`${inputCls} font-mono`}
+                placeholder="https://crm.suaacademia.com.br"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">
+                {t("academyApiTokenLabel", "Token da API")}
+              </label>
+              <input
+                className={`${inputCls} font-mono`}
+                type="password"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
+              />
+            </div>
+
+            <p className="flex items-start gap-2 text-[11px] leading-snug text-[#F5F1E8]/55">
+              <PlugZap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
+              {t(
+                "academyProviderHint",
+                "Seu software precisa expor a Gym Provider API. O Coliseu já é compatível; outros softwares podem implementar o contrato público."
+              )}
             </p>
-            <Link
-              href="/academias"
-              className="mt-3 inline-flex items-center gap-2 bg-[#F2B705] px-5 py-2.5 text-sm font-bold text-[#1A1505]"
+
+            {msg ? <p className="bg-[#F2B705]/15 px-3 py-2 text-sm text-[#F5F1E8]">{msg}</p> : null}
+
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={submitAcademy}
+              className="inline-flex items-center gap-2 bg-[#F2B705] px-6 py-2.5 text-sm font-bold text-[#1A1505] disabled:opacity-60"
             >
-              <Dumbbell className="h-4 w-4" /> {t("academyOwnFlowCta", "Ir para Academias")}
-            </Link>
+              <Dumbbell className="h-4 w-4" />
+              {submitting ? t("creating", "Criando...") : t("academyCreateCta", "Cadastrar academia")}
+            </button>
           </div>
         ) : (
           <>

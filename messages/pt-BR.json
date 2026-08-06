@@ -2571,7 +2571,16 @@
     "numberLabel": "Número",
     "neighborhoodLabel": "Bairro",
     "cepLabel": "CEP",
-    "loading": "Carregando..."
+    "loading": "Carregando...",
+    "academyCreateIntro": "Grátis. Informe a URL e o token da API do software da sua academia (Gym Provider API) — é por ela que puxamos catraca e pagamentos.",
+    "academyNameLabel": "Nome da academia",
+    "academyNamePlaceholder": "Ex.: Academia Coliseu",
+    "academyApiUrlLabel": "URL da API (Gym Provider)",
+    "academyApiTokenLabel": "Token da API",
+    "academyProviderHint": "Seu software precisa expor a Gym Provider API. O Coliseu já é compatível; outros softwares podem implementar o contrato público.",
+    "academyMissing": "Preencha nome, estado, cidade, URL da API e token.",
+    "academyCreateCta": "Cadastrar academia",
+    "academyCreateError": "Não foi possível cadastrar a academia."
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -4453,7 +4462,8 @@
     "createMissingCity": "Preencha nome, estado, cidade, URL da API e token.",
     "testDotOk": "Conectado",
     "testDotFail": "Sem conexão",
-    "curtoLabel": "Curto"
+    "curtoLabel": "Curto",
+    "emptySearch": "Nenhuma academia encontrada. Ajuste a busca."
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
