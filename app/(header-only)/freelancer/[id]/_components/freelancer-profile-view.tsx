@@ -192,8 +192,10 @@ export default function FreelancerProfileView({
   const [showMural, setShowMural] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [portfolioTab, setPortfolioTab] = useState<"feed" | "bees" | "services" | "courses" | "shop">("feed")
-  // Chaves do Painel de Controle por aba do perfil, combinadas com a
-  // preferência pessoal do VIEWER (seção "Funções" do menu lateral).
+  // Chaves do Painel de Controle por aba do perfil. A posse (Loja de Funções) e
+  // a preferência pessoal ("Funções" no menu) governam o PRÓPRIO perfil — o que
+  // o usuário expõe/vende. Visitando o perfil de outra pessoa elas não valem:
+  // senão quem não comprou "Loja" não conseguiria nem VER a loja do vendedor.
   // Hooks chamados incondicionalmente (rules-of-hooks).
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
@@ -202,9 +204,9 @@ export default function FreelancerProfileView({
   const coursesFlagOn = useFeature("courses")
   const coursesPrefOn = useUserFeature("courses")
   const agendaFeatOn = useUserFeature("agenda")
-  const storeOn = storeFlagOn && storePrefOn
-  const servicesOn = servicesFlagOn && servicesPrefOn
-  const coursesOn = coursesFlagOn && coursesPrefOn
+  const storeOn = storeFlagOn && (!isOwnProfile || storePrefOn)
+  const servicesOn = servicesFlagOn && (!isOwnProfile || servicesPrefOn)
+  const coursesOn = coursesFlagOn && (!isOwnProfile || coursesPrefOn)
   // Abas 1:1 com a barra do UserPortfolio do /account (esqueleto unificado).
   const tabBtn = (active: boolean) =>
     `inline-flex h-8 items-center justify-center gap-1.5 border-b-2 px-3 text-[11px] font-semibold uppercase tracking-wide transition ${

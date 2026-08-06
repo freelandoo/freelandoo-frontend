@@ -27,7 +27,6 @@ import {
 } from "@/components/search/product-subfilters"
 import { getAttributeSchema } from "@/lib/product-attributes"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
@@ -250,20 +249,14 @@ function SearchPageInner() {
     setProductFilterSheetOpen(false)
   }, [])
 
-  // Chaves do Painel de Controle combinadas com a preferência pessoal do
-  // viewer (seção "Funções" do menu): qualquer uma desligada esconde a aba.
-  const servicesFlagOn = useFeature("services")
-  const servicesPrefOn = useUserFeature("services")
-  const storeFlagOn = useFeature("store")
-  const storePrefOn = useUserFeature("store")
-  const coursesFlagOn = useFeature("courses")
-  const coursesPrefOn = useUserFeature("courses")
-  const communitiesFlagOn = useFeature("communities")
-  const communitiesPrefOn = useUserFeature("communities")
-  const servicesOn = servicesFlagOn && servicesPrefOn
-  const storeOn = storeFlagOn && storePrefOn
-  const coursesOn = coursesFlagOn && coursesPrefOn
-  const communitiesOn = communitiesFlagOn && communitiesPrefOn
+  // A vitrine é o lado COMPRADOR: só o Painel de Controle do admin decide quais
+  // abas existem. Posse da Loja de Funções e preferência pessoal ("Funções")
+  // valem pro lado VENDEDOR (publicar loja/serviços/cursos no próprio perfil) —
+  // não podem tirar de ninguém o direito de navegar e comprar na vitrine.
+  const servicesOn = useFeature("services")
+  const storeOn = useFeature("store")
+  const coursesOn = useFeature("courses")
+  const communitiesOn = useFeature("communities")
   const isTabEnabled = useCallback(
     (x: SearchTab) =>
       x === "services" ? servicesOn : x === "products" ? storeOn : x === "courses" ? coursesOn : communitiesOn,

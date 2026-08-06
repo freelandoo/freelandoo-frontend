@@ -3,7 +3,6 @@
 import { Briefcase, Package, GraduationCap, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { cn } from "@/lib/utils"
 
 export type SearchTab = "services" | "products" | "courses" | "communities"
@@ -23,22 +22,15 @@ const TABS: { id: SearchTab; labelKey: string; labelPt: string; icon: React.Comp
 
 export function SearchTabsBar({ tab, onTabChange }: Props) {
   const t = useTranslations("Search")
-  // Cada aba tem sua chave no Painel de Controle E na seção "Funções" do menu
-  // lateral (preferência do viewer): qualquer uma desligada remove a aba.
-  // Hooks em consts separadas — `&&` inline pularia o segundo (rules-of-hooks).
-  const servicesFlagOn = useFeature("services")
-  const servicesPrefOn = useUserFeature("services")
-  const storeFlagOn = useFeature("store")
-  const storePrefOn = useUserFeature("store")
-  const coursesFlagOn = useFeature("courses")
-  const coursesPrefOn = useUserFeature("courses")
-  const communitiesFlagOn = useFeature("communities")
-  const communitiesPrefOn = useUserFeature("communities")
+  // A vitrine é o lado COMPRADOR: quem manda no que aparece aqui é só o Painel
+  // de Controle do admin. Posse da Loja de Funções e preferência pessoal
+  // ("Funções" no menu) governam o lado VENDEDOR — se o usuário publica loja/
+  // serviços/cursos no perfil dele —, nunca o direito de navegar a vitrine.
   const enabled: Record<SearchTab, boolean> = {
-    services: servicesFlagOn && servicesPrefOn,
-    products: storeFlagOn && storePrefOn,
-    courses: coursesFlagOn && coursesPrefOn,
-    communities: communitiesFlagOn && communitiesPrefOn,
+    services: useFeature("services"),
+    products: useFeature("store"),
+    courses: useFeature("courses"),
+    communities: useFeature("communities"),
   }
   const tabs = TABS.filter((x) => enabled[x.id])
   return (
