@@ -41,6 +41,14 @@ const ONBOARDING_SOCIALS: { icon: string; label: string; Icon: React.ComponentTy
   { icon: "linkedin", label: "LinkedIn", Icon: Linkedin, placeholder: "linkedin.com/in/voce" },
 ]
 
+// Select nativo dentro de modal escuro: a LISTA aberta é desenhada pelo
+// sistema, que usa fundo branco próprio. Sem pintar as <option> explicitamente,
+// elas herdam a cor clara do modal e ficam branco no branco (invisíveis).
+// Por isso o fundo/cor aparecem duas vezes: no controle e nas opções.
+const SELECT_CLASS =
+  "h-9 w-full border border-white/15 bg-background px-2 text-sm text-foreground " +
+  "disabled:opacity-60 [&>option]:bg-background [&>option]:text-foreground"
+
 type Machine = { id_machine: number; name: string; slug: string }
 type Profession = { id_category: number; desc_category: string }
 type Municipio = { id: number; nome: string }
@@ -487,7 +495,7 @@ export function BirthdateGate() {
                   value={idMachine}
                   onChange={(e) => handleMachineChange(e.target.value)}
                   disabled={loadingMachines}
-                  className="h-9 w-full border border-white/15 bg-transparent px-2 text-sm disabled:opacity-60"
+                  className={SELECT_CLASS}
                 >
                   <option value="">
                     {loadingMachines
@@ -509,7 +517,7 @@ export function BirthdateGate() {
                   value={idCategory}
                   onChange={(e) => setIdCategory(e.target.value)}
                   disabled={!idMachine || loadingProfessions}
-                  className="h-9 w-full border border-white/15 bg-transparent px-2 text-sm disabled:opacity-60"
+                  className={SELECT_CLASS}
                 >
                   <option value="">
                     {!idMachine
@@ -533,7 +541,7 @@ export function BirthdateGate() {
                     id="onboarding-estado"
                     value={estadoId}
                     onChange={(e) => handleEstadoChange(e.target.value)}
-                    className="h-9 w-full border border-white/15 bg-transparent px-2 text-sm"
+                    className={SELECT_CLASS}
                   >
                     <option value="">{t("selectState", "UF")}</option>
                     {ESTADOS_BRASIL.map((e) => (
@@ -550,7 +558,7 @@ export function BirthdateGate() {
                     value={municipio}
                     onChange={(e) => setMunicipio(e.target.value)}
                     disabled={!estadoId || loadingMunicipios}
-                    className="h-9 w-full border border-white/15 bg-transparent px-2 text-sm disabled:opacity-60"
+                    className={SELECT_CLASS}
                   >
                     <option value="">
                       {!estadoId
