@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, type LucideIcon } from "lucide-react"
+import { Users, Receipt, Sparkles, Wallet, Trophy, HandCoins, ShieldAlert, Store, ShoppingBag, Newspaper, Boxes, Activity, Search, ChevronRight, Compass, Power, Bot, Radio, Fingerprint, type LucideIcon } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 
@@ -56,6 +56,7 @@ const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
 
   // Moderação
   { section: "Moderação", hint: "admin-chat-mod", href: "/administracao/moderacao", icon: ShieldAlert, title: "Moderação", body: "Chat (fila/mute/ban), termos bloqueados e posts denunciados — tudo em abas." },
+  { section: "Moderação", href: "/administracao/fraude", icon: Fingerprint, title: "Fraude", body: "Fila de cadastros suspeitos (IP em rajada, e-mail descartável, região do CPF), bloqueio de conta e destinos de repasse divergentes.", badge: "novo" },
 
   // Sistema & Dados
   { section: "Sistema & Dados", href: "/administracao/painel-de-controle", icon: Power, title: "Painel de Controle", body: "Chaves de liga/desliga por responsabilidade (ex.: Lojas / Produtos). Desligar esconde toda a superfície e bloqueia as rotas — sem apagar dados.", badge: "novo" },

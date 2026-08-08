@@ -1490,7 +1490,9 @@
     "myReferralsEmpty": "Ninguém vinculado ainda. Compartilhe seu cupom: o primeiro que comprar algo da plataforma por ele fica seu para sempre.",
     "myReferralsCount": "Vinculados",
     "myReferralsRecurring": "Comissão por vínculo (30 dias)",
-    "myReferralsSince": "desde {date}"
+    "myReferralsSince": "desde {date}",
+    "payoutOwnershipHint": "O CPF do recebedor precisa ser o mesmo CPF cadastrado na sua conta.",
+    "pixSaveFail": "Não foi possível salvar os dados de recebimento."
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

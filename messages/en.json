@@ -1490,7 +1490,9 @@
     "myReferralsEmpty": "Nobody linked yet. Share your coupon: the first person to buy something from the platform with it is yours forever.",
     "myReferralsCount": "Linked",
     "myReferralsRecurring": "Referral commission (30 days)",
-    "myReferralsSince": "since {date}"
+    "myReferralsSince": "since {date}",
+    "payoutOwnershipHint": "The payee's CPF must be the same CPF registered on your account.",
+    "pixSaveFail": "Could not save your payout details."
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

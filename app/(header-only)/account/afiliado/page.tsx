@@ -149,6 +149,7 @@ export default function MeusFaturamentosPage() {
   const [pixForm, setPixForm] = useState({ pix_key: "", pix_key_type: "", legal_name: "", tax_id: "" })
   const [savingPix, setSavingPix] = useState(false)
   const [pixSaved, setPixSaved] = useState(false)
+  const [pixError, setPixError] = useState<string | null>(null)
   const { ensureConsent } = useActionConsent()
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -234,6 +235,7 @@ export default function MeusFaturamentosPage() {
     if (!(await ensureConsent("affiliate"))) return
     setSavingPix(true)
     setPixSaved(false)
+    setPixError(null)
     try {
       const res = await fetch("/api/me/affiliate/payout-info", {
         method: "PUT",
@@ -249,7 +251,17 @@ export default function MeusFaturamentosPage() {
         setPixSaved(true)
         setTimeout(() => setPixSaved(false), 2500)
         await loadAffiliate()
+      } else {
+        // O backend recusa destino cujo CPF não é o da conta (gate antifraude).
+        // Sem mostrar a mensagem, o botão parecia quebrado.
+        const body = await res.json().catch(() => null)
+        setPixError(
+          body?.error ||
+            t("pixSaveFail", "Não foi possível salvar os dados de recebimento."),
+        )
       }
+    } catch {
+      setPixError(t("pixSaveFail", "Não foi possível salvar os dados de recebimento."))
     } finally {
       setSavingPix(false)
     }
@@ -376,6 +388,7 @@ export default function MeusFaturamentosPage() {
                   onSavePix={handleSavePix}
                   savingPix={savingPix}
                   pixSaved={pixSaved}
+                  pixError={pixError}
                 />
               </motion.div>
             ) : (
@@ -661,7 +674,7 @@ function MyReferrals() {
 }
 
 function AfiliadoPanel({
-  affiliate, defaultRule, coupons, pixForm, setPixForm, onSavePix, savingPix, pixSaved,
+  affiliate, defaultRule, coupons, pixForm, setPixForm, onSavePix, savingPix, pixSaved, pixError,
 }: {
   affiliate: Affiliate | null
   defaultRule: DefaultRule | null
@@ -671,6 +684,7 @@ function AfiliadoPanel({
   onSavePix: () => void
   savingPix: boolean
   pixSaved: boolean
+  pixError: string | null
 }) {
   const t = useTranslations("Account")
   return (
@@ -765,6 +779,9 @@ function AfiliadoPanel({
             <div className="space-y-1.5">
               <Label htmlFor="tax-id" className="text-[11px] uppercase tracking-wider text-white/50">{t("taxId", "CPF / CNPJ")}</Label>
               <Input id="tax-id" value={pixForm.tax_id} onChange={(e) => setPixForm((p) => ({ ...p, tax_id: e.target.value }))} />
+              <p className="text-[11px] text-white/45">
+                {t("payoutOwnershipHint", "O CPF do recebedor precisa ser o mesmo CPF cadastrado na sua conta.")}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 pt-1">
@@ -778,6 +795,11 @@ function AfiliadoPanel({
             {pixSaved && <span className="text-xs text-emerald-400">{t("dataSaved", "Dados salvos.")}</span>}
             {!affiliate && <span className="text-xs text-white/45">{t("availableAfterActivation", "Disponível após ativação.")}</span>}
           </div>
+          {pixError && (
+            <p className="mt-2 border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              {pixError}
+            </p>
+          )}
         </CardContent>
       </Card>
     </>

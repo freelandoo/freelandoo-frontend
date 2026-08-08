@@ -1490,7 +1490,9 @@
     "myReferralsEmpty": "Nadie vinculado todavía. Comparte tu cupón: la primera persona que compre algo de la plataforma con él es tuya para siempre.",
     "myReferralsCount": "Vinculados",
     "myReferralsRecurring": "Comisión por vínculo (30 días)",
-    "myReferralsSince": "desde {date}"
+    "myReferralsSince": "desde {date}",
+    "payoutOwnershipHint": "El CPF del receptor debe ser el mismo CPF registrado en tu cuenta.",
+    "pixSaveFail": "No fue posible guardar los datos de cobro."
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
