@@ -31,6 +31,8 @@ interface PublicProfileResponse {
     is_paid: boolean
     is_published: boolean
     is_user_account: boolean
+    /** mig 200: perfil-conta que declarou enxame/profissão no onboarding. */
+    has_declared_taxonomy?: boolean
     deleted_at: string | null
   }
 }
@@ -94,8 +96,10 @@ export async function generateMetadata({
   const cityLabel = profile.municipio || ""
   const stateLabel = profile.estado || ""
   const location = [cityLabel, stateLabel].filter(Boolean).join(", ")
-  // Perfil-conta carrega categoria "fantasma" (AuthStorage) — não expor profissão.
-  const professionLabel = profile.is_user_account ? "" : profile.desc_category
+  // Perfil-conta carrega categoria "fantasma" (AuthStorage) até o dono declarar
+  // a dele no onboarding (mig 200) — só a fantasma fica de fora do título.
+  const ghostCategory = profile.is_user_account && !profile.has_declared_taxonomy
+  const professionLabel = ghostCategory ? "" : profile.desc_category
   const titleBase = professionLabel
     ? `${profile.display_name} · ${professionLabel}`
     : profile.display_name
@@ -181,7 +185,7 @@ export default async function PublicProfilePage({
     name: profile.display_name,
     description:
       profile.bio ||
-      (profile.is_user_account
+      (profile.is_user_account && !profile.has_declared_taxonomy
         ? `Conheça ${profile.display_name} no Freelandoo.`
         : `Conheça ${profile.display_name}, ${profile.desc_category} no Freelandoo.`),
     image: profile.avatar_url || undefined,

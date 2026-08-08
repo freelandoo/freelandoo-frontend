@@ -16,6 +16,13 @@ export interface AccountProfileInfo {
   id_profile: string
   xp_total?: number
   xp_level?: number
+  /** mig 200: o dono já declarou enxame/profissão no onboarding. */
+  has_taxonomy?: boolean
+  id_category?: number | null
+  id_machine?: number | null
+  category?: string | null
+  estado?: string | null
+  municipio?: string | null
 }
 
 export interface ProfileSubscription {
