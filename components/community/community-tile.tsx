@@ -15,8 +15,10 @@ export type CommunityTileData = {
   avatar_url: string | null
   banner_url?: string | null
   enxame_name: string | null
-  member_count: number
-  xp_level: number
+  // Opcionais: o backend recorta contadores por tier do viewer — comunidade
+  // privada e condomínio não os devolvem para quem está de fora.
+  member_count?: number
+  xp_level?: number
   community_theme?: { accent?: string } | null
   role?: "leader" | "vice" | "member" | null
   privacy?: "public" | "private"
@@ -83,9 +85,11 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
             {tx.enxame(null, community.enxame_name)}
           </span>
         ) : null}
-        <span className="absolute right-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
-          <Trophy className="h-3 w-3" style={{ color: accent }} /> {community.xp_level}
-        </span>
+        {community.xp_level != null ? (
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
+            <Trophy className="h-3 w-3" style={{ color: accent }} /> {community.xp_level}
+          </span>
+        ) : null}
         {community.privacy === "private" && (
           <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] backdrop-blur">
             <Lock className="h-3 w-3" style={{ color: accent }} /> {t("privateBadge", "Privada")}
@@ -117,11 +121,17 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
           </span>
         )}
         <div className="mt-auto flex items-center justify-between gap-2 text-[10px] font-semibold text-[#6B6457]">
-          <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" />{" "}
-            {community.member_count}{" "}
-            {community.kind === "condo" ? t("residentsCount", "moradores") : t("membersCount", "membros")}
-          </span>
+          {/* Contagem some inteira quando o backend não a devolve (privada e
+              condomínio para quem está de fora) — melhor que exibir "— membros". */}
+          {community.member_count != null ? (
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3 w-3" />{" "}
+              {community.member_count}{" "}
+              {community.kind === "condo" ? t("residentsCount", "moradores") : t("membersCount", "membros")}
+            </span>
+          ) : (
+            <span />
+          )}
           {roleLabel && (
             <span className="inline-flex items-center gap-1 font-extrabold uppercase tracking-[0.08em]" style={{ color: "#9a7400" }}>
               {RoleIcon && <RoleIcon className="h-3 w-3" />} {roleLabel}

@@ -24,7 +24,8 @@ export type CondoCommunity = {
   bio: string | null
   avatar_url: string | null
   banner_url: string | null
-  member_count: number
+  // Opcional: o backend só devolve a contagem para quem é de dentro.
+  member_count?: number
   kind?: "common" | "academy" | "condo"
   address?: {
     street?: string | null
@@ -648,7 +649,7 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
             </p>
           )}
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
-            {community.member_count} {t("residentsCount", "moradores")}
+            {community.member_count ?? "—"} {t("residentsCount", "moradores")}
           </p>
         </div>
 

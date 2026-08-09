@@ -44,9 +44,11 @@ type Community = {
   banner_url: string | null
   enxame_name: string | null
   community_theme: Theme | null
-  xp_total: number
-  xp_level: number
-  member_count: number
+  // Opcionais: o backend recorta contadores por tier do viewer — comunidade
+  // privada e condomínio não os devolvem para quem está de fora.
+  xp_total?: number
+  xp_level?: number
+  member_count?: number
   privacy?: "public" | "private"
   monthly_cents?: number | null
   viewer_is_member?: boolean
@@ -214,7 +216,12 @@ export default function CommunityDetailPage() {
   }, [])
 
   const fetchGoal = useCallback(async () => {
-    const r = await fetch(`/api/communities/${id}/goal`)
+    // /goal exige tier mínimo desde a blindagem de privacidade: em comunidade
+    // privada e condomínio ele devolve 403 sem token.
+    const token = getToken()
+    const r = await fetch(`/api/communities/${id}/goal`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
     const d = await r.json().catch(() => ({}))
     setGoal(d.goal || null)
   }, [id])
@@ -256,11 +263,13 @@ export default function CommunityDetailPage() {
       const tk = getToken()
       const authHeaders = tk ? { Authorization: `Bearer ${tk}` } : undefined
       const [cRes, mRes, gRes, aRes, bmRes] = await Promise.all([
+        // Todas com token: desde a blindagem de privacidade, members/goal/
+        // benchmark exigem tier mínimo em comunidade privada e condomínio.
         fetch(`/api/communities/${id}`, authHeaders ? { headers: authHeaders } : undefined),
-        fetch(`/api/communities/${id}/members`),
-        fetch(`/api/communities/${id}/goal`),
+        fetch(`/api/communities/${id}/members`, authHeaders ? { headers: authHeaders } : undefined),
+        fetch(`/api/communities/${id}/goal`, authHeaders ? { headers: authHeaders } : undefined),
         fetch(`/api/communities/${id}/announcements`, authHeaders ? { headers: authHeaders } : undefined),
-        fetch(`/api/communities/${id}/benchmark`),
+        fetch(`/api/communities/${id}/benchmark`, authHeaders ? { headers: authHeaders } : undefined),
       ])
       const cData = await cRes.json()
       if (!cRes.ok) throw new Error(cData.error || t("notFound", "Comunidade não encontrada."))
@@ -609,7 +618,7 @@ export default function CommunityDetailPage() {
             )}
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
               <span className="text-[8px] font-bold uppercase text-[#9A938A]">{t("level", "Nível")}</span>
-              <span className="fl-display text-2xl leading-none" style={{ color: accent }}>{community.xp_level}</span>
+              <span className="fl-display text-2xl leading-none" style={{ color: accent }}>{community.xp_level ?? "—"}</span>
             </span>
           </div>
         </div>
@@ -661,9 +670,9 @@ export default function CommunityDetailPage() {
       {/* KPIs */}
       <section className="relative z-10 mx-auto mt-6 max-w-5xl px-5 md:px-10">
         <div className="grid grid-cols-3 gap-3">
-          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={compact(community.member_count)} accent={accent} />
-          <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={String(community.xp_level)} accent={accent} />
-          <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={compact(community.xp_total)} accent={accent} />
+          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
+          <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
+          <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
         </div>
       </section>
 
@@ -734,10 +743,10 @@ export default function CommunityDetailPage() {
                     </select>
                   </div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                    🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {community.member_count < 5 ? `(${community.member_count}/5)` : ""}
+                    🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {(community.member_count ?? 0) < 5 ? `(${community.member_count ?? 0}/5)` : ""}
                   </p>
                   <div className="flex gap-2 pt-1">
-                    <button type="button" disabled={savingGoal || community.member_count < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                    <button type="button" disabled={savingGoal || (community.member_count ?? 0) < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
                       {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("goalStart", "Iniciar temporada")}
                     </button>
                     {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[#ff5a44]/60 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#ff7a6a]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
