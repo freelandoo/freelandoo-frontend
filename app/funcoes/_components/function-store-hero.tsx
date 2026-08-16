@@ -24,8 +24,10 @@ import {
   acceptsPolens,
   formatPolens,
   formatPriceBRL,
+  getBackstageVars,
+  getCardOffset,
   getCardRole,
-  getRoleVars,
+  getSlotVars,
   padIndex,
   toTweenVars,
   type CardRole,
@@ -249,9 +251,9 @@ export default function FunctionStoreHero({
       slides.forEach((slide, index) => {
         const el = cardRefs.current.get(slide.id)
         if (!el) return
-        const role = getCardRole(index, activeIndexRef.current, total)
-        gsap.set(el, toTweenVars(getRoleVars(role, isMobile)))
-        gsap.set(el, { zIndex: getRoleVars(role, isMobile).zIndex })
+        const vars = getSlotVars(getCardOffset(index, activeIndexRef.current, total), isMobile, total)
+        gsap.set(el, toTweenVars(vars))
+        gsap.set(el, { zIndex: vars.zIndex })
       })
 
       // O canvas NÃO troca de cor por produto (era o que fazia a página parecer
@@ -314,9 +316,7 @@ export default function FunctionStoreHero({
     }
 
     const current = activeIndexRef.current
-    const centerEl = cardRefs.current.get(slides[current]?.id ?? "")
-    const prevEl = cardRefs.current.get(slides[(current - 1 + total) % total]?.id ?? "")
-    const nextEl = cardRefs.current.get(slides[(current + 1) % total]?.id ?? "")
+    const mobile = isMobileRef.current
 
     const tl = gsap.timeline({ defaults: { ease: "power3.out" }, onComplete: startAutoplay })
     timelineRef.current = tl
@@ -324,11 +324,27 @@ export default function FunctionStoreHero({
     tl.from(q("[data-hero-logo]"), { y: -28, autoAlpha: 0, duration: 0.7 }, 0.05)
       .from(q("[data-hero-headline]"), { yPercent: 24, autoAlpha: 0, duration: 0.9 }, 0.1)
 
-    if (centerEl) tl.from(centerEl, { scale: 0.86, autoAlpha: 0, duration: 1 }, 0.15)
-    if (prevEl && prevEl !== centerEl) tl.from(prevEl, { x: -320, autoAlpha: 0, duration: 0.9 }, 0.3)
-    if (nextEl && nextEl !== centerEl && nextEl !== prevEl) {
-      tl.from(nextEl, { x: 320, autoAlpha: 0, duration: 0.9 }, 0.3)
-    }
+    // Entra o anel visível inteiro: o centro cresce, os laterais chegam de fora
+    // pro seu lado. `autoAlpha` mexe em visibility, então card de slot invisível
+    // fica FORA daqui — senão nasceria com visibility:hidden e nunca mais
+    // apareceria nas transições seguintes.
+    slides.forEach((slide, index) => {
+      const el = cardRefs.current.get(slide.id)
+      if (!el) return
+      const offset = getCardOffset(index, current, total)
+      if (getSlotVars(offset, mobile, total).opacity === 0) return
+
+      if (offset === 0) {
+        tl.from(el, { scale: 0.86, autoAlpha: 0, duration: 1 }, 0.15)
+        return
+      }
+      const depth = Math.abs(offset)
+      tl.from(
+        el,
+        { x: Math.sign(offset) * (280 + depth * 60), autoAlpha: 0, duration: 0.9 },
+        0.3 + (depth - 1) * 0.08,
+      )
+    })
 
     tl.from(q("[data-hero-eyebrow], [data-hero-description]"), { y: 26, autoAlpha: 0, duration: 0.6, stagger: 0.08 }, 0.5)
       .from(q("[data-hero-cta]"), { x: 36, autoAlpha: 0, duration: 0.6 }, 0.6)
@@ -360,16 +376,8 @@ export default function FunctionStoreHero({
     lastNavStartRef.current = performance.now()
 
     const mobile = isMobileRef.current
-    const centerVars = getRoleVars("center", mobile)
-    const prevVars = getRoleVars("previous", mobile)
-    const nextVars = getRoleVars("next", mobile)
+    const backstageVars = getBackstageVars(mobile)
     const headlineOpacity = mobile ? 0.75 : 0.92
-
-    const prevIndex = (from - 1 + total) % total
-    const nextIndex = (from + 1) % total
-    const centerEl = cardRefs.current.get(slides[from]?.id ?? "")
-    const prevEl = cardRefs.current.get(slides[prevIndex]?.id ?? "")
-    const nextEl = cardRefs.current.get(slides[nextIndex]?.id ?? "")
 
     const headlineEl = q("[data-hero-headline]")
     const copyEls = q("[data-hero-eyebrow], [data-hero-description]")
@@ -382,9 +390,10 @@ export default function FunctionStoreHero({
       setActiveIndex(to)
     }
 
-    const animatedCards = [centerEl, prevEl, nextEl].filter(
-      (el, index, list): el is HTMLDivElement => Boolean(el) && list.indexOf(el) === index,
-    )
+    // O anel inteiro gira: todo card do catálogo anda um slot por transição.
+    const animatedCards = slides
+      .map((slide) => cardRefs.current.get(slide.id))
+      .filter((el): el is HTMLDivElement => Boolean(el))
 
     const release = () => {
       gsap.set(animatedCards, { willChange: "auto" })
@@ -403,8 +412,7 @@ export default function FunctionStoreHero({
           slides.forEach((slide, index) => {
             const el = cardRefs.current.get(slide.id)
             if (!el) return
-            const role = getCardRole(index, to, total)
-            const vars = getRoleVars(role, mobile)
+            const vars = getSlotVars(getCardOffset(index, to, total), mobile, total)
             gsap.set(el, { ...toTweenVars(vars), rotationY: 0, rotationZ: 0, filter: "blur(0px)" })
             gsap.set(el, { zIndex: vars.zIndex })
           })
@@ -421,59 +429,56 @@ export default function FunctionStoreHero({
     })
     timelineRef.current = tl
 
-    if (direction === "next") {
-      if (centerEl) {
-        tl.to(centerEl, { scale: 1.04, duration: 0.16, ease: "power2.out", overwrite: "auto" }, 0)
-          .set(centerEl, { zIndex: 18 }, 0.2)
-          .to(centerEl, { ...toTweenVars(prevVars), duration: TRANSITION_DURATION - 0.16 }, 0.16)
-          .set(centerEl, { zIndex: prevVars.zIndex }, TRANSITION_DURATION)
-      }
-      if (nextEl) {
-        tl.set(nextEl, { zIndex: centerVars.zIndex }, 0).to(nextEl, { ...toTweenVars(centerVars), overwrite: "auto" }, 0)
-      }
-      if (prevEl && total > 2 && prevEl !== centerEl && prevEl !== nextEl) {
-        tl.set(prevEl, { zIndex: 6 }, 0)
+    // Uma volta do anel: cada card sai do slot em que está e entra no vizinho,
+    // todos pro MESMO lado. Quem já não cabia no anel visível continua andando
+    // fora de cena — é isso que impede o palco de "desalinhar" (antes só três
+    // elementos se moviam e o resto ficava parado onde a transição anterior
+    // tinha largado).
+    slides.forEach((slide, index) => {
+      const el = cardRefs.current.get(slide.id)
+      if (!el) return
+
+      const fromOffset = getCardOffset(index, from, total)
+      const toOffset = getCardOffset(index, to, total)
+      const startVars = getSlotVars(fromOffset, mobile, total)
+      const targetVars = getSlotVars(toOffset, mobile, total)
+
+      // No "next" todo mundo anda pra esquerda (offset diminui); quem anda pro
+      // outro lado é o card que fechou a volta.
+      const wrapsAround = direction === "next" ? toOffset > fromOffset : toOffset < fromOffset
+
+      if (wrapsAround) {
+        // Passa por trás do centro, encolhendo e sumindo, e reaparece do outro
+        // lado — o giro continua em vez de atravessar o palco na diagonal.
+        tl.set(el, { zIndex: backstageVars.zIndex }, 0)
           .to(
-            prevEl,
-            {
-              left: nextVars.left, top: nextVars.top,
-              rotationY: nextVars.rotationY, rotationZ: nextVars.rotationZ,
-              filter: nextVars.filter, x: 0, y: 0,
-              duration: TRANSITION_DURATION, overwrite: "auto",
-            },
+            el,
+            { ...toTweenVars(backstageVars), duration: TRANSITION_DURATION / 2, ease: "power2.in", overwrite: "auto" },
             0,
           )
-          .to(prevEl, { scale: 0.44, opacity: 0.32, duration: TRANSITION_DURATION / 2, ease: "power2.in" }, 0)
-          .to(prevEl, { scale: nextVars.scale, opacity: nextVars.opacity, duration: TRANSITION_DURATION / 2, ease: "power2.out" }, TRANSITION_DURATION / 2)
-          .set(prevEl, { zIndex: nextVars.zIndex }, TRANSITION_DURATION)
-      }
-    } else {
-      if (centerEl) {
-        tl.to(centerEl, { scale: 1.04, duration: 0.16, ease: "power2.out", overwrite: "auto" }, 0)
-          .set(centerEl, { zIndex: 18 }, 0.2)
-          .to(centerEl, { ...toTweenVars(nextVars), duration: TRANSITION_DURATION - 0.16 }, 0.16)
-          .set(centerEl, { zIndex: nextVars.zIndex }, TRANSITION_DURATION)
-      }
-      if (prevEl) {
-        tl.set(prevEl, { zIndex: centerVars.zIndex }, 0).to(prevEl, { ...toTweenVars(centerVars), overwrite: "auto" }, 0)
-      }
-      if (nextEl && total > 2 && nextEl !== centerEl && nextEl !== prevEl) {
-        tl.set(nextEl, { zIndex: 6 }, 0)
           .to(
-            nextEl,
-            {
-              left: prevVars.left, top: prevVars.top,
-              rotationY: prevVars.rotationY, rotationZ: prevVars.rotationZ,
-              filter: prevVars.filter, x: 0, y: 0,
-              duration: TRANSITION_DURATION, overwrite: "auto",
-            },
-            0,
+            el,
+            { ...toTweenVars(targetVars), duration: TRANSITION_DURATION / 2, ease: "power2.out" },
+            TRANSITION_DURATION / 2,
           )
-          .to(nextEl, { scale: 0.44, opacity: 0.32, duration: TRANSITION_DURATION / 2, ease: "power2.in" }, 0)
-          .to(nextEl, { scale: prevVars.scale, opacity: prevVars.opacity, duration: TRANSITION_DURATION / 2, ease: "power2.out" }, TRANSITION_DURATION / 2)
-          .set(nextEl, { zIndex: prevVars.zIndex }, TRANSITION_DURATION)
+          .set(el, { zIndex: targetVars.zIndex }, TRANSITION_DURATION)
+        return
       }
-    }
+
+      if (fromOffset === 0) {
+        // O card que deixa o centro dá um pulinho e sai por baixo do que chega.
+        tl.set(el, { zIndex: startVars.zIndex }, 0)
+          .to(el, { scale: startVars.scale * 1.04, duration: 0.16, ease: "power2.out", overwrite: "auto" }, 0)
+          .set(el, { zIndex: targetVars.zIndex + 5 }, 0.2)
+          .to(el, { ...toTweenVars(targetVars), duration: TRANSITION_DURATION - 0.16 }, 0.16)
+          .set(el, { zIndex: targetVars.zIndex }, TRANSITION_DURATION)
+        return
+      }
+
+      tl.set(el, { zIndex: Math.max(startVars.zIndex, targetVars.zIndex) }, 0)
+        .to(el, { ...toTweenVars(targetVars), overwrite: "auto" }, 0)
+        .set(el, { zIndex: targetVars.zIndex }, TRANSITION_DURATION)
+    })
 
     // Pulso do glow dourado no lugar da troca de cor do fundo: mantém o
     // "respiro" da transição sem repintar a página a cada função.
