@@ -40,6 +40,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { RotateCcw } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -108,18 +109,58 @@ export default function MonstersPage() {
     return () => window.removeEventListener("message", ouve)
   }, [origemJogo, entrega])
 
-  // O CELULAR PRECISA DEITAR. O jogo desenha num espaço 16:9 e os controles de
-  // toque moram nos dois cantos de baixo (ver `jogo/scripts/ui/toque.gd`); em
-  // pé, os dois polegares se encontram no meio da tela. `orientation.lock` só
-  // existe em tela cheia e só no Android — onde não existe, o aviso abaixo faz
-  // o pedido em português.
+  // ── O RETRATO NÃO É "FEIO", É INJOGÁVEL ────────────────────────────────
+  //
+  // O jogo desenha num espaço de 1920×1080 e estica por `canvas_items` com
+  // `aspect = expand`: a escala é `min(largura/1920, altura/1080)`. Num celular
+  // em pé (412×915) isso dá **0,21** — a interface inteira encolhe para um
+  // quinto, e os botões do menu ficam com ~16 px de altura CSS, uns 2,5 mm de
+  // alvo. Eles continuam funcionando; ninguém consegue acertar. Deitado o mesmo
+  // aparelho dá 0,38 e os mesmos botões passam de 4 mm.
+  //
+  // Por isso o retrato é BLOQUEADO e não só avisado: deixar entrar é deixar a
+  // pessoa concluir que o jogo está quebrado.
+  const [retrato, setRetrato] = useState(false)
+
   useEffect(() => {
-    const tela = screen as Screen & {
-      orientation?: ScreenOrientation & { lock?: (o: string) => Promise<void> }
+    // `pointer: coarse` separa dedo de mouse. Sem isso, quem estreitasse a
+    // janela no computador levaria um "gire o telefone" sem ter telefone.
+    const dedo = window.matchMedia("(pointer: coarse)")
+    const empe = window.matchMedia("(orientation: portrait)")
+    const olha = () => setRetrato(dedo.matches && empe.matches)
+    olha()
+    empe.addEventListener("change", olha)
+    dedo.addEventListener("change", olha)
+    return () => {
+      empe.removeEventListener("change", olha)
+      dedo.removeEventListener("change", olha)
     }
-    tela.orientation?.lock?.("landscape").catch(() => {
-      /* iOS e desktop não deixam; o aviso na tela cobre esse caso */
-    })
+  }, [])
+
+  // DEITAR SOZINHO SÓ FUNCIONA DENTRO DE UM GESTO E EM TELA CHEIA. A versão
+  // anterior chamava `orientation.lock` num `useEffect` no carregamento; o
+  // navegador recusa nas duas contas (sem gesto, e fora de tela cheia) e a
+  // promessa era engolida por um `catch` vazio — parecia tratado e não fazia
+  // nada. Agora quem chama é o dedo, e a tela cheia vem antes.
+  const deita = useCallback(async () => {
+    const alvo = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>
+    }
+    try {
+      if (!document.fullscreenElement) {
+        await (alvo.requestFullscreen?.() ?? alvo.webkitRequestFullscreen?.())
+      }
+    } catch {
+      /* o iOS não tem tela cheia em página; o pedido escrito cobre */
+    }
+    try {
+      const o = screen.orientation as ScreenOrientation & {
+        lock?: (o: string) => Promise<void>
+      }
+      await o.lock?.("landscape")
+    } catch {
+      /* iOS não trava orientação; a pessoa gira na mão */
+    }
   }, [])
 
   if (status === "loading") {
@@ -187,10 +228,34 @@ export default function MonstersPage() {
         ← Freelandoo
       </Link>
 
-      {!entregue && (
+      {!entregue && !retrato && (
         <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-[11px] text-white/50 backdrop-blur">
-          carregando o mundo — deite o telefone
+          carregando o mundo…
         </span>
+      )}
+
+      {/* O iframe continua vivo por baixo: a build segue baixando os 364 MB
+          enquanto a pessoa gira o aparelho. Desmontá-lo aqui recomeçaria o
+          download do zero a cada rotação. */}
+      {retrato && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0b0804] px-8 text-center">
+          <RotateCcw className="h-10 w-10 text-[#f2b705]" aria-hidden />
+          <h2 className="fl-headline text-2xl text-[#f2b705]">Deite o telefone</h2>
+          <p className="max-w-xs text-sm leading-relaxed text-white/60">
+            Em pé, a arena fica do tamanho de um selo e os botões somem. Girando,
+            tudo volta ao tamanho certo.
+          </p>
+          <button
+            type="button"
+            onClick={deita}
+            className="mt-1 rounded-full bg-[#f2b705] px-5 py-2 text-sm font-semibold text-[#0b0b0d] transition hover:bg-[#e0a500]"
+          >
+            Girar e entrar em tela cheia
+          </button>
+          <span className="text-[11px] text-white/35">
+            no iPhone o giro é na mão — o Safari não deixa a página girar sozinha
+          </span>
+        </div>
       )}
     </main>
   )
