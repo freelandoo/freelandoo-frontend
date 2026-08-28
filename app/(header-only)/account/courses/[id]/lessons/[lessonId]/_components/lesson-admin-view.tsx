@@ -95,7 +95,7 @@ export function LessonAdminView({ courseId, lessonId }: Props) {
   const isLoading = loadingLesson || loadingModules || loadingModuleLessons
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell rail>
     <div className="relative z-10 px-4 py-6 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-7xl">
         {/* Header */}

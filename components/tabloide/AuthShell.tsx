@@ -89,22 +89,28 @@ export function AuthCard({
   footer?: ReactNode
   className?: string
 }) {
+  // Carimbo quadrado de 2px — a exceção circular é só para retrato e bolinha.
   const toneBg = {
-    gold: "bg-[#F2B705] text-[#1A1505]",
-    green: "bg-[#16a34a] text-white",
-    red: "bg-[#dc2626] text-white",
+    gold: "border-[#0B0B0D] bg-[#F2B705] text-[#1A1505]",
+    green: "border-[#0B0B0D] bg-[#16a34a] text-white",
+    red: "border-[#0B0B0D] bg-[#dc2626] text-white",
   }[iconTone]
 
   return (
     <div
       className={cn(
-        "fl-card relative z-10 w-full max-w-md rounded-3xl p-7 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.85)] sm:p-8",
+        "fl-card relative z-10 w-full max-w-md p-7 shadow-[8px_8px_0_0_#0B0B0D] sm:p-8",
         className,
       )}
     >
       <div className="mb-6 text-center">
         {icon && (
-          <div className={cn("mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full", toneBg)}>
+          <div
+            className={cn(
+              "mx-auto mb-4 flex h-14 w-14 rotate-[-2deg] items-center justify-center border-2 shadow-[4px_4px_0_0_#0B0B0D]",
+              toneBg,
+            )}
+          >
             {icon}
           </div>
         )}

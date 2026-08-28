@@ -38,7 +38,7 @@ export default function AgendaPage() {
 
   if (!resolved) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell rail>
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loadingAgenda", "Carregando agenda...")} />
         </div>

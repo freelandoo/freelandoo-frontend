@@ -156,7 +156,7 @@ export default function ProfileSettingsPage() {
 
   if (isLoading) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loadingProfile", "Carregando seu perfil…")} />
         </div>
@@ -166,7 +166,7 @@ export default function ProfileSettingsPage() {
 
   if (error || !perfil) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <ErrorState title={t("profileUnavailable", "Perfil indisponível")} description={error || t("loadProfileError", "Erro ao carregar perfil")} />
         </div>
@@ -176,7 +176,7 @@ export default function ProfileSettingsPage() {
 
   if (!profile) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
       <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-4 px-4 py-12">
         <p className="text-muted-foreground">{t("profileNotExist", "Este perfil não existe ou não pertence a você.")}</p>
         <Button asChild variant="outline">
@@ -542,7 +542,7 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
       <TabloidPageIntro
         eyebrow={t("profileEyebrow", "Perfil")}

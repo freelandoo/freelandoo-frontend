@@ -257,7 +257,7 @@ export default function MyClansPage() {
 
   if (loading) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loadingClans", "Carregando seus clans...")} />
         </div>
@@ -267,7 +267,7 @@ export default function MyClansPage() {
 
   if (error) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <ErrorState title={t("clansUnavailable", "Clans indisponíveis")} description={error} />
         </div>
@@ -283,7 +283,7 @@ export default function MyClansPage() {
   const eligibleSubProfiles = subProfiles
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
     <main className="relative z-10 mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10">
       <TabloidPageIntro
         eyebrow={t("teamsEyebrow", "Equipes")}

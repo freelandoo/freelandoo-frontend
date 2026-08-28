@@ -86,7 +86,7 @@ export default function ParentalRequestPage() {
 
   if (isMinor === null) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loading", "Carregando...")} />
         </div>
@@ -95,7 +95,7 @@ export default function ParentalRequestPage() {
   }
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
       <main className="relative z-10 mx-auto max-w-2xl px-4 py-10">
         <TabloidPageIntro
           eyebrow={t("parentalEyebrow", "Supervisão")}

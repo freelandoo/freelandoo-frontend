@@ -203,7 +203,7 @@ export default function FunctionProductPage() {
 
   if (notFound) {
     return (
-      <PageShell className="fl-sharp md:pl-[80px]">
+      <PageShell rail className="fl-sharp">
         <div className="mx-auto w-full max-w-3xl px-4 py-16">
           <ErrorState
             title={t("notFound", "Função não encontrada")}
@@ -218,7 +218,7 @@ export default function FunctionProductPage() {
 
   if (!product) {
     return (
-      <PageShell className="fl-sharp md:pl-[80px]">
+      <PageShell rail className="fl-sharp">
         <div className="mx-auto w-full max-w-3xl px-4 py-16">
           <LoadingState label={t("loading", "Carregando…")} />
         </div>
@@ -229,7 +229,7 @@ export default function FunctionProductPage() {
   const showImage = Boolean(product.image_url)
 
   return (
-    <PageShell className="fl-sharp md:pl-[80px]">
+    <PageShell rail className="fl-sharp">
       <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10 md:py-12">
         <TabloidPageIntro
           eyebrow={product.eyebrow}

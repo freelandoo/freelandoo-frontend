@@ -498,7 +498,7 @@ export default function ManageClanPage({
 
   if (loading) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loadingClan", "Carregando clan...")} />
         </div>
@@ -508,7 +508,7 @@ export default function ManageClanPage({
 
   if (error || !clan) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-12">
         <Card>
           <CardContent className="pt-6 flex items-center gap-2 text-red-600">
@@ -549,7 +549,7 @@ export default function ManageClanPage({
   }
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
     <main className="relative z-10 mx-auto flex max-w-4xl flex-col gap-8 px-4 py-12">
       <TabloidPageIntro
         eyebrow={isOwner ? t("clanOwnerEyebrow", "Dono do clan") : t("clanMemberEyebrow", "Membro do clan")}

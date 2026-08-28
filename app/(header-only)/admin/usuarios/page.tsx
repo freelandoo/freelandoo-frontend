@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronRight,
   ArrowLeft,
+  Trash2,
 } from "lucide-react"
 
 interface ProfileAdmin {
@@ -100,6 +101,7 @@ export default function AdminUsuariosPage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [updatingAdminId, setUpdatingAdminId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -195,6 +197,40 @@ export default function AdminUsuariosPage() {
       window.alert("Erro de rede ao atualizar admin.")
     } finally {
       setUpdatingAdminId(null)
+    }
+  }
+
+  async function deleteUser(user: UserAdmin, e: React.MouseEvent) {
+    e.stopPropagation()
+    if (user.id_user === currentUserId || user.is_admin) return
+    const ok = window.confirm(
+      `Excluir DEFINITIVAMENTE ${user.nome} (${user.email})?\n\nTodos os perfis e dados deste usuário serão apagados. Esta ação não pode ser desfeita.`
+    )
+    if (!ok) return
+
+    const token = localStorage.getItem("token")
+    if (!token) return
+    setDeletingId(user.id_user)
+    try {
+      const res = await fetch(`/api/admin/users/${user.id_user}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        window.alert(data.error || "Erro ao excluir usuário.")
+        return
+      }
+      setUsers((prev) => prev.filter((u) => u.id_user !== user.id_user))
+      setExpandedRows((prev) => {
+        const next = new Set(prev)
+        next.delete(user.id_user)
+        return next
+      })
+    } catch {
+      window.alert("Erro de rede ao excluir usuário.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -336,6 +372,9 @@ export default function AdminUsuariosPage() {
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Total entradas
                     </th>
+                    <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      <span className="sr-only">Excluir</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -443,6 +482,29 @@ export default function AdminUsuariosPage() {
                           <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-foreground">
                             {formatCents(u.total_spent_cents ?? 0)}
                           </td>
+
+                          {/* Excluir usuário */}
+                          <td className="px-3 py-3 text-center">
+                            {u.id_user !== currentUserId && (
+                              <button
+                                type="button"
+                                onClick={(e) => deleteUser(u, e)}
+                                disabled={deletingId === u.id_user || u.is_admin}
+                                title={
+                                  u.is_admin
+                                    ? "Remova os privilégios de admin antes de excluir"
+                                    : "Excluir usuário definitivamente"
+                                }
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-500 transition-colors hover:bg-red-500/25 hover:border-red-500/50 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {deletingId === u.id_user ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            )}
+                          </td>
                         </tr>
 
                         {/* Profile sub-rows */}
@@ -503,6 +565,9 @@ export default function AdminUsuariosPage() {
                               <td className="whitespace-nowrap px-4 py-2 text-right text-xs text-muted-foreground">
                                 {formatCents(p.total_spent_cents)}
                               </td>
+
+                              {/* Alinhamento com a coluna de excluir */}
+                              <td className="px-3 py-2" />
                             </tr>
                           ))}
                       </React.Fragment>

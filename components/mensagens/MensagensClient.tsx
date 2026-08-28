@@ -21,7 +21,6 @@ import {
   Package,
   Plus,
   Radio,
-  Search,
   Send,
   Sparkles,
   Trash2,
@@ -49,6 +48,15 @@ import { emitRealtime, onRealtime } from "@/lib/realtime"
 import { useAuth } from "@/hooks/use-auth"
 import { useNavCounts, refreshNavCounts } from "@/components/navigation/use-nav-counts"
 import { cn } from "@/lib/utils"
+import {
+  PaperList,
+  PaperListItem,
+  PaperPortrait,
+  PaperRow,
+  TabloidMasthead,
+  TabloidSearch,
+  TabloidTab,
+} from "@/components/tabloide/pieces"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import type {
@@ -1206,17 +1214,16 @@ export default function MensagensClient() {
               : "flex"
           )}
         >
-          <div className="flex items-center justify-between gap-2 border-b-2 border-[#F1EDE2]/12 px-4 py-3.5">
-            <div className="min-w-0">
-              <h2 className="fl-display text-3xl leading-none text-[#F2B705]">
-                {t("messagesHeaderTitle", "Mensagens")}
-              </h2>
-              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#8a8275]">
-                {tab === "conv" ? t("conversationsSubtitle", "Suas conversas") : t("osSubtitle", "Suas ordens de serviço")}
-              </p>
-            </div>
-            {tab === "conv" ? (
-              <div className="flex items-center gap-1.5">
+          <TabloidMasthead
+            title={t("messagesHeaderTitle", "Mensagens")}
+            eyebrow={
+              tab === "conv"
+                ? t("conversationsSubtitle", "Suas conversas")
+                : t("osSubtitle", "Suas ordens de serviço")
+            }
+            actions={
+            tab === "conv" ? (
+              <>
                 {apiFeatureOn && (
                   <button
                     type="button"
@@ -1244,7 +1251,7 @@ export default function MensagensClient() {
                   loading={actorsLoading}
                   onSelect={handleSelectActor}
                 />
-              </div>
+              </>
             ) : tab === "os" ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1275,12 +1282,13 @@ export default function MensagensClient() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : null}
-          </div>
+            ) : null
+            }
+          />
 
           {/* Tabs */}
           <div className="flex items-stretch border-b-2 border-[#F1EDE2]/12">
-            <TabBtn
+            <TabloidTab
               active={tab === "conv"}
               onClick={() => handleSelectTab("conv")}
               icon={<MessageCircle className="h-3.5 w-3.5" />}
@@ -1288,7 +1296,7 @@ export default function MensagensClient() {
               shortLabel={t("conversationsTabShortLabel", "Conv.")}
               dataTour="messages-tab-conv"
             />
-            <TabBtn
+            <TabloidTab
               active={tab === "os"}
               onClick={() => handleSelectTab("os")}
               icon={<ClipboardList className="h-3.5 w-3.5" />}
@@ -1298,7 +1306,7 @@ export default function MensagensClient() {
             />
             {!isClanActor && (
               <>
-                <TabBtn
+                <TabloidTab
                   active={tab === "global"}
                   onClick={() => handleSelectTab("global")}
                   icon={<Radio className="h-3.5 w-3.5" />}
@@ -1307,7 +1315,7 @@ export default function MensagensClient() {
                   dataTour="messages-tab-global"
                   badge={globalHasUnread}
                 />
-                <TabBtn
+                <TabloidTab
                   active={tab === "machine"}
                   onClick={() => handleSelectTab("machine")}
                   icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -1322,28 +1330,13 @@ export default function MensagensClient() {
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
             {/* Search inline pra encontrar perfis/clans pra começar nova conversa */}
-            <div className="sticky top-0 z-10 border-b-2 border-[#F1EDE2]/10 bg-[#0b0804]/85 px-3 py-2.5 backdrop-blur">
-              <div className="flex items-center gap-2 rounded-[4px] border-2 border-[#F1EDE2]/15 bg-[#1D1810] px-3 py-2 transition-colors focus-within:border-[#F2B705]">
-                <Search className="h-3.5 w-3.5 shrink-0 text-[#8a8275]" />
-                <input
-                  type="text"
-                  value={convSearch}
-                  onChange={(e) => setConvSearch(e.target.value)}
-                  placeholder={t("searchProfilesPlaceholder", "Buscar @usuário ou nome")}
-                  className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
-                />
-                {convSearch ? (
-                  <button
-                    type="button"
-                    onClick={() => setConvSearch("")}
-                    className="text-white/40 hover:text-white"
-                    aria-label={t("clearSearchAria", "Limpar busca")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <TabloidSearch
+              sticky
+              value={convSearch}
+              onChange={setConvSearch}
+              placeholder={t("searchProfilesPlaceholder", "Buscar @usuário ou nome")}
+              clearLabel={t("clearSearchAria", "Limpar busca")}
+            />
 
             {convSearch.trim().length >= 2 ? (
               searchLoading ? (
@@ -1411,7 +1404,7 @@ export default function MensagensClient() {
             ) : conversations.length === 0 ? (
               <EmptyConversations />
             ) : (
-              <ul className="space-y-2.5 p-2.5">
+              <PaperList>
                 {sortedConversations.map((c) => {
                   const isGroup = c.kind === "group"
                   const isClanChat = !!c.id_clan_profile
@@ -1419,71 +1412,53 @@ export default function MensagensClient() {
                   const title = isGroup
                     ? (c.name || t("groupFallback", "Grupo"))
                     : (c.other_entity?.display_name || t("noNameLabel", "Sem nome"))
-                  const isActive = activeConvId === c.id_conversation
                   return (
-                  <li key={c.id_conversation} className="relative">
-                    <button
+                  <PaperListItem key={c.id_conversation}>
+                    <PaperRow
                       onClick={() => handleSelectConv(c.id_conversation)}
-                      className={cn(
-                        "group flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:-rotate-[0.3deg]",
-                        isActive
-                          ? "-translate-y-0.5 shadow-[6px_6px_0_0_#F2B705]"
-                          : "shadow-[4px_4px_0_0_#0B0B0D] hover:shadow-[7px_7px_0_0_#F2B705]"
-                      )}
-                    >
-                      <div
-                        className="relative shrink-0 rotate-[-2deg] overflow-hidden border-2 border-[#0B0B0D]"
-                        style={{ outline: "2px solid #F2B705", outlineOffset: "1px" }}
-                      >
-                        {isGroup ? (
-                          <div className="flex h-11 w-11 items-center justify-center bg-[#1D1810]">
-                            {c.cover_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={c.cover_url} alt={title} className="h-full w-full object-cover" />
-                            ) : (
-                              <Users className="h-5 w-5 text-[#F2B705]" />
-                            )}
-                          </div>
-                        ) : (
-                          <Avatar className="h-11 w-11 rounded-none">
-                            <AvatarImage src={c.other_entity?.avatar_url || undefined} className="object-cover" />
-                            <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
-                              {entityInitials(c.other_entity?.display_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="fl-display inline-flex items-center gap-1.5 truncate text-lg leading-none text-[#0B0B0D]">
-                            {isClanChat && (
-                              <Pin className="h-3.5 w-3.5 shrink-0 fill-[#F2B705] text-[#0B0B0D]" />
-                            )}
-                            {title}
-                            {isGroup && c.member_count != null && (
-                              <span className="text-[10px] font-bold tabular-nums text-[#9a7400]">· {c.member_count}</span>
-                            )}
-                          </span>
-                          <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.08em] text-[#8a8275]">
-                            {formatTime(c.last_message_at || c.created_at, locale)}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                          <span className={cn(
-                            "truncate text-xs",
-                            c.unread_count > 0 ? "font-bold text-[#0B0B0D]" : "font-semibold text-[#6B6457]"
-                          )}>
-                            {c.is_last_message_from_me ? t("sentByMePrefix", "Você: ") : ""}
-                            {c.last_message_preview || t("noMessagesYet", "Sem mensagens ainda")}
-                          </span>
-                          {c.unread_count > 0 && (
-                            <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center border-2 border-[#0B0B0D] bg-[#F2B705] px-1 text-[10px] font-black tabular-nums text-[#0B0B0D]">
-                              {c.unread_count > 99 ? "99+" : c.unread_count}
-                            </span>
+                      active={activeConvId === c.id_conversation}
+                      strong={c.unread_count > 0}
+                      badge={c.unread_count}
+                      meta={formatTime(c.last_message_at || c.created_at, locale)}
+                      media={
+                        <PaperPortrait>
+                          {isGroup ? (
+                            <div className="flex h-full w-full items-center justify-center bg-[#1D1810]">
+                              {c.cover_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={c.cover_url} alt={title} className="h-full w-full object-cover" />
+                              ) : (
+                                <Users className="h-5 w-5 text-[#F2B705]" />
+                              )}
+                            </div>
+                          ) : (
+                            <Avatar className="h-full w-full rounded-none">
+                              <AvatarImage src={c.other_entity?.avatar_url || undefined} className="object-cover" />
+                              <AvatarFallback className="rounded-none bg-[#1D1810] text-xs font-bold text-[#F2B705]">
+                                {entityInitials(c.other_entity?.display_name)}
+                              </AvatarFallback>
+                            </Avatar>
                           )}
-                        </div>
-                      </div>
-                    </button>
+                        </PaperPortrait>
+                      }
+                      title={
+                        <>
+                          {isClanChat && (
+                            <Pin className="h-3.5 w-3.5 shrink-0 fill-[#F2B705] text-[#0B0B0D]" />
+                          )}
+                          <span className="truncate">{title}</span>
+                          {isGroup && c.member_count != null && (
+                            <span className="shrink-0 text-[10px] font-bold tabular-nums text-[#9a7400]">· {c.member_count}</span>
+                          )}
+                        </>
+                      }
+                      subtitle={
+                        <>
+                          {c.is_last_message_from_me ? t("sentByMePrefix", "Você: ") : ""}
+                          {c.last_message_preview || t("noMessagesYet", "Sem mensagens ainda")}
+                        </>
+                      }
+                    />
                     {otherHref && (
                       <Link
                         href={otherHref}
@@ -1492,10 +1467,10 @@ export default function MensagensClient() {
                         className="absolute left-3 top-3 h-11 w-11"
                       />
                     )}
-                  </li>
+                  </PaperListItem>
                   )
                 })}
-              </ul>
+              </PaperList>
             )}
           </div>
 
@@ -2374,47 +2349,6 @@ function EmptyOsThread() {
       <ClipboardList className="mb-3 h-12 w-12" />
       <p className="text-sm">{t("selectOsHint", "Selecione uma O.S. para abrir o chat.")}</p>
     </div>
-  )
-}
-
-function TabBtn({
-  active,
-  onClick,
-  icon,
-  label,
-  shortLabel,
-  dataTour,
-  badge = false,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  label: string
-  shortLabel: string
-  dataTour?: string
-  badge?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-tour={dataTour}
-      className={cn(
-        "relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1.5 py-2.5 text-[10px] font-black uppercase tracking-[0.06em] transition-colors",
-        active
-          ? "-mb-[2px] border-b-[3px] border-[#F2B705] text-[#F2B705]"
-          : "border-b-[3px] border-transparent text-[#9A938A] hover:text-[#F5F1E8]"
-      )}
-    >
-      <span className="relative shrink-0">
-        {icon}
-        {badge && (
-          <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-[#F2B705] ring-2 ring-[#141009]" />
-        )}
-      </span>
-      <span className="hidden truncate lg:inline">{label}</span>
-      <span className="truncate lg:hidden">{shortLabel}</span>
-    </button>
   )
 }
 

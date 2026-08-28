@@ -67,7 +67,7 @@ export default function DadosPage() {
   }
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
       <main className="relative z-10 px-4 py-10">
         <div className="mx-auto flex max-w-xl flex-col gap-6">
           <TabloidPageIntro

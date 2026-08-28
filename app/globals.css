@@ -528,7 +528,7 @@
   background: var(--fl-paper);
   color: var(--fl-ink);
   border: 2px solid var(--fl-ink);
-  border-radius: 6px;
+  border-radius: 0;
   box-shadow: 5px 5px 0 0 var(--fl-ink);
 }
 .tabloid-account-page [data-slot="card-title"] {
@@ -543,13 +543,13 @@
   font-weight: 700;
 }
 .tabloid-account-page [data-slot="button"] {
-  border-radius: 4px;
+  border-radius: 0;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .tabloid-account-page [data-slot="badge"] {
-  border-radius: 2px;
+  border-radius: 0;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -557,7 +557,7 @@
 .tabloid-account-page [data-slot="input"],
 .tabloid-account-page textarea,
 .tabloid-account-page select {
-  border-radius: 4px;
+  border-radius: 0;
   border-width: 2px;
 }
 
@@ -595,7 +595,7 @@
   background: #fff;
   color: var(--fl-ink);
   border: 2px solid rgba(11, 11, 13, 0.16);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 0.7rem 0.9rem;
   font-size: 0.95rem;
   line-height: 1.4;
@@ -605,13 +605,13 @@
 .fl-input:focus {
   outline: none;
   border-color: var(--fl-ink);
-  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.35);
+  box-shadow: 3px 3px 0 0 var(--fl-gold);
 }
 .fl-input:disabled { opacity: 0.55; cursor: not-allowed; }
 .fl-input-error { border-color: #dc2626 !important; }
-.fl-input-error:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25); }
+.fl-input-error:focus { box-shadow: 3px 3px 0 0 #dc2626; }
 .fl-input-ok { border-color: #16a34a !important; }
-.fl-input-ok:focus { box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.22); }
+.fl-input-ok:focus { box-shadow: 3px 3px 0 0 #16a34a; }
 
 /* Float suave (UI cards do hero) */
 @keyframes fl-float {

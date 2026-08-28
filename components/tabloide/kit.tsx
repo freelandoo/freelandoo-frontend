@@ -30,10 +30,10 @@ export const TABLOID_OUTLINE_ACTION_CLASSES =
   "inline-flex items-center justify-center gap-2 border-2 border-[#F1EDE2]/30 bg-transparent px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#F1EDE2] transition hover:border-[#F1EDE2] hover:bg-[#F1EDE2]/6 disabled:cursor-not-allowed disabled:opacity-55"
 
 export const TABLOID_PAPER_CARD_CLASSES =
-  "fl-card fl-hard rounded-[6px] border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]"
+  "fl-card fl-hard border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D]"
 
 export const TABLOID_DARK_PANEL_CLASSES =
-  "rounded-[6px] border-2 border-[#F1EDE2]/14 bg-[#1D1810] text-[#F1EDE2]"
+  "border-2 border-[#F1EDE2]/14 bg-[#1D1810] text-[#F1EDE2]"
 
 /* ── PageShell ────────────────────────────────────────────────────────────
    Casca da página: estabelece o subtree `.fl-root` (resolve os tokens) + a
@@ -45,18 +45,26 @@ export function PageShell({
   header,
   footer,
   texture = true,
+  rail = false,
 }: {
   children: ReactNode
   className?: string
   header?: ReactNode
   footer?: ReactNode
   texture?: boolean
+  /**
+   * Reserva a calha de 80px da `ProfileSidebar` em `md+`. Antes cada página
+   * repetia `md:pl-[80px]` na mão (19 arquivos) — a medida da barra virava
+   * um número solto espalhado pelo app. Agora só o kit conhece a largura.
+   */
+  rail?: boolean
 }) {
   return (
     <div
       className={cn(
         "fl-root flex min-h-[100dvh] flex-col font-sans antialiased",
         texture && "fl-paper-texture",
+        rail && "md:pl-[80px]",
         className,
       )}
     >
@@ -238,7 +246,7 @@ function StateCard({
   return (
     <div
       className={cn(
-        "relative mx-auto flex w-full max-w-md flex-col items-center rounded-2xl border-2 border-[#F5F1E8]/12 bg-[#1D1810] px-7 py-12 text-center",
+        "relative mx-auto flex w-full max-w-md flex-col items-center border-2 border-[#F5F1E8]/12 bg-[#1D1810] px-7 py-12 text-center shadow-[6px_6px_0_0_#0B0B0D]",
         className,
       )}
       style={style}
@@ -266,7 +274,7 @@ export function EmptyState({
   return (
     <StateCard className={className}>
       {icon && (
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#F2B705]/12 text-[#F2B705]">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center border-2 border-[#F2B705]/45 bg-[#F2B705]/12 text-[#F2B705]">
           {icon}
         </div>
       )}
@@ -291,6 +299,7 @@ export function LoadingState({
     <StateCard className={className}>
       <span
         aria-hidden
+        data-dot
         className="mb-5 inline-block h-10 w-10 animate-spin rounded-full border-[3px] border-[#F5F1E8]/15 border-t-[#F2B705]"
       />
       <p className="fl-marker text-xl text-[#C9C2B6]">{label}</p>
@@ -301,7 +310,7 @@ export function LoadingState({
 
 /** Bloco de skeleton (linhas/cards) para lista carregando. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-[#F5F1E8]/8", className)} />
+  return <div className={cn("animate-pulse bg-[#F5F1E8]/8", className)} />
 }
 
 /* ── ErrorState ───────────────────────────────────────────────────────────── */
@@ -322,7 +331,7 @@ export function ErrorState({
 }) {
   return (
     <StateCard className={cn("border-[#F2B705]/25", className)}>
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#F2B705]/12 text-3xl">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center border-2 border-[#F2B705]/45 bg-[#F2B705]/12 text-3xl">
         ⚠️
       </div>
       <h3 className="fl-display text-2xl text-[#F5F1E8]">{title}</h3>

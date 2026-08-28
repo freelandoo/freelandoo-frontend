@@ -211,7 +211,7 @@ export default function EditClanPage({
 
   if (loading) {
     return (
-      <PageShell className="tabloid-account-page md:pl-[80px]">
+      <PageShell rail className="tabloid-account-page">
         <div className="relative z-10 px-4 py-16">
           <LoadingState label={t("loading", "Carregando...")} />
         </div>
@@ -236,7 +236,7 @@ export default function EditClanPage({
   if (!clan) return null
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
     <main className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
       <TabloidPageIntro
         eyebrow={t("clanWord", "Clan")}

@@ -276,7 +276,7 @@ export default function MeusFaturamentosPage() {
   ]), [totals, t])
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
       <main className="relative z-10 mx-auto px-4 py-10">
         <div className="mx-auto flex max-w-5xl flex-col gap-6">
           <TabloidPageIntro

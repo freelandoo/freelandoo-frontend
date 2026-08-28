@@ -60,7 +60,7 @@ export default function FunctionStorePage() {
   // Estados fora da vitrine usam o kit tabloide (mesmo desenho do resto do site).
   if (error || (products && products.length === 0)) {
     return (
-      <PageShell className="fl-sharp md:pl-[80px]">
+      <PageShell rail className="fl-sharp">
         <div className="mx-auto w-full max-w-3xl px-4 py-16">
           {error ? (
             <ErrorState
@@ -87,7 +87,7 @@ export default function FunctionStorePage() {
 
   if (!products) {
     return (
-      <PageShell className="fl-sharp md:pl-[80px]">
+      <PageShell rail className="fl-sharp">
         <div className="mx-auto w-full max-w-3xl px-4 py-16">
           <LoadingState label={t("loading", "Carregando…")} />
         </div>

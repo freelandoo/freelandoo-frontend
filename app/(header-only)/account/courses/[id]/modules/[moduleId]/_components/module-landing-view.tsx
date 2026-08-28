@@ -278,7 +278,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
 
   if (moduleLoading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell rail>
       <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-5xl">
           <div className="h-9 w-32 animate-pulse rounded-full bg-white/[0.04]" />
@@ -291,7 +291,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
 
   if (moduleError || !module) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell rail>
       <div className="relative z-10 px-4 py-10 text-white md:px-8">
         <div className="mx-auto w-full max-w-3xl rounded-[1.5rem] border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
@@ -312,7 +312,7 @@ export function ModuleLandingView({ courseId, moduleId }: Props) {
   }
 
   return (
-    <PageShell className="text-white md:pl-[80px]">
+    <PageShell rail className="text-white">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_30%_-10%,rgba(230,184,0,0.14),transparent_55%)]"

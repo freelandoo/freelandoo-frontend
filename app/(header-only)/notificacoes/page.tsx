@@ -88,7 +88,7 @@ export default function NotificationsPage() {
   const unread = items.filter((i) => !i.read_at).length
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell rail>
       <header className="sticky top-0 z-20 border-b border-[#F5F1E8]/8 bg-[#0b0804]/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <Link

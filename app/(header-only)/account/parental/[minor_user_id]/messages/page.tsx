@@ -116,7 +116,7 @@ export default function MinorMessagesPage() {
   }
 
   return (
-    <PageShell className="tabloid-account-page md:pl-[80px]">
+    <PageShell rail className="tabloid-account-page">
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-10">
         <TabloidPageIntro
           eyebrow={t("readOnlyEyebrow", "Somente leitura")}

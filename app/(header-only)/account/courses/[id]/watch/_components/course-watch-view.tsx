@@ -128,7 +128,7 @@ export function CourseWatchView({ courseId }: Props) {
 
   if (isLoading) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell rail>
       <div className="relative z-10 px-4 py-8 text-white">
         <div className="mx-auto max-w-7xl">
           <div className="h-10 w-48 animate-pulse rounded-full bg-white/[0.05]" />
@@ -144,7 +144,7 @@ export function CourseWatchView({ courseId }: Props) {
 
   if (error || !data) {
     return (
-      <PageShell className="md:pl-[80px]">
+      <PageShell rail>
       <div className="relative z-10 px-4 py-8 text-white">
         <div className="mx-auto max-w-3xl rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-200">
           <AlertCircle className="mb-3 h-5 w-5" />
@@ -165,7 +165,7 @@ export function CourseWatchView({ courseId }: Props) {
   }
 
   return (
-    <PageShell className="md:pl-[80px]">
+    <PageShell rail>
     <div className="relative z-10 px-4 py-6 text-white md:px-8 md:py-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-5 flex flex-wrap items-center gap-3">
