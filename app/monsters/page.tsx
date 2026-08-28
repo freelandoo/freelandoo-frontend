@@ -159,7 +159,24 @@ export default function MonstersPage() {
         // A build precisa de `allow-scripts` e `allow-same-origin` (o Godot usa
         // IndexedDB para o `user://`). `allow-forms` e `allow-popups` ficam de
         // fora: o jogo não abre nem uma coisa nem outra.
-        sandbox="allow-scripts allow-same-origin"
+        //
+        // `allow-pointer-lock` NÃO É OPCIONAL, e a falta dele custou uma tela
+        // onde o mouse não girava a câmera nem golpeava.
+        //
+        // Todo o mouse do `jogador.gd` está atrás de
+        // `Input.mouse_mode == MOUSE_MODE_CAPTURED` — a câmera em
+        // `_unhandled_input` e o golpe em `botao_ataque_segurado()`. No
+        // navegador, `MOUSE_MODE_CAPTURED` vira `requestPointerLock()`, e num
+        // iframe com atributo `sandbox` o navegador recusa isso a menos que
+        // este token esteja aqui. Recusa com uma linha no console e mais nada:
+        // o jogo abre, desenha, anda pelo teclado, e o mouse simplesmente não
+        // existe. Sem sandbox nenhum funcionaria por acidente; com sandbox,
+        // funciona porque está escrito.
+        //
+        // (`pointer-lock` no atributo `allow` não serve — não é uma feature de
+        // Permissions Policy, e o Chrome só responde "Unrecognized feature".
+        // Quem manda em pointer lock dentro de iframe é o sandbox.)
+        sandbox="allow-scripts allow-same-origin allow-pointer-lock"
         allow="fullscreen; autoplay; gamepad"
       />
 
