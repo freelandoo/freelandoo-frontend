@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Gamepad2, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -40,6 +40,27 @@ const HIDDEN_ON_PATHS = [
   "/confirmar-email",
   "/activate",
   "/bem-vindo",
+  // O JOGO É TELA CHEIA E DEITADA. No celular esta toolbar é uma pílula fixa
+  // no rodapé CENTRAL — exatamente onde a build Godot desenha o botão de sair
+  // da partida (ver `jogo/scripts/ui/toque.gd`). Os dois no mesmo pixel: quem
+  // fosse sair da partida sairia do jogo, e vice-versa.
+  "/monsters",
+]
+
+/**
+ * Os itens que NÃO dependem do contexto ativo.
+ *
+ * Os três contextos (usuário, subperfil, clã) sempre repetiram esta mesma
+ * lista e só divergem no Ranking, que muda de destino. Ela virou constante
+ * quando o Monsters entrou: um quinto item copiado em três lugares é o quinto
+ * lugar de onde ele some quando alguém mexer só num deles.
+ */
+const ITENS_COMUNS: SidebarItem[] = [
+  { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
+  { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
+  { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
+  { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
+  { href: "/monsters", label: "Monsters", icon: Gamepad2, matchPrefix: "/monsters" },
 ]
 
 function getInitials(name: string | null | undefined): string {
@@ -83,10 +104,7 @@ function buildContextBundle(
     return {
       ...userBundle,
       items: [
-        { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
-        { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-        { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
-        { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
+        ...ITENS_COMUNS,
         { href: `${root}?ranking=1`, label: "Ranking", icon: Trophy, activePath: root },
       ],
     }
@@ -95,10 +113,7 @@ function buildContextBundle(
     return {
       ...userBundle,
       items: [
-        { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
-        { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-        { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
-        { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
+        ...ITENS_COMUNS,
         { href: `/clans/${active.id_profile}?ranking=1`, label: "Ranking", icon: Trophy },
       ],
     }
@@ -107,10 +122,7 @@ function buildContextBundle(
   return {
     ...userBundle,
     items: [
-      { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
-      { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
-      { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
-      { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
+      ...ITENS_COMUNS,
       { href: "/ranking", label: "Ranking", icon: Trophy, matchPrefix: "/ranking" },
     ],
   }

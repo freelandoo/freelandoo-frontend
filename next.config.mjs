@@ -11,6 +11,35 @@
 const BACKEND_PUBLIC = "https://freelandoo-backend-production.up.railway.app"
 const R2_PUBLIC = "https://pub-3b9774a0af714847979058ea5677a840.r2.dev"
 
+// Freelandoo Monsters: a build Godot roda num <iframe> em /monsters e mora
+// FORA deste repositório (o .pck passa de 250 MB e o GitHub recusa arquivo
+// acima de 100 MB). Sem o host dela no `frame-src`, o iframe é bloqueado no
+// dia em que a CSP sair do Report-Only — falha que não aparece agora e aparece
+// depois, sem ninguém ter mexido no jogo. Vazio = a página avisa que a build
+// não foi publicada e nada é liberado à toa.
+// A build publicada mora no MESMO R2 da mídia, então o padrão não precisa de
+// host novo — é o `R2_PUBLIC` que já está declarado aqui em cima. A variável
+// só entra quando alguém aponta o iframe para outro lugar (bancada local, ou
+// uma versão de teste).
+const MONSTERS_JOGO = (() => {
+  const bruto = process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL?.trim()
+  if (!bruto) return R2_PUBLIC
+  try {
+    return new URL(bruto).origin
+  } catch {
+    return R2_PUBLIC
+  }
+})()
+const MONSTERS_API = (() => {
+  const bruto = process.env.NEXT_PUBLIC_MONSTERS_API_URL?.trim()
+  if (!bruto) return ""
+  try {
+    return new URL(bruto).origin
+  } catch {
+    return ""
+  }
+})()
+
 const cspReportOnly = [
   "default-src 'self'",
   // 'unsafe-inline' por causa dos scripts inline do próprio Next (sem nonce) e
@@ -23,9 +52,9 @@ const cspReportOnly = [
   "img-src 'self' data: blob: https:",
   `media-src 'self' blob: ${R2_PUBLIC} https://*.r2.dev`,
   "font-src 'self' data:",
-  `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:`,
+  `connect-src 'self' ${BACKEND_PUBLIC} wss://freelandoo-backend-production.up.railway.app https://*.r2.cloudflarestorage.com ${R2_PUBLIC} https://*.r2.dev https://cdn.jsdelivr.net https://storage.googleapis.com https://accounts.google.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google wss:${MONSTERS_API ? " " + MONSTERS_API : ""}`,
   "worker-src 'self' blob:",
-  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://js.stripe.com https://vercel.live`,
+  `frame-src https://accounts.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://js.stripe.com https://vercel.live${MONSTERS_JOGO ? " " + MONSTERS_JOGO : ""}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://checkout.stripe.com",
