@@ -622,6 +622,8 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
         const isImageStory = result.kind === "image"
         await uploadStory({
           token, id_profile: selectedProfileId, kind: "bee",
+          // O bee publicado pelo "+" do mural pertence à comunidade (mig 208).
+          idCommunity: communityId || undefined,
           mediaType: isImageStory ? "image" : "video",
           videoBlob: result.blob, posterBlob: result.posterBlob,
           durationSeconds: isImageStory ? 7 : result.durationSec,

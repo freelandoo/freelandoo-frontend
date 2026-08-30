@@ -83,6 +83,16 @@ type Community = {
   viewer_units?: { id_unit: number; number: string; block_name: string | null }[]
   viewer_parking?: { id_spot: number; code: string }[]
 }
+type CommunityBee = {
+  id_story: string
+  video_url: string | null
+  thumbnail_url: string | null
+  caption: string | null
+  profile_name: string | null
+  profile_avatar: string | null
+  author_username: string | null
+  created_at: string
+}
 type MembershipSummary = {
   active_subs: number
   past_due_subs: number
@@ -160,6 +170,10 @@ export default function CommunityDetailPage() {
 
   // Feed estilo grupo
   const [posts, setPosts] = useState<FeedPost[]>([])
+  // Faixa de bees do mural (mig 208): os bees publicados AQUI. Vivem pela
+  // mesma regra do resto do site — 24h + 1h por ponto de engajamento, teto de
+  // 7 dias —, então a faixa esvazia sozinha, sem job e sem "arquivar".
+  const [bees, setBees] = useState<CommunityBee[]>([])
   const [postsCursor, setPostsCursor] = useState<string | null>(null)
   const [postsHasMore, setPostsHasMore] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(true)
@@ -264,6 +278,22 @@ export default function CommunityDetailPage() {
     setAnnouncements(Array.isArray(d.announcements) ? d.announcements : [])
   }, [id])
 
+  const fetchBees = useCallback(async () => {
+    try {
+      const token = getToken()
+      if (!token) return
+      const res = await fetch(`/api/communities/${id}/bees`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setBees(Array.isArray(data.bees) ? data.bees : [])
+    } catch {
+      /* silencioso: a faixa some, o mural continua */
+    }
+  }, [id])
+
   const fetchPosts = useCallback(async (reset: boolean, cursor?: string | null) => {
     if (!id) return
     if (reset) setLoadingPosts(true); else setLoadingMorePosts(true)
@@ -326,6 +356,7 @@ export default function CommunityDetailPage() {
 
   useEffect(() => { loadAll() }, [loadAll])
   useEffect(() => { fetchPosts(true) }, [fetchPosts])
+  useEffect(() => { fetchBees() }, [fetchBees])
   useEffect(() => {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
@@ -944,6 +975,36 @@ export default function CommunityDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {bees.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto pb-1">
+                      {bees.map((b) => (
+                        <Link
+                          key={b.id_story}
+                          href={`/bees?bee=${encodeURIComponent(b.id_story)}`}
+                          className="group shrink-0"
+                          title={b.caption || undefined}
+                        >
+                          <span
+                            className="block h-28 w-20 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
+                            style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}
+                          >
+                            {b.thumbnail_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={b.thumbnail_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="grid h-full w-full place-items-center">
+                                <Hexagon className="h-6 w-6" style={{ color: accent }} />
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1 block max-w-20 truncate text-[10px] font-bold text-[#9A938A]">
+                            {b.profile_name || b.author_username || ""}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Publicar: quadrado amarelo com "+". Não é uma seção de
                       composer — é UM botão, e o que ele abre é a escolha do
                       tipo: foto/texto, vídeo ou bee (o vídeo que dura mais
@@ -1142,7 +1203,14 @@ export default function CommunityDetailPage() {
           mode={composerKind}
           communityId={id}
           onClose={() => setComposerOpen(false)}
-          onPosted={() => { setComposerOpen(false); fetchPosts(true) }}
+          onPosted={() => {
+            setComposerOpen(false)
+            // O bee não entra no feed de portfólio — ele vive na faixa. Por
+            // isso as duas recargas: sem a segunda, publicar um bee pareceria
+            // não ter feito nada.
+            fetchPosts(true)
+            fetchBees()
+          }}
         />
       )}
     </div>

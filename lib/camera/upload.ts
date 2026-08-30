@@ -121,6 +121,12 @@ export interface UploadStoryParams {
   /** Links estilizados do bee (máx 3). Opcional. */
   links?: { label: string; url: string; style: "gold" | "paper" | "ink" }[]
   filterMeta: FilterMeta
+  /**
+   * Comunidade em cujo mural o bee foi publicado (mig 208). Sem isto, o bee
+   * postado pelo botão "+" da comunidade viraria um bee GLOBAL: publicado com
+   * sucesso e invisível no lugar onde a pessoa apertou o botão.
+   */
+  idCommunity?: string | null
   /** Música anexada (metadado — não queimada). Opcional. */
   audioTrackId?: string | null
   audioStartMs?: number
@@ -174,6 +180,7 @@ export async function uploadStory(p: UploadStoryParams): Promise<PublishedStory>
     filter_meta: p.filterMeta,
     audio_track_id: p.audioTrackId || undefined,
     audio_start_ms: p.audioTrackId ? (p.audioStartMs ?? 0) : undefined,
+    id_community: p.idCommunity || undefined,
     storage_key: urls.video.key,
     thumbnail_key: thumbnailKey,
   })
