@@ -22,6 +22,7 @@ import {
   Hexagon,
   ImageIcon,
   Loader2,
+  MessageSquare,
   Plus,
   Search,
   ShoppingBag,
@@ -104,6 +105,12 @@ const MuralModal = dynamic(
 )
 const MediaCropModal = dynamic(
   () => import("@/components/media/media-crop-modal").then((m) => m.MediaCropModal),
+  { ssr: false }
+)
+// Recado = post só-texto (mig 209). Composer próprio: publicar um parágrafo
+// não deve baixar o módulo de câmera que o MediaComposer arrasta.
+const RecadoComposer = dynamic(
+  () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
   { ssr: false }
 )
 const MediaComposer = dynamic(
@@ -225,6 +232,7 @@ export default function FreelancerProfileView({
     }
   }, [storeOn, servicesOn, coursesOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
+  const [recadoOpen, setRecadoOpen] = useState(false)
   const { ensureConsent } = useActionConsent()
   const [createServiceTrigger, setCreateServiceTrigger] = useState(0)
   const [createCourseTrigger, setCreateCourseTrigger] = useState(0)
@@ -490,6 +498,12 @@ export default function FreelancerProfileView({
         void ensureConsent("publish_content").then((ok) => {
           if (ok) setComposerMode("post")
         })
+      } else if (detail.kind === "recado") {
+        setPortfolioTab("feed")
+        setPortfolioError(null)
+        void ensureConsent("publish_content").then((ok) => {
+          if (ok) setRecadoOpen(true)
+        })
       } else if (detail.kind === "bees") {
         setPortfolioTab("bees")
         setPortfolioError(null)
@@ -749,6 +763,16 @@ export default function FreelancerProfileView({
                 <DropdownMenuItem
                   onSelect={() =>
                     window.dispatchEvent(
+                      new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "recado" } }),
+                    )
+                  }
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {t("menuRecado", "Recado")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    window.dispatchEvent(
                       new CustomEvent("freelandoo:create-subprofile", { detail: { kind: "bees" } }),
                     )
                   }
@@ -970,8 +994,12 @@ export default function FreelancerProfileView({
           )}
 
           {(portfolioTab === "feed" || portfolioTab === "bees") && (() => {
-            const filteredItems = portfolioItems.filter(
-              (it) => (it.feed_kind ?? "feed") === portfolioTab
+            // Aba Portfólio mostra post E recado (texto é post, mig 209); a
+            // aba Curtos fica só com 'bees'.
+            const filteredItems = portfolioItems.filter((it) =>
+              portfolioTab === "feed"
+                ? (it.feed_kind ?? "feed") !== "bees"
+                : (it.feed_kind ?? "feed") === portfolioTab
             )
             const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
             const emptyLabel =
@@ -983,10 +1011,35 @@ export default function FreelancerProfileView({
               {filteredItems.map((item) => {
                 const activeMedias = item.media?.filter((m) => m.is_active !== false) ?? []
                 const firstMedia = activeMedias[0]
+                const isRecado = (item.feed_kind ?? "feed") === "recado"
                 return (
                   <div key={item.id_portfolio_item} className="group relative flex flex-col">
                     {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
-                    {firstMedia ? (
+                    {isRecado ? (
+                      // Recado (mig 209): tile de TEXTO. Sem botão de mídia —
+                      // o backend recusa mídia em recado.
+                      <div
+                        className={`relative ${aspectClass} overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] p-3 ${!isOwnProfile ? "cursor-pointer" : ""}`}
+                        onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
+                      >
+                        <MessageSquare className="h-4 w-4 text-[#F2B705]" />
+                        <p className="mt-2 line-clamp-6 whitespace-pre-line break-words text-[11px] leading-snug text-[#F5F1E8]">
+                          {item.description}
+                        </p>
+                        {isOwnProfile && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-[#0B0B0D]/65 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => handlePortfolioDeleteItem(item.id_portfolio_item)}
+                              className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition-colors hover:bg-[#b91c1c] hover:text-white"
+                              title={t("removeItem", "Remover item")}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : firstMedia ? (
                       <div
                         className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
                         onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
@@ -1615,6 +1668,17 @@ export default function FreelancerProfileView({
       {/* Montado só quando aberto: fechado ele retorna null e faz hardReset,
           então desmontar é equivalente — e o visitante nunca baixa o chunk
           do módulo de câmera. */}
+      {recadoOpen && (
+        <RecadoComposer
+          open
+          initialProfileId={profileId}
+          onClose={() => setRecadoOpen(false)}
+          onPosted={() => {
+            setRecadoOpen(false)
+            void refetchPortfolio()
+          }}
+        />
+      )}
       {composerMode !== null && (
         <MediaComposer
           open

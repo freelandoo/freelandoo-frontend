@@ -75,7 +75,7 @@ export interface FeedPost {
   /** Atalho de `hot_tier != null`. */
   is_hot?: boolean
   published_at: string | null
-  feed_kind: "feed" | "bees"
+  feed_kind: "feed" | "bees" | "recado"
   viewer_has_liked: boolean
   viewer_has_bookmarked?: boolean
   public_profile_url: string | null

@@ -88,7 +88,7 @@ export interface PortfolioItem {
   description: string | null
   project_url: string | null
   is_active?: boolean
-  feed_kind?: "feed" | "bees"
+  feed_kind?: "feed" | "bees" | "recado"
   created_at: string
   media: PortfolioMedia[]
   likes_count?: number

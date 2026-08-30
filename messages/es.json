@@ -1492,7 +1492,8 @@
     "myReferralsRecurring": "Comisión por vínculo (30 días)",
     "myReferralsSince": "desde {date}",
     "payoutOwnershipHint": "El CPF del receptor debe ser el mismo CPF registrado en tu cuenta.",
-    "pixSaveFail": "No fue posible guardar los datos de cobro."
+    "pixSaveFail": "No fue posible guardar los datos de cobro.",
+    "menuRecado": "Recado"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -1718,7 +1719,8 @@
     "createPost": "Post",
     "createProfile": "Perfil",
     "regionLabel": "Región",
-    "regionTitle": "Región"
+    "regionTitle": "Región",
+    "createRecado": "Recado"
   },
   "Post": {
     "timeNow": "ahora",
@@ -2888,7 +2890,11 @@
     "bee.stylePaper": "Papel",
     "bee.styleInk": "Tinta",
     "mode.curto": "Nuevo Corto",
-    "mode.beeStory": "Nuevo Bee"
+    "mode.beeStory": "Nuevo Bee",
+    "mode.recado": "Nuevo Recado",
+    "recadoClose": "Cerrar",
+    "recadoPlaceholder": "Escribe lo que quieres decir...",
+    "recadoPublish": "Publicar recado"
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",
@@ -3732,7 +3738,8 @@
     "fitnessTool": "Fitness",
     "openAccountMenu": "Abrir menú de la cuenta",
     "openSettings": "Abrir configuración",
-    "addSocial": "Agregar red social"
+    "addSocial": "Agregar red social",
+    "menuRecado": "Recado"
   },
   "Bees": {
     "chat": "Chat",
@@ -5021,7 +5028,7 @@
     "chipAcademy": "Gimnasio asociado",
     "backToFitness": "Volver al panel fitness",
     "messageCta": "Enviar mensaje",
-    "composerCta": "Publica o escribe aquí",
+    "composerCta": "Publica o escribe un recado",
     "postLabel": "Post",
     "beeLabel": "Bee",
     "loadMore": "Ver más",
@@ -5056,7 +5063,8 @@
     "testDotOk": "Conectado",
     "testDotFail": "Sin conexión",
     "curtoLabel": "Corto",
-    "emptySearch": "No se encontraron gimnasios. Ajusta la búsqueda."
+    "emptySearch": "No se encontraron gimnasios. Ajusta la búsqueda.",
+    "recadoLabel": "Recado"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

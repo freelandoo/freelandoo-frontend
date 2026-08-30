@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, Sparkles, UserRound, Users, Crown } from "lucide-react"
+import { ChevronDown, MapPin, X, Plus, Image as ImageIcon, MessageSquare, Sparkles, UserRound, Users, Crown } from "lucide-react"
 import type { CatalogMachine } from "@/components/home/machines/use-machines-catalog"
 import { MachineFilterSheet } from "./machine-filter-sheet"
 import { RegionFilterSheet } from "./region-filter-sheet"
@@ -14,7 +14,7 @@ import {
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 
-export type FeedCreateKind = "post" | "bees" | "perfil" | "clan" | "curso"
+export type FeedCreateKind = "post" | "recado" | "bees" | "perfil" | "clan" | "curso"
 
 interface FeedRetractableHeaderProps {
   machines: CatalogMachine[]
@@ -97,6 +97,10 @@ export function FeedRetractableHeader({
               <DropdownMenuItem onSelect={() => onCreate("post")}>
                 <ImageIcon className="h-4 w-4" />
                 {t("createPost", "Post")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreate("recado")}>
+                <MessageSquare className="h-4 w-4" />
+                {t("createRecado", "Recado")}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => onCreate("bees")}>
                 <Sparkles className="h-4 w-4" />

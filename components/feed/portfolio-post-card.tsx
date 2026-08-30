@@ -650,6 +650,11 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               {post.machine.name.replace(/^Enxame de\s+/i, "")}
             </span>
           )}
+          {post.feed_kind === "recado" && (
+            <span className="inline-flex shrink-0 -rotate-1 items-center gap-1 border border-[#0B0B0D] bg-[#F2B705] px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+              <MessageSquare className="h-3 w-3" /> {t("recadoLabel", "Recado")}
+            </span>
+          )}
           {communityChipFeed}
           {academyChipFeed}
         </div>
@@ -811,13 +816,28 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
         </div>
       ) : (
         <>
-          <div className="bg-[#0b0804]">
-            <PostMedia
-              media={post.media}
-              glow={null}
-              aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
-            />
-          </div>
+          {/* Recado (mig 209): post SÓ-TEXTO — no lugar da mídia entra o texto,
+              e o rodapé de ações (curtir/comentar/compartilhar/salvar) segue
+              inteiro logo abaixo, porque recado é post como qualquer outro.
+              Não confundir com `post.is_recado`, que é o recado exclusivo do
+              mural de comunidade (mig 162) e não tem essas ações. */}
+          {post.feed_kind === "recado" ? (
+            <div className="bg-[#15120E] px-4 py-5">
+              <div className="border-l-2 border-[#F2B705]/40 pl-3">
+                <p className="whitespace-pre-line break-words text-[15px] leading-relaxed text-[#F5F1E8]">
+                  {post.caption || post.title}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#0b0804]">
+              <PostMedia
+                media={post.media}
+                glow={null}
+                aspect={post.feed_kind === "bees" ? "9:16" : "4:5"}
+              />
+            </div>
+          )}
 
           {/* FOOTER tabloide (escuro) */}
           <div className="border-t border-[#F5F1E8]/10 bg-[#15120E]">
@@ -895,8 +915,10 @@ export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments,
               </span>
             </div>
 
-            {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend */}
-            {(post.title || post.caption) && (
+            {/* Descrição com "mais"/"menos" — máximo 3000 chars no backend.
+                No recado o texto JÁ é o corpo do card (acima), então repeti-lo
+                aqui mostraria o mesmo parágrafo duas vezes. */}
+            {post.feed_kind !== "recado" && (post.title || post.caption) && (
               <div className="shrink-0 px-3 pt-1 text-[14px] leading-snug text-[#F5F1E8]">
                 {post.title && (
                   <span className="mr-1.5 font-bold">

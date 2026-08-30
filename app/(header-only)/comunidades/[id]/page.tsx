@@ -1182,7 +1182,7 @@ export default function CommunityDetailPage() {
               </div>
               <button type="button" disabled={postingRecado || !recadoBody.trim()} onClick={postRecado}
                 className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2.5 text-sm font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
-                {postingRecado ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />} {t("recadoPublish", "Publicar recado")}
+                {postingRecado ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />} {t("recadoPublish", "Postar recado")}
               </button>
             </div>
           </div>

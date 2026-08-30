@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { Film, ImagePlus, Loader2, Megaphone, PenSquare, X } from "lucide-react"
+import { Film, ImagePlus, Loader2, Megaphone, MessageSquare, PenSquare, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
@@ -22,6 +22,12 @@ const CommentsPanel = dynamic(
 )
 const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
+// Recado = post só-texto (mig 209). Fica fora do MediaComposer de propósito:
+// publicar um parágrafo não deve baixar o módulo de câmera inteiro.
+const RecadoComposer = dynamic(
+  () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
   { ssr: false }
 )
 
@@ -50,6 +56,7 @@ export function AcademyFeed({
   const [composerOpen, setComposerOpen] = useState(false)
   const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
   const [chooserOpen, setChooserOpen] = useState(false)
+  const [recadoOpen, setRecadoOpen] = useState(false)
 
   const fetchPosts = useCallback(
     async (reset: boolean, cur?: string | null) => {
@@ -86,6 +93,11 @@ export function AcademyFeed({
     setComposerOpen(true)
   }
 
+  const openRecado = () => {
+    setChooserOpen(false)
+    setRecadoOpen(true)
+  }
+
   return (
     <section className="fl-sharp mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
       <h2 className="flex items-center gap-2 border-b-2 border-[#0B0B0D] pb-2 text-xs font-extrabold uppercase tracking-[0.16em]">
@@ -102,15 +114,18 @@ export function AcademyFeed({
             className="flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3 text-left"
           >
             <PenSquare className="h-5 w-5 shrink-0 text-[#F2B705]" />
-            <span className="text-sm font-semibold text-[#9A938A]">{t("composerCta", "Poste ou escreva aqui")}</span>
+            <span className="text-sm font-semibold text-[#9A938A]">{t("composerCta", "Poste ou escreva um recado")}</span>
           </button>
           {chooserOpen && (
-            <div className="absolute left-0 right-0 top-full z-30 mt-1 flex gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
-              <button type="button" onClick={() => openComposer("post")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+            <div className="absolute left-0 right-0 top-full z-30 mt-1 flex flex-wrap gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
+              <button type="button" onClick={() => openComposer("post")} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                 <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
               </button>
-              <button type="button" onClick={() => openComposer("bee")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <button type="button" onClick={() => openComposer("bee")} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                 <Film className="h-4 w-4" /> {t("curtoLabel", "Curto")}
+              </button>
+              <button type="button" onClick={openRecado} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                <MessageSquare className="h-4 w-4" /> {t("recadoLabel", "Recado")}
               </button>
               <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[#F5F1E8]/20 px-2 text-[#9A938A]">
                 <X className="h-4 w-4" />
@@ -166,6 +181,17 @@ export function AcademyFeed({
           setPosts((prev) => prev.map((p) => (p.post_id === pid ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) } : p)))
         }
       />
+      {recadoOpen && (
+        <RecadoComposer
+          open
+          academyId={academyId}
+          onClose={() => setRecadoOpen(false)}
+          onPosted={() => {
+            setRecadoOpen(false)
+            void fetchPosts(true)
+          }}
+        />
+      )}
       {composerOpen && (
         <MediaComposer
           open

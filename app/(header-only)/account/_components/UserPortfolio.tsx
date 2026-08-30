@@ -24,6 +24,7 @@ import {
   Sparkles,
   Crop,
   Bookmark,
+  MessageSquare,
 } from "lucide-react"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -31,6 +32,7 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { CoursesSection, type ProfileOption } from "./courses-section"
 import { MediaComposer } from "@/components/composer/MediaComposer"
+import { RecadoComposer } from "@/components/composer/RecadoComposer"
 import type { ComposerMode } from "@/lib/composer/types"
 import {
   Dialog,
@@ -71,7 +73,7 @@ type Item = {
   description: string | null
   is_featured?: boolean
   sort_order?: number
-  feed_kind?: "feed" | "bees"
+  feed_kind?: "feed" | "bees" | "recado"
   likes_count?: number
   liked_by_me?: boolean
   media: Media[]
@@ -134,7 +136,7 @@ type SavedItem = {
   bookmarked_at: string
   post_id: string
   title: string | null
-  feed_kind: "feed" | "bees"
+  feed_kind: "feed" | "bees" | "recado"
   display_name: string | null
   avatar_url: string | null
   username: string | null
@@ -208,6 +210,8 @@ export function UserPortfolio({
     }
   }, [coursesOn, communitiesOn, profilesPrefOn, servicesOn, shopOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
+  // Recado = post só-texto (mig 209). Vive na aba Portfólio junto com os posts.
+  const [recadoOpen, setRecadoOpen] = useState(false)
 
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -273,7 +277,11 @@ export function UserPortfolio({
     const onCreate = (e: Event) => {
       const detail = (e as CustomEvent<{ kind: string }>).detail
       if (!detail) return
-      if (detail.kind === "post" || detail.kind === "bees") {
+      if (detail.kind === "recado") {
+        setPortfolioTab("feed")
+        setPortfolioError(null)
+        setRecadoOpen(true)
+      } else if (detail.kind === "post" || detail.kind === "bees") {
         const next = detail.kind === "bees" ? "bees" : "feed"
         setPortfolioTab(next)
         setEditingItemId(null)
@@ -294,7 +302,13 @@ export function UserPortfolio({
   const filteredItems = useMemo(
     () =>
       isPortfolioGridTab
-        ? items.filter((it) => (it.feed_kind ?? "feed") === portfolioTab)
+        // Aba Portfólio mostra post E recado — texto é post (utils/feedKind
+        // no backend segue a mesma regra). A aba Curtos fica só com 'bees'.
+        ? items.filter((it) =>
+            portfolioTab === "feed"
+              ? (it.feed_kind ?? "feed") !== "bees"
+              : (it.feed_kind ?? "feed") === portfolioTab,
+          )
         : [],
     [items, portfolioTab, isPortfolioGridTab],
   )
@@ -784,7 +798,27 @@ export function UserPortfolio({
             return (
               <div key={item.id_portfolio_item} className="group relative flex flex-col">
                 {/* Media Container — 4:5 (feed) ou 9:16 (bees) */}
-                {firstMedia ? (
+                {itemKind === "recado" ? (
+                  // Recado (mig 209): tile de TEXTO. Sem afordância de upload —
+                  // o backend recusa mídia em recado, então oferecer o botão
+                  // aqui seria prometer o que a API não entrega.
+                  <div className={`relative ${aspectClass} overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] p-3`}>
+                    <MessageSquare className="h-4 w-4 text-[#F2B705]" />
+                    <p className="mt-2 line-clamp-6 whitespace-pre-line break-words text-[11px] leading-snug text-[#F5F1E8]">
+                      {item.description}
+                    </p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem(item.id_portfolio_item)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-[#b91c1c]"
+                        title={tr("removeItem", "Remover item")}
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : firstMedia ? (
                   <div className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden`}>
                     {firstMedia.media_type === "video" ? (
                       <video
@@ -1249,6 +1283,16 @@ export function UserPortfolio({
         onClose={() => setComposerMode(null)}
         onPosted={() => {
           setComposerMode(null)
+          void fetchItems()
+        }}
+      />
+
+      <RecadoComposer
+        open={recadoOpen}
+        initialProfileId={accountProfileId ?? null}
+        onClose={() => setRecadoOpen(false)}
+        onPosted={() => {
+          setRecadoOpen(false)
           void fetchItems()
         }}
       />

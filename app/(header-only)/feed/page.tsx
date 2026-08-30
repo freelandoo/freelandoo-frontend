@@ -23,6 +23,10 @@ const StoryPlayer = dynamic(
   () => import("@/components/stories/story-player").then((m) => m.StoryPlayer),
   { ssr: false }
 )
+const RecadoComposer = dynamic(
+  () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
+  { ssr: false }
+)
 const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
   { ssr: false }
@@ -70,6 +74,8 @@ function FeedPageInner() {
   const [storyOpen, setStoryOpen] = useState<{ entries: StoryBarEntry[]; index: number } | null>(null)
   const [creatorOpen, setCreatorOpen] = useState(false)
   const [composerMode, setComposerMode] = useState<"story" | "post" | "bee">("story")
+  // Recado (post só-texto, mig 209) tem composer próprio — sem módulo de câmera.
+  const [recadoOpen, setRecadoOpen] = useState(false)
   const [storyBarKey, setStoryBarKey] = useState(0)
 
   const hydrated = useRef(false)
@@ -227,6 +233,7 @@ function FeedPageInner() {
         onClearAll={clearAll}
         onCreate={(kind) => {
           if (kind === "post") { setComposerMode("post"); setCreatorOpen(true) }
+          else if (kind === "recado") { setRecadoOpen(true) }
           else if (kind === "bees") { setComposerMode("bee"); setCreatorOpen(true) }
           else if (kind === "clan") router.push("/account/clans")
           else router.push("/account")
@@ -341,6 +348,14 @@ function FeedPageInner() {
           entries={storyOpen.entries}
           initialIndex={storyOpen.index}
           onClose={() => setStoryOpen(null)}
+        />
+      )}
+
+      {recadoOpen && (
+        <RecadoComposer
+          open
+          onClose={() => setRecadoOpen(false)}
+          onPosted={() => setRecadoOpen(false)}
         />
       )}
 

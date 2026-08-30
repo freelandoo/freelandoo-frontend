@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -1603,6 +1603,16 @@ export default function PerfilPage() {
               >
                 <ImageIcon className="h-4 w-4" />
                 {t("menuPost", "Post")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("freelandoo:create", { detail: { kind: "recado" } }),
+                  )
+                }
+              >
+                <MessageSquare className="h-4 w-4" />
+                {t("menuRecado", "Recado")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() =>
