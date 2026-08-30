@@ -715,7 +715,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
             <h2 className="fl-display text-xl text-foreground">{t("updates", "Publicações")}</h2>
             {isOwner && (
               <div className="flex gap-1.5">
-                <ComposerBtn icon={Type} label={t("kindText", "Texto")} onClick={() => openComposer("text")} />
+                <ComposerBtn icon={Type} label={t("kindText", "Recado")} onClick={() => openComposer("text")} />
                 <ComposerBtn icon={ImageIcon} label={t("kindPost", "Foto")} onClick={() => openComposer("post")} />
                 <ComposerBtn icon={Clapperboard} label={t("kindCurto", "Curto")} onClick={() => openComposer("bee")} />
               </div>
@@ -726,7 +726,7 @@ export function VaquinhaView({ slug }: { slug: string }) {
           {isOwner && composerKind && (
             <div className="mb-4 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D]">
               <p className="fl-display text-lg">
-                {composerKind === "text" ? t("kindText", "Texto") : composerKind === "post" ? t("kindPost", "Foto") : t("kindCurto", "Curto")}
+                {composerKind === "text" ? t("kindText", "Recado") : composerKind === "post" ? t("kindPost", "Foto") : t("kindCurto", "Curto")}
               </p>
               <textarea
                 value={caption}

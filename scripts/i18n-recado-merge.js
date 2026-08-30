@@ -63,6 +63,11 @@ const OVERRIDES = {
     // Era "Publicar recado"; o verbo do Alex é "postar".
     recadoPublish: ["Postar recado", "Post note", "Publicar recado"],
   },
+  Vaquinha: {
+    // A vaquinha já publicava só-texto sob o rótulo "Texto" — mesmo objeto,
+    // nome novo: todo texto na plataforma chama recado.
+    kindText: ["Recado", "Note", "Recado"],
+  },
 };
 
 let added = 0;
