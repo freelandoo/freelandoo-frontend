@@ -5088,7 +5088,10 @@
     "testDotFail": "No connection",
     "curtoLabel": "Short",
     "emptySearch": "No gyms found. Adjust your search.",
-    "recadoLabel": "Note"
+    "recadoLabel": "Note",
+    "composeCta": "Publish",
+    "composeHint": "Post on the wall",
+    "joinToPost": "Link your membership to publish."
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

@@ -3,11 +3,12 @@
 // Feed social da academia no MESMO motor do /feed (mig 181): posts/bees dos
 // membros vinculados (ou staff) viram itens de portfólio ligados à academia —
 // aparecem aqui E no /feed global com a tag "Acessar academia". Espelha o feed
-// das comunidades (PortfolioPostCard + MediaComposer + CommentsPanel).
+// das comunidades (PortfolioPostCard + CommentsPanel). Publicar NÃO mora
+// aqui: é o "+" amarelo do headcard (academy-view), como em toda comunidade.
 
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { Film, ImagePlus, Loader2, Megaphone, MessageSquare, PenSquare, X } from "lucide-react"
+import { Loader2, Megaphone } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
@@ -20,28 +21,18 @@ const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
 )
-const MediaComposer = dynamic(
-  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
-  { ssr: false }
-)
-// Recado = post só-texto (mig 209). Fica fora do MediaComposer de propósito:
-// publicar um parágrafo não deve baixar o módulo de câmera inteiro.
-const RecadoComposer = dynamic(
-  () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
-  { ssr: false }
-)
-
 const FEED_FILTERS: FeedFilters = { id_machine: null, id_category: null, estado: null, municipio: null, level_min: null }
 
 /** Feed da academia (posts + bees dos membros) — cards padrão do Freelandoo. */
 export function AcademyFeed({
   academyId,
   slug,
-  canPost,
+  reloadKey = 0,
 }: {
   academyId: string
   slug: string
-  canPost: boolean
+  /** Muda quando o "+" do headcard publica algo — força recarregar o mural. */
+  reloadKey?: number
   isOwner: boolean
   meId: string | null
 }) {
@@ -53,10 +44,6 @@ export function AcademyFeed({
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
-  const [composerOpen, setComposerOpen] = useState(false)
-  const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
-  const [chooserOpen, setChooserOpen] = useState(false)
-  const [recadoOpen, setRecadoOpen] = useState(false)
 
   const fetchPosts = useCallback(
     async (reset: boolean, cur?: string | null) => {
@@ -85,18 +72,7 @@ export function AcademyFeed({
 
   useEffect(() => {
     void fetchPosts(true)
-  }, [fetchPosts])
-
-  const openComposer = (kind: "post" | "bee") => {
-    setChooserOpen(false)
-    setComposerKind(kind)
-    setComposerOpen(true)
-  }
-
-  const openRecado = () => {
-    setChooserOpen(false)
-    setRecadoOpen(true)
-  }
+  }, [fetchPosts, reloadKey])
 
   return (
     <section className="fl-sharp mt-6 border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-[#F5F1E8]">
@@ -104,36 +80,6 @@ export function AcademyFeed({
         <Megaphone className="h-4 w-4 text-[#F2B705]" />
         {t("feedTitle", "Mural da academia")}
       </h2>
-
-      {/* Composer — vinculados/staff publicam post ou bee */}
-      {canPost && (
-        <div className="relative mt-3">
-          <button
-            type="button"
-            onClick={() => setChooserOpen((v) => !v)}
-            className="flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3 text-left"
-          >
-            <PenSquare className="h-5 w-5 shrink-0 text-[#F2B705]" />
-            <span className="text-sm font-semibold text-[#9A938A]">{t("composerCta", "Poste ou escreva um recado")}</span>
-          </button>
-          {chooserOpen && (
-            <div className="absolute left-0 right-0 top-full z-30 mt-1 flex flex-wrap gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
-              <button type="button" onClick={() => openComposer("post")} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
-              </button>
-              <button type="button" onClick={() => openComposer("bee")} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                <Film className="h-4 w-4" /> {t("curtoLabel", "Curto")}
-              </button>
-              <button type="button" onClick={openRecado} className="flex min-w-[6.5rem] flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                <MessageSquare className="h-4 w-4" /> {t("recadoLabel", "Recado")}
-              </button>
-              <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[#F5F1E8]/20 px-2 text-[#9A938A]">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Lista */}
       {loading ? (
@@ -171,7 +117,7 @@ export function AcademyFeed({
         </div>
       )}
 
-      {/* Comentários + composer */}
+      {/* Comentários */}
       <CommentsPanel
         postId={openCommentsFor}
         open={!!openCommentsFor}
@@ -181,29 +127,6 @@ export function AcademyFeed({
           setPosts((prev) => prev.map((p) => (p.post_id === pid ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) } : p)))
         }
       />
-      {recadoOpen && (
-        <RecadoComposer
-          open
-          academyId={academyId}
-          onClose={() => setRecadoOpen(false)}
-          onPosted={() => {
-            setRecadoOpen(false)
-            void fetchPosts(true)
-          }}
-        />
-      )}
-      {composerOpen && (
-        <MediaComposer
-          open
-          mode={composerKind}
-          academyId={academyId}
-          onClose={() => setComposerOpen(false)}
-          onPosted={() => {
-            setComposerOpen(false)
-            void fetchPosts(true)
-          }}
-        />
-      )}
     </section>
   )
 }

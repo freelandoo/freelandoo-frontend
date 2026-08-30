@@ -5068,7 +5068,10 @@
     "testDotFail": "Sin conexión",
     "curtoLabel": "Corto",
     "emptySearch": "No se encontraron gimnasios. Ajusta la búsqueda.",
-    "recadoLabel": "Recado"
+    "recadoLabel": "Recado",
+    "composeCta": "Publicar",
+    "composeHint": "Publicar en el muro",
+    "joinToPost": "Vincula tu matrícula para publicar."
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

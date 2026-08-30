@@ -5,6 +5,7 @@
 // sobreposto com outline dourado, tiles de estatística, painéis #15120E.
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { toast } from "sonner"
 import {
@@ -26,9 +27,21 @@ import {
 import { getStoredUser, getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { TrainingGrid } from "./training-grid"
 import { AcademyFeed } from "./academy-feed"
 import { AcademyRanking } from "./academy-ranking"
+
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
+// Recado = post só-texto (mig 209). Fica fora do MediaComposer de propósito:
+// publicar um parágrafo não deve baixar o módulo de câmera inteiro.
+const RecadoComposer = dynamic(
+  () => import("@/components/composer/RecadoComposer").then((m) => m.RecadoComposer),
+  { ssr: false }
+)
 
 type Professor = { id_user: string; username: string | null; nome: string | null }
 type MyMembership = {
@@ -108,6 +121,12 @@ export function AcademyView({ slug }: { slug: string }) {
   const [uploadingMedia, setUploadingMedia] = useState<"avatar" | "cover" | null>(null)
   const avatarRef = useRef<HTMLInputElement | null>(null)
   const coverRef = useRef<HTMLInputElement | null>(null)
+  // Publicar no mural: o "+" do headcard abre estes composers, e o mural
+  // recarrega por `feedReload` (o botão não mora mais dentro do feed).
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
+  const [recadoOpen, setRecadoOpen] = useState(false)
+  const [feedReload, setFeedReload] = useState(0)
 
   const authHeaders = useCallback((): Record<string, string> => {
     const token = getToken()
@@ -341,7 +360,7 @@ export function AcademyView({ slug }: { slug: string }) {
         </div>
 
         {/* Cabeçalho estilo comunidade: capa + chips + avatar sobreposto */}
-        <header className="mt-3 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
+        <header className="relative mt-3 border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
           <div className="relative h-40 bg-[#1D1810] md:h-52">
             {academy.cover_url && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -393,6 +412,25 @@ export function AcademyView({ slug }: { slug: string }) {
                         <MessageCircle className="h-4 w-4 text-[#F2B705]" />
                       </Link>
                     )}
+                    {/* Publicar no mural: mesmo "+" amarelo das comunidades,
+                        no headcard. A academia não tem Bee (story pertence a
+                        comunidade, não a academia) — só Post, Curto e Recado. */}
+                    <PublishMenuButton
+                      label={t("composeCta", "Publicar")}
+                      canPost={canPost}
+                      blockedMessage={t("joinToPost", "Vincule sua matrícula para publicar.")}
+                      onBlocked={(m) => toast.error(m)}
+                      items={[
+                        { kind: "post", label: t("postLabel", "Post") },
+                        { kind: "bee", label: t("curtoLabel", "Curto") },
+                        { kind: "recado", label: t("recadoLabel", "Recado") },
+                      ]}
+                      onPick={(kind) => {
+                        if (kind === "recado") { setRecadoOpen(true); return }
+                        setComposerKind(kind === "bee" ? "bee" : "post")
+                        setComposerOpen(true)
+                      }}
+                    />
                   </div>
                   {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
                 </div>
@@ -533,7 +571,7 @@ export function AcademyView({ slug }: { slug: string }) {
         <AcademyRanking academyId={academy.id_academy} slug={academy.slug} isOwner={academy.is_owner} />
 
         {/* Mural social (público; postar = vinculado/staff) */}
-        <AcademyFeed academyId={academy.id_academy} slug={academy.slug} canPost={canPost} isOwner={academy.is_owner} meId={meId} />
+        <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />
 
         {/* Treinos por data (staff) */}
         {isStaff && <TrainingGrid academyId={academy.id_academy} />}
@@ -639,6 +677,31 @@ export function AcademyView({ slug }: { slug: string }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Composers do "+" do headcard */}
+      {recadoOpen && (
+        <RecadoComposer
+          open
+          academyId={academy.id_academy}
+          onClose={() => setRecadoOpen(false)}
+          onPosted={() => {
+            setRecadoOpen(false)
+            setFeedReload((n) => n + 1)
+          }}
+        />
+      )}
+      {composerOpen && (
+        <MediaComposer
+          open
+          mode={composerKind}
+          academyId={academy.id_academy}
+          onClose={() => setComposerOpen(false)}
+          onPosted={() => {
+            setComposerOpen(false)
+            setFeedReload((n) => n + 1)
+          }}
+        />
       )}
     </div>
   )

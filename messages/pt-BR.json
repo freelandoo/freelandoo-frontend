@@ -4502,7 +4502,10 @@
     "testDotFail": "Sem conexão",
     "curtoLabel": "Curto",
     "emptySearch": "Nenhuma academia encontrada. Ajuste a busca.",
-    "recadoLabel": "Recado"
+    "recadoLabel": "Recado",
+    "composeCta": "Publicar",
+    "composeHint": "Publicar no mural",
+    "joinToPost": "Vincule sua matrícula para publicar."
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

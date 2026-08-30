@@ -6,7 +6,7 @@ import { useParams } from "next/navigation"
 import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
-  Pin, Trash2, BarChart3, Plus, Hexagon, Film, X, MessageSquare,
+  Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
   Lock, Globe,
 } from "lucide-react"
 import Link from "next/link"
@@ -14,6 +14,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
+import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -184,7 +185,6 @@ export default function CommunityDetailPage() {
   // (o vídeo que dura mais quanto mais engajamento recebe). Os nomes internos
   // são os do Bees v2 — renomeá-los aqui quebraria o MediaComposer.
   const [composerKind, setComposerKind] = useState<"post" | "bee" | "story">("post")
-  const [chooserOpen, setChooserOpen] = useState(false)
 
   // Recado (nota só-texto, até 2000 chars)
   const [recadoOpen, setRecadoOpen] = useState(false)
@@ -558,12 +558,10 @@ export default function CommunityDetailPage() {
     : t("joinToPost", "Entre na comunidade para publicar."))
 
   const openComposer = (kind: "post" | "bee" | "story") => {
-    setChooserOpen(false)
     if (!canPost) { denyPost(); return }
     setComposerKind(kind); setComposerOpen(true)
   }
   const openRecado = () => {
-    setChooserOpen(false)
     if (!canPost) { denyPost(); return }
     setRecadoBody(""); setRecadoOpen(true)
   }
@@ -683,7 +681,7 @@ export default function CommunityDetailPage() {
           </div>
         </div>
 
-        <div className="relative z-20 -mt-12 flex items-end gap-4 px-2 md:-mt-16 md:px-3">
+        <div className="relative z-20 -mt-12 flex flex-wrap items-end gap-4 px-2 md:-mt-16 md:px-3">
           <div className="relative h-28 w-28 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
@@ -697,6 +695,30 @@ export default function CommunityDetailPage() {
               <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">{community.display_name}</h1>
             )}
           </div>
+          {/* Publicar: quadrado amarelo com "+" no PRÓPRIO headcard (não há
+              mais barra "Poste ou escreva aqui" no meio do feed). O menu abre
+              com os tipos empilhados. Feed trancado (privada sem assinar) não
+              mostra o botão: ali nem ler dá. */}
+          {!feedLocked && (
+            <div className="pb-1">
+              <PublishMenuButton
+                accent={accent}
+                label={t("composeCta", "Publicar")}
+                canPost={canPost}
+                blockedMessage={isCondo
+                  ? t("residentToPost", "Confirme seu apartamento para publicar.")
+                  : t("joinToPost", "Entre na comunidade para publicar.")}
+                onBlocked={setActionMsg}
+                items={[
+                  { kind: "post", label: t("postLabel", "Post") },
+                  { kind: "bee", label: t("curtoLabel", "Curto") },
+                  { kind: "story", label: t("beeLabel", "Bee") },
+                  { kind: "recado", label: t("recadoLabel", "Recado") },
+                ]}
+                onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+              />
+            </div>
+          )}
           {!isLeader && (
             <div className="pb-1">
               {myMembership ? (
@@ -1004,49 +1026,6 @@ export default function CommunityDetailPage() {
                       ))}
                     </div>
                   )}
-
-                  {/* Publicar: quadrado amarelo com "+". Não é uma seção de
-                      composer — é UM botão, e o que ele abre é a escolha do
-                      tipo: foto/texto, vídeo ou bee (o vídeo que dura mais
-                      quanto mais engajamento recebe). */}
-                  <div className="relative flex items-center gap-3">
-                    <button
-                      type="button"
-                      aria-label={t("composeCta", "Publicar")}
-                      title={t("composeCta", "Publicar")}
-                      aria-expanded={chooserOpen}
-                      onClick={() => canPost
-                        ? setChooserOpen((v) => !v)
-                        : setActionMsg(isCondo
-                          ? t("residentToPost", "Confirme seu apartamento para publicar.")
-                          : t("joinToPost", "Entre na comunidade para publicar."))}
-                      className="grid h-14 w-14 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]"
-                      style={{ background: accent, boxShadow: `4px 4px 0 0 #0B0B0D` }}
-                    >
-                      <Plus className={`h-7 w-7 transition ${chooserOpen ? "rotate-45" : ""}`} />
-                    </button>
-                    <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                      {t("composeHint", "Publicar no mural")}
-                    </span>
-
-                    {chooserOpen && canPost && (
-                      <div className="absolute left-0 top-full z-30 mt-2 flex flex-wrap gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
-                        <button type="button" onClick={() => openComposer("post")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                          <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
-                        </button>
-                        <button type="button" onClick={() => openComposer("bee")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                          <Film className="h-4 w-4" /> {t("curtoLabel", "Curto")}
-                        </button>
-                        <button type="button" onClick={() => openComposer("story")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                          <Hexagon className="h-4 w-4" /> {t("beeLabel", "Bee")}
-                        </button>
-                        <button type="button" onClick={openRecado} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
-                          <MessageSquare className="h-4 w-4" /> {t("recadoLabel", "Recado")}
-                        </button>
-                        <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[#F5F1E8]/20 px-2 text-[#9A938A]"><X className="h-4 w-4" /></button>
-                      </div>
-                    )}
-                  </div>
 
                   {/* Feed unificado (posts + bees + recados) — cards padrão do Freelandoo */}
                   {loadingPosts ? (
