@@ -11,11 +11,20 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Film, Hexagon, ImagePlus, MessageSquare, Plus } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 /** `bee` = Curto (vídeo do feed) e `story` = Bee — nomes físicos do Bees v2. */
 export type PublishKind = "post" | "bee" | "story" | "recado"
 
 export type PublishItem = { kind: PublishKind; label: string }
+
+/**
+ * Ação EXTRA da superfície — não publica nada, só abre algo daquela página
+ * (ex.: Professores e Ranking da academia, que saíram das seções soltas do
+ * corpo e passaram a morar aqui). Superfície que não declara nenhuma continua
+ * com o menu de publicação puro.
+ */
+export type PublishExtraItem = { id: string; label: string; icon: LucideIcon }
 
 const ICON: Record<PublishKind, typeof Plus> = {
   post: ImagePlus,
@@ -34,6 +43,8 @@ export function PublishMenuButton({
   canPost = true,
   onBlocked,
   align = "left",
+  extras = [],
+  onPickExtra,
 }: {
   items: PublishItem[]
   onPick: (kind: PublishKind) => void
@@ -47,6 +58,9 @@ export function PublishMenuButton({
   canPost?: boolean
   onBlocked?: (message: string) => void
   align?: "left" | "right"
+  /** Ações da superfície que não são publicação (abrem painéis da página). */
+  extras?: PublishExtraItem[]
+  onPickExtra?: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement | null>(null)
@@ -76,7 +90,7 @@ export function PublishMenuButton({
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => {
-          if (!canPost) {
+          if (!canPost && extras.length === 0) {
             setOpen(false)
             if (blockedMessage) onBlocked?.(blockedMessage)
             return
@@ -92,7 +106,7 @@ export function PublishMenuButton({
         <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{hint}</span>
       )}
 
-      {open && canPost && (
+      {open && (canPost || extras.length > 0) && (
         <div
           role="menu"
           className={`absolute top-full z-40 mt-2 flex w-48 flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2 ${align === "right" ? "right-0" : "left-0"}`}
@@ -107,11 +121,38 @@ export function PublishMenuButton({
                 role="menuitem"
                 onClick={() => {
                   setOpen(false)
+                  // Sem permissão o item continua visível e devolve o aviso de
+                  // sempre — quem abriu o menu foram os extras, a permissão de
+                  // publicar não mudou.
+                  if (!canPost) {
+                    if (blockedMessage) onBlocked?.(blockedMessage)
+                    return
+                  }
                   onPick(it.kind)
+                }}
+                className={`mb-1 flex w-full items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] last:mb-0 hover:bg-[#241d12] ${canPost ? "" : "opacity-60"}`}
+              >
+                <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} /> {it.label}
+              </button>
+            )
+          })}
+
+          {extras.length > 0 && items.length > 0 && <div className="my-1 border-t-2 border-[#0B0B0D]" />}
+
+          {extras.map((ex) => {
+            const Icon = ex.icon
+            return (
+              <button
+                key={ex.id}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false)
+                  onPickExtra?.(ex.id)
                 }}
                 className="mb-1 flex w-full items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] last:mb-0 hover:bg-[#241d12]"
               >
-                <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} /> {it.label}
+                <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} /> {ex.label}
               </button>
             )
           })}

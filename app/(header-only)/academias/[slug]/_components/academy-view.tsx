@@ -21,6 +21,7 @@ import {
   RefreshCcw,
   ShieldAlert,
   Trash2,
+  Trophy,
   Users,
   X,
 } from "lucide-react"
@@ -126,6 +127,9 @@ export function AcademyView({ slug }: { slug: string }) {
   const [composerOpen, setComposerOpen] = useState(false)
   const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
   const [recadoOpen, setRecadoOpen] = useState(false)
+  // Professores e Ranking saíram do corpo da página: agora são painéis abertos
+  // pelo "+" do headcard, e o mural vem logo depois do headcard.
+  const [panel, setPanel] = useState<null | "professors" | "ranking">(null)
   const [feedReload, setFeedReload] = useState(0)
 
   const authHeaders = useCallback((): Record<string, string> => {
@@ -430,6 +434,11 @@ export function AcademyView({ slug }: { slug: string }) {
                         setComposerKind(kind === "bee" ? "bee" : "post")
                         setComposerOpen(true)
                       }}
+                      extras={[
+                        { id: "professors", label: t("professorsTitle", "Professores"), icon: GraduationCap },
+                        { id: "ranking", label: t("rankingTitle", "Ranking do mês"), icon: Trophy },
+                      ]}
+                      onPickExtra={(id) => setPanel(id === "ranking" ? "ranking" : "professors")}
                     />
                   </div>
                   {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
@@ -467,25 +476,6 @@ export function AcademyView({ slug }: { slug: string }) {
             </div>
           </div>
         </header>
-
-        {/* Professores */}
-        <section className={`${PANEL} mt-6 p-4`}>
-          <h2 className={H_SECTION}>
-            <GraduationCap className="h-4 w-4 text-[#F2B705]" />
-            {t("professorsTitle", "Professores")}
-          </h2>
-          {academy.professors.length === 0 ? (
-            <p className="mt-2 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
-          ) : (
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {academy.professors.map((p) => (
-                <li key={p.id_user} className={`${INNER} px-3 py-1 text-xs font-bold`}>
-                  {p.nome || p.username || p.id_user.slice(0, 8)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
 
         {/* Painel do dono */}
         {academy.is_owner && (
@@ -567,9 +557,6 @@ export function AcademyView({ slug }: { slug: string }) {
           </section>
         )}
 
-        {/* Ranking do mês (público) */}
-        <AcademyRanking academyId={academy.id_academy} slug={academy.slug} isOwner={academy.is_owner} />
-
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />
 
@@ -635,6 +622,58 @@ export function AcademyView({ slug }: { slug: string }) {
           </section>
         )}
       </div>
+
+      {/* Professores e Ranking — abertos pelo "+" do headcard */}
+      {panel === "professors" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPanel(null)}>
+          <div
+            className={`fl-sharp max-h-[85vh] w-full max-w-md overflow-y-auto ${PANEL} p-6 text-[#F5F1E8]`}
+            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
+              <h2 className="flex items-center gap-2 text-xl font-black uppercase">
+                <GraduationCap className="h-5 w-5 text-[#F2B705]" />
+                {t("professorsTitle", "Professores")}
+              </h2>
+              <button onClick={() => setPanel(null)} aria-label={t("close", "Fechar")}>
+                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
+              </button>
+            </div>
+            {academy.professors.length === 0 ? (
+              <p className="mt-3 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
+            ) : (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {academy.professors.map((p) => (
+                  <li key={p.id_user} className={`${INNER} px-3 py-1 text-xs font-bold`}>
+                    {p.nome || p.username || p.id_user.slice(0, 8)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+      {panel === "ranking" && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/80 p-4" onClick={() => setPanel(null)}>
+          <div className="fl-sharp w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setPanel(null)}
+                aria-label={t("close", "Fechar")}
+                className={`${BTN_DARK} h-9 w-9`}
+              >
+                <X className="h-4 w-4 text-[#9A938A]" />
+              </button>
+            </div>
+            {/* O componente já traz o próprio painel (título, abas, metas do
+                dono e o link do ranking completo) — só some a margem de topo. */}
+            <div className="[&>section]:mt-2">
+              <AcademyRanking academyId={academy.id_academy} slug={academy.slug} isOwner={academy.is_owner} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal vincular CPF */}
       {linkOpen && (
