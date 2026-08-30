@@ -106,7 +106,9 @@ export interface ComposedResult {
   mimeType: string
 }
 
-/** Resolução-alvo de saída por modo (largura base; altura = largura/aspect). */
+/** Resolução-alvo de saída por modo — é o LADO CURTO (ver outSize em
+ *  compose.ts): retrato/quadrado saem com essa largura, paisagem com essa
+ *  altura. */
 export function targetWidthFor(mode: ComposerMode, kind: MediaKind): number {
   // Vídeo: 720 (bate com o recorder/capability check da câmera). Foto: 1080.
   if (kind === "video") return 720

@@ -779,11 +779,24 @@ export function VaquinhaView({ slug }: { slug: string }) {
                     </button>
                   )}
                   {p.kind !== "text" && p.media_url && (
+                    /* Post aceita 4:5, 1:1 e 16:9 — a moldura não pode ser fixa.
+                       O Curto (bee) continua vertical; o post deitado se
+                       ajusta sozinho pela altura natural da mídia. */
                     p.media_type === "video" ? (
-                      <video src={p.media_url} poster={p.thumbnail_url || undefined} controls className={`w-full ${p.kind === "bee" ? "aspect-[9/16]" : "aspect-[4/5]"} bg-black object-contain`} />
+                      <video
+                        src={p.media_url}
+                        poster={p.thumbnail_url || undefined}
+                        controls
+                        className={`w-full bg-black object-contain ${p.kind === "bee" ? "aspect-[9/16]" : "max-h-[70vh]"}`}
+                      />
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.media_url} alt={p.caption || ""} loading="lazy" className="w-full object-cover" />
+                      <img
+                        src={p.media_url}
+                        alt={p.caption || ""}
+                        loading="lazy"
+                        className="max-h-[70vh] w-full bg-black object-contain"
+                      />
                     )
                   )}
                   {p.caption && <p className="mt-2 whitespace-pre-wrap text-sm text-[#F1EDE2]/90">{p.caption}</p>}

@@ -183,7 +183,7 @@
     "createProfileError": "Error al crear el perfil. Inténtalo de nuevo.",
     "creating": "Creando...",
     "cropImage": "Recortar imagen",
-    "cropImageDesc": "Recorta tu imagen a 4:5 para que se vea mejor en el feed.",
+    "cropImageDesc": "Elige la orientación (4:5, 1:1 o 16:9) y recorta tu imagen.",
     "currentAvatar": "Avatar actual",
     "delete": "Eliminar",
     "deleteMediaConfirm": "¿Seguro que quieres eliminar este medio?",
@@ -3577,7 +3577,7 @@
     "createItemError": "Error al crear el elemento",
     "createItemErrorRetry": "Error al crear el elemento. Inténtalo de nuevo.",
     "crop": "Recortar",
-    "cropDescription": "Recorta tu imagen a 4:5 para que se vea mejor en el feed.",
+    "cropDescription": "Elige la orientación (4:5, 1:1 o 16:9) y recorta tu imagen.",
     "cropTitle": "Recortar imagen",
     "descriptionLabel": "Descripción",
     "descriptionPlaceholder": "Cuenta el contexto: cliente, proceso, resultado...",
@@ -5589,5 +5589,24 @@
     "emptyTitle": "Aún no declaraste dónde vives",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
     "privacyNote": "Tu dirección nunca aparece para otros residentes — solo ven el barrio."
+  },
+  "MediaCrop": {
+    "orientationGroup": "Orientación del post",
+    "labelAvatar": "foto de perfil",
+    "labelPost": "imagen del post",
+    "avatarTooBig": "La foto de perfil debe tener como máximo 2MB.",
+    "postTooBig": "La imagen del post debe tener como máximo 3MB.",
+    "optimizeError": "No fue posible optimizar este archivo. Prueba con otro.",
+    "previewAlt": "Vista previa de la {label}",
+    "outputTitle": "Salida",
+    "ratio": "Proporción",
+    "resolution": "Resolución",
+    "sizeLimit": "Límite",
+    "zoom": "Zoom",
+    "zoomAria": "Zoom del recorte",
+    "reset": "Restablecer",
+    "dragHint": "Arrastra la imagen para elegir el encuadre. El archivo final se optimiza antes del envío.",
+    "cancel": "Cancelar",
+    "apply": "Aplicar recorte"
   }
 }

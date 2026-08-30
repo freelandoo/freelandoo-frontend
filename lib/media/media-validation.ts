@@ -9,6 +9,23 @@ export const BEES_VIDEO_ASPECT_RATIO_MAX = 0.6
 export const POST_IMAGE_MAX_SIZE_BYTES = 3 * 1024 * 1024
 export const AVATAR_IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024
 export const POST_IMAGE_OUTPUT = { width: 1080, height: 1350 }
+
+/** Orientações que um post aceita — espelho de POST_ORIENTATIONS no backend
+ *  (freelandoo-backend/src/utils/mediaProcessing.js). Se mudar de um lado,
+ *  mudar do outro: é o backend que enquadra de verdade, isto aqui só decide o
+ *  que o cortador oferece e o que passa direto sem cortar. */
+export type PostOrientation = {
+  id: "4:5" | "1:1" | "16:9"
+  ratio: number
+  width: number
+  height: number
+}
+
+export const POST_ORIENTATIONS: PostOrientation[] = [
+  { id: "4:5", ratio: 4 / 5, width: 1080, height: 1350 },
+  { id: "1:1", ratio: 1, width: 1080, height: 1080 },
+  { id: "16:9", ratio: 16 / 9, width: 1920, height: 1080 },
+]
 export const AVATAR_IMAGE_OUTPUT = { width: 800, height: 800 }
 export const ASPECT_RATIO_TOLERANCE = 0.01
 
@@ -37,6 +54,33 @@ export function isAspectRatio(
 ): boolean {
   if (!width || !height) return false
   return Math.abs(width / height - targetRatio) <= tolerance
+}
+
+/** Orientação de post que a imagem já tem, ou null se não bate com nenhuma.
+ *  Quem já está em uma delas não precisa passar pelo cortador. */
+export function matchedPostOrientation(width: number, height: number): PostOrientation | null {
+  return POST_ORIENTATIONS.find((o) => isAspectRatio(width, height, o.ratio)) ?? null
+}
+
+/** Orientação mais próxima — usada pra abrir o cortador já no formato certo.
+ *  Mesma conta do backend: distância em escala log (3:4 fica igualmente longe
+ *  de 1:1 e de 16:9) e, no empate, vence a que preserva deitado/em pé. */
+export function nearestPostOrientation(width: number, height: number): PostOrientation {
+  if (!width || !height) return POST_ORIENTATIONS[0]
+  const exact = matchedPostOrientation(width, height)
+  if (exact) return exact
+  const ratio = width / height
+  const ordered = ratio > 1 ? [...POST_ORIENTATIONS].reverse() : POST_ORIENTATIONS
+  let best = ordered[0]
+  let bestDist = Infinity
+  for (const o of ordered) {
+    const dist = Math.abs(Math.log(ratio / o.ratio))
+    if (dist < bestDist - 1e-9) {
+      bestDist = dist
+      best = o
+    }
+  }
+  return best
 }
 
 export function getImageDimensions(file: File): Promise<ImageDimensions> {

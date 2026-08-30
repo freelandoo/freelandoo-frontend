@@ -183,7 +183,7 @@
     "createProfileError": "Erro ao criar perfil. Tente novamente.",
     "creating": "Criando...",
     "cropImage": "Cortar imagem",
-    "cropImageDesc": "Corte sua imagem no formato 4:5 para aparecer melhor no feed.",
+    "cropImageDesc": "Escolha a orientação (4:5, 1:1 ou 16:9) e corte sua imagem.",
     "currentAvatar": "Avatar atual",
     "delete": "Excluir",
     "deleteMediaConfirm": "Tem certeza que deseja deletar esta mídia?",
@@ -3011,7 +3011,7 @@
     "createItemError": "Erro ao criar item",
     "createItemErrorRetry": "Erro ao criar item. Tente novamente.",
     "crop": "Recortar",
-    "cropDescription": "Corte sua imagem no formato 4:5 para aparecer melhor no feed.",
+    "cropDescription": "Escolha a orientação (4:5, 1:1 ou 16:9) e corte sua imagem.",
     "cropTitle": "Cortar imagem",
     "descriptionLabel": "Descrição",
     "descriptionPlaceholder": "Conte o contexto: cliente, processo, resultado...",
@@ -5023,5 +5023,24 @@
     "emptyTitle": "Você ainda não declarou onde mora",
     "genericError": "Algo deu errado. Tente de novo.",
     "privacyNote": "Seu endereço nunca aparece para outros moradores — eles veem só o bairro."
+  },
+  "MediaCrop": {
+    "orientationGroup": "Orientação do post",
+    "labelAvatar": "foto de perfil",
+    "labelPost": "imagem do post",
+    "avatarTooBig": "A foto de perfil precisa ter no máximo 2MB.",
+    "postTooBig": "A imagem do post precisa ter no máximo 3MB.",
+    "optimizeError": "Não foi possível otimizar esse arquivo. Tente outro.",
+    "previewAlt": "Prévia da {label}",
+    "outputTitle": "Saída",
+    "ratio": "Proporção",
+    "resolution": "Resolução",
+    "sizeLimit": "Limite",
+    "zoom": "Zoom",
+    "zoomAria": "Zoom do corte",
+    "reset": "Resetar",
+    "dragHint": "Arraste a imagem para escolher o enquadramento. O arquivo final será otimizado antes do envio.",
+    "cancel": "Cancelar",
+    "apply": "Aplicar corte"
   }
 }

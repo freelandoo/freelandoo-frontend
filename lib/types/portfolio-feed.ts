@@ -4,6 +4,11 @@ export interface FeedMedia {
   url: string
   type: FeedMediaType
   thumbnail_url: string | null
+  /** Dimensões reais do arquivo processado. É delas que sai a orientação do
+   *  card (4:5, 1:1 ou 16:9). Podem vir null em mídia antiga — nesse caso o
+   *  card cai no 4:5, que era a única orientação que existia até então. */
+  width?: number | null
+  height?: number | null
 }
 
 /** Música anexada a um post/bee/story (metadado — tocada pelo player, não queimada). */

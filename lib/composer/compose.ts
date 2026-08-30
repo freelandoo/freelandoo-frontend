@@ -9,11 +9,16 @@ import { ComposerRenderer } from "./renderer"
 import type { ComposedResult, FilterState, CropState, MediaDraft } from "./types"
 import { targetWidthFor } from "./types"
 
-/** Calcula W×H de saída a partir do aspect (w/h) e largura-alvo, ambos pares. */
-function outSize(aspect: number, baseW: number): { w: number; h: number } {
+/** Calcula W×H de saída a partir do aspect (w/h), ambos pares.
+ *  `base` é o LADO CURTO, não a largura: assim 4:5 sai 1080×1350, 1:1 sai
+ *  1080×1080 e 16:9 sai 1920×1080 — as três com a mesma densidade. Fixando a
+ *  largura, o 16:9 sairia 1080×608 e ficaria visivelmente mais mole que os
+ *  outros dois no mesmo feed. */
+function outSize(aspect: number, base: number): { w: number; h: number } {
   const even = (n: number) => { const r = Math.round(n); return r % 2 === 0 ? r : r - 1 }
-  const w = even(baseW)
-  const h = even(baseW / aspect)
+  const short = even(base)
+  const w = aspect >= 1 ? even(base * aspect) : short
+  const h = aspect >= 1 ? short : even(base / aspect)
   return { w: Math.max(2, w), h: Math.max(2, h) }
 }
 

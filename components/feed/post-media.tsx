@@ -13,8 +13,41 @@ interface PostMediaProps {
   fillContainer?: boolean
   /** Sobe indicadores inferiores para não colidir com legenda sobreposta (feed paged). */
   reserveBottomOverlay?: boolean
-  /** Proporção quando não é fillContainer. Default 4:5. */
+  /** Proporção de FALLBACK quando a mídia não traz width/height (posts antigos)
+   *  e não é fillContainer. Default 4:5. */
   aspect?: "4:5" | "9:16"
+}
+
+/** Orientações que um post pode ter — espelha POST_ORIENTATIONS do backend
+ *  (utils/mediaProcessing.js). Curto/bee continua vertical e não entra aqui. */
+const POST_ASPECT_CLASSES: Array<{ ratio: number; className: string }> = [
+  { ratio: 4 / 5, className: "aspect-[4/5]" },
+  { ratio: 1, className: "aspect-square" },
+  { ratio: 16 / 9, className: "aspect-[16/9]" },
+]
+
+/** Classe de proporção da mídia. Casa as dimensões reais com a orientação mais
+ *  próxima em vez de usar o valor cru: um 1920×1080 vira `aspect-[16/9]`
+ *  redondo, e o ruído de arredondamento do encoder (1080×608, 760×1350) não
+ *  vira uma moldura torta. Sem width/height (mídia anterior a esta mudança),
+ *  devolve null e quem chama usa o fallback. */
+function aspectClassFor(media: FeedMedia | undefined, vertical: boolean): string | null {
+  const w = media?.width
+  const h = media?.height
+  if (!w || !h) return null
+  const ratio = w / h
+  // Vertical (bee/curto) tem moldura própria — 9:16 não é orientação de post.
+  if (vertical) return ratio <= 0.65 ? "aspect-[9/16]" : null
+  let best = POST_ASPECT_CLASSES[0]
+  let bestDist = Infinity
+  for (const o of POST_ASPECT_CLASSES) {
+    const dist = Math.abs(Math.log(ratio / o.ratio))
+    if (dist < bestDist) {
+      bestDist = dist
+      best = o
+    }
+  }
+  return best.className
 }
 
 // Estado global do mute compartilhado entre todos os players do feed.
@@ -169,8 +202,13 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
 
 export function PostMedia({ media, glow, fillContainer, reserveBottomOverlay, aspect = "4:5" }: PostMediaProps) {
   const t = useTranslations("Post")
-  const aspectClass = aspect === "9:16" ? "aspect-[9/16]" : "aspect-[4/5]"
   const [index, setIndex] = useState(0)
+  const shown = media?.[Math.min(index, Math.max(0, (media?.length ?? 1) - 1))]
+  // A moldura segue a mídia visível: num carrossel o composer trava um aspecto
+  // só para todos os slides, mas ler o slide atual evita corte se algum dia
+  // vierem misturados.
+  const fallbackClass = aspect === "9:16" ? "aspect-[9/16]" : "aspect-[4/5]"
+  const aspectClass = aspectClassFor(shown, aspect === "9:16") ?? fallbackClass
   if (!media || media.length === 0) {
     return (
       <div

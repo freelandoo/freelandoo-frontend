@@ -45,6 +45,7 @@ import {
 import { MediaCropModal } from "@/components/media/media-crop-modal"
 import {
   BEES_VIDEO_ASPECT_RATIO_MAX,
+  matchedPostOrientation,
   POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
   POST_IMAGE_OUTPUT,
@@ -367,14 +368,17 @@ export function UserPortfolio({
       setPortfolioError(null)
       try {
         const dimensions = await getImageDimensions(file)
-        if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+        // Post aceita 4:5, 1:1 e 16:9: quem já chega em uma delas sobe
+        // direto; o cortador só abre pra quem está fora das três.
+        const orientation = matchedPostOrientation(dimensions.width, dimensions.height)
+        if (!orientation) {
           setCropTarget({ file, itemId, mode })
           return
         }
         setProcessingMedia(true)
         const processed = await compressImageToMaxSize(file, {
-          outputWidth: POST_IMAGE_OUTPUT.width,
-          outputHeight: POST_IMAGE_OUTPUT.height,
+          outputWidth: orientation.width,
+          outputHeight: orientation.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
           errorMessage: tr("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
@@ -1271,7 +1275,7 @@ export function UserPortfolio({
           maxSizeMB={3}
           mediaType="post_image"
           title={tr("cropImage", "Cortar imagem")}
-          description={tr("cropImageDesc", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
+          description={tr("cropImageDesc", "Escolha a orientação (4:5, 1:1 ou 16:9) e corte sua imagem.")}
           onCancel={() => setCropTarget(null)}
           onConfirm={handleCropConfirm}
         />

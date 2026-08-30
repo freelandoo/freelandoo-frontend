@@ -36,6 +36,7 @@ import type { ProfileServiceEditClanMember } from "@/components/profile/profile-
 import { useMyCourses, type MyCourse } from "@/hooks/use-my-courses"
 import { useActionConsent } from "@/hooks/use-action-consent"
 import {
+  matchedPostOrientation,
   POST_IMAGE_ASPECT_RATIO,
   POST_IMAGE_MAX_SIZE_BYTES,
   POST_IMAGE_OUTPUT,
@@ -334,15 +335,18 @@ export default function ManageClanPage({
 
       try {
         const dimensions = await getImageDimensions(file)
-        if (!isAspectRatio(dimensions.width, dimensions.height, POST_IMAGE_ASPECT_RATIO)) {
+        // Post aceita 4:5, 1:1 e 16:9: quem já chega em uma delas sobe
+        // direto; o cortador só abre pra quem está fora das três.
+        const orientation = matchedPostOrientation(dimensions.width, dimensions.height)
+        if (!orientation) {
           setNewItemCropFile(file)
           return
         }
 
         setProcessingPortfolioMedia(true)
         const processed = await compressImageToMaxSize(file, {
-          outputWidth: POST_IMAGE_OUTPUT.width,
-          outputHeight: POST_IMAGE_OUTPUT.height,
+          outputWidth: orientation.width,
+          outputHeight: orientation.height,
           maxSizeBytes: POST_IMAGE_MAX_SIZE_BYTES,
           mimeType: "image/webp",
           errorMessage: t("postImageTooBig", "A imagem do post precisa ter no máximo 3MB."),
@@ -1178,7 +1182,7 @@ export default function ManageClanPage({
           maxSizeMB={3}
           mediaType="post_image"
           title={t("cropImage", "Cortar imagem")}
-          description={t("cropImageDesc", "Corte sua imagem no formato 4:5 para aparecer melhor no feed.")}
+          description={t("cropImageDesc", "Escolha a orientação (4:5, 1:1 ou 16:9) e corte sua imagem.")}
           onCancel={() => setNewItemCropFile(null)}
           onConfirm={handleClanPortfolioCropConfirm}
         />
