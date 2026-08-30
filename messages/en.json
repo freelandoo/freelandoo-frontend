@@ -5091,7 +5091,8 @@
     "recadoLabel": "Note",
     "composeCta": "Publish",
     "composeHint": "Post on the wall",
-    "joinToPost": "Link your membership to publish."
+    "joinToPost": "Link your membership to publish.",
+    "professorViewProfile": "View profile"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

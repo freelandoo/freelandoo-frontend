@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   ArrowLeft,
@@ -31,7 +32,6 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { TrainingGrid } from "./training-grid"
 import { AcademyFeed } from "./academy-feed"
-import { AcademyRanking } from "./academy-ranking"
 
 const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
@@ -44,7 +44,7 @@ const RecadoComposer = dynamic(
   { ssr: false }
 )
 
-type Professor = { id_user: string; username: string | null; nome: string | null }
+type Professor = { id_user: string; username: string | null; nome: string | null; id_profile?: string | null }
 type MyMembership = {
   membership_status: string
   plan_name: string | null
@@ -127,9 +127,11 @@ export function AcademyView({ slug }: { slug: string }) {
   const [composerOpen, setComposerOpen] = useState(false)
   const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
   const [recadoOpen, setRecadoOpen] = useState(false)
-  // Professores e Ranking saíram do corpo da página: agora são painéis abertos
-  // pelo "+" do headcard, e o mural vem logo depois do headcard.
-  const [panel, setPanel] = useState<null | "professors" | "ranking">(null)
+  // Professores e Ranking saíram do corpo da página: quem os abre é o "+" do
+  // headcard, e o mural vem logo depois do headcard. Ranking não abre painel —
+  // vai direto pra página de ranking da academia.
+  const [professorsOpen, setProfessorsOpen] = useState(false)
+  const router = useRouter()
   const [feedReload, setFeedReload] = useState(0)
 
   const authHeaders = useCallback((): Record<string, string> => {
@@ -438,7 +440,10 @@ export function AcademyView({ slug }: { slug: string }) {
                         { id: "professors", label: t("professorsTitle", "Professores"), icon: GraduationCap },
                         { id: "ranking", label: t("rankingTitle", "Ranking do mês"), icon: Trophy },
                       ]}
-                      onPickExtra={(id) => setPanel(id === "ranking" ? "ranking" : "professors")}
+                      onPickExtra={(id) => {
+                        if (id === "ranking") { router.push(`/academias/${academy.slug}/ranking`); return }
+                        setProfessorsOpen(true)
+                      }}
                     />
                   </div>
                   {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
@@ -623,9 +628,10 @@ export function AcademyView({ slug }: { slug: string }) {
         )}
       </div>
 
-      {/* Professores e Ranking — abertos pelo "+" do headcard */}
-      {panel === "professors" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPanel(null)}>
+      {/* Professores — painel aberto pelo "+" do headcard (Ranking do
+          menu navega direto pra página de ranking da academia). */}
+      {professorsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setProfessorsOpen(false)}>
           <div
             className={`fl-sharp max-h-[85vh] w-full max-w-md overflow-y-auto ${PANEL} p-6 text-[#F5F1E8]`}
             style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
@@ -636,41 +642,31 @@ export function AcademyView({ slug }: { slug: string }) {
                 <GraduationCap className="h-5 w-5 text-[#F2B705]" />
                 {t("professorsTitle", "Professores")}
               </h2>
-              <button onClick={() => setPanel(null)} aria-label={t("close", "Fechar")}>
+              <button onClick={() => setProfessorsOpen(false)} aria-label={t("close", "Fechar")}>
                 <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
               </button>
             </div>
             {academy.professors.length === 0 ? (
               <p className="mt-3 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
             ) : (
-              <ul className="mt-3 flex flex-wrap gap-2">
+              <ul className="mt-3 space-y-2">
                 {academy.professors.map((p) => (
-                  <li key={p.id_user} className={`${INNER} px-3 py-1 text-xs font-bold`}>
-                    {p.nome || p.username || p.id_user.slice(0, 8)}
+                  <li key={p.id_user} className={`${INNER} flex items-center justify-between gap-3 px-3 py-2 text-xs font-bold`}>
+                    <span className="min-w-0 truncate">{p.nome || p.username || p.id_user.slice(0, 8)}</span>
+                    {/* Sem perfil (professor que nunca criou nenhum) o link não
+                        aparece — melhor nada do que /freelancer/undefined. */}
+                    {p.id_profile && (
+                      <Link
+                        href={`/freelancer/${p.id_profile}`}
+                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] hover:-translate-y-0.5"
+                      >
+                        {t("professorViewProfile", "Ver perfil")}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
-          </div>
-        </div>
-      )}
-      {panel === "ranking" && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/80 p-4" onClick={() => setPanel(null)}>
-          <div className="fl-sharp w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setPanel(null)}
-                aria-label={t("close", "Fechar")}
-                className={`${BTN_DARK} h-9 w-9`}
-              >
-                <X className="h-4 w-4 text-[#9A938A]" />
-              </button>
-            </div>
-            {/* O componente já traz o próprio painel (título, abas, metas do
-                dono e o link do ranking completo) — só some a margem de topo. */}
-            <div className="[&>section]:mt-2">
-              <AcademyRanking academyId={academy.id_academy} slug={academy.slug} isOwner={academy.is_owner} />
-            </div>
           </div>
         </div>
       )}

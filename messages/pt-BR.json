@@ -4505,7 +4505,8 @@
     "recadoLabel": "Recado",
     "composeCta": "Publicar",
     "composeHint": "Publicar no mural",
-    "joinToPost": "Vincule sua matrícula para publicar."
+    "joinToPost": "Vincule sua matrícula para publicar.",
+    "professorViewProfile": "Ver perfil"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
