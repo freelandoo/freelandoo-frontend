@@ -136,11 +136,40 @@ const SPACES = {
   bioLabel: ["Descrição (opcional)", "Description (optional)", "Descripción (opcional)"],
 };
 
-// Chips das modalidades novas na vitrine, no card e no cabeçalho da comunidade.
+// Chips das modalidades novas na vitrine, no card e no cabeçalho da comunidade
+// + o editor do ASSUNTO, que mora no modo de edição da própria comunidade.
+//
+// Nota: as chaves de modal do ns `Spaces` (newPetTitle, createCarCta, etc.)
+// ficaram ÓRFÃS de propósito quando os modais de cadastro morreram — a criação
+// virou "cria vazio e edita dentro". Elas não atrapalham e evitam retrabalho se
+// algum fluxo voltar a precisar de um formulário fora da página.
 const COMMUNITY = {
   kindPet: ["Pet", "Pet", "Mascota"],
   kindCar: ["Carro", "Car", "Coche"],
   kindGames: ["Games", "Games", "Juegos"],
+
+  subjectPetTitle: ["Sobre o pet", "About the pet", "Sobre la mascota"],
+  subjectCarTitle: ["O carro", "The car", "El coche"],
+  subjectGameTitle: ["O jogo", "The game", "El juego"],
+  speciesDog: ["Cachorro", "Dog", "Perro"],
+  speciesCat: ["Gato", "Cat", "Gato"],
+  speciesOther: ["Outro animal", "Other animal", "Otro animal"],
+  breedLabel: ["Raça", "Breed", "Raza"],
+  breedUnknown: ["Não sei / não informar", "I don't know / skip", "No sé / no informar"],
+  birthYearLabel: ["Ano de nascimento", "Year of birth", "Año de nacimiento"],
+  carUniqueHint: [
+    "Existe uma única comunidade por modelo. Se o modelo já tiver dono, o site avisa e leva você até ela.",
+    "There is a single community per model. If the model is taken, we point you to it.",
+    "Existe una única comunidad por modelo. Si el modelo ya tiene dueño, te llevamos a ella.",
+  ],
+  carBrandLabel: ["Marca", "Brand", "Marca"],
+  carModelLabel: ["Modelo", "Model", "Modelo"],
+  carPickBrandFirst: ["Escolha a marca", "Pick the brand first", "Elige la marca"],
+  gameTitleLabel: ["Jogo", "Game", "Juego"],
+  gamertagLabel: ["Seu nick", "Your nickname", "Tu nick"],
+  platformMobile: ["Celular", "Mobile", "Móvil"],
+  platformRetro: ["Retrô", "Retro", "Retro"],
+  platformOther: ["Outra", "Other", "Otra"],
 };
 
 // O rótulo do avatar na /account, que deixou de ser "trocar foto".

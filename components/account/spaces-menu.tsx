@@ -20,9 +20,6 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { getToken } from "@/lib/auth"
-import { CreatePetModal } from "./create-pet-modal"
-import { CreateCarModal } from "./create-car-modal"
-import { CreateGameModal } from "./create-game-modal"
 
 /**
  * O menu que abre ao apertar a foto de perfil (decisão do Alex, 2026-08-30).
@@ -102,6 +99,37 @@ export function SpacesMenu({
   const [view, setView] = useState<MenuKey | null>(null)
   const [creating, setCreating] = useState<"pet" | "car" | "games" | null>(null)
 
+  /**
+   * Cria a comunidade VAZIA e abre a página dela.
+   *
+   * Não há formulário: quem escolhe raça, modelo ou jogo é o headcard da
+   * própria comunidade, no modo de edição em que o dono já cai (decisão do
+   * Alex: "já entra em uma página pronta editável, sem modal"). Um modal
+   * perguntando as mesmas coisas antes seria um segundo lugar para editar o
+   * que a página já sabe editar.
+   */
+  const createAndOpen = async (kind: "pet" | "car" | "games") => {
+    const token = getToken()
+    if (!token || creating) return
+    setCreating(kind)
+    try {
+      const path = kind === "pet" ? "/api/pets" : kind === "car" ? "/api/cars" : "/api/games"
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: "{}",
+      })
+      const json = await res.json()
+      if (!res.ok || !json?.community?.id_profile) return
+      onClose()
+      router.push(`/comunidades/${json.community.id_profile}`)
+    } catch {
+      /* silencioso: o menu continua aberto e a pessoa tenta de novo */
+    } finally {
+      setCreating(null)
+    }
+  }
+
   const load = useCallback(async () => {
     const token = getToken()
     if (!token) return
@@ -177,7 +205,7 @@ export function SpacesMenu({
         subtitle: r.subject_label,
         href: `/comunidades/${r.id_profile}`,
       })),
-      create: () => setCreating("pet"),
+      create: () => createAndOpen("pet"),
       createLabel: t("newPet", "Novo pet"),
     },
     {
@@ -191,7 +219,7 @@ export function SpacesMenu({
         subtitle: r.subject_label,
         href: `/comunidades/${r.id_profile}`,
       })),
-      create: () => setCreating("car"),
+      create: () => createAndOpen("car"),
       createLabel: t("newCar", "Adicionar carro"),
     },
     {
@@ -205,7 +233,7 @@ export function SpacesMenu({
         subtitle: r.subject_label,
         href: `/comunidades/${r.id_profile}`,
       })),
-      create: () => setCreating("games"),
+      create: () => createAndOpen("games"),
       createLabel: t("newGame", "Novo jogo"),
     },
     {
@@ -396,12 +424,6 @@ export function SpacesMenu({
           )}
         </div>
       )}
-
-      {/* Os modais ficam fora do painel: fechar o menu não pode fechar o
-          cadastro que a pessoa começou. */}
-      <CreatePetModal open={creating === "pet"} onClose={() => setCreating(null)} onCreated={load} />
-      <CreateCarModal open={creating === "car"} onClose={() => setCreating(null)} onCreated={load} />
-      <CreateGameModal open={creating === "games"} onClose={() => setCreating(null)} onCreated={load} />
     </div>
   )
 }

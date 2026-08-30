@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe,
+  Lock, Globe, PawPrint, Car, Gamepad2,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -42,6 +42,10 @@ const CondoExtras = dynamic(
   { ssr: false }
 )
 
+// Campos do editor de assunto: mesma pele reta dos outros controles da página.
+const selectCls =
+  "h-10 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 text-sm text-[#F5F1E8] outline-none focus:border-[#F2B705]"
+
 type Theme = { primary?: string; background?: string; text?: string; accent?: string }
 type Community = {
   id_profile: string
@@ -73,6 +77,8 @@ type Community = {
     breed_label?: string | null
     is_mixed?: boolean
     birth_year?: number | null
+    brand_code?: string | null
+    model_code?: string | null
     brand_label?: string | null
     model_label?: string | null
     platform?: string | null
@@ -211,6 +217,15 @@ export default function CommunityDetailPage() {
   const [saving, setSaving] = useState(false)
   const [nameDraft, setNameDraft] = useState("")
   const [bioDraft, setBioDraft] = useState("")
+  // Assunto das modalidades da mig 210 (raça do pet, modelo do carro, jogo).
+  // Editado AQUI, no modo de edição da própria comunidade — não há modal de
+  // cadastro: a comunidade nasce vazia e é batizada dentro de si mesma.
+  const [petDraft, setPetDraft] = useState({ species: "", breed_slug: "", breed_label: "", birth_year: "" })
+  const [gameDraft, setGameDraft] = useState({ platform: "", game_title: "", gamertag: "" })
+  const [carDraft, setCarDraft] = useState({ brand_code: "", model_code: "" })
+  const [breeds, setBreeds] = useState<{ id_breed: number; slug: string; label: string }[]>([])
+  const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
+  const [carModels, setCarModels] = useState<{ code: string; label: string }[]>([])
   const [accentDraft, setAccentDraft] = useState("gold")
   const [uploading, setUploading] = useState<"banner" | "avatar" | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
@@ -246,6 +261,10 @@ export default function CommunityDetailPage() {
   // vizinhos é o MORADOR — titular reconhecido de um apartamento (migs
   // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
   const isCondo = community?.kind === "condo"
+  const subjectKind =
+    community?.kind === "pet" || community?.kind === "car" || community?.kind === "games"
+      ? community.kind
+      : null
 
   // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
   // sozinho não diz de quem é; games mostra a plataforma pela mesma razão.
@@ -388,6 +407,66 @@ export default function CommunityDetailPage() {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
 
+  // ─── Assunto: carrega o que já está escolhido e as listas de escolha ──────
+  // Só para o líder em edição: um visitante não precisa baixar 300 modelos de
+  // carro para ler o mural.
+  useEffect(() => {
+    const sub = community?.subject
+    if (!sub) return
+    if (sub.kind === "pet") {
+      setPetDraft({
+        species: sub.species || "",
+        breed_slug: "",
+        breed_label: sub.breed_label || "",
+        birth_year: sub.birth_year ? String(sub.birth_year) : "",
+      })
+    } else if (sub.kind === "games") {
+      setGameDraft({
+        platform: sub.platform || "",
+        game_title: sub.game_title || "",
+        gamertag: sub.gamertag || "",
+      })
+    } else if (sub.kind === "car") {
+      setCarDraft({ brand_code: sub.brand_code || "", model_code: sub.model_code || "" })
+    }
+  }, [community?.subject])
+
+  useEffect(() => {
+    if (!showAsLeaderEdit || subjectKind !== "pet") return
+    const token = getToken()
+    if (!token) return
+    const species = petDraft.species || "dog"
+    fetch(`/api/pets/breeds?species=${species}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setBreeds(Array.isArray(d.breeds) ? d.breeds : []))
+      .catch(() => setBreeds([]))
+  }, [showAsLeaderEdit, subjectKind, petDraft.species])
+
+  useEffect(() => {
+    if (!showAsLeaderEdit || subjectKind !== "car") return
+    const token = getToken()
+    if (!token) return
+    fetch("/api/cars/brands", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setCarBrands(Array.isArray(d.brands) ? d.brands : []))
+      .catch(() => setCarBrands([]))
+  }, [showAsLeaderEdit, subjectKind])
+
+  useEffect(() => {
+    if (!showAsLeaderEdit || subjectKind !== "car" || !carDraft.brand_code) {
+      setCarModels([])
+      return
+    }
+    const token = getToken()
+    if (!token) return
+    fetch(`/api/cars/brands/${encodeURIComponent(carDraft.brand_code)}/models`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => setCarModels(Array.isArray(d.models) ? d.models : []))
+      .catch(() => setCarModels([]))
+  }, [showAsLeaderEdit, subjectKind, carDraft.brand_code])
+
   // Comunidade privada: cria o checkout da assinatura mensal e redireciona.
   const startMembershipCheckout = useCallback(async () => {
     const token = getToken()
@@ -515,6 +594,50 @@ export default function CommunityDetailPage() {
         })
         const tData = await tRes.json()
         if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
+      }
+      // Assunto (pet/carro/games): vai junto do Salvar, e não num botão só
+      // dele — para quem edita, nome, foto e raça são a mesma tarefa.
+      if (subjectKind) {
+        const base = subjectKind === "pet" ? "pets" : subjectKind === "car" ? "cars" : "games"
+        const body =
+          subjectKind === "pet"
+            ? {
+                species: petDraft.species || null,
+                breed_slug: petDraft.breed_slug || null,
+                breed_label: petDraft.breed_label || null,
+                birth_year: petDraft.birth_year || null,
+              }
+            : subjectKind === "games"
+              ? {
+                  platform: gameDraft.platform || null,
+                  game_title: gameDraft.game_title || null,
+                  gamertag: gameDraft.gamertag || null,
+                }
+              : {
+                  brand_code: carDraft.brand_code || null,
+                  brand_label: carBrands.find((b) => b.code === carDraft.brand_code)?.label || null,
+                  model_code: carDraft.model_code || null,
+                  model_label: carModels.find((m) => m.code === carDraft.model_code)?.label || null,
+                }
+        // Carro sem modelo escolhido ainda: não manda nada em vez de tomar 400.
+        const skip = subjectKind === "car" && (!carDraft.brand_code || !carDraft.model_code)
+        if (!skip) {
+          const sRes = await fetch(`/api/${base}/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify(body),
+          })
+          const sData = await sRes.json()
+          if (!sRes.ok) {
+            // 409 = esse modelo já tem comunidade. O erro aponta qual, para a
+            // pessoa poder ir até ela em vez de ficar tentando.
+            throw new Error(
+              sData.existing_community
+                ? `${sData.error} (${sData.existing_community.display_name})`
+                : sData.error || t("saveError", "Não foi possível salvar."),
+            )
+          }
+        }
       }
       setActionMsg(t("profileSaved", "Alterações salvas!"))
       await loadAll()
@@ -816,6 +939,117 @@ export default function CommunityDetailPage() {
               />
             </>
           )}
+          {/* O ASSUNTO da comunidade (mig 210/211): raça do pet, modelo do
+              carro, jogo. Fica aqui, no modo de edição, e não num modal de
+              cadastro — a comunidade nasce vazia e é batizada dentro de si
+              mesma (decisão do Alex: "já entra numa página pronta editável"). */}
+          {showAsLeaderEdit && subjectKind === "pet" && (
+            <Block title={t("subjectPetTitle", "Sobre o pet")} icon={<PawPrint className="h-4 w-4" />} accent={accent}>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["dog", t("speciesDog", "Cachorro")],
+                    ["cat", t("speciesCat", "Gato")],
+                    ["other", t("speciesOther", "Outro animal")],
+                  ] as const).map(([key, label]) => (
+                    <button key={key} type="button"
+                      onClick={() => setPetDraft((d) => ({ ...d, species: key, breed_slug: "" }))}
+                      className="border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                      style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("breedLabel", "Raça")}</span>
+                  <select value={petDraft.breed_slug}
+                    onChange={(e) => {
+                      const slug = e.target.value
+                      const found = breeds.find((b) => b.slug === slug)
+                      setPetDraft((d) => ({ ...d, breed_slug: slug, breed_label: found ? found.label : d.breed_label }))
+                    }}
+                    className={selectCls}>
+                    <option value="">{petDraft.breed_label || t("breedUnknown", "Não sei / não informar")}</option>
+                    {breeds.map((b) => (
+                      <option key={b.id_breed} value={b.slug}>{b.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("birthYearLabel", "Ano de nascimento")}</span>
+                  <input value={petDraft.birth_year} inputMode="numeric" placeholder="2021"
+                    onChange={(e) => setPetDraft((d) => ({ ...d, birth_year: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                    className={selectCls} />
+                </label>
+              </div>
+            </Block>
+          )}
+
+          {showAsLeaderEdit && subjectKind === "car" && (
+            <Block title={t("subjectCarTitle", "O carro")} icon={<Car className="h-4 w-4" />} accent={accent}>
+              <div className="space-y-3">
+                <p className="text-xs leading-snug text-[#9A938A]">
+                  {t("carUniqueHint", "Existe uma única comunidade por modelo. Se o modelo já tiver dono, o site avisa e leva você até ela.")}
+                </p>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carBrandLabel", "Marca")}</span>
+                  <select value={carDraft.brand_code}
+                    onChange={(e) => setCarDraft({ brand_code: e.target.value, model_code: "" })}
+                    className={selectCls}>
+                    <option value="">—</option>
+                    {carBrands.map((b) => (
+                      <option key={b.code} value={b.code}>{b.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carModelLabel", "Modelo")}</span>
+                  <select value={carDraft.model_code} disabled={!carDraft.brand_code}
+                    onChange={(e) => setCarDraft((d) => ({ ...d, model_code: e.target.value }))}
+                    className={selectCls}>
+                    <option value="">{carDraft.brand_code ? "—" : t("carPickBrandFirst", "Escolha a marca")}</option>
+                    {carModels.map((m) => (
+                      <option key={m.code} value={m.code}>{m.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </Block>
+          )}
+
+          {showAsLeaderEdit && subjectKind === "games" && (
+            <Block title={t("subjectGameTitle", "O jogo")} icon={<Gamepad2 className="h-4 w-4" />} accent={accent}>
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["pc", "PC"], ["playstation", "PlayStation"], ["xbox", "Xbox"],
+                    ["nintendo", "Nintendo"], ["mobile", t("platformMobile", "Celular")],
+                    ["retro", t("platformRetro", "Retrô")], ["outra", t("platformOther", "Outra")],
+                  ] as const).map(([key, label]) => (
+                    <button key={key} type="button"
+                      onClick={() => setGameDraft((d) => ({ ...d, platform: key }))}
+                      className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                      style={gameDraft.platform === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gameTitleLabel", "Jogo")}</span>
+                  <input value={gameDraft.game_title} maxLength={120} placeholder="Minecraft"
+                    onChange={(e) => setGameDraft((d) => ({ ...d, game_title: e.target.value }))}
+                    className={selectCls} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gamertagLabel", "Seu nick")}</span>
+                  <input value={gameDraft.gamertag} maxLength={60}
+                    onChange={(e) => setGameDraft((d) => ({ ...d, gamertag: e.target.value }))}
+                    className={selectCls} />
+                </label>
+              </div>
+            </Block>
+          )}
+
           {/* Privacidade + mensalidade (só líder em edição) */}
           {showAsLeaderEdit && (
             <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
