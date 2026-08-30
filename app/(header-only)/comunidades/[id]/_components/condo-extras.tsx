@@ -4,7 +4,7 @@
 // próprias, então tem tela própria em vez de espremer tudo na da comunidade.
 //
 // Privacidade guiando a UI: quem não é morador confirmado não vê mural, quadro
-// de anúncios, enquetes nem lista de vizinhos — vê o cartão de reivindicação.
+// de anúncios, enquetes nem lista de vizinhos — vê a portaria (CondoResidence).
 // Unidade/vaga de terceiro só aparece na aba de administração.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -167,10 +167,20 @@ function authHeaders(): Record<string, string> {
 
 /* ------------------------------- componente ------------------------------ */
 
-export function CondoView({ community, onReload }: { community: CondoCommunity; onReload: () => void }) {
+export function CondoExtras({
+  communityId,
+  isAdmin,
+  isResident,
+  onReload,
+}: {
+  communityId: string
+  isAdmin: boolean
+  isResident: boolean
+  onReload: () => void
+}) {
   const t = useTranslations("Condo")
   const locale = useLocale()
-  const id = community.id_profile
+  const id = communityId
 
   const [tab, setTab] = useState<Tab>("mural")
   const [busy, setBusy] = useState(false)
@@ -183,12 +193,11 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
   const [products, setProducts] = useState<Listing[]>([])
   const [quota, setQuota] = useState<Quota | null>(null)
   const [polls, setPolls] = useState<Poll[]>([])
-  const [claims, setClaims] = useState<Claim[]>([])
   const [residents, setResidents] = useState<Resident[]>([])
 
-  const isResident = !!(structure?.viewer.is_resident ?? community.viewer_is_resident)
-  const isAdmin = !!(structure?.viewer.is_admin ?? community.viewer_is_admin)
-  const hasPending = !!(structure?.viewer.has_pending_claim ?? community.viewer_has_pending_claim)
+  // Papéis vêm de FORA (da casca da comunidade), e não de `structure`: a
+  // portaria e a planta moram no CondoResidence agora, e duas fontes para a
+  // mesma pergunta acabariam divergindo enquanto uma delas ainda carrega.
   const canSeeInside = isResident || isAdmin
 
   const money = useCallback(
@@ -253,16 +262,6 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
     }
   }, [id])
 
-  const loadClaims = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/condos/${id}/claims?status=pending`, { headers: authHeaders() })
-      const data = await res.json()
-      if (res.ok) setClaims(Array.isArray(data.claims) ? data.claims : [])
-    } catch {
-      /* silencioso */
-    }
-  }, [id])
-
   const loadResidents = useCallback(async () => {
     try {
       const res = await fetch(`/api/communities/${id}/members`, { headers: authHeaders() })
@@ -281,44 +280,11 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
     loadPolls()
     loadResidents()
   }, [canSeeInside, loadNotices, loadListings, loadPolls, loadResidents])
-  useEffect(() => {
-    if (isAdmin) loadClaims()
-  }, [isAdmin, loadClaims])
 
-  /* ------------------------------ reivindicação --------------------------- */
-
-  const [claimBlock, setClaimBlock] = useState("")
-  const [claimNumber, setClaimNumber] = useState("")
-
-  const submitClaim = async () => {
-    if (!claimNumber.trim()) {
-      setMsg(t("claimNeedsNumber", "Informe o número do apartamento."))
-      return
-    }
-    setBusy(true)
-    setMsg(null)
-    try {
-      const res = await fetch(`/api/condos/${id}/claims/unit`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ block_name: claimBlock.trim() || null, number: claimNumber.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("claimError", "Não foi possível reivindicar."))
-      setMsg(
-        data.status === "approved"
-          ? t("claimApproved", "Pronto! Apartamento confirmado.")
-          : t("claimPending", "Este apartamento já tem morador. A administração vai decidir.")
-      )
-      setClaimNumber("")
-      await loadStructure()
-      onReload()
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("claimError", "Não foi possível reivindicar."))
-    } finally {
-      setBusy(false)
-    }
-  }
+  /* ------------------------------- vaga ----------------------------------- */
+  // A reivindicação de APARTAMENTO saiu daqui (migs 205/206): virou a portaria
+  // do CondoResidence, onde o morador escolhe da planta e o apartamento aceita
+  // mais de uma pessoa. A VAGA continua aqui — vaga tem um dono, não moradores.
 
   const [spotCode, setSpotCode] = useState("")
   const submitSpotClaim = async () => {
@@ -565,56 +531,7 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
 
   /* ------------------------------ administração --------------------------- */
 
-  const decideClaim = async (idClaim: number, action: "approve" | "reject") => {
-    setBusy(true)
-    try {
-      const res = await fetch(`/api/condos/${id}/claims/${idClaim}/decide`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ action }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t("claimDecideError", "Não foi possível decidir."))
-      await Promise.all([loadClaims(), loadStructure(), loadResidents()])
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : t("claimDecideError", "Não foi possível decidir."))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const [newBlock, setNewBlock] = useState("")
-  const addBlock = async () => {
-    if (!newBlock.trim()) return
-    setBusy(true)
-    try {
-      await fetch(`/api/condos/${id}/blocks`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ name: newBlock.trim() }),
-      })
-      setNewBlock("")
-      await loadStructure()
-    } finally {
-      setBusy(false)
-    }
-  }
-
   /* --------------------------------- render ------------------------------- */
-
-  const address = community.address
-  const addressLine = useMemo(() => {
-    if (!address) return null
-    if (community.address_is_full) {
-      return [
-        [address.street, address.number].filter(Boolean).join(", "),
-        address.neighborhood,
-        [address.municipio, address.estado].filter(Boolean).join(" · "),
-        address.cep,
-      ].filter(Boolean).join(" — ")
-    }
-    return [address.neighborhood, address.municipio, address.estado].filter(Boolean).join(" · ")
-  }, [address, community.address_is_full])
 
   const tabs: { key: Tab; label: string; icon: typeof Megaphone; badge?: number }[] = [
     { key: "mural", label: t("tabMural", "Mural"), icon: Megaphone, badge: unreadNotices },
@@ -622,64 +539,24 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
     { key: "products", label: t("tabProducts", "Produtos"), icon: ShoppingBag },
     { key: "polls", label: t("tabPolls", "Enquetes"), icon: Vote },
     { key: "residents", label: t("tabResidents", "Moradores"), icon: Users },
-    ...(isAdmin ? [{ key: "admin" as Tab, label: t("tabAdmin", "Administração"), icon: ShieldCheck, badge: claims.length }] : []),
+    ...(isAdmin ? [{ key: "admin" as Tab, label: t("tabAdmin", "Administração"), icon: ShieldCheck }] : []),
   ]
 
+  // Sem moldura de página: isto é uma SEÇÃO dentro da casca padrão de
+  // comunidade. Capa, nome, endereço e o botão de entrar são de lá — repetir
+  // aqui era o que fazia o condomínio parecer outro site.
+  //
+  // Quem ainda não confirmou apartamento não vê nada disto: o que ele vê é a
+  // portaria, renderizada pelo CondoResidence acima.
+  if (!canSeeInside) return null
+
   return (
-    <div className="fl-sharp relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
-      <div className="mx-auto max-w-5xl px-5 pt-6 md:px-10">
-        <Link href="/comunidades" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
-          <ArrowLeft className="h-4 w-4" /> {t("back", "Comunidades")}
-        </Link>
-
-        {/* Cabeçalho */}
-        <div className="mt-5 border-2 border-[#0B0B0D] bg-[#15120E] p-5">
-          <span className="inline-flex items-center gap-1 bg-[#F2B705] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
-            <Building2 className="h-3 w-3" /> {t("kindLabel", "Condomínio")}
-          </span>
-          <h1 className="mt-3 fl-display text-3xl leading-none text-[#F5F1E8]">{community.display_name}</h1>
-          {addressLine && (
-            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#9A938A]">
-              <MapPin className="h-4 w-4" /> {addressLine}
-            </p>
-          )}
-          {!community.address_is_full && (
-            <p className="mt-1 text-[11px] text-[#9A938A]/70">
-              {t("addressHidden", "O endereço completo só aparece para moradores confirmados.")}
-            </p>
-          )}
-          <p className="mt-3 text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
-            {community.member_count ?? "—"} {t("residentsCount", "moradores")}
-          </p>
-        </div>
-
-        {msg && <p className="mt-4 border-2 border-[#F2B705]/40 bg-[#F2B705]/10 px-3 py-2 text-sm">{msg}</p>}
-
-        {/* Portaria: quem ainda não é morador confirmado para aqui. */}
-        {!canSeeInside ? (
-          <div className={`mt-6 ${CARD}`}>
-            <p className="flex items-center gap-2 fl-display text-xl">
-              <KeyRound className="h-5 w-5 text-[#F2B705]" /> {t("claimTitle", "Você mora aqui?")}
-            </p>
-            <p className="mt-1 text-sm text-[#9A938A]">
-              {t("claimSubtitle", "Informe seu bloco e apartamento para entrar no condomínio. Se a unidade já estiver com outra pessoa, a administração decide.")}
-            </p>
-            {hasPending ? (
-              <p className="mt-4 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-sm text-[#F2B705]">
-                {t("claimWaiting", "Sua reivindicação está aguardando a administração.")}
-              </p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                <input className={INPUT} placeholder={t("blockPlaceholder", "Bloco (opcional)")} value={claimBlock} onChange={(e) => setClaimBlock(e.target.value)} />
-                <input className={INPUT} placeholder={t("unitPlaceholder", "Apartamento")} value={claimNumber} onChange={(e) => setClaimNumber(e.target.value)} />
-                <button type="button" className={BTN} disabled={busy} onClick={submitClaim}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {t("claimCta", "Reivindicar")}
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
+    <div className="fl-sharp space-y-4 text-[#F5F1E8]">
+      {msg && (
+        <p className="border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-2 text-xs font-bold">{msg}</p>
+      )}
+      <div>
+        <>
             {/* Abas */}
             <div className="mt-6 flex flex-wrap gap-1 border-b-2 border-[#0B0B0D]">
               {tabs.map((tb) => {
@@ -999,63 +876,11 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
             {/* ADMINISTRAÇÃO */}
             {tab === "admin" && isAdmin && (
               <div className="mt-5 space-y-4">
-                <div className={CARD}>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-                    {t("claimsQueue", "Reivindicações pendentes")}
-                  </p>
-                  {claims.length === 0 ? (
-                    <p className="mt-3 text-sm text-[#9A938A]">{t("noClaims", "Nada pendente.")}</p>
-                  ) : (
-                    <div className="mt-3 space-y-3">
-                      {claims.map((c) => (
-                        <div key={c.id_claim} className="border-2 border-[#0B0B0D] bg-[#1D1810] p-3">
-                          <p className="text-sm">
-                            <strong>@{c.claimant_username}</strong>{" "}
-                            {c.target_type === "unit"
-                              ? t("claimWantsUnit", "quer o apartamento")
-                              : t("claimWantsSpot", "quer a vaga")}{" "}
-                            <strong className="text-[#F2B705]">
-                              {c.target_type === "unit"
-                                ? [c.block_name, c.unit_number].filter(Boolean).join(" · ")
-                                : c.spot_code}
-                            </strong>
-                          </p>
-                          {c.current_holder_username && (
-                            <p className="mt-1 text-[11px] text-[#9A938A]">
-                              {t("claimCurrentHolder", "Hoje é de @{user}").replace("{user}", c.current_holder_username)}
-                            </p>
-                          )}
-                          <div className="mt-2 flex gap-2">
-                            <button type="button" className={BTN} disabled={busy} onClick={() => decideClaim(c.id_claim, "approve")}>
-                              <Check className="h-3 w-3" /> {t("approve", "Aprovar")}
-                            </button>
-                            <button type="button" className={BTN_GHOST} disabled={busy} onClick={() => decideClaim(c.id_claim, "reject")}>
-                              <X className="h-3 w-3" /> {t("reject", "Recusar")}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className={CARD}>
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{t("blocks", "Blocos")}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(structure?.blocks || []).map((b) => (
-                      <span key={b.id_block} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-xs font-bold">
-                        {b.name} <span className="text-[#9A938A]">({b.units_count})</span>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <input className={INPUT} placeholder={t("blockPlaceholder", "Bloco (opcional)")} value={newBlock} onChange={(e) => setNewBlock(e.target.value)} />
-                    <button type="button" className={BTN} disabled={busy || !newBlock.trim()} onClick={addBlock}>
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
+                {/* A fila de reivindicações e o cadastro de blocos saíram
+                    daqui: viraram a portaria e a planta do CondoResidence
+                    (migs 205/206), logo acima nesta mesma página. Manter uma
+                    segunda tela decidindo moradia seria manter o conflito E1
+                    vivo — aprovar ali derrubava o morador anterior em silêncio. */}
                 <div className={CARD}>
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{t("unitsAndSpots", "Unidades e vagas")}</p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -1104,8 +929,7 @@ export function CondoView({ community, onReload }: { community: CondoCommunity; 
                 </div>
               </div>
             )}
-          </>
-        )}
+        </>
       </div>
     </div>
   )

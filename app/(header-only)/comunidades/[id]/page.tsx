@@ -6,7 +6,7 @@ import { useParams } from "next/navigation"
 import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
-  Pin, Trash2, BarChart3, Plus, PenSquare, Film, X, MessageSquare,
+  Pin, Trash2, BarChart3, Plus, Hexagon, Film, X, MessageSquare,
   Lock, Globe,
 } from "lucide-react"
 import Link from "next/link"
@@ -14,7 +14,6 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
-import type { CondoCommunity } from "./_components/condo-view"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -28,9 +27,17 @@ const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
   { ssr: false }
 )
-// Condomínio tem tela própria (migs 196-199): carregada só quando é o caso.
-const CondoView = dynamic(
-  () => import("./_components/condo-view").then((m) => m.CondoView),
+// Condomínio (migs 205/206) NÃO tem mais tela própria: todas as comunidades
+// usam esta casca. O que é do prédio — planta, portaria, família × disputa,
+// veredito do síndico — entra como SEÇÃO, carregada só quando é o caso.
+const CondoResidence = dynamic(
+  () => import("./_components/condo-residence").then((m) => m.CondoResidence),
+  { ssr: false }
+)
+// Avisos, anúncios internos, enquetes e lista de vizinhos (migs 197-199).
+// Continuam existindo — o que morreu foi a TELA separada, não as features.
+const CondoExtras = dynamic(
+  () => import("./_components/condo-extras").then((m) => m.CondoExtras),
   { ssr: false }
 )
 
@@ -53,10 +60,22 @@ type Community = {
   monthly_cents?: number | null
   viewer_is_member?: boolean
   viewer_sub_status?: string | null
-  // Modalidade (mig 196). 'condo' cai numa tela própria (CondoView) logo abaixo
-  // dos guards de loading/erro — regras e privacidade são outras.
-  kind?: "common" | "academy" | "condo"
-  address?: CondoCommunity["address"]
+  // Modalidade (migs 196/205). Todas as modalidades renderizam nesta MESMA
+  // casca; o que muda é quais seções aparecem e quem pode escrever.
+  kind?: "common" | "academy" | "condo" | "neighborhood"
+  // Endereço do condomínio. SENSÍVEL: o backend só devolve rua/número/CEP
+  // para morador confirmado ou administração (CondoRules é a fonte única) —
+  // aqui os campos são opcionais porque para visitante eles simplesmente NÃO
+  // EXISTEM na resposta, e não porque venham vazios.
+  address?: {
+    street?: string | null
+    number?: string | null
+    complement?: string | null
+    neighborhood?: string | null
+    cep?: string | null
+    municipio?: string | null
+    estado?: string | null
+  } | null
   address_is_full?: boolean
   viewer_is_admin?: boolean
   viewer_is_resident?: boolean
@@ -147,7 +166,10 @@ export default function CommunityDetailPage() {
   const [loadingMorePosts, setLoadingMorePosts] = useState(false)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
   const [composerOpen, setComposerOpen] = useState(false)
-  const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
+  // "post" = foto/texto · "bee" = Curto (vídeo permanente) · "story" = Bee
+  // (o vídeo que dura mais quanto mais engajamento recebe). Os nomes internos
+  // são os do Bees v2 — renomeá-los aqui quebraria o MediaComposer.
+  const [composerKind, setComposerKind] = useState<"post" | "bee" | "story">("post")
   const [chooserOpen, setChooserOpen] = useState(false)
 
   // Recado (nota só-texto, até 2000 chars)
@@ -190,6 +212,14 @@ export default function CommunityDetailPage() {
     [members, currentUserId]
   )
   const isMember = isLeader || !!myMembership || !!community?.viewer_is_member
+
+  // Condomínio: MEMBRO não basta para escrever. Quem publica, vota e vê
+  // vizinhos é o MORADOR — titular reconhecido de um apartamento (migs
+  // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
+  const isCondo = community?.kind === "condo"
+  const isResident = !!community?.viewer_is_resident
+  const canPost = isCondo ? isLeader || isResident : isMember
+
   const accent = accentHex(accentDraft)
   const showAsLeaderEdit = isLeader && edit
   const isPrivate = community?.privacy === "private"
@@ -490,14 +520,20 @@ export default function CommunityDetailPage() {
     await fetchAnnouncements()
   }
 
-  const openComposer = (kind: "post" | "bee") => {
+  // No condomínio quem escreve é o MORADOR, não o membro — por isso o guard é
+  // `canPost` e não `isMember`.
+  const denyPost = () => setActionMsg(isCondo
+    ? t("residentToPost", "Confirme seu apartamento para publicar.")
+    : t("joinToPost", "Entre na comunidade para publicar."))
+
+  const openComposer = (kind: "post" | "bee" | "story") => {
     setChooserOpen(false)
-    if (!isMember) { setActionMsg(t("joinToPost", "Entre na comunidade para publicar.")); return }
+    if (!canPost) { denyPost(); return }
     setComposerKind(kind); setComposerOpen(true)
   }
   const openRecado = () => {
     setChooserOpen(false)
-    if (!isMember) { setActionMsg(t("joinToPost", "Entre na comunidade para publicar.")); return }
+    if (!canPost) { denyPost(); return }
     setRecadoBody(""); setRecadoOpen(true)
   }
   const postRecado = async () => {
@@ -544,13 +580,6 @@ export default function CommunityDetailPage() {
         </div>
       </div>
     )
-  }
-
-  // Condomínio: modalidade com regras próprias (privacidade de endereço,
-  // unidades, avisos direcionados, enquetes). Sai por outra tela — depois de
-  // todos os hooks, então não viola rules-of-hooks.
-  if (community.kind === "condo") {
-    return <CondoView community={community as CondoCommunity} onReload={loadAll} />
   }
 
   const bannerSrc = bannerPreview || community.banner_url
@@ -646,6 +675,13 @@ export default function CommunityDetailPage() {
                     {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
                   </button>
                 ) : null
+              ) : isCondo ? (
+                // Condomínio não tem visitante: o backend recusa o join
+                // genérico (409). A porta é escolher o apartamento na planta,
+                // logo abaixo — mostrar "Entrar" aqui só produziria um erro.
+                <span className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {t("condoResidentsOnly", "Só moradores")}
+                </span>
               ) : (
                 <button type="button" disabled={busy} onClick={() => (isPrivate ? startMembershipCheckout() : joinOrLeave("join"))}
                   className="border-2 border-[#0B0B0D] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60" style={{ background: accent }}>
@@ -680,6 +716,19 @@ export default function CommunityDetailPage() {
       <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
         {/* coluna principal */}
         <div className="space-y-6 md:col-span-2">
+          {/* Condomínio (migs 205/206): portaria, família × disputa, planta e
+              veredito. Mesma casca — muda o que aparece dentro dela. */}
+          {isCondo && (
+            <>
+              <CondoResidence communityId={id} onResidencyChange={loadAll} />
+              <CondoExtras
+                communityId={id}
+                isAdmin={isLeader || !!community.viewer_is_admin}
+                isResident={isResident}
+                onReload={loadAll}
+              />
+            </>
+          )}
           {/* Privacidade + mensalidade (só líder em edição) */}
           {showAsLeaderEdit && (
             <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
@@ -895,22 +944,42 @@ export default function CommunityDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Composer "Poste ou escreva aqui" */}
-                  <div className="relative">
-                    <button type="button" onClick={() => isMember ? setChooserOpen((v) => !v) : setActionMsg(t("joinToPost", "Entre na comunidade para publicar."))}
-                      className="flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3 text-left">
-                      <PenSquare className="h-5 w-5 shrink-0" style={{ color: accent }} />
-                      <span className="text-sm font-semibold text-[#9A938A]">{t("composerCta", "Poste ou escreva aqui")}</span>
+                  {/* Publicar: quadrado amarelo com "+". Não é uma seção de
+                      composer — é UM botão, e o que ele abre é a escolha do
+                      tipo: foto/texto, vídeo ou bee (o vídeo que dura mais
+                      quanto mais engajamento recebe). */}
+                  <div className="relative flex items-center gap-3">
+                    <button
+                      type="button"
+                      aria-label={t("composeCta", "Publicar")}
+                      title={t("composeCta", "Publicar")}
+                      aria-expanded={chooserOpen}
+                      onClick={() => canPost
+                        ? setChooserOpen((v) => !v)
+                        : setActionMsg(isCondo
+                          ? t("residentToPost", "Confirme seu apartamento para publicar.")
+                          : t("joinToPost", "Entre na comunidade para publicar."))}
+                      className="grid h-14 w-14 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]"
+                      style={{ background: accent, boxShadow: `4px 4px 0 0 #0B0B0D` }}
+                    >
+                      <Plus className={`h-7 w-7 transition ${chooserOpen ? "rotate-45" : ""}`} />
                     </button>
-                    {chooserOpen && isMember && (
-                      <div className="absolute left-0 right-0 top-full z-30 mt-1 flex gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
-                        <button type="button" onClick={() => openComposer("post")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                    <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                      {t("composeHint", "Publicar no mural")}
+                    </span>
+
+                    {chooserOpen && canPost && (
+                      <div className="absolute left-0 top-full z-30 mt-2 flex flex-wrap gap-2 border-2 border-[#0B0B0D] bg-[#15120E] p-2">
+                        <button type="button" onClick={() => openComposer("post")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                           <ImagePlus className="h-4 w-4" /> {t("postLabel", "Post")}
                         </button>
-                        <button type="button" onClick={() => openComposer("bee")} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                        <button type="button" onClick={() => openComposer("bee")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                           <Film className="h-4 w-4" /> {t("curtoLabel", "Curto")}
                         </button>
-                        <button type="button" onClick={openRecado} className="flex flex-1 items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                        <button type="button" onClick={() => openComposer("story")} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+                          <Hexagon className="h-4 w-4" /> {t("beeLabel", "Bee")}
+                        </button>
+                        <button type="button" onClick={openRecado} className="flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
                           <MessageSquare className="h-4 w-4" /> {t("recadoLabel", "Recado")}
                         </button>
                         <button type="button" onClick={() => setChooserOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid place-items-center border-2 border-[#F5F1E8]/20 px-2 text-[#9A938A]"><X className="h-4 w-4" /></button>
