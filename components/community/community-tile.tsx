@@ -5,7 +5,7 @@
 // Reusado em: aba "Comunidades" do enxame, /comunidades e a aba do /account.
 
 import Link from "next/link"
-import { Users, Trophy, Crown, Shield, Lock, Building2, MapPin } from "lucide-react"
+import { Users, Trophy, Crown, Shield, Lock, Building2, MapPin, PawPrint, Car, Gamepad2, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
@@ -23,11 +23,22 @@ export type CommunityTileData = {
   role?: "leader" | "vice" | "member" | null
   privacy?: "public" | "private"
   monthly_cents?: number | null
-  /** Modalidade (mig 196). Condomínio mostra bairro/cidade no lugar do enxame. */
-  kind?: "common" | "academy" | "condo"
+  /** Modalidade (migs 196/210). Condomínio mostra bairro/cidade no lugar do
+   *  enxame; pet, carro e games mostram o ASSUNTO (raça, modelo, jogo), que é o
+   *  que eles têm no lugar do enxame — sem isso o card sairia com o rodapé
+   *  vazio, parecendo quebrado. */
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games"
+  subject_label?: string | null
   condo_neighborhood?: string | null
   municipio?: string | null
   estado?: string | null
+}
+
+// Modalidades cujo chip é o assunto, não o enxame (mig 210).
+const SUBJECT_ICON: Record<string, LucideIcon | undefined> = {
+  pet: PawPrint,
+  car: Car,
+  games: Gamepad2,
 }
 
 // Mesma paleta de accent da página da comunidade (detalhe recolorível).
@@ -52,6 +63,11 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
       : community.role === "vice" ? t("roleVice", "Vice-líder")
         : community.role ? t("roleMember", "Membro") : null
   const RoleIcon = community.role === "leader" ? Crown : community.role === "vice" ? Shield : null
+  const kindLabel =
+    community.kind === "pet" ? t("kindPet", "Pet")
+      : community.kind === "car" ? t("kindCar", "Carro")
+        : community.kind === "games" ? t("kindGames", "Games")
+          : null
 
   return (
     <Link
@@ -76,6 +92,17 @@ export function CommunityTile({ community }: { community: CommunityTileData }) {
             style={{ color: accent }}
           >
             <Building2 className="h-3 w-3" /> {t("kindCondo", "Condomínio")}
+          </span>
+        ) : SUBJECT_ICON[community.kind || ""] ? (
+          <span
+            className="absolute left-2 top-2 inline-flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] backdrop-blur"
+            style={{ color: accent }}
+          >
+            {(() => {
+              const Icon = SUBJECT_ICON[community.kind || ""]
+              return Icon ? <Icon className="h-3 w-3" /> : null
+            })()}
+            {community.subject_label || kindLabel}
           </span>
         ) : community.enxame_name ? (
           <span

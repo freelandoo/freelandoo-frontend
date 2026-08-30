@@ -73,6 +73,17 @@ export default function CreateCommunityPage() {
     }
   }, [])
 
+  // `?tipo=condo` vem do menu da foto de perfil: quem apertou "Meu condomínio"
+  // já disse o que quer cadastrar e não deveria escolher de novo.
+  //
+  // Lido do `window` e não por `useSearchParams`: o hook obriga um limite de
+  // Suspense e tira a rota do pré-render estático — caro demais para uma
+  // conveniência de um clique.
+  useEffect(() => {
+    const tipo = new URLSearchParams(window.location.search).get("tipo")
+    if (tipo === "condo" || tipo === "academy") setKind(tipo)
+  }, [])
+
   useEffect(() => {
     fetch("/api/enxames")
       .then((r) => r.json())

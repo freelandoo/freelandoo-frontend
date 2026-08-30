@@ -61,9 +61,24 @@ type Community = {
   monthly_cents?: number | null
   viewer_is_member?: boolean
   viewer_sub_status?: string | null
-  // Modalidade (migs 196/205). Todas as modalidades renderizam nesta MESMA
+  // Modalidade (migs 196/205/210). Todas as modalidades renderizam nesta MESMA
   // casca; o que muda é quais seções aparecem e quem pode escrever.
-  kind?: "common" | "academy" | "condo" | "neighborhood"
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games"
+  // Assunto das modalidades da mig 210: a raça do pet, o modelo do carro, o
+  // jogo. É o que dá identidade à página — sem ele o cabeçalho do "Rex" não
+  // diz que Rex é um vira-lata.
+  subject?: {
+    kind: "pet" | "car" | "games"
+    species?: string | null
+    breed_label?: string | null
+    is_mixed?: boolean
+    birth_year?: number | null
+    brand_label?: string | null
+    model_label?: string | null
+    platform?: string | null
+    game_title?: string | null
+    gamertag?: string | null
+  } | null
   // Endereço do condomínio. SENSÍVEL: o backend só devolve rua/número/CEP
   // para morador confirmado ou administração (CondoRules é a fonte única) —
   // aqui os campos são opcionais porque para visitante eles simplesmente NÃO
@@ -231,6 +246,18 @@ export default function CommunityDetailPage() {
   // vizinhos é o MORADOR — titular reconhecido de um apartamento (migs
   // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
   const isCondo = community?.kind === "condo"
+
+  // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
+  // sozinho não diz de quem é; games mostra a plataforma pela mesma razão.
+  const subjectChip = (() => {
+    const sub = community?.subject
+    if (!sub) return null
+    if (sub.kind === "pet") return sub.breed_label || t("kindPet", "Pet")
+    if (sub.kind === "car") {
+      return [sub.brand_label, sub.model_label].filter(Boolean).join(" ") || t("kindCar", "Carro")
+    }
+    return sub.game_title || t("kindGames", "Games")
+  })()
   const isResident = !!community?.viewer_is_resident
   const canPost = isCondo ? isLeader || isResident : isMember
 
@@ -666,6 +693,13 @@ export default function CommunityDetailPage() {
             {community.enxame_name && (
               <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
                 {tx.enxame(null, community.enxame_name)}
+              </span>
+            )}
+            {/* Pet, carro e games não têm enxame (mig 210): o chip do lugar dele
+                é o ASSUNTO — raça, modelo, jogo. */}
+            {subjectChip && (
+              <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+                {subjectChip}
               </span>
             )}
             {isPrivate && (

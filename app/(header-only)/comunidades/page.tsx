@@ -6,10 +6,13 @@ import { Search, Users, Plus } from "lucide-react"
 import { PageShell, PageHero, EmptyState, LoadingState } from "@/components/tabloide"
 import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
 type CommunityCard = CommunityTileData & {
   id_machine: number | null
 }
+
+type Kind = "" | "common" | "condo" | "pet" | "car" | "games"
 
 const inputCls =
   "h-11 w-full rounded-xl border-2 border-[#F5F1E8]/10 bg-[#0B0B0D]/40 px-4 text-sm text-[#F5F1E8] placeholder:text-[#F5F1E8]/40 outline-none focus:border-[#F2B705]/60"
@@ -19,9 +22,17 @@ export default function CommunityListPage() {
   const [communities, setCommunities] = useState<CommunityCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Vitrine é superfície de DESCOBERTA: gateia só pela flag do admin, nunca
+  // pela preferência pessoal — esconder o pet dos outros porque EU desliguei o
+  // meu seria decidir pelo visitante (regra da vitrine × lado comprador).
+  const condoOn = useFeature("condominio")
+  const petOn = useFeature("pet")
+  const carOn = useFeature("carro")
+  const gamesOn = useFeature("games")
   const [search, setSearch] = useState("")
-  // Modalidade (mig 196): "" = todas. Condomínio é achado por nome OU endereço.
-  const [kind, setKind] = useState<"" | "common" | "condo">("")
+  // Modalidade (migs 196/210): "" = todas. Condomínio é achado por nome OU
+  // endereço; pet, carro e games são achados por nome ou pelo assunto.
+  const [kind, setKind] = useState<Kind>("")
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -89,13 +100,21 @@ export default function CommunityListPage() {
           </Link>
         </div>
 
-        {/* Tipo: comunidade comum × condomínio. Academia tem vitrine própria. */}
+        {/* Tipo. Academia tem vitrine própria; as modalidades da mig 210 entram
+            aqui e cada uma respeita o kill-switch dela. */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {([
-            ["", t("kindAll", "Todos")],
-            ["common", t("kindCommon", "Comunidade")],
-            ["condo", t("kindCondo", "Condomínio")],
-          ] as const).map(([key, label]) => (
+          {(
+            [
+              ["", t("kindAll", "Todos"), true],
+              ["common", t("kindCommon", "Comunidade"), true],
+              ["condo", t("kindCondo", "Condomínio"), condoOn],
+              ["pet", t("kindPet", "Pet"), petOn],
+              ["car", t("kindCar", "Carro"), carOn],
+              ["games", t("kindGames", "Games"), gamesOn],
+            ] as [Kind, string, boolean][]
+          )
+            .filter(([, , on]) => on)
+            .map(([key, label]) => (
             <button
               key={key || "all"}
               type="button"

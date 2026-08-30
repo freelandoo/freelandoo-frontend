@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -38,6 +38,7 @@ import { ManifestationBadge } from "@/components/manifestation/ManifestationBadg
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { MuralPill } from "@/components/profile/profile-head-card"
 import { CommunityTile } from "@/components/community/community-tile"
+import { SpacesMenu } from "@/components/account/spaces-menu"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
 import { AvatarImage } from "@/components/ui/avatar"
@@ -179,6 +180,10 @@ export default function PerfilPage() {
   // ids dos bees vivos do usuário (ORDER BY created_at ASC no backend —
   // o último da lista é o mais recente, usado no deep-link do anel neon).
   const [myBees, setMyBees] = useState<string[]>([])
+  // A foto de perfil deixou de abrir o modal de trocar avatar: ela abre o
+  // menu dos espaços do usuário (pet, carro, games, academia, condomínio,
+  // rua, comunidade). Trocar a foto passou a ser o badge de câmera.
+  const [spacesOpen, setSpacesOpen] = useState(false)
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
@@ -1708,7 +1713,7 @@ export default function PerfilPage() {
             <div className="relative px-5 pb-6 md:px-7">
               <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
                 <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
-                  <div className="flex shrink-0 flex-col items-center">
+                  <div className="relative flex shrink-0 flex-col items-center">
                   <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
                     {/* Anel neon rosa quando há bees vivos: conic-gradient com um
                         facho quase branco que gira (framer-motion) + camada
@@ -1741,15 +1746,12 @@ export default function PerfilPage() {
                     )}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (myBees.length > 0) {
-                          router.push(`/bees?bee=${myBees[myBees.length - 1]}`)
-                        } else {
-                          setIsUploadModalOpen(true)
-                        }
-                      }}
-                      aria-label={myBees.length > 0 ? t("avatarViewBees", "Ver seus bees") : t("changeAvatar", "Trocar foto de perfil")}
-                      title={myBees.length > 0 ? t("avatarViewBees", "Ver seus bees") : t("changeAvatar", "Trocar foto de perfil")}
+                      data-spaces-trigger
+                      onClick={() => setSpacesOpen((v) => !v)}
+                      aria-haspopup="menu"
+                      aria-expanded={spacesOpen}
+                      aria-label={t("openSpaces", "Meus espaços")}
+                      title={t("openSpaces", "Meus espaços")}
                       className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D]"
                     >
                       <Avatar className="h-full w-full rounded-none">
@@ -1765,26 +1767,39 @@ export default function PerfilPage() {
                         </AvatarFallback>
                       </Avatar>
                       <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                        {myBees.length > 0 ? <Sparkles className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+                        <LayoutGrid className="h-5 w-5" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {myBees.length > 0 ? t("viewBees", "Ver bees") : t("changePhoto", "Trocar foto")}
+                          {t("openSpaces", "Meus espaços")}
                         </span>
                       </span>
                     </button>
-                    {/* Com o anel ativo o clique no avatar vai pro /bees — este
-                        badge vira a única entrada pra trocar a foto. */}
-                    {myBees.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setIsUploadModalOpen(true)}
-                        aria-label={t("changeAvatar", "Trocar foto de perfil")}
-                        title={t("changeAvatar", "Trocar foto de perfil")}
-                        className="absolute -bottom-2 -right-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705]"
-                      >
-                        <Camera className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    {/* O clique na foto abre o menu dos espaços, então este badge
+                        é a ÚNICA entrada para trocar a foto — e por isso ele não
+                        depende mais de haver bee vivo: aparece sempre. */}
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                      title={t("changeAvatar", "Trocar foto de perfil")}
+                      className="absolute -bottom-2 -right-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705]"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
                   </div>
+
+                  <SpacesMenu
+                    open={spacesOpen}
+                    onClose={() => setSpacesOpen(false)}
+                    hasBees={myBees.length > 0}
+                    onViewBees={() => router.push(`/bees?bee=${myBees[myBees.length - 1]}`)}
+                    onNewProfile={() => {
+                      setNewProfileError(null)
+                      setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
+                      setProfessions([])
+                      fetchMachines()
+                      setIsNewProfileModalOpen(true)
+                    }}
+                  />
                   {/* Estrelas de avaliação do perfil-conta (paridade subperfil). */}
                   {accountProfileId && (
                     <div className="mt-2">
