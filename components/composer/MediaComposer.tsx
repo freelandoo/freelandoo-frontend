@@ -39,6 +39,7 @@ import {
 import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
 import { AudioPicker } from "./AudioPicker"
 import { OversizeModal } from "@/components/media/oversize-modal"
+import { nearestPostOrientation } from "@/lib/media/media-validation"
 import { UPLOAD_LIMITS } from "@/lib/media/upload-limits"
 
 type Step = "pick" | "crop" | "edit" | "details" | "publish"
@@ -128,10 +129,19 @@ function paintOverlay(
   } catch { /* frame não decodável ainda */ }
 }
 
-export function MediaComposer({ open, mode, initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
+export function MediaComposer({ open, mode: modeProp, initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
   const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
+
+  // Curto é vertical por definição, mas vídeo deitado não cabe nele: quando o
+  // arquivo chega em 16:9, o composer oferece publicar como Post (a única
+  // superfície que enquadra em 1920x1080). `modeSwitch` é esse desvio — o modo
+  // efetivo daqui pra frente, incluindo o feed_kind da publicação.
+  const [modeSwitch, setModeSwitch] = useState<ComposerProps["mode"] | null>(null)
+  const mode = modeSwitch ?? modeProp
+  /** Dimensões do vídeo deitado que disparou a oferta (null = sem oferta na tela). */
+  const [landscapeVideo, setLandscapeVideo] = useState<{ w: number; h: number } | null>(null)
 
   const [step, setStep] = useState<Step>("pick")
   const [editTab, setEditTab] = useState<EditTab>("filtro")
@@ -212,6 +222,17 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
 
   const allowedAspects = aspectsFor(mode)
 
+  /** Aceita o desvio: o Curto vira Post e o corte abre já na orientação de post
+   *  mais próxima do arquivo (16:9 pra vídeo deitado), com zoom/pan zerados. */
+  const switchToPost = useCallback(() => {
+    setLandscapeVideo((dim) => {
+      const ratio = dim ? nearestPostOrientation(dim.w, dim.h).ratio : ASPECTS["16:9"].ratio
+      setSlides((ss) => ss.map((s) => ({ ...s, crop: { ...NEUTRAL_CROP, aspect: ratio } })))
+      return null
+    })
+    setModeSwitch("post")
+  }, [])
+
   // ── limpeza de slides (revoga object URLs) ───────────────────────────────────
   const revokeSlides = useCallback((list: Slide[]) => {
     list.forEach((s) => {
@@ -236,6 +257,7 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
     setAudioPick(null)
     setTitle(""); setDescription(""); setCaption(""); setProgress(0); setSubmitting(false); setError(null); setVideoNotice(null)
     setBeeLocation(""); setBeeLinks([])
+    setModeSwitch(null); setLandscapeVideo(null)
     setCameraOpen(false)
   }, [slides, revokeSlides])
 
@@ -289,7 +311,7 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
   })
 
   const buildImageSlides = async (files: File[], append: boolean) => {
-    const aspect = append && slides[0] ? slides[0].crop.aspect : ASPECTS[allowedAspects[0]].ratio
+    const aspect = append && slides[0] ? slides[0].crop.aspect : ASPECTS[aspectsFor(modeProp)[0]].ratio
     const built: Slide[] = []
     for (const f of files) {
       const url = URL.createObjectURL(f)
@@ -327,7 +349,12 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
     const v = document.createElement("video")
     v.preload = "metadata"
     v.onloadedmetadata = () => {
-      const aspect = ASPECTS[allowedAspects[0]].ratio
+      const aspect = ASPECTS[aspectsFor(modeProp)[0]].ratio
+      // Vídeo deitado no Curto: oferece o desvio pra Post em vez de espremer
+      // 16:9 numa moldura em pé.
+      if (modeProp === "bee" && v.videoWidth > v.videoHeight) {
+        setLandscapeVideo({ w: v.videoWidth, h: v.videoHeight })
+      }
       setSlides([{
         id: crypto.randomUUID(),
         draft: { file: f, kind: "video", url, width: v.videoWidth, height: v.videoHeight, durationSec: Math.round(v.duration) },
@@ -346,6 +373,7 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
   // ── seleção de arquivo(s) inicial ────────────────────────────────────────────
   const handleFiles = (fileList: FileList | null) => {
     setError(null)
+    setModeSwitch(null); setLandscapeVideo(null)
     const files = fileList ? Array.from(fileList) : []
     if (files.length === 0) return
     const images = files.filter((f) => f.type.startsWith("image/"))
@@ -856,6 +884,31 @@ export function MediaComposer({ open, mode, initialProfileId = null, communityId
                   onSelect={selectSlide} onRemove={removeSlide} onMove={moveSlide}
                   onAdd={() => addImagesRef.current?.click()}
                 />
+              )}
+
+              {step === "crop" && landscapeVideo && (
+                <div className="border-t-2 border-[#0B0B0D] bg-[#F1EDE2] px-4 py-3 text-[#0B0B0D]">
+                  <p className="text-[13px] font-black uppercase tracking-[0.04em]">
+                    {t("curto.landscapeTitle", "Esse vídeo é deitado")}
+                  </p>
+                  <p className="mt-1 text-[12px] font-semibold leading-snug">
+                    {t("curto.landscapeBody", "Curto é vertical. Publique como Post para manter o 16:9.")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button" onClick={switchToPost}
+                      className="border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                    >
+                      {t("curto.landscapeSwitch", "Publicar como Post")}
+                    </button>
+                    <button
+                      type="button" onClick={() => setLandscapeVideo(null)}
+                      className="border-2 border-[#0B0B0D] bg-transparent px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.06em] text-[#0B0B0D]"
+                    >
+                      {t("curto.landscapeKeep", "Continuar no Curto")}
+                    </button>
+                  </div>
+                </div>
               )}
 
               {draft.kind === "video" && videoNotice && (

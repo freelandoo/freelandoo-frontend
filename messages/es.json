@@ -2894,7 +2894,11 @@
     "mode.recado": "Nuevo Recado",
     "recadoClose": "Cerrar",
     "recadoPlaceholder": "Escribe lo que quieres decir...",
-    "recadoPublish": "Publicar recado"
+    "recadoPublish": "Publicar recado",
+    "curto.landscapeTitle": "Este video es horizontal",
+    "curto.landscapeBody": "El Corto es vertical. Publícalo como Post para mantener el 16:9.",
+    "curto.landscapeSwitch": "Publicar como Post",
+    "curto.landscapeKeep": "Seguir en Corto"
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",

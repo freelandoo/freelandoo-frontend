@@ -2891,7 +2891,11 @@
     "mode.recado": "Novo Recado",
     "recadoClose": "Fechar",
     "recadoPlaceholder": "Escreva o que você quer dizer...",
-    "recadoPublish": "Postar recado"
+    "recadoPublish": "Postar recado",
+    "curto.landscapeTitle": "Esse vídeo é deitado",
+    "curto.landscapeBody": "Curto é vertical. Publique como Post para manter o 16:9.",
+    "curto.landscapeSwitch": "Publicar como Post",
+    "curto.landscapeKeep": "Continuar no Curto"
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",

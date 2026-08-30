@@ -2914,7 +2914,11 @@
     "mode.recado": "New Note",
     "recadoClose": "Close",
     "recadoPlaceholder": "Write what you want to say...",
-    "recadoPublish": "Post note"
+    "recadoPublish": "Post note",
+    "curto.landscapeTitle": "This video is landscape",
+    "curto.landscapeBody": "Shorts are vertical. Publish it as a Post to keep 16:9.",
+    "curto.landscapeSwitch": "Publish as Post",
+    "curto.landscapeKeep": "Stay on Short"
   },
   "Chamado": {
     "titleService": "Open a service request",
