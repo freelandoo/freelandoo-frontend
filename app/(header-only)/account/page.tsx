@@ -1678,7 +1678,10 @@ export default function PerfilPage() {
         <div className="mx-auto grid w-full min-w-0 max-w-[1100px] gap-5 md:gap-6">
           <article
             ref={headcardRef}
-            className="min-w-0 overflow-hidden rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
+            // Sem `overflow-hidden`: o menu que abre na foto de perfil sai
+            // PARA FORA do card, e a borda o cortava (mesma armadilha que o
+            // "+" do mural da academia pagou). O banner tem recorte próprio.
+            className="min-w-0 rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
           >
             <div className="relative h-40 overflow-hidden bg-[#1d1810] md:h-52">
               {manifestation?.active?.banner_url ? (

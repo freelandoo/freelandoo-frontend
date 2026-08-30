@@ -73,7 +73,6 @@ export function SpacesMenu({
   onNewProfile,
   hasBees = false,
   onViewBees,
-  align = "left",
 }: {
   open: boolean
   onClose: () => void
@@ -81,7 +80,6 @@ export function SpacesMenu({
   onNewProfile: () => void
   hasBees?: boolean
   onViewBees?: () => void
-  align?: "left" | "right"
 }) {
   const t = useTranslations("Spaces")
   const router = useRouter()
@@ -281,7 +279,11 @@ export function SpacesMenu({
       {open && (
         <div
           role="menu"
-          className={`absolute top-full z-40 mt-3 flex w-60 flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2 ${align === "right" ? "right-0" : "left-0"}`}
+          // AO LADO da foto, não embaixo dela: embaixo o painel cobria o nome, os
+          // contadores e a bio inteira do headcard. `max-w` porque no celular a
+          // coluna do avatar deixa pouco espaço à direita — o menu encolhe em vez
+          // de vazar da tela (o <main> tem overflow-x-hidden e cortaria).
+          className="absolute left-full top-0 z-50 ml-3 flex w-56 max-w-[calc(100vw-8.5rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2"
           style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
         >
           {current ? (
