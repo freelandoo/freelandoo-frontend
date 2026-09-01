@@ -39,6 +39,7 @@ import {
 import { SiteCanvas } from "./site-canvas"
 import { SiteAddSectionMenu } from "./site-add-section-menu"
 import { SiteColorPalettePicker } from "./site-color-palette-picker"
+import { SiteDomainsPanel } from "./site-domains-panel"
 
 /** Pausa do autosave. Longa o bastante para um parágrafo virar UM save. */
 const AUTOSAVE_MS = 1200
@@ -69,6 +70,7 @@ export function CommunitySiteBuilder({
   const [editing, setEditing] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  const [domainsOpen, setDomainsOpen] = useState(false)
 
   // Guarda o que está pendente de gravação. Ref e não estado: mudar isso não
   // deve repintar a tela, e o timer precisa enxergar sempre o valor MAIS NOVO
@@ -430,6 +432,28 @@ export function CommunitySiteBuilder({
             {saveState === "saved" && <Check className="h-3.5 w-3.5" style={{ color: accent }} />}
             {statusLabel}
           </span>
+
+          {isPublished && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDomainsOpen((v) => !v)}
+                aria-expanded={domainsOpen}
+                className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8]"
+              >
+                <Globe className="h-4 w-4" style={{ color: accent }} />
+                {t("domainsButton", "Endereço")}
+              </button>
+              {domainsOpen && (
+                <SiteDomainsPanel
+                  idProfile={idProfile}
+                  accent={accent}
+                  onClose={() => setDomainsOpen(false)}
+                  t={t}
+                />
+              )}
+            </div>
+          )}
 
           <button
             type="button"

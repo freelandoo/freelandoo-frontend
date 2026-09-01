@@ -246,6 +246,87 @@ const COMMUNITY_SITE = {
     "Sin información de contacto.",
   ],
 
+  // ─── Endereço e domínio próprio (migs 213/214) ───────────────────────────
+  domainsButton: ["Endereço", "Address", "Dirección"],
+  domainsTitle: ["Endereço do site", "Site address", "Dirección del sitio"],
+  slugTitle: ["Endereço na Freelandoo", "Address on Freelandoo", "Dirección en Freelandoo"],
+  slugEdit: ["Mudar endereço", "Change address", "Cambiar dirección"],
+  slugWarning: [
+    "Ao mudar o endereço, os links antigos param de funcionar.",
+    "Changing the address breaks the old links.",
+    "Al cambiar la dirección, los enlaces antiguos dejan de funcionar.",
+  ],
+  slugError: [
+    "Não foi possível mudar o endereço.",
+    "Could not change the address.",
+    "No se pudo cambiar la dirección.",
+  ],
+  publishFirst: [
+    "Publique o site para ele ganhar um endereço.",
+    "Publish the site so it gets an address.",
+    "Publica el sitio para que tenga una dirección.",
+  ],
+  customDomainsTitle: ["Domínio próprio", "Custom domain", "Dominio propio"],
+  customDomainsEmpty: [
+    "Ligue um domínio que você já tem, como suacomunidade.com.br.",
+    "Connect a domain you already own, like yourcommunity.com.",
+    "Conecta un dominio que ya tengas, como tucomunidad.com.",
+  ],
+  domainPlaceholder: ["suacomunidade.com.br", "yourcommunity.com", "tucomunidad.com"],
+  domainAdd: ["Ligar", "Connect", "Conectar"],
+  domainAddError: [
+    "Não foi possível adicionar o domínio.",
+    "Could not add the domain.",
+    "No se pudo añadir el dominio.",
+  ],
+  domainsLoadError: [
+    "Não foi possível carregar os domínios.",
+    "Could not load the domains.",
+    "No se pudieron cargar los dominios.",
+  ],
+  domainActionError: [
+    "A ação não pôde ser concluída.",
+    "The action could not be completed.",
+    "La acción no pudo completarse.",
+  ],
+  domainPending: ["Aguardando DNS", "Waiting for DNS", "Esperando DNS"],
+  domainPendingHint: [
+    "Crie o registro TXT abaixo no painel do seu domínio e clique em Verificar.",
+    "Create the TXT record below in your domain panel, then click Verify.",
+    "Crea el registro TXT de abajo en el panel de tu dominio y pulsa Verificar.",
+  ],
+  domainVerified: ["Verificado", "Verified", "Verificado"],
+  domainVerifiedHint: [
+    "Posse confirmada. O certificado de segurança está sendo emitido — isso pode levar alguns minutos.",
+    "Ownership confirmed. The security certificate is being issued — this can take a few minutes.",
+    "Propiedad confirmada. El certificado de seguridad se está emitiendo — puede tardar unos minutos.",
+  ],
+  domainActive: ["No ar", "Live", "En línea"],
+  domainActiveHint: [
+    "O site já responde neste domínio.",
+    "The site already responds on this domain.",
+    "El sitio ya responde en este dominio.",
+  ],
+  domainError: ["Com problema", "Has a problem", "Con problema"],
+  domainErrorHint: [
+    "Algo falhou. Confira o DNS e tente de novo.",
+    "Something failed. Check the DNS and try again.",
+    "Algo falló. Revisa el DNS e inténtalo de nuevo.",
+  ],
+  domainVerifyAction: ["Verificar", "Verify", "Verificar"],
+  domainRefreshAction: ["Checar de novo", "Check again", "Comprobar de nuevo"],
+  domainDnsHelp: [
+    "Depois de verificar, aponte o domínio para a Freelandoo no painel do seu registrador (registro A para o domínio raiz, ou CNAME para subdomínio).",
+    "After verifying, point the domain to Freelandoo in your registrar panel (A record for the root domain, or CNAME for a subdomain).",
+    "Después de verificar, apunta el dominio a Freelandoo en el panel de tu registrador (registro A para el dominio raíz, o CNAME para subdominio).",
+  ],
+  dnsType: ["Tipo", "Type", "Tipo"],
+  dnsHost: ["Nome / Host", "Name / Host", "Nombre / Host"],
+  dnsValue: ["Valor", "Value", "Valor"],
+  open: ["Abrir", "Open", "Abrir"],
+  remove: ["Remover", "Remove", "Eliminar"],
+  save: ["Salvar", "Save", "Guardar"],
+
   // ─── Paleta ──────────────────────────────────────────────────────────────
   paletteTitle: ["Paleta de cores", "Color palette", "Paleta de colores"],
   paletteCustom: ["Ajuste fino", "Fine tuning", "Ajuste fino"],

@@ -95,9 +95,14 @@ export function InlineText({
   )
 
   if (!editing) {
+    // Em LEITURA o placeholder não existe. Ele é uma dica de edição ("Manchete
+    // do banner"), e mostrá-lo ao visitante publicaria o rótulo do formulário
+    // como se fosse o conteúdo do site. Campo vazio simplesmente não ocupa
+    // espaço — quem monta a seção decide se ela aparece.
+    if (!value) return null
     return (
       <Tag className={className} style={style}>
-        {value || placeholder}
+        {value}
       </Tag>
     )
   }
