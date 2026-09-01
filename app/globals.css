@@ -669,3 +669,30 @@ body.camera-active { overflow: hidden; }
 .fl-sharp [data-avatar] { border-radius: 9999px !important; }
 /* Bolinhas de status (verde/vermelha) também são círculos, não cantos. */
 .fl-sharp [data-dot] { border-radius: 9999px !important; }
+
+/* ============================================================================
+   CONSTRUTOR DE SITE DA COMUNIDADE ("Meu Site", mig 212)
+   Só o líder em modo de edição vê estas affordances — o visitante recebe a
+   mesma marcação sem a classe, e portanto sem contorno nenhum.
+   ============================================================================ */
+.fl-site-editable {
+  outline: 1px dashed rgba(245, 241, 232, 0.28);
+  outline-offset: 2px;
+  cursor: text;
+  min-height: 1em;
+  transition: outline-color 120ms ease, background-color 120ms ease;
+}
+.fl-site-editable:hover { outline-color: rgba(242, 183, 5, 0.65); }
+.fl-site-editable:focus {
+  outline: 2px solid #f2b705;
+  outline-offset: 2px;
+  background-color: rgba(242, 183, 5, 0.06);
+}
+/* Placeholder do campo vazio: pseudo-elemento para não virar conteúdo real
+   (texto de verdade dentro do nó seria salvo como se o usuário o tivesse
+   digitado). */
+.fl-site-editable-empty::before {
+  content: attr(data-placeholder);
+  color: rgba(245, 241, 232, 0.35);
+  pointer-events: none;
+}

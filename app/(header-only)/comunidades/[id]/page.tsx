@@ -15,6 +15,7 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -33,6 +34,14 @@ const MediaComposer = dynamic(
 // veredito do síndico — entra como SEÇÃO, carregada só quando é o caso.
 const CondoResidence = dynamic(
   () => import("./_components/condo-residence").then((m) => m.CondoResidence),
+  { ssr: false }
+)
+// "Meu Site" (mig 212): o site próprio da comunidade, montado pelo líder num
+// construtor visual INLINE — não é modal, ocupa a aba. Carregado por `dynamic`
+// porque o construtor traz editor, paleta e seções: quem só veio ler o feed não
+// deve baixar nada disso.
+const CommunitySiteBuilder = dynamic(
+  () => import("./_components/site-builder/community-site-builder").then((m) => m.CommunitySiteBuilder),
   { ssr: false }
 )
 // Avisos, anúncios internos, enquetes e lista de vizinhos (migs 197-199).
@@ -99,6 +108,9 @@ type Community = {
     estado?: string | null
   } | null
   address_is_full?: boolean
+  // "Meu Site" (mig 212): existe site PUBLICADO? Vem no mesmo GET da comunidade
+  // para a aba Site não custar uma requisição a mais em toda visita.
+  has_site?: boolean
   viewer_is_admin?: boolean
   viewer_is_resident?: boolean
   viewer_has_pending_claim?: boolean
@@ -184,7 +196,7 @@ export default function CommunityDetailPage() {
   const [goal, setGoal] = useState<Goal | null>(null)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
-  const [tab, setTab] = useState<"feed" | "members">("feed")
+  const [tab, setTab] = useState<"feed" | "members" | "site">("feed")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
@@ -279,6 +291,32 @@ export default function CommunityDetailPage() {
   })()
   const isResident = !!community?.viewer_is_resident
   const canPost = isCondo ? isLeader || isResident : isMember
+
+  // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
+  // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
+  // perde a entrada do menu e a aba, mas um site JÁ publicado continua abrindo
+  // para quem visita — desligar o interruptor segura o que ainda não nasceu,
+  // não derruba o que está no ar. (Mesma regra do GET /me/spaces.)
+  const siteEnabled = useFeature("comunidade_site")
+  const hasPublishedSite = !!community?.has_site
+
+  // O líder sempre vê a entrada (é dele que o site nasce); quem visita só a vê
+  // quando existe site publicado — comunidade sem site não ganha aba vazia.
+  const showSiteTab = hasPublishedSite || (isLeader && siteEnabled)
+
+  const siteExtras = useMemo(
+    () => (isLeader && siteEnabled ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : []),
+    [isLeader, siteEnabled, t]
+  )
+
+  const communityTabs = useMemo(() => {
+    const tabs: [("feed" | "members" | "site"), string][] = [
+      ["feed", t("tabFeed", "Feed")],
+      ["members", t("tabMembers", "Membros")],
+    ]
+    if (showSiteTab) tabs.push(["site", t("tabSite", "Site")])
+    return tabs
+  }, [showSiteTab, t])
 
   const accent = accentHex(accentDraft)
   const showAsLeaderEdit = isLeader && edit
@@ -873,6 +911,10 @@ export default function CommunityDetailPage() {
                   { kind: "recado", label: t("recadoLabel", "Recado") },
                 ]}
                 onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                extras={siteExtras}
+                onPickExtra={(extraId) => {
+                  if (extraId === "site") setTab("site")
+                }}
               />
             </div>
           )}
@@ -1219,7 +1261,7 @@ export default function CommunityDetailPage() {
           {/* Tabs */}
           <div>
             <div className="flex gap-1 border-b-2 border-[#F5F1E8]/15">
-              {([["feed", t("tabFeed", "Feed")], ["members", t("tabMembers", "Membros")]] as const).map(([key, label]) => (
+              {communityTabs.map(([key, label]) => (
                 <button key={key} type="button" onClick={() => setTab(key)} className="-mb-0.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
                   style={{ borderBottom: tab === key ? `4px solid ${accent}` : "4px solid transparent", opacity: tab === key ? 1 : 0.5 }}>
                   {label}
@@ -1228,7 +1270,13 @@ export default function CommunityDetailPage() {
             </div>
 
             <div className="mt-6">
-              {tab === "members" ? (
+              {tab === "site" ? (
+                <CommunitySiteBuilder
+                  idProfile={community.id_profile}
+                  isLeader={isLeader}
+                  accent={accent}
+                />
+              ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (
