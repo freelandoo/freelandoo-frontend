@@ -36,6 +36,7 @@ const AgendaBookingsExperience = dynamic(
 )
 import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
+import { WalletPill } from "@/components/profile/wallet-pill"
 import { MuralPill } from "@/components/profile/profile-head-card"
 import { CommunityTile } from "@/components/community/community-tile"
 import { SpacesMenu } from "@/components/account/spaces-menu"
@@ -1812,6 +1813,9 @@ export default function PerfilPage() {
                   </div>
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
+                    {/* Carteira: mesma peça e mesma posição do headcard do outro
+                        perfil — todo perfil do dono tem a dela, nativa. */}
+                    <WalletPill />
                     {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
                         headcard do subperfil (esqueleto unificado). */}
                     <div className="flex items-baseline gap-4">

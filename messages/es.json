@@ -1494,7 +1494,8 @@
     "payoutOwnershipHint": "El CPF del receptor debe ser el mismo CPF registrado en tu cuenta.",
     "pixSaveFail": "No fue posible guardar los datos de cobro.",
     "menuRecado": "Recado",
-    "openSpaces": "Mis espacios"
+    "openSpaces": "Mis espacios",
+    "walletPill": "Cartera"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

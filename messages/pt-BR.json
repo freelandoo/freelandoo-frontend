@@ -1494,7 +1494,8 @@
     "payoutOwnershipHint": "O CPF do recebedor precisa ser o mesmo CPF cadastrado na sua conta.",
     "pixSaveFail": "Não foi possível salvar os dados de recebimento.",
     "menuRecado": "Recado",
-    "openSpaces": "Meus espaços"
+    "openSpaces": "Meus espaços",
+    "walletPill": "Carteira"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",

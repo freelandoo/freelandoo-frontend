@@ -33,6 +33,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { WalletPill } from "@/components/profile/wallet-pill"
 import { useAccountTools } from "@/components/profile/account-tools"
 
 const DataConnectionsModal = dynamic(
@@ -470,6 +471,14 @@ export function ProfileHeadCard({
 
             {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna. */}
             <div className="min-w-0 flex-1 pb-1 text-left">
+              {/* Carteira: mesma peça e mesma posição do headcard do /account.
+                  Só para o dono (é o dinheiro dele) e fora do clan, que é
+                  entidade coletiva e mantém menu próprio. */}
+              {isOwnProfile && entityType !== "clan" && (
+                <div className="mb-2">
+                  <WalletPill />
+                </div>
+              )}
               <div className="flex items-baseline gap-4">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">

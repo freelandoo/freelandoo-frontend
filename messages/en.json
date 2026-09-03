@@ -1494,7 +1494,8 @@
     "payoutOwnershipHint": "The payee's CPF must be the same CPF registered on your account.",
     "pixSaveFail": "Could not save your payout details.",
     "menuRecado": "Note",
-    "openSpaces": "My spaces"
+    "openSpaces": "My spaces",
+    "walletPill": "Wallet"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
