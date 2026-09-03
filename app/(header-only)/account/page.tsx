@@ -37,7 +37,6 @@ const AgendaBookingsExperience = dynamic(
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { MuralPill } from "@/components/profile/profile-head-card"
-import { CommunityTile } from "@/components/community/community-tile"
 import { SpacesMenu } from "@/components/account/spaces-menu"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
@@ -139,19 +138,6 @@ export default function PerfilPage() {
   const unreadMessages = navCounts.conversationUnread
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
-  const [myCommunities, setMyCommunities] = useState<
-    Array<{
-      id_profile: string
-      display_name: string
-      avatar_url: string | null
-      role: "leader" | "vice" | "member"
-      xp_level: number
-      member_count: number
-      enxame_name: string | null
-      banner_url?: string | null
-      community_theme?: { accent?: string } | null
-    }>
-  >([])
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
   // Paridade user≡subperfil: seguidores do perfil-conta no headcard
   const [accountFollowersCount, setAccountFollowersCount] = useState(0)
@@ -397,20 +383,6 @@ export default function PerfilPage() {
       })
       .catch(() => {})
   }, [accountProfileId])
-
-  React.useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) return
-    fetch("/api/communities/me", {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.communities)) setMyCommunities(data.communities)
-      })
-      .catch(() => {})
-  }, [])
 
   // Ref no headcard pro RetractableProfileHeader observar.
   const headcardRef = useRef<HTMLElement | null>(null)
@@ -2205,39 +2177,6 @@ export default function PerfilPage() {
                     <Plus className="h-4 w-4" />
                     {t("createProfile", "Criar Perfil")}
                   </button>
-                </div>
-              )}
-            </div>
-              </div>
-            }
-            myClansSlot={
-              <div className="space-y-4">
-                <div className="flex justify-end">
-                  <Link
-                    href="/search?tab=communities"
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#F5F1E8]/25 px-4 py-2 text-[13px] font-bold text-[#F5F1E8] transition hover:border-[#F2B705] hover:text-[#F2B705]"
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    {t("browseByEnxame", "Buscar por enxame")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-            <div>
-              {myCommunities.length > 0 ? (
-                <div className="grid grid-cols-2 gap-px bg-white/[0.03] sm:grid-cols-3 lg:grid-cols-4">
-                  {myCommunities.map((c) => (
-                    <CommunityTile key={c.id_profile} community={c} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border-2 border-dashed border-[#F5F1E8]/15 bg-[#F5F1E8]/[0.02] p-8 text-center">
-                  <Users className="mx-auto mb-2 h-8 w-8 text-[#9A938A]" />
-                  <p className="text-sm text-[#9A938A]">
-                    {t("noCommunitiesYet", "Você ainda não participa de nenhuma comunidade.")}
-                  </p>
-                  <Link href="/comunidades" className="mt-2 inline-block text-sm font-bold text-[#F2B705] hover:underline">
-                    {t("createOrJoinCommunity", "Criar ou entrar em uma comunidade")}
-                  </Link>
                 </div>
               )}
             </div>

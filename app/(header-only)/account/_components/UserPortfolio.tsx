@@ -20,7 +20,6 @@ import {
   GraduationCap,
   ShoppingBag,
   UserRound,
-  Users,
   Sparkles,
   Crop,
   Bookmark,
@@ -110,8 +109,6 @@ interface UserPortfolioProps {
   coursesProfileOptions?: ProfileOption[]
   /** Conteúdo da aba "Meus Perfis" (só renderizado em /account). */
   myProfilesSlot?: React.ReactNode
-  /** Conteúdo da aba "Meus Clans" (só renderizado em /account). */
-  myClansSlot?: React.ReactNode
   /** Reporta a contagem de posts pro headcard (contador POSTS, paridade subperfil). */
   onPostsCount?: (count: number) => void
   /** id do perfil-conta (is_user_account) — habilita as abas Serviços/Loja. */
@@ -125,7 +122,6 @@ type PortfolioTab =
   | "courses"
   | "shop"
   | "profiles"
-  | "clans"
   | "saved"
 
 // "feed"/"bees" = bookmarks de posts (bees = Curtos, vídeos permanentes);
@@ -166,7 +162,6 @@ type SavedBee = {
 export function UserPortfolio({
   coursesProfileOptions = [],
   myProfilesSlot,
-  myClansSlot,
   onPostsCount,
   accountProfileId = null,
 }: UserPortfolioProps = {}) {
@@ -181,13 +176,11 @@ export function UserPortfolio({
   useEffect(() => {
     onPostsCount?.(items.length)
   }, [items.length, onPostsCount])
-  // Chaves do Painel de Controle: Cursos e Comunidade podem estar desligadas.
+  // Chaves do Painel de Controle: Cursos, Serviços e Loja podem estar desligadas.
   // Flag global do admin E preferência pessoal (seção "Funções" do menu):
   // qualquer uma desligada esconde a aba. Hooks chamados incondicionalmente.
   const coursesFlagOn = useFeature("courses")
   const coursesPrefOn = useUserFeature("courses")
-  const communitiesFlagOn = useFeature("communities")
-  const communitiesPrefOn = useUserFeature("communities")
   const profilesPrefOn = useUserFeature("profiles")
   const servicesFlagOn = useFeature("services")
   const servicesPrefOn = useUserFeature("services")
@@ -195,21 +188,19 @@ export function UserPortfolio({
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
   const coursesOn = coursesFlagOn && coursesPrefOn
-  const communitiesOn = communitiesFlagOn && communitiesPrefOn
   // Serviços/Loja do perfil-conta (paridade user≡subperfil) — precisam do id.
   const servicesOn = servicesFlagOn && servicesPrefOn && !!accountProfileId
   const shopOn = storeFlagOn && storePrefOn && !!accountProfileId
   useEffect(() => {
     if (
       (!coursesOn && portfolioTab === "courses") ||
-      (!communitiesOn && portfolioTab === "clans") ||
       (!profilesPrefOn && portfolioTab === "profiles") ||
       (!servicesOn && portfolioTab === "services") ||
       (!shopOn && portfolioTab === "shop")
     ) {
       setPortfolioTab("feed")
     }
-  }, [coursesOn, communitiesOn, profilesPrefOn, servicesOn, shopOn, portfolioTab])
+  }, [coursesOn, profilesPrefOn, servicesOn, shopOn, portfolioTab])
   const [composerMode, setComposerMode] = useState<ComposerMode | null>(null)
   // Recado = post só-texto (mig 209). Vive na aba Portfólio junto com os posts.
   const [recadoOpen, setRecadoOpen] = useState(false)
@@ -728,18 +719,6 @@ export function UserPortfolio({
               </button>
             </HoverHint>
           )}
-          {myClansSlot !== undefined && communitiesOn && (
-            <HoverHint id="account-tab-clans" side="bottom">
-              <button
-                type="button"
-                onClick={() => setPortfolioTab("clans")}
-                className={tabBtn(portfolioTab === "clans")}
-              >
-                <Users className="h-3.5 w-3.5" />
-                {tr("tabCommunity", "Comunidade")}
-              </button>
-            </HoverHint>
-          )}
         </div>
       </div>
       {/* Botões "Novo item" e "Novo Bees" migraram pro + do RetractableProfileHeader. */}
@@ -763,8 +742,6 @@ export function UserPortfolio({
         <SavedSection />
       ) : portfolioTab === "profiles" ? (
         <>{myProfilesSlot}</>
-      ) : portfolioTab === "clans" ? (
-        <>{myClansSlot}</>
       ) : (
         <>
       {listError && (
