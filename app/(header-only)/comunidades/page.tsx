@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { Search, Users, Plus } from "lucide-react"
-import { PageShell, PageHero, EmptyState, LoadingState } from "@/components/tabloide"
+import { PageShell, PageHero, PageBackLink, EmptyState, LoadingState } from "@/components/tabloide"
 import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
@@ -60,6 +60,7 @@ export default function CommunityListPage() {
   return (
     <PageShell>
       <PageHero
+        back={<PageBackLink href="/account" />}
         kicker={<><Users className="h-3.5 w-3.5" /> {t("pageTitle", "Comunidades")}</>}
         title={t("pageTitle", "Comunidades")}
         subtitle={t("pageSubtitle", "Encontre e participe de comunidades.")}

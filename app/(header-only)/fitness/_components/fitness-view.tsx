@@ -31,6 +31,7 @@ import {
 import { getToken, getStoredUser } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { PageBackLink } from "@/components/tabloide"
 import { WorkoutTodayCard } from "./workout-today-card"
 import { FitnessProposalsGate } from "./proposals-modal"
 import { IndicatorsTab } from "./indicators-tab"
@@ -604,6 +605,8 @@ export function FitnessView() {
             void load()
           }}
         />
+
+        <PageBackLink href="/account" className="mb-6" />
 
         {/* Header estilo perfil */}
         <header className={`relative ${PANEL}`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>

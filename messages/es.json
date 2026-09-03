@@ -66,7 +66,8 @@
     "privacy": "Privacidad",
     "help": "Centro de ayuda",
     "logout": "Cerrar sesión",
-    "reviewTour": "Repetir tour"
+    "reviewTour": "Repetir tour",
+    "back": "Volver"
   },
   "Auth": {
     "login": "Iniciar sesión",
@@ -1508,7 +1509,17 @@
     "openChamadoLabel": "Abrir solicitud",
     "chamadoModeService": "Servicio",
     "chamadoModeProduct": "Producto",
-    "chamadoModeCourse": "Curso"
+    "chamadoModeCourse": "Curso",
+    "clansVitrineKicker": "Equipos Freelandoo",
+    "clansVitrineHighlight": "en juego",
+    "clansVitrineSubtitle": "Equipos de hasta 6 perfiles trabajando juntos. La puntuación combina todas las métricas de los miembros.",
+    "clansSearchPlaceholder": "Buscar por nombre o bio...",
+    "allEnxamesOption": "Todos los enjambres",
+    "loadingClansVitrine": "Cargando clanes…",
+    "noClansFoundTitle": "Ningún clan",
+    "noClansFoundDesc": "Ningún clan coincide con estos filtros. Prueba a ampliar la búsqueda.",
+    "noEnxameLabel": "Sin enjambre",
+    "pointsSuffix": "pts"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

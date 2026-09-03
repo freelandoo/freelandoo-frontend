@@ -16,7 +16,7 @@ import {
   CheckCircle2, CreditCard, Sparkles, BadgeCheck, TrendingUp, BarChart3,
   type LucideIcon,
 } from "lucide-react"
-import { PageShell, Section, PhotoFrame, EmptyState, ErrorState } from "@/components/tabloide"
+import { PageShell, PageBackLink, Section, PhotoFrame, EmptyState, ErrorState } from "@/components/tabloide"
 import { useTranslations, useLocale } from "@/components/i18n/I18nProvider"
 import EngagementTab from "./EngagementTab"
 
@@ -149,6 +149,7 @@ export default function XpPage() {
       <Section className="pb-16 pt-12 sm:pt-16">
         {/* Masthead */}
         <div className="relative max-w-3xl">
+          <PageBackLink href="/account" className="mb-5" />
           <div className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
             <Zap className="h-3.5 w-3.5" />
             {t("xpEyebrow", "Sua evolução na plataforma")}

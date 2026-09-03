@@ -4,7 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Users, MapPin, Star, Heart } from "lucide-react"
-import { PageShell, PageHero, EmptyState, LoadingState } from "@/components/tabloide"
+import { PageShell, PageHero, PageBackLink, EmptyState, LoadingState } from "@/components/tabloide"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
 type Machine = { id_machine: number; name: string; slug: string }
 
@@ -34,6 +36,8 @@ type ClanCard = {
 }
 
 export default function ClansVitrinePage() {
+  const t = useTranslations("Account")
+  const tx = useTaxonomy()
   const [clans, setClans] = useState<ClanCard[]>([])
   const [machines, setMachines] = useState<Machine[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,25 +70,26 @@ export default function ClansVitrinePage() {
   }, [])
 
   const inputCls =
-    "h-11 w-full rounded-xl border-2 border-[#F5F1E8]/12 bg-[#1D1810] px-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
+    "h-11 w-full border-2 border-[#F5F1E8]/12 bg-[#1D1810] px-4 text-sm text-[#F5F1E8] placeholder:text-[#9A938A] outline-none transition focus:border-[#F2B705]"
 
   return (
-    <PageShell>
+    <PageShell className="fl-sharp">
       <PageHero
-        kicker={<><Users className="h-3.5 w-3.5" /> Times Freelandoo</>}
-        title="Clans"
-        highlight="em jogo"
-        subtitle="Times de até 6 sub-perfis trabalhando juntos. O score combina todas as métricas dos membros."
+        back={<PageBackLink href="/account" />}
+        kicker={<><Users className="h-3.5 w-3.5" /> {t("clansVitrineKicker", "Times Freelandoo")}</>}
+        title={t("clans", "Clans")}
+        highlight={t("clansVitrineHighlight", "em jogo")}
+        subtitle={t("clansVitrineSubtitle", "Times de até 6 perfis trabalhando juntos. O score combina todas as métricas dos membros.")}
         doodle={false}
       />
 
       <div className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-8">
         {/* Filtros */}
-        <div className="grid grid-cols-1 gap-3 rounded-2xl border-2 border-[#F5F1E8]/10 bg-[#1D1810]/60 p-4 sm:grid-cols-12">
+        <div className="grid grid-cols-1 gap-3 border-2 border-[#F5F1E8]/10 bg-[#1D1810]/60 p-4 sm:grid-cols-12">
           <div className="sm:col-span-5">
             <input
               className={inputCls}
-              placeholder="Buscar por nome ou bio..."
+              placeholder={t("clansSearchPlaceholder", "Buscar por nome ou bio...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && load()}
@@ -92,16 +97,16 @@ export default function ClansVitrinePage() {
           </div>
           <div className="sm:col-span-3">
             <select className={inputCls} value={filterMachine} onChange={(e) => setFilterMachine(e.target.value)}>
-              <option value="__all__">Todos os enxames</option>
+              <option value="__all__">{t("allEnxamesOption", "Todos os enxames")}</option>
               {machines.map((m) => (
-                <option key={m.id_machine} value={m.slug}>{m.name}</option>
+                <option key={m.id_machine} value={m.slug}>{tx.enxame(m.slug, m.name)}</option>
               ))}
             </select>
           </div>
           <div className="sm:col-span-3">
             <input
               className={inputCls}
-              placeholder="Cidade"
+              placeholder={t("cityPlaceholder", "Cidade")}
               value={filterCity}
               onChange={(e) => setFilterCity(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && load()}
@@ -112,8 +117,8 @@ export default function ClansVitrinePage() {
               type="button"
               onClick={load}
               disabled={loading}
-              aria-label="Buscar"
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-[#F2B705] text-[#1A1505] transition hover:bg-[#ffc81f] disabled:opacity-60"
+              aria-label={t("search", "Buscar")}
+              className="flex h-11 w-full items-center justify-center bg-[#F2B705] text-[#1A1505] transition hover:bg-[#ffc81f] disabled:opacity-60"
             >
               <Search className="h-4 w-4" />
             </button>
@@ -121,20 +126,20 @@ export default function ClansVitrinePage() {
         </div>
 
         {loading ? (
-          <div className="py-16"><LoadingState label="Carregando clans…" /></div>
+          <div className="py-16"><LoadingState label={t("loadingClansVitrine", "Carregando clans…")} /></div>
         ) : clans.length === 0 ? (
           <div className="py-16">
             <EmptyState
               icon={<Users className="h-6 w-6" />}
-              title="Nenhum clan"
-              description="Nenhum clan encontrado com esses filtros. Tente ampliar a busca."
+              title={t("noClansFoundTitle", "Nenhum clan")}
+              description={t("noClansFoundDesc", "Nenhum clan encontrado com esses filtros. Tente ampliar a busca.")}
             />
           </div>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clans.map((c) => (
               <Link key={c.id_profile} href={`/clans/${c.id_profile}`} className="group block">
-                <div className="fl-card fl-hard h-full rounded-2xl p-5">
+                <div className="fl-card fl-hard h-full p-5">
                   <div className="flex items-start gap-3">
                     <Avatar className="size-14 ring-2 ring-[#0B0B0D]/10">
                       <AvatarImage src={c.avatar_url || undefined} />
@@ -145,8 +150,8 @@ export default function ClansVitrinePage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-base font-black text-[#0B0B0D]">{c.display_name}</h3>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#5b554b]">
-                        <span className="rounded-full bg-[#0B0B0D] px-2 py-0.5 text-[10px] font-bold text-[#F1EDE2]">
-                          {c.machine_name || "Sem enxame"}
+                        <span className="bg-[#0B0B0D] px-2 py-0.5 text-[10px] font-bold text-[#F1EDE2]">
+                          {c.machine_name ? tx.enxame(c.machine_slug, c.machine_name) : t("noEnxameLabel", "Sem enxame")}
                         </span>
                         {(c.municipio || c.estado) && (
                           <span className="flex items-center gap-1">
@@ -169,7 +174,8 @@ export default function ClansVitrinePage() {
                     ))}
                     {c.members.length > 0 && (
                       <span className="ml-3 self-center text-xs text-[#5b554b]">
-                        {c.members.length} {c.members.length === 1 ? "membro" : "membros"}
+                        {c.members.length}{" "}
+                        {c.members.length === 1 ? t("memberLower", "membro") : t("membersLower", "membros")}
                       </span>
                     )}
                   </div>
@@ -184,7 +190,7 @@ export default function ClansVitrinePage() {
                       </span>
                     )}
                     <span className="ml-auto font-black text-[#0B0B0D]">
-                      {Math.round(Number(c.total_points))} pts
+                      {Math.round(Number(c.total_points))} {t("pointsSuffix", "pts")}
                     </span>
                   </div>
                 </div>

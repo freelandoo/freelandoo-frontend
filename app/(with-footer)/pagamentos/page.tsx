@@ -19,7 +19,7 @@ import {
   Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { TabloidPageIntro } from "@/components/tabloide"
+import { PageBackLink, TabloidPageIntro } from "@/components/tabloide"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { SellerBalanceSection } from "./_components/seller-balance-section"
 import { BookingPayoutsSection } from "./_components/booking-payouts-section"
@@ -659,6 +659,7 @@ export default function PagamentosPage() {
         {/* Header */}
         <TabloidPageIntro
           size="compact"
+          back={<PageBackLink href="/account" />}
           eyebrow={t("eyebrow", "Ativação")}
           title={t("title", "PAGAMENTOS.")}
           subtitle={t("subtitle", "Assinaturas, ativações e saldo de vendas em um painel só.")}

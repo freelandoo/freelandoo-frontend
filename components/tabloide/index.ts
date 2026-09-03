@@ -13,6 +13,7 @@
 
 /* ── Chrome da página ─────────────────────────────────────────────────────── */
 export { TabloidHeader } from "./TabloidHeader"
+export { PageBackLink } from "./PageBackLink"
 export { AuthShell, AuthCard } from "./AuthShell"
 export {
   PageShell,

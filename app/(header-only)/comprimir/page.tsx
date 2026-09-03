@@ -8,7 +8,7 @@
 import { useCallback, useRef, useState } from "react"
 import { ArrowDownToLine, ImageIcon, Loader2, LogIn, RotateCcw, UploadCloud, Video, X } from "lucide-react"
 import Link from "next/link"
-import { PageShell, Section } from "@/components/tabloide"
+import { PageBackLink, PageShell, Section } from "@/components/tabloide"
 import { compressImage } from "@/lib/media/compress-image"
 import { compressVideo, isAllowedVideo, MAX_VIDEO_INPUT_BYTES, type CompressResult } from "@/lib/media/compress-video"
 import { formatBytes } from "@/lib/media/media-validation"
@@ -40,6 +40,7 @@ export default function ComprimirPage() {
     <PageShell>
       <Section className="py-10 sm:py-14">
         <div className="mx-auto max-w-2xl">
+          <PageBackLink href="/account" className="mb-5" />
           <p className="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">
             {t("eyebrow", "Ferramenta")}
           </p>

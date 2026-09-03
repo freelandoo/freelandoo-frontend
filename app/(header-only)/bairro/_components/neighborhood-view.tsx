@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { PageBackLink } from "@/components/tabloide"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { getToken } from "@/lib/auth"
 import { toast } from "sonner"
@@ -264,6 +265,7 @@ export function NeighborhoodView() {
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] text-[#F5F1E8]">
       <div className="mx-auto w-full max-w-3xl px-4 py-8 space-y-6">
         <header className="space-y-2">
+          <PageBackLink href="/account" className="mb-3" />
           <h1 className="fl-display text-3xl font-black uppercase tracking-tight">
             {t("title", "Meu bairro")}
           </h1>

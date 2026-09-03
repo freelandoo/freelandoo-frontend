@@ -66,7 +66,8 @@
     "privacy": "Privacy",
     "help": "Help center",
     "logout": "Log out",
-    "reviewTour": "Replay tour"
+    "reviewTour": "Replay tour",
+    "back": "Back"
   },
   "Auth": {
     "login": "Log in",
@@ -1508,7 +1509,17 @@
     "openChamadoLabel": "Open a request",
     "chamadoModeService": "Service",
     "chamadoModeProduct": "Product",
-    "chamadoModeCourse": "Course"
+    "chamadoModeCourse": "Course",
+    "clansVitrineKicker": "Freelandoo teams",
+    "clansVitrineHighlight": "in play",
+    "clansVitrineSubtitle": "Teams of up to 6 profiles working together. The score combines every member's metrics.",
+    "clansSearchPlaceholder": "Search by name or bio...",
+    "allEnxamesOption": "All swarms",
+    "loadingClansVitrine": "Loading clans…",
+    "noClansFoundTitle": "No clans",
+    "noClansFoundDesc": "No clans matched these filters. Try widening your search.",
+    "noEnxameLabel": "No swarm",
+    "pointsSuffix": "pts"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

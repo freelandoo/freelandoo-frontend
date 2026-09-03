@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import { ShareIconButton } from "@/components/share/share-icon-button"
 import {
   PageShell,
+  PageBackLink,
   TabloidPageIntro,
   EmptyState,
   ErrorState,
@@ -375,6 +376,7 @@ export default function ManifestacaoPage() {
       <section className="mx-auto max-w-7xl px-4 pt-10 md:px-8 md:pt-14">
         <TabloidPageIntro
           size="compact"
+          back={<PageBackLink href="/account" />}
           eyebrow={t("eyebrow", "Manifestação")}
           title={t("storeTitle", "Loja de Manifestações")}
           subtitle={t("subtitle", "Desbloqueie banners de manifestação com Poléns ou cartão e aplique um deles no headcard do seu perfil. Depois de desbloqueada, ela fica sua para sempre.")}

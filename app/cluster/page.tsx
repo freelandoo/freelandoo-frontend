@@ -10,6 +10,7 @@ import { ChevronRight, Loader2, Radio, RefreshCw, Users } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { PageBackLink } from "@/components/tabloide"
 
 interface Cluster {
   id_live_cluster: string
@@ -59,6 +60,7 @@ export default function ClusterListPage() {
   return (
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804]">
       <main className="mx-auto max-w-lg px-4 pb-16 pt-[max(1.5rem,env(safe-area-inset-top))]">
+        <PageBackLink href="/account" className="mb-5" />
         <div className="flex items-center gap-2">
           <h1 className="flex items-center gap-2 text-xl font-black uppercase tracking-tight text-white">
             <Radio className="h-5 w-5 text-[#F2B705]" /> {t("title", "Clusters")}

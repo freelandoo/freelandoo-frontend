@@ -86,6 +86,7 @@ export function PageHero({
   highlightAt = "end",
   highlightMark = true,
   subtitle,
+  back,
   actions,
   align = "left",
   doodle = true,
@@ -98,6 +99,12 @@ export function PageHero({
   highlightAt?: "start" | "end"
   highlightMark?: boolean
   subtitle?: ReactNode
+  /**
+   * Saída da página (o "Voltar"). Toda página nasce com uma — ver
+   * `PageBackLink`, que é o que se passa aqui. Fica ACIMA do kicker porque
+   * a saída tem que estar no primeiro olhar, não depois da manchete.
+   */
+  back?: ReactNode
   actions?: ReactNode
   align?: "left" | "center"
   doodle?: boolean
@@ -111,6 +118,7 @@ export function PageHero({
   return (
     <Section className={cn("pb-6 pt-12 sm:pt-16 md:pt-20", className)}>
       <div className={cn("relative max-w-3xl", centered && "mx-auto text-center")}>
+        {back && <div className={cn("mb-5", centered && "flex justify-center")}>{back}</div>}
         {kicker && (
           <div
             className={cn(
