@@ -3420,7 +3420,7 @@
     "heroTitle": "Carteira",
     "period": "Período",
     "allSubprofiles": "Todos os subperfis",
-    "courseAffiliateNote": "Curso e Afiliado são por conta — não filtram por subperfil.",
+    "courseAffiliateNote": "Curso e Afiliado são por conta — não filtram por perfil.",
     "kpiReceived": "Recebido",
     "kpiAvailable": "Disponível",
     "kpiPending": "Aguardando",
@@ -3486,7 +3486,8 @@
     "addIncome": "Incluir ganho",
     "addExpense": "Incluir gasto",
     "fixedIncome": "Ganho fixo",
-    "fixedExpense": "Gasto fixo"
+    "fixedExpense": "Gasto fixo",
+    "allProfiles": "Todos os perfis"
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",

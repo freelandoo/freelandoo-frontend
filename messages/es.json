@@ -3986,7 +3986,7 @@
     "heroTitle": "Cartera",
     "period": "Período",
     "allSubprofiles": "Todos los subperfiles",
-    "courseAffiliateNote": "Curso y Afiliado son por cuenta — no filtran por subperfil.",
+    "courseAffiliateNote": "Curso y Afiliado son por cuenta — no filtran por perfil.",
     "kpiReceived": "Recibido",
     "kpiAvailable": "Disponible",
     "kpiPending": "En espera",
@@ -4052,7 +4052,8 @@
     "addIncome": "Incluir ingreso",
     "addExpense": "Incluir gasto",
     "fixedIncome": "Ingreso fijo",
-    "fixedExpense": "Gasto fijo"
+    "fixedExpense": "Gasto fijo",
+    "allProfiles": "Todos los perfiles"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

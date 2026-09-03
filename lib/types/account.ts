@@ -56,6 +56,10 @@ export interface Profile {
   is_paid?: boolean
   is_published?: boolean
   is_clan?: boolean
+  /** Comunidade (pet/carro/games/bairro/condomínio) mora na MESMA tabela dos
+   *  perfis — sem esta flag, toda lista de perfis oferece "Meu pet" como se
+   *  fosse um perfil. */
+  is_community?: boolean
   is_user_account?: boolean
   xp_total?: number
   xp_level?: number

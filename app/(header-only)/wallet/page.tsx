@@ -1,7 +1,7 @@
 "use client"
 
 // Carteira do user — extrato de ganhos (Loja/Serviço/Curso/Afiliado) escopável
-// por subperfil + gráfico de barras (ganhos × dias) + sidebar de mercado.
+// por perfil + gráfico de barras (ganhos × dias) + sidebar de mercado.
 // IDENTIDADE TABLOIDE (igual ranking/Casa Views/Mensagens): canvas warm escuro
 // + textura, manchete condensada fl-display, eyebrow manuscrito fl-marker,
 // cards de papel com cantos RETOS e sombra dura preta (hover vira sombra verde).
@@ -96,7 +96,14 @@ export default function WalletPage() {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
   const { perfil, isLoading: perfilLoading } = useMeProfile()
-  const subprofiles = useMemo(() => (perfil?.profiles || []).filter((p) => !p.is_clan), [perfil])
+  // Comunidade (pet/carro/games/bairro/condomínio) mora na MESMA tabela dos
+  // perfis, então filtrar só `is_clan` fazia "Meu pet" e "Meu carro" aparecerem
+  // aqui como se fossem perfis. Não existe hierarquia: a lista é a dos perfis
+  // do dono — o primeiro e os abertos depois, todos no mesmo grau.
+  const ownProfiles = useMemo(
+    () => (perfil?.profiles || []).filter((p) => !p.is_clan && !p.is_community),
+    [perfil]
+  )
 
   const [profileId, setProfileId] = useState<string>("")
   const [range, setRange] = useState("30d")
@@ -227,7 +234,7 @@ export default function WalletPage() {
             </div>
           </div>
 
-          {/* Select subperfil */}
+          {/* Select de perfil */}
           <div className="relative">
             <select
               value={profileId}
@@ -235,8 +242,8 @@ export default function WalletPage() {
               disabled={perfilLoading}
               className="h-11 w-full appearance-none border-2 border-[#F1EDE2]/25 bg-transparent px-4 pr-10 text-sm font-bold uppercase tracking-wide text-[#F1EDE2] outline-none transition focus:border-[#16B79A] sm:min-w-[240px]"
             >
-              <option value="" className="bg-[#1D1810]">{tr("allSubprofiles", "Todos os subperfis")}</option>
-              {subprofiles.map((p) => (
+              <option value="" className="bg-[#1D1810]">{tr("allProfiles", "Todos os perfis")}</option>
+              {ownProfiles.map((p) => (
                 <option key={p.id_profile} value={p.id_profile} className="bg-[#1D1810]">
                   {p.display_name}
                 </option>
@@ -247,7 +254,7 @@ export default function WalletPage() {
         </div>
           {profileId && (
             <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
-              {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por subperfil.")}
+              {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por perfil.")}
             </p>
           )}
 

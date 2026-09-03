@@ -4006,7 +4006,7 @@
     "heroTitle": "Wallet",
     "period": "Period",
     "allSubprofiles": "All subprofiles",
-    "courseAffiliateNote": "Course and Affiliate are account-wide — they don't filter by subprofile.",
+    "courseAffiliateNote": "Course and Affiliate are account-wide — they don't filter by profile.",
     "kpiReceived": "Received",
     "kpiAvailable": "Available",
     "kpiPending": "Pending",
@@ -4072,7 +4072,8 @@
     "addIncome": "Add income",
     "addExpense": "Add expense",
     "fixedIncome": "Fixed income",
-    "fixedExpense": "Fixed expense"
+    "fixedExpense": "Fixed expense",
+    "allProfiles": "All profiles"
   },
   "Polens": {
     "eyebrow": "Polen packages",
