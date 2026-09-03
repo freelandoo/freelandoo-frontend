@@ -15,8 +15,9 @@ import { cn } from "@/lib/utils"
  * Os botões RETRÁTEIS do headcard — PEÇA ÚNICA das duas superfícies (o headcard
  * do /account e o `ProfileHeadCard` do perfil).
  *
- * São três, empilhados um em cima do outro atrás da foto: Carteira (verde),
- * Fitness (laranja) e Games (roxo). Fechados, só o ícone escapa pela direita da
+ * São três, empilhados um em cima do outro atrás da foto: Games (roxo, o mais
+ * alto — sobe até por cima do banner da manifestação), Carteira (verde) e
+ * Fitness (laranja). Fechados, só o ícone escapa pela direita da
  * foto; no hover ele espia um pouco mais para fora; no clique abre e mostra o
  * rótulo. O SEGUNDO clique é que navega — abrir e ir embora são gestos
  * diferentes, e o ícone mal aparece de trás da foto: fazê-lo navegar no
@@ -232,6 +233,20 @@ export function HeadcardPills({
 
   const pills: PillSpec[] = []
 
+  // Games é o PRIMEIRO da pilha: fica acima do cifrão e sobe até por cima do
+  // banner da manifestação (decisão do Alex 2026-09-03).
+  if (gamesFlag) {
+    pills.push({
+      key: "games",
+      icon: Gamepad2,
+      label: t("gamesPill", "Games"),
+      ariaLabel: t("openGamesAria", "Abrir a comunidade dos meus games"),
+      bg: "#6D28D9",
+      bgHover: "#5B21B6",
+      onOpen: openGames,
+    })
+  }
+
   if (walletOn) {
     pills.push({
       key: "wallet",
@@ -256,28 +271,27 @@ export function HeadcardPills({
     })
   }
 
-  if (gamesFlag) {
-    pills.push({
-      key: "games",
-      icon: Gamepad2,
-      label: t("gamesPill", "Games"),
-      ariaLabel: t("openGamesAria", "Abrir a comunidade dos meus games"),
-      bg: "#6D28D9",
-      bgHover: "#5B21B6",
-      onOpen: openGames,
-    })
-  }
-
   if (pills.length === 0) return null
 
   return (
     <div
       ref={rootRef}
-      // `top-[48%]` é da COLUNA (que inclui as estrelas), o que cai em ~57% da
-      // altura da FOTO. A pilha é centrada nessa linha, então cresce para os
-      // dois lados e continua deixando folga acima da fila "POSTS | ACOMP.",
-      // que é bottom-aligned com a base da coluna.
-      className={cn("absolute left-0 top-[48%] flex -translate-y-1/2 flex-col gap-1.5", className)}
+      // `48%` é da COLUNA (que inclui as estrelas), o que cai em ~57% da altura
+      // da FOTO. A pilha é centrada nessa linha, então cresce para os dois lados
+      // e continua deixando folga acima da fila "POSTS | ACOMP.", que é
+      // bottom-aligned com a base da coluna.
+      //
+      // O `-2.5rem` sobe a pilha UMA LINHA inteira (pill ~33px + gap 6px): é o
+      // que abre o slot novo do Games no topo mantendo Carteira e Fitness onde
+      // já estavam. Como a foto começa dentro do banner (a linha do avatar é
+      // puxada com -mt-12/-mt-14), essa linha extra cai em cima do BANNER da
+      // manifestação — de propósito. A pilha não é recortada ali porque vive na
+      // coluna do avatar, irmã do banner (que tem `overflow-hidden` próprio), e
+      // vem depois dele no DOM.
+      className={cn(
+        "absolute left-0 top-[calc(48%-2.5rem)] flex -translate-y-1/2 flex-col gap-1.5",
+        className
+      )}
     >
       {pills.map((spec) => (
         <Pill
