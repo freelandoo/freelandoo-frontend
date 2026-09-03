@@ -246,7 +246,7 @@ export function SocialFinalCTASection() {
             Explorar feed de portfólios
           </Link>
           <Link
-            href="/account/afiliado"
+            href="/wallet"
             className="inline-flex items-center gap-2 self-center text-sm font-medium text-white/55 underline-offset-4 transition hover:text-primary hover:underline"
           >
             <Receipt className="h-3.5 w-3.5" />

@@ -131,6 +131,9 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
 
   if (!mounted) return null
 
+  const isAdmin =
+    user?.is_admin || user?.roles?.some((r) => r.desc_role === "Administrator")
+
   // Itens acima do "Abrir chamado". ("Editar" é um botão dedicado — abre o modal
   // de edição da conta via openAccountEdit, não um link.)
   const actionsTop: Action[] = [
@@ -139,11 +142,10 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       label: tAcc("manifestationLabel", "Manifestação"),
       icon: Sparkles,
     },
-    {
-      href: "/account/afiliado",
-      label: tAcc("earningsLabel", "Meus Faturamentos"),
-      icon: Briefcase,
-    },
+    // "Meus Faturamentos" (/account/afiliado) FOI APAGADO: extrato, KPIs,
+    // vendas por cupom, indicados, regra e dados de PIX vivem todos na
+    // Carteira agora. Não recriar a entrada — seriam duas portas para a mesma
+    // tela, que foi como as duas divergiram.
     ...(featOn("wallet")
       ? [{ href: "/wallet", label: tAcc("wallet", "Carteira"), icon: Wallet }]
       : []),
@@ -163,11 +165,12 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
       label: tAcc("xpLabel", "Métricas"),
       icon: BarChart3,
     },
-    {
-      href: "/acasaviews",
-      label: tAcc("casaViewsLabel", "Casa Views"),
-      icon: Home,
-    },
+    // Casa Views é operação da plataforma, não função da conta: some do menu
+    // de quem não é administrador (decisão do Alex, 2026-09-03). A rota
+    // continua pública para quem tiver o link — o que sai daqui é a PORTA.
+    ...(isAdmin
+      ? [{ href: "/acasaviews", label: tAcc("casaViewsLabel", "Casa Views"), icon: Home }]
+      : []),
   ]
 
   // Loja/Produtos desligada no Painel de Controle → sem "Pedir Produto".
@@ -197,15 +200,14 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     },
   ]
 
-  const isAdmin =
-    user?.is_admin || user?.roles?.some((r) => r.desc_role === "Administrator")
-
   const renderActionLink = (a: Action) => {
     const Icon = a.icon
     const hintId: HintId | undefined =
       a.href === "/manifestacao"
         ? "dropside-manifestation"
-        : a.href === "/account/afiliado"
+        : // A âncora do faturamento seguiu o conteúdo: é a Carteira que hoje
+          // guarda extrato, comissões e cupons.
+          a.href === "/wallet"
           ? "dropside-earnings"
           : a.href === "/loja-polens"
             ? "dropside-pollens"

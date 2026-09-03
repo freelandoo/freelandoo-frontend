@@ -88,7 +88,7 @@ export const TOUR_CONFIGS: TourConfig[] = [
       { id: "welcome-sidebar-ranking", target: "[data-tour='sidebar-ranking']", title: "Ranking", content: "Posições dos perfis por atividade e XP — recalculado a cada 2 horas.", placement: "right" },
       { id: "welcome-dropside-open", target: "[data-tour='dropside-edit']", title: "Menu da conta", content: "Esse é o menu da sua conta. Vamos passar por cada botão.", placement: "right", onEnter: "openDropside" },
       { id: "welcome-dropside-manifestation", target: "[data-tour='dropside-manifestation']", title: "Manifestação", content: "Loja de banners — desbloqueia com pólens ou cartão e aplica no headcard do seu perfil.", placement: "right" },
-      { id: "welcome-dropside-earnings", target: "[data-tour='dropside-earnings']", title: "Faturamentos", content: "Saldo, comissões de afiliado, cupons compartilhados e histórico financeiro.", placement: "right" },
+      { id: "welcome-dropside-earnings", target: "[data-tour='dropside-earnings']", title: "Carteira", content: "Saldo, comissões de afiliado, cupons compartilhados e histórico financeiro.", placement: "right" },
       { id: "welcome-dropside-open-chamado", target: "[data-tour='dropside-open-chamado']", title: "Abrir chamado", content: "Peça serviço, produto ou curso (O.S.) — profissionais, vendedores e instrutores respondem na aba O.S. das mensagens.", placement: "right" },
       { id: "welcome-dropside-pollens", target: "[data-tour='dropside-pollens']", title: "Pólens", content: "Loja de pólens — compre pacotes ou veja seu saldo e como gastar.", placement: "right" },
       { id: "welcome-dropside-payments", target: "[data-tour='dropside-payments']", title: "Pagamentos & Ativações", content: "Histórico de cobranças, assinaturas dos subperfis e reembolsos.", placement: "right" },
@@ -177,8 +177,8 @@ export const TOUR_CONFIGS: TourConfig[] = [
   { tourKey: "subprofile_store", title: "Loja em subperfil", description: "Vendas no perfil", version: 1, pagePath: ["/account/profile"], steps: [{ id: "store-1", title: "Sua loja dentro do subperfil", content: "Subperfis pagos podem vender produtos no próprio perfil.", placement: "center" }] },
   { tourKey: "pollens", title: "Pólens", description: "Energia da plataforma", version: 1, pagePath: ["/loja-polens", "/account"], steps: [{ id: "pollens-1", title: "Pólens são sua energia", content: "Ganhe e use com estratégia para desbloquear vantagens.", placement: "center" }] },
   { tourKey: "manifestations", title: "Manifestações", description: "Banners do perfil", version: 1, pagePath: ["/manifestacao"], steps: [{ id: "manifestations-1", title: "Escolha seu banner", content: "Compre com pólens e personalize seu headcard.", placement: "center" }] },
-  { tourKey: "coupons", title: "Cupons", description: "Compartilhamento", version: 1, pagePath: ["/account/afiliado", "/oferta"], steps: [{ id: "coupons-1", title: "Seu cupom acompanha você", content: "Links com cupom podem aplicar vantagens automaticamente.", placement: "center" }] },
-  { tourKey: "affiliates", title: "Afiliados", description: "Ganhos por indicação", version: 1, pagePath: ["/account/afiliado"], steps: [{ id: "affiliates-1", title: "Ganhe indicando", content: "Acompanhe cliques, conversões e comissões.", placement: "center" }] },
+  { tourKey: "coupons", title: "Cupons", description: "Compartilhamento", version: 1, pagePath: ["/wallet", "/oferta"], steps: [{ id: "coupons-1", title: "Seu cupom acompanha você", content: "Links com cupom podem aplicar vantagens automaticamente.", placement: "center" }] },
+  { tourKey: "affiliates", title: "Afiliados", description: "Ganhos por indicação", version: 1, pagePath: ["/wallet"], steps: [{ id: "affiliates-1", title: "Ganhe indicando", content: "Acompanhe cliques, conversões e comissões.", placement: "center" }] },
   {
     tourKey: "ranking",
     title: "Ranking",
@@ -219,7 +219,9 @@ export const TOUR_CONFIGS: TourConfig[] = [
     description: "Como começar a ganhar indicando pessoas",
     version: 1,
     autoStart: false,
-    pagePath: ["/account"],
+    // Cupom e painel do afiliado moram na Carteira desde que "Meus
+    // Faturamentos" foi absorvido por ela.
+    pagePath: ["/wallet"],
     steps: [
       {
         id: "affiliate-path-coupon",
@@ -230,12 +232,10 @@ export const TOUR_CONFIGS: TourConfig[] = [
       },
       {
         id: "affiliate-path-panel",
-        target: "[data-tour='dropside-earnings']",
+        target: "[data-tour='wallet-affiliate']",
         title: "Painel do Afiliado",
-        content: "Aqui no menu da conta você acompanha indicações, comissões pendentes e liberadas, e as regras de saque.",
-        placement: "right",
-        onEnter: "openDropside",
-        onLeave: "closeDropside",
+        content: "Logo abaixo do extrato você acompanha indicações, comissões pendentes e liberadas, e as regras de saque.",
+        placement: "top",
       },
     ],
   },

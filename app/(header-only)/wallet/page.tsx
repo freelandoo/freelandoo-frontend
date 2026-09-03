@@ -17,14 +17,18 @@ import {
   Wallet, ArrowLeft, ShoppingBag, Briefcase, GraduationCap, Percent,
   TrendingUp, TrendingDown, Newspaper, ChevronDown, X,
   Loader2, AlertCircle, Inbox, BarChart3, LineChart,
+  Ticket, Copy, Check, PiggyBank,
 } from "lucide-react"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { VidaFinanceira } from "./_components/vida-financeira"
 import { MeiCard } from "./_components/mei-card"
+import { AfiliadoPanel } from "./_components/afiliado-panel"
 
 /* ── paleta (verde teal no lugar do dourado) ──────────────────────────────── */
 const GREEN = "#16B79A"
@@ -72,6 +76,16 @@ type Earning = {
   available_at: string | null; paid_at: string | null
 }
 type SeriesPoint = { day: string; net_cents: number; count: number }
+/** Venda feita com o cupom do usuário — aba "Cupom" do extinto /account/afiliado. */
+type CouponSale = {
+  id: string
+  created_at: string
+  status: string
+  coupon_code: string | null
+  buyer: { id: string; name: string | null; email: string | null }
+  item: { name: string | null; count: number }
+  amounts: { discount_cents: number; final_cents: number; commission_cents: number }
+}
 type MarketItem = {
   symbol: string; kind: string; label: string; price: number | null
   change_pct: number | null; currency: string; logo_url: string | null
@@ -89,13 +103,19 @@ const KIND_FILTERS = [
   { key: "service", label: "Serviço", labelKey: "kindService" },
   { key: "course", label: "Curso", labelKey: "kindCourse" },
   { key: "affiliate", label: "Afiliado", labelKey: "kindAffiliate" },
+  // "Cupom" não é um `kind` de ganho: é a lista de VENDAS feitas com o cupom do
+  // usuário, que vive noutro endpoint. Fica no mesmo trilho de filtros porque,
+  // para quem olha, é mais um recorte do mesmo extrato.
+  { key: "coupon", label: "Cupom", labelKey: "filterCoupon" },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export default function WalletPage() {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
-  const { perfil, isLoading: perfilLoading } = useMeProfile()
+  const { perfil, setPerfil, isLoading: perfilLoading } = useMeProfile()
+  const vaquinhaFlag = useFeature("vaquinha")
+  const vaquinhaPref = useUserFeature("vaquinha")
   // Comunidade (pet/carro/games/bairro/condomínio) mora na MESMA tabela dos
   // perfis, então filtrar só `is_clan` fazia "Meu pet" e "Meu carro" aparecerem
   // aqui como se fossem perfis. Não existe hierarquia: a lista é a dos perfis
@@ -115,8 +135,11 @@ export default function WalletPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [series, setSeries] = useState<SeriesPoint[]>([])
+  const [couponSales, setCouponSales] = useState<CouponSale[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [couponCopied, setCouponCopied] = useState(false)
+  const [generatingCoupon, setGeneratingCoupon] = useState(false)
 
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null)
 
@@ -127,19 +150,33 @@ export default function WalletPage() {
       if (replace) setLoading(true)
       setError("")
       const pq = profileId ? `&profile=${encodeURIComponent(profileId)}` : ""
-      const kq = kind && kind !== "all" ? `&kind=${kind}` : ""
+      const isCoupon = kind === "coupon"
+      // No recorte "Cupom" os KPIs seguem sendo os da conta inteira: eles somam
+      // GANHOS, e venda com cupom é outra coisa (o que entra dela já aparece
+      // como comissão em "Afiliado"). Filtrar os dois juntos zeraria a tela.
+      const kq = kind && kind !== "all" && !isCoupon ? `&kind=${kind}` : ""
       try {
-        const [eRes, sRes] = await Promise.all([
-          clientFetchWithTimeout(`/api/me/earnings?page=${pg}&per_page=24${pq}${kq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000),
+        const [eRes, sRes, cRes] = await Promise.all([
+          clientFetchWithTimeout(`/api/me/earnings?page=${isCoupon ? 1 : pg}&per_page=24${pq}${kq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000),
           replace
             ? clientFetchWithTimeout(`/api/me/earnings/series?range=${range}${pq}`, { headers: { Authorization: `Bearer ${t}` } }, 9000)
+            : Promise.resolve(null),
+          isCoupon
+            ? clientFetchWithTimeout(`/api/me/earnings/coupon-sales?page=${pg}&per_page=24`, { headers: { Authorization: `Bearer ${t}` } }, 9000)
             : Promise.resolve(null),
         ])
         if (!eRes.ok) throw new Error(tr("loadStatementError", "Falha ao carregar extrato"))
         const eData = await eRes.json()
         setAgg(eData.aggregates || null)
-        setTotalPages(eData.pagination?.total_pages || 1)
-        setItems((prev) => (replace ? eData.items || [] : [...prev, ...(eData.items || [])]))
+        if (isCoupon) {
+          if (!cRes || !cRes.ok) throw new Error(tr("loadStatementError", "Falha ao carregar extrato"))
+          const cData = await cRes.json()
+          setTotalPages(cData.pagination?.total_pages || 1)
+          setCouponSales((prev) => (replace ? cData.items || [] : [...prev, ...(cData.items || [])]))
+        } else {
+          setTotalPages(eData.pagination?.total_pages || 1)
+          setItems((prev) => (replace ? eData.items || [] : [...prev, ...(eData.items || [])]))
+        }
         if (sRes && sRes.ok) setSeries((await sRes.json()).series || [])
       } catch (e) {
         setError(e instanceof Error ? e.message : tr("loadError", "Erro ao carregar"))
@@ -156,6 +193,35 @@ export default function WalletPage() {
   }, [load])
 
   const totals = agg?.totals || {}
+  const showingCoupon = kind === "coupon"
+  const rowCount = showingCoupon ? couponSales.length : items.length
+
+  const handleCopyCoupon = (code: string) => {
+    void navigator.clipboard.writeText(code)
+    setCouponCopied(true)
+    setTimeout(() => setCouponCopied(false), 2000)
+  }
+
+  const handleGenerateCoupon = async () => {
+    const t = token()
+    if (!t || generatingCoupon) return
+    setGeneratingCoupon(true)
+    try {
+      const res = await fetch("/api/users/me/coupon", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const code = data.coupon_code ?? data.code ?? data.coupon
+        if (code) setPerfil((prev) => (prev ? { ...prev, coupon_code: code } : prev))
+      }
+    } catch {
+      /* silencioso: o botão volta ao normal e a pessoa tenta de novo */
+    } finally {
+      setGeneratingCoupon(false)
+    }
+  }
 
   return (
     <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
@@ -203,8 +269,77 @@ export default function WalletPage() {
       {/* CORPO — coluna única (Vida Financeira em cima + Ganhos embaixo) + Mercado à direita */}
       <section className="mx-auto mt-8 flex w-full max-w-6xl flex-col gap-6 px-3 md:px-8 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
-          {/* Vida Financeira — orçamento manual mensal (em cima) */}
-          <VidaFinanceira />
+          {/* MEU CUPOM + MINHA VAQUINHA — as duas portas de dinheiro que a
+              pessoa ABRE (em vez de só acompanhar). O cupom veio do headcard do
+              /account, onde era um chip perdido entre badges; a vaquinha veio do
+              menu lateral. Os dois pertencem ao mesmo lugar: aqui. */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+              <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                <Ticket className="h-3.5 w-3.5" /> {tr("myCouponTitle", "Meu cupom")}
+              </p>
+              {perfil?.coupon_code ? (
+                <>
+                  <button
+                    type="button"
+                    data-tour="account-coupon"
+                    onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                    className="mt-2 inline-flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/45 px-3 py-2 font-mono text-sm font-black tracking-[0.18em] text-[#0B0B0D] transition hover:border-solid"
+                    style={{ background: couponCopied ? GREEN : "transparent" }}
+                  >
+                    {couponCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {perfil.coupon_code}
+                  </button>
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                    {tr("myCouponHint", "Compartilhe: quem comprar na plataforma com ele fica vinculado a você e gera comissão.")}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    data-tour="account-coupon"
+                    onClick={handleGenerateCoupon}
+                    disabled={generatingCoupon}
+                    className="mt-2 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-50"
+                    style={{ background: GREEN }}
+                  >
+                    {generatingCoupon && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {generatingCoupon ? tr("generating", "Gerando...") : tr("generateCoupon", "Gerar cupom")}
+                  </button>
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                    {tr("myCouponEmptyHint", "Você ainda não tem cupom. Gere o seu e comece a indicar.")}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* O cofrinho. Só aparece com a função ligada (flag do admin E
+                preferência da pessoa) — mesma regra do menu lateral. */}
+            {vaquinhaFlag && vaquinhaPref && (
+              <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+                <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                  <PiggyBank className="h-3.5 w-3.5" /> {tr("myVaquinhaTitle", "Minha vaquinha")}
+                </p>
+                <Link
+                  href="/vaquinha/nova"
+                  className="mt-2 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                  style={{ background: GREEN }}
+                >
+                  <PiggyBank className="h-4 w-4" />
+                  {tr("myVaquinhaCta", "Abrir minha vaquinha")}
+                </Link>
+                <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                  {tr("myVaquinhaHint", "Arrecade para um objetivo seu. Se você já tem uma, o botão abre a que existe.")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Vida Financeira — orçamento manual mensal */}
+          <div className="mt-6">
+            <VidaFinanceira />
+          </div>
 
           {/* GANHOS NA PLATAFORMA — controles + extrato (embaixo) */}
           {/* CONTROLES */}
@@ -259,10 +394,13 @@ export default function WalletPage() {
           )}
 
           {/* KPIs */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* "Revertido" veio do Meus Faturamentos: sem ele, reembolso e
+              cancelamento sumiam da conta e o extrato não fechava. */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Kpi label={tr("kpiReceived", "Recebido")} value={brl(totals.received, locale)} accent />
             <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
             <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
+            <Kpi label={tr("kpiReversed", "Revertido")} value={brl(totals.reversed, locale)} />
             <Kpi label={tr("kpiEntries", "Lançamentos")} value={String(totals.count || 0)} />
           </div>
 
@@ -309,7 +447,7 @@ export default function WalletPage() {
               </div>
             </div>
 
-            {loading && items.length === 0 ? (
+            {loading && rowCount === 0 ? (
               <ExtratoSkeleton />
             ) : error ? (
               <StateBox
@@ -327,18 +465,26 @@ export default function WalletPage() {
                   </button>
                 }
               />
-            ) : items.length === 0 ? (
+            ) : rowCount === 0 ? (
               <StateBox
-                icon={<Inbox className="h-6 w-6" />}
-                title={tr("emptyTitle", "Nenhum ganho ainda.")}
-                desc={tr("emptyDesc", "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.")}
+                icon={showingCoupon ? <Ticket className="h-6 w-6" /> : <Inbox className="h-6 w-6" />}
+                title={
+                  showingCoupon
+                    ? tr("couponSalesEmptyTitle", "Nenhuma venda com seu cupom ainda")
+                    : tr("emptyTitle", "Nenhum ganho ainda.")
+                }
+                desc={
+                  showingCoupon
+                    ? tr("couponSalesEmptyHint", "Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.")
+                    : tr("emptyDesc", "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.")
+                }
               />
             ) : (
               <>
                 <div className="flex flex-col gap-3">
-                  {items.map((it) => (
-                    <ExtratoRow key={`${it.kind}-${it.id}`} it={it} />
-                  ))}
+                  {showingCoupon
+                    ? couponSales.map((sale) => <CouponSaleRow key={sale.id} sale={sale} />)
+                    : items.map((it) => <ExtratoRow key={`${it.kind}-${it.id}`} it={it} />)}
                 </div>
                 {page < totalPages && (
                   <div className="mt-6 flex justify-center">
@@ -358,6 +504,17 @@ export default function WalletPage() {
                 )}
               </>
             )}
+          </div>
+
+          {/* AFILIADO — herdado do extinto /account/afiliado. */}
+          <div className="mt-12">
+            <div className="mb-6 relative">
+              <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">
+                {tr("affiliateSection", "Afiliado")}
+              </h2>
+              <Underline className="absolute -bottom-2 left-0 h-3.5 w-28" style={{ color: GREEN }} />
+            </div>
+            <AfiliadoPanel />
           </div>
         </div>
 
@@ -462,6 +619,58 @@ function ExtratoRow({ it }: { it: Earning }) {
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className="fl-display text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>{brl(it.net_cents, locale)}</span>
         <span className={cn("px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em]", sm.cls)}>{sm.labelKey ? tr(sm.labelKey, sm.label) : sm.label}</span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Linha do recorte "Cupom": uma VENDA feita com o cupom do usuário (quem
+ * comprou, o que levou, quanto pagou e quanto virou comissão). É a única lista
+ * do extinto /account/afiliado que não sai de `/me/earnings`.
+ */
+function CouponSaleRow({ sale }: { sale: CouponSale }) {
+  const tr = useTranslations("Wallet")
+  const locale = useLocale()
+  const sm = STATUS_META[sale.status] || { label: sale.status, labelKey: "", cls: "bg-[#0B0B0D] text-[#F1EDE2]" }
+  const buyerLabel = sale.buyer?.name || sale.buyer?.email || tr("buyer", "Comprador")
+  const itemLabel = sale.item?.name
+    ? sale.item.count > 1
+      ? `${sale.item.name} +${sale.item.count - 1}`
+      : sale.item.name
+    : `${sale.item?.count || 0} ${tr("itemsCount", "item(s)")}`
+  return (
+    <div className="group flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-3 shadow-[5px_5px_0_0_#0B0B0D] transition-transform duration-200 hover:-translate-y-1 hover:-rotate-[0.4deg] hover:shadow-[8px_8px_0_0_#16B79A] md:px-4">
+      <span className="inline-flex h-11 w-11 shrink-0 -rotate-2 items-center justify-center border-2 border-[#0B0B0D]" style={{ background: GREEN, outline: "2px solid #0B0B0D", outlineOffset: "1px" }}>
+        <Ticket className="h-5 w-5 text-[#06251F]" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="fl-display truncate text-lg leading-none text-[#0B0B0D] md:text-xl">{buyerLabel}</h4>
+          {sale.coupon_code && (
+            <span className="-rotate-1 bg-[#0B0B0D] px-1.5 py-0.5 font-mono text-[8px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2]">
+              {sale.coupon_code}
+            </span>
+          )}
+        </div>
+        <p className="mt-1 truncate text-[12px] font-semibold text-[#6B6457]">{itemLabel}</p>
+        <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6457]">
+          {fmtDate(sale.created_at, locale)}
+          {sale.amounts?.discount_cents > 0 && (
+            <> · {tr("discount", "desconto")} {brl(sale.amounts.discount_cents, locale)}</>
+          )}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <span className="fl-display text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>
+          +{brl(sale.amounts?.commission_cents, locale)}
+        </span>
+        <span className="text-[11px] font-bold tabular-nums text-[#6B6457]">
+          {tr("saleOf", "venda de")} {brl(sale.amounts?.final_cents, locale)}
+        </span>
+        <span className={cn("px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-[0.12em]", sm.cls)}>
+          {sm.labelKey ? tr(sm.labelKey, sm.label) : sm.label}
+        </span>
       </div>
     </div>
   )

@@ -242,7 +242,7 @@ export const HINTS: Record<HintId, Hint> = {
     text: "Loja de banners. Desbloqueia com pólens ou cartão e aplica no headcard do perfil.",
   },
   "dropside-earnings": {
-    title: "Meus faturamentos",
+    title: "Carteira",
     text: "Saldo, comissões de afiliado, cupons compartilhados e histórico financeiro.",
   },
   "dropside-open-chamado": {

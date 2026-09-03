@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, Copy, Check, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -34,9 +34,8 @@ const AgendaBookingsExperience = dynamic(
   () => import("@/components/agenda/AgendaBookingsExperience").then((m) => m.AgendaBookingsExperience),
   { ssr: false },
 )
-import { ManifestationBadge } from "@/components/manifestation/ManifestationBadge"
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
-import { WalletPill } from "@/components/profile/wallet-pill"
+import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { MuralPill } from "@/components/profile/profile-head-card"
 import { CommunityTile } from "@/components/community/community-tile"
 import { SpacesMenu } from "@/components/account/spaces-menu"
@@ -231,8 +230,10 @@ export default function PerfilPage() {
   const [loadingNewProfileMunicipios, setLoadingNewProfileMunicipios] = useState(false)
   const [isCreatingProfile, setIsCreatingProfile] = useState(false)
   const [newProfileError, setNewProfileError] = useState<string | null>(null)
-  const [isGeneratingCoupon, setIsGeneratingCoupon] = useState(false)
-  const [couponCopied, setCouponCopied] = useState(false)
+  // O primeiro toque no banner revela "Alterar"; ele se desarma sozinho porque
+  // um banner que fica escurecido para sempre depois de um clique parece
+  // quebrado (no desktop quem manda é o hover, e este estado nem entra).
+  const [bannerArmed, setBannerArmed] = useState(false)
   const [portfolioForm, setPortfolioForm] = useState({
     title: "",
     description: "",
@@ -280,6 +281,12 @@ export default function PerfilPage() {
       .then((data) => { if (data) setManifestation(data) })
       .catch(() => {})
   }, [])
+
+  React.useEffect(() => {
+    if (!bannerArmed) return
+    const id = window.setTimeout(() => setBannerArmed(false), 3500)
+    return () => window.clearTimeout(id)
+  }, [bannerArmed])
 
   // Bees vivos do usuário: acende o anel neon no avatar e o clique vai pro /bees
   // (deep-link no bee mais recente). Sem bees, o clique segue trocando a foto.
@@ -447,36 +454,10 @@ export default function PerfilPage() {
     return <AccountError message={error || t("loadProfileError", "Erro ao carregar perfil")} />
   }
 
-  const handleGenerateCoupon = async () => {
-    const token = localStorage.getItem("token")
-    if (!token) return
-    setIsGeneratingCoupon(true)
-    try {
-      const res = await fetch("/api/users/me/coupon", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setPerfil((prev) => prev ? { ...prev, coupon_code: data.coupon_code ?? data.code ?? data.coupon } : prev)
-      }
-    } catch {
-      // silencioso
-    } finally {
-      setIsGeneratingCoupon(false)
-    }
-  }
-
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     router.push("/login")
-  }
-
-  const handleCopyCoupon = (code: string) => {
-    navigator.clipboard.writeText(code)
-    setCouponCopied(true)
-    setTimeout(() => setCouponCopied(false), 2000)
   }
 
   const fetchMachines = async () => {
@@ -1684,7 +1665,10 @@ export default function PerfilPage() {
             // "+" do mural da academia pagou). O banner tem recorte próprio.
             className="min-w-0 rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
           >
-            <div className="relative h-40 overflow-hidden bg-[#1d1810] md:h-52">
+            <div
+              className="group/banner relative h-40 overflow-hidden bg-[#1d1810] md:h-52"
+              onClick={() => setBannerArmed(true)}
+            >
               {manifestation?.active?.banner_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -1695,6 +1679,28 @@ export default function PerfilPage() {
               ) : (
                 <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
               )}
+
+              {/* O banner é a manifestação: tocar nele oferece TROCAR, e o
+                  destino é a loja. Dois gestos de propósito (mesma regra do
+                  pill da Carteira): o primeiro clique só revela o "Alterar",
+                  o segundo navega — banner ocupa meia tela e vira armadilha
+                  de navegação se levar embora no primeiro toque. No desktop o
+                  hover já revela, então o gesto extra só existe no toque.
+                  z-10: fica ABAIXO do sino e da engrenagem (z-20). */}
+              <div
+                className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[#0B0B0D]/45 transition-opacity duration-200 group-hover/banner:opacity-100 ${
+                  bannerArmed ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <Link
+                  href="/manifestacao"
+                  aria-label={t("changeManifestationAria", "Trocar sua manifestação na loja")}
+                  className="pointer-events-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#1A1505] shadow-[3px_3px_0_0_#0B0B0D] transition hover:bg-[#F1EDE2]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t("changeManifestation", "Alterar")}
+                </Link>
+              </div>
 
               {/* sininho de notificações (só na /account) + configurações */}
               <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
@@ -1718,11 +1724,11 @@ export default function PerfilPage() {
               <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
                 <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
                   <div className="relative flex shrink-0 flex-col items-center">
-                  {/* Carteira: PRIMEIRO filho de propósito — o card da foto vem
-                      depois no DOM e por isso cobre o pill, que só escapa pela
-                      direita. Mesma peça e mesma posição do outro headcard:
-                      todo perfil do dono tem a dela, nativa. */}
-                  <WalletPill avatarPadClass="pl-24 md:pl-28" />
+                  {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito —
+                      o card da foto vem depois no DOM e por isso cobre a pilha,
+                      que só escapa pela direita. Mesma peça e mesma posição do
+                      outro headcard. */}
+                  <HeadcardPills avatarPadClass="pl-24 md:pl-28" />
                   <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
                     {/* Anel neon rosa quando há bees vivos: conic-gradient com um
                         facho quase branco que gira (framer-motion) + camada
@@ -1865,22 +1871,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* Casa Views (ticket) — lado direito */}
-                <div className="flex shrink-0 flex-col items-center pb-1">
-                  <Link
-                    href="/acasaviews/rankings"
-                    aria-label={t("casaViewsRankingsAria", "Ver os rankings da Casa Views")}
-                    title={t("casaViewsRankings", "Rankings da Casa Views")}
-                    className="group -rotate-2 transition-transform duration-200 hover:rotate-0"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/casaviews/profile/casa-views-ticket.webp"
-                      alt="Casa Views"
-                      className="w-[112px] select-none drop-shadow-[3px_4px_6px_rgba(0,0,0,0.35)] transition-[filter] group-hover:drop-shadow-[4px_6px_10px_rgba(216,169,40,0.45)] md:w-[128px]"
-                    />
-                  </Link>
-                </div>
               </div>
 
               {perfil.bio && (
@@ -1890,24 +1880,9 @@ export default function PerfilPage() {
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {/* Nível do perfil-conta (paridade user≡subperfil) */}
-                {perfil.account_profile && (
-                  <span
-                    title={t("accountLevelHint", "Nível da sua conta — sobe com curtidas, seguidores e compartilhamentos")}
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D]"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    {t("accountLevel", "Nível {level}").replace(
-                      "{level}",
-                      String(perfil.account_profile.xp_level ?? 0)
-                    )}
-                  </span>
-                )}
-                {manifestation?.active && (
-                  <HoverHint id="account-manifestation-tag" side="bottom">
-                    <ManifestationBadge label={manifestation.active.tag_label} size="lg" />
-                  </HoverHint>
-                )}
+                {/* Nível e tag da manifestação SAÍRAM daqui (decisão do Alex,
+                    2026-09-03): o nível continua no header retrátil e a
+                    manifestação é o próprio banner, que agora abre a loja. */}
                 {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
                   <span
                     key={status.id_status}
@@ -1936,30 +1911,8 @@ export default function PerfilPage() {
                     {perfil.is_minor === true ? t("supervised", "Supervisionada") : t("parental", "Parental")}
                   </button>
                 </HoverHint>
-                {perfil.coupon_code ? (
-                  <HoverHint id="account-coupon" side="bottom">
-                    <button
-                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                      data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-[#E0A500]/60 bg-[#F2B705]/12 px-2.5 py-1 font-mono text-[11px] font-bold tracking-widest text-[#8a6d00] transition hover:bg-[#F2B705]/25"
-                    >
-                      {couponCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                      {perfil.coupon_code}
-                    </button>
-                  </HoverHint>
-                ) : (
-                  <HoverHint id="account-coupon-generate" side="bottom">
-                    <button
-                      type="button"
-                      onClick={handleGenerateCoupon}
-                      disabled={isGeneratingCoupon}
-                      data-tour="account-coupon"
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e] transition hover:bg-[#F2B705]/20 disabled:opacity-50"
-                    >
-                      {isGeneratingCoupon ? t("generating", "Gerando...") : t("generateCoupon", "Gerar cupom")}
-                    </button>
-                  </HoverHint>
-                )}
+                {/* O cupom mudou de casa: agora mora na Carteira (/wallet),
+                    junto do resto do dinheiro. Não recolocar aqui. */}
                 {/* Mural do perfil-conta — mesmo pill do subperfil. */}
                 {accountProfileId && (
                   <MuralPill

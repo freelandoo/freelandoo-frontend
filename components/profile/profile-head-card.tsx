@@ -33,7 +33,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
-import { WalletPill } from "@/components/profile/wallet-pill"
+import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { useAccountTools } from "@/components/profile/account-tools"
 
 const DataConnectionsModal = dynamic(
@@ -119,8 +119,6 @@ interface ProfileHeadCardProps {
   }
   /** Rótulo do botão principal para visitantes (ex.: rolar à secção de serviços). */
   visitorScheduleButtonLabel?: string
-  /** Nível de XP do perfil — chip dourado na fila de badges (paridade com /account). */
-  xpLevel?: number | null
   className?: string
 }
 
@@ -218,7 +216,6 @@ export function ProfileHeadCard({
   ownerActions,
   visitorActions,
   visitorScheduleButtonLabel = "Agendar",
-  xpLevel = null,
   className,
 }: ProfileHeadCardProps) {
   const t = useTranslations("Profile")
@@ -230,6 +227,10 @@ export function ProfileHeadCard({
   const router = useRouter()
   const [avatarOverride, setAvatarOverride] = useState<string | null>(null)
   const [bannerFailed, setBannerFailed] = useState(false)
+  // Primeiro toque no banner revela "Alterar"; desarma sozinho (banner escuro
+  // para sempre depois de um clique parece quebrado). No desktop quem revela é
+  // o hover e este estado nem entra em jogo.
+  const [bannerArmed, setBannerArmed] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   // Paridade user≡subperfil: a engrenagem do subperfil carrega as mesmas
@@ -243,6 +244,13 @@ export function ProfileHeadCard({
     is_admin?: boolean
     roles?: { desc_role?: string }[]
   } | null>(null)
+
+  useEffect(() => {
+    if (!bannerArmed) return
+    const id = window.setTimeout(() => setBannerArmed(false), 3500)
+    return () => window.clearTimeout(id)
+  }, [bannerArmed])
+
   useEffect(() => {
     if (!isOwnProfile) return
     try {
@@ -360,7 +368,10 @@ export function ProfileHeadCard({
       >
         {/* BANNER — imagem da manifestação ou gradiente warm.
             Borda inferior rasgada (papel) revelando o card creme por baixo. */}
-        <div className="fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52">
+        <div
+          className="group/banner fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52"
+          onClick={isOwnProfile ? () => setBannerArmed(true) : undefined}
+        >
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
             // next/image (política F3.S6): banner é o LCP do perfil público e
             // sempre vem do R2. Avatar segue <img> (pode ser blob: de preview).
@@ -375,7 +386,28 @@ export function ProfileHeadCard({
           ) : (
             <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.30),transparent_38%),linear-gradient(135deg,#2a2212,#141009)]" />
           )}
-          <div className="absolute left-3 top-3 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
+          {/* O banner É a manifestação: para o dono ele abre a loja para trocar.
+              Dois gestos (mesma regra do pill da Carteira) — o primeiro clique
+              só revela o "Alterar". z-10 fica ABAIXO do sino/engrenagem (z-20)
+              e da tag, que continua clicável do jeito que era. */}
+          {isOwnProfile && !isClan && (
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[#0B0B0D]/45 transition-opacity duration-200 group-hover/banner:opacity-100",
+                bannerArmed ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <Link
+                href="/manifestacao"
+                aria-label={t("changeManifestationAria", "Trocar sua manifestação na loja")}
+                className="pointer-events-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#1A1505] shadow-[3px_3px_0_0_#0B0B0D] transition hover:bg-[#F1EDE2]"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {t("changeManifestation", "Alterar")}
+              </Link>
+            </div>
+          )}
+          <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
             {profile.manifestation?.tag_label && !isClan && (
               <div className="inline-flex max-w-full items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-1.5 text-xs font-bold text-[#F2B705] shadow-[2px_2px_0_0_rgba(242,183,5,0.5)]">
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
@@ -419,12 +451,12 @@ export function ProfileHeadCard({
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
           <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
             <div className="relative flex shrink-0 flex-col items-center">
-              {/* Carteira: PRIMEIRO filho de propósito — o card da foto vem
-                  depois no DOM e por isso cobre o pill, que só escapa pela
-                  direita. Só para o dono (é o dinheiro dele) e fora do clan,
-                  que é entidade coletiva e mantém menu próprio. */}
+              {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito — o
+                  card da foto vem depois no DOM e por isso cobre a pilha, que
+                  só escapa pela direita. Só para o DONO (é a conta dele) e fora
+                  do clan, que é entidade coletiva e mantém menu próprio. */}
               {isOwnProfile && entityType !== "clan" && (
-                <WalletPill avatarPadClass="pl-24 md:pl-32" />
+                <HeadcardPills avatarPadClass="pl-24 md:pl-32" />
               )}
               {canUploadAvatar ? (
                 <button
@@ -536,20 +568,13 @@ export function ProfileHeadCard({
             </MarkdownText>
           )}
 
-          {/* Fila de chips (mesma do /account): nível + Mural + redes. */}
-          {((!isClan && xpLevel !== null) ||
-            (isOwnProfile && ownerActions?.onShowMural) ||
+          {/* Fila de chips (mesma do /account): Mural + redes. O chip de nível
+              saiu das duas superfícies (decisão do Alex, 2026-09-03) — o nível
+              continua no header retrátil. Não recolocar em uma só, senão os
+              dois headcards divergem de novo. */}
+          {((isOwnProfile && ownerActions?.onShowMural) ||
             socials.length > 0) && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {!isClan && xpLevel !== null && (
-                <span
-                  title={t("accountLevelHint", "Nível da conta — sobe com o engajamento")}
-                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D]"
-                >
-                  <Sparkles className="h-3 w-3" />
-                  {t("accountLevel", "Nível {level}").replace("{level}", String(xpLevel ?? 0))}
-                </span>
-              )}
               {isOwnProfile && ownerActions?.onShowMural && (
                 <MuralPill
                   onClick={ownerActions.onShowMural}

@@ -214,7 +214,7 @@ function hrefFor(item: NotificationItem): string {
     case "condo_poll_opened":
       return item.entity_id ? `/comunidades/${item.entity_id}` : "/comunidades"
     case "affiliate_commission_released":
-      return "/account/afiliado"
+      return "/wallet"
     case "subscription_expiring":
       return "/pagamentos"
     case "premium_expiring":

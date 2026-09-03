@@ -93,7 +93,7 @@ export function SocialHero() {
                 {t("hero.secondaryCta", "Explorar profissionais")}
               </Link>
               <Link
-                href="/account/afiliado"
+                href="/wallet"
                 className="text-sm font-medium text-white/55 underline-offset-4 transition hover:text-primary hover:underline"
               >
                 {t("hero.affiliateCta", "Ganhar indicando ->")}
