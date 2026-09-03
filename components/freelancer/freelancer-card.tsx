@@ -217,15 +217,6 @@ export function FreelancerCard({ creator, featured = false }: FreelancerCardProp
             unoptimized
             className="object-cover"
           />
-        ) : creator.user_avatar ? (
-          <Image
-            src={creator.user_avatar}
-            alt={creator.user_nome}
-            fill
-            sizes="(max-width: 768px) 50vw, 25vw"
-            unoptimized
-            className="object-cover"
-          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <div

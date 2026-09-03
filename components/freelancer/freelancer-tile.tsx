@@ -93,7 +93,11 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
     router.push(`/freelancer/${creator.id_profile}`)
   }
 
-  const image = creator.avatar_url || creator.user_avatar
+  // Cada perfil mostra a foto DELE. O fallback antigo (|| creator.user_avatar)
+  // emprestava a cara do titular a subperfil/clan/comunidade sem foto própria —
+  // e perfil comprado é independente. O perfil-conta continua com foto porque
+  // `tb_user.avatar` é espelhado em `avatar_url` na escrita (mig 215).
+  const image = creator.avatar_url
   const name = creator.display_name || creator.user_nome
 
   return (
