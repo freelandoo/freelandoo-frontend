@@ -1718,6 +1718,11 @@ export default function PerfilPage() {
               <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
                 <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
                   <div className="relative flex shrink-0 flex-col items-center">
+                  {/* Carteira: PRIMEIRO filho de propósito — o card da foto vem
+                      depois no DOM e por isso cobre o pill, que só escapa pela
+                      direita. Mesma peça e mesma posição do outro headcard:
+                      todo perfil do dono tem a dela, nativa. */}
+                  <WalletPill avatarPadClass="pl-24 md:pl-28" />
                   <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
                     {/* Anel neon rosa quando há bees vivos: conic-gradient com um
                         facho quase branco que gira (framer-motion) + camada
@@ -1813,9 +1818,6 @@ export default function PerfilPage() {
                   </div>
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
-                    {/* Carteira: mesma peça e mesma posição do headcard do outro
-                        perfil — todo perfil do dono tem a dela, nativa. */}
-                    <WalletPill />
                     {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
                         headcard do subperfil (esqueleto unificado). */}
                     <div className="flex items-baseline gap-4">

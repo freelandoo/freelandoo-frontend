@@ -418,7 +418,14 @@ export function ProfileHeadCard({
               items-end no flex garante que a coluna direita só ocupe espaço da
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
           <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
-            <div className="flex shrink-0 flex-col items-center">
+            <div className="relative flex shrink-0 flex-col items-center">
+              {/* Carteira: PRIMEIRO filho de propósito — o card da foto vem
+                  depois no DOM e por isso cobre o pill, que só escapa pela
+                  direita. Só para o dono (é o dinheiro dele) e fora do clan,
+                  que é entidade coletiva e mantém menu próprio. */}
+              {isOwnProfile && entityType !== "clan" && (
+                <WalletPill avatarPadClass="pl-24 md:pl-32" />
+              )}
               {canUploadAvatar ? (
                 <button
                   type="button"
@@ -471,14 +478,6 @@ export function ProfileHeadCard({
 
             {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna. */}
             <div className="min-w-0 flex-1 pb-1 text-left">
-              {/* Carteira: mesma peça e mesma posição do headcard do /account.
-                  Só para o dono (é o dinheiro dele) e fora do clan, que é
-                  entidade coletiva e mantém menu próprio. */}
-              {isOwnProfile && entityType !== "clan" && (
-                <div className="mb-2">
-                  <WalletPill />
-                </div>
-              )}
               <div className="flex items-baseline gap-4">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
