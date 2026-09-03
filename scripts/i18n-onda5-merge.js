@@ -260,6 +260,7 @@ const WALLET = {
 
 // Namespace "Polens" — S4 (loja de poléns pública).
 const POLENS = {
+  back: ["Voltar", "Back", "Volver"],
   eyebrow: ["Pacotes de Poléns", "Polen packages", "Paquetes de Polen"],
   storeTitle: ["Loja de Polén", "Polen Store", "Tienda de Polen"],
   storeIntro: [

@@ -2,7 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { CheckCircle2, CreditCard, Hexagon, Loader2, Rocket, Search, Sparkles, XCircle } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, CheckCircle2, CreditCard, Hexagon, Loader2, Rocket, Search, Sparkles, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getCapturedCoupon } from "@/lib/share-coupon"
 import { getStoredUser } from "@/lib/auth"
@@ -238,7 +239,16 @@ function LojaPolensContent() {
 
   return (
     <PageShell>
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-14">
+      <div className="mx-auto w-full max-w-7xl px-4 pt-8 md:px-8 md:pt-10">
+        <Link
+          href="/account"
+          className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6] transition hover:text-[#F1EDE2]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("back", "Voltar")}
+        </Link>
+      </div>
+
+      <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-10 pt-5 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:pb-14">
         <div className="flex min-h-[480px] flex-col justify-between">
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#F2B705]">

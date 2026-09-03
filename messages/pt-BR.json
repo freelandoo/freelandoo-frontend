@@ -3532,7 +3532,8 @@
     "boosterCta": "Impulsionar ao nível 5",
     "boosterPickFirst": "Escolha um subperfil primeiro.",
     "boostSuccessTitle": "Perfil impulsionado!",
-    "boostSuccessMsg": "Seu subperfil foi levado ao nível 5. O nível atualiza em instantes."
+    "boostSuccessMsg": "Seu subperfil foi levado ao nível 5. O nível atualiza em instantes.",
+    "back": "Voltar"
   },
   "Manifestation": {
     "badge": "Manifestação",
