@@ -65,7 +65,8 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "help": "Help center",
-    "logout": "Log out"
+    "logout": "Log out",
+    "reviewTour": "Replay tour"
   },
   "Auth": {
     "login": "Log in",
@@ -1501,7 +1502,13 @@
     "fitnessPill": "Fitness",
     "gamesPill": "Games",
     "openGamesAria": "Open my games community",
-    "browseByEnxame": "Browse by swarm"
+    "browseByEnxame": "Browse by swarm",
+    "functionsHintAlwaysOn": "Your account features are always on.",
+    "xpLabel": "Metrics",
+    "openChamadoLabel": "Open a request",
+    "chamadoModeService": "Service",
+    "chamadoModeProduct": "Product",
+    "chamadoModeCourse": "Course"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",

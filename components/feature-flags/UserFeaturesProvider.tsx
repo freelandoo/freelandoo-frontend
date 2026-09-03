@@ -1,27 +1,26 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 type PrefMap = Record<string, boolean>
 
 type UserFeaturesContextValue = {
-  prefs: PrefMap
   /**
    * Posse (Loja de Funções, mig 191): owned[key]=false quando a função está à
    * venda e o usuário NÃO comprou — a linha do menu e os pontos de entrada
    * somem. Fail-open: mapa vazio/chave ausente = possuída.
+   *
+   * É o ÚNICO gate por usuário que sobrou. A preferência pessoal da mig 186
+   * (o liga/desliga da seção "Funções") foi descontinuada na mig 218: função
+   * de usuário é sempre ligada.
    */
   owned: PrefMap
-  setPref: (key: string, enabled: boolean) => void
 }
 
 const UserFeaturesContext = createContext<UserFeaturesContextValue>({
-  prefs: {},
   owned: {},
-  setPref: () => {},
 })
 
-const LS_KEY = "fl_user_features"
 const LS_OWNED_KEY = "fl_user_features_owned"
 
 /** Chaves da seção "Funções" (mesma whitelist do backend, mig 186). */
@@ -50,17 +49,22 @@ export const USER_FEATURE_KEYS = [
  * cache local e busca a verdade do servidor (só com token). Fail-open.
  */
 export function UserFeaturesProvider({ children }: { children: ReactNode }) {
-  const [prefs, setPrefs] = useState<PrefMap>({})
   const [owned, setOwned] = useState<PrefMap>({})
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(LS_KEY)
-      if (raw) setPrefs(JSON.parse(raw))
       const rawOwned = localStorage.getItem(LS_OWNED_KEY)
       if (rawOwned) setOwned(JSON.parse(rawOwned))
     } catch {
       /* cache corrompido — ignora */
+    }
+    // Cache da preferência descontinuada (mig 218): apagado no primeiro load
+    // pós-deploy. Sem isso, um `false` guardado no navegador continuaria
+    // escondendo a função até alguém limpar o storage na mão.
+    try {
+      localStorage.removeItem("fl_user_features")
+    } catch {
+      /* ok */
     }
 
     const token = localStorage.getItem("token")
@@ -73,12 +77,10 @@ export function UserFeaturesProvider({ children }: { children: ReactNode }) {
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (cancelled || !data?.features) return
-        setPrefs(data.features)
-        if (data.owned) setOwned(data.owned)
+        if (cancelled || !data?.owned) return
+        setOwned(data.owned)
         try {
-          localStorage.setItem(LS_KEY, JSON.stringify(data.features))
-          if (data.owned) localStorage.setItem(LS_OWNED_KEY, JSON.stringify(data.owned))
+          localStorage.setItem(LS_OWNED_KEY, JSON.stringify(data.owned))
         } catch {
           /* storage cheio/bloqueado — ok */
         }
@@ -91,50 +93,29 @@ export function UserFeaturesProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const setPref = useCallback((key: string, enabled: boolean) => {
-    // Otimista: aplica local e persiste; o PUT corre em background.
-    setPrefs((prev) => {
-      const next = { ...prev, [key]: enabled }
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(next))
-      } catch {
-        /* ok */
-      }
-      return next
-    })
-    const token = localStorage.getItem("token")
-    if (!token) return
-    fetch(`/api/users/me/features/${encodeURIComponent(key)}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ enabled }),
-    }).catch(() => {
-      /* falha de rede — preferência local segue valendo; próximo load re-sincroniza */
-    })
-  }, [])
-
   return (
-    <UserFeaturesContext.Provider value={{ prefs, owned, setPref }}>
+    <UserFeaturesContext.Provider value={{ owned }}>
       {children}
     </UserFeaturesContext.Provider>
   )
 }
 
 /**
- * `true` quando a função está ligada PRA ESTE usuário: comprada na Loja de
- * Funções (ou grátis) E não desativada na seção Funções. Fail-open:
- * desconhecida ou mapa não carregado = ligada. Combine com useFeature(key)
- * onde a função também tem flag global do admin.
+ * `true` quando a função vale PRA ESTE usuário: comprada na Loja de Funções —
+ * ou grátis (`is_for_sale = FALSE`, caso da Carteira na mig 216 e da Academia
+ * e da Vaquinha na mig 217). Fail-open: chave desconhecida ou mapa ainda não
+ * carregado = ligada.
+ *
+ * NÃO existe mais desligar por usuário (mig 218). Combine com `useFeature(key)`
+ * onde a função também tem flag global do admin — essa continua valendo e
+ * vence tudo.
  */
 export function useUserFeature(key: string): boolean {
-  const { prefs, owned } = useContext(UserFeaturesContext)
-  return owned[key] !== false && prefs[key] !== false
+  const { owned } = useContext(UserFeaturesContext)
+  return owned[key] !== false
 }
 
-/** Mapa completo + setter (pra seção "Funções" do menu). */
+/** Mapa de posse completo (pra lista de funções do menu). */
 export function useUserFeatures(): UserFeaturesContextValue {
   return useContext(UserFeaturesContext)
 }

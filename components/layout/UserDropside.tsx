@@ -25,6 +25,7 @@ import {
   Compass,
   HeartHandshake,
   Users,
+  Check,
   Dumbbell,
   SlidersHorizontal,
   ShoppingBag,
@@ -71,13 +72,13 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
   const tCommon = useTranslations("Common")
   const storeOn = useFeature("store")
   const vaquinhaOn = useFeature("vaquinha")
-  // Seção "Funções": preferências POR usuário (liga/desliga a própria
-  // experiência). A flag global do admin desligada vence a preferência.
-  // Loja de Funções (mig 191): função à venda NÃO comprada (owned=false)
-  // não aparece na lista nem nos pontos de entrada — só depois de comprar.
-  const { prefs: userFeats, owned: userOwned, setPref: setUserFeat } = useUserFeatures()
+  // Seção "Funções": lista o que a CONTA possui. O liga/desliga por usuário
+  // (mig 186) foi descontinuado na mig 218 — função de usuário é sempre ligada.
+  // O que sobra é a posse da Loja de Funções (mig 191): função à venda NÃO
+  // comprada (owned=false) não aparece na lista nem nos pontos de entrada.
+  const { owned: userOwned } = useUserFeatures()
   const featOwned = (key: string) => userOwned[key] !== false
-  const featOn = (key: string) => featOwned(key) && userFeats[key] !== false
+  const featOn = featOwned
 
   // "Configurações" expande e guarda dentro os dados da conta + as Funções.
   const [settingsExpanded, setSettingsExpanded] = useState(false)
@@ -180,9 +181,8 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     ...(featOn("courses") ? [{ mode: "course" as ChamadoMode, label: tAcc("chamadoModeCourse", "Curso"), icon: GraduationCap }] : []),
   ]
 
-  // Seção "Funções": cada linha = uma função da conta com liga/desliga pessoal.
-  // `desc` = aviso extra quando o efeito NÃO é só na própria experiência.
-  const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }>; desc?: string }[] = [
+  // Seção "Funções": cada linha = uma função que a conta possui.
+  const featureRows: { key: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "courses", label: tAcc("featureCourses", "Cursos"), icon: GraduationCap },
     { key: "store", label: tAcc("featureStore", "Loja"), icon: Package },
     { key: "services", label: tAcc("featureServices", "Serviços"), icon: Briefcase },
@@ -192,12 +192,10 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
     { key: "fitness_academias", label: tAcc("featureFitness", "Academia"), icon: Dumbbell },
     { key: "profiles", label: tAcc("featureProfiles", "Perfis"), icon: UserRound },
     { key: "agenda", label: tAcc("featureAgenda", "Agenda"), icon: CalendarDays },
-    {
-      key: "vitrine",
-      label: tAcc("featureVitrine", "Vitrine"),
-      icon: Store,
-      desc: tAcc("featureVitrineHint", "Desligada, seus perfis somem da vitrine pra todo mundo."),
-    },
+    // O aviso "desligada, seus perfis somem da vitrine" saiu junto do switch:
+    // com a mig 218 não há como desligar, e a cláusula que a lia foi removida
+    // do SearchStorage. Manter o texto seria descrever um botão que não existe.
+    { key: "vitrine", label: tAcc("featureVitrine", "Vitrine"), icon: Store },
   ]
 
   const renderActionLink = (a: Action) => {
@@ -421,46 +419,20 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                       {tAcc("functionsEmptyOwned", "Você ainda não tem funções. Visite a Loja de Funções.")}
                     </p>
                   )}
+                  {/* Lista de LEITURA: o switch morreu com a mig 218. Ela fica
+                      porque continua respondendo "o que a minha conta tem?" e
+                      porque é ela que sustenta o CTA da Loja logo abaixo. */}
                   <ul className="space-y-1">
                     {featureRows.filter((f) => featOwned(f.key)).map((f) => {
                       const FIcon = f.icon
-                      const on = featOn(f.key)
                       return (
                         <li key={f.key}>
                           <div className="flex items-center gap-2.5 px-3 py-1.5 text-[12.5px] text-white/80">
                             <FIcon className="h-3.5 w-3.5 shrink-0 text-white/45" />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate font-semibold">{f.label}</span>
-                              {f.desc && (
-                                <span className="block text-[10.5px] leading-snug text-white/35">{f.desc}</span>
-                              )}
                             </span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={on}
-                              onClick={() => setUserFeat(f.key, !on)}
-                              aria-label={(on
-                                ? tAcc("featureTurnOff", "Desativar {feature}")
-                                : tAcc("featureTurnOn", "Ativar {feature}")
-                              ).replace("{feature}", f.label)}
-                              title={on ? tAcc("featureOn", "Ativada") : tAcc("featureOff", "Desativada")}
-                              className={cn(
-                                "relative h-5 w-10 shrink-0 border transition-colors",
-                                on
-                                  ? "border-amber-400/60 bg-amber-400/80"
-                                  : "border-white/15 bg-white/[0.06]",
-                              )}
-                            >
-                              <span
-                                className={cn(
-                                  "absolute top-0.5 h-3.5 w-3.5 transition-transform",
-                                  on
-                                    ? "left-0.5 translate-x-[22px] bg-zinc-950"
-                                    : "left-0.5 translate-x-0 bg-white/55",
-                                )}
-                              />
-                            </button>
+                            <Check className="h-3.5 w-3.5 shrink-0 text-amber-300/70" aria-hidden />
                           </div>
                         </li>
                       )
@@ -468,8 +440,8 @@ export function UserDropside({ open, onClose, user, unreadServiceRequest, onLogo
                   </ul>
                   <p className="px-3 pb-1 pt-1 text-[10.5px] leading-relaxed text-white/35">
                     {tAcc(
-                      "functionsHint",
-                      "Desativar esconde a função só da sua experiência — nada é apagado.",
+                      "functionsHintAlwaysOn",
+                      "As funções da sua conta ficam sempre ativas.",
                     )}
                   </p>
                   {/* Loja de Funções — compre novas funções pra conta */}

@@ -65,7 +65,8 @@
     "terms": "Términos",
     "privacy": "Privacidad",
     "help": "Centro de ayuda",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "reviewTour": "Repetir tour"
   },
   "Auth": {
     "login": "Iniciar sesión",
@@ -1501,7 +1502,13 @@
     "fitnessPill": "Fitness",
     "gamesPill": "Games",
     "openGamesAria": "Abrir la comunidad de mis juegos",
-    "browseByEnxame": "Buscar por enjambre"
+    "browseByEnxame": "Buscar por enjambre",
+    "functionsHintAlwaysOn": "Las funciones de tu cuenta están siempre activas.",
+    "xpLabel": "Métricas",
+    "openChamadoLabel": "Abrir solicitud",
+    "chamadoModeService": "Servicio",
+    "chamadoModeProduct": "Producto",
+    "chamadoModeCourse": "Curso"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
