@@ -28,6 +28,14 @@ import { cn } from "@/lib/utils"
  * (/account é w-24 md:w-28; ProfileHeadCard é w-24 md:w-32). É esse padding que
  * faz o corpo verde nascer debaixo da foto em vez de ao lado dela.
  *
+ * A largura do avatar NÃO BASTA, porém: o card da foto é rotacionado -3deg
+ * (o canto avança ~4px além da caixa) e tem sombra dura de 6px para a direita,
+ * e a sombra é pintada DEPOIS do pill, logo por cima dele. Com o conteúdo
+ * começando na largura nua, o cifrão nascia debaixo desses ~10px e aparecia
+ * cortado pela metade. Daí o CLEARANCE fixo abaixo — ele é a folga entre a
+ * caixa da foto e a borda VISÍVEL dela, igual nas duas superfícies, então mora
+ * aqui e não na prop.
+ *
  * O `top-[48%]` é da COLUNA (que inclui as estrelas), o que cai em ~57% da
  * altura da FOTO — a altura em que o pill aparece no layout pedido — e deixa
  * folga acima da fila "POSTS | ACOMP.", que é bottom-aligned com a base da
@@ -101,24 +109,28 @@ export function WalletPill({
             }
           }}
           className={cn(
-            "flex items-center border-2 border-[#0B0B0D] bg-[#15803D] py-1.5 pr-2.5",
+            "flex items-center border-2 border-[#0B0B0D] bg-[#15803D] py-1.5 pr-3",
             "text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition-colors hover:bg-[#166F36]",
             avatarPadClass
           )}
         >
-          <motion.span
-            initial={false}
-            animate={{
-              maxWidth: open ? 200 : 0,
-              opacity: open ? 1 : 0,
-              marginRight: open ? 8 : 0,
-            }}
-            transition={spring}
-            className="overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
-          >
-            {t("walletPill", "Carteira")}
-          </motion.span>
-          <DollarSign className="h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+          {/* CLEARANCE da rotação + sombra dura da foto (~10px): sem ele o
+              cifrão nasce debaixo da borda visível e sai cortado. */}
+          <span className="flex items-center pl-3.5">
+            <motion.span
+              initial={false}
+              animate={{
+                maxWidth: open ? 200 : 0,
+                opacity: open ? 1 : 0,
+                marginRight: open ? 8 : 0,
+              }}
+              transition={spring}
+              className="overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
+            >
+              {t("walletPill", "Carteira")}
+            </motion.span>
+            <DollarSign className="h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+          </span>
         </Link>
       </motion.div>
     </div>
