@@ -346,6 +346,39 @@ const COMMUNITY_SITE = {
   tokenSurface: ["Superfície", "Surface", "Superficie"],
   tokenTextPrimary: ["Texto", "Text", "Texto"],
   tokenTextSecondary: ["Texto secundário", "Secondary text", "Texto secundario"],
+
+  // ─── Página própria + tamanhos manuais (alças), 2026-09-03 ───────────────
+  backToCommunity: [
+    "Voltar para a comunidade",
+    "Back to the community",
+    "Volver a la comunidad",
+  ],
+  notFound: [
+    "Comunidade não encontrada.",
+    "Community not found.",
+    "Comunidad no encontrada.",
+  ],
+  resizeSection: ["Tamanho da seção", "Section size", "Tamaño de la sección"],
+  resizeHint: [
+    "Clique num texto para ver as bolinhas dos cantos e arraste para mudar o tamanho. No celular, dê zoom com dois dedos e toque na caixa.",
+    "Click a text to reveal the corner dots and drag to resize it. On phones, pinch to zoom and tap the box.",
+    "Haz clic en un texto para ver los puntos de las esquinas y arrástralos para cambiar el tamaño. En el móvil, haz zoom con dos dedos y toca la caja.",
+  ],
+  sizeTitleText: ["Caixa de texto", "Text box", "Caja de texto"],
+  sizeTitleSection: ["Seção", "Section", "Sección"],
+  sizeFont: ["Fonte", "Font", "Fuente"],
+  sizeWidth: ["Largura", "Width", "Ancho"],
+  sizeHeight: ["Altura", "Height", "Alto"],
+  sizeAuto: ["Auto", "Auto", "Auto"],
+  sizeReset: [
+    "Voltar ao automático",
+    "Back to automatic",
+    "Volver al automático",
+  ],
+  sizeClose: ["Fechar", "Close", "Cerrar"],
+  zoomIn: ["Aproximar", "Zoom in", "Acercar"],
+  zoomOut: ["Afastar", "Zoom out", "Alejar"],
+  zoomReset: ["Zoom 100%", "Zoom 100%", "Zoom 100%"],
 };
 
 const NAMESPACES = { Community: COMMUNITY, CommunitySite: COMMUNITY_SITE };

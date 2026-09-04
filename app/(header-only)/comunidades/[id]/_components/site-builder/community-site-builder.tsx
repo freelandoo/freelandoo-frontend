@@ -2,9 +2,12 @@
 
 // "Meu Site": construtor/visualizador do site da comunidade (mig 212).
 //
-// Entra INLINE na aba "Site" da página da comunidade — não é modal. Foi pedido
-// assim e a razão é boa: um construtor de página inteira dentro de uma caixinha
-// com scroll próprio mente sobre o resultado.
+// Mora numa PÁGINA PRÓPRIA (`/comunidades/<id>/site`), não numa aba da página
+// da comunidade. Foi aba até 2026-09-03 e o motivo da mudança é o mesmo que
+// tinha feito dela uma aba em vez de um modal, levado até o fim: um construtor
+// de página inteira encaixado embaixo do feed, do mural e das configurações da
+// comunidade mente sobre o resultado — o líder editava um site espremido numa
+// faixa e publicava outro. Aqui a área de edição É a página.
 //
 // Quem NÃO é líder cai no mesmo componente sem a camada de edição — nenhuma
 // barra, nenhum contentEditable. E quem não pode nem ver recebe o aviso de
@@ -16,9 +19,11 @@ import {
   Globe,
   Loader2,
   Lock,
+  Minus,
   Monitor,
   Palette,
   Plus,
+  Search,
   Smartphone,
   Tablet,
   Upload,
@@ -71,10 +76,25 @@ export function CommunitySiteBuilder({
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [domainsOpen, setDomainsOpen] = useState(false)
+  // Zoom da prancheta. No celular ele vem da pizca de dois dedos; no
+  // computador, dos botões. É zoom DA PRANCHETA, não do navegador: o do
+  // navegador ampliaria a barra de ferramentas junto e tiraria o site da tela.
+  const [zoom, setZoom] = useState(1)
+  const [canvasHeight, setCanvasHeight] = useState(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
 
   // Guarda o que está pendente de gravação. Ref e não estado: mudar isso não
   // deve repintar a tela, e o timer precisa enxergar sempre o valor MAIS NOVO
   // (uma captura em closure gravaria o config de 1,2s atrás).
+  // O listener da pizca é montado UMA vez; sem este espelho ele leria para
+  // sempre o zoom que existia no dia em que foi montado.
+  const zoomRef = useRef(1)
+  useEffect(() => {
+    zoomRef.current = zoom
+  }, [zoom])
+
   const pendingRef = useRef<CommunitySiteConfig | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savingRef = useRef(false)
@@ -280,7 +300,76 @@ export function CommunitySiteBuilder({
     [config, applyChange]
   )
 
+  // A pizca precisa de listener NATIVO com `passive: false`: o React registra
+  // touchmove como passivo, e num listener passivo o `preventDefault` é
+  // ignorado — o navegador daria o zoom dele por cima do nosso, e a página
+  // inteira (barra incluída) sairia do lugar.
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    let start: { dist: number; zoom: number } | null = null
+
+    const distance = (touches: TouchList) => {
+      const [a, b] = [touches[0], touches[1]]
+      return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    }
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return
+      start = { dist: distance(e.touches), zoom: zoomRef.current }
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!start || e.touches.length !== 2) return
+      e.preventDefault()
+      const ratio = distance(e.touches) / (start.dist || 1)
+      setZoom(Math.min(3, Math.max(0.4, Number((start.zoom * ratio).toFixed(3)))))
+    }
+    const onEnd = () => {
+      start = null
+    }
+
+    el.addEventListener("touchstart", onStart, { passive: true })
+    el.addEventListener("touchmove", onMove, { passive: false })
+    el.addEventListener("touchend", onEnd)
+    el.addEventListener("touchcancel", onEnd)
+    return () => {
+      el.removeEventListener("touchstart", onStart)
+      el.removeEventListener("touchmove", onMove)
+      el.removeEventListener("touchend", onEnd)
+      el.removeEventListener("touchcancel", onEnd)
+    }
+  }, [])
+
+  // Largura útil da prancheta. Em Desktop o site nasce com a largura dela, e
+  // com zoom essa largura precisa virar NÚMERO: uma porcentagem seria medida
+  // contra o espaçador já escalado, e o zoom entraria ao quadrado.
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const measure = () => setViewportWidth(el.clientWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Altura NÃO-escalada do site. É ela que dimensiona o espaçador de rolagem:
+  // `transform: scale` não muda o tamanho que o elemento ocupa no layout, então
+  // sem o espaçador o zoom cortaria o site no primeiro rolar.
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const measure = () => setCanvasHeight(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [config, viewport, editing])
+
   const frameWidth = SITE_VIEWPORTS[viewport]
+  // Largura em pixels do site desenhado: a do aparelho escolhido, ou a da
+  // prancheta em Desktop. Só importa com zoom (sem ele, é 100% e pronto).
+  const contentWidth = frameWidth || viewportWidth || 1024
   const statusLabel = useMemo(() => {
     switch (saveState) {
       case "saving":
@@ -377,6 +466,38 @@ export function CommunitySiteBuilder({
                 <Icon className="h-4 w-4" />
               </button>
             ))}
+          </div>
+
+          {/* Zoom: os botões existem para o computador e para o teclado; no
+              celular o gesto de dois dedos faz o mesmo. */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.max(0.4, Number((z - 0.1).toFixed(2))))}
+              title={t("zoomOut", "Afastar")}
+              aria-label={t("zoomOut", "Afastar")}
+              className="grid h-9 w-9 place-items-center border-2 border-[#0B0B0D] bg-[#1D1810] text-[#9A938A]"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              title={t("zoomReset", "Zoom 100%")}
+              className="flex h-9 items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8]"
+            >
+              <Search className="h-3.5 w-3.5" style={{ color: accent }} />
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.min(3, Number((z + 0.1).toFixed(2))))}
+              title={t("zoomIn", "Aproximar")}
+              aria-label={t("zoomIn", "Aproximar")}
+              className="grid h-9 w-9 place-items-center border-2 border-[#0B0B0D] bg-[#1D1810] text-[#9A938A]"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
 
           {editing && (
@@ -490,24 +611,59 @@ export function CommunitySiteBuilder({
         </div>
       )}
 
-      {/* Moldura da prévia. Em Desktop o site ocupa a largura toda; nos outros
-          a largura é travada para simular o aparelho, com fundo neutro em volta
-          para a borda do "aparelho" ficar legível. */}
+      {isLeader && editing && (
+        <p className="mb-3 px-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+          {t(
+            "resizeHint",
+            "Clique num texto para ver as bolinhas dos cantos e arraste para mudar o tamanho. No celular, dê zoom com dois dedos e toque na caixa."
+          )}
+        </p>
+      )}
+
+      {/* Prancheta. Em Desktop o site ocupa a largura toda; nos outros a
+          largura é travada para simular o aparelho, com fundo neutro em volta
+          para a borda do "aparelho" ficar legível.
+
+          Com zoom, o conteúdo é escalado e um ESPAÇADOR do tamanho escalado
+          cria a área de rolagem — `transform` não ocupa espaço no layout, e sem
+          o espaçador o site ampliado ficaria cortado sem barra de rolagem. */}
       <div
-        className="flex w-full justify-center"
+        ref={viewportRef}
+        className="w-full overflow-auto"
         style={frameWidth ? { background: "#0B0B0D", padding: "16px 8px" } : undefined}
       >
         <div
-          className="w-full border-2 border-[#0B0B0D]"
-          style={frameWidth ? { maxWidth: frameWidth } : undefined}
+          className="mx-auto"
+          style={
+            zoom === 1
+              ? { width: "100%", maxWidth: frameWidth || undefined }
+              : {
+                  width: contentWidth * zoom,
+                  height: canvasHeight ? canvasHeight * zoom : undefined,
+                }
+          }
         >
-          <SiteCanvas
-            config={config}
-            editing={editing && isLeader}
-            onChange={applyChange}
-            onUpload={uploadImage}
-            t={t}
-          />
+          <div
+            ref={canvasRef}
+            className="w-full border-2 border-[#0B0B0D]"
+            style={
+              zoom === 1
+                ? undefined
+                : {
+                    width: contentWidth,
+                    transform: `scale(${zoom})`,
+                    transformOrigin: "top left",
+                  }
+            }
+          >
+            <SiteCanvas
+              config={config}
+              editing={editing && isLeader}
+              onChange={applyChange}
+              onUpload={uploadImage}
+              t={t}
+            />
+          </div>
         </div>
       </div>
     </div>

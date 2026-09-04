@@ -8,6 +8,7 @@
 
 import type { SiteColorTheme } from "@/types/community-site"
 import { InlineText } from "../editable"
+import { useSectionLayout } from "../site-style-context"
 
 export function SectionShell({
   title,
@@ -35,10 +36,17 @@ export function SectionShell({
 }) {
   // Em leitura, um título vazio não deve deixar buraco no ritmo da página.
   const showHeader = !hideHeader && (editing || title || subtitle)
+  const layout = useSectionLayout()
 
   return (
     <section className="px-5 py-12 md:px-10 md:py-16">
-      <div className="mx-auto w-full max-w-6xl">
+      {/* A largura da coluna é a que o líder deixou na alça; sem alça, o
+          max-w-6xl de sempre — e a classe continua no lugar para o site nunca
+          ficar sem teto de largura. */}
+      <div
+        className="mx-auto w-full max-w-6xl"
+        style={layout?.maxWidth ? { maxWidth: layout.maxWidth } : undefined}
+      >
         {showHeader && (
           <header className="mb-8">
             <InlineText
@@ -46,6 +54,7 @@ export function SectionShell({
               editing={editing}
               value={title}
               onChange={onTitle}
+              styleKey="title"
               placeholder={titlePlaceholder}
               maxLength={120}
               className="fl-display text-3xl leading-none md:text-5xl"
@@ -57,6 +66,7 @@ export function SectionShell({
                 editing={editing}
                 value={subtitle}
                 onChange={onSubtitle}
+                styleKey="subtitle"
                 placeholder={subtitlePlaceholder}
                 maxLength={240}
                 className="mt-2 max-w-2xl text-sm leading-relaxed"

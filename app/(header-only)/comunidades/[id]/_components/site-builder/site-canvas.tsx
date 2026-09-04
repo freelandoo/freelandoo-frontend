@@ -7,7 +7,8 @@
 // outra árvore. Duas árvores divergiriam, e o líder acabaria publicando algo
 // diferente do que viu.
 
-import { useCallback } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { SITE_SIZES, clampSize } from "@/types/community-site"
 import type {
   AboutData,
   CommunitySiteConfig,
@@ -16,9 +17,21 @@ import type {
   HeroData,
   ServicesCatalogData,
   SiteSection,
+  SiteSectionLayout,
+  SiteTextStyle,
   TestimonialsData,
 } from "@/types/community-site"
 import { InlineText } from "./editable"
+import {
+  SectionResizeDots,
+  SiteStyleProvider,
+  SiteStyleScope,
+  SITE_CONTENT_MAX_WIDTH,
+  measuredFontSize,
+  measuredSectionHeight,
+  type SiteSelection,
+} from "./site-style-context"
+import { SiteSizeToolbar, type SizeRow } from "./site-size-toolbar"
 import { SiteSectionToolbar } from "./site-section-toolbar"
 import { sectionLabel } from "./site-add-section-menu"
 import { SectionShell } from "./sections/section-shell"
@@ -43,6 +56,32 @@ export function SiteCanvas({
   t: (key: string, fallback: string) => string
 }) {
   const { theme, sections } = config
+
+  // Seleção mora AQUI, e não no construtor: o canvas é o mesmo componente que
+  // serve o site publicado, e é dele que sai tanto a alça quanto o painel — o
+  // construtor só precisa saber que existe um site, não qual caixa está
+  // selecionada agora.
+  const [selection, setSelection] = useState<SiteSelection>(null)
+
+  // Sair da edição não pode deixar a seleção pendurada: o painel some, mas as
+  // alças continuariam desenhadas por cima do site em modo leitura.
+  useEffect(() => {
+    if (!editing) setSelection(null)
+  }, [editing])
+
+  useEffect(() => {
+    if (!editing || !selection) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelection(null)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [editing, selection])
+
+  const setTextStyles = useCallback(
+    (textStyles: Record<string, SiteTextStyle>) => onChange({ ...config, textStyles }),
+    [config, onChange]
+  )
 
   const patchSection = useCallback(
     (sectionId: string, patch: Partial<SiteSection>) => {
@@ -75,12 +114,118 @@ export function SiteCanvas({
     [config, onChange]
   )
 
+  const patchLayout = useCallback(
+    (sectionId: string, layout: SiteSectionLayout) => {
+      onChange({
+        ...config,
+        sections: config.sections.map((s) =>
+          s.id === sectionId ? ({ ...s, layout } as SiteSection) : s
+        ),
+      })
+    },
+    [config, onChange]
+  )
+
   const visible = editing ? sections : sections.filter((s) => s.enabled)
 
+  // Linhas do painel de tamanho do que está selecionado. Montadas aqui porque
+  // é aqui que se sabe se o alvo é texto (fonte + largura) ou seção (altura +
+  // largura da coluna) — o painel em si só desenha botões.
+  const sizePanel = useMemo(() => {
+    if (!editing || !selection) return null
+
+    if (selection.type === "text") {
+      const key = selection.key
+      const current = config.textStyles?.[key] || { fontSize: null, width: null }
+      const setStyle = (patch: Partial<SiteTextStyle>) => {
+        const merged = { ...current, ...patch }
+        const next = { ...(config.textStyles || {}) }
+        if (merged.fontSize === null && merged.width === null) delete next[key]
+        else next[key] = merged
+        onChange({ ...config, textStyles: next })
+      }
+      const rows: SizeRow[] = [
+        {
+          label: t("sizeFont", "Fonte"),
+          value: current.fontSize,
+          fallback: () => measuredFontSize(key),
+          step: 2,
+          unit: "px",
+          onChange: (n) =>
+            setStyle({ fontSize: clampSize(n, SITE_SIZES.FONT_MIN, SITE_SIZES.FONT_MAX) }),
+        },
+        {
+          label: t("sizeWidth", "Largura"),
+          value: current.width,
+          fallback: () => 100,
+          step: 5,
+          unit: "%",
+          onChange: (n) =>
+            setStyle({ width: clampSize(n, SITE_SIZES.WIDTH_MIN, SITE_SIZES.WIDTH_MAX) }),
+        },
+      ]
+      return {
+        title: t("sizeTitleText", "Caixa de texto"),
+        rows,
+        reset: () => {
+          const next = { ...(config.textStyles || {}) }
+          delete next[key]
+          onChange({ ...config, textStyles: next })
+        },
+      }
+    }
+
+    const section = sections.find((s) => s.id === selection.id)
+    if (!section) return null
+    const layout: SiteSectionLayout = section.layout || { minHeight: null, maxWidth: null }
+    const rows: SizeRow[] = [
+      {
+        label: t("sizeHeight", "Altura"),
+        value: layout.minHeight,
+        fallback: () => measuredSectionHeight(section.id),
+        step: 20,
+        unit: "px",
+        onChange: (n) =>
+          patchLayout(section.id, {
+            ...layout,
+            minHeight: clampSize(n, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX),
+          }),
+      },
+      {
+        label: t("sizeWidth", "Largura"),
+        value: layout.maxWidth,
+        fallback: () => SITE_CONTENT_MAX_WIDTH,
+        step: 40,
+        unit: "px",
+        onChange: (n) =>
+          patchLayout(section.id, {
+            ...layout,
+            maxWidth: clampSize(n, SITE_SIZES.MAXW_MIN, SITE_SIZES.MAXW_MAX),
+          }),
+      },
+    ]
+    return {
+      title: t("sizeTitleSection", "Seção"),
+      rows,
+      reset: () => patchLayout(section.id, { minHeight: null, maxWidth: null }),
+    }
+  }, [editing, selection, config, sections, onChange, patchLayout, t])
+
   return (
+    <SiteStyleProvider
+      editing={editing}
+      styles={config.textStyles}
+      onChangeStyles={setTextStyles}
+      selection={selection}
+      onSelect={setSelection}
+    >
     <div
       className="fl-sharp w-full"
       style={{ background: theme.background, color: theme.textPrimary }}
+      // Tocar no fundo do site (fora de qualquer caixa) desfaz a seleção. Sem
+      // isto a única saída seria o X do painel, e a alça ficaria pendurada numa
+      // caixa que a pessoa já esqueceu.
+      onPointerDown={editing ? () => setSelection(null) : undefined}
     >
       {/* Cabeçalho do site: nome + tagline. Fora das seções de propósito —
           é a identidade do site, não um bloco que se possa remover. */}
@@ -93,6 +238,7 @@ export function SiteCanvas({
             editing={editing}
             value={config.siteName}
             onChange={(v) => onChange({ ...config, siteName: v })}
+            styleKey="site.name"
             placeholder={t("siteNamePlaceholder", "Nome do site")}
             maxLength={120}
             className="fl-display text-2xl leading-none md:text-3xl"
@@ -103,6 +249,7 @@ export function SiteCanvas({
               editing={editing}
               value={config.tagline}
               onChange={(v) => onChange({ ...config, tagline: v })}
+              styleKey="site.tagline"
               placeholder={t("taglinePlaceholder", "Uma frase que resume a comunidade")}
               maxLength={240}
               className="text-[11px] font-extrabold uppercase tracking-[0.16em]"
@@ -124,6 +271,11 @@ export function SiteCanvas({
 
       {visible.map((section) => {
         const index = sections.indexOf(section)
+        const layout: SiteSectionLayout = section.layout || { minHeight: null, maxWidth: null }
+        // A altura vai na moldura; a largura da coluna desce pelo contexto até
+        // a casca da seção (é ela quem centraliza o conteúdo), junto do escopo.
+        const frameStyle: React.CSSProperties = { minHeight: layout.minHeight ?? undefined }
+        const isResizing = editing && selection?.type === "section" && selection.id === section.id
         const body = renderSection(section)
 
         // Hero desenha o próprio cabeçalho (manchete gigante sobre a foto), então
@@ -146,14 +298,24 @@ export function SiteCanvas({
             </SectionShell>
           )
 
-        if (!editing) return <div key={section.id}>{content}</div>
+        if (!editing) {
+          return (
+            <SiteStyleScope key={section.id} scope={`sec:${section.id}`} layout={layout}>
+              <div style={frameStyle}>{content}</div>
+            </SiteStyleScope>
+          )
+        }
 
         return (
+          <SiteStyleScope key={section.id} scope={`sec:${section.id}`} layout={layout}>
           <div
-            key={section.id}
+            data-section-id={section.id}
             className="relative"
             style={{
-              outline: "1px dashed rgba(245,241,232,0.12)",
+              ...frameStyle,
+              outline: isResizing
+                ? "2px solid #5AC8FA"
+                : "1px dashed rgba(245,241,232,0.12)",
               outlineOffset: "-1px",
               // Seção oculta continua visível PARA O LÍDER, esmaecida: sumir de
               // vez no modo de edição esconderia que ela existe e ele a
@@ -171,6 +333,10 @@ export function SiteCanvas({
                 onMoveDown={() => move(index, 1)}
                 onToggleEnabled={() => patchSection(section.id, { enabled: !section.enabled })}
                 onRemove={() => remove(section.id)}
+                onToggleResize={() =>
+                  setSelection(isResizing ? null : { type: "section", id: section.id })
+                }
+                resizing={isResizing}
                 labels={{
                   moveUp: t("moveUp", "Mover para cima"),
                   moveDown: t("moveDown", "Mover para baixo"),
@@ -179,15 +345,37 @@ export function SiteCanvas({
                   remove: t("removeSection", "Remover seção"),
                   confirmRemove: t("confirmRemove", "Remover"),
                   cancel: t("cancel", "Cancelar"),
+                  resize: t("resizeSection", "Tamanho da seção"),
                 }}
               />
             </div>
             {/* Espaço para a barra não cobrir o conteúdo da seção. */}
             <div className="pt-14">{content}</div>
+            {isResizing && (
+              <SectionResizeDots
+                layout={layout}
+                onChange={(next) => patchLayout(section.id, next)}
+                label={t("resizeSection", "Tamanho da seção")}
+              />
+            )}
           </div>
+          </SiteStyleScope>
         )
       })}
     </div>
+
+    {sizePanel && (
+      <SiteSizeToolbar
+        title={sizePanel.title}
+        rows={sizePanel.rows}
+        autoLabel={t("sizeAuto", "Auto")}
+        resetLabel={t("sizeReset", "Voltar ao automático")}
+        closeLabel={t("sizeClose", "Fechar")}
+        onReset={sizePanel.reset}
+        onClose={() => setSelection(null)}
+      />
+    )}
+    </SiteStyleProvider>
   )
 
   function renderSection(section: SiteSection) {

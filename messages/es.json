@@ -5925,6 +5925,21 @@
     "dnsValue": "Valor",
     "open": "Abrir",
     "remove": "Eliminar",
-    "save": "Guardar"
+    "save": "Guardar",
+    "backToCommunity": "Volver a la comunidad",
+    "notFound": "Comunidad no encontrada.",
+    "resizeSection": "Tamaño de la sección",
+    "resizeHint": "Haz clic en un texto para ver los puntos de las esquinas y arrástralos para cambiar el tamaño. En el móvil, haz zoom con dos dedos y toca la caja.",
+    "sizeTitleText": "Caja de texto",
+    "sizeTitleSection": "Sección",
+    "sizeFont": "Fuente",
+    "sizeWidth": "Ancho",
+    "sizeHeight": "Alto",
+    "sizeAuto": "Auto",
+    "sizeReset": "Volver al automático",
+    "sizeClose": "Cerrar",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomReset": "Zoom 100%"
   }
 }

@@ -91,6 +91,7 @@ export function ContactSection({
               editing={editing}
               value={data.address}
               onChange={(v) => onChange({ ...data, address: v })}
+              styleKey="address"
               placeholder={labels.address}
               maxLength={160}
               multiline
@@ -128,6 +129,7 @@ export function ContactSection({
               editing={editing}
               value={data.hours}
               onChange={(v) => onChange({ ...data, hours: v })}
+              styleKey="hours"
               placeholder={labels.hours}
               maxLength={320}
               multiline

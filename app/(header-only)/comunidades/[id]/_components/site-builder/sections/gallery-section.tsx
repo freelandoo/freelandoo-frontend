@@ -122,6 +122,7 @@ export function GallerySection({
                   editing={editing}
                   value={p.caption}
                   onChange={(v) => patch(p.id, { caption: v })}
+                  styleKey={`photo.${p.id}.caption`}
                   placeholder={labels.caption}
                   maxLength={120}
                   className="mt-1 text-[11px]"

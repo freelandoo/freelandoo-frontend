@@ -7,7 +7,7 @@
 // escolher a seção duas vezes, uma na lista e outra na tela.
 
 import { useState } from "react"
-import { ArrowDown, ArrowUp, Eye, EyeOff, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, Eye, EyeOff, Scaling, Trash2 } from "lucide-react"
 
 export function SiteSectionToolbar({
   label,
@@ -18,6 +18,8 @@ export function SiteSectionToolbar({
   onMoveDown,
   onToggleEnabled,
   onRemove,
+  onToggleResize,
+  resizing,
   labels,
 }: {
   label: string
@@ -28,6 +30,9 @@ export function SiteSectionToolbar({
   onMoveDown: () => void
   onToggleEnabled: () => void
   onRemove: () => void
+  /** Liga/desliga as alças de tamanho DESTA seção. */
+  onToggleResize: () => void
+  resizing: boolean
   labels: {
     moveUp: string
     moveDown: string
@@ -36,6 +41,7 @@ export function SiteSectionToolbar({
     remove: string
     confirmRemove: string
     cancel: string
+    resize: string
   }
 }) {
   // Remoção pede confirmação DENTRO da própria barra: um modal aqui roubaria o
@@ -95,6 +101,19 @@ export function SiteSectionToolbar({
             aria-label={labels.moveDown}
           >
             <ArrowDown className="h-4 w-4" />
+          </button>
+          {/* As alças da seção não ficam sempre ligadas: elas cobrem os cantos,
+              e cantos ocupados atrapalhariam a edição do texto que mora ali. */}
+          <button
+            type="button"
+            className={btn}
+            onClick={onToggleResize}
+            title={labels.resize}
+            aria-label={labels.resize}
+            aria-pressed={resizing}
+            style={resizing ? { background: "#F2B705", color: "#0B0B0D" } : undefined}
+          >
+            <Scaling className="h-4 w-4" />
           </button>
           <button
             type="button"

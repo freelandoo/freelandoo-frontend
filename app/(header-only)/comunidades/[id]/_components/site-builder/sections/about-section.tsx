@@ -66,6 +66,7 @@ export function AboutSection({
             editing={editing}
             value={data.body}
             onChange={(v) => onChange({ ...data, body: v })}
+            styleKey="body"
             placeholder={labels.body}
             maxLength={2000}
             multiline
@@ -88,6 +89,7 @@ export function AboutSection({
                   editing={editing}
                   value={h.title}
                   onChange={(v) => patchHighlight(h.id, { title: v })}
+                  styleKey={`hl.${h.id}.title`}
                   placeholder={labels.highlightTitle}
                   maxLength={60}
                   className="text-sm font-extrabold uppercase tracking-[0.08em]"
@@ -98,6 +100,7 @@ export function AboutSection({
                   editing={editing}
                   value={h.description}
                   onChange={(v) => patchHighlight(h.id, { description: v })}
+                  styleKey={`hl.${h.id}.desc`}
                   placeholder={labels.highlightDescription}
                   maxLength={160}
                   multiline

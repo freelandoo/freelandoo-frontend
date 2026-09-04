@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
@@ -36,14 +36,10 @@ const CondoResidence = dynamic(
   () => import("./_components/condo-residence").then((m) => m.CondoResidence),
   { ssr: false }
 )
-// "Meu Site" (mig 212): o site próprio da comunidade, montado pelo líder num
-// construtor visual INLINE — não é modal, ocupa a aba. Carregado por `dynamic`
-// porque o construtor traz editor, paleta e seções: quem só veio ler o feed não
-// deve baixar nada disso.
-const CommunitySiteBuilder = dynamic(
-  () => import("./_components/site-builder/community-site-builder").then((m) => m.CommunitySiteBuilder),
-  { ssr: false }
-)
+// "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
+// `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
+// aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
+// portas daqui — o item "Meu Site" do menu "+" e a aba "Site" — LEVAM até lá.
 // Avisos, anúncios internos, enquetes e lista de vizinhos (migs 197-199).
 // Continuam existindo — o que morreu foi a TELA separada, não as features.
 const CondoExtras = dynamic(
@@ -199,13 +195,15 @@ export default function CommunityDetailPage() {
   const [goal, setGoal] = useState<Goal | null>(null)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
-  const [tab, setTab] = useState<"feed" | "members" | "site">("feed")
+  const [tab, setTab] = useState<"feed" | "members">("feed")
+  const router = useRouter()
+  const sitePath = id ? `/comunidades/${id}/site` : "/comunidades"
   // O menu do "+" mora no HEADCARD e a aba fica MUITO abaixo (privacidade,
   // enxame, perfil...). Trocar a aba dali sozinho não muda nada na parte da
   // tela que a pessoa está olhando — parece botão quebrado. Por isso o item
   // do menu troca a aba E leva a pessoa até ela.
   const tabsRef = useRef<HTMLDivElement | null>(null)
-  const goToTab = useCallback((key: "feed" | "members" | "site") => {
+  const goToTab = useCallback((key: "feed" | "members") => {
     setTab(key)
     // Depois da pintura: a aba só existe no DOM no quadro seguinte.
     requestAnimationFrame(() => {
@@ -327,14 +325,14 @@ export default function CommunityDetailPage() {
     [isLeader, siteEnabled, t]
   )
 
-  const communityTabs = useMemo(() => {
-    const tabs: [("feed" | "members" | "site"), string][] = [
-      ["feed", t("tabFeed", "Feed")],
-      ["members", t("tabMembers", "Membros")],
-    ]
-    if (showSiteTab) tabs.push(["site", t("tabSite", "Site")])
-    return tabs
-  }, [showSiteTab, t])
+  const communityTabs = useMemo(
+    () =>
+      [
+        ["feed", t("tabFeed", "Feed")],
+        ["members", t("tabMembers", "Membros")],
+      ] as ["feed" | "members", string][],
+    [t]
+  )
 
   const accent = accentHex(accentDraft)
   const showAsLeaderEdit = isLeader && edit
@@ -957,7 +955,7 @@ export default function CommunityDetailPage() {
                 onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
                 extras={siteExtras}
                 onPickExtra={(extraId) => {
-                  if (extraId === "site") goToTab("site")
+                  if (extraId === "site") router.push(sitePath)
                 }}
               />
             </div>
@@ -1336,16 +1334,21 @@ export default function CommunityDetailPage() {
                   {label}
                 </button>
               ))}
+              {/* "Site" fica na fila das abas porque é ali que se procura por
+                  ele — mas é LINK, não aba: o site abre na página dele. Manter
+                  as duas coisas (aba e página) daria duas experiências do mesmo
+                  site, e a de dentro da caixa é a que mente sobre o resultado. */}
+              {showSiteTab && (
+                <Link href={sitePath} className="-mb-0.5 flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] opacity-50 hover:opacity-100"
+                  style={{ borderBottom: "4px solid transparent" }}>
+                  <Globe className="h-3.5 w-3.5" style={{ color: accent }} />
+                  {t("tabSite", "Site")}
+                </Link>
+              )}
             </div>
 
             <div className="mt-6">
-              {tab === "site" ? (
-                <CommunitySiteBuilder
-                  idProfile={community.id_profile}
-                  isLeader={isLeader}
-                  accent={accent}
-                />
-              ) : tab === "members" ? (
+              {tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (

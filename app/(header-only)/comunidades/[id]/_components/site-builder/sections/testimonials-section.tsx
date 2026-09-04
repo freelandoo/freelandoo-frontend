@@ -124,6 +124,7 @@ export function TestimonialsSection({
                 editing={editing}
                 value={item.text}
                 onChange={(v) => patch(item.id, { text: v })}
+                styleKey={`item.${item.id}.text`}
                 placeholder={labels.text}
                 maxLength={480}
                 multiline
@@ -151,6 +152,7 @@ export function TestimonialsSection({
                     editing={editing}
                     value={item.name}
                     onChange={(v) => patch(item.id, { name: v })}
+                    styleKey={`item.${item.id}.name`}
                     placeholder={labels.name}
                     maxLength={80}
                     className="block text-xs font-extrabold uppercase tracking-[0.1em]"
@@ -161,6 +163,7 @@ export function TestimonialsSection({
                       editing={editing}
                       value={item.role}
                       onChange={(v) => patch(item.id, { role: v })}
+                      styleKey={`item.${item.id}.role`}
                       placeholder={labels.role}
                       maxLength={80}
                       className="block text-[11px]"

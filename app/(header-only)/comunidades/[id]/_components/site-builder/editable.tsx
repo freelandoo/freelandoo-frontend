@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ImagePlus, Loader2, Move, Trash2 } from "lucide-react"
 import { SITE_OBJECT_POSITIONS, type SiteObjectPosition } from "@/types/community-site"
+import { ResizeDots, nextFontSize, nextWidth, useTextBox } from "./site-style-context"
 
 /**
  * Texto editável no lugar (clica e digita).
@@ -31,6 +32,7 @@ export function InlineText({
   placeholder = "",
   multiline = false,
   maxLength,
+  styleKey,
 }: {
   value: string
   onChange: (next: string) => void
@@ -41,9 +43,53 @@ export function InlineText({
   placeholder?: string
   multiline?: boolean
   maxLength?: number
+  /**
+   * Nome desta caixa DENTRO do escopo atual (o canvas abre um escopo por
+   * seção). Sem ele a caixa não tem tamanho próprio — nem alça, nem entrada no
+   * mapa de tamanhos. Campos que são configuração e não conteúdo (o link do
+   * botão, por exemplo) ficam de fora de propósito: ninguém "redimensiona" uma
+   * URL, e cada chave ocupa uma vaga do teto.
+   */
+  styleKey?: string
 }) {
   const ref = useRef<HTMLElement | null>(null)
+  const wrapRef = useRef<HTMLSpanElement | null>(null)
   const [empty, setEmpty] = useState(!value)
+  const box = useTextBox(styleKey)
+
+  // Guarda o ponto de partida do arraste. Sem ele cada pointermove somaria
+  // sobre o valor JÁ alterado e o texto dispararia para o teto.
+  const dragRef = useRef<{ font: number; width: number; parentW: number } | null>(null)
+
+  const onResize = useCallback(
+    (delta: { dx: number; dy: number }, phase: "start" | "move") => {
+      const el = ref.current
+      const wrap = wrapRef.current
+      if (!el || !wrap) return
+      if (phase === "start") {
+        const parent = wrap.parentElement
+        const parentW = parent ? parent.getBoundingClientRect().width : wrap.getBoundingClientRect().width
+        dragRef.current = {
+          // Sem tamanho escolhido ainda, o ponto de partida é o que a classe
+          // do Tailwind já pinta — começar de um número fixo faria o texto
+          // SALTAR no primeiro pixel de arraste.
+          font: box.fontSize ?? (parseFloat(window.getComputedStyle(el).fontSize) || 16),
+          width:
+            box.width ??
+            Math.round((wrap.getBoundingClientRect().width / (parentW || 1)) * 100),
+          parentW,
+        }
+        return
+      }
+      const d = dragRef.current
+      if (!d) return
+      box.setStyle({
+        fontSize: nextFontSize(d.font, delta.dy),
+        width: nextWidth(d.width, delta.dx, d.parentW),
+      })
+    },
+    [box]
+  )
 
   // useLayoutEffect: escrever o texto antes da pintura evita o flash de campo
   // vazio no primeiro render de cada seção.
@@ -94,20 +140,34 @@ export function InlineText({
     [multiline]
   )
 
+  // O tamanho escolhido vale nas DUAS pontas: a caixa que o líder encolheu tem
+  // que sair encolhida para quem visita, senão o que ele publicou não é o que
+  // ele viu. Fonte no elemento (a classe do Tailwind precisa perder para o
+  // inline) e largura no invólucro, que é onde as alças se apoiam.
+  const textStyle: React.CSSProperties = box.fontSize
+    ? { ...style, fontSize: `${box.fontSize}px` }
+    : style || {}
+  const wrapStyle: React.CSSProperties | undefined = box.width
+    ? { display: "block", width: `${box.width}%`, maxWidth: "100%" }
+    : undefined
+
   if (!editing) {
     // Em LEITURA o placeholder não existe. Ele é uma dica de edição ("Manchete
     // do banner"), e mostrá-lo ao visitante publicaria o rótulo do formulário
     // como se fosse o conteúdo do site. Campo vazio simplesmente não ocupa
     // espaço — quem monta a seção decide se ela aparece.
     if (!value) return null
-    return (
-      <Tag className={className} style={style}>
+    const read = (
+      <Tag className={className} style={textStyle}>
         {value}
       </Tag>
     )
+    // Só embrulha quando há largura escolhida: em leitura, nó a mais por caixa
+    // é custo sem contrapartida.
+    return wrapStyle ? <span style={wrapStyle}>{read}</span> : read
   }
 
-  return (
+  const editable = (
     <Tag
       ref={ref as React.Ref<HTMLDivElement>}
       contentEditable
@@ -121,9 +181,33 @@ export function InlineText({
       onBlur={handleInput}
       onPaste={handlePaste}
       onKeyDown={handleKeyDown}
+      onFocus={box.key ? box.select : undefined}
+      // Âncora do painel de botões: é por ela que ele descobre o tamanho que a
+      // caixa TEM agora, quando ainda está em automático.
+      data-style-key={box.key || undefined}
       className={`fl-site-editable ${empty ? "fl-site-editable-empty" : ""} ${className}`}
-      style={style}
+      style={textStyle}
     />
+  )
+
+  // Caixa sem nome (campo de configuração) não ganha invólucro nem alça.
+  if (!box.key) return editable
+
+  return (
+    <span
+      ref={wrapRef}
+      className="relative block"
+      style={wrapStyle}
+      // Tocar em qualquer lugar da caixa seleciona: no celular a alça só
+      // aparece depois da seleção, e exigir acertar o texto exato seria pedir
+      // pontaria que dedo não tem.
+      onPointerDown={box.select}
+    >
+      {editable}
+      {box.selected && (
+        <ResizeDots onResize={onResize} onCommit={() => (dragRef.current = null)} label={placeholder || "resize"} />
+      )}
+    </span>
   )
 }
 

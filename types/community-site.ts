@@ -132,7 +132,44 @@ type SiteSectionBase<K extends SiteSectionKind, D> = {
   enabled: boolean
   title: string
   subtitle: string
+  /** Tamanho escolhido nas alças. Ausente/null = AUTO (segue o responsivo). */
+  layout?: SiteSectionLayout
   data: D
+}
+
+/**
+ * Tamanho da seção. `null` é AUTO — a seção nunca redimensionada continua
+ * fluida no celular. É diferente de 0, que seria uma escolha do líder.
+ */
+export type SiteSectionLayout = {
+  minHeight: number | null
+  maxWidth: number | null
+}
+
+/** Tamanho de UMA caixa de texto: corpo da fonte e largura em % do bloco. */
+export type SiteTextStyle = {
+  fontSize: number | null
+  width: number | null
+}
+
+/**
+ * Faixas de sanidade — ESPELHO de `SIZES` no backend, que é quem manda. Aqui
+ * elas existem para a alça não deixar o líder arrastar até um valor que o
+ * servidor vai fixar em silêncio (o texto "voltaria" no próximo carregamento).
+ */
+export const SITE_SIZES = {
+  FONT_MIN: 8,
+  FONT_MAX: 200,
+  WIDTH_MIN: 10,
+  WIDTH_MAX: 100,
+  HEIGHT_MIN: 40,
+  HEIGHT_MAX: 2400,
+  MAXW_MIN: 320,
+  MAXW_MAX: 1920,
+} as const
+
+export function clampSize(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)))
 }
 
 /** Dados de uma seção, indexados pelo kind. */
@@ -145,6 +182,16 @@ export type CommunitySiteConfig = {
   siteName: string
   tagline: string
   theme: SiteColorTheme
+  /**
+   * Tamanhos por caixa de texto, indexados pelo CAMINHO da caixa
+   * (`site.name`, `sec:<id>.title`, `sec:<id>.hero.<slideId>.headline`…).
+   *
+   * Mapa à parte em vez de um campo dentro de cada texto: os textos são
+   * strings simples espalhadas por seis formatos de seção, e pendurar estilo
+   * em cada uma mudaria a forma de todos eles para guardar dois números.
+   * Site antigo não tem o campo — por isso é opcional.
+   */
+  textStyles?: Record<string, SiteTextStyle>
   sections: SiteSection[]
 }
 

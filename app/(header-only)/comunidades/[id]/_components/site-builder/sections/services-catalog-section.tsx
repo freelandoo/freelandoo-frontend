@@ -144,6 +144,7 @@ export function ServicesCatalogSection({
                   editing={editing}
                   value={item.title}
                   onChange={(v) => patchItem(item.id, { title: v })}
+                  styleKey={`item.${item.id}.title`}
                   placeholder={labels.title}
                   maxLength={120}
                   className="text-base font-extrabold uppercase tracking-[0.06em]"
@@ -156,6 +157,7 @@ export function ServicesCatalogSection({
                     editing={editing}
                     value={item.description}
                     onChange={(v) => patchItem(item.id, { description: v })}
+                    styleKey={`item.${item.id}.desc`}
                     placeholder={labels.description}
                     maxLength={320}
                     multiline
@@ -170,6 +172,7 @@ export function ServicesCatalogSection({
                       editing={editing}
                       value={item.price}
                       onChange={(v) => patchItem(item.id, { price: v })}
+                      styleKey={`item.${item.id}.price`}
                       placeholder={labels.price}
                       maxLength={40}
                       className="fl-display text-xl leading-none"
@@ -183,6 +186,7 @@ export function ServicesCatalogSection({
                         editing={editing}
                         value={item.duration}
                         onChange={(v) => patchItem(item.id, { duration: v })}
+                        styleKey={`item.${item.id}.duration`}
                         placeholder={labels.duration}
                         maxLength={40}
                         className="text-[11px] font-extrabold uppercase tracking-[0.1em]"

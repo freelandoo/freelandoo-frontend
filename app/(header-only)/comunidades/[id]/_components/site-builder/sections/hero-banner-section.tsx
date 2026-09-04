@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
 import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineText } from "../editable"
+import { useSectionLayout } from "../site-style-context"
 
 const HEIGHTS: Record<HeroData["height"], string> = {
   short: "min-h-[320px] md:min-h-[380px]",
@@ -50,6 +51,13 @@ export function HeroBannerSection({
 }) {
   const slides = data.slides
   const [index, setIndex] = useState(0)
+  // O hero tem altura PRÓPRIA (short/medium/tall). Quando o líder puxa a alça
+  // da seção, a altura escolhida por ele vence — e a classe sai de cena, senão
+  // o `min-h` dela seguraria o banner acima do tamanho pedido.
+  const layout = useSectionLayout()
+  const customHeight = layout?.minHeight ?? null
+  const heightClass = customHeight ? "" : HEIGHTS[data.height]
+  const heightStyle = customHeight ? { minHeight: customHeight } : undefined
 
   // Remover o último slide deixaria o índice apontando para o vazio.
   useEffect(() => {
@@ -101,8 +109,8 @@ export function HeroBannerSection({
     if (!editing) return null
     return (
       <section
-        className={`flex items-center justify-center ${HEIGHTS[data.height]}`}
-        style={{ background: theme.surface }}
+        className={`flex items-center justify-center ${heightClass}`}
+        style={{ background: theme.surface, ...heightStyle }}
       >
         <BuilderButton onClick={addSlide} icon={Plus} tone="accent">
           {labels.addSlide}
@@ -112,7 +120,10 @@ export function HeroBannerSection({
   }
 
   return (
-    <section className={`relative w-full overflow-hidden ${HEIGHTS[data.height]}`}>
+    <section
+      className={`relative w-full overflow-hidden ${heightClass}`}
+      style={heightStyle}
+    >
       <div className="absolute inset-0">
         <EditableImage
           url={current.imageUrl}
@@ -142,12 +153,16 @@ export function HeroBannerSection({
 
       <div className="relative flex h-full min-h-inherit items-end">
         <div className="w-full px-5 py-10 md:px-10 md:py-16">
-          <div className="mx-auto w-full max-w-6xl">
+          <div
+            className="mx-auto w-full max-w-6xl"
+            style={layout?.maxWidth ? { maxWidth: layout.maxWidth } : undefined}
+          >
             <InlineText
               as="h1"
               editing={editing}
               value={current.headline}
               onChange={(v) => patchSlide(current.id, { headline: v })}
+              styleKey={`hero.${current.id}.headline`}
               placeholder={labels.headline}
               maxLength={120}
               className="fl-display max-w-4xl text-4xl leading-[0.95] md:text-7xl"
@@ -159,6 +174,7 @@ export function HeroBannerSection({
                 editing={editing}
                 value={current.subheadline}
                 onChange={(v) => patchSlide(current.id, { subheadline: v })}
+                styleKey={`hero.${current.id}.subheadline`}
                 placeholder={labels.subheadline}
                 maxLength={240}
                 multiline

@@ -5945,6 +5945,21 @@
     "dnsValue": "Value",
     "open": "Open",
     "remove": "Remove",
-    "save": "Save"
+    "save": "Save",
+    "backToCommunity": "Back to the community",
+    "notFound": "Community not found.",
+    "resizeSection": "Section size",
+    "resizeHint": "Click a text to reveal the corner dots and drag to resize it. On phones, pinch to zoom and tap the box.",
+    "sizeTitleText": "Text box",
+    "sizeTitleSection": "Section",
+    "sizeFont": "Font",
+    "sizeWidth": "Width",
+    "sizeHeight": "Height",
+    "sizeAuto": "Auto",
+    "sizeReset": "Back to automatic",
+    "sizeClose": "Close",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Zoom 100%"
   }
 }
