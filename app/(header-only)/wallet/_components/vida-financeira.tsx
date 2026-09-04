@@ -61,7 +61,7 @@ function fmtDay(e: Entry, t: TFn) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-export function VidaFinanceira() {
+export function VidaFinanceira({ onEntriesChanged }: { onEntriesChanged?: () => void } = {}) {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
   const [ym, setYm] = useState(currentYm())
@@ -98,6 +98,9 @@ export function VidaFinanceira() {
       await clientFetchWithTimeout(`/api/me/wallet/finance/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${t}` } }, 8000)
     } finally {
       void load()
+      // O KPI "Total recebido" da página soma estas entradas: sem o aviso ele
+      // ficaria com o número velho até a pessoa recarregar a Carteira.
+      onEntriesChanged?.()
     }
   }
 
@@ -184,6 +187,7 @@ export function VidaFinanceira() {
           onCreated={() => {
             setModal(null)
             void load()
+            onEntriesChanged?.()
           }}
         />
       )}

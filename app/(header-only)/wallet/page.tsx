@@ -164,6 +164,8 @@ export default function WalletPage() {
   const [error, setError] = useState("")
   const [couponCopied, setCouponCopied] = useState(false)
   const [generatingCoupon, setGeneratingCoupon] = useState(false)
+  /** Entradas manuais da Vida Financeira, somadas desde sempre. */
+  const [manualInCents, setManualInCents] = useState(0)
 
   const token = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null)
 
@@ -215,6 +217,30 @@ export default function WalletPage() {
     setPage(1)
     void load(1, true)
   }, [load])
+
+  /**
+   * A metade "sua" do Total recebido. Fica FORA do `load` de propósito: não
+   * depende de perfil nem de período, então trocar o filtro do extrato não
+   * precisa buscá-la de novo. Só o que a Vida Financeira muda a invalida.
+   */
+  const loadManualIn = useCallback(async () => {
+    const t = token()
+    if (!t) return
+    try {
+      const r = await clientFetchWithTimeout(
+        "/api/me/wallet/finance/received-in",
+        { headers: { Authorization: `Bearer ${t}` } },
+        9000
+      )
+      if (r.ok) setManualInCents(Number((await r.json())?.received_in_cents) || 0)
+    } catch {
+      /* silencioso: o KPI cai para só o lado da plataforma */
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadManualIn()
+  }, [loadManualIn])
 
   const totals = agg?.totals || {}
   const showingCoupon = kind === "coupon"
@@ -573,7 +599,7 @@ export default function WalletPage() {
           saiu. Estava no fim da página, depois de KPIs, MEI e gráfico, e por
           isso só aparecia depois de duas telas de rolagem. */}
       <section className="mx-auto mt-3 w-full max-w-6xl px-3 md:px-8">
-        <VidaFinanceira />
+        <VidaFinanceira onEntriesChanged={loadManualIn} />
       </section>
 
       {/* GANHOS NA PLATAFORMA — escopo, KPIs, MEI e gráfico. Vem depois porque
@@ -627,19 +653,34 @@ export default function WalletPage() {
           </div>
           {profileId && (
             <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
-              {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por perfil.")}
+              {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por perfil.")}{" "}
+              {tr("manualInAccountNote", "Suas entradas da Vida Financeira também são da conta e seguem no Total recebido.")}
             </p>
           )}
 
           {/* KPIs */}
           {/* "Revertido" veio do Meus Faturamentos: sem ele, reembolso e
               cancelamento sumiam da conta e o extrato não fechava. */}
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <Kpi label={tr("kpiReceived", "Recebido")} value={brl(totals.received, locale)} accent />
             <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
             <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
             <Kpi label={tr("kpiReversed", "Revertido")} value={brl(totals.reversed, locale)} />
             <Kpi label={tr("kpiEntries", "Lançamentos")} value={String(totals.count || 0)} />
+            {/* TOTAL RECEBIDO = o que a plataforma pagou + o que a pessoa
+                lançou como entrada na Vida Financeira.
+                A conta é honesta porque as DUAS metades são vitalícias: os
+                KPIs vizinhos não filtram por data (o seletor de período move só
+                o gráfico) e a soma manual conta tudo que já venceu.
+                Ressalva que a legenda precisa dizer: a Vida Financeira é da
+                CONTA — não existe lançamento manual por perfil —, então com um
+                perfil selecionado só a metade da plataforma encolhe. */}
+            <Kpi
+              label={tr("kpiTotalReceived", "Total recebido")}
+              value={brl((totals.received || 0) + manualInCents, locale)}
+              hint={tr("kpiTotalReceivedHint", "plataforma + suas entradas")}
+              emphasis
+            />
           </div>
 
           {/* MEI — termômetro do teto + recibo */}
@@ -703,21 +744,46 @@ function PanelShell({
 }
 
 /* ── KPI ──────────────────────────────────────────────────────────────────── */
-function Kpi({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+/**
+ * `accent` = o verde do "Recebido". `emphasis` = o fundo preto do "Total
+ * recebido": ele é a SOMA dos outros, e repetir o verde do Recebido faria os
+ * dois parecerem o mesmo número.
+ */
+function Kpi({
+  label,
+  value,
+  accent,
+  emphasis,
+  hint,
+}: {
+  label: string
+  value: string
+  accent?: boolean
+  emphasis?: boolean
+  hint?: string
+}) {
+  const bg = emphasis ? INK : accent ? GREEN : PAPER
   return (
-    <div
-      className="border-2 border-[#0B0B0D] p-3.5 shadow-[5px_5px_0_0_#0B0B0D]"
-      style={{ background: accent ? GREEN : PAPER }}
-    >
-      <p className={cn("text-[10px] font-extrabold uppercase tracking-[0.14em]", accent ? "text-[#06251F]" : "text-[#6B6457]")}>
+    <div className="border-2 border-[#0B0B0D] p-3.5 shadow-[5px_5px_0_0_#0B0B0D]" style={{ background: bg }}>
+      <p
+        className={cn(
+          "text-[10px] font-extrabold uppercase tracking-[0.14em]",
+          emphasis ? "text-[#C9C2B6]" : accent ? "text-[#06251F]" : "text-[#6B6457]"
+        )}
+      >
         {label}
       </p>
       <p
         className="mt-1 fl-display text-2xl leading-none sm:text-[1.7rem]"
-        style={{ color: accent ? INK : GREEN_DEEP }}
+        style={{ color: emphasis ? GREEN : accent ? INK : GREEN_DEEP }}
       >
         {value}
       </p>
+      {hint && (
+        <p className={cn("mt-1 text-[9px] font-bold uppercase tracking-[0.1em]", emphasis ? "text-[#8A8378]" : "text-[#6B6457]")}>
+          {hint}
+        </p>
+      )}
     </div>
   )
 }

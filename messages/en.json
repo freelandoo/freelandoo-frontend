@@ -4162,7 +4162,10 @@
     "couponPillAria": "My coupon, statement and affiliate panel",
     "marketPill": "Market",
     "marketPillAria": "Market news, quotes and top gainers",
-    "headcardHint": "The buttons behind the photo open your fundraiser, your coupon and the market. The first tap shows the name; the second opens it."
+    "headcardHint": "The buttons behind the photo open your fundraiser, your coupon and the market. The first tap shows the name; the second opens it.",
+    "kpiTotalReceived": "Total received",
+    "kpiTotalReceivedHint": "platform + your income",
+    "manualInAccountNote": "Your Financial Life income is account-wide too and stays in Total received."
   },
   "Polens": {
     "eyebrow": "Polen packages",
