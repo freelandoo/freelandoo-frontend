@@ -300,9 +300,19 @@ export default function WalletPage() {
     <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
       <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
 
-      {/* HERO */}
-      <section className="mx-auto w-full max-w-6xl px-3 pt-9 md:px-8 md:pt-12">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      {/* HEADCARD — é a MANCHETE da página: a foto com os três botões
+          retráteis atrás dela e, no lugar onde antes ficavam o nome e o @, o
+          próprio título "Carteira". A hero solta que existia acima daqui
+          morreu: eram dois blocos dizendo a mesma coisa, e o espaço entre eles
+          empurrava o conteúdo de verdade para fora da primeira tela.
+
+          A pilha é o PRIMEIRO filho da coluna do avatar e o card da foto vem
+          depois no DOM: sem z-index, quem pinta por último cobre, então a foto
+          esconde o corpo do botão e só o ícone escapa pela direita. É a mesma
+          armadilha já paga no headcard do perfil — `-z-10` funcionaria aqui e
+          quebraria lá, por isso a regra é a ordem do DOM. */}
+      <section className="mx-auto w-full max-w-6xl px-3 pt-5 md:px-8 md:pt-6">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/account"
             className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6] transition hover:text-[#F1EDE2]"
@@ -317,24 +327,8 @@ export default function WalletPage() {
           )}
         </div>
 
-        <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("heroEyebrow", "a sua grana")}</p>
-        <h1 className="relative min-w-0">
-          <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
-            {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
-          </span>
-          <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
-        </h1>
-      </section>
-
-      {/* HEADCARD — a foto do perfil com os três botões retráteis atrás dela.
-          A pilha é o PRIMEIRO filho da coluna do avatar e o card da foto vem
-          depois no DOM: sem z-index, quem pinta por último cobre, então a foto
-          esconde o corpo do botão e só o ícone escapa pela direita. É a mesma
-          armadilha já paga no headcard do perfil — `-z-10` funcionaria aqui e
-          quebraria lá, por isso a regra é a ordem do DOM. */}
-      <section className="mx-auto mt-9 w-full max-w-6xl px-3 md:px-8">
         <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-5">
             <div className="relative flex shrink-0 flex-col items-center">
               <PillStack
                 pills={pills}
@@ -354,22 +348,19 @@ export default function WalletPage() {
             </div>
 
             {/* Folga à esquerda maior que a foto: é por trás dela que os botões
-                nascem, e o ícone de cada um escapa alguns pixels para cá. */}
-            <div className="min-w-0 flex-1 pl-10 md:pl-12">
-              <p className="fl-display truncate text-2xl leading-none text-[#0B0B0D] md:text-3xl">
-                {perfil?.nome || tr("heroTitle", "Carteira")}
+                nascem, e o ícone de cada um escapa alguns pixels para cá.
+                O título usa clamp porque divide a linha com a foto — em vw puro
+                ele estouraria a caixa nos celulares estreitos. */}
+            <div className="min-w-0 flex-1 pl-8 md:pl-10">
+              <p className="fl-marker text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>
+                {tr("heroEyebrow", "a sua grana")}
               </p>
-              {perfil?.username && (
-                <p className="mt-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-                  @{perfil.username}
-                </p>
-              )}
-              <p className="mt-2.5 max-w-sm text-[12px] leading-relaxed text-[#6B6457]">
-                {tr(
-                  "headcardHint",
-                  "Os botões atrás da foto abrem o cofrinho, o cupom e o mercado. O primeiro toque mostra o nome; o segundo abre."
-                )}
-              </p>
+              <h1 className="relative mt-1 min-w-0">
+                <span className="fl-display block text-[clamp(2.1rem,9vw,4.25rem)] leading-[0.84] text-[#0B0B0D]">
+                  {tr("heroTitle", "Carteira")}<span style={{ color: GREEN_DEEP }}>.</span>
+                </span>
+                <Underline className="absolute -bottom-1 left-0.5 h-3 w-[52%] max-w-[220px]" style={{ color: GREEN }} />
+              </h1>
             </div>
           </div>
         </div>
@@ -379,7 +370,7 @@ export default function WalletPage() {
           pessoa acabou de pedir; o painel financeiro fixo (KPIs, MEI, gráfico,
           Vida Financeira) continua embaixo, valendo para os três. */}
       {panel && (
-        <section className="mx-auto mt-6 w-full max-w-6xl px-3 md:px-8">
+        <section className="mx-auto mt-5 w-full max-w-6xl px-3 md:px-8">
           {panel === "vaquinha" && (
             <PanelShell
               title={tr("myVaquinhaTitle", "Minha vaquinha")}
@@ -570,10 +561,17 @@ export default function WalletPage() {
         </section>
       )}
 
-      {/* PAINEL FINANCEIRO FIXO — escopo, KPIs, MEI, gráfico e Vida Financeira.
-          Fica sempre visível: é o retrato da conta, não o conteúdo de um dos
-          três botões. */}
-      <section className="mx-auto mt-10 w-full max-w-6xl px-3 md:px-8">
+      {/* VIDA FINANCEIRA — grudada no headcard (só a folga da sombra dura).
+          É o que a pessoa vem fazer aqui todo dia: lançar o que entrou e o que
+          saiu. Estava no fim da página, depois de KPIs, MEI e gráfico, e por
+          isso só aparecia depois de duas telas de rolagem. */}
+      <section className="mx-auto mt-3 w-full max-w-6xl px-3 md:px-8">
+        <VidaFinanceira />
+      </section>
+
+      {/* GANHOS NA PLATAFORMA — escopo, KPIs, MEI e gráfico. Vem depois porque
+          é retrato (o que a plataforma já te pagou), não lançamento. */}
+      <section className="mx-auto mt-8 w-full max-w-6xl px-3 md:px-8">
         <div className="min-w-0">
           {/* CONTROLES DE ESCOPO — valem para os KPIs, o gráfico e o extrato. */}
           <div className="flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -629,7 +627,7 @@ export default function WalletPage() {
           {/* KPIs */}
           {/* "Revertido" veio do Meus Faturamentos: sem ele, reembolso e
               cancelamento sumiam da conta e o extrato não fechava. */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Kpi label={tr("kpiReceived", "Recebido")} value={brl(totals.received, locale)} accent />
             <Kpi label={tr("kpiAvailable", "Disponível")} value={brl(totals.available, locale)} />
             <Kpi label={tr("kpiPending", "Aguardando")} value={brl(totals.pending, locale)} />
@@ -638,22 +636,18 @@ export default function WalletPage() {
           </div>
 
           {/* MEI — termômetro do teto + recibo */}
-          <div className="mt-6">
+          <div className="mt-3">
             <MeiCard />
           </div>
 
           {/* Gráfico */}
-          <div className="mt-6 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
+          <div className="mt-3 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
             <h2 className="mb-4 flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
               <BarChart3 className="h-5 w-5" /> {tr("earningsPerDay", "Ganhos por dia")}
             </h2>
             <EarningsBars series={series} loading={loading} />
           </div>
 
-          {/* Vida Financeira — orçamento manual mensal */}
-          <div className="mt-6">
-            <VidaFinanceira />
-          </div>
         </div>
       </section>
     </main>

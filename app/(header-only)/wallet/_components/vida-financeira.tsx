@@ -106,21 +106,26 @@ export function VidaFinanceira() {
 
   return (
     <section className="w-full">
-      <div className="relative mb-8">
+      {/* ESPAÇAMENTO — a regra desta tela: tudo GRUDADO, com a folga só onde
+          o assunto muda de verdade.
+          `gap-1.5` (6px) não é "um espacinho": é exatamente a folga que a
+          sombra dura de 5px de cada card precisa para não ser coberta pelo
+          card seguinte. Zero faria as sombras sumirem debaixo do vizinho. */}
+      <div className="relative mb-3">
         <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
         <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>
         <Underline className="absolute -bottom-2 left-0 h-3.5 w-48" style={{ color: GREEN }} />
-        <p className="mt-4 max-w-xl text-sm font-medium text-[#C9C2B6]">
+        <p className="mt-3 max-w-xl text-sm font-medium text-[#C9C2B6]">
           {tr("financeIntro", "Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.")}
         </p>
       </div>
 
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[160px_minmax(0,1fr)]">
+      <div className="flex flex-col gap-1.5 lg:grid lg:grid-cols-[160px_minmax(0,1fr)] lg:gap-1.5">
         {/* Coluna de meses */}
         <MonthRail year={year} month={month} onPick={(y, m) => setYm(y * 100 + m)} tr={tr} locale={locale} />
 
         <div className="min-w-0">
-          <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
+          <div className="flex flex-col gap-1.5 md:grid md:grid-cols-2">
             <Column
               dir="in"
               data={data}
@@ -142,8 +147,10 @@ export function VidaFinanceira() {
           </div>
 
           {/* Fechamento do mês */}
+          {/* Fechamento é o ÚNICO respiro da planilha: ele é o veredito do
+              mês, e colado nas colunas viraria só mais uma linha delas. */}
           <div
-            className="mt-5 flex flex-col gap-2 border-2 border-[#0B0B0D] p-5 shadow-[6px_6px_0_0_#0B0B0D] sm:flex-row sm:items-center sm:justify-between"
+            className="mt-6 flex flex-col gap-2 border-2 border-[#0B0B0D] p-5 shadow-[6px_6px_0_0_#0B0B0D] sm:flex-row sm:items-center sm:justify-between"
             style={{ background: positive ? GREEN : RED }}
           >
             <div>
@@ -215,7 +222,9 @@ function CostChart({ data, tr, locale }: { data: MonthData | null; tr: TFn; loca
   const empty = inTotal === 0 && outTotal === 0
 
   return (
-    <div className="mt-5 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
+    // Grudado no fechamento de propósito: o gráfico explica o número que
+    // acabou de aparecer acima dele.
+    <div className="mt-1.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
       <h3 className="mb-4 fl-display text-2xl text-[#0B0B0D]">{tr("costControl", "Controle de custos")}</h3>
 
       {empty ? (
