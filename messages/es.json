@@ -4135,7 +4135,14 @@
     "save": "Guardar",
     "saving": "Guardando...",
     "dataSaved": "Datos guardados.",
-    "availableAfterActivation": "Disponible tras la activación."
+    "availableAfterActivation": "Disponible tras la activación.",
+    "vaquinhaPill": "Vaquita",
+    "vaquinhaPillAria": "Abrir mi vaquita",
+    "couponPill": "Mi cupón",
+    "couponPillAria": "Mi cupón, extracto y panel de afiliado",
+    "marketPill": "Mercado",
+    "marketPillAria": "Noticias de mercado, cotizaciones y acciones en alza",
+    "headcardHint": "Los botones detrás de la foto abren la vaquita, el cupón y el mercado. El primer toque muestra el nombre; el segundo abre."
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",
@@ -5787,7 +5794,8 @@
     "gamertagLabel": "Tu nick (opcional)",
     "communityNameOptional": "Nombre de la comunidad (opcional)",
     "createGameCta": "Crear comunidad del juego",
-    "bioLabel": "Descripción (opcional)"
+    "bioLabel": "Descripción (opcional)",
+    "myChildren": "Mis hijos"
   },
   "CommunitySite": {
     "modeEditing": "Editando",

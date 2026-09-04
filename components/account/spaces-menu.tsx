@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Building2,
+  Baby,
   Car,
-  Dumbbell,
-  Gamepad2,
   PawPrint,
   Plus,
   Signpost,
@@ -25,9 +24,15 @@ import { getToken } from "@/lib/auth"
  * O menu que abre ao apertar a foto de perfil (decisão do Alex, 2026-08-30).
  *
  * Ele responde uma pergunta só: "o que é meu?". Cada linha é uma modalidade —
- * pet, carro, games, academia, condomínio, rua (bairro) e comunidade temática.
- * Quem JÁ tem daquele tipo vê a lista; quem não tem cai direto no fluxo de
- * criar. Nenhuma linha leva a uma tela vazia perguntando o que fazer.
+ * pet, carro, condomínio, rua (bairro) e comunidade temática. Quem JÁ tem
+ * daquele tipo vê a lista; quem não tem cai direto no fluxo de criar. Nenhuma
+ * linha leva a uma tela vazia perguntando o que fazer.
+ *
+ * GAMES e ACADEMIA saíram daqui (decisão do Alex, 2026-09-04): cada um já tem
+ * o próprio botão retrátil atrás da foto de perfil (`HeadcardPills`), e manter
+ * a linha no menu seria a segunda porta para a mesma tela. "Meus filhos" entrou
+ * no lugar delas — é o painel parental, que antes só se alcançava por um chip
+ * perdido entre os badges do headcard.
  *
  * O visual é o mesmo do "+" do mural (publish-menu-button): itens EMPILHADOS,
  * um em cima do outro, fecha por clique fora e Esc.
@@ -44,25 +49,18 @@ type SpaceRow = {
   subject_label: string | null
 }
 
-type AcademyRow = {
-  id_academy: string
-  slug: string | null
-  display_name: string
-  avatar_url: string | null
-  role: string
-}
-
+/**
+ * `GET /me/spaces` também devolve `academies` e os games da pessoa; o menu não
+ * lê mais nem um nem outro — os dois viraram botão retrátil do headcard. A
+ * modalidade `games` continua no tipo porque a resposta segue trazendo a chave.
+ */
 type SpacesPayload = {
   spaces: Record<SpaceKind, SpaceRow[]>
-  academies: AcademyRow[]
 }
 
 const EMPTY: SpacesPayload = {
   spaces: { pet: [], car: [], games: [], condo: [], neighborhood: [], common: [] },
-  academies: [],
 }
-
-type MenuKey = SpaceKind | "academy"
 
 export function SpacesMenu({
   open,
@@ -70,6 +68,7 @@ export function SpacesMenu({
   onNewProfile,
   hasBees = false,
   onViewBees,
+  isMinor = false,
 }: {
   open: boolean
   onClose: () => void
@@ -77,6 +76,12 @@ export function SpacesMenu({
   onNewProfile: () => void
   hasBees?: boolean
   onViewBees?: () => void
+  /**
+   * Menor supervisionado não tem "Meus filhos": para ele o painel parental é
+   * outra coisa (pedir permissão), e essa porta continua sendo o chip
+   * "Supervisionada" do headcard.
+   */
+  isMinor?: boolean
 }) {
   const t = useTranslations("Spaces")
   const router = useRouter()
@@ -86,18 +91,15 @@ export function SpacesMenu({
   // deixaria a segunda chamada de hook condicional (rules-of-hooks).
   const communitiesPref = useUserFeature("communities")
   const profilesPref = useUserFeature("profiles")
-  const academyFlag = useFeature("fitness_academias")
-  const academyPref = useUserFeature("fitness_academias")
   const condoFlag = useFeature("condominio")
   const neighborhoodFlag = useFeature("bairro")
   const petFlag = useFeature("pet")
   const carFlag = useFeature("carro")
-  const gamesFlag = useFeature("games")
 
   const [data, setData] = useState<SpacesPayload>(EMPTY)
   const [loading, setLoading] = useState(false)
-  const [view, setView] = useState<MenuKey | null>(null)
-  const [creating, setCreating] = useState<"pet" | "car" | "games" | "common" | null>(null)
+  const [view, setView] = useState<SpaceKind | null>(null)
+  const [creating, setCreating] = useState<"pet" | "car" | "common" | null>(null)
   // A comunidade comum é a única das quatro que pode ser RECUSADA (teto de
   // comunidades, nível mínimo). Antes o formulário explicava o motivo; sem ele,
   // engolir o erro deixaria o item do menu parecendo quebrado.
@@ -112,21 +114,20 @@ export function SpacesMenu({
    * perguntando as mesmas coisas antes seria um segundo lugar para editar o
    * que a página já sabe editar.
    */
-  const createAndOpen = async (kind: "pet" | "car" | "games" | "common") => {
+  const createAndOpen = async (kind: "pet" | "car" | "common") => {
     const token = getToken()
     if (!token || creating) return
     setCreating(kind)
     setCreateError(null)
     try {
-      // A comunidade comum entra pela rota genérica; as trêss modalidades da mig
-      // 210 têm base própria. Corpo vazio nas quatro: o backend reconhece o
-      // pedido sem nome e sem enxame como RASCUNHO (mig 219) e devolve a
-      // comunidade já criada, que a página abre em modo de edição.
+      // A comunidade comum entra pela rota genérica; pet e carro (mig 210) têm
+      // base própria. Corpo vazio nas três: o backend reconhece o pedido sem
+      // nome e sem enxame como RASCUNHO (mig 219) e devolve a comunidade já
+      // criada, que a página abre em modo de edição.
       const path =
         kind === "pet" ? "/api/pets"
           : kind === "car" ? "/api/cars"
-            : kind === "games" ? "/api/games"
-              : "/api/communities"
+            : "/api/communities"
       const res = await fetch(path, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -154,10 +155,7 @@ export function SpacesMenu({
       const res = await fetch("/api/me/spaces", { headers: { Authorization: `Bearer ${token}` } })
       const json = await res.json()
       if (res.ok) {
-        setData({
-          spaces: { ...EMPTY.spaces, ...(json.spaces || {}) },
-          academies: Array.isArray(json.academies) ? json.academies : [],
-        })
+        setData({ spaces: { ...EMPTY.spaces, ...(json.spaces || {}) } })
       }
     } catch {
       /* menu continua utilizável: sem dados ele oferece criar */
@@ -200,7 +198,7 @@ export function SpacesMenu({
   }
 
   type Item = {
-    key: MenuKey
+    key: SpaceKind
     icon: LucideIcon
     label: string
     enabled: boolean
@@ -238,37 +236,6 @@ export function SpacesMenu({
       })),
       create: () => createAndOpen("car"),
       createLabel: t("newCar", "Adicionar carro"),
-    },
-    {
-      key: "games",
-      icon: Gamepad2,
-      label: t("myGames", "Meus games"),
-      enabled: gamesFlag,
-      rows: data.spaces.games.map((r) => ({
-        id: r.id_profile,
-        name: r.display_name,
-        subtitle: r.subject_label,
-        href: `/comunidades/${r.id_profile}`,
-      })),
-      create: () => createAndOpen("games"),
-      createLabel: t("newGame", "Novo jogo"),
-    },
-    {
-      key: "academy",
-      icon: Dumbbell,
-      label: t("myAcademy", "Minha academia"),
-      enabled: academyFlag && academyPref,
-      rows: data.academies.map((a) => ({
-        id: a.id_academy,
-        name: a.display_name,
-        subtitle:
-          a.role === "owner" ? t("academyOwner", "Você é dono") : t("academyMember", "Aluno"),
-        href: a.slug ? `/academias/${a.slug}` : "/academias",
-      })),
-      // Academia continua tendo cadastro próprio (mig 176): o menu leva à
-      // vitrine, que é onde se cria e onde se acha a academia para se vincular.
-      create: () => go("/academias"),
-      createLabel: t("findAcademy", "Encontrar academia"),
     },
     {
       key: "condo",
@@ -404,6 +371,21 @@ export function SpacesMenu({
                   className={itemCls}
                 >
                   <UserRound className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("newProfile", "Novo perfil")}
+                </button>
+              )}
+
+              {/* Meus filhos = painel parental. Entrou aqui porque a única
+                  porta dele era um chip espremido entre os badges do headcard;
+                  o chip do adulto foi embora junto, para não virarem duas
+                  portas para a mesma tela. */}
+              {!isMinor && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => go("/account/parental")}
+                  className={itemCls}
+                >
+                  <Baby className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("myChildren", "Meus filhos")}
                 </button>
               )}
 

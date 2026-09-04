@@ -48,12 +48,17 @@ import { cn } from "@/lib/utils"
  * Botão novo de headcard entra AQUI, nunca como markup solto na página: peça de
  * headcard escrita duas vezes diverge em silêncio (foi assim que a foto de
  * perfil sumiu de uma das telas).
+ *
+ * A Carteira tem headcard próprio com OUTROS três botões (cofrinho, cupom e
+ * mercado, que abrem painéis da própria página em vez de navegar). O que ela
+ * reusa é o `PillStack` abaixo — a mecânica —, não este preset: a lista de
+ * botões é da superfície, a mecânica é de todo mundo.
  */
 
 /** Folga fixa da rotação (-3deg) + sombra dura da foto. Ver comentário acima. */
 const CLEARANCE = "pl-3.5"
 
-type PillSpec = {
+export type PillSpec = {
   key: string
   icon: LucideIcon
   label: string
@@ -64,6 +69,12 @@ type PillSpec = {
   href?: string
   /** Destino resolvido na hora do clique (Games precisa criar-ou-abrir). */
   onOpen?: () => void
+  /**
+   * Marca o pill cujo destino já está no ar. Só escurece o corpo (a cor de
+   * hover): mantê-lo ABERTO seria a alternativa óbvia, mas o rótulo aberto
+   * cobre o que está à direita da foto enquanto durar o painel.
+   */
+  active?: boolean
 }
 
 function Pill({
@@ -101,6 +112,8 @@ function Pill({
     </span>
   )
 
+  const baseBg = spec.active ? spec.bgHover : spec.bg
+
   const className = cn(
     "flex w-full items-center border-2 border-[#0B0B0D] py-1.5 pr-3 text-left",
     "text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition-colors",
@@ -127,9 +140,9 @@ function Pill({
             }
           }}
           className={className}
-          style={{ background: spec.bg }}
+          style={{ background: baseBg }}
           onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = spec.bg)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
         >
           {body}
         </Link>
@@ -141,9 +154,9 @@ function Pill({
           title={spec.ariaLabel}
           onClick={() => (open ? spec.onOpen?.() : onArm())}
           className={className}
-          style={{ background: spec.bg }}
+          style={{ background: baseBg }}
           onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = spec.bg)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
         >
           {body}
         </button>
@@ -152,31 +165,32 @@ function Pill({
   )
 }
 
-export function HeadcardPills({
-  avatarPadClass = "pl-24 md:pl-28",
+/**
+ * A mecânica dos pills, sem opinião sobre QUAIS são: um aberto por vez, fecha
+ * por clique fora e Esc, empilhados de cima para baixo atrás da foto.
+ *
+ * Existe separada do preset do headcard porque a Carteira precisa dos MESMOS
+ * botões com outro conteúdo (cofrinho, cupom e mercado, que abrem painéis da
+ * própria página em vez de navegar). Reescrever a mecânica lá dentro seria a
+ * duplicação que este arquivo existe para impedir.
+ *
+ * Qual destino está no ar é dito pela COR (`spec.active`), não por deixar o
+ * pill aberto: aberto, o rótulo cobriria o que estiver à direita da foto o
+ * tempo todo em que o painel durasse.
+ */
+export function PillStack({
+  pills,
+  avatarPadClass,
   className,
 }: {
-  avatarPadClass?: string
+  pills: PillSpec[]
+  avatarPadClass: string
   className?: string
 }) {
-  const t = useTranslations("Account")
-  const router = useRouter()
   const rootRef = useRef<HTMLDivElement>(null)
   // Um aberto por vez: três rótulos abertos ao mesmo tempo viram uma parede de
   // texto saindo de trás da foto.
   const [openKey, setOpenKey] = useState<string | null>(null)
-  const [goingToGames, setGoingToGames] = useState(false)
-
-  // A Carteira é NATIVA (saiu da Loja de Funções na mig 216): ninguém compra. O
-  // que ainda pode escondê-la é só a preferência da seção "Funções" do menu
-  // lateral — `useUserFeature` devolve `owned && pref`, e com a função fora da
-  // venda `owned` é sempre true.
-  const walletOn = useUserFeature("wallet")
-  // Flag global do admin E preferência do usuário em consts SEPARADAS: um `&&`
-  // inline deixaria a segunda chamada de hook condicional (rules-of-hooks).
-  const academyFlag = useFeature("fitness_academias")
-  const fitnessPref = useUserFeature("fitness_academias")
-  const gamesFlag = useFeature("games")
 
   useEffect(() => {
     if (!openKey) return
@@ -195,6 +209,45 @@ export function HeadcardPills({
       document.removeEventListener("keydown", onKeyDown)
     }
   }, [openKey])
+
+  if (pills.length === 0) return null
+
+  return (
+    <div ref={rootRef} className={cn("flex flex-col gap-1.5", className)}>
+      {pills.map((spec) => (
+        <Pill
+          key={spec.key}
+          spec={spec}
+          open={openKey === spec.key}
+          onArm={() => setOpenKey(spec.key)}
+          avatarPadClass={avatarPadClass}
+        />
+      ))}
+    </div>
+  )
+}
+
+export function HeadcardPills({
+  avatarPadClass = "pl-24 md:pl-28",
+  className,
+}: {
+  avatarPadClass?: string
+  className?: string
+}) {
+  const t = useTranslations("Account")
+  const router = useRouter()
+  const [goingToGames, setGoingToGames] = useState(false)
+
+  // A Carteira é NATIVA (saiu da Loja de Funções na mig 216): ninguém compra. O
+  // que ainda pode escondê-la é só a preferência da seção "Funções" do menu
+  // lateral — `useUserFeature` devolve `owned && pref`, e com a função fora da
+  // venda `owned` é sempre true.
+  const walletOn = useUserFeature("wallet")
+  // Flag global do admin E preferência do usuário em consts SEPARADAS: um `&&`
+  // inline deixaria a segunda chamada de hook condicional (rules-of-hooks).
+  const academyFlag = useFeature("fitness_academias")
+  const fitnessPref = useUserFeature("fitness_academias")
+  const gamesFlag = useFeature("games")
 
   /**
    * Games não tem URL fixa: o destino é a comunidade "Meus games" da pessoa.
@@ -271,11 +324,10 @@ export function HeadcardPills({
     })
   }
 
-  if (pills.length === 0) return null
-
   return (
-    <div
-      ref={rootRef}
+    <PillStack
+      pills={pills}
+      avatarPadClass={avatarPadClass}
       // `48%` é da COLUNA (que inclui as estrelas), o que cai em ~57% da altura
       // da FOTO. A pilha é centrada nessa linha, então cresce para os dois lados
       // e continua deixando folga acima da fila "POSTS | ACOMP.", que é
@@ -288,20 +340,7 @@ export function HeadcardPills({
       // manifestação — de propósito. A pilha não é recortada ali porque vive na
       // coluna do avatar, irmã do banner (que tem `overflow-hidden` próprio), e
       // vem depois dele no DOM.
-      className={cn(
-        "absolute left-0 top-[calc(48%-2.5rem)] flex -translate-y-1/2 flex-col gap-1.5",
-        className
-      )}
-    >
-      {pills.map((spec) => (
-        <Pill
-          key={spec.key}
-          spec={spec}
-          open={openKey === spec.key}
-          onArm={() => setOpenKey(spec.key)}
-          avatarPadClass={avatarPadClass}
-        />
-      ))}
-    </div>
+      className={cn("absolute left-0 top-[calc(48%-2.5rem)] -translate-y-1/2", className)}
+    />
   )
 }

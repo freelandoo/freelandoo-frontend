@@ -3569,7 +3569,14 @@
     "save": "Salvar",
     "saving": "Salvando...",
     "dataSaved": "Dados salvos.",
-    "availableAfterActivation": "Disponível após ativação."
+    "availableAfterActivation": "Disponível após ativação.",
+    "vaquinhaPill": "Vaquinha",
+    "vaquinhaPillAria": "Abrir minha vaquinha",
+    "couponPill": "Meu cupom",
+    "couponPillAria": "Meu cupom, extrato e painel do afiliado",
+    "marketPill": "Mercado",
+    "marketPillAria": "Notícias de mercado, cotações e ações em alta",
+    "headcardHint": "Os botões atrás da foto abrem o cofrinho, o cupom e o mercado. O primeiro toque mostra o nome; o segundo abre."
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",
@@ -5221,7 +5228,8 @@
     "gamertagLabel": "Seu nick (opcional)",
     "communityNameOptional": "Nome da comunidade (opcional)",
     "createGameCta": "Criar comunidade do jogo",
-    "bioLabel": "Descrição (opcional)"
+    "bioLabel": "Descrição (opcional)",
+    "myChildren": "Meus filhos"
   },
   "CommunitySite": {
     "modeEditing": "Editando",

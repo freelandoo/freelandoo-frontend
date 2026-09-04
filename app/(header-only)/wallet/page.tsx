@@ -1,7 +1,16 @@
 "use client"
 
 // Carteira do user — extrato de ganhos (Loja/Serviço/Curso/Afiliado) escopável
-// por perfil + gráfico de barras (ganhos × dias) + sidebar de mercado.
+// por perfil + gráfico de barras (ganhos × dias) + painéis do cofrinho, do
+// cupom e do mercado.
+//
+// A tela é um HUB: um headcard com a foto e três botões RETRÁTEIS atrás dela
+// (mesma peça do headcard do perfil, `PillStack`), cada um abrindo um painel
+// desta própria página em vez de navegar. Cofrinho → vaquinha; porcentagem →
+// cupom, extrato e afiliado; gráfico → mercado. Antes, tudo isso vivia
+// empilhado na mesma rolagem, com o mercado numa barra lateral que só existia
+// no desktop.
+//
 // IDENTIDADE TABLOIDE (igual ranking/Casa Views/Mensagens): canvas warm escuro
 // + textura, manchete condensada fl-display, eyebrow manuscrito fl-marker,
 // cards de papel com cantos RETOS e sombra dura preta (hover vira sombra verde).
@@ -22,6 +31,7 @@ import {
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { Halftone, Underline } from "@/components/home/landing/primitives"
+import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
@@ -53,6 +63,17 @@ function shortDay(iso: string, locale = "pt-BR") {
 function fmtDate(iso?: string | null, locale = "pt-BR") {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })
+}
+function initialsOf(name?: string | null) {
+  return (
+    String(name || "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0] || "")
+      .join("")
+      .toUpperCase() || "?"
+  )
 }
 
 const KIND_META: Record<string, { label: string; labelKey: string; Icon: typeof ShoppingBag }> = {
@@ -92,6 +113,9 @@ type MarketItem = {
 }
 type NewsItem = { id: number; source?: string; category: string; title: string; url: string; thumb_url?: string | null; published_at?: string | null }
 
+/** Qual dos três botões retráteis está com o painel no ar. */
+type PanelKey = "vaquinha" | "coupon" | "market"
+
 const RANGES = [
   { key: "7d", label: "7 dias", labelKey: "range7d" },
   { key: "30d", label: "30 dias", labelKey: "range30d" },
@@ -128,7 +152,7 @@ export default function WalletPage() {
   const [profileId, setProfileId] = useState<string>("")
   const [range, setRange] = useState("30d")
   const [kind, setKind] = useState("all")
-  const [marketOpen, setMarketOpen] = useState(false)
+  const [panel, setPanel] = useState<PanelKey | null>(null)
 
   const [agg, setAgg] = useState<Agg | null>(null)
   const [items, setItems] = useState<Earning[]>([])
@@ -223,6 +247,55 @@ export default function WalletPage() {
     }
   }
 
+  /**
+   * Os três botões retráteis DESTA superfície.
+   *
+   * Mesma mecânica do headcard do perfil (um aberto por vez, o primeiro clique
+   * só revela o rótulo e o segundo é que age), outro conteúdo: aqui nenhum
+   * navega — cada um abre um painel logo abaixo. Apertar o que já está aberto
+   * fecha, senão o único jeito de recolher seria o X do painel.
+   *
+   * O cofrinho é o único que pode faltar: a Vaquinha é função com flag do admin
+   * E preferência da pessoa (mesma regra do menu lateral).
+   */
+  const pills = useMemo<PillSpec[]>(() => {
+    const toggle = (key: PanelKey) => () => setPanel((prev) => (prev === key ? null : key))
+    const list: PillSpec[] = []
+    if (vaquinhaFlag && vaquinhaPref) {
+      list.push({
+        key: "vaquinha",
+        icon: PiggyBank,
+        label: tr("vaquinhaPill", "Vaquinha"),
+        ariaLabel: tr("vaquinhaPillAria", "Abrir minha vaquinha"),
+        bg: "#15803D",
+        bgHover: "#0F5F2E",
+        onOpen: toggle("vaquinha"),
+        active: panel === "vaquinha",
+      })
+    }
+    list.push({
+      key: "coupon",
+      icon: Percent,
+      label: tr("couponPill", "Meu cupom"),
+      ariaLabel: tr("couponPillAria", "Meu cupom, extrato e painel do afiliado"),
+      bg: "#C2410C",
+      bgHover: "#9A3412",
+      onOpen: toggle("coupon"),
+      active: panel === "coupon",
+    })
+    list.push({
+      key: "market",
+      icon: BarChart3,
+      label: tr("marketPill", "Mercado"),
+      ariaLabel: tr("marketPillAria", "Notícias de mercado, cotações e ações em alta"),
+      bg: GREEN_DEEP,
+      bgHover: "#046A55",
+      onOpen: toggle("market"),
+      active: panel === "market",
+    })
+    return list
+  }, [vaquinhaFlag, vaquinhaPref, panel, tr])
+
   return (
     <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
       <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
@@ -245,148 +318,308 @@ export default function WalletPage() {
         </div>
 
         <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("heroEyebrow", "a sua grana")}</p>
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="relative min-w-0">
-            <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
-              {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
-            </span>
-            <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
-          </h1>
-          {/* Mercado (mobile): na hero p/ não ficar atrás da toolbar de baixo */}
-          <button
-            type="button"
-            onClick={() => setMarketOpen(true)}
-            aria-label={tr("market", "Mercado")}
-            className="mt-1 inline-flex aspect-square w-16 shrink-0 flex-col items-center justify-center gap-1 border-2 border-[#0B0B0D] text-[9px] font-extrabold uppercase leading-none tracking-[0.1em] text-[#06251F] shadow-[4px_4px_0_0_#0B0B0D] transition-transform hover:-translate-y-0.5 lg:hidden"
-            style={{ background: GREEN }}
-          >
-            <BarChart3 className="h-5 w-5" />
-            {tr("market", "Mercado")}
-          </button>
+        <h1 className="relative min-w-0">
+          <span className="fl-display block text-[16vw] leading-[0.84] text-[#F1EDE2] sm:text-[11vw] lg:text-[6.5rem]">
+            {tr("heroTitle", "Carteira")}<span style={{ color: GREEN }}>.</span>
+          </span>
+          <Underline className="absolute -bottom-2 left-1 h-4 w-[46%] max-w-[280px]" style={{ color: GREEN }} />
+        </h1>
+      </section>
+
+      {/* HEADCARD — a foto do perfil com os três botões retráteis atrás dela.
+          A pilha é o PRIMEIRO filho da coluna do avatar e o card da foto vem
+          depois no DOM: sem z-index, quem pinta por último cobre, então a foto
+          esconde o corpo do botão e só o ícone escapa pela direita. É a mesma
+          armadilha já paga no headcard do perfil — `-z-10` funcionaria aqui e
+          quebraria lá, por isso a regra é a ordem do DOM. */}
+      <section className="mx-auto mt-9 w-full max-w-6xl px-3 md:px-8">
+        <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="relative flex shrink-0 flex-col items-center">
+              <PillStack
+                pills={pills}
+                avatarPadClass="pl-24 md:pl-28"
+                className="absolute left-0 top-1/2 -translate-y-1/2"
+              />
+              <div className="w-24 -rotate-3 md:w-28">
+                <div className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] bg-[#0B0B0D]/[0.07] shadow-[6px_6px_0_0_#16B79A] ring-2 ring-[#0B0B0D]">
+                  {perfil?.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={perfil.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="fl-display text-3xl text-[#0B0B0D]">{initialsOf(perfil?.nome)}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Folga à esquerda maior que a foto: é por trás dela que os botões
+                nascem, e o ícone de cada um escapa alguns pixels para cá. */}
+            <div className="min-w-0 flex-1 pl-10 md:pl-12">
+              <p className="fl-display truncate text-2xl leading-none text-[#0B0B0D] md:text-3xl">
+                {perfil?.nome || tr("heroTitle", "Carteira")}
+              </p>
+              {perfil?.username && (
+                <p className="mt-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                  @{perfil.username}
+                </p>
+              )}
+              <p className="mt-2.5 max-w-sm text-[12px] leading-relaxed text-[#6B6457]">
+                {tr(
+                  "headcardHint",
+                  "Os botões atrás da foto abrem o cofrinho, o cupom e o mercado. O primeiro toque mostra o nome; o segundo abre."
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CORPO — coluna única (Vida Financeira em cima + Ganhos embaixo) + Mercado à direita */}
-      <section className="mx-auto mt-8 flex w-full max-w-6xl flex-col gap-6 px-3 md:px-8 lg:grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0">
-          {/* MEU CUPOM + MINHA VAQUINHA — as duas portas de dinheiro que a
-              pessoa ABRE (em vez de só acompanhar). O cupom veio do headcard do
-              /account, onde era um chip perdido entre badges; a vaquinha veio do
-              menu lateral. Os dois pertencem ao mesmo lugar: aqui. */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
-              <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-                <Ticket className="h-3.5 w-3.5" /> {tr("myCouponTitle", "Meu cupom")}
-              </p>
-              {perfil?.coupon_code ? (
-                <>
-                  <button
-                    type="button"
-                    data-tour="account-coupon"
-                    onClick={() => handleCopyCoupon(perfil.coupon_code!)}
-                    className="mt-2 inline-flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/45 px-3 py-2 font-mono text-sm font-black tracking-[0.18em] text-[#0B0B0D] transition hover:border-solid"
-                    style={{ background: couponCopied ? GREEN : "transparent" }}
-                  >
-                    {couponCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    {perfil.coupon_code}
-                  </button>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
-                    {tr("myCouponHint", "Compartilhe: quem comprar na plataforma com ele fica vinculado a você e gera comissão.")}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    data-tour="account-coupon"
-                    onClick={handleGenerateCoupon}
-                    disabled={generatingCoupon}
-                    className="mt-2 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-50"
-                    style={{ background: GREEN }}
-                  >
-                    {generatingCoupon && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {generatingCoupon ? tr("generating", "Gerando...") : tr("generateCoupon", "Gerar cupom")}
-                  </button>
-                  <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
-                    {tr("myCouponEmptyHint", "Você ainda não tem cupom. Gere o seu e comece a indicar.")}
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* O cofrinho. Só aparece com a função ligada (flag do admin E
-                preferência da pessoa) — mesma regra do menu lateral. */}
-            {vaquinhaFlag && vaquinhaPref && (
-              <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
-                <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
-                  <PiggyBank className="h-3.5 w-3.5" /> {tr("myVaquinhaTitle", "Minha vaquinha")}
-                </p>
+      {/* PAINEL DO BOTÃO ABERTO — vem logo abaixo do headcard porque é o que a
+          pessoa acabou de pedir; o painel financeiro fixo (KPIs, MEI, gráfico,
+          Vida Financeira) continua embaixo, valendo para os três. */}
+      {panel && (
+        <section className="mx-auto mt-6 w-full max-w-6xl px-3 md:px-8">
+          {panel === "vaquinha" && (
+            <PanelShell
+              title={tr("myVaquinhaTitle", "Minha vaquinha")}
+              icon={<PiggyBank className="h-4 w-4" />}
+              onClose={() => setPanel(null)}
+              closeLabel={tr("close", "Fechar")}
+            >
+              <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
                 <Link
                   href="/vaquinha/nova"
-                  className="mt-2 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
                   style={{ background: GREEN }}
                 >
                   <PiggyBank className="h-4 w-4" />
                   {tr("myVaquinhaCta", "Abrir minha vaquinha")}
                 </Link>
-                <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                <p className="mt-3 max-w-lg text-[12px] leading-relaxed text-[#6B6457]">
                   {tr("myVaquinhaHint", "Arrecade para um objetivo seu. Se você já tem uma, o botão abre a que existe.")}
                 </p>
               </div>
-            )}
-          </div>
+            </PanelShell>
+          )}
 
-          {/* Vida Financeira — orçamento manual mensal */}
-          <div className="mt-6">
-            <VidaFinanceira />
-          </div>
+          {panel === "coupon" && (
+            <PanelShell
+              title={tr("myCouponTitle", "Meu cupom")}
+              icon={<Percent className="h-4 w-4" />}
+              onClose={() => setPanel(null)}
+              closeLabel={tr("close", "Fechar")}
+            >
+              {/* O cupom, quem comprou com ele (extrato) e o painel do afiliado
+                  vivem juntos de propósito: são as três metades da mesma
+                  pergunta — "quanto o meu cupom rendeu, de quem, e para onde
+                  esse dinheiro vai". */}
+              <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+                <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
+                  <Ticket className="h-3.5 w-3.5" /> {tr("myCouponTitle", "Meu cupom")}
+                </p>
+                {perfil?.coupon_code ? (
+                  <>
+                    <button
+                      type="button"
+                      data-tour="account-coupon"
+                      onClick={() => handleCopyCoupon(perfil.coupon_code!)}
+                      className="mt-2 inline-flex items-center gap-2 border-2 border-dashed border-[#0B0B0D]/45 px-3 py-2 font-mono text-sm font-black tracking-[0.18em] text-[#0B0B0D] transition hover:border-solid"
+                      style={{ background: couponCopied ? GREEN : "transparent" }}
+                    >
+                      {couponCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {perfil.coupon_code}
+                    </button>
+                    <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                      {tr("myCouponHint", "Compartilhe: quem comprar na plataforma com ele fica vinculado a você e gera comissão.")}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      data-tour="account-coupon"
+                      onClick={handleGenerateCoupon}
+                      disabled={generatingCoupon}
+                      className="mt-2 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 disabled:opacity-50"
+                      style={{ background: GREEN }}
+                    >
+                      {generatingCoupon && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {generatingCoupon ? tr("generating", "Gerando...") : tr("generateCoupon", "Gerar cupom")}
+                    </button>
+                    <p className="mt-2 text-[11px] leading-relaxed text-[#6B6457]">
+                      {tr("myCouponEmptyHint", "Você ainda não tem cupom. Gere o seu e comece a indicar.")}
+                    </p>
+                  </>
+                )}
+              </div>
 
-          {/* GANHOS NA PLATAFORMA — controles + extrato (embaixo) */}
-          {/* CONTROLES */}
-          <div className="mt-12 flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">{tr("period", "Período")}</span>
-            <div className="flex gap-1.5">
-              {RANGES.map((r) => {
-                const active = range === r.key
-                return (
-                  <button
-                    key={r.key}
-                    type="button"
-                    onClick={() => setRange(r.key)}
-                    className={cn(
-                      "border-2 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
-                      active
-                        ? "border-[#0B0B0D] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-                        : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+              {/* Extrato — o recorte "Cupom" é a listagem de quem comprou com
+                  ele; os outros recortes seguem sendo o extrato inteiro. */}
+              <div className="mt-10">
+                <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+                  <div className="relative">
+                    <h3 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">{tr("statement", "Extrato")}</h3>
+                    <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {KIND_FILTERS.map((f) => {
+                      const active = kind === f.key
+                      return (
+                        <button
+                          key={f.key}
+                          type="button"
+                          onClick={() => setKind(f.key)}
+                          className={cn(
+                            "border-2 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
+                            active
+                              ? "border-[#0B0B0D] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                              : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+                          )}
+                          style={active ? { background: GREEN } : undefined}
+                        >
+                          {tr(f.labelKey, f.label)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {loading && rowCount === 0 ? (
+                  <ExtratoSkeleton />
+                ) : error ? (
+                  <StateBox
+                    icon={<AlertCircle className="h-6 w-6" />}
+                    title={tr("loadFailedTitle", "Não deu pra carregar.")}
+                    desc={error}
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => load(1, true)}
+                        className="border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+                        style={{ background: GREEN }}
+                      >
+                        {tr("tryAgain", "Tentar de novo")}
+                      </button>
+                    }
+                  />
+                ) : rowCount === 0 ? (
+                  <StateBox
+                    icon={showingCoupon ? <Ticket className="h-6 w-6" /> : <Inbox className="h-6 w-6" />}
+                    title={
+                      showingCoupon
+                        ? tr("couponSalesEmptyTitle", "Nenhuma venda com seu cupom ainda")
+                        : tr("emptyTitle", "Nenhum ganho ainda.")
+                    }
+                    desc={
+                      showingCoupon
+                        ? tr("couponSalesEmptyHint", "Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.")
+                        : tr("emptyDesc", "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.")
+                    }
+                  />
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-3">
+                      {showingCoupon
+                        ? couponSales.map((sale) => <CouponSaleRow key={sale.id} sale={sale} />)
+                        : items.map((it) => <ExtratoRow key={`${it.kind}-${it.id}`} it={it} />)}
+                    </div>
+                    {page < totalPages && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = page + 1
+                            setPage(next)
+                            void load(next, false)
+                          }}
+                          className="inline-flex items-center gap-2 border-2 border-[#F1EDE2]/25 px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
+                        >
+                          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          {tr("loadMore", "Carregar mais")}
+                        </button>
+                      </div>
                     )}
-                    style={active ? { background: GREEN } : undefined}
-                  >
-                    {tr(r.labelKey, r.label)}
-                  </button>
-                )
-              })}
+                  </>
+                )}
+              </div>
+
+              {/* AFILIADO — herdado do extinto /account/afiliado. */}
+              <div className="mt-12">
+                <div className="mb-6 relative">
+                  <h3 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">
+                    {tr("affiliateSection", "Afiliado")}
+                  </h3>
+                  <Underline className="absolute -bottom-2 left-0 h-3.5 w-28" style={{ color: GREEN }} />
+                </div>
+                <AfiliadoPanel />
+              </div>
+            </PanelShell>
+          )}
+
+          {panel === "market" && (
+            <PanelShell
+              title={tr("market", "Mercado")}
+              icon={<BarChart3 className="h-4 w-4" />}
+              onClose={() => setPanel(null)}
+              closeLabel={tr("close", "Fechar")}
+            >
+              <MarketPanel />
+            </PanelShell>
+          )}
+        </section>
+      )}
+
+      {/* PAINEL FINANCEIRO FIXO — escopo, KPIs, MEI, gráfico e Vida Financeira.
+          Fica sempre visível: é o retrato da conta, não o conteúdo de um dos
+          três botões. */}
+      <section className="mx-auto mt-10 w-full max-w-6xl px-3 md:px-8">
+        <div className="min-w-0">
+          {/* CONTROLES DE ESCOPO — valem para os KPIs, o gráfico e o extrato. */}
+          <div className="flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#C9C2B6]">{tr("period", "Período")}</span>
+              <div className="flex gap-1.5">
+                {RANGES.map((r) => {
+                  const active = range === r.key
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() => setRange(r.key)}
+                      className={cn(
+                        "border-2 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
+                        active
+                          ? "border-[#0B0B0D] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                          : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
+                      )}
+                      style={active ? { background: GREEN } : undefined}
+                    >
+                      {tr(r.labelKey, r.label)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Select de perfil */}
+            <div className="relative">
+              <select
+                value={profileId}
+                onChange={(e) => setProfileId(e.target.value)}
+                disabled={perfilLoading}
+                className="h-11 w-full appearance-none border-2 border-[#F1EDE2]/25 bg-transparent px-4 pr-10 text-sm font-bold uppercase tracking-wide text-[#F1EDE2] outline-none transition focus:border-[#16B79A] sm:min-w-[240px]"
+              >
+                <option value="" className="bg-[#1D1810]">{tr("allProfiles", "Todos os perfis")}</option>
+                {ownProfiles.map((p) => (
+                  <option key={p.id_profile} value={p.id_profile} className="bg-[#1D1810]">
+                    {p.display_name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#F1EDE2]" />
             </div>
           </div>
-
-          {/* Select de perfil */}
-          <div className="relative">
-            <select
-              value={profileId}
-              onChange={(e) => setProfileId(e.target.value)}
-              disabled={perfilLoading}
-              className="h-11 w-full appearance-none border-2 border-[#F1EDE2]/25 bg-transparent px-4 pr-10 text-sm font-bold uppercase tracking-wide text-[#F1EDE2] outline-none transition focus:border-[#16B79A] sm:min-w-[240px]"
-            >
-              <option value="" className="bg-[#1D1810]">{tr("allProfiles", "Todos os perfis")}</option>
-              {ownProfiles.map((p) => (
-                <option key={p.id_profile} value={p.id_profile} className="bg-[#1D1810]">
-                  {p.display_name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#F1EDE2]" />
-          </div>
-        </div>
           {profileId && (
             <p className="mt-2 text-[11px] text-[#C9C2B6]/70">
               {tr("courseAffiliateNote", "Curso e Afiliado são por conta — não filtram por perfil.")}
@@ -417,110 +650,54 @@ export default function WalletPage() {
             <EarningsBars series={series} loading={loading} />
           </div>
 
-          {/* Extrato */}
-          <div className="mt-10">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-              <div className="relative">
-                <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">{tr("statement", "Extrato")}</h2>
-                <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {KIND_FILTERS.map((f) => {
-                  const active = kind === f.key
-                  return (
-                    <button
-                      key={f.key}
-                      type="button"
-                      onClick={() => setKind(f.key)}
-                      className={cn(
-                        "border-2 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] transition-transform hover:-translate-y-0.5",
-                        active
-                          ? "border-[#0B0B0D] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
-                          : "border-[#F1EDE2]/25 bg-transparent text-[#F1EDE2] hover:border-[#F1EDE2]"
-                      )}
-                      style={active ? { background: GREEN } : undefined}
-                    >
-                      {tr(f.labelKey, f.label)}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {loading && rowCount === 0 ? (
-              <ExtratoSkeleton />
-            ) : error ? (
-              <StateBox
-                icon={<AlertCircle className="h-6 w-6" />}
-                title={tr("loadFailedTitle", "Não deu pra carregar.")}
-                desc={error}
-                action={
-                  <button
-                    type="button"
-                    onClick={() => load(1, true)}
-                    className="border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
-                    style={{ background: GREEN }}
-                  >
-                    {tr("tryAgain", "Tentar de novo")}
-                  </button>
-                }
-              />
-            ) : rowCount === 0 ? (
-              <StateBox
-                icon={showingCoupon ? <Ticket className="h-6 w-6" /> : <Inbox className="h-6 w-6" />}
-                title={
-                  showingCoupon
-                    ? tr("couponSalesEmptyTitle", "Nenhuma venda com seu cupom ainda")
-                    : tr("emptyTitle", "Nenhum ganho ainda.")
-                }
-                desc={
-                  showingCoupon
-                    ? tr("couponSalesEmptyHint", "Compartilhe seu cupom de afiliado pra começar a ver vendas aqui.")
-                    : tr("emptyDesc", "Quando você vender na Loja, fechar um agendamento, vender um curso ou receber comissão de afiliado, aparece aqui.")
-                }
-              />
-            ) : (
-              <>
-                <div className="flex flex-col gap-3">
-                  {showingCoupon
-                    ? couponSales.map((sale) => <CouponSaleRow key={sale.id} sale={sale} />)
-                    : items.map((it) => <ExtratoRow key={`${it.kind}-${it.id}`} it={it} />)}
-                </div>
-                {page < totalPages && (
-                  <div className="mt-6 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = page + 1
-                        setPage(next)
-                        void load(next, false)
-                      }}
-                      className="inline-flex items-center gap-2 border-2 border-[#F1EDE2]/25 px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2] transition hover:border-[#F1EDE2]"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                      {tr("loadMore", "Carregar mais")}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* AFILIADO — herdado do extinto /account/afiliado. */}
-          <div className="mt-12">
-            <div className="mb-6 relative">
-              <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">
-                {tr("affiliateSection", "Afiliado")}
-              </h2>
-              <Underline className="absolute -bottom-2 left-0 h-3.5 w-28" style={{ color: GREEN }} />
-            </div>
-            <AfiliadoPanel />
+          {/* Vida Financeira — orçamento manual mensal */}
+          <div className="mt-6">
+            <VidaFinanceira />
           </div>
         </div>
-
-        <MarketSidebar open={marketOpen} setOpen={setMarketOpen} />
       </section>
     </main>
+  )
+}
+
+/* ── Moldura do painel de um botão retrátil ───────────────────────────────── */
+function PanelShell({
+  title,
+  icon,
+  onClose,
+  closeLabel,
+  children,
+}: {
+  title: string
+  icon: ReactNode
+  onClose: () => void
+  closeLabel: string
+  children: ReactNode
+}) {
+  return (
+    <div className="border-l-4 pl-4 md:pl-5" style={{ borderColor: GREEN }}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 fl-display text-3xl text-[#F1EDE2] md:text-4xl">
+          <span
+            className="inline-flex h-7 w-7 items-center justify-center border-2 border-[#0B0B0D] text-[#06251F]"
+            style={{ background: GREEN }}
+          >
+            {icon}
+          </span>
+          {title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          title={closeLabel}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[#F1EDE2]/25 text-[#F1EDE2] transition hover:border-[#F1EDE2]"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {children}
+    </div>
   )
 }
 
@@ -697,8 +874,16 @@ function ExtratoSkeleton() {
   )
 }
 
-/* ═══ Sidebar de mercado ══════════════════════════════════════════════════════ */
-function MarketSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
+/* ═══ Painel de mercado ══════════════════════════════════════════════════════ */
+/**
+ * Era uma barra lateral fixa (e um slide-over no celular). Virou painel do
+ * botão "Mercado": no desktop as três seções ficam lado a lado, porque agora
+ * há a largura inteira da página em vez de uma coluna de 340px.
+ *
+ * O snapshot continua vindo do cache do backend numa requisição só, disparada
+ * UMA vez por montagem (`fetched`): abrir e fechar o painel não refaz a busca.
+ */
+function MarketPanel() {
   const tr = useTranslations("Wallet")
   const [data, setData] = useState<{ stocks: MarketItem[]; quotes: MarketItem[]; news: NewsItem[] } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -715,75 +900,36 @@ function MarketSidebar({ open, setOpen }: { open: boolean; setOpen: (v: boolean)
       .finally(() => setLoading(false))
   }, [])
 
-  const body = (
-    <div className="space-y-5">
-      <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
-        {loading ? <RowsSkeleton n={2} /> : data?.news?.length ? (
-          data.news.map((n) => <NewsRow key={n.id} item={n} />)
-        ) : (
-          <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
-        )}
-      </MarketSection>
-      <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
-        {loading ? <RowsSkeleton n={4} /> : err || !data?.quotes.length ? (
-          <Muted>{tr("noQuotes", "Cotações indisponíveis no momento.")}</Muted>
-        ) : (
-          data.quotes.map((q) => <QuoteRow key={q.symbol} item={q} />)
-        )}
-      </MarketSection>
-      <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
-        {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
-          <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
-        ) : (
-          data.stocks.slice(0, 5).map((s) => <QuoteRow key={s.symbol} item={s} />)
-        )}
-      </MarketSection>
-    </div>
-  )
-
-  const Card = (
-    <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
-      <h2 className="mb-4 flex items-center gap-2 fl-display text-2xl text-[#0B0B0D]">
-        <span className="inline-flex h-7 w-7 items-center justify-center border-2 border-[#0B0B0D]" style={{ background: GREEN }}>
-          <BarChart3 className="h-3.5 w-3.5 text-[#06251F]" />
-        </span>
-        {tr("market", "Mercado")}
-      </h2>
-      {body}
-    </div>
-  )
-
   return (
-    <>
-      <aside className="hidden lg:block">
-        <div className="sticky top-6">{Card}</div>
-      </aside>
-
-      {/* Mobile: slide-over (acionado pelo botão na hero) */}
-      <div className={cn("fixed inset-0 z-40 overflow-hidden lg:hidden", !open && "pointer-events-none")} aria-hidden={!open}>
-        <div
-          onClick={() => setOpen(false)}
-          className={cn("absolute inset-0 bg-[#0B0B0D]/60 transition-opacity duration-300", open ? "opacity-100" : "opacity-0")}
-        />
-        <div
-          className="absolute right-0 top-0 h-full w-[90%] max-w-[360px] overflow-y-auto border-l-2 border-[#0B0B0D] bg-[#15120E] p-4 transition-transform duration-300 ease-out"
-          style={{ transform: open ? "translateX(0)" : "translateX(100%)" }}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="fl-display text-2xl text-[#F1EDE2]">{tr("market", "Mercado")}</h2>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label={tr("close", "Fechar")}
-              className="inline-flex h-9 w-9 items-center justify-center border-2 border-[#F1EDE2]/25 text-[#F1EDE2]"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          {Card}
-        </div>
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+        <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
+          {loading ? <RowsSkeleton n={3} /> : data?.news?.length ? (
+            data.news.map((n) => <NewsRow key={n.id} item={n} />)
+          ) : (
+            <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
+          )}
+        </MarketSection>
       </div>
-    </>
+      <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+        <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
+          {loading ? <RowsSkeleton n={4} /> : err || !data?.quotes.length ? (
+            <Muted>{tr("noQuotes", "Cotações indisponíveis no momento.")}</Muted>
+          ) : (
+            data.quotes.map((q) => <QuoteRow key={q.symbol} item={q} />)
+          )}
+        </MarketSection>
+      </div>
+      <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
+        <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
+          {loading ? <RowsSkeleton n={4} /> : err || !data?.stocks.length ? (
+            <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
+          ) : (
+            data.stocks.slice(0, 5).map((s) => <QuoteRow key={s.symbol} item={s} />)
+          )}
+        </MarketSection>
+      </div>
+    </div>
   )
 }
 

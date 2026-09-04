@@ -1777,6 +1777,7 @@ export default function PerfilPage() {
                   <SpacesMenu
                     open={spacesOpen}
                     onClose={() => setSpacesOpen(false)}
+                    isMinor={perfil.is_minor === true}
                     hasBees={myBees.length > 0}
                     onViewBees={() => router.push(`/bees?bee=${myBees[myBees.length - 1]}`)}
                     onNewProfile={() => {
@@ -1863,26 +1864,22 @@ export default function PerfilPage() {
                     {status.desc_status.replace(/_/g, " ")}
                   </span>
                 ))}
-                {/* Botão Parental: sempre presente. Menor → pedir permissão; adulto → painel. */}
-                <HoverHint
-                  id={perfil.is_minor === true ? "account-parental-supervised" : "account-parental"}
-                  side="bottom"
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        perfil.is_minor === true
-                          ? "/account/parental/request"
-                          : "/account/parental"
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
-                  >
-                    <ShieldCheck className="h-3 w-3" />
-                    {perfil.is_minor === true ? t("supervised", "Supervisionada") : t("parental", "Parental")}
-                  </button>
-                </HoverHint>
+                {/* Só o MENOR mantém o chip: para ele o parental é "pedir
+                    permissão ao responsável". A porta do adulto virou "Meus
+                    filhos" no menu da foto de perfil — deixá-la também aqui
+                    seriam duas portas para a mesma tela. */}
+                {perfil.is_minor === true && (
+                  <HoverHint id="account-parental-supervised" side="bottom">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/account/parental/request")}
+                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      {t("supervised", "Supervisionada")}
+                    </button>
+                  </HoverHint>
+                )}
                 {/* O cupom mudou de casa: agora mora na Carteira (/wallet),
                     junto do resto do dinheiro. Não recolocar aqui. */}
                 {/* Mural do perfil-conta — mesmo pill do subperfil. */}
