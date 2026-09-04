@@ -329,7 +329,13 @@ export default function WalletPage() {
 
         <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
           <div className="flex items-center gap-3 md:gap-5">
-            <div className="relative flex shrink-0 flex-col items-center">
+            {/* TRÊS CAMADAS, de trás para a frente: título → botões → foto.
+                O `z-10` desta coluna é o que põe os botões NA FRENTE da
+                tipografia (sem ele o título, que vem depois no DOM, pintava por
+                cima do rótulo aberto e cortava a palavra no meio). Como a
+                coluna inteira sobe junto, a foto continua cobrindo o corpo do
+                botão pela ordem do DOM lá dentro — nada de z-index na foto. */}
+            <div className="relative z-10 flex shrink-0 flex-col items-center">
               <PillStack
                 pills={pills}
                 avatarPadClass="pl-24 md:pl-28"
@@ -347,11 +353,12 @@ export default function WalletPage() {
               </div>
             </div>
 
-            {/* Folga à esquerda maior que a foto: é por trás dela que os botões
-                nascem, e o ícone de cada um escapa alguns pixels para cá.
+            {/* A folga tem que passar dos ÍCONES, não da foto: os botões
+                nascem atrás dela e cada ícone escapa uns 42px para cá. Com
+                folga só da largura da foto, o título começava debaixo deles.
                 O título usa clamp porque divide a linha com a foto — em vw puro
                 ele estouraria a caixa nos celulares estreitos. */}
-            <div className="min-w-0 flex-1 pl-8 md:pl-10">
+            <div className="min-w-0 flex-1 pl-16 md:pl-24">
               <p className="fl-marker text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>
                 {tr("heroEyebrow", "a sua grana")}
               </p>
