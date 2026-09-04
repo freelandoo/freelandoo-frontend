@@ -28,15 +28,23 @@
 //
 // ═══ POR QUE SÃO DUAS METADES (o `<style>` E o desmonte) ═══
 //
-// O HTML que sai do servidor JÁ CONTÉM a dock — o navegador o pinta antes de
-// qualquer JavaScript rodar. Só desmontar no cliente deixaria a dock piscar na
-// tela do visitante a cada carregamento. Então o supressor também emite uma
-// regra de CSS, que viaja no mesmo HTML e vence a primeira pintura.
+// O desmonte é quem apaga de verdade — e só ele serve, porque CSS esconde sem
+// desligar: o heartbeat seguiria batendo, o prompt de instalação seguiria armado
+// e um modal aberto por portal escaparia de qualquer seletor daqui.
 //
-// O CSS sozinho também não basta: ele esconde, não desliga. O heartbeat
-// continuaria batendo, o prompt de instalação continuaria armado e um modal que
-// abre por portal escaparia do seletor. O desmonte é o que apaga de verdade;
-// o CSS só cobre os milissegundos até ele acontecer.
+// O `<style>` existe para a janela em que o desmonte ainda não aconteceu. Ele
+// viaja no mesmo HTML da página, então vale desde a primeira pintura, antes de
+// qualquer JavaScript rodar. Duas coisas caem nessa janela:
+//
+//  - o que ESTE componente renderiza no servidor (hoje o Toaster e a tag do
+//    AdSense — verificado no HTML de produção), que chega pintado;
+//  - a dock, que não vem no HTML (ela lê o login no cliente e devolve null
+//    enquanto não sabe), mas monta na hidratação, no mesmo commit em que o
+//    supressor ainda vai rodar o seu efeito.
+//
+// Ou seja: o CSS não é redundante nem é a metade principal. Ele cobre os
+// milissegundos até o desmonte, e cobre de antemão qualquer peça futura que
+// venha a renderizar no servidor.
 
 import React, {
   createContext,
