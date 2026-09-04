@@ -21,7 +21,7 @@ type Eligibility = {
   owned: number
   memberships: number
 }
-type Kind = "common" | "academy" | "condo"
+type Kind = "academy" | "condo"
 
 const inputCls =
   "h-11 w-full border-2 border-[#F5F1E8]/10 bg-[#0B0B0D]/40 px-4 text-sm text-[#F5F1E8] placeholder:text-[#F5F1E8]/40 outline-none focus:border-[#F2B705]/60"
@@ -35,7 +35,9 @@ export default function CreateCommunityPage() {
   // Academia é cadastrada aqui, mas continua vivendo em /academias (mig 176).
   const academyEnabled = useFeature("fitness_academias")
 
-  const [kind, setKind] = useState<Kind>("common")
+  // Começa em condomínio porque é a única das duas que chega aqui pelo menu
+  // ("Meu condomínio" manda ?tipo=condo); a academia chega pela vitrine dela.
+  const [kind, setKind] = useState<Kind>("condo")
   const [enxames, setEnxames] = useState<Enxame[]>([])
   const [name, setName] = useState("")
   const [idMachine, setIdMachine] = useState("")
@@ -217,13 +219,12 @@ export default function CreateCommunityPage() {
     }
   }
 
+  // A comunidade COMUM saiu daqui (mig 219): ela nasce vazia pelo menu da foto
+  // de perfil e o enxame é escolhido dentro da própria página, como pet, carro
+  // e games desde a mig 211. Sobram as duas que têm mesmo o que perguntar antes
+  // de existir: a academia (URL e token da API dela) e o condomínio (o endereço,
+  // que é o que torna o prédio pesquisável).
   const kinds: { key: Kind; icon: typeof Users; label: string; hint: string }[] = [
-    {
-      key: "common",
-      icon: Users,
-      label: t("kindCommon", "Comunidade"),
-      hint: t("kindCommonHint", "Gente reunida em torno de um enxame."),
-    },
     {
       key: "academy",
       icon: Dumbbell,
@@ -245,8 +246,10 @@ export default function CreateCommunityPage() {
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
 
-        <h1 className="mt-6 text-2xl font-extrabold text-[#F5F1E8]">{t("createTitle", "Criar comunidade")}</h1>
-        <p className="mt-1 text-sm text-[#F5F1E8]/60">{t("createSubtitle", "Reúna pessoas em torno de um enxame.")}</p>
+        <h1 className="mt-6 text-2xl font-extrabold text-[#F5F1E8]">{t("registerTitle", "Cadastrar")}</h1>
+        <p className="mt-1 text-sm text-[#F5F1E8]/60">
+          {t("registerSubtitle", "Academia e condomínio precisam de alguns dados antes de existir. Para uma comunidade comum, use “Criar comunidade” — ela nasce pronta para editar.")}
+        </p>
 
         {/* Tipo */}
         <div className="mt-6">

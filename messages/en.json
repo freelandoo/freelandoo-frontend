@@ -2650,7 +2650,12 @@
     "platformRetro": "Retro",
     "platformOther": "Other",
     "mySite": "My Site",
-    "tabSite": "Site"
+    "tabSite": "Site",
+    "enxameTitle": "Swarm",
+    "enxameNone": "— choose later",
+    "enxameHint": "It is how the community shows up in the showcase filters. You can choose it later.",
+    "registerTitle": "Register",
+    "registerSubtitle": "Gyms and buildings need a few details before they exist. For a regular community, use “Create community” — it is born ready to edit."
   },
   "Careers": {
     "hero.badge": "Careers",

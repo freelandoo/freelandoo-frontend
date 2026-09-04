@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Dumbbell, Loader2, MapPin, Search, Users } from "lucide-react"
+import { ArrowLeft, Dumbbell, Loader2, MapPin, Plus, Search, Users } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
@@ -26,8 +26,9 @@ export function AcademiesView() {
   const [q, setQ] = useState("")
   const [city, setCity] = useState("")
 
-  // O cadastro de academia mora na criação de comunidade (/comunidades/criar,
-  // tipo "Academia") — esta página é só vitrine/busca.
+  // O cadastro de academia mora no formulário de criação
+  // (/comunidades/criar?tipo=academy) — esta página é vitrine/busca e a porta
+  // para ele.
 
   const load = useCallback(async () => {
     setState("loading")
@@ -80,6 +81,18 @@ export function AcademiesView() {
           <h1 className="text-4xl font-black uppercase leading-none tracking-tight">
             {t("title", "Academias")}
           </h1>
+          {/* O cadastro de academia continua no formulário de criação (ela
+              precisa de URL e token da API dela antes de existir), mas a
+              comunidade comum saiu de lá (mig 219) — então a vitrine da
+              academia passa a ser a porta dela, em vez de depender de um
+              seletor de tipo que a pessoa teria de adivinhar. */}
+          <Link
+            href="/comunidades/criar?tipo=academy"
+            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+          >
+            <Plus className="h-4 w-4" />
+            {t("registerCta", "Cadastrar academia")}
+          </Link>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-[#9A938A]">
           {t(

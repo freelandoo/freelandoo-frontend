@@ -97,7 +97,11 @@ export function SpacesMenu({
   const [data, setData] = useState<SpacesPayload>(EMPTY)
   const [loading, setLoading] = useState(false)
   const [view, setView] = useState<MenuKey | null>(null)
-  const [creating, setCreating] = useState<"pet" | "car" | "games" | null>(null)
+  const [creating, setCreating] = useState<"pet" | "car" | "games" | "common" | null>(null)
+  // A comunidade comum é a única das quatro que pode ser RECUSADA (teto de
+  // comunidades, nível mínimo). Antes o formulário explicava o motivo; sem ele,
+  // engolir o erro deixaria o item do menu parecendo quebrado.
+  const [createError, setCreateError] = useState<string | null>(null)
 
   /**
    * Cria a comunidade VAZIA e abre a página dela.
@@ -108,19 +112,31 @@ export function SpacesMenu({
    * perguntando as mesmas coisas antes seria um segundo lugar para editar o
    * que a página já sabe editar.
    */
-  const createAndOpen = async (kind: "pet" | "car" | "games") => {
+  const createAndOpen = async (kind: "pet" | "car" | "games" | "common") => {
     const token = getToken()
     if (!token || creating) return
     setCreating(kind)
+    setCreateError(null)
     try {
-      const path = kind === "pet" ? "/api/pets" : kind === "car" ? "/api/cars" : "/api/games"
+      // A comunidade comum entra pela rota genérica; as trêss modalidades da mig
+      // 210 têm base própria. Corpo vazio nas quatro: o backend reconhece o
+      // pedido sem nome e sem enxame como RASCUNHO (mig 219) e devolve a
+      // comunidade já criada, que a página abre em modo de edição.
+      const path =
+        kind === "pet" ? "/api/pets"
+          : kind === "car" ? "/api/cars"
+            : kind === "games" ? "/api/games"
+              : "/api/communities"
       const res = await fetch(path, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: "{}",
       })
       const json = await res.json()
-      if (!res.ok || !json?.community?.id_profile) return
+      if (!res.ok || !json?.community?.id_profile) {
+        setCreateError(json?.error || t("createError", "Não foi possível criar."))
+        return
+      }
       onClose()
       router.push(`/comunidades/${json.community.id_profile}`)
     } catch {
@@ -153,6 +169,7 @@ export function SpacesMenu({
   useEffect(() => {
     if (!open) return
     setView(null)
+    setCreateError(null)
     load()
   }, [open, load])
 
@@ -292,7 +309,7 @@ export function SpacesMenu({
         subtitle: null,
         href: `/comunidades/${r.id_profile}`,
       })),
-      create: () => go("/comunidades/criar"),
+      create: () => createAndOpen("common"),
       createLabel: t("newCommunity", "Criar comunidade"),
     },
   ]
@@ -345,15 +362,17 @@ export function SpacesMenu({
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => {
-                  setView(null)
-                  current.create()
-                }}
+                onClick={() => current.create()}
                 className={itemCls}
                 style={{ background: "#241d12" }}
               >
                 <Plus className="h-4 w-4 shrink-0 text-[#F2B705]" /> {current.createLabel}
               </button>
+              {createError && (
+                <p className="px-2 py-1 text-[11px] font-semibold normal-case tracking-normal text-[#ff7a6a]">
+                  {createError}
+                </p>
+              )}
             </>
           ) : (
             <>

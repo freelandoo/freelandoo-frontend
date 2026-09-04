@@ -64,6 +64,9 @@ type Community = {
   avatar_url: string | null
   banner_url: string | null
   enxame_name: string | null
+  // O enxame da comunidade comum agora é EDITÁVEL na página (mig 219), então o
+  // id — e não só o nome — precisa chegar aqui para pré-selecionar o campo.
+  id_machine?: number | null
   community_theme: Theme | null
   // Opcionais: o backend recorta contadores por tier do viewer — comunidade
   // privada e condomínio não os devolvem para quem está de fora.
@@ -239,6 +242,9 @@ export default function CommunityDetailPage() {
   const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
   const [carModels, setCarModels] = useState<{ code: string; label: string }[]>([])
   const [accentDraft, setAccentDraft] = useState("gold")
+  // Enxame (mig 219): a comunidade comum nasce sem ele e o líder escolhe aqui.
+  const [machineDraft, setMachineDraft] = useState("")
+  const [enxames, setEnxames] = useState<{ id_machine: number; name: string }[]>([])
   const [uploading, setUploading] = useState<"banner" | "avatar" | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -445,6 +451,23 @@ export default function CommunityDetailPage() {
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
 
+  // Enxame atual da comunidade comum, para o select nascer no que já vale.
+  useEffect(() => {
+    setMachineDraft(community?.id_machine ? String(community.id_machine) : "")
+  }, [community?.id_machine])
+
+  // A lista de enxames só desce para quem ESTÁ editando uma comunidade comum:
+  // visitante não precisa dos 15 enxames para ler o mural, e as modalidades da
+  // mig 210 (pet/carro/games) e as territoriais não têm enxame nenhum.
+  useEffect(() => {
+    if (!showAsLeaderEdit || (community?.kind ?? "common") !== "common") return
+    if (enxames.length) return
+    fetch("/api/enxames")
+      .then((r) => r.json())
+      .then((d) => setEnxames(Array.isArray(d?.enxames) ? d.enxames : []))
+      .catch(() => setEnxames([]))
+  }, [showAsLeaderEdit, community?.kind, enxames.length])
+
   // ─── Assunto: carrega o que já está escolhido e as listas de escolha ──────
   // Só para o líder em edição: um visitante não precisa baixar 300 modelos de
   // carro para ler o mural.
@@ -621,7 +644,16 @@ export default function CommunityDetailPage() {
     try {
       const pRes = await fetch(`/api/communities/${id}/profile`, {
         method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ display_name: nameDraft.trim(), bio: bioDraft.trim() || null }),
+        // O enxame entra no mesmo PATCH: para quem edita, nome, bio e enxame
+        // são a mesma tarefa. Só vai quando a modalidade tem enxame — nas
+        // outras o backend recusa o campo de propósito (mig 219).
+        body: JSON.stringify({
+          display_name: nameDraft.trim(),
+          bio: bioDraft.trim() || null,
+          ...((community.kind ?? "common") === "common"
+            ? { id_machine: machineDraft ? Number(machineDraft) : null }
+            : {}),
+        }),
       })
       const pData = await pRes.json()
       if (!pRes.ok) throw new Error(pData.error || t("saveError", "Não foi possível salvar."))
@@ -1089,6 +1121,31 @@ export default function CommunityDetailPage() {
                     className={selectCls} />
                 </label>
               </div>
+            </Block>
+          )}
+
+          {/* Enxame (mig 219). É este bloco que substitui o formulário de
+              criação: a comunidade comum nasce vazia e o assunto dela é
+              escolhido aqui, do mesmo jeito que pet/carro/games escolhem raça,
+              modelo e jogo desde a mig 211. Fica ANTES da Privacidade para o
+              líder ler a página de cima para baixo na ordem em que a comunidade
+              se define: o que ela é, depois quem entra. */}
+          {showAsLeaderEdit && (community.kind ?? "common") === "common" && (
+            <Block title={t("enxameTitle", "Enxame")} icon={<Hexagon className="h-4 w-4" />} accent={accent}>
+              <label className="block">
+                <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {t("enxameLabel", "Enxame da comunidade")}
+                </span>
+                <select value={machineDraft} onChange={(e) => setMachineDraft(e.target.value)} className={selectCls}>
+                  <option value="">{t("enxameNone", "— escolher depois")}</option>
+                  {enxames.map((e) => (
+                    <option key={e.id_machine} value={e.id_machine}>{tx.enxame(null, e.name)}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="mt-2 text-xs text-[#9A938A]">
+                {t("enxameHint", "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.")}
+              </p>
             </Block>
           )}
 

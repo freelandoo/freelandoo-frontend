@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Search, Users, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2, Search, Users, Plus } from "lucide-react"
 import { PageShell, PageHero, PageBackLink, EmptyState, LoadingState } from "@/components/tabloide"
 import { CommunityTile, type CommunityTileData } from "@/components/community/community-tile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+import { getToken } from "@/lib/auth"
 
 type CommunityCard = CommunityTileData & {
   id_machine: number | null
@@ -19,6 +21,8 @@ const inputCls =
 
 export default function CommunityListPage() {
   const t = useTranslations("Community")
+  const router = useRouter()
+  const [creating, setCreating] = useState(false)
   const [communities, setCommunities] = useState<CommunityCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,6 +37,39 @@ export default function CommunityListPage() {
   // Modalidade (migs 196/210): "" = todas. Condomínio é achado por nome OU
   // endereço; pet, carro e games são achados por nome ou pelo assunto.
   const [kind, setKind] = useState<Kind>("")
+
+  /**
+   * Cria a comunidade VAZIA e abre a página dela (mig 219).
+   *
+   * Mesma função do menu da foto de perfil, de propósito: duas portas para a
+   * mesma ação têm de fazer a mesma coisa, senão uma delas volta a levar ao
+   * formulário e a pessoa vê dois jeitos diferentes de criar a mesma coisa.
+   */
+  const createAndOpen = async () => {
+    const token = getToken()
+    if (!token) { router.push("/login"); return }
+    if (creating) return
+    setCreating(true)
+    try {
+      const res = await fetch("/api/communities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: "{}",
+      })
+      const json = await res.json()
+      if (!res.ok || !json?.community?.id_profile) {
+        // O erro do backend é informação útil (teto de comunidades atingido,
+        // nível insuficiente) — engoli-lo deixaria o botão parecendo quebrado.
+        setError(json?.error || t("createError", "Não foi possível criar a comunidade."))
+        return
+      }
+      router.push(`/comunidades/${json.community.id_profile}`)
+    } catch {
+      setError(t("createError", "Não foi possível criar a comunidade."))
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -93,12 +130,17 @@ export default function CommunityListPage() {
           >
             <Users className="h-4 w-4" /> {t("browseByEnxame", "Buscar por enxame")}
           </Link>
-          <Link
-            href="/comunidades/criar"
-            className="flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#F2B705]/40 px-4 text-sm font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/10"
+          {/* Cria VAZIA e abre a página já editável (mig 219), a mesma porta do
+              menu da foto de perfil — não há mais formulário antes de existir. */}
+          <button
+            type="button"
+            onClick={createAndOpen}
+            disabled={creating}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#F2B705]/40 px-4 text-sm font-semibold text-[#F2B705] transition hover:bg-[#F2B705]/10 disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" /> {t("create", "Criar comunidade")}
-          </Link>
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {t("create", "Criar comunidade")}
+          </button>
         </div>
 
         {/* Tipo. Academia tem vitrine própria; as modalidades da mig 210 entram

@@ -2650,7 +2650,12 @@
     "platformRetro": "Retro",
     "platformOther": "Otra",
     "mySite": "Mi Sitio",
-    "tabSite": "Sitio"
+    "tabSite": "Sitio",
+    "enxameTitle": "Enjambre",
+    "enxameNone": "— elegir después",
+    "enxameHint": "Es como la comunidad aparece en los filtros del escaparate. Puedes elegirlo después.",
+    "registerTitle": "Registrar",
+    "registerSubtitle": "Gimnasios y condominios necesitan algunos datos antes de existir. Para una comunidad común, usa “Crear comunidad” — nace lista para editar."
   },
   "Careers": {
     "hero.badge": "Carreras",

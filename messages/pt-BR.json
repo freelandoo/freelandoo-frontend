@@ -2637,7 +2637,12 @@
     "platformRetro": "Retrô",
     "platformOther": "Outra",
     "mySite": "Meu Site",
-    "tabSite": "Site"
+    "tabSite": "Site",
+    "enxameTitle": "Enxame",
+    "enxameNone": "— escolher depois",
+    "enxameHint": "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.",
+    "registerTitle": "Cadastrar",
+    "registerSubtitle": "Academia e condomínio precisam de alguns dados antes de existir. Para uma comunidade comum, use “Criar comunidade” — ela nasce pronta para editar."
   },
   "Careers": {
     "hero.badge": "Carreiras",
