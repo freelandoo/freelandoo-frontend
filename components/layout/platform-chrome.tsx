@@ -3,14 +3,17 @@
 // components/layout/platform-chrome.tsx
 //
 // O CHROME DA PLATAFORMA — tudo que o layout raiz monta por cima de qualquer
-// página: a dock do perfil, os modais de conta, o banner de cookies, os prompts
-// de PWA e o script de anúncios.
+// página: a dock do perfil, os modais de conta, o banner de cookies e os
+// prompts de PWA.
 //
 // Existe porque o site público de uma comunidade (`/c/<slug>`, o subdomínio e o
 // domínio próprio) é servido pela MESMA aplicação Next, e portanto herda o
 // layout raiz. Sem esta peça, o site do cliente nascia com a dock da Freelandoo
 // flutuando por cima, o gate de CPF podendo cobrir a tela e um convite para
 // instalar o app da Freelandoo — tudo isso no endereço dele.
+//
+// (O script do AdSense também vinha daqui e saiu de vez: ele agora é carregado
+// pelo próprio `components/ads/ad-slot.tsx`, onde existe anúncio para servir.)
 //
 // ═══ POR QUE NÃO DÁ PARA DECIDIR ISSO PELO PATHNAME ═══
 //
@@ -36,8 +39,8 @@
 // viaja no mesmo HTML da página, então vale desde a primeira pintura, antes de
 // qualquer JavaScript rodar. Duas coisas caem nessa janela:
 //
-//  - o que ESTE componente renderiza no servidor (hoje o Toaster e a tag do
-//    AdSense — verificado no HTML de produção), que chega pintado;
+//  - o que ESTE componente renderiza no servidor (hoje o Toaster), que chega
+//    pintado;
 //  - a dock, que não vem no HTML (ela lê o login no cliente e devolve null
 //    enquanto não sabe), mas monta na hidratação, no mesmo commit em que o
 //    supressor ainda vai rodar o seu efeito.
@@ -53,7 +56,6 @@ import React, {
   useMemo,
   useState,
 } from "react"
-import Script from "next/script"
 import { ProfileSidebar } from "@/components/layout/profile-sidebar"
 import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
 import { CookieConsent } from "@/components/cookie-consent"
@@ -142,20 +144,6 @@ export function PlatformChrome() {
         position="top-center"
         richColors
         toastOptions={{ style: { borderRadius: 0 } }}
-      />
-      {/* AdSense em lazyOnload: o script de anúncios é pesado e só há ad em ~9
-          páginas (blog/legais via <ContentAd>). Carregar no idle tira ele do
-          caminho crítico de render em TODA rota (LCP/TBT).
-          Mora aqui dentro, e não no layout raiz, porque é rastreamento de
-          TERCEIRO: no site de uma comunidade ele carregaria sob o domínio do
-          dono, que não pediu anúncio nenhum e não respondeu por esse cookie.
-          Como é lazyOnload, o desmonte na hidratação acontece antes de ele
-          chegar a carregar. O Consent Mode default segue no layout raiz
-          (beforeInteractive, exigência de LGPD, e não carrega nada). */}
-      <Script
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
-        strategy="lazyOnload"
-        crossOrigin="anonymous"
       />
     </div>
   )

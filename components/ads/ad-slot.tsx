@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import Script from "next/script"
 
 /** Publisher ID do Google AdSense da Freelandoo. */
 const AD_CLIENT = "ca-pub-5728915466446266"
@@ -25,8 +26,16 @@ interface AdSlotProps {
  * Colocação conservadora: usar apenas em páginas de conteúdo e
  * institucionais. Não usar em áreas logadas, checkout ou admin.
  *
- * O script do AdSense é carregado uma única vez no layout raiz; aqui
- * apenas registramos o bloco na fila `adsbygoogle`.
+ * O bloco carrega o PRÓPRIO script do AdSense (o `id` faz o next/script
+ * deduplicar entre vários blocos na mesma página). Antes ele vinha do layout
+ * raiz, o que trazia dois problemas: o script de rastreamento de terceiro
+ * carregava em TODA rota — inclusive no site publicado de uma comunidade, sob o
+ * domínio de um dono que não pediu anúncio nenhum — e o anúncio dependia de uma
+ * peça de layout distante para funcionar. Carregando aqui, ele existe
+ * exatamente onde há `<ins>` para preencher, e em lugar nenhum além disso.
+ *
+ * Ordem não importa: o `push` abaixo cria a fila `adsbygoogle` se ela ainda não
+ * existir, e o script a consome quando chega.
  */
 export function AdSlot({ slot, format = "auto", responsive = true, className }: AdSlotProps) {
   const pushed = useRef(false)
@@ -45,6 +54,14 @@ export function AdSlot({ slot, format = "auto", responsive = true, className }: 
 
   return (
     <aside className={className} aria-label="Publicidade">
+      {/* lazyOnload: o script de anúncios é pesado e não pode disputar o
+          caminho crítico de render (LCP/TBT) com o conteúdo da página. */}
+      <Script
+        id="adsbygoogle-lib"
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`}
+        strategy="lazyOnload"
+        crossOrigin="anonymous"
+      />
       <span className="mb-1 block text-center text-[11px] uppercase tracking-wide text-muted-foreground/60">
         Publicidade
       </span>
