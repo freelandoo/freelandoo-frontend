@@ -33,6 +33,28 @@ const ICON: Record<PublishKind, typeof Plus> = {
   recado: MessageSquare,
 }
 
+/**
+ * De que lado o menu cabe.
+ *
+ * 192px é a largura (`w-48`) e os 12px de folga pagam a sombra dura de 4px mais
+ * uma margem para a borda da tela. Se o lado pedido estoura, tenta o outro; se
+ * nenhum dos dois cabe (tela muito estreita), fica com o pedido e quem segura o
+ * menu dentro da tela é o `max-w` do container.
+ */
+function resolveSide(
+  el: HTMLElement | null,
+  preferred: "left" | "right"
+): "left" | "right" {
+  if (!el || typeof window === "undefined") return preferred
+  const MENU_W = 192 + 12
+  const rect = el.getBoundingClientRect()
+  const fitsLeftAligned = rect.left + MENU_W <= window.innerWidth
+  const fitsRightAligned = rect.right - MENU_W >= 0
+  if (preferred === "left" && !fitsLeftAligned && fitsRightAligned) return "right"
+  if (preferred === "right" && !fitsRightAligned && fitsLeftAligned) return "left"
+  return preferred
+}
+
 export function PublishMenuButton({
   items,
   onPick,
@@ -63,6 +85,12 @@ export function PublishMenuButton({
   onPickExtra?: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  // Lado EFETIVO em que o menu abre. Começa no que a superfície pediu e é
+  // recalculado a cada abertura: o botão mora na ponta do headcard, então num
+  // celular estreito o menu de 192px nascia para FORA da tela e os itens
+  // apareciam cortados pela metade. Medir é o único jeito de acertar nas duas
+  // superfícies sem cada uma ter de adivinhar a própria posição.
+  const [side, setSide] = useState<"left" | "right">(align)
   const wrapRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -95,6 +123,10 @@ export function PublishMenuButton({
             if (blockedMessage) onBlocked?.(blockedMessage)
             return
           }
+          // Mede ANTES de abrir, e não num efeito depois: assim o menu já
+          // nasce do lado certo, sem o pulo de um quadro que apareceria se ele
+          // fosse desenhado errado e corrigido em seguida.
+          if (!open) setSide(resolveSide(wrapRef.current, align))
           setOpen((v) => !v)
         }}
         className="grid h-14 w-14 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]"
@@ -109,7 +141,7 @@ export function PublishMenuButton({
       {open && (canPost || extras.length > 0) && (
         <div
           role="menu"
-          className={`absolute top-full z-40 mt-2 flex w-48 flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2 ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute top-full z-40 mt-2 flex w-48 max-w-[calc(100vw-1.5rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2 ${side === "right" ? "right-0" : "left-0"}`}
           style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}
         >
           {items.map((it) => {
