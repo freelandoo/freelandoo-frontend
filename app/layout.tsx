@@ -2,14 +2,11 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { Geist, Geist_Mono, Anton, Archivo, Caveat } from "next/font/google"
-import { CookieConsent } from "@/components/cookie-consent"
-import { AnalyticsProvider } from "@/components/analytics-provider"
-import { ProfileSidebar } from "@/components/layout"
-import { BirthdateGate } from "@/components/onboarding/birthdate-gate"
-import { CouponCapture } from "@/components/share/coupon-capture"
-import { GlobalOverlays } from "@/components/global-overlays"
+import {
+  PlatformChrome,
+  PlatformChromeProvider,
+} from "@/components/layout/platform-chrome"
 import { I18nProvider } from "@/components/i18n/I18nProvider"
-import { Toaster } from "sonner"
 import { ConsentProvider } from "@/components/consent/ConsentProvider"
 import { FeatureFlagsProvider } from "@/components/feature-flags/FeatureFlagsProvider"
 import { UserFeaturesProvider } from "@/components/feature-flags/UserFeaturesProvider"
@@ -144,24 +141,16 @@ export default function RootLayout({
                 envolvendo só {children}, a sidebar (irmã) ficava fora do contexto
                 e estourava "useConsentContext fora do ConsentProvider" ao logar. */}
             <ConsentProvider>
-              {children}
-              <ProfileSidebar />
-              <BirthdateGate />
-              <CookieConsent />
-              <AnalyticsProvider />
-              <CouponCapture />
-              {/* Overlays não-críticos (heartbeat, alertas admin, modal de
-                  votação, prompts PWA) carregados lazy via client wrapper. */}
-              <GlobalOverlays />
-              {/* Sem este Toaster, TODO toast.error/success do sonner (20+
-                  arquivos) dispara no vazio — erros de validação ficavam mudos
-                  e botões pareciam quebrados. borderRadius 0 = regra fl-sharp. */}
-              <Toaster
-                theme="dark"
-                position="top-center"
-                richColors
-                toastOptions={{ style: { borderRadius: 0 } }}
-              />
+              {/* Todo o chrome da plataforma (dock, gates, cookies, overlays,
+                  toaster, AdSense) vive numa peça só para poder ser DESLIGADO
+                  inteiro no site público de comunidade — que é servido por esta
+                  mesma aplicação e, sem isso, nascia com a dock da Freelandoo
+                  por cima. Peça global nova entra LÁ DENTRO, não aqui.
+                  Ver components/layout/platform-chrome.tsx. */}
+              <PlatformChromeProvider>
+                {children}
+                <PlatformChrome />
+              </PlatformChromeProvider>
             </ConsentProvider>
           </UserFeaturesProvider>
           </FeatureFlagsProvider>
@@ -172,15 +161,6 @@ export default function RootLayout({
         <Script id="google-consent-default" strategy="beforeInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});`}
         </Script>
-        {/* AdSense em lazyOnload: o script de anúncios é pesado e só há ad em
-            ~9 páginas (blog/legais via <ContentAd>). Carregar no idle tira ele
-            do caminho crítico de render em TODA rota (LCP/TBT). O Consent Mode
-            default acima continua beforeInteractive (LGPD). */}
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5728915466446266"
-          strategy="lazyOnload"
-          crossOrigin="anonymous"
-        />
       </body>
     </html>
   )
