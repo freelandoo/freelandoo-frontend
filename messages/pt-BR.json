@@ -5374,6 +5374,11 @@
     "sizeClose": "Fechar",
     "zoomIn": "Aproximar",
     "zoomOut": "Afastar",
-    "zoomReset": "Zoom 100%"
+    "zoomReset": "Zoom 100%",
+    "serviceColumns": "Colunas",
+    "serviceCta": "Quero este",
+    "serviceEmptyHint": "Esta vitrine mostra os serviços do seu perfil. Cadastre em Meu perfil → Serviços e eles aparecem aqui.",
+    "serviceHourSuffix": "h",
+    "serviceMinSuffix": "min"
   }
 }

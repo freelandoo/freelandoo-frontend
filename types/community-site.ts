@@ -43,17 +43,22 @@ export type HeroSlide = {
   ctaUrl: string
 }
 
-export type ServiceItem = {
-  id: string
-  imageUrl: string
-  objectPosition: SiteObjectPosition
-  title: string
+/**
+ * Um serviço da vitrine do site.
+ *
+ * NÃO faz parte do documento do site: vem do cadastro real (tb_profile_service
+ * do perfil do líder), servido pelo backend a cada leitura. Por isso não tem
+ * `id` local nem campos de apresentação — nada aqui é editado no construtor.
+ *
+ * Preço em CENTAVOS: quem formata é o front, que sabe o idioma de quem lê.
+ */
+export type ShowcaseService = {
+  id_profile_service: number
+  name: string
   description: string
-  /** Texto livre, não centavos: aqui o preço é vitrine, quem cobra é a Loja. */
-  price: string
-  duration: string
-  ctaText: string
-  ctaLink: string
+  price_amount: number | null
+  duration_minutes: number | null
+  image_url: string | null
 }
 
 export type HighlightItem = {
@@ -100,7 +105,8 @@ export type HeroData = {
   autoplay: boolean
   height: "short" | "medium" | "tall"
 }
-export type ServicesCatalogData = { items: ServiceItem[]; columns: 2 | 3 | 4 }
+/** Só apresentação — o conteúdo são os serviços cadastrados (ShowcaseService). */
+export type ServicesCatalogData = { columns: 2 | 3 | 4 }
 export type AboutData = { body: string; highlights: HighlightItem[]; photos: PhotoItem[] }
 export type TestimonialsData = { items: TestimonialItem[] }
 export type GalleryData = { photos: PhotoItem[]; columns: 2 | 3 | 4 }
@@ -206,6 +212,13 @@ export type CommunitySiteResponse = {
   locked?: boolean
   /** `null` quando não há nada a mostrar (rascunho alheio ou trancado). */
   config: CommunitySiteConfig | null
+  /**
+   * Serviços cadastrados que a vitrine mostra. O construtor recebe a MESMA
+   * lista que a página pública — é o que garante que o líder edite contra o
+   * que vai ser publicado.
+   */
+  services?: ShowcaseService[]
+  provider_profile_id?: string | null
 }
 
 export const DEFAULT_SITE_THEME: SiteColorTheme = {
@@ -235,7 +248,7 @@ export function emptySectionData(kind: SiteSectionKind): SiteSection["data"] {
     case "hero":
       return { slides: [], autoplay: true, height: "tall" } satisfies HeroData
     case "services_catalog":
-      return { items: [], columns: 3 } satisfies ServicesCatalogData
+      return { columns: 3 } satisfies ServicesCatalogData
     case "about":
       return { body: "", highlights: [], photos: [] } satisfies AboutData
     case "testimonials":

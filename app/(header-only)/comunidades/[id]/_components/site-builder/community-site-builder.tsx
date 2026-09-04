@@ -28,7 +28,7 @@ import {
   Tablet,
   Upload,
 } from "lucide-react"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import {
   DEFAULT_SITE_THEME,
@@ -37,6 +37,7 @@ import {
   newLocalId,
   type CommunitySiteConfig,
   type CommunitySiteResponse,
+  type ShowcaseService,
   type SiteSection,
   type SiteSectionKind,
   type SiteViewport,
@@ -62,11 +63,18 @@ export function CommunitySiteBuilder({
   accent: string
 }) {
   const t = useTranslations("CommunitySite")
+  const locale = useLocale()
 
   const [loading, setLoading] = useState(true)
   const [locked, setLocked] = useState(false)
   const [missing, setMissing] = useState(false)
   const [config, setConfig] = useState<CommunitySiteConfig | null>(null)
+  // A vitrine de serviços NÃO faz parte do documento: vem do cadastro real do
+  // líder junto da resposta do site, e por isso vive fora do `config` — se
+  // entrasse nele, o autosave a gravaria de volta no JSONB e recriaria a cópia
+  // de preço que esta mudança veio justamente eliminar.
+  const [services, setServices] = useState<ShowcaseService[]>([])
+  const [providerProfileId, setProviderProfileId] = useState<string | null>(null)
   const [isPublished, setIsPublished] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>("idle")
   const [publishing, setPublishing] = useState(false)
@@ -118,6 +126,8 @@ export function CommunitySiteBuilder({
         }
         setLocked(!!data.locked)
         setIsPublished(!!data.is_published)
+        setServices(Array.isArray(data.services) ? data.services : [])
+        setProviderProfileId(data.provider_profile_id || null)
         if (data.config) {
           setConfig(data.config)
           // Site que ainda não existe abre JÁ em edição para o líder: ele veio
@@ -662,6 +672,11 @@ export function CommunitySiteBuilder({
               onChange={applyChange}
               onUpload={uploadImage}
               t={t}
+              services={services}
+              providerHref={
+                providerProfileId ? `/freelancer/${providerProfileId}` : null
+              }
+              locale={locale}
             />
           </div>
         </div>

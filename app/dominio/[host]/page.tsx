@@ -103,7 +103,15 @@ export default async function CommunityDomainPage({ params }: Props) {
 
   return (
     <main className="fl-sharp min-h-[100dvh]">
-      <PublicSiteView config={site.config} />
+      <PublicSiteView
+        config={site.config}
+        services={site.services || []}
+        // O botão do card leva ao perfil do prestador, que é onde moram agenda,
+        // sinal e pagamento — este site não tem como concluir uma contratação.
+        providerHref={
+          site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
+        }
+      />
       <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">
         {/* Link ABSOLUTO: estamos num domínio que não é o nosso, então um href
             relativo apontaria para uma rota inexistente do domínio do cliente. */}

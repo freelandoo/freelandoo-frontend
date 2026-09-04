@@ -16,6 +16,7 @@ import type {
   GalleryData,
   HeroData,
   ServicesCatalogData,
+  ShowcaseService,
   SiteSection,
   SiteSectionLayout,
   SiteTextStyle,
@@ -48,12 +49,27 @@ export function SiteCanvas({
   onChange,
   onUpload,
   t,
+  services = [],
+  providerHref = null,
+  locale = "pt-BR",
 }: {
   config: CommunitySiteConfig
   editing: boolean
   onChange: (next: CommunitySiteConfig) => void
   onUpload: (file: File) => Promise<string | null>
   t: (key: string, fallback: string) => string
+  /**
+   * Serviços cadastrados que a vitrine mostra. Chegam do backend junto com o
+   * site (mesma resposta) e NÃO fazem parte do documento — o construtor e a
+   * página pública recebem a mesma lista, que é o que garante que o líder edite
+   * contra o que vai ser publicado.
+   *
+   * O default vazio existe para o site que ainda não tem serviço nenhum: a
+   * seção some em leitura e vira instrução em edição.
+   */
+  services?: ShowcaseService[]
+  providerHref?: string | null
+  locale?: string
 }) {
   const { theme, sections } = config
 
@@ -415,22 +431,19 @@ export function SiteCanvas({
             onChange={(d: ServicesCatalogData) => setData(d)}
             editing={editing}
             theme={theme}
-            onUpload={onUpload}
+            services={services}
+            providerHref={providerHref}
+            locale={locale}
             labels={{
-              title: t("serviceTitle", "Nome do serviço"),
-              description: t("serviceDescription", "O que está incluso"),
-              price: t("servicePrice", "R$ 0,00"),
-              duration: t("serviceDuration", "Duração"),
-              ctaText: t("serviceCtaText", "Texto do botão"),
-              ctaUrl: t("serviceCtaUrl", "Link do botão"),
-              addItem: t("serviceAdd", "Adicionar serviço"),
-              removeItem: t("serviceRemove", "Remover serviço"),
-              changeImage: t("changeImage", "Trocar imagem"),
-              framing: t("framing", "Enquadramento"),
-              removeImage: t("removeImage", "Remover imagem"),
-              imageHint: t("imageHint", "Clique para enviar uma imagem"),
+              columns: t("serviceColumns", "Colunas"),
+              cta: t("serviceCta", "Quero este"),
               empty: t("serviceEmpty", "Nenhum serviço cadastrado ainda."),
-              columns: t("columns", "Colunas"),
+              emptyHint: t(
+                "serviceEmptyHint",
+                "Esta vitrine mostra os serviços do seu perfil. Cadastre em Meu perfil → Serviços e eles aparecem aqui."
+              ),
+              hourSuffix: t("serviceHourSuffix", "h"),
+              minSuffix: t("serviceMinSuffix", "min"),
             }}
           />
         )

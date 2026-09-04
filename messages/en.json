@@ -5960,6 +5960,11 @@
     "sizeClose": "Close",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomReset": "Zoom 100%"
+    "zoomReset": "Zoom 100%",
+    "serviceColumns": "Columns",
+    "serviceCta": "I want this",
+    "serviceEmptyHint": "This showcase lists the services on your profile. Add them under My profile → Services and they show up here.",
+    "serviceHourSuffix": "h",
+    "serviceMinSuffix": "min"
   }
 }

@@ -7,7 +7,7 @@
 // para chamadas do browser, e aqui não há browser.
 
 import { getBackendApiUrl } from "@/lib/backend"
-import type { CommunitySiteConfig } from "@/types/community-site"
+import type { CommunitySiteConfig, ShowcaseService } from "@/types/community-site"
 
 /**
  * Revalidação do site público.
@@ -26,6 +26,15 @@ export type PublicSite = {
   updated_at?: string | null
   community: { display_name: string; avatar_url: string | null; bio?: string | null }
   config: CommunitySiteConfig | null
+  /**
+   * Serviços cadastrados que a vitrine mostra (2026-09-04). Não fazem parte do
+   * documento do site: vêm do cadastro real do líder e são recarregados a cada
+   * revalidação do ISR — ou seja, mudar um serviço reflete no site em até
+   * SITE_REVALIDATE_SECONDS, sem republicar.
+   */
+  services?: ShowcaseService[]
+  /** Perfil onde os serviços são contratados (destino do botão do card). */
+  provider_profile_id?: string | null
 }
 
 /** `null` = não existe (ou não está publicado). Quem chama transforma em 404. */

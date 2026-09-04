@@ -106,7 +106,15 @@ export default async function CommunitySitePage({ params }: Props) {
 
   return (
     <main className="fl-sharp min-h-[100dvh]">
-      <PublicSiteView config={site.config} />
+      <PublicSiteView
+        config={site.config}
+        services={site.services || []}
+        // O botão do card leva ao perfil do prestador, que é onde moram agenda,
+        // sinal e pagamento — este site não tem como concluir uma contratação.
+        providerHref={
+          site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
+        }
+      />
 
       {/* Rodapé de origem: quem chega por um link solto (ou por domínio
           próprio) não tem como saber onde está nem como entrar na comunidade.
