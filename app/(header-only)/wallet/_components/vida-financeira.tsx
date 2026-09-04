@@ -288,6 +288,38 @@ function CompareBar({ label, value, max, color, locale }: { label: string; value
 
 /* ── Coluna de meses ──────────────────────────────────────────────────────── */
 function MonthRail({ year, month, onPick, tr, locale }: { year: number; month: number; onPick: (y: number, m: number) => void; tr: TFn; locale: string }) {
+  const railRef = useRef<HTMLDivElement>(null)
+  const activeRef = useRef<HTMLButtonElement>(null)
+
+  /**
+   * Centraliza o mês selecionado na régua.
+   *
+   * No celular a régua é uma faixa que rola na horizontal, e o mês de hoje
+   * mora lá pelo meio ou pelo fim dos doze: quem abria a Carteira em setembro
+   * via JAN–JUL e precisava arrastar para achar o mês que já estava
+   * selecionado — parecia que a seleção tinha se perdido.
+   *
+   * ⚠️ Mexe em `scrollLeft` DA RÉGUA, nunca `scrollIntoView`: o elemento está
+   * dentro de um container que só rola no celular, então no desktop (onde a
+   * régua vira coluna e não rola nada) o `scrollIntoView` subiria pelo
+   * ancestral rolável mais próximo — a PÁGINA — e arrancaria a pessoa do lugar
+   * onde ela estava. A guarda do `scrollWidth` já não deixaria chegar aqui,
+   * mas a escolha da API é o que torna o erro impossível.
+   *
+   * A conta usa `getBoundingClientRect` e não `offsetLeft` porque a régua não
+   * é posicionada: o `offsetParent` dos botões pode ser qualquer ancestral
+   * acima dela, e aí o offset não estaria no mesmo referencial.
+   */
+  useEffect(() => {
+    const rail = railRef.current
+    const btn = activeRef.current
+    if (!rail || !btn) return
+    if (rail.scrollWidth <= rail.clientWidth) return // coluna do desktop: nada a rolar
+    const r = rail.getBoundingClientRect()
+    const b = btn.getBoundingClientRect()
+    rail.scrollLeft += b.left - r.left - (r.width - b.width) / 2
+  }, [year, month])
+
   return (
     <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-2 shadow-[5px_5px_0_0_#0B0B0D]">
       <div className="mb-2 flex items-center justify-between px-1">
@@ -299,13 +331,15 @@ function MonthRail({ year, month, onPick, tr, locale }: { year: number; month: n
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div ref={railRef} className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
         {Array.from({ length: 12 }).map((_, i) => {
           const active = month === i + 1
           return (
             <button
               key={i}
+              ref={active ? activeRef : undefined}
               type="button"
+              aria-current={active ? "true" : undefined}
               onClick={() => onPick(year, i + 1)}
               className={cn(
                 "shrink-0 border-2 px-3 py-1.5 text-left text-[11px] font-extrabold uppercase tracking-[0.1em] transition lg:w-full",
