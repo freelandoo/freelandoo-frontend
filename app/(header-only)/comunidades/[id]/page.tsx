@@ -200,6 +200,18 @@ export default function CommunityDetailPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
   const [tab, setTab] = useState<"feed" | "members" | "site">("feed")
+  // O menu do "+" mora no HEADCARD e a aba fica MUITO abaixo (privacidade,
+  // enxame, perfil...). Trocar a aba dali sozinho não muda nada na parte da
+  // tela que a pessoa está olhando — parece botão quebrado. Por isso o item
+  // do menu troca a aba E leva a pessoa até ela.
+  const tabsRef = useRef<HTMLDivElement | null>(null)
+  const goToTab = useCallback((key: "feed" | "members" | "site") => {
+    setTab(key)
+    // Depois da pintura: a aba só existe no DOM no quadro seguinte.
+    requestAnimationFrame(() => {
+      tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
@@ -945,7 +957,7 @@ export default function CommunityDetailPage() {
                 onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
                 extras={siteExtras}
                 onPickExtra={(extraId) => {
-                  if (extraId === "site") setTab("site")
+                  if (extraId === "site") goToTab("site")
                 }}
               />
             </div>
@@ -1316,7 +1328,7 @@ export default function CommunityDetailPage() {
           )}
 
           {/* Tabs */}
-          <div>
+          <div ref={tabsRef} className="scroll-mt-4">
             <div className="flex gap-1 border-b-2 border-[#F5F1E8]/15">
               {communityTabs.map(([key, label]) => (
                 <button key={key} type="button" onClick={() => setTab(key)} className="-mb-0.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
