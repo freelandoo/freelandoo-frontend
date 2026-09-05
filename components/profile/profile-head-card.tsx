@@ -691,8 +691,13 @@ export function ProfileHeadCard({
               {profileId && (
                 <AvatarRatingStar profileId={profileId} align="end" className="mb-1.5" />
               )}
-              <div className="flex items-baseline justify-end gap-4">
-                <div className="flex items-baseline gap-1.5">
+              {/* Fila APERTADA de propósito: com a foto mais larga e a pilha
+                  escapando por trás dela, a folga entre o pill e o começo da
+                  fila encolheu — no gap-4 antigo o "POSTS" ficava por baixo do
+                  pill de baixo. Espremer a fila é o que a traz para dentro da
+                  faixa livre sem mexer no tamanho da foto nem da pilha. */}
+              <div className="flex items-baseline justify-end gap-2 md:gap-3">
+                <div className="flex items-baseline gap-1">
                   <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
                     {portfolioCount}
                   </span>
@@ -704,7 +709,7 @@ export function ProfileHeadCard({
                 <button
                   type="button"
                   onClick={() => setOpenFollowers(true)}
-                  className="flex items-baseline gap-1.5 transition hover:opacity-70"
+                  className="flex items-baseline gap-1 transition hover:opacity-70"
                   aria-label={t("seeFollowersAria", "Ver quem acompanha")}
                 >
                   <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
@@ -722,7 +727,7 @@ export function ProfileHeadCard({
                 <button
                   type="button"
                   onClick={() => (onShowFollowing ? onShowFollowing() : setOpenFollowing(true))}
-                  className="flex items-baseline gap-1.5 transition hover:opacity-70"
+                  className="flex items-baseline gap-1 transition hover:opacity-70"
                   aria-label={t("seeFollowingAria", "Ver quem este perfil acompanha")}
                 >
                   <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
