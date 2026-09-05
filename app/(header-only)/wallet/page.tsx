@@ -364,11 +364,15 @@ export default function WalletPage() {
             <div className="relative z-10 flex shrink-0 flex-col items-center">
               <PillStack
                 pills={pills}
-                avatarPadClass="pl-24 md:pl-28"
+                avatarPadClass="pl-28 md:pl-32"
                 className="absolute left-0 top-1/2 -translate-y-1/2"
               />
-              <div className="w-24 -rotate-3 md:w-28">
-                <div className="flex aspect-[4/5] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] bg-[#0B0B0D]/[0.07] shadow-[6px_6px_0_0_#16B79A] ring-2 ring-[#0B0B0D]">
+              {/* Mesma geometria do headcard do perfil: a foto precisa cobrir a
+                  pilha (`PILL_STACK_PX`, 120px), e a largura casa com o
+                  `avatarPadClass` acima. Aqui a pilha é outra (cofrinho, cupom
+                  e mercado), mas a mecânica e o tamanho são os mesmos. */}
+              <div className="w-28 -rotate-3 md:w-32">
+                <div className="flex aspect-[2/3] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] bg-[#0B0B0D]/[0.07] shadow-[6px_6px_0_0_#16B79A] ring-2 ring-[#0B0B0D]">
                   {perfil?.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={perfil.avatar} alt="" className="h-full w-full object-cover" />

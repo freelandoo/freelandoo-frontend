@@ -175,12 +175,14 @@ const BEE_RING_GRADIENT =
 /** Moldura da foto — borda creme com anel preto por fora, do /account. A
  *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto.
  *
- *  A PROPORÇÃO é 2/3 (era 4/5) porque a foto precisa ALCANÇAR o pill do topo
- *  (Games): a pilha tem ~108px e em 4/5 a foto dava 120px no celular, então os
- *  pills escapavam por cima em vez de só pela direita. Em 2/3 a foto vai a
- *  144px (celular) e 168px (md) e cobre a pilha inteira com folga nos dois
- *  lados. Só a ALTURA mudou — a largura segue w-24/md:w-28, e é ela que casa
- *  com o `avatarPadClass` da pilha. */
+ *  TAMANHO: a foto precisa COBRIR a pilha de pills (`PILL_STACK_PX`, 120px),
+ *  senão o Games escapa por cima em vez de só pela direita. Com w-28/md:w-32 e
+ *  proporção 2/3 ela mede 168px (celular) e 192px (md) — folga de 24 e 36px,
+ *  conta fechada, não estimativa.
+ *
+ *  ⚠️ A LARGURA casa com o `avatarPadClass` da pilha (`pl-28 md:pl-32`): é esse
+ *  padding que faz o corpo colorido nascer DEBAIXO da foto. Mexeu numa, mexe na
+ *  outra — e no recuo negativo da linha do avatar, que absorve a altura. */
 const AVATAR_FRAME_CLASS =
   "relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] disabled:opacity-70"
 
@@ -573,11 +575,13 @@ export function ProfileHeadCard({
           {/* Bloco principal: avatar (esquerda) + coluna de stats/info (direita).
               items-end no flex garante que a coluna direita só ocupe espaço da
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
-          {/* A foto cresceu para CIMA, não para baixo: o recuo negativo absorve
-              a altura nova (48px + 24 no celular, + 28 no md), então a base da
-              foto — e com ela os contadores, que são bottom-aligned — fica
-              exatamente onde estava, e quem cede espaço é o banner. */}
-          <div className="relative z-10 -mt-[72px] flex items-end gap-4 md:-mt-[76px] md:gap-6">
+          {/* A foto cresce para CIMA, não para baixo: o recuo negativo absorve a
+              altura dela, então a base — e com ela os contadores e as estrelas,
+              que são bottom-aligned — fica onde sempre esteve, e quem cede
+              espaço é o banner. A conta é 48px (o recuo original, de quando a
+              foto tinha 120px) + o que ela cresceu: 168−120=48 no celular e
+              192−140=52 no md. */}
+          <div className="relative z-10 -mt-[96px] flex items-end gap-4 md:-mt-[100px] md:gap-6">
             <div className="relative flex shrink-0 flex-col items-center">
               {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito — o
                   card da foto vem depois no DOM e por isso cobre a pilha, que
@@ -586,14 +590,14 @@ export function ProfileHeadCard({
                   O padding casa com a LARGURA DO AVATAR — mexeu numa, mexe na
                   outra (ver components/profile/headcard-pills.tsx). */}
               {isOwnProfile && entityType !== "clan" && (
-                <HeadcardPills avatarPadClass="pl-24 md:pl-28" />
+                <HeadcardPills avatarPadClass="pl-28 md:pl-32" />
               )}
               {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
                   troca-perfil na quina de baixo, e é nele que mora a rotação —
                   o anel de bees precisa girar junto com a foto. A coluna
                   inteira não serve: ela desce até as estrelas, e o botão
                   nasceria solto abaixo. */}
-              <div className="group relative w-24 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
+              <div className="group relative w-28 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-32">
                 {/* Anel neon rosa quando há bee vivo: conic-gradient com um facho
                     quase branco que gira, mais uma camada desfocada fazendo o
                     glow. Some sem bee. */}

@@ -58,6 +58,14 @@ import { cn } from "@/lib/utils"
 /** Folga fixa da rotação (-3deg) + sombra dura da foto. Ver comentário acima. */
 const CLEARANCE = "pl-3.5"
 
+/**
+ * Altura da pilha cheia, em px: 3 pills de 36px (h-9) + 2 gaps de 6px (gap-1.5).
+ * A foto do headcard precisa ser MAIOR que isto para cobrir a pilha — é o que
+ * faz os pills escaparem só pela direita, como o desenho pede. A conta de lá
+ * vive em `AVATAR_FRAME_CLASS` (components/profile/profile-head-card.tsx).
+ */
+export const PILL_STACK_PX = 120
+
 export type PillSpec = {
   key: string
   icon: LucideIcon
@@ -114,8 +122,15 @@ function Pill({
 
   const baseBg = spec.active ? spec.bgHover : spec.bg
 
+  // ALTURA FIXA (h-9 = 36px), e não padding: a altura de um pill com padding
+  // depende do `line-height` HERDADO do rótulo, que muda conforme a árvore em
+  // que a pilha for montada. Sem número certo aqui, "a foto cobre a pilha" vira
+  // estimativa — e foi assim que a foto cresceu em 2026-09-05 e os pills
+  // continuaram escapando por cima. Com h-9, a pilha mede
+  // 3 × 36 + 2 × 6 (gap-1.5) = 120px, e a folga dentro da foto é conta fechada.
+  // MEXEU AQUI OU NO NÚMERO DE PILLS? Confira PILL_STACK_PX abaixo.
   const className = cn(
-    "flex w-full items-center border-2 border-[#0B0B0D] py-1.5 pr-3 text-left",
+    "flex h-9 w-full shrink-0 items-center border-2 border-[#0B0B0D] pr-3 text-left",
     "text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition-colors",
     avatarPadClass
   )
@@ -228,7 +243,7 @@ export function PillStack({
 }
 
 export function HeadcardPills({
-  avatarPadClass = "pl-24 md:pl-28",
+  avatarPadClass = "pl-28 md:pl-32",
   className,
 }: {
   avatarPadClass?: string
