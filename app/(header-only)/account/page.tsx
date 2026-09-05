@@ -1838,10 +1838,14 @@ export default function PerfilPage() {
                   )}
                   </div>
 
-                  <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
+                  {/* Coluna ALINHADA À DIREITA (pedido do Alex, 2026-09-05):
+                      encostada no avatar, ela colidia com a pilha de pills, que
+                      escapa por trás da foto justamente para a direita. Mesma
+                      mudança no headcard do perfil — esqueleto unificado. */}
+                  <div className="flex min-w-0 flex-1 flex-col items-end gap-1.5 pb-1 text-right">
                     {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
                         headcard do perfil (esqueleto unificado). */}
-                    <div className="flex items-baseline gap-4">
+                    <div className="flex items-baseline justify-end gap-4">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
                           {postsCount}

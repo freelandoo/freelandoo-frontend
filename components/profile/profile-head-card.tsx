@@ -393,8 +393,8 @@ export function ProfileHeadCard({
           )}
           {/* O banner É a manifestação: para o dono ele abre a loja para trocar.
               Dois gestos (mesma regra do pill da Carteira) — o primeiro clique
-              só revela o "Alterar". z-10 fica ABAIXO do sino/engrenagem (z-20)
-              e da tag, que continua clicável do jeito que era. */}
+              só revela o "Alterar". z-10 fica ABAIXO do sino/engrenagem e do
+              selo de publicação (z-20). */}
           {isOwnProfile && !isClan && (
             <div
               className={cn(
@@ -412,13 +412,13 @@ export function ProfileHeadCard({
               </Link>
             </div>
           )}
+          {/* A TAG da manifestação saiu daqui em 2026-09-05 (pedido do Alex) —
+              o /account já a tinha perdido em 2026-09-03, e ela era o último
+              resto dela num headcard. O banner continua sendo a manifestação
+              (e a porta da loja); o `tag_label` segue vindo da API e aparecendo
+              onde é o assunto: a loja /manifestacao e o card de /p/[itemId].
+              Sobra aqui o selo de publicação. */}
           <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
-            {profile.manifestation?.tag_label && !isClan && (
-              <div className="inline-flex max-w-full items-center gap-1.5 rounded-full border-2 border-[#0B0B0D] bg-[#0B0B0D] px-3 py-1.5 text-xs font-bold text-[#F2B705] shadow-[2px_2px_0_0_rgba(242,183,5,0.5)]">
-                <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{profile.manifestation.tag_label}</span>
-              </div>
-            )}
             {statusBadge && (
               <span
                 className={cn(
@@ -524,9 +524,14 @@ export function ProfileHeadCard({
               )}
             </div>
 
-            {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna. */}
-            <div className="min-w-0 flex-1 pb-1 text-left">
-              <div className="flex items-baseline gap-4">
+            {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna.
+                ALINHADA À DIREITA (pedido do Alex, 2026-09-05): encostada no
+                avatar, ela colidia com a pilha de pills, que escapa por trás da
+                foto justamente para a direita — o cifrão da Carteira caía por
+                cima de "POSTS". Empurrar o texto para a borda do card é o que
+                abre essa faixa; a pilha ganhou espaço sem precisar encolher. */}
+            <div className="min-w-0 flex-1 pb-1 text-right">
+              <div className="flex items-baseline justify-end gap-4">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
                     {portfolioCount}
@@ -552,7 +557,7 @@ export function ProfileHeadCard({
               </div>
 
               {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
-                <div className="mt-2 flex flex-col gap-1">
+                <div className="mt-2 flex flex-col items-end gap-1">
                   {profile.machine_name && (
                     <HeadInfo icon={Megaphone} value={tx.enxameFull(null, profile.machine_name)} />
                   )}
