@@ -2,9 +2,16 @@
 
 import { Star } from "lucide-react"
 import { useRankingPublicProfileMeta } from "@/hooks/use-ranking-public-profile-meta"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { cn } from "@/lib/utils"
 
 type Props = {
   profileId: string
+  /** Onde a coluna encosta. No headcard as estrelas ficam na coluna da
+   *  direita, alinhadas com os contadores; centradas era o lugar antigo,
+   *  debaixo da foto. */
+  align?: "center" | "end"
+  className?: string
 }
 
 // Regra de exibição: a cada 0.5+ arredonda para cima.
@@ -14,8 +21,9 @@ function roundForDisplay(avg: number): number {
   return Math.min(5, Math.max(0, Math.floor(avg + 0.5)))
 }
 
-export function AvatarRatingStar({ profileId }: Props) {
+export function AvatarRatingStar({ profileId, align = "center", className }: Props) {
   const { data } = useRankingPublicProfileMeta(profileId)
+  const t = useTranslations("Profile")
 
   if (data === undefined) return null
 
@@ -24,7 +32,13 @@ export function AvatarRatingStar({ profileId }: Props) {
   const stars = roundForDisplay(avg)
 
   return (
-    <div className="mt-3 flex flex-col items-center gap-1">
+    <div
+      className={cn(
+        "flex flex-col gap-1",
+        align === "end" ? "items-end" : "mt-3 items-center",
+        className,
+      )}
+    >
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => {
           const filled = i < stars
@@ -41,7 +55,7 @@ export function AvatarRatingStar({ profileId }: Props) {
         })}
       </div>
       <span className="text-[11px] font-bold text-[#5b554b] tabular-nums">
-        {avg > 0 ? `${avg.toFixed(1)} (${count})` : "Sem avaliações"}
+        {avg > 0 ? `${avg.toFixed(1)} (${count})` : t("noRatings", "Sem avaliações")}
       </span>
     </div>
   )

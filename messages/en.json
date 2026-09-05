@@ -3830,7 +3830,9 @@
     "changeManifestationAria": "Change your manifestation in the store",
     "mySocials": "My socials",
     "followingShort": "Following",
-    "seeFollowingAria": "See who this profile follows"
+    "seeFollowingAria": "See who this profile follows",
+    "tools": "Tools",
+    "noRatings": "No ratings"
   },
   "Bees": {
     "chat": "Chat",

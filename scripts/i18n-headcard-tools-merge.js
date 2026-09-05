@@ -1,34 +1,49 @@
-// i18n do botão de ferramentas (toolbar retrátil do headcard do /account).
-// Idempotente e não-destrutivo: só ADICIONA chaves ausentes.
-// Rodar com: node scripts/i18n-headcard-tools-merge.js
-const fs = require("fs")
-const path = require("path")
+/* eslint-disable @typescript-eslint/no-require-imports */
+// Merge idempotente das chaves do gatilho de ferramentas e das avaliações.
+//
+// - `Profile.tools`: o gatilho do menu do headcard deixou de ser engrenagem e
+//   virou ferramenta (o ícone gear ficou reservado ao menu da CONTA, no banner,
+//   que é outra coisa). O rótulo acompanhou o ícone.
+// - `Profile.noRatings`: escoteiro — o "Sem avaliações" do
+//   components/profile/avatar-rating-star.tsx estava em pt cravado no JSX, e
+//   en/es mostravam português em silêncio.
+//
+// Padrão da casa: fill-if-absent — nunca sobrescreve o que já está no dicionário.
+//
+// Uso: node scripts/i18n-headcard-tools-merge.js
 
-const dir = path.join(__dirname, "..", "messages")
+const fs = require("fs");
+const path = require("path");
 
-const ACCOUNT = {
-  toolsButton: ["Ferramentas", "Tools", "Herramientas"],
-  toolsClose: ["Fechar ferramentas", "Close tools", "Cerrar herramientas"],
-}
+const LOCALES = ["pt-BR", "en", "es"];
+const DIR = path.join(__dirname, "..", "messages");
 
-const LOCALES = ["pt-BR", "en", "es"]
+/** chave → [pt, en, es] */
+const PROFILE = {
+  tools: ["Ferramentas", "Tools", "Herramientas"],
+  noRatings: ["Sem avaliações", "No ratings", "Sin valoraciones"],
+};
 
-function mergeNamespace(json, ns, keys, localeIndex) {
-  if (!json[ns]) json[ns] = {}
-  let added = 0
-  for (const [key, values] of Object.entries(keys)) {
-    if (json[ns][key] === undefined) {
-      json[ns][key] = values[localeIndex]
-      added++
+const NAMESPACES = { Profile: PROFILE };
+
+let added = 0;
+
+for (const locale of LOCALES) {
+  const file = path.join(DIR, `${locale}.json`);
+  const dict = JSON.parse(fs.readFileSync(file, "utf8"));
+  const i = LOCALES.indexOf(locale);
+
+  for (const [ns, keys] of Object.entries(NAMESPACES)) {
+    if (!dict[ns]) dict[ns] = {};
+    for (const [key, values] of Object.entries(keys)) {
+      if (dict[ns][key] === undefined) {
+        dict[ns][key] = values[i];
+        added++;
+      }
     }
   }
-  return added
+
+  fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n", "utf8");
 }
 
-for (let i = 0; i < LOCALES.length; i++) {
-  const file = path.join(dir, `${LOCALES[i]}.json`)
-  const json = JSON.parse(fs.readFileSync(file, "utf8"))
-  const added = mergeNamespace(json, "Account", ACCOUNT, i)
-  fs.writeFileSync(file, JSON.stringify(json, null, 2) + "\n", "utf8")
-  console.log(`${LOCALES[i]}: +${added} chaves`)
-}
+console.log(`[i18n] ${added} chave(s) adicionada(s).`);

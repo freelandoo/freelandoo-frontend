@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, LayoutGrid } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, LayoutGrid } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -120,7 +120,6 @@ export default function PerfilPage() {
   const router = useRouter()
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
   const navCounts = useNavCounts()
-  const unreadMessages = navCounts.conversationUnread
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
   const dataApiOn = useFeature("data_api")
@@ -1759,21 +1758,6 @@ export default function PerfilPage() {
                 setIsEditing(false)
                 setIsModalOpen(true)
               }}
-              toolsLead={
-                <button
-                  type="button"
-                  onClick={() => router.push("/mensagens?tab=os")}
-                  aria-label={t("openMessages", "Abrir mensagens")}
-                  title={t("messages", "Mensagens")}
-                  className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
-                  )}
-                </button>
-              }
-              toolsBadge={unreadMessages > 0}
               onCreateProfile={openNewProfileModal}
               /* O menu lateral é o mesmo componente; esta página só entrega o
                  usuário completo (o do localStorage é pobre) e a bolinha de

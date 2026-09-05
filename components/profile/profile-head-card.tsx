@@ -20,6 +20,7 @@ import {
   Sparkles,
   Trophy,
   Users,
+  Wrench,
   type LucideIcon,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -156,11 +157,6 @@ interface ProfileHeadCardProps {
   belowAvatar?: React.ReactNode
   /** "+" de rede social abre modal em vez de navegar para o settings. */
   onAddSocial?: () => void
-  /** Botões antes das ferramentas (mensagens com badge de não-lidas). */
-  toolsLead?: React.ReactNode
-  /** Novidade que o `toolsLead` carrega — soma na bolinha da engrenagem
-   *  fechada, senão o aviso ficaria escondido atrás do hover. */
-  toolsBadge?: boolean
   /** Criar perfil sem sair da página — repassado ao troca-perfil. */
   onCreateProfile?: () => void
   /** Usuário do menu lateral. Sem isso vale o do localStorage — a /account tem
@@ -292,8 +288,6 @@ export function ProfileHeadCard({
   onChangeAvatar,
   belowAvatar,
   onAddSocial,
-  toolsLead,
-  toolsBadge = false,
   onCreateProfile,
   dropsideUser,
   dropsideUnreadServiceRequest,
@@ -657,11 +651,6 @@ export function ProfileHeadCard({
 
               {belowAvatar}
 
-              {profileId && (
-                <div className="mt-2">
-                  <AvatarRatingStar profileId={profileId} />
-                </div>
-              )}
               {canUploadAvatar && (
                 <input
                   ref={fileInputRef}
@@ -680,6 +669,12 @@ export function ProfileHeadCard({
                 cima de "POSTS". Empurrar o texto para a borda do card é o que
                 abre essa faixa; a pilha ganhou espaço sem precisar encolher. */}
             <div className="min-w-0 flex-1 pb-1 text-right">
+              {/* Avaliações: saíram de baixo da foto e vieram para cá (pedido do
+                  Alex, 2026-09-05), logo abaixo da linha onde o banner encontra
+                  o card e em cima dos contadores, encostadas à direita. */}
+              {profileId && (
+                <AvatarRatingStar profileId={profileId} align="end" className="mb-1.5" />
+              )}
               <div className="flex items-baseline justify-end gap-4">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
@@ -809,16 +804,14 @@ export function ProfileHeadCard({
               <>
                 <IconAction
                   onClick={handleSettingsClick}
-                  icon={Settings}
-                  label={menuOpen ? t("close", "Fechar") : t("settings", "Configurações")}
+                  icon={Wrench}
+                  label={menuOpen ? t("close", "Fechar") : t("tools", "Ferramentas")}
                   hint="headcard-settings"
                   accent
                   ariaExpanded={menuOpen}
-                  badge={(muralHasNew || toolsBadge) && !menuOpen}
+                  badge={muralHasNew && !menuOpen}
                 />
                 <RetractableIcons open={menuOpen}>
-                  {/* Botões da superfície (mensagens com badge de não-lidas). */}
-                  {toolsLead}
                   {/* Mensagens e Comunidade SAÍRAM daqui (2026-09-04, pedido do
                       Alex): as duas já são raiz do dock da ProfileSidebar, que
                       fica na tela o tempo todo — repeti-las no menu do headcard
