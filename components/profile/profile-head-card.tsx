@@ -5,12 +5,14 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { motion } from "framer-motion"
 import {
   BarChart2,
   CalendarDays,
   Camera,
   Cog,
   Instagram,
+  LayoutGrid,
   MapPin,
   Megaphone,
   MessageCircle,
@@ -20,6 +22,7 @@ import {
   Trophy,
   Users,
   UserRound,
+  type LucideIcon,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { MarkdownText } from "@/components/ui/markdown-text"
@@ -120,7 +123,62 @@ interface ProfileHeadCardProps {
   /** Rótulo do botão principal para visitantes (ex.: rolar à secção de serviços). */
   visitorScheduleButtonLabel?: string
   className?: string
+  /**
+   * ── Encaixes da CONTA ────────────────────────────────────────────────────
+   * O /account desenhava o próprio headcard, e por isso as duas telas
+   * divergiam a cada feature (U2b do CLAUDE.md). Agora é este componente nas
+   * duas, e o que era exclusivo de lá entra por estes encaixes — todos
+   * OPCIONAIS, então o headcard de um perfil comum não muda de forma.
+   *
+   * Nenhum deles muda o LAYOUT: mudam o que a peça faz ou de onde vêm os
+   * dados. É essa fronteira que mantém as telas idênticas.
+   */
+  /** Contagem de "acompanhando" própria da superfície (a conta soma todos os
+   *  perfis do dono). Sem isso vale a do próprio perfil. */
+  followingCount?: number
+  /** Abre a lista de acompanhados. Sem isso, abre a do próprio perfil. */
+  onShowFollowing?: () => void
+  /** Linha de identidade sob os contadores (@username). */
+  identityHandle?: string | null
+  /** Chips antes da fila de redes (status da conta, supervisionada). */
+  chips?: React.ReactNode
+  /** Anel neon rosa na foto: o dono tem bee vivo. */
+  hasLiveBees?: boolean
+  /** Clique na foto faz outra coisa (menu dos espaços). Sem isso, troca a foto. */
+  onAvatarClick?: () => void
+  /** Rótulo/ícone do overlay quando `onAvatarClick` toma a foto. */
+  avatarClickLabel?: string
+  avatarClickIcon?: LucideIcon
+  /** Marca o gatilho para o clique-fora do menu que ele abre. */
+  avatarTriggerAttr?: boolean
+  /** Badge de câmera: vira a ÚNICA porta de trocar a foto quando o clique nela
+   *  foi tomado por `onAvatarClick`. */
+  onChangeAvatar?: () => void
+  /** Ancorado logo abaixo da foto (o menu dos espaços abre daqui). */
+  belowAvatar?: React.ReactNode
+  /** "+" de rede social abre modal em vez de navegar para o settings. */
+  onAddSocial?: () => void
+  /** Botões antes das ferramentas (mensagens com badge de não-lidas). */
+  toolsLead?: React.ReactNode
+  /** Novidade que o `toolsLead` carrega — soma na bolinha da engrenagem
+   *  fechada, senão o aviso ficaria escondido atrás do hover. */
+  toolsBadge?: boolean
+  /** Criar perfil sem sair da página — repassado ao troca-perfil. */
+  onCreateProfile?: () => void
 }
+
+/** Anel neon de bee: o mesmo gradiente das duas camadas (glow + facho). */
+const BEE_RING_GRADIENT =
+  "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)"
+
+/** Moldura da foto — borda creme com anel preto por fora, do /account. A
+ *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto. */
+const AVATAR_FRAME_CLASS =
+  "relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] disabled:opacity-70"
+
+/** O "+" da fila de redes — mesmo botão nas duas superfícies. */
+const SOCIAL_ADD_CLASS =
+  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-dashed border-[#0B0B0D]/40 bg-transparent text-[#0B0B0D] transition hover:border-solid hover:bg-[#F2B705]/25"
 
 function getInitials(name?: string | null): string {
   if (!name) return "?"
@@ -217,11 +275,27 @@ export function ProfileHeadCard({
   visitorActions,
   visitorScheduleButtonLabel = "Agendar",
   className,
+  followingCount,
+  onShowFollowing,
+  identityHandle,
+  chips,
+  hasLiveBees = false,
+  onAvatarClick,
+  avatarClickLabel,
+  avatarClickIcon: AvatarClickIcon,
+  avatarTriggerAttr = false,
+  onChangeAvatar,
+  belowAvatar,
+  onAddSocial,
+  toolsLead,
+  toolsBadge = false,
+  onCreateProfile,
 }: ProfileHeadCardProps) {
   const t = useTranslations("Profile")
   const tx = useTaxonomy()
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
   const [openFollowers, setOpenFollowers] = useState(false)
+  const [openFollowing, setOpenFollowing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
@@ -361,20 +435,55 @@ export function ProfileHeadCard({
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
   const displayName = profile.display_name || t("noName", "Sem nome")
-  const canUploadAvatar = isOwnProfile
+  // Trocar a foto pelo clique nela só sobra quando ninguém tomou esse clique.
+  const canUploadAvatar = isOwnProfile && !onAvatarClick
+
+  const avatarImage = avatarSrc ? (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
+      {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+    </div>
+  )
+
+  /** O que o clique na foto faz — menu (quando a superfície toma o clique),
+   *  troca de foto, ou nada (visitante). Um lugar só decide. */
+  const avatarAction = onAvatarClick
+    ? {
+        onClick: onAvatarClick,
+        disabled: false,
+        label: avatarClickLabel || t("change", "Trocar"),
+        overlayLabel: avatarClickLabel || t("change", "Trocar"),
+        Icon: AvatarClickIcon || LayoutGrid,
+      }
+    : canUploadAvatar
+      ? {
+          onClick: handleAvatarSelect,
+          disabled: uploadingAvatar,
+          label: t("changeAvatar", "Trocar foto de perfil"),
+          overlayLabel: uploadingAvatar ? t("sending", "Enviando…") : t("change", "Trocar"),
+          Icon: Camera,
+        }
+      : null
 
   return (
     <>
       <article
         className={cn(
-          "relative overflow-hidden rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[6px_6px_0_0_#0B0B0D]",
+          // MOLDURA ÚNICA (U2b, 2026-09-05): é a do /account, que o Alex apontou
+          // como a certa — no celular o card vai de ponta a ponta, sem borda
+          // lateral e sem sombra, e o fundo escuro sobra só como uma linha.
+          // SEM `overflow-hidden`: o menu que abre na foto e o troca-perfil saem
+          // PARA FORA do card, e a borda os cortava (a mesma armadilha que o "+"
+          // do mural da academia pagou). O banner tem recorte próprio.
+          "relative min-w-0 rounded-2xl fl-paper-card border-2 border-[#0B0B0D] text-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none",
           className
         )}
       >
-        {/* BANNER — imagem da manifestação ou gradiente warm.
-            Borda inferior rasgada (papel) revelando o card creme por baixo. */}
+        {/* BANNER — imagem da manifestação ou gradiente warm. */}
         <div
-          className="group/banner fl-torn-bottom fl-torn-bottom-shadow relative h-28 bg-[#1d1810] md:h-52"
+          className="group/banner relative h-40 overflow-hidden bg-[#1d1810] md:h-52"
           onClick={isOwnProfile ? () => setBannerArmed(true) : undefined}
         >
           {profile.manifestation?.banner_url && !isClan && !bannerFailed ? (
@@ -418,7 +527,7 @@ export function ProfileHeadCard({
               (e a porta da loja); o `tag_label` segue vindo da API e aparecendo
               onde é o assunto: a loja /manifestacao e o card de /p/[itemId].
               Sobra aqui o selo de publicação. */}
-          <div className="absolute left-3 top-3 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
+          <div className="absolute left-4 top-4 z-20 flex max-w-[calc(100%-6rem)] flex-col items-start gap-1.5">
             {statusBadge && (
               <span
                 className={cn(
@@ -433,7 +542,7 @@ export function ProfileHeadCard({
           {/* Sino + menu da conta (visão do dono) — mesmos botões do banner
               do /account: as duas páginas têm a mesma função. */}
           {isOwnProfile && (
-            <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+            <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
               <NotificationBell />
               <button
                 type="button"
@@ -450,65 +559,94 @@ export function ProfileHeadCard({
           )}
         </div>
 
-        <div className="px-4 pb-4 md:px-7 md:pb-5">
+        <div className="relative px-5 pb-6 md:px-7">
           {/* Bloco principal: avatar (esquerda) + coluna de stats/info (direita).
               items-end no flex garante que a coluna direita só ocupe espaço da
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
-          <div className="-mt-10 flex items-end gap-4 md:-mt-14 md:gap-5">
+          <div className="relative z-10 -mt-12 flex items-end gap-4 md:gap-6">
             <div className="relative flex shrink-0 flex-col items-center">
               {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito — o
                   card da foto vem depois no DOM e por isso cobre a pilha, que
                   só escapa pela direita. Só para o DONO (é a conta dele) e fora
-                  do clan, que é entidade coletiva e mantém menu próprio. */}
+                  do clan, que é entidade coletiva e mantém menu próprio.
+                  O padding casa com a LARGURA DO AVATAR — mexeu numa, mexe na
+                  outra (ver components/profile/headcard-pills.tsx). */}
               {isOwnProfile && entityType !== "clan" && (
-                <HeadcardPills avatarPadClass="pl-24 md:pl-32" />
+                <HeadcardPills avatarPadClass="pl-24 md:pl-28" />
               )}
               {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
-                  troca-perfil na quina de baixo. A coluna inteira não serve —
-                  ela desce até as estrelas, e o botão nasceria solto abaixo. */}
-              <div className="relative w-24 md:w-32">
-                {canUploadAvatar ? (
+                  troca-perfil na quina de baixo, e é nele que mora a rotação —
+                  o anel de bees precisa girar junto com a foto. A coluna
+                  inteira não serve: ela desce até as estrelas, e o botão
+                  nasceria solto abaixo. */}
+              <div className="group relative w-24 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
+                {/* Anel neon rosa quando há bee vivo: conic-gradient com um facho
+                    quase branco que gira, mais uma camada desfocada fazendo o
+                    glow. Some sem bee. */}
+                {hasLiveBees && (
+                  <>
+                    <div className="pointer-events-none absolute -inset-2.5 overflow-hidden rounded-2xl opacity-80 blur-[7px]">
+                      <motion.div
+                        className="absolute -inset-[120%]"
+                        style={{ background: BEE_RING_GRADIENT }}
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute -inset-1.5 overflow-hidden rounded-2xl">
+                      <motion.div
+                        className="absolute -inset-[120%]"
+                        style={{ background: BEE_RING_GRADIENT }}
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
+                      />
+                    </div>
+                  </>
+                )}
+                {avatarAction ? (
                   <button
                     type="button"
-                    onClick={handleAvatarSelect}
-                    disabled={uploadingAvatar}
-                    aria-label={t("changeAvatar", "Trocar foto de perfil")}
-                    title={t("changeAvatar", "Trocar foto de perfil")}
-                    className="group relative flex aspect-[4/5] w-full -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70"
+                    {...(avatarTriggerAttr ? { "data-spaces-trigger": "" } : {})}
+                    onClick={avatarAction.onClick}
+                    disabled={avatarAction.disabled}
+                    aria-label={avatarAction.label}
+                    aria-haspopup={onAvatarClick ? "menu" : undefined}
+                    title={avatarAction.label}
+                    className={AVATAR_FRAME_CLASS}
                   >
-                    {avatarSrc ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
-                        {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                      </div>
-                    )}
+                    {avatarImage}
                     <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      <Camera className="h-5 w-5" />
+                      <avatarAction.Icon className="h-5 w-5" />
                       <span className="text-[10px] font-bold uppercase tracking-wider">
-                        {uploadingAvatar ? t("sending", "Enviando…") : t("change", "Trocar")}
+                        {avatarAction.overlayLabel}
                       </span>
                     </span>
                   </button>
                 ) : (
-                  <div className="relative flex aspect-[4/5] w-full -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705]">
-                    {avatarSrc ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
-                        {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                      </div>
-                    )}
-                  </div>
+                  <div className={AVATAR_FRAME_CLASS}>{avatarImage}</div>
                 )}
                 {/* Troca-perfil: sem `onCreateProfile`, o card "+" leva para a
                     /account, onde o formulário de criar perfil vive. */}
                 {isOwnProfile && entityType !== "clan" && (
-                  <ProfileSwitcher currentProfileId={profileId} />
+                  <ProfileSwitcher currentProfileId={profileId} onCreateProfile={onCreateProfile} />
+                )}
+                {/* Badge de câmera: existe quando o clique na foto foi tomado
+                    por outra coisa (o menu dos espaços) — aí ele é a ÚNICA
+                    porta de trocar a foto, e por isso aparece sempre. */}
+                {onChangeAvatar && (
+                  <button
+                    type="button"
+                    onClick={onChangeAvatar}
+                    aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                    title={t("changeAvatar", "Trocar foto de perfil")}
+                    className="absolute -bottom-2 -right-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705]"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </div>
+
+              {belowAvatar}
 
               <div className="mt-2">
                 <AvatarRatingStar profileId={profileId} />
@@ -554,7 +692,31 @@ export function ProfileHeadCard({
                     {t("followersShort", "Acomp.")}
                   </span>
                 </button>
+                {/* Terceiro contador — existia só no /account e é o que o
+                    headcard do perfil não tinha. A CONTA passa a sua própria
+                    contagem (ela soma todos os perfis do dono); sem isso vale a
+                    deste perfil. */}
+                <span className="text-[#0B0B0D]/20">|</span>
+                <button
+                  type="button"
+                  onClick={() => (onShowFollowing ? onShowFollowing() : setOpenFollowing(true))}
+                  className="flex items-baseline gap-1.5 transition hover:opacity-70"
+                  aria-label={t("seeFollowingAria", "Ver quem este perfil acompanha")}
+                >
+                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                    {followingCount ?? counts.following_count}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                    {t("followingShort", "Acompanhando")}
+                  </span>
+                </button>
               </div>
+
+              {/* @username — contexto de identidade. O nome grande vive no
+                  header retrátil nas duas telas. */}
+              {identityHandle && (
+                <p className="mt-1 text-sm font-medium text-[#5b554b]">@{identityHandle}</p>
+              )}
 
               {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
                 <div className="mt-2 flex flex-col items-end gap-1">
@@ -589,12 +751,16 @@ export function ProfileHeadCard({
             </MarkdownText>
           )}
 
+          {/* Chips da superfície (status da conta, supervisionada). Slot porque
+              o conteúdo é dado da tela, não do perfil. */}
+          {chips && <div className="mt-4 flex flex-wrap items-center gap-2">{chips}</div>}
+
           {/* Fila das REDES (mesma do /account). O Mural saiu daqui em
               2026-09-04 (pedido do Alex) e virou item da engrenagem, junto das
               outras ferramentas; o chip de nível saiu antes, em 2026-09-03.
               Não recolocar em uma só das superfícies, senão os dois headcards
               divergem de novo. */}
-          {((isOwnProfile && ownerActions?.editHref) || socials.length > 0) && (
+          {((isOwnProfile && (ownerActions?.editHref || onAddSocial)) || socials.length > 0) && (
             <div className="mt-4">
               {/* O "+" sozinho não dizia de que era. O rótulo nomeia a fila. */}
               <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
@@ -605,15 +771,30 @@ export function ProfileHeadCard({
                 {/* "+" de rede social — paridade com o headcard do /account, que
                     já tinha o atalho. Leva ao settings do perfil, onde as redes
                     DESTE perfil são geridas (conteúdo é independente por perfil). */}
-                {isOwnProfile && ownerActions?.editHref && (
-                  <Link
-                    href={ownerActions.editHref}
-                    title={t("addSocial", "Adicionar rede social")}
-                    aria-label={t("addSocial", "Adicionar rede social")}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-dashed border-[#0B0B0D]/40 bg-transparent text-[#0B0B0D] transition hover:border-solid hover:bg-[#F2B705]/25"
-                  >
-                    <Plus className="h-[18px] w-[18px]" />
-                  </Link>
+                {/* Onde as redes são geridas muda por superfície: a conta abre
+                    o modal desta página, o perfil navega para o settings dele
+                    (conteúdo é independente por perfil). O BOTÃO é o mesmo. */}
+                {isOwnProfile && (onAddSocial || ownerActions?.editHref) && (
+                  onAddSocial ? (
+                    <button
+                      type="button"
+                      onClick={onAddSocial}
+                      title={t("addSocial", "Adicionar rede social")}
+                      aria-label={t("addSocial", "Adicionar rede social")}
+                      className={SOCIAL_ADD_CLASS}
+                    >
+                      <Plus className="h-[18px] w-[18px]" />
+                    </button>
+                  ) : (
+                    <Link
+                      href={ownerActions!.editHref!}
+                      title={t("addSocial", "Adicionar rede social")}
+                      aria-label={t("addSocial", "Adicionar rede social")}
+                      className={SOCIAL_ADD_CLASS}
+                    >
+                      <Plus className="h-[18px] w-[18px]" />
+                    </Link>
+                  )
                 )}
               </div>
             </div>
@@ -625,7 +806,7 @@ export function ProfileHeadCard({
             ref={menuRef}
             onMouseEnter={() => setMenuOpen(true)}
             onMouseLeave={() => setMenuOpen(false)}
-            className="mt-4 flex flex-wrap items-center gap-1.5"
+            className="mt-5 flex flex-wrap items-center gap-1.5"
           >
             {isOwnProfile && ownerActions ? (
               <>
@@ -636,9 +817,11 @@ export function ProfileHeadCard({
                   hint="headcard-settings"
                   accent
                   ariaExpanded={menuOpen}
-                  badge={muralHasNew && !menuOpen}
+                  badge={(muralHasNew || toolsBadge) && !menuOpen}
                 />
                 <RetractableIcons open={menuOpen}>
+                  {/* Botões da superfície (mensagens com badge de não-lidas). */}
+                  {toolsLead}
                   {/* Mensagens e Comunidade SAÍRAM daqui (2026-09-04, pedido do
                       Alex): as duas já são raiz do dock da ProfileSidebar, que
                       fica na tela o tempo todo — repeti-las no menu do headcard
@@ -756,6 +939,18 @@ export function ProfileHeadCard({
         entityId={profileId}
         mode="followers"
       />
+
+      {/* Só existe quando a superfície NÃO trouxe a própria lista de
+          acompanhados (a conta traz: a dela é do dono, não do perfil). */}
+      {!onShowFollowing && (
+        <EntityFollowModal
+          open={openFollowing}
+          onOpenChange={setOpenFollowing}
+          entityType={entityType}
+          entityId={profileId}
+          mode="following"
+        />
+      )}
 
       {isOwnProfile && dataApiOn && (
         <DataConnectionsModal open={dataConnOpen} onClose={() => setDataConnOpen(false)} />

@@ -3242,7 +3242,9 @@
     "menuRecado": "Recado",
     "changeManifestation": "Alterar",
     "changeManifestationAria": "Trocar sua manifestação na loja",
-    "mySocials": "Minhas redes"
+    "mySocials": "Minhas redes",
+    "followingShort": "Acompanhando",
+    "seeFollowingAria": "Ver quem este perfil acompanha"
   },
   "Bees": {
     "chat": "Chat",

@@ -3808,7 +3808,9 @@
     "menuRecado": "Recado",
     "changeManifestation": "Cambiar",
     "changeManifestationAria": "Cambiar tu manifestación en la tienda",
-    "mySocials": "Mis redes"
+    "mySocials": "Mis redes",
+    "followingShort": "Siguiendo",
+    "seeFollowingAria": "Ver a quién sigue este perfil"
   },
   "Bees": {
     "chat": "Chat",

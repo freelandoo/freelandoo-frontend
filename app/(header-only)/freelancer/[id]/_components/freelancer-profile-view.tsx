@@ -842,8 +842,11 @@ export default function FreelancerProfileView({
           {t("back", "Voltar")}
         </button>
 
-        {/* HEADER CARD */}
-        <section ref={headcardRef} className="mb-0">
+        {/* HEADER CARD — sangra até a borda no celular, igual ao /account: lá o
+            <main> já é `px-0` no mobile, e aqui a página inteira tem px-4, então
+            quem rompe a margem é o próprio bloco. Sem isso o card do perfil
+            nasce com uma moldura escura em volta que o /account não tem. */}
+        <section ref={headcardRef} className="mb-0 max-md:-mx-4">
           <ProfileHeadCard
             profile={profile}
             profileId={profileId}
