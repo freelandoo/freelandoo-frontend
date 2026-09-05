@@ -223,8 +223,8 @@ export default async function PublicProfilePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
-      {/* Paridade user≡subperfil: o perfil-conta renderiza a MESMA página do
-          subperfil (decisão Alex 2026-07-20 — "as duas têm que ser idênticas"). */}
+      {/* Paridade user≡perfil: o perfil-conta renderiza a MESMA página do
+          perfil (decisão Alex 2026-07-20 — "as duas têm que ser idênticas"). */}
       <FreelancerProfileView profileId={profile.id_profile} />
     </>
   )

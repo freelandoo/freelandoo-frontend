@@ -380,7 +380,7 @@ export default function CreateCommunityPage() {
           <>
             {!levelOk ? (
               <p className="mt-6 border-2 border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                {t("needLevel5", "Você precisa de pelo menos um subperfil nível 5 para criar uma comunidade.")}
+                {t("needLevel5", "Você precisa de pelo menos um perfil nível 5 para criar uma comunidade.")}
               </p>
             ) : null}
 

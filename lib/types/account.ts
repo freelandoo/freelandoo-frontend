@@ -11,7 +11,7 @@ export interface RedeSocial {
   icon?: string | null
 }
 
-// Perfil-conta (is_user_account) — paridade user≡subperfil: XP/nível do user.
+// Perfil-conta (is_user_account) — paridade user≡perfil: XP/nível do user.
 export interface AccountProfileInfo {
   id_profile: string
   xp_total?: number

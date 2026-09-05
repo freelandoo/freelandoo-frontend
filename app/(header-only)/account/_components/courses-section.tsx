@@ -57,13 +57,13 @@ export interface ProfileOption {
 
 interface Props {
   /**
-   * Lista de subperfis (não-clan) do usuário logado, para o select
+   * Lista de perfis (não-clan) do usuário logado, para o select
    * "Perfil vinculado". Quando vazio, o campo fica oculto.
    */
   profileOptions?: ProfileOption[]
   /**
    * No nível do user cursos viraram "Meu aprendizado": mostra só os
-   * comprados e esconde criação/aba "Criados" (cursos nascem no subperfil).
+   * comprados e esconde criação/aba "Criados" (cursos nascem no perfil).
    */
   purchasedOnly?: boolean
 }
@@ -398,7 +398,7 @@ export function CoursesSection({ purchasedOnly = false }: Props) {
   } = usePurchasedCourses()
 
   const { ensureConsent } = useActionConsent()
-  // No nível do user só há "comprados" (cursos criados moram nos subperfis).
+  // No nível do user só há "comprados" (cursos criados moram nos perfis).
   const [tab, setTab] = useState<CoursesTab>(purchasedOnly ? "purchased" : "created")
   const [creating, setCreating] = useState(false)
   const creatingRef = useRef(false)
@@ -431,7 +431,7 @@ export function CoursesSection({ purchasedOnly = false }: Props) {
   }, [createCourse, router, ensureConsent, t])
 
   // Escuta o "+ Curso" do RetractableProfileHeader (via window event).
-  // No modo "Meu aprendizado" (nível do user) não cria — cursos nascem no subperfil.
+  // No modo "Meu aprendizado" (nível do user) não cria — cursos nascem no perfil.
   useEffect(() => {
     if (purchasedOnly) return
     const onCreate = (e: Event) => {

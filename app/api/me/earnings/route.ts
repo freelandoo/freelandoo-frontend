@@ -5,7 +5,7 @@ import { fetchWithTimeout } from "@/lib/server-fetch"
 const BACKEND = getBackendApiUrl()
 
 // Extrato de ganhos do user (Loja/Serviço/Curso/Afiliado), escopável por
-// subperfil. Repassa auth + querystring (kind, profile, page, per_page).
+// perfil. Repassa auth + querystring (kind, profile, page, per_page).
 export async function GET(request: Request) {
   const auth =
     request.headers.get("authorization") || request.headers.get("Authorization")

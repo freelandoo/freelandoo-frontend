@@ -53,6 +53,7 @@ interface MeProfileLite {
     id_profile: string
     display_name?: string | null
     is_clan?: boolean
+    is_community?: boolean
   }[]
 }
 
@@ -318,7 +319,7 @@ export function CourseLandingView({ courseId }: Props) {
     [course, t, updateCourse],
   )
 
-  // Carrega subperfis do usuário (não-clan) para o select no modal de dados.
+  // Carrega perfis do usuário (não-clan) para o select no modal de dados.
   useEffect(() => {
     const token = getToken()
     if (!token) return
@@ -332,7 +333,7 @@ export function CourseLandingView({ courseId }: Props) {
         const data = (await res.json().catch(() => null)) as MeProfileLite | null
         if (cancelled) return
         const list = (data?.profiles || [])
-          .filter((p) => !p.is_clan)
+          .filter((p) => !p.is_clan && !p.is_community)
           .map((p) => ({
             id: p.id_profile,
             name: p.display_name || t("unnamedProfile", "Perfil sem nome"),

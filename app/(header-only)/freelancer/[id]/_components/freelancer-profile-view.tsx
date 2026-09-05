@@ -525,7 +525,7 @@ export default function FreelancerProfileView({
         // Incrementa trigger para o ProfilePublicServicesSection abrir o modal de criar.
         setCreateServiceTrigger((n) => n + 1)
       } else if (detail.kind === "curso") {
-        // Curso agora nasce DENTRO do subperfil (pago). Abre a aba e dispara a
+        // Curso agora nasce DENTRO do perfil (pago). Abre a aba e dispara a
         // criação vinculada a este perfil (o ProfileCoursesTab cria + navega).
         setPortfolioTab("courses")
         setCreateCourseTrigger((n) => n + 1)
@@ -660,7 +660,7 @@ export default function FreelancerProfileView({
   }
 
   // Owner do clan oculta um post de membro do feed do clan, sem afetar o
-  // portfolio do subperfil de origem.
+  // portfolio do perfil de origem.
   const handleHideFromClan = async (itemId: string) => {
     if (!isClan || !isOwnProfile) return
     if (!confirm(t("confirmHideFromClan", "Ocultar este post do feed do clan? O post continuará no perfil do membro."))) return
@@ -1720,7 +1720,7 @@ function ProfileCoursesTab({
   profileId: string
   isOwnProfile: boolean
   isClan?: boolean
-  /** Subperfil pago (assinatura ativa) — só ele pode criar cursos. */
+  /** Perfil pago (assinatura ativa) — só ele pode criar cursos. */
   isPaid?: boolean
   /** Incrementado pelo "+" do header para disparar a criação vinculada. */
   openCreateTrigger?: number
@@ -1736,8 +1736,8 @@ function ProfileCoursesTab({
   const [creating, setCreating] = useState(false)
   const creatingRef = useRef(false)
 
-  // Cria um rascunho JÁ vinculado a este subperfil e abre o editor. Só o dono de
-  // um subperfil pago (não-clan) cria — o backend também exige is_paid.
+  // Cria um rascunho JÁ vinculado a este perfil e abre o editor. Só o dono de
+  // um perfil pago (não-clan) cria — o backend também exige is_paid.
   const canCreate = isOwnProfile && !isClan && isPaid
   const createAndGo = useCallback(async () => {
     if (!canCreate || creatingRef.current) return
@@ -1756,7 +1756,7 @@ function ProfileCoursesTab({
     }
   }, [canCreate, myCoursesHook, profileId, router, t])
 
-  // Dispara ao clicar "+ Curso" no header do subperfil.
+  // Dispara ao clicar "+ Curso" no header do perfil.
   useEffect(() => {
     if (openCreateTrigger > 0 && canCreate) void createAndGo()
     // eslint-disable-next-line react-hooks/exhaustive-deps

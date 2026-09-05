@@ -23,7 +23,7 @@ type Product = {
 
 type Wallet = { balance: number; lifetime_earned?: number; lifetime_spent?: number }
 
-type BoostProfile = { id_profile: string; display_name: string; xp_level: number; is_clan?: boolean; is_active?: boolean }
+type BoostProfile = { id_profile: string; display_name: string; xp_level: number; is_clan?: boolean; is_community?: boolean; is_active?: boolean }
 
 const BOOST_TARGET_LEVEL = 5
 
@@ -92,7 +92,8 @@ function LojaPolensContent() {
       if (!res.ok) return
       const data = await res.json()
       const list: BoostProfile[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter(
-        (p: BoostProfile) => !p.is_clan && p.is_active !== false && Number(p.xp_level) < BOOST_TARGET_LEVEL,
+        (p: BoostProfile) =>
+          !p.is_clan && !p.is_community && p.is_active !== false && Number(p.xp_level) < BOOST_TARGET_LEVEL,
       )
       setBoostProfiles(list)
       setBoostProfileId((cur) => (cur && list.some((p) => p.id_profile === cur) ? cur : list[0]?.id_profile || ""))
@@ -152,7 +153,7 @@ function LojaPolensContent() {
       setFeedback({
         kind: "success",
         title: t("boostSuccessTitle", "Perfil impulsionado!"),
-        message: t("boostSuccessMsg", "Seu subperfil foi levado ao nível 5. O nível atualiza em instantes."),
+        message: t("boostSuccessMsg", "Seu perfil foi levado ao nível 5. O nível atualiza em instantes."),
       })
       void loadBoostProfiles()
     } else if (xpBoostReturn === "cancel") {
@@ -212,7 +213,7 @@ function LojaPolensContent() {
       setFeedback({
         kind: "error",
         title: t("purchaseNotCompleted", "Compra não concluída"),
-        message: t("boosterPickFirst", "Escolha um subperfil primeiro."),
+        message: t("boosterPickFirst", "Escolha um perfil primeiro."),
       })
       return
     }
@@ -344,7 +345,7 @@ function LojaPolensContent() {
                 {t("boosterTitle", "Booster de Nível 5")}
               </h2>
               <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-[#C9C2B6]">
-                {t("boosterDesc", "Leve um subperfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.")}
+                {t("boosterDesc", "Leve um perfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.")}
               </p>
               <p className="mt-3 text-xs text-[#9A938A]">
                 {t("boosterPriceNote", "Pagamento único de {price} via Stripe.").replace("{price}", fmtBRL(1000, locale))}
@@ -354,12 +355,12 @@ function LojaPolensContent() {
             <div className="flex flex-col justify-center gap-3">
               {boostProfiles.length === 0 ? (
                 <p className="text-sm text-[#9A938A]">
-                  {t("boosterNoProfiles", "Você não tem subperfis elegíveis (abaixo do nível 5).")}
+                  {t("boosterNoProfiles", "Você não tem perfis elegíveis (abaixo do nível 5).")}
                 </p>
               ) : (
                 <>
                   <label htmlFor="boost-profile" className="text-xs font-bold uppercase tracking-[0.18em] text-[#9A938A]">
-                    {t("boosterSelectProfile", "Escolha o subperfil")}
+                    {t("boosterSelectProfile", "Escolha o perfil")}
                   </label>
                   <select
                     id="boost-profile"

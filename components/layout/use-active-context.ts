@@ -7,7 +7,7 @@ export type ActiveContextKind = "user" | "subprofile" | "clan"
 
 export interface ActiveContext {
   kind: ActiveContextKind
-  /** Id do sub-perfil ou clan quando kind != "user". */
+  /** Id do perfil ou clan quando kind != "user". */
   id_profile: string | null
   /** Nome (display_name) — null enquanto carrega ou em modo user. */
   name: string | null
@@ -22,7 +22,7 @@ interface ParsedRoute {
 
 /**
  * Detecta o contexto a partir do pathname:
- *  - /account/profile/<id>/* → subperfil
+ *  - /account/profile/<id>/* → perfil
  *  - /account/clans/<id>/* → clan
  *  - qualquer outra rota → user
  */

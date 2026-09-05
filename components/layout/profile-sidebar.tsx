@@ -50,7 +50,7 @@ const HIDDEN_ON_PATHS = [
 /**
  * Os itens que NÃO dependem do contexto ativo.
  *
- * Os três contextos (usuário, subperfil, clã) sempre repetiram esta mesma
+ * Os três contextos (usuário, perfil, clã) sempre repetiram esta mesma
  * lista e só divergem no Ranking, que muda de destino. Ela virou constante
  * quando o Monsters entrou: um quinto item copiado em três lugares é o quinto
  * lugar de onde ele some quando alguém mexer só num deles.
@@ -78,7 +78,7 @@ interface ContextBundle {
   homeHref: string
   /** Itens do toolbar. */
   items: SidebarItem[]
-  /** Display name (subperfil/clan) ou nome do user. */
+  /** Display name (perfil/clan) ou nome do user. */
   displayName: string
   /** URL do avatar quando disponível. */
   avatar_url: string | null

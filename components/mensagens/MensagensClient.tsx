@@ -819,7 +819,7 @@ export default function MensagensClient() {
   }, [status, tab, loadOsChats])
 
   // Solicitações são do usuário inteiro (serviço/produto/curso, ambos os lados),
-  // não de um subperfil específico — por isso não filtra por actorId.
+  // não de um perfil específico — por isso não filtra por actorId.
   const visibleOsChats = osChats
 
   const activeOsChat = useMemo(
@@ -1378,7 +1378,7 @@ export default function MensagensClient() {
                               ? ` · ${t("clanLabel", "Clan")}`
                               : r.is_user_account
                               ? ` · ${t("userAccountLabel", "Conta")}`
-                              : ` · ${t("subprofileLabel", "Subperfil")}`}
+                              : ` · ${t("subprofileLabel", "Perfil")}`}
                           </div>
                         </div>
                         <MessageCircle className="h-4 w-4 text-white/40" />
@@ -1708,7 +1708,7 @@ export default function MensagensClient() {
                         {activeOsChat.profile.display_name || t("professionalFallback", "Profissional")}
                       </div>
                       <div className="truncate text-[11px] text-white/50">
-                        {activeOsChat.profile.username ? `@${activeOsChat.profile.username}` : t("subprofileLabel", "Subperfil")}
+                        {activeOsChat.profile.username ? `@${activeOsChat.profile.username}` : t("subprofileLabel", "Perfil")}
                         {" · "}
                         <span className={cn(
                           OS_TERMINAL_STATUS.has(osCurrentStatus || activeOsChat.response_status)
@@ -1933,7 +1933,7 @@ export default function MensagensClient() {
                     {activeDetail?.other_entity?.display_name || t("conversationFallback", "Conversa")}
                   </div>
                   <div className="truncate text-[11px] text-white/50">
-                    {activeDetail?.other_entity?.type === "clan" ? t("clanLabel", "Clan") : t("subprofileLabel", "Subperfil")}
+                    {activeDetail?.other_entity?.type === "clan" ? t("clanLabel", "Clan") : t("subprofileLabel", "Perfil")}
                     {activeDetail?.other_entity?.username
                       ? ` · @${activeDetail.other_entity.username}`
                       : ""}
@@ -2225,7 +2225,7 @@ function ActorSelector({
   if (actors.length === 0) {
     return (
       <span className="text-[11px] text-white/40">
-        {t("noActiveSubprofiles", "Sem subperfis ativos")}
+        {t("noActiveSubprofiles", "Sem perfis ativos")}
       </span>
     )
   }

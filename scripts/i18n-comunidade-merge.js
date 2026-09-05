@@ -164,9 +164,9 @@ const COMMUNITY = {
   createButton: ["Criar", "Create", "Crear"],
   creating: ["Criando...", "Creating...", "Creando..."],
   needLevel5: [
-    "Você precisa de pelo menos um subperfil nível 5 para criar uma comunidade.",
+    "Você precisa de pelo menos um perfil nível 5 para criar uma comunidade.",
     "You need at least one level 5 subprofile to create a community.",
-    "Necesitas al menos un subperfil de nivel 5 para crear una comunidad.",
+    "Necesitas al menos un perfil de nivel 5 para crear una comunidad.",
   ],
   createError: ["Não foi possível criar a comunidade.", "Could not create the community.", "No se pudo crear la comunidad."],
   createSuccess: ["Comunidade criada!", "Community created!", "¡Comunidad creada!"],

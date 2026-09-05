@@ -97,7 +97,7 @@ export function ServiceChatModal({
   }, [open, responseStatus])
 
   // Ao abrir via mural (preview), cria response PENDING para liberar o chat.
-  // Se outro sub-perfil já travou a O.S., backend devolve 409 + locked_by_other.
+  // Se outro perfil já travou a O.S., backend devolve 409 + locked_by_other.
   useEffect(() => {
     if (!open || !previewRequest || effectiveIdResponse) return
     if (openingRef.current) return

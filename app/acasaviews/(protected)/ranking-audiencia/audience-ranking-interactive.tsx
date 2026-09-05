@@ -470,7 +470,7 @@ export function AudienceRankingInteractive({ audience }: AudienceRankingInteract
 
               <div className="mt-3 flex items-center gap-2 bg-[var(--gold)] px-2 py-1.5 casa-body text-[10px] font-extrabold uppercase tracking-[0.12em] text-[var(--ink)]">
                 <MessageSquare className="h-3.5 w-3.5" strokeWidth={3} />
-                comentários pela sua conta user, não por subperfil
+                comentários pela sua conta user, não por perfil
               </div>
             </header>
 

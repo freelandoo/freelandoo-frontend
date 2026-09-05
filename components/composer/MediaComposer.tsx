@@ -273,7 +273,7 @@ export function MediaComposer({ open, mode: modeProp, initialProfileId = null, c
     if (isTouch) fileRef.current?.click()
   }, [open, slides.length])
 
-  // ── carrega subperfis ────────────────────────────────────────────────────────
+  // ── carrega perfis ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!open || status !== "authenticated" || !user) return
     let cancelled = false
@@ -1424,7 +1424,7 @@ function DetailsStep({
         {loadingProfiles ? (
           <div className="flex items-center gap-2 text-sm text-[#a89f8d]"><Loader2 className="h-4 w-4 animate-spin text-[#F2B705]" /> {t("details.loadingProfiles", "Carregando perfis…")}</div>
         ) : profiles.length === 0 ? (
-          <p className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D]">{t("details.noProfiles", "Sem subperfis elegíveis. Crie um subperfil para postar.")}</p>
+          <p className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D]">{t("details.noProfiles", "Sem perfis elegíveis. Crie um perfil para postar.")}</p>
         ) : (
           <ProfileSelect userName={userName} profiles={profiles} selectedId={selectedProfileId} onSelect={onSelectProfile} ineligible={ineligible} />
         )}

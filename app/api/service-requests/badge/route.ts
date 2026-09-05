@@ -5,7 +5,7 @@ import { isFetchTimeout, fetchWithTimeout, readBodyWithTimeout } from "@/lib/ser
 const BACKEND = getBackendApiUrl()
 const EMPTY = { has_new: false, unread_chats: 0, mural_count: 0 }
 
-/** GET /api/service-requests/badge?id_profile= — badge para o subperfil */
+/** GET /api/service-requests/badge?id_profile= — badge para o perfil */
 export async function GET(request: Request) {
   const log = apiFlow("service-requests/badge:GET")
   let status = 500

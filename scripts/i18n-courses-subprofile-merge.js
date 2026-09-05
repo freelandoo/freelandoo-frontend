@@ -1,4 +1,4 @@
-// Namespaces Profile/Account — cursos agora nascem dentro do subperfil (pago)
+// Namespaces Profile/Account — cursos agora nascem dentro do perfil (pago)
 // e o nível do user vira "Meu aprendizado". Idempotente, fill-if-absent. Rodar:
 //   node scripts/i18n-courses-subprofile-merge.js
 const fs = require("fs")

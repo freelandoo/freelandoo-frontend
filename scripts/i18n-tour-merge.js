@@ -99,9 +99,9 @@ const TOUR = {
     "Pestañas de tu hub: Portafolio, Bees, Cursos, Guardados y Perfiles.",
   ],
   tour_account_profiles: [
-    "Crie e alterne entre subperfis profissionais.",
+    "Crie e alterne entre perfis profissionais.",
     "Create and switch between professional sub-profiles.",
-    "Crea y alterna entre subperfiles profesionales.",
+    "Crea y alterna entre perfiles profesionales.",
   ],
   tour_account_menu: [
     "O menu lateral dá acesso rápido a tudo da conta.",
@@ -111,9 +111,9 @@ const TOUR = {
 
   // Tela 5 — Carteira
   tour_wallet_extrato: [
-    "Seus ganhos reais por subperfil, com gráfico por período.",
+    "Seus ganhos reais por perfil, com gráfico por período.",
     "Your real earnings per sub-profile, with a chart by period.",
-    "Tus ganancias reales por subperfil, con gráfico por período.",
+    "Tus ganancias reales por perfil, con gráfico por período.",
   ],
   tour_wallet_market: [
     "Um resumo do mercado (ações e cripto) para acompanhar.",

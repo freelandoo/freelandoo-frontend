@@ -176,7 +176,7 @@ export default function ManifestationUsagePage() {
             <CardHeader>
               <CardTitle className="text-white">Usuarios do produto</CardTitle>
               <CardDescription>
-                {pagination ? `${pagination.total} registro(s)` : "Compras e aplicacoes por subperfil"}
+                {pagination ? `${pagination.total} registro(s)` : "Compras e aplicacoes por perfil"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -207,7 +207,7 @@ export default function ManifestationUsagePage() {
                         <th className="py-3 pr-4 font-medium">Pagamento</th>
                         <th className="py-3 pr-4 font-medium">Valor</th>
                         <th className="py-3 pr-4 font-medium">Vigencia</th>
-                        <th className="py-3 pr-4 font-medium">Subperfis</th>
+                        <th className="py-3 pr-4 font-medium">Perfis</th>
                         <th className="py-3 font-medium">Status</th>
                       </tr>
                     </thead>

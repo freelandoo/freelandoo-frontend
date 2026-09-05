@@ -94,7 +94,7 @@ export function FreelancerTile({ creator, featured = false }: FreelancerTileProp
   }
 
   // Cada perfil mostra a foto DELE. O fallback antigo (|| creator.user_avatar)
-  // emprestava a cara do titular a subperfil/clan/comunidade sem foto própria —
+  // emprestava a cara do titular a perfil/clan/comunidade sem foto própria —
   // e perfil comprado é independente. O perfil-conta continua com foto porque
   // `tb_user.avatar` é espelhado em `avatar_url` na escrita (mig 215).
   const image = creator.avatar_url

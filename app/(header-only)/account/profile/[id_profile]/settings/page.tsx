@@ -547,7 +547,7 @@ export default function ProfileSettingsPage() {
       <TabloidPageIntro
         eyebrow={t("profileEyebrow", "Perfil")}
         title={t("settingsTitle", "AJUSTES.")}
-        subtitle={t("settingsSubtitle", "Configurações do subperfil, redes, ativação e visibilidade com a mesma pegada de ranking premium.")}
+        subtitle={t("settingsSubtitle", "Configurações do perfil, redes, ativação e visibilidade com a mesma pegada de ranking premium.")}
         back={<TabloidBackLink href={`/account/profile/${id_profile}`}>{t("backToProfile", "Voltar para o Perfil")}</TabloidBackLink>}
         actions={
           !isPaid ? (

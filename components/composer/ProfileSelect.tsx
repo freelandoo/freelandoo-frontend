@@ -2,8 +2,8 @@
 
 // Select hierárquico de perfil na pele tabloide. A CONTA do usuário (perfil-
 // fantasma, is_user_account) aparece SEMPRE primeiro, em dourado e selecionável
-// — o user pode publicar como a própria conta, não só pelos subperfis. Abaixo
-// vêm os subperfis. Itens inelegíveis ficam esmaecidos com o motivo.
+// — o user pode publicar como a própria conta, não só pelos perfis. Abaixo
+// vêm os perfis. Itens inelegíveis ficam esmaecidos com o motivo.
 
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -93,7 +93,7 @@ export function ProfileSelect({
         </div>
       )}
 
-      {/* Subperfis */}
+      {/* Perfis */}
       <div className="space-y-2">
         {subs.map((p) => {
           const reason = ineligible?.(p) || null

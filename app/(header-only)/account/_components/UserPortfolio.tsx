@@ -79,8 +79,8 @@ type Item = {
   media: Media[]
 }
 
-// Abas Serviços/Loja do perfil-conta (paridade user≡subperfil): mesmos
-// componentes da página do subperfil, em chunk lazy (fora do bundle inicial).
+// Abas Serviços/Loja do perfil-conta (paridade user≡perfil): mesmos
+// componentes da página do perfil, em chunk lazy (fora do bundle inicial).
 const sectionSkeleton = () => (
   <div className="mt-8 h-48 w-full animate-pulse bg-white/5" aria-hidden />
 )
@@ -101,7 +101,7 @@ const BACKEND_DIRECT = "https://freelandoo-backend-production.up.railway.app"
 
 /**
  * Portfólio do user-account (perfil-fantasma).
- * Espelha o subperfil: tabs Portfolio/Bees, modal com preview, crop modal pra
+ * Espelha o perfil: tabs Portfolio/Bees, modal com preview, crop modal pra
  * imagens 4:5 e validação 9:16 pra vídeos do Bees. Vídeos vão direto pro
  * backend pra escapar do body limit do Vercel.
  */
@@ -109,7 +109,7 @@ interface UserPortfolioProps {
   coursesProfileOptions?: ProfileOption[]
   /** Conteúdo da aba "Meus Perfis" (só renderizado em /account). */
   myProfilesSlot?: React.ReactNode
-  /** Reporta a contagem de posts pro headcard (contador POSTS, paridade subperfil). */
+  /** Reporta a contagem de posts pro headcard (contador POSTS, paridade perfil). */
   onPostsCount?: (count: number) => void
   /** id do perfil-conta (is_user_account) — habilita as abas Serviços/Loja. */
   accountProfileId?: string | null
@@ -172,7 +172,7 @@ export function UserPortfolio({
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("feed")
 
-  // Contador POSTS do headcard (paridade user≡subperfil).
+  // Contador POSTS do headcard (paridade user≡perfil).
   useEffect(() => {
     onPostsCount?.(items.length)
   }, [items.length, onPostsCount])
@@ -188,7 +188,7 @@ export function UserPortfolio({
   const storeFlagOn = useFeature("store")
   const storePrefOn = useUserFeature("store")
   const coursesOn = coursesFlagOn && coursesPrefOn
-  // Serviços/Loja do perfil-conta (paridade user≡subperfil) — precisam do id.
+  // Serviços/Loja do perfil-conta (paridade user≡perfil) — precisam do id.
   const servicesOn = servicesFlagOn && servicesPrefOn && !!accountProfileId
   const shopOn = storeFlagOn && storePrefOn && !!accountProfileId
   useEffect(() => {

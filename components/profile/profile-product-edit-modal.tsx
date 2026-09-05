@@ -1118,7 +1118,7 @@ export function ProfileProductEditModal({
                           className="fl-input font-mono"
                         />
                         <p className="mt-1 text-[10px] text-[#8a8275]">
-                          {t("overridesDefaultZip", "Sobrescreve o CEP padrão do subperfil para este produto.")}
+                          {t("overridesDefaultZip", "Sobrescreve o CEP padrão do perfil para este produto.")}
                         </p>
                       </div>
                     </>

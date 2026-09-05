@@ -1,4 +1,4 @@
-// Namespace "Agenda" — redesign tabloide da página de agenda do subperfil/clan
+// Namespace "Agenda" — redesign tabloide da página de agenda do perfil/clan
 // (AgendaPageClient + AgendaBookingsExperience + AgendaBookingsPanel +
 // AgendaMonthCalendar). Idempotente e não-destrutivo: só ADICIONA chaves
 // ausentes, nunca sobrescreve. Placeholders {x} preservados. Rodar:
@@ -146,7 +146,7 @@ const AGENDA = {
 }
 
 // Entrada da agenda na toolbar do headcard do /account (mig 190): antes o user
-// nao tinha nenhuma porta pra agenda, so o subperfil pela engrenagem.
+// nao tinha nenhuma porta pra agenda, so o perfil pela engrenagem.
 const ACCOUNT = {
   // "Editar perfil" migrou da engrenagem do headcard pro menu de perfis do
   // /account (o lapis saiu do headcard a pedido do Alex, 2026-07-21).
@@ -168,7 +168,7 @@ const ACCOUNT = {
   ],
 }
 
-// "+" de rede social no headcard do subperfil (paridade com o /account).
+// "+" de rede social no headcard do perfil (paridade com o /account).
 const PROFILE = {
   addSocial: ["Adicionar rede social", "Add social network", "Agregar red social"],
 }

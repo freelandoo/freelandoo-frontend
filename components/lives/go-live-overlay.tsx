@@ -55,7 +55,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
   // Live ativa em andamento — usado p/ encerrar se o transmissor sair sem clicar.
   const activeLiveIdRef = useRef<string | null>(null)
 
-  // ── Carrega subperfis ──────────────────────────────────────────────────────
+  // ── Carrega perfis ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!open || status !== "authenticated" || !user) return
     let cancelled = false
@@ -354,7 +354,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
               <h2 className="text-lg font-semibold">Ir ao vivo</h2>
             </div>
 
-            {/* Subperfil */}
+            {/* Perfil */}
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">Transmitir como</p>
               {loadingProfiles ? (
@@ -363,7 +363,7 @@ export function GoLiveOverlay({ open, onClose, onLiveStarted, onLiveEnded }: GoL
                 </div>
               ) : profiles.length === 0 ? (
                 <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white/60">
-                  Sem subperfis ativos para transmitir.
+                  Sem perfis ativos para transmitir.
                 </p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

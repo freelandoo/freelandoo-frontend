@@ -1,7 +1,7 @@
 import { getBackendApiUrl } from "@/lib/backend"
 import { apiFlow } from "@/lib/api-logger"
 
-// Redes sociais do perfil-conta do user (paridade user≡subperfil).
+// Redes sociais do perfil-conta do user (paridade user≡perfil).
 // Backend: POST /users/me/social-media (resolveUserAccountProfile).
 export async function POST(request: Request) {
   const log = apiFlow("users/me/social-media:POST")

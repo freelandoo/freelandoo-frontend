@@ -58,7 +58,7 @@ interface MarkdownTextProps {
  * Render markdown sanitizado. allowedElements = lista curta segura,
  * <a> recebe target="_blank" rel="noopener noreferrer".
  *
- * Não aplicar em: display_name de subperfil, formulários e campos básicos
+ * Não aplicar em: display_name de perfil, formulários e campos básicos
  * (cidade, UF, profissão).
  */
 function MarkdownTextImpl({ children, className, prose = true }: MarkdownTextProps) {

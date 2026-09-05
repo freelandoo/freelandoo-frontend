@@ -70,7 +70,7 @@ const STEPS: Step[] = [
     titleFallback: "Sua conta",
     items: [
       { icon: LayoutGrid, slot: "tour_account_tabs", fallback: "Abas do seu hub: Portfólio, Bees, Cursos, Salvos e Perfis." },
-      { icon: User, slot: "tour_account_profiles", fallback: "Crie e alterne entre subperfis profissionais." },
+      { icon: User, slot: "tour_account_profiles", fallback: "Crie e alterne entre perfis profissionais." },
       { icon: MessageCircle, slot: "tour_account_menu", fallback: "O menu lateral dá acesso rápido a tudo da conta." },
     ],
   },
@@ -80,7 +80,7 @@ const STEPS: Step[] = [
     titleSlot: "tour_wallet_title",
     titleFallback: "Carteira",
     items: [
-      { icon: Wallet, slot: "tour_wallet_extrato", fallback: "Seus ganhos reais por subperfil, com gráfico por período." },
+      { icon: Wallet, slot: "tour_wallet_extrato", fallback: "Seus ganhos reais por perfil, com gráfico por período." },
       { icon: Trophy, slot: "tour_wallet_market", fallback: "Um resumo do mercado (ações e cripto) para acompanhar." },
       { icon: ArrowRight, slot: "tour_wallet_payouts", fallback: "Acompanhe saldos e repasses dos seus recebimentos." },
     ],

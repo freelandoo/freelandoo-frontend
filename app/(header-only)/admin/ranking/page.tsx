@@ -424,7 +424,7 @@ export default function AdminRankingPage() {
                         <Zap className="h-4 w-4 text-primary" /> Pesos da Pontuação
                       </CardTitle>
                       <CardDescription>
-                        Aplica-se aos subperfis profissionais. Os mesmos pontos contam para XP/nível e para a posição no ranking.
+                        Aplica-se aos perfis profissionais. Os mesmos pontos contam para XP/nível e para a posição no ranking.
                       </CardDescription>
                     </div>
                     <button
@@ -543,7 +543,7 @@ export default function AdminRankingPage() {
                           onChange={(e) => setXpDraft((d) => d ? { ...d, polens_per_level: Math.max(0, parseInt(e.target.value, 10) || 0) } : d)}
                         />
                         <p className="text-[11px] text-muted-foreground">
-                          Creditado na carteira do usuário a cada vez que um subperfil (não-clã) sobe de nível. 0 desativa.
+                          Creditado na carteira do usuário a cada vez que um perfil (não-clã) sobe de nível. 0 desativa.
                         </p>
                       </div>
                     </div>

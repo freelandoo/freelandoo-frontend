@@ -88,7 +88,7 @@ const ACCOUNT = {
 // ── F4: perfil público (ns Profile) — aba/validações de Curtos ──────────────
 const PROFILE = {
   curtosTab: ["Curtos", "Shorts", "Cortos"],
-  // Menu "+" do subperfil: Curto (vídeo permanente) e Bee (story)
+  // Menu "+" do perfil: Curto (vídeo permanente) e Bee (story)
   menuPost: ["Post", "Post", "Post"],
   menuCurtos: ["Curto", "Short", "Corto"],
   menuBee: ["Bee", "Bee", "Bee"],

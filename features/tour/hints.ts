@@ -179,11 +179,11 @@ export const HINTS: Record<HintId, Hint> = {
   // ── /account — contadores ──────────────────────────────────────────────
   "account-counter-profiles": {
     title: "Total de perfis",
-    text: "Quantos subperfis profissionais você tem criados (visíveis ou não).",
+    text: "Quantos perfis profissionais você tem criados (visíveis ou não).",
   },
   "account-counter-visible": {
     title: "Perfis publicados",
-    text: "Subperfis que estão publicados e aparecendo na vitrine para clientes.",
+    text: "Perfis que estão publicados e aparecendo na vitrine para clientes.",
   },
   "account-counter-clans": {
     title: "Seus clans",
@@ -191,7 +191,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "account-counter-following": {
     title: "Acompanhando",
-    text: "Subperfis e clans que você segue — geram conteúdo no seu feed e stories.",
+    text: "Perfis e clans que você segue — geram conteúdo no seu feed e stories.",
   },
   "account-counter-unread": {
     title: "Mensagens não lidas",
@@ -209,7 +209,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "account-tab-services": {
     title: "Serviços",
-    text: "Serviços da sua conta — com preço e agenda, iguais aos do subperfil.",
+    text: "Serviços da sua conta — com preço e agenda, iguais aos do perfil.",
   },
   "account-tab-courses": {
     title: "Cursos",
@@ -217,7 +217,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "account-tab-shop": {
     title: "Loja",
-    text: "Produtos físicos vendidos pela sua conta — mesma loja do subperfil.",
+    text: "Produtos físicos vendidos pela sua conta — mesma loja do perfil.",
   },
   "account-tab-saved": {
     title: "Salvos",
@@ -225,7 +225,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "account-tab-profiles": {
     title: "Meus perfis",
-    text: "Lista dos seus subperfis profissionais. Clique pra abrir e editar cada um.",
+    text: "Lista dos seus perfis profissionais. Clique pra abrir e editar cada um.",
   },
   "account-tab-clans": {
     title: "Meus clans",
@@ -257,11 +257,11 @@ export const HINTS: Record<HintId, Hint> = {
   // ── Dropside — secundárias ─────────────────────────────────────────────
   "dropside-account": {
     title: "Minha conta",
-    text: "Visão geral da sua conta: perfis, subperfis, clans, pólens e XP.",
+    text: "Visão geral da sua conta: perfis, clans, pólens e XP.",
   },
   "dropside-payments": {
     title: "Pagamentos e ativações",
-    text: "Histórico de pagamentos, assinaturas dos subperfis e reembolsos.",
+    text: "Histórico de pagamentos, assinaturas dos perfis e reembolsos.",
   },
   "dropside-settings": {
     title: "Configurações",
@@ -305,11 +305,11 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "headcard-clans": {
     title: "Clans",
-    text: "Lista os clans deste subperfil — comunidades coletivas associadas.",
+    text: "Lista os clans deste perfil — comunidades coletivas associadas.",
   },
   "headcard-members": {
     title: "Membros do clan",
-    text: "Vê e gerencia os subperfis membros deste clan.",
+    text: "Vê e gerencia os perfis membros deste clan.",
   },
   "headcard-manage": {
     title: "Gerenciar clan",
@@ -383,7 +383,7 @@ export const HINTS: Record<HintId, Hint> = {
   // ── /admin — cards principais ──────────────────────────────────────────
   "admin-users": {
     title: "Usuários / Perfis",
-    text: "Lista de usuários cadastrados com seus subperfis, premium e total recebido.",
+    text: "Lista de usuários cadastrados com seus perfis, premium e total recebido.",
   },
   "admin-entries": {
     title: "Entradas",
@@ -457,7 +457,7 @@ export const HINTS: Record<HintId, Hint> = {
   },
   "headcard-view-members": {
     title: "Membros do clan",
-    text: "Vê quais subperfis fazem parte deste clan.",
+    text: "Vê quais perfis fazem parte deste clan.",
   },
   "headcard-view-ranking": {
     title: "Ranking deste perfil",

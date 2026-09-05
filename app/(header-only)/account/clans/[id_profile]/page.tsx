@@ -1038,7 +1038,7 @@ export default function ManageClanPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="size-5" /> {t("inviteSubprofile", "Convidar sub-perfil")}
+                <UserPlus className="size-5" /> {t("inviteSubprofile", "Convidar perfil")}
               </CardTitle>
               <CardDescription>
                 {slotsAvailable > 0
@@ -1083,7 +1083,7 @@ export default function ManageClanPage({
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium">@{head.username}</div>
                         <div className="text-xs text-muted-foreground">
-                          {t("subprofilesFoundChoose", "{count} subperfil(is) encontrado(s) — escolha qual entra no clan").replace("{count}", String(searchResults.length))}
+                          {t("subprofilesFoundChoose", "{count} perfil(is) encontrado(s) — escolha qual entra no clan").replace("{count}", String(searchResults.length))}
                         </div>
                       </div>
                     </div>
@@ -1091,7 +1091,7 @@ export default function ManageClanPage({
                       {searchResults.map((p) => {
                         const blocked = !p.is_paid || p.already_in_clan
                         const reason = !p.is_paid
-                          ? t("inactiveSubprofile", "Subperfil inativo")
+                          ? t("inactiveSubprofile", "Perfil inativo")
                           : p.already_in_clan
                             ? t("alreadyInAnotherClan", "Já está em outro clan")
                             : ""

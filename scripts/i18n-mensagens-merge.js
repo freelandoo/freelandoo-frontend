@@ -50,7 +50,7 @@ const CONVERSATION = {
   offeringPickService: ["Escolha um serviço", "Choose a service", "Elige un servicio"],
   offeringPickCourse: ["Escolha um curso", "Choose a course", "Elige un curso"],
   closeAriaLabel: ["Fechar", "Close", "Cerrar"],
-  offeringProductHint: ["Da loja dos seus subperfis", "From your subprofiles' shop", "De la tienda de tus subperfiles"],
+  offeringProductHint: ["Da loja dos seus perfis", "From your subprofiles' shop", "De la tienda de tus perfiles"],
   offeringServiceHint: ["Pacote de serviço pra agendar", "Service package to schedule", "Paquete de servicio para agendar"],
   offeringCourseHint: ["Seus cursos publicados", "Your published courses", "Tus cursos publicados"],
   offeringEmpty: ["Você ainda não tem itens deste tipo.", "You don't have items of this type yet.", "Aún no tienes elementos de este tipo."],

@@ -616,7 +616,7 @@ function ProhibitedRulesTab() {
         <div>
           <h2 className="text-base font-semibold text-foreground">Produtos Proibidos</h2>
           <p className="text-xs text-muted-foreground">
-            Regras que bloqueiam ou enviam produtos para revisão nas lojas dos subperfis.
+            Regras que bloqueiam ou enviam produtos para revisão nas lojas dos perfis.
           </p>
         </div>
         <button
@@ -1024,7 +1024,7 @@ function PendingProductsTab() {
             <thead className="bg-card/60 text-xs text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left">Produto</th>
-                <th className="px-3 py-2 text-left">Subperfil</th>
+                <th className="px-3 py-2 text-left">Perfil</th>
                 <th className="px-3 py-2 text-left">Categoria</th>
                 <th className="px-3 py-2 text-left">Status</th>
                 <th className="px-3 py-2"></th>

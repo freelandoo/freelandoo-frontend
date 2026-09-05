@@ -34,6 +34,7 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
+import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { useAccountTools } from "@/components/profile/account-tools"
 
 const DataConnectionsModal = dynamic(
@@ -233,7 +234,7 @@ export function ProfileHeadCard({
   const [bannerArmed, setBannerArmed] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  // Paridade user≡subperfil: a engrenagem do subperfil carrega as mesmas
+  // Paridade user≡perfil: a engrenagem do perfil carrega as mesmas
   // ferramentas da conta (menu do /account) além dos itens do próprio perfil.
   const [dataConnOpen, setDataConnOpen] = useState(false)
   // Sino + menu lateral da conta no banner (visão do dono) — igual /account.
@@ -458,42 +459,53 @@ export function ProfileHeadCard({
               {isOwnProfile && entityType !== "clan" && (
                 <HeadcardPills avatarPadClass="pl-24 md:pl-32" />
               )}
-              {canUploadAvatar ? (
-                <button
-                  type="button"
-                  onClick={handleAvatarSelect}
-                  disabled={uploadingAvatar}
-                  aria-label={t("changeAvatar", "Trocar foto de perfil")}
-                  title={t("changeAvatar", "Trocar foto de perfil")}
-                  className="group relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70 md:w-32"
-                >
-                  {avatarSrc ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
-                      {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                    </div>
-                  )}
-                  <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    <Camera className="h-5 w-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      {uploadingAvatar ? t("sending", "Enviando…") : t("change", "Trocar")}
+              {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
+                  troca-perfil na quina de baixo. A coluna inteira não serve —
+                  ela desce até as estrelas, e o botão nasceria solto abaixo. */}
+              <div className="relative w-24 md:w-32">
+                {canUploadAvatar ? (
+                  <button
+                    type="button"
+                    onClick={handleAvatarSelect}
+                    disabled={uploadingAvatar}
+                    aria-label={t("changeAvatar", "Trocar foto de perfil")}
+                    title={t("changeAvatar", "Trocar foto de perfil")}
+                    className="group relative flex aspect-[4/5] w-full -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] transition-transform duration-300 hover:rotate-0 disabled:opacity-70"
+                  >
+                    {avatarSrc ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
+                        {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+                      </div>
+                    )}
+                    <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Camera className="h-5 w-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        {uploadingAvatar ? t("sending", "Enviando…") : t("change", "Trocar")}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              ) : (
-                <div className="relative flex aspect-[4/5] w-24 -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] md:w-32">
-                  {avatarSrc ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
-                      {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
-                    </div>
-                  )}
-                </div>
-              )}
+                  </button>
+                ) : (
+                  <div className="relative flex aspect-[4/5] w-full -rotate-3 items-center justify-center overflow-hidden rounded-xl border-4 border-[#0B0B0D] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705]">
+                    {avatarSrc ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={avatarSrc} alt={displayName} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#0B0B0D]">
+                        {isClan ? <Users className="h-8 w-8" /> : getInitials(displayName)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Troca-perfil: sem `onCreateProfile`, o card "+" leva para a
+                    /account, onde o formulário de criar perfil vive. */}
+                {isOwnProfile && entityType !== "clan" && (
+                  <ProfileSwitcher currentProfileId={profileId} />
+                )}
+              </div>
+
               <div className="mt-2">
                 <AvatarRatingStar profileId={profileId} />
               </div>
@@ -559,7 +571,7 @@ export function ProfileHeadCard({
           </div>
 
           {/* Nome pequeno — o nome grande vive no header retrátil, igual ao
-              @username do /account (esqueleto unificado user≡subperfil). */}
+              @username do /account (esqueleto unificado user≡perfil). */}
           <p className="mt-3 text-sm font-medium text-[#5b554b]">{displayName}</p>
 
           {profile.bio && (
@@ -663,7 +675,7 @@ export function ProfileHeadCard({
                     />
                   )}
                   {/* Agenda: só o clan tem agenda própria (mig 190). A do
-                      subperfil virou a agenda da CONTA e vive no /account —
+                      perfil virou a agenda da CONTA e vive no /account —
                       duplicá-la aqui só confundiria. */}
                   {isClan && ownerActions.agendaHref && (
                     <IconAction

@@ -200,15 +200,15 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
       <section id="products-section" className="mb-20 scroll-mt-24">
         <div className="mx-auto max-w-md rounded-2xl border-2 border-[#0B0B0D] bg-[#F1EDE2] px-6 py-12 text-center text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
           <Lock className="mx-auto mb-3 h-10 w-10 text-[#0B0B0D]/40" aria-hidden />
-          <h3 className="fl-display mb-1 text-xl text-[#0B0B0D]">{t("storePaidOnly", "Loja só para subperfis pagos")}</h3>
+          <h3 className="fl-display mb-1 text-xl text-[#0B0B0D]">{t("storePaidOnly", "Loja só para perfis pagos")}</h3>
           <p className="mb-5 text-sm text-[#5b554b]">
-            {t("activateToSell", "Ative este subperfil para começar a vender produtos.")}
+            {t("activateToSell", "Ative este perfil para começar a vender produtos.")}
           </p>
           <Link
             href={`/payment/taxa?profile_id=${profileId}`}
             className="fl-btn-gold inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-bold"
           >
-            {t("activatePaidSubprofile", "Ativar subperfil pago")}
+            {t("activatePaidSubprofile", "Ativar perfil pago")}
           </Link>
         </div>
       </section>
@@ -221,7 +221,7 @@ export function ProfileOwnerProductsSection({ profileId }: ProfileOwnerProductsS
         <div>
           <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("storeTitle", "Loja")}</h2>
           <p className="text-[11px] text-[#9A938A]">
-            {t("physicalProductsBy", "Produtos físicos vendidos por este subperfil.")}
+            {t("physicalProductsBy", "Produtos físicos vendidos por este perfil.")}
           </p>
         </div>
         <button

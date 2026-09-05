@@ -32,7 +32,7 @@ type Section = (typeof SECTIONS)[number]
 
 const ADMIN_CARDS: (AdminCard & { section: Section })[] = [
   // Pessoas & Acesso
-  { section: "Pessoas & Acesso", hint: "admin-users", href: "/admin/usuarios", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus sub-perfis, premium e total recebido." },
+  { section: "Pessoas & Acesso", hint: "admin-users", href: "/admin/usuarios", icon: Users, title: "Usuários / Perfis", body: "Usuários cadastrados, com seus perfis, premium e total recebido." },
 
   // Receita — tudo que a plataforma embolsa (será consolidado no extrato Entradas)
   { section: "Receita", hint: "admin-entries", href: "/admin/entradas", icon: Receipt, title: "Entradas", body: "Extrato de receita: ativações, taxas de agendamento, comissão da Loja, Poléns, Premium e Manifestação." },

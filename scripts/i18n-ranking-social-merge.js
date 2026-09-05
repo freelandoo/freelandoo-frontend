@@ -15,9 +15,9 @@ const RANKING = {
   panelRankBadge: ["#{n} no ranking", "#{n} in the ranking", "#{n} en el ranking"],
   panelViewProfile: ["Ver perfil", "View profile", "Ver perfil"],
   panelNote: [
-    "curtidas e comentários saem pela sua conta, não por subperfil",
+    "curtidas e comentários saem pela sua conta, não por perfil",
     "likes and comments are posted by your account, not a subprofile",
-    "los me gusta y comentarios salen de tu cuenta, no de un subperfil",
+    "los me gusta y comentarios salen de tu cuenta, no de un perfil",
   ],
   commentsEmpty: ["Seja a primeira pessoa a comentar", "Be the first to comment", "Sé la primera persona en comentar"],
   commentsLoadMore: ["Carregar mais", "Load more", "Cargar más"],

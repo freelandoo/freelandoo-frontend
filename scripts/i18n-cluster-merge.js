@@ -60,9 +60,9 @@ const CLUSTER = {
   profilePaid: ["Ativo", "Active", "Activo"],
   profileUnpaid: ["Sem assinatura", "No subscription", "Sin suscripción"],
   cueOnlyHint: [
-    "Sem subperfil com assinatura ativa você recebe os sinais do administrador, mas não transmite a sua própria live.",
+    "Sem perfil com assinatura ativa você recebe os sinais do administrador, mas não transmite a sua própria live.",
     "Without a subprofile with an active subscription you receive the administrator's signals but do not broadcast your own live.",
-    "Sin un subperfil con suscripción activa recibes las señales del administrador, pero no transmites tu propia transmisión.",
+    "Sin un perfil con suscripción activa recibes las señales del administrador, pero no transmites tu propia transmisión.",
   ],
   preparingCamera: ["Preparando câmera…", "Preparing camera…", "Preparando cámara…"],
   liveFooter: [

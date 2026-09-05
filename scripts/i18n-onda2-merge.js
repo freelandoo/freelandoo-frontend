@@ -143,7 +143,7 @@ const PROFILE = {
   sendMessage: ["Enviar mensagem", "Send message", "Enviar mensaje"],
   sendRating: ["Enviar avaliação", "Submit review", "Enviar reseña"],
   sending: ["Enviando…", "Sending…", "Enviando…"],
-  servicesOwnerSubtitle: ["Serviços públicos oferecidos por este subperfil.", "Public services offered by this subprofile.", "Servicios públicos ofrecidos por este subperfil."],
+  servicesOwnerSubtitle: ["Serviços públicos oferecidos por este perfil.", "Public services offered by this subprofile.", "Servicios públicos ofrecidos por este perfil."],
   servicesUnavailable: ["Serviços indisponíveis", "Services unavailable", "Servicios no disponibles"],
   servicesUnavailableDesc: ["Não foi possível carregar os serviços agora. Tente novamente mais tarde.", "Couldn't load services right now. Try again later.", "No se pudieron cargar los servicios ahora. Inténtalo más tarde."],
   settings: ["Configurações", "Settings", "Configuración"],

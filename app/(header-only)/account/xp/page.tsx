@@ -7,7 +7,7 @@
  *    10 últimos ganhos (por perfil); no escopo Conta, grade de mini-cards.
  *  - "Engajamento": painel de métricas (views por canal, interações, seguidores,
  *    região, enxame, top conteúdo, horários) — ver <EngagementTab />.
- * Um seletor de escopo no topo (Conta · @username, depois subperfis e clans) é
+ * Um seletor de escopo no topo (Conta · @username, depois perfis e clans) é
  * compartilhado pelas duas abas.
  */
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -101,9 +101,9 @@ export default function XpPage() {
   const t = useTranslations("Account")
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [username, setUsername] = useState<string>("")
-  // Avatar do usuário — fallback quando o subperfil não tem avatar próprio.
+  // Avatar do usuário — fallback quando o perfil não tem avatar próprio.
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
-  // Escopo selecionado: "account" ou um id_profile (subperfil/clan).
+  // Escopo selecionado: "account" ou um id_profile (perfil/clan).
   const [scope, setScope] = useState<string>(ACCOUNT)
   const [tab, setTab] = useState<"xp" | "engagement">("xp")
   const [loadingProfiles, setLoadingProfiles] = useState(true)
@@ -111,7 +111,7 @@ export default function XpPage() {
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
 
-  // Carrega perfis do usuário (subperfis + clans).
+  // Carrega perfis do usuário (perfis + clans).
   useEffect(() => {
     if (!token) { window.location.href = "/login?next=/account/xp"; return }
     fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
@@ -128,7 +128,7 @@ export default function XpPage() {
       .finally(() => setLoadingProfiles(false))
   }, [token])
 
-  // Paridade user≡subperfil: o perfil-conta ganha entrada própria no escopo.
+  // Paridade user≡perfil: o perfil-conta ganha entrada própria no escopo.
   const accountProfile = useMemo(
     () => profiles.find((p) => p.is_user_account) || null,
     [profiles],
@@ -138,7 +138,7 @@ export default function XpPage() {
     [profiles],
   )
   const clans = useMemo(() => profiles.filter((p) => p.is_clan), [profiles])
-  // Grid do escopo "Conta inteira": perfil-conta primeiro, depois subperfis.
+  // Grid do escopo "Conta inteira": perfil-conta primeiro, depois perfis.
   const overviewProfiles = useMemo(
     () => (accountProfile ? [accountProfile, ...subprofiles] : subprofiles),
     [accountProfile, subprofiles],
@@ -184,7 +184,7 @@ export default function XpPage() {
                 </option>
               )}
               {subprofiles.length > 0 && (
-                <optgroup label={t("subprofilesGroup", "Subperfis")}>
+                <optgroup label={t("subprofilesGroup", "Perfis")}>
                   {subprofiles.map((p) => (
                     <option key={p.id_profile} value={p.id_profile}>
                       {p.display_name || t("unnamedProfile", "Perfil sem nome")}
@@ -249,7 +249,7 @@ export default function XpPage() {
   )
 }
 
-/* ─── XP de um perfil (subperfil ou clan) ─────────────────────────────────── */
+/* ─── XP de um perfil (perfil ou clan) ─────────────────────────────────── */
 function ProfileXp({
   profile, userAvatar, token,
 }: { profile: Profile | null; userAvatar: string | null; token: string | null }) {
@@ -402,7 +402,7 @@ function ProfileXp({
   )
 }
 
-/* ─── Visão geral de XP da conta (grade de subperfis) ─────────────────────── */
+/* ─── Visão geral de XP da conta (grade de perfis) ─────────────────────── */
 function AccountXpOverview({
   subprofiles, userAvatar, token, onSelect,
 }: {
@@ -446,8 +446,8 @@ function AccountXpOverview({
     return (
       <EmptyState
         icon={<Zap className="h-6 w-6" />}
-        title={t("noSubprofilesTitle", "Você ainda não tem subperfis profissionais")}
-        description={t("noSubprofilesDesc", "Crie um subperfil para começar a acumular XP e níveis.")}
+        title={t("noSubprofilesTitle", "Você ainda não tem perfis profissionais")}
+        description={t("noSubprofilesDesc", "Crie um perfil para começar a acumular XP e níveis.")}
       />
     )
   }
@@ -456,7 +456,7 @@ function AccountXpOverview({
     <div>
       <div className="mb-4 flex items-center gap-3">
         <span className="fl-display inline-block -rotate-1 bg-[#F2B705] px-3 py-1 text-lg text-[#1A1505] shadow-[3px_3px_0_0_rgba(0,0,0,0.45)]">
-          {t("xpBySubprofile", "XP por subperfil")}
+          {t("xpBySubprofile", "XP por perfil")}
         </span>
         <span className="h-[2px] flex-1 bg-[#F5F1E8]/12" />
       </div>

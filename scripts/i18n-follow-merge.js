@@ -1,4 +1,4 @@
-// Namespace "Follow" — botão de acompanhar (user-level; sem seletor de subperfil).
+// Namespace "Follow" — botão de acompanhar (user-level; sem seletor de perfil).
 // Idempotente, fill-if-absent. Rodar:
 //   node scripts/i18n-follow-merge.js
 const fs = require("fs")

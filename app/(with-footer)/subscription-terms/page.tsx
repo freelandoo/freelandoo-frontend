@@ -17,8 +17,8 @@ const sections = [
     title: "2. Valor e forma de pagamento",
     items: [
       "A ativação custa R$ 300,00 (trezentos reais), em pagamento único.",
-      "A ativação é vitalícia para o subperfil profissional ativado e não possui renovação nem cobrança recorrente.",
-      "Cada subperfil profissional exige a sua própria ativação.",
+      "A ativação é vitalícia para o perfil profissional ativado e não possui renovação nem cobrança recorrente.",
+      "Cada perfil profissional exige a sua própria ativação.",
       "O pagamento é processado exclusivamente pela Stripe.",
     ],
   },

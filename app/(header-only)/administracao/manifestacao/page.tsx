@@ -547,7 +547,7 @@ function ManifestationAdminInner({ embedded = false }: { embedded?: boolean }) {
                 <>
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                     <MetricCard icon={Users} label="Usuarios ativos" value={dashboard.summary.active_users} />
-                    <MetricCard icon={Sparkles} label="Subperfis aplicados" value={dashboard.summary.active_subprofile_apply} />
+                    <MetricCard icon={Sparkles} label="Perfis aplicados" value={dashboard.summary.active_subprofile_apply} />
                     <MetricCard icon={BarChart3} label="Produtos ativos" value={`${dashboard.summary.products_active}/${dashboard.summary.products_total}`} />
                     <MetricCard icon={Coins} label="Receita 30d" value={`${fmtBRL(dashboard.summary.revenue_cents_30d)} · ${Number(dashboard.summary.revenue_polens_30d || 0).toLocaleString("pt-BR")} P`} />
                   </div>

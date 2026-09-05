@@ -78,7 +78,7 @@ export async function sendGift(id_live: string, id_live_gift: string): Promise<S
   return parse<SendGiftResult>(res)
 }
 
-// Subperfis do usuário (para escolher de qual perfil transmitir).
+// Perfis do usuário (para escolher de qual perfil transmitir).
 export interface OwnedProfile {
   id_profile: string
   display_name: string

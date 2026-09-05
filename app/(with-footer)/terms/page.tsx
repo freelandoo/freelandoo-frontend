@@ -14,8 +14,8 @@ const sections = [
       `Plataforma / Freelandoo: o site, as aplicações e os serviços operados pela ${legalCompanyQualification()}.`,
       "Usuário: qualquer pessoa que acessa ou utiliza a plataforma, cadastrada ou não.",
       "Conta: o registro único de um usuário, vinculado a um e-mail.",
-      "Perfil e subperfil: páginas profissionais públicas criadas pelo usuário; um usuário pode manter um perfil principal e subperfis.",
-      "Clan: subperfil coletivo que reúne vários profissionais.",
+      "Perfil: página profissional pública criada pelo usuário; um usuário pode manter mais de um perfil, todos em pé de igualdade.",
+      "Clan: perfil coletivo que reúne vários profissionais.",
       "Enxame: categoria temática da vitrine que agrupa profissões e perfis.",
       "Conteúdo do usuário: textos, imagens, vídeos, áudios, portfólios, posts, stories, transmissões ao vivo e mensagens publicados pelos usuários.",
       "Loja: o ambiente de compra e venda de produtos entre usuários dentro da plataforma.",
@@ -53,7 +53,7 @@ const sections = [
       "Cada usuário é responsável por manter a confidencialidade de suas credenciais e por toda atividade realizada em sua conta.",
       "É proibido criar contas com dados falsos, se passar por terceiros ou manter múltiplas contas para fraudar funcionalidades, rankings ou comissões.",
       "Qualquer uso não autorizado da conta deve ser comunicado imediatamente à Freelandoo.",
-      "Um usuário pode manter um perfil principal e subperfis profissionais; cada subperfil profissional pode exigir ativação própria.",
+      "Um usuário pode manter mais de um perfil profissional, sem hierarquia entre eles; cada perfil pode exigir ativação própria.",
     ],
   },
   {
@@ -82,7 +82,7 @@ const sections = [
       "A Freelandoo disponibiliza, entre outras, as seguintes funcionalidades, que podem ser alteradas, incluídas ou descontinuadas a qualquer momento:",
     ],
     items: [
-      "Vitrine por Enxames, perfis, subperfis, clans, portfólios e ranking.",
+      "Vitrine por Enxames, perfis, clans, portfólios e ranking.",
       "Rede social: Feed, Bees, Stories, mensagens privadas, salas de chat ao vivo e transmissões ao vivo (Lives) com presentes virtuais.",
       "Cursos e conteúdos educacionais.",
       "Loja de produtos e agendamento de serviços.",

@@ -158,8 +158,10 @@ export default function MyClansPage() {
         setMachines(machinesData.enxames || machinesData.machines || machinesData || [])
         setPendingInvites(invitesData.invites || [])
 
+        // Comunidade mora na MESMA tabela dos perfis: sem `is_community` a
+        // lista ofereceria "Meu pet" para criar clan.
         const profiles: SubProfile[] = (meData?.profiles || meData?.user?.profiles || [])
-          .filter((p: { is_clan?: boolean }) => !p.is_clan)
+          .filter((p: { is_clan?: boolean; is_community?: boolean }) => !p.is_clan && !p.is_community)
         setSubProfiles(profiles)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
@@ -202,7 +204,7 @@ export default function MyClansPage() {
 
   async function handleCreate() {
     setFormError("")
-    if (!form.id_profile_owner) return setFormError(t("clanChooseOwnerProfile", "Escolha o sub-perfil que vai criar o clan"))
+    if (!form.id_profile_owner) return setFormError(t("clanChooseOwnerProfile", "Escolha o perfil que vai criar o clan"))
     if (!form.id_machine) return setFormError(t("clanChooseEnxame", "Escolha o enxame do clan"))
     if (!form.display_name.trim()) return setFormError(t("clanNameRequired", "Dê um nome ao clan"))
 
@@ -288,7 +290,7 @@ export default function MyClansPage() {
       <TabloidPageIntro
         eyebrow={t("teamsEyebrow", "Equipes")}
         title={t("myClansTitle", "MEUS CLANS.")}
-        subtitle={t("myClansSubtitle", "Crie ou participe de clans com até 6 sub-perfis. As métricas do clan somam likes, horas e engajamento de todos os membros.")}
+        subtitle={t("myClansSubtitle", "Crie ou participe de clans com até 6 perfis. As métricas do clan somam likes, horas e engajamento de todos os membros.")}
         back={<TabloidBackLink href="/account">{t("back", "Voltar")}</TabloidBackLink>}
         actions={
           <button
@@ -409,24 +411,24 @@ export default function MyClansPage() {
           <DialogHeader>
             <DialogTitle>{t("createNewClan", "Criar novo clan")}</DialogTitle>
             <DialogDescription>
-              {t("createClanDesc", "O sub-perfil escolhido vira dono do clan e ocupa 1 das 6 vagas. 3 vagas grátis, mais 3 disponíveis a R$39 cada.")}
+              {t("createClanDesc", "O perfil escolhido vira dono do clan e ocupa 1 das 6 vagas. 3 vagas grátis, mais 3 disponíveis a R$39 cada.")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label>{t("clanOwnerProfileLabel", "Sub-perfil que cria o clan")}</Label>
+              <Label>{t("clanOwnerProfileLabel", "Perfil que cria o clan")}</Label>
               <Select
                 value={form.id_profile_owner}
                 onValueChange={(v) => setForm({ ...form, id_profile_owner: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("selectSubprofile", "Selecione um sub-perfil")} />
+                  <SelectValue placeholder={t("selectSubprofile", "Selecione um perfil")} />
                 </SelectTrigger>
                 <SelectContent>
                   {eligibleSubProfiles.length === 0 && (
                     <SelectItem value="__none__" disabled>
-                      {t("noSubprofileAvailable", "Nenhum sub-perfil disponível")}
+                      {t("noSubprofileAvailable", "Nenhum perfil disponível")}
                     </SelectItem>
                   )}
                   {eligibleSubProfiles.map((p) => (
@@ -438,7 +440,7 @@ export default function MyClansPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                {t("clanOwnerProfileHint", "Apenas subperfis ativados podem criar clan, e cada sub-perfil só pode estar em 1 clan.")}
+                {t("clanOwnerProfileHint", "Apenas perfis ativados podem criar clan, e cada perfil só pode estar em 1 clan.")}
               </p>
             </div>
 

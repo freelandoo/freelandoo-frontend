@@ -9,9 +9,9 @@ const POLENS = {
   boosterEyebrow: ["Atalho", "Shortcut", "Atajo"],
   boosterTitle: ["Booster de Nível 5", "Level 5 Booster", "Booster de Nivel 5"],
   boosterDesc: [
-    "Leve um subperfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.",
+    "Leve um perfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.",
     "Take a sub-profile straight to level 5 — unlocks creating a community and much more.",
-    "Lleva un subperfil directo al nivel 5 — desbloquea crear comunidad y mucho más.",
+    "Lleva un perfil directo al nivel 5 — desbloquea crear comunidad y mucho más.",
   ],
   boosterPriceNote: [
     "Pagamento único de {price} via Stripe.",
@@ -19,19 +19,19 @@ const POLENS = {
     "Pago único de {price} vía Stripe.",
   ],
   boosterNoProfiles: [
-    "Você não tem subperfis elegíveis (abaixo do nível 5).",
+    "Você não tem perfis elegíveis (abaixo do nível 5).",
     "You have no eligible sub-profiles (below level 5).",
-    "No tienes subperfiles elegibles (por debajo del nivel 5).",
+    "No tienes perfiles elegibles (por debajo del nivel 5).",
   ],
-  boosterSelectProfile: ["Escolha o subperfil", "Choose the sub-profile", "Elige el subperfil"],
+  boosterSelectProfile: ["Escolha o perfil", "Choose the sub-profile", "Elige el perfil"],
   boosterLevel: ["Nível {n}", "Level {n}", "Nivel {n}"],
   boosterCta: ["Impulsionar ao nível 5", "Boost to level 5", "Impulsar al nivel 5"],
-  boosterPickFirst: ["Escolha um subperfil primeiro.", "Choose a sub-profile first.", "Elige un subperfil primero."],
+  boosterPickFirst: ["Escolha um perfil primeiro.", "Choose a sub-profile first.", "Elige un perfil primero."],
   boostSuccessTitle: ["Perfil impulsionado!", "Profile boosted!", "¡Perfil impulsado!"],
   boostSuccessMsg: [
-    "Seu subperfil foi levado ao nível 5. O nível atualiza em instantes.",
+    "Seu perfil foi levado ao nível 5. O nível atualiza em instantes.",
     "Your sub-profile was taken to level 5. The level updates in moments.",
-    "Tu subperfil fue llevado al nivel 5. El nivel se actualiza en instantes.",
+    "Tu perfil fue llevado al nivel 5. El nivel se actualiza en instantes.",
   ],
 }
 

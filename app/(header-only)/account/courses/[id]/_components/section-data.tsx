@@ -292,7 +292,7 @@ export function CourseDataSection({
             </SelectContent>
           </Select>
           <p className="text-[11px] text-white/45">
-            {t("profileLinkHint", "Se associado, o curso vai aparecer na página deste subperfil.")}
+            {t("profileLinkHint", "Se associado, o curso vai aparecer na página deste perfil.")}
           </p>
         </div>
       )}

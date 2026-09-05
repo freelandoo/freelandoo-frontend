@@ -165,7 +165,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (!p.profession_slug) continue
 
-      // Sub-perfil obrigatório pra montar URL canônica de 4 segmentos. Se o
+      // Perfil obrigatório pra montar URL canônica de 4 segmentos. Se o
       // backend não estiver retornando, evita listar a rota de 3 segmentos
       // que sempre 301-redireciona pra canônica.
       if (!p.sub_profile_slug) continue

@@ -36,6 +36,7 @@ const AgendaBookingsExperience = dynamic(
 )
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
+import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { MuralPill } from "@/components/profile/profile-head-card"
 import { SpacesMenu } from "@/components/account/spaces-menu"
 import { HoverHint } from "@/features/tour/HoverHint"
@@ -139,7 +140,7 @@ export default function PerfilPage() {
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
-  // Paridade user≡subperfil: seguidores do perfil-conta no headcard
+  // Paridade user≡perfil: seguidores do perfil-conta no headcard
   const [accountFollowersCount, setAccountFollowersCount] = useState(0)
   const [followersModalOpen, setFollowersModalOpen] = useState(false)
   const [dataConnOpen, setDataConnOpen] = useState(false)
@@ -150,7 +151,7 @@ export default function PerfilPage() {
   const profilesFeatOn = useUserFeature("profiles")
   const agendaFeatOn = useUserFeature("agenda")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
-  // do subperfil: hover expande, click alterna).
+  // do perfil: hover expande, click alterna).
   const [toolsOpen, setToolsOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
@@ -306,13 +307,15 @@ export default function PerfilPage() {
       .catch(() => {})
   }, [])
 
-  // Seguidores do perfil-conta (paridade user≡subperfil): quem acompanha VOCÊ.
+  // Seguidores do perfil-conta (paridade user≡perfil): quem acompanha VOCÊ.
   const accountProfileId = perfil?.account_profile?.id_profile || null
   // Perfis que o usuário REALMENTE gerencia. O perfil-conta é o veículo do
   // próprio user (esta página é a dele) — listá-lo em "Perfis" duplicava a
   // pessoa e fazia conta nova nascer com "1 perfil" que ela nunca criou.
+  // Comunidade (pet/carro/games/bairro/condomínio) mora na MESMA tabela dos
+  // perfis: sem `is_community` a aba oferecia "Meu pet" como se fosse um.
   const managedProfiles = (perfil?.profiles || []).filter(
-    (p) => !p.is_clan && !p.is_user_account,
+    (p) => !p.is_clan && !p.is_community && !p.is_user_account,
   )
 
   // Ferramentas da conta: fonte única compartilhada com a engrenagem do
@@ -322,7 +325,7 @@ export default function PerfilPage() {
     onOpenDataConnections: () => setDataConnOpen(true),
   })
 
-  // Mural do perfil-conta (paridade user≡subperfil) + contador de posts.
+  // Mural do perfil-conta (paridade user≡perfil) + contador de posts.
   const [muralOpen, setMuralOpen] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
   const [postsCount, setPostsCount] = useState(0)
@@ -354,7 +357,7 @@ export default function PerfilPage() {
     }
   }, [accountProfileId])
 
-  // XP/nível do perfil-conta no header retrátil (igual ao header do subperfil).
+  // XP/nível do perfil-conta no header retrátil (igual ao header do perfil).
   const [accountXp, setAccountXp] = useState<{
     xp_level: number
     xp_total: number
@@ -418,6 +421,32 @@ export default function PerfilPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfil])
 
+  /**
+   * O card "+" do troca-perfil montado em OUTRA superfície manda para cá com
+   * `?novoPerfil=1` — o formulário de criar perfil vive nesta página e não
+   * seria replicado lá. Lido do `window` e não por `useSearchParams`: o hook
+   * obriga Suspense e tira a rota do pré-render (o build já quebrou assim uma
+   * vez, com o `?tipo=condo`). A querystring é apagada depois para um F5 não
+   * reabrir o modal sozinho.
+   *
+   * Fica ANTES dos early returns (regra dos hooks) e espera a página existir:
+   * enquanto carrega, o render sai antes de declarar `openNewProfileModal`, e
+   * tocá-la aqui seria ReferenceError.
+   */
+  const askedNewProfile = useRef(false)
+  React.useEffect(() => {
+    if (isLoading || !perfil) return
+    if (askedNewProfile.current || typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("novoPerfil") !== "1") return
+    askedNewProfile.current = true
+    openNewProfileModal()
+    params.delete("novoPerfil")
+    const query = params.toString()
+    window.history.replaceState(null, "", window.location.pathname + (query ? `?${query}` : "") + window.location.hash)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, perfil])
+
   if (isLoading) {
     return <AccountLoading />
   }
@@ -447,6 +476,21 @@ export default function PerfilPage() {
     } finally {
       setLoadingMachines(false)
     }
+  }
+
+  /**
+   * Abrir o modal de criar perfil é a MESMA ação em quatro portas (menu "+",
+   * menu dos espaços, estado vazio da aba Perfis e o card "+" do troca-perfil),
+   * e por isso mora aqui em vez de repetida em cada uma: quatro cópias do mesmo
+   * reset divergem em silêncio na primeira vez que um campo novo entrar no
+   * formulário.
+   */
+  const openNewProfileModal = () => {
+    setNewProfileError(null)
+    setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
+    setProfessions([])
+    fetchMachines()
+    setIsNewProfileModalOpen(true)
   }
 
   const fetchProfessions = async (id_machine: string) => {
@@ -1589,13 +1633,7 @@ export default function PerfilPage() {
               </DropdownMenuItem>
               {profilesFeatOn && (
                 <DropdownMenuItem
-                  onSelect={() => {
-                    setNewProfileError(null)
-                    setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
-                    setProfessions([])
-                    fetchMachines()
-                    setIsNewProfileModalOpen(true)
-                  }}
+                  onSelect={openNewProfileModal}
                 >
                   <UserRound className="h-4 w-4" />
                   {t("menuProfile", "Perfil")}
@@ -1607,14 +1645,14 @@ export default function PerfilPage() {
                   {t("menuCommunity", "Comunidade")}
                 </DropdownMenuItem>
               )}
-              {/* "Curso" saiu daqui: cursos agora nascem DENTRO de um subperfil
+              {/* "Curso" saiu daqui: cursos agora nascem DENTRO de um perfil
                   pago (regra Alex 2026-07-01). Criar curso é pelo "+" do
-                  subperfil, não pelo nível do user. */}
+                  perfil, não pelo nível do user. */}
             </DropdownMenuContent>
           </DropdownMenu>
         }
       >
-        {/* Paridade user≡subperfil: mesmo bloco Nv + XP do header do subperfil
+        {/* Paridade user≡perfil: mesmo bloco Nv + XP do header do perfil
             (os contadores antigos saíram — decisão Alex 2026-07-19). */}
         {(accountXp || perfil.account_profile) && (
           <div className="flex shrink-0 items-center gap-2">
@@ -1760,6 +1798,14 @@ export default function PerfilPage() {
                         </span>
                       </span>
                     </button>
+                    {/* Troca-perfil: o "+" na quina de baixo da foto, irmão do
+                        badge de câmera. Aqui ele recebe `onCreateProfile` porque
+                        o modal de criar perfil vive NESTA página; nas outras
+                        superfícies ele navega para cá. */}
+                    <ProfileSwitcher
+                      currentProfileId={accountProfileId}
+                      onCreateProfile={openNewProfileModal}
+                    />
                     {/* O clique na foto abre o menu dos espaços, então este badge
                         é a ÚNICA entrada para trocar a foto — e por isso ele não
                         depende mais de haver bee vivo: aparece sempre. */}
@@ -1780,15 +1826,9 @@ export default function PerfilPage() {
                     isMinor={perfil.is_minor === true}
                     hasBees={myBees.length > 0}
                     onViewBees={() => router.push(`/bees?bee=${myBees[myBees.length - 1]}`)}
-                    onNewProfile={() => {
-                      setNewProfileError(null)
-                      setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" })
-                      setProfessions([])
-                      fetchMachines()
-                      setIsNewProfileModalOpen(true)
-                    }}
+                    onNewProfile={openNewProfileModal}
                   />
-                  {/* Estrelas de avaliação do perfil-conta (paridade subperfil). */}
+                  {/* Estrelas de avaliação do perfil-conta (paridade perfil). */}
                   {accountProfileId && (
                     <div className="mt-2">
                       <AvatarRatingStar profileId={accountProfileId} />
@@ -1798,7 +1838,7 @@ export default function PerfilPage() {
 
                   <div className="flex min-w-0 flex-col items-start gap-1.5 pb-1">
                     {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
-                        headcard do subperfil (esqueleto unificado). */}
+                        headcard do perfil (esqueleto unificado). */}
                     <div className="flex items-baseline gap-4">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
@@ -1882,7 +1922,7 @@ export default function PerfilPage() {
                 )}
                 {/* O cupom mudou de casa: agora mora na Carteira (/wallet),
                     junto do resto do dinheiro. Não recolocar aqui. */}
-                {/* Mural do perfil-conta — mesmo pill do subperfil. */}
+                {/* Mural do perfil-conta — mesmo pill do perfil. */}
                 {accountProfileId && (
                   <MuralPill
                     onClick={() => setMuralOpen(true)}
@@ -1891,7 +1931,7 @@ export default function PerfilPage() {
                     hasNew={!!(muralBadge.has_new || muralBadge.chat_unread > 0)}
                   />
                 )}
-                {/* Redes sociais do user (perfil-conta) — mesmos ícones do subperfil */}
+                {/* Redes sociais do user (perfil-conta) — mesmos ícones do perfil */}
                 {(perfil.redes_sociais || []).map((rede) => {
                   const url = socialUrlFor(rede)
                   if (!url) return null
@@ -1911,7 +1951,7 @@ export default function PerfilPage() {
                     </a>
                   )
                 })}
-                {/* Adicionar rede direto do headcard — o subperfil já tinha o
+                {/* Adicionar rede direto do headcard — o perfil já tinha o
                     atalho aqui; no user o CRUD só existia na seção lá embaixo. */}
                 <button
                   type="button"
@@ -1930,7 +1970,7 @@ export default function PerfilPage() {
 
               {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
                   (hover abre, click alterna — mesmo comportamento da engrenagem
-                  do subperfil). Botões só-ícone; o nome vive no title/aria. */}
+                  do perfil). Botões só-ícone; o nome vive no title/aria. */}
               <div
                 className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]"
                 onMouseEnter={() => setToolsOpen(true)}
@@ -2000,7 +2040,7 @@ export default function PerfilPage() {
             onPostsCount={setPostsCount}
             accountProfileId={accountProfileId}
             coursesProfileOptions={(perfil.profiles || [])
-              .filter((p) => !p.is_clan)
+              .filter((p) => !p.is_clan && !p.is_community)
               .map((p) => ({
                 id: p.id_profile,
                 name: p.display_name || t("unnamedProfile", "Perfil sem nome"),
@@ -2168,7 +2208,7 @@ export default function PerfilPage() {
                   <p className="mt-1 mb-5 text-sm text-[#9A938A]">{t("createFirstProfile", "Crie seu primeiro perfil para começar")}</p>
                   <button
                     type="button"
-                    onClick={() => { setNewProfileError(null); setNewProfileForm({ id_machine: "", id_category: "", display_name: "", bio: "", estado: "", municipio: "" }); setProfessions([]); fetchMachines(); setIsNewProfileModalOpen(true) }}
+                    onClick={openNewProfileModal}
                     className="fl-btn-gold inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
                   >
                     <Plus className="h-4 w-4" />

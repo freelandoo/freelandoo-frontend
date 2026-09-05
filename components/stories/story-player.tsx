@@ -406,8 +406,8 @@ export function StoryPlayer({ entries, initialIndex, onClose, onUserViewed }: St
             ))}
           </div>
 
-          {/* Header mostra o SUBPERFIL que postou o bee ativo (a faixa agrupa
-              por user, então cada bee pode vir de um subperfil diferente). */}
+          {/* Header mostra o PERFIL que postou o bee ativo (a faixa agrupa
+              por user, então cada bee pode vir de um perfil diferente). */}
           <div className="pointer-events-auto mt-3 flex items-center gap-2">
             <Avatar
               className="h-8 w-8 ring-1"

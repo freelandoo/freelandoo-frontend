@@ -240,7 +240,7 @@ export default function AtendimentoIaPage() {
             <section className="mt-6 border-2 border-[#0B0B0D] bg-[#F1EDE2] p-5 text-[#0B0B0D] shadow-[5px_5px_0_0_#0B0B0D]">
               <h2 className="fl-display text-xl">{t("howTitle", "Como funciona")}</h2>
               <ul className="mt-3 space-y-2 text-sm">
-                <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" /> {t("how1", "O bot lê seus perfis, subperfis, serviços, produtos, cursos e preços e monta a própria base de conhecimento (atualizada todo dia).")}</li>
+                <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" /> {t("how1", "O bot lê seus perfis, serviços, produtos, cursos e preços e monta a própria base de conhecimento (atualizada todo dia).")}</li>
                 <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" /> {t("how2", "Responde suas conversas diretas e chats de O.S. em segundos, com os valores certos.")}</li>
                 <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" /> {t("how3", "Nunca inicia conversa — só responde quem falou com você. Você pausa quando quiser.")}</li>
                 <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#16a34a]" /> {t("how4", "Cada plano tem uma cota mensal de uso. Bateu a cota, o bot pausa até o próximo ciclo.")}</li>

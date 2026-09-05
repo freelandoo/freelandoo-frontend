@@ -152,9 +152,9 @@ export default function MessagesNavLink({ className = "" }: { className?: string
                   )}
                 </div>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm">{actor.display_name || t("subprofileLabel", "Subperfil")}</span>
+                  <span className="block truncate text-sm">{actor.display_name || t("subprofileLabel", "Perfil")}</span>
                   <span className="block truncate text-[11px] text-muted-foreground">
-                    {actor.type === "clan" ? t("clanLabel", "Clan") : actor.username ? `@${actor.username}` : t("subprofileLabel", "Subperfil")}
+                    {actor.type === "clan" ? t("clanLabel", "Clan") : actor.username ? `@${actor.username}` : t("subprofileLabel", "Perfil")}
                   </span>
                 </span>
                 {actor.type === "clan" ? <Users className="h-4 w-4 text-muted-foreground" /> : null}

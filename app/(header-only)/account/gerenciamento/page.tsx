@@ -2,7 +2,7 @@
 
 /**
  * Gerenciamento da conta — visão única em listas de tudo que o user possui:
- * subperfis, serviços, cursos e produtos (agregados de todos os subperfis via
+ * perfis, serviços, cursos e produtos (agregados de todos os perfis via
  * GET /me/offerings). Cada linha permite entrar pra editar (página própria ou
  * modal owner existente) e excluir com confirmação. Clans ficam de fora
  * (gestão própria em /account/clans); o perfil-fantasma da conta (mig 052)
@@ -50,6 +50,7 @@ interface MgmtProfile {
   municipio: string | null
   is_active: boolean
   is_clan: boolean
+  is_community: boolean
   is_user_account: boolean
   is_paid: boolean
 }
@@ -145,7 +146,11 @@ export default function AccountManagementPage() {
       if (!offeringsRes.ok) {
         throw new Error(offeringsData.error || t("mgmtLoadError", "Erro ao carregar gerenciamento"))
       }
-      setProfiles(profilesData.profiles.filter((p) => !p.is_clan && !p.is_user_account))
+      // O perfil que carrega o seu rosto entra na lista como qualquer outro (não
+        // existe hierarquia de perfis): o que ele não tem é lixeira, porque
+        // apagá-lo apagaria a sua conta. Comunidade (pet/carro/games/bairro/
+        // condomínio) mora na MESMA tabela e por isso é filtrada aqui.
+        setProfiles(profilesData.profiles.filter((p) => !p.is_clan && !p.is_community))
       setOfferings({
         products: offeringsData.products || [],
         services: offeringsData.services || [],
@@ -244,7 +249,7 @@ export default function AccountManagementPage() {
       {
         key: "profiles",
         icon: Users,
-        title: t("mgmtProfilesTitle", "Subperfis"),
+        title: t("mgmtProfilesTitle", "Perfis"),
         count: profiles.length,
       },
       {
@@ -316,13 +321,13 @@ export default function AccountManagementPage() {
           </div>
         ) : (
           <div className="space-y-10">
-            {/* SUBPERFIS */}
+            {/* PERFIS */}
             <Section
               id="mgmt-profiles"
               icon={<Users className="h-4 w-4" />}
-              title={t("mgmtProfilesTitle", "Subperfis")}
+              title={t("mgmtProfilesTitle", "Perfis")}
               count={profiles.length}
-              empty={t("mgmtProfilesEmpty", "Nenhum subperfil ainda.")}
+              empty={t("mgmtProfilesEmpty", "Nenhum perfil ainda.")}
             >
               {profiles.map((profile) => {
                 const location = profile.municipio && profile.estado ? `${profile.municipio}, ${profile.estado}` : null
@@ -333,15 +338,23 @@ export default function AccountManagementPage() {
                     image={profile.avatar_url}
                     fallback={getInitials(profile.display_name)}
                     title={profile.display_name || t("unnamedProfile", "Perfil sem nome")}
-                    sub={sub || t("mgmtProfileWord", "Subperfil")}
+                    sub={sub || t("mgmtProfileWord", "Perfil")}
                     badges={[
                       profile.is_paid
                         ? { label: t("mgmtBadgeActive", "Ativo"), tone: "yellow" as const }
                         : { label: t("mgmtBadgeUnpaid", "Não ativado"), tone: "muted" as const },
+                      ...(profile.is_user_account
+                        ? [{ label: t("mgmtBadgeAccount", "Sua conta"), tone: "muted" as const }]
+                        : []),
                     ]}
-                    onEdit={() => router.push(`/account/profile/${profile.id_profile}`)}
-                    onDelete={() =>
-                      setDeleteTarget({ kind: "profile", id: profile.id_profile, name: profile.display_name })
+                    onEdit={() =>
+                      router.push(profile.is_user_account ? "/account" : `/account/profile/${profile.id_profile}`)
+                    }
+                    onDelete={
+                      profile.is_user_account
+                        ? undefined
+                        : () =>
+                            setDeleteTarget({ kind: "profile", id: profile.id_profile, name: profile.display_name })
                     }
                   />
                 )
@@ -451,7 +464,7 @@ export default function AccountManagementPage() {
           </DialogHeader>
           {deleteTarget?.kind === "profile" && (
             <p className="text-xs font-semibold text-red-700">
-              {t("mgmtDeleteProfileWarn", "Excluir um subperfil tira ele da vitrine e leva junto o que está vinculado a ele.")}
+              {t("mgmtDeleteProfileWarn", "Excluir um perfil tira ele da vitrine e leva junto o que está vinculado a ele.")}
             </p>
           )}
           <DialogFooter>
@@ -547,7 +560,8 @@ function Row({
   badges: { label: string; tone: "yellow" | "muted" }[]
   editLoading?: boolean
   onEdit: () => void
-  onDelete: () => void
+  /** Ausente = linha sem lixeira (o perfil que é a sua conta). */
+  onDelete?: () => void
 }) {
   const t = useTranslations("Account")
   return (
@@ -589,14 +603,16 @@ function Row({
           {editLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PencilLine className="h-3.5 w-3.5" />}
           <span className="hidden sm:inline">{t("mgmtEdit", "Editar")}</span>
         </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={t("mgmtDeleteAria", "Excluir item")}
-          className="inline-flex h-9 w-9 items-center justify-center border-2 border-[#0B0B0D] bg-[#FBF8F1] text-[#0B0B0D] transition hover:-translate-y-0.5 hover:bg-red-600 hover:text-white"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={t("mgmtDeleteAria", "Excluir item")}
+            className="inline-flex h-9 w-9 items-center justify-center border-2 border-[#0B0B0D] bg-[#FBF8F1] text-[#0B0B0D] transition hover:-translate-y-0.5 hover:bg-red-600 hover:text-white"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
   )

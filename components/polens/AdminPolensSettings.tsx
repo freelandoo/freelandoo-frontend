@@ -112,7 +112,7 @@ const MANIFESTATION_FIELDS: NumericField[] = [
   {
     key: "manifestation_min_xp_level",
     label: "Nivel minimo do usuario",
-    helper: "Maximo nivel XP entre subperfis profissionais. Use 20 para liberar apenas users nivel 20+.",
+    helper: "Maximo nivel XP entre perfis profissionais. Use 20 para liberar apenas users nivel 20+.",
   },
 ]
 

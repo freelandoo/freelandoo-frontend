@@ -144,7 +144,7 @@ export default function AgendaPageClient({
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<ProfileService | null>(null)
 
-  // Lembrete de horário (anti-no-show) — config por subperfil (booking-settings).
+  // Lembrete de horário (anti-no-show) — config por perfil (booking-settings).
   const [reminderEnabled, setReminderEnabled] = useState(true)
   const [reminderHours, setReminderHours] = useState(24)
   const [reminderSaving, setReminderSaving] = useState(false)

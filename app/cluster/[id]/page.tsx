@@ -1,12 +1,12 @@
 "use client"
 
 // Sala do MEMBRO de um Cluster de Live. O membro entra, escolhe por qual
-// subperfil vai transmitir (a câmera já fica pronta em preview) e AGUARDA:
+// perfil vai transmitir (a câmera já fica pronta em preview) e AGUARDA:
 // quando o administrador aperta Iniciar na sala de comando, a live de todo
 // mundo começa NA MESMA HORA (push socket cluster:start — zero poll). Os
 // sinais do admin (botões grandes e caixas de texto) estampam a tela via
 // <ClusterSignalOverlay/>. Encerrar do admin para todo mundo junto.
-// Sem subperfil pago o membro fica em modo "só sinais" (recebe tudo, não
+// Sem perfil pago o membro fica em modo "só sinais" (recebe tudo, não
 // transmite). Gated pela flag live_clusters; visual escuro, cantos retos.
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
@@ -97,7 +97,7 @@ export default function ClusterRoomPage() {
     return () => { cancelled = true }
   }, [id, router, t])
 
-  // ── Subperfis (prefere o primeiro pago — único que transmite) ─────────────
+  // ── Perfis (prefere o primeiro pago — único que transmite) ─────────────
   useEffect(() => {
     if (status !== "authenticated" || !user) return
     let cancelled = false
@@ -148,7 +148,7 @@ export default function ClusterRoomPage() {
     const profileId = selectedIdRef.current
     const profile = profilesRef.current.find((p) => p.id_profile === profileId)
     if (!profileId || !profile?.is_paid || !camRef.current) {
-      // Modo "só sinais": sem subperfil pago (ou sem câmera) não transmite,
+      // Modo "só sinais": sem perfil pago (ou sem câmera) não transmite,
       // mas continua recebendo os botões/textos do admin.
       return
     }
@@ -226,7 +226,7 @@ export default function ClusterRoomPage() {
   }, [id, forbidden, enabled, autoStart, stopFromAdmin])
 
   // Cluster já iniciado quando o membro chegou → entra na live assim que a
-  // câmera e os subperfis estiverem prontos.
+  // câmera e os perfis estiverem prontos.
   useEffect(() => {
     if (cluster?.status === "started" && camReady && profiles.length > 0 && phase === "lobby") {
       autoStart()
@@ -355,7 +355,7 @@ export default function ClusterRoomPage() {
         </div>
       </div>
 
-      {/* Lobby: escolha de subperfil + aguardando o admin */}
+      {/* Lobby: escolha de perfil + aguardando o admin */}
       <AnimatePresence>
         {phase !== "live" && (
           <motion.div
@@ -387,7 +387,7 @@ export default function ClusterRoomPage() {
               {t("waitingHint", "Fique nesta tela. Quando o administrador apertar Iniciar, a live de todo mundo começa na mesma hora — e os sinais dele aparecem aqui, bem grandes.")}
             </p>
 
-            {/* Subperfil de transmissão */}
+            {/* Perfil de transmissão */}
             {profiles.length > 0 && (
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">
@@ -430,7 +430,7 @@ export default function ClusterRoomPage() {
 
             {(cueOnly || (selectedProfile && !selectedProfile.is_paid)) && (
               <p className="border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-200">
-                {t("cueOnlyHint", "Sem subperfil com assinatura ativa você recebe os sinais do administrador, mas não transmite a sua própria live.")}
+                {t("cueOnlyHint", "Sem perfil com assinatura ativa você recebe os sinais do administrador, mas não transmite a sua própria live.")}
               </p>
             )}
 

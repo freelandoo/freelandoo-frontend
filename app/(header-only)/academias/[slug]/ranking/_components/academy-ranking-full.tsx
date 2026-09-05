@@ -372,7 +372,7 @@ function PodiumCol({
           {rank}
         </span>
 
-        {/* Foto do perfil (1º subperfil) em card rasgado — fallback: iniciais */}
+        {/* Foto do perfil (1º perfil) em card rasgado — fallback: iniciais */}
         <div className="fl-torn-1 fl-cut relative overflow-hidden p-2" style={{ background: frame }}>
           {row.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element

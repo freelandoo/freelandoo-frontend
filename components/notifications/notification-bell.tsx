@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
  * Sininho de notificações autossuficiente (botão + badge de não-lidas +
  * dropdown). Usa o mesmo NotificationsDropdown do feed/busca e o contador
  * global (useNavCounts). Montado pontualmente onde se quer o sino — hoje só
- * na /account (subperfis não recebem).
+ * na /account (perfis não recebem).
  */
 export function NotificationBell({ className }: { className?: string }) {
   const t = useTranslations("Notifications")

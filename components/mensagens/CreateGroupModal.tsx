@@ -55,7 +55,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
     }
   }, [open])
 
-  // Search subperfis. Reusa o endpoint público de busca.
+  // Search perfis. Reusa o endpoint público de busca.
   useEffect(() => {
     if (!open) return
     const term = query.trim()
@@ -107,7 +107,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
   const handleSubmit = async () => {
     setError(null)
     if (!ownerProfileId) {
-      setError(t("selectActorError", "Selecione um subperfil ator antes de criar grupo."))
+      setError(t("selectActorError", "Selecione um perfil ator antes de criar grupo."))
       return
     }
     if (name.trim().length < 2) {
@@ -155,7 +155,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
             <div className="min-w-0">
               <DialogTitle className="text-base text-white">{t("createGroupModalTitle", "Criar grupo")}</DialogTitle>
               <DialogDescription className="text-xs text-white/50">
-                {t("createGroupDescription", "Convide até {max} subperfis para conversar juntos.").replace("{max}", String(MAX_MEMBERS))}
+                {t("createGroupDescription", "Convide até {max} perfis para conversar juntos.").replace("{max}", String(MAX_MEMBERS))}
               </DialogDescription>
             </div>
           </div>
@@ -187,7 +187,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t("searchSubprofileInputPlaceholder", "Buscar subperfil por nome ou @username...")}
+                placeholder={t("searchSubprofileInputPlaceholder", "Buscar perfil por nome ou @username...")}
                 className="h-11 rounded-xl border-white/10 bg-white/[0.03] pl-9 text-sm text-white placeholder:text-white/30 focus-visible:ring-yellow-400/40"
               />
             </div>
@@ -225,7 +225,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
           {query.trim().length < 2 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <Users className="h-7 w-7 text-white/30 mb-2" />
-              <p className="text-xs text-white/45">{t("typeToSearchHint", "Digite para buscar subperfis")}</p>
+              <p className="text-xs text-white/45">{t("typeToSearchHint", "Digite para buscar perfis")}</p>
             </div>
           ) : loading ? (
             <div className="flex items-center justify-center py-14">
@@ -234,7 +234,7 @@ export function CreateGroupModal({ open, onOpenChange, ownerProfileId, onCreated
           ) : options.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <Search className="h-7 w-7 text-white/30 mb-2" />
-              <p className="text-xs text-white/45">{t("noSubprofilesFoundMessage", "Nenhum subperfil encontrado")}</p>
+              <p className="text-xs text-white/45">{t("noSubprofilesFoundMessage", "Nenhum perfil encontrado")}</p>
             </div>
           ) : (
             <ul className="space-y-1">

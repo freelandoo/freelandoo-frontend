@@ -1,4 +1,4 @@
-// i18n da paridade user≡subperfil (perfil-conta pode ser seguido, nível/XP,
+// i18n da paridade user≡perfil (perfil-conta pode ser seguido, nível/XP,
 // redes sociais no headcard do /account e na página pública do user).
 // Namespaces: Account (headcard + escopo do /account/xp) e Profile (página pública).
 // Idempotente e não-destrutivo (fill-if-absent). Rodar: node scripts/i18n-user-parity-merge.js
@@ -24,7 +24,7 @@ const ACCOUNT = {
   followingShort: ["Acompanhando", "Following", "Siguiendo"],
   muralLabel: ["Mural", "Board", "Mural"],
   openMuralAria: ["Abrir Mural", "Open board", "Abrir mural"],
-  // S4 — abas Serviços/Loja do perfil-conta no /account (mesmos rótulos do subperfil).
+  // S4 — abas Serviços/Loja do perfil-conta no /account (mesmos rótulos do perfil).
   tabServices: ["Serviços", "Services", "Servicios"],
   tabShop: ["Loja", "Shop", "Tienda"],
 }
@@ -50,10 +50,10 @@ const PROFILE = {
   statCourses: ["Cursos", "Courses", "Cursos"],
   coursesTitle: ["Meus cursos", "My courses", "Mis cursos"],
   coursePublished: ["Publicado", "Published", "Publicado"],
-  // Esqueleto unificado (L1): sino + menu da conta no banner do subperfil.
+  // Esqueleto unificado (L1): sino + menu da conta no banner do perfil.
   openAccountMenu: ["Abrir menu da conta", "Open account menu", "Abrir menú de la cuenta"],
   openSettings: ["Abrir configurações", "Open settings", "Abrir configuración"],
-  // Engrenagem do subperfil = ferramentas da conta (paridade user≡subperfil).
+  // Engrenagem do perfil = ferramentas da conta (paridade user≡perfil).
   metrics: ["Métricas", "Metrics", "Métricas"],
   myWallet: ["Minha Carteira", "My Wallet", "Mi Billetera"],
   dataApi: ["Conexões de Dados", "Data Connections", "Conexiones de Datos"],

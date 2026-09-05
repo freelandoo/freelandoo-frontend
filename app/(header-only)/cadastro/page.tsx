@@ -106,7 +106,7 @@ export default function CadastroPage() {
   const isAdultBirth = !formData.dataNascimento || isAdult(formData.dataNascimento)
   const isMinorBirth = !!formData.dataNascimento && userAge != null && userAge < 18
   const dateOk = !!formData.dataNascimento && userAge != null
-  // CPF: obrigatório e único por conta (1 CPF = 1 conta; subperfis ficam dentro
+  // CPF: obrigatório e único por conta (1 CPF = 1 conta; perfis ficam dentro
   // dela). Aqui só o dígito verificador — o backend revalida e checa duplicidade.
   const cpfDigits = onlyDigits(formData.cpf)
   const cpfOk = isValidCPF(formData.cpf)

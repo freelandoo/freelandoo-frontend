@@ -201,7 +201,7 @@ export function FitnessView() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d) return
-        // Sem foto no user (tb_user.avatar), espelha a do subperfil mais
+        // Sem foto no user (tb_user.avatar), espelha a do perfil mais
         // recente que tiver uma — /users/me já devolve profiles[].avatar_url.
         const profileAvatar = Array.isArray(d.profiles)
           ? d.profiles.find((p: { avatar_url?: string | null; deleted_at?: string | null }) => p?.avatar_url && !p.deleted_at)?.avatar_url ?? null

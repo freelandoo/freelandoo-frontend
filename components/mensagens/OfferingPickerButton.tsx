@@ -179,7 +179,7 @@ export function OfferingPickerButton({ origin, onPick, disabled }: OfferingPicke
                         <ProductIcon className="h-4 w-4 text-emerald-300" />
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-white">{t("offeringProduct", "Produto")}</div>
-                          <div className="text-[11px] text-white/45">{t("offeringProductHint", "Da loja dos seus subperfis")}</div>
+                          <div className="text-[11px] text-white/45">{t("offeringProductHint", "Da loja dos seus perfis")}</div>
                         </div>
                       </button>
                     </li>

@@ -348,7 +348,7 @@ export function MessagesSection() {
             desc="Perfis e clans podem trocar mensagens dentro da Freelandoo. Converse, negocie, tire dúvidas e mantenha o histórico organizado — sem misturar com WhatsApp pessoal."
           />
           <div className="mt-8 flex flex-wrap gap-2">
-            {["Subperfil → Subperfil", "Subperfil → Clan", "Histórico permanente"].map((t) => (
+            {["Perfil → Perfil", "Perfil → Clan", "Histórico permanente"].map((t) => (
               <span
                 key={t}
                 className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-white/70"

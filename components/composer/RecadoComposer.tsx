@@ -202,7 +202,7 @@ export function RecadoComposer({
                 <Loader2 className="h-4 w-4 animate-spin" /> {t("details.loadingProfiles", "Carregando perfis…")}
               </div>
             ) : profiles.length === 0 ? (
-              <p className="text-xs text-[#9A938A]">{t("details.noProfiles", "Sem subperfis elegíveis. Crie um subperfil para postar.")}</p>
+              <p className="text-xs text-[#9A938A]">{t("details.noProfiles", "Sem perfis elegíveis. Crie um perfil para postar.")}</p>
             ) : (
               <ProfileSelect
                 userName={user?.nome || null}

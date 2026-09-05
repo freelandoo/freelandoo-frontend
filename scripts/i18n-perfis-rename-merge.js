@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-// "Subperfil" morreu: não existe hierarquia de perfis (decisão do Alex,
+// "Perfil" morreu: não existe hierarquia de perfis (decisão do Alex,
 // 2026-09-03). Só existe PERFIL — quem abre outro fica no MESMO grau, é uma
 // réplica com conteúdo próprio.
 //
 // Duas partes, porque o dicionário VENCE o fallback inline:
 //   1. fill-if-absent para a chave nova `Wallet.allProfiles`;
 //   2. OVERRIDE explícito de `Wallet.courseAffiliateNote`, que já existia no
-//      dicionário dizendo "por subperfil" — sem sobrescrever, a tela
+//      dicionário dizendo "por perfil" — sem sobrescrever, a tela
 //      continuaria mostrando o termo antigo por mais que o fallback mude.
 //
 // `Wallet.allSubprofiles` fica órfã no dicionário de propósito (padrão da casa:

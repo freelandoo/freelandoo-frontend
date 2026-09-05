@@ -4,7 +4,7 @@
  * Social do /ranking — likes e comentários sobre os perfis listados, no molde
  * do Ranking da Audiência da Casa Views. Leitura pública (summary em lote +
  * comentários paginados); curtir/comentar exige login e sai sempre pela conta
- * user (nunca subperfil). Backend: /ranking/social/* (mig 147).
+ * user (nunca perfil). Backend: /ranking/social/* (mig 147).
  */
 import {
   useCallback,
@@ -495,7 +495,7 @@ export function RankingSocialPanel({
 
           <div className="mt-3 flex items-center gap-2 bg-[#F2B705] px-2 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]">
             <MessageSquare className="h-3.5 w-3.5" strokeWidth={3} />
-            {t("panelNote", "curtidas e comentários saem pela sua conta, não por subperfil")}
+            {t("panelNote", "curtidas e comentários saem pela sua conta, não por perfil")}
           </div>
         </header>
 

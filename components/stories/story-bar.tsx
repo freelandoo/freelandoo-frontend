@@ -8,7 +8,7 @@ import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 
 // Bees v2 (2026-07-10): a faixa agrupa por USUÁRIO — 1 tile por user acompanhado
-// com bee vivo, foto do user. O subperfil que postou aparece dentro do player.
+// com bee vivo, foto do user. O perfil que postou aparece dentro do player.
 export interface StoryBarEntry {
   id_user: string
   has_unviewed: boolean

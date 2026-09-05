@@ -214,7 +214,7 @@ export function ProfilePublicServicesSection({
           <div>
             <h2 className="fl-display text-2xl text-[#F5F1E8] md:text-3xl">{t("tabServices", "Serviços")}</h2>
             <p className="text-[11px] text-[#9A938A]">
-              {t("servicesOwnerSubtitle", "Serviços públicos oferecidos por este subperfil.")}
+              {t("servicesOwnerSubtitle", "Serviços públicos oferecidos por este perfil.")}
             </p>
           </div>
           <button

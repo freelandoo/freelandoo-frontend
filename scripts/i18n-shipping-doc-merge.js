@@ -1,7 +1,7 @@
 // Coleta de CPF/CNPJ para etiqueta do Melhor Envio (produção).
 //   - ns Product: campo de documento no checkout de produto físico.
 //   - ns Account: campos de origem (CPF/CNPJ, número, complemento) nas settings
-//     do subperfil vendedor.
+//     do perfil vendedor.
 // Idempotente, fill-if-absent. Cada chave = [pt-BR, en, es].
 //   node scripts/i18n-shipping-doc-merge.js
 const fs = require("fs")

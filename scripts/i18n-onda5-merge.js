@@ -164,11 +164,11 @@ const WALLET = {
   heroEyebrow: ["a sua grana", "your money", "tu dinero"],
   heroTitle: ["Carteira", "Wallet", "Cartera"],
   period: ["Período", "Period", "Período"],
-  allSubprofiles: ["Todos os subperfis", "All subprofiles", "Todos los subperfiles"],
+  allSubprofiles: ["Todos os perfis", "All subprofiles", "Todos los perfiles"],
   courseAffiliateNote: [
-    "Curso e Afiliado são por conta — não filtram por subperfil.",
+    "Curso e Afiliado são por conta — não filtram por perfil.",
     "Course and Affiliate are account-wide — they don't filter by subprofile.",
-    "Curso y Afiliado son por cuenta — no filtran por subperfil.",
+    "Curso y Afiliado son por cuenta — no filtran por perfil.",
   ],
   // KPIs / gráfico
   kpiReceived: ["Recebido", "Received", "Recibido"],

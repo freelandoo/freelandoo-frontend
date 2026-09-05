@@ -21,9 +21,9 @@ const AT = {
   retry: ["Tentar de novo", "Try again", "Intentar de nuevo"],
   howTitle: ["Como funciona", "How it works", "Cómo funciona"],
   how1: [
-    "O bot lê seus perfis, subperfis, serviços, produtos, cursos e preços e monta a própria base de conhecimento (atualizada todo dia).",
+    "O bot lê seus perfis, perfis, serviços, produtos, cursos e preços e monta a própria base de conhecimento (atualizada todo dia).",
     "The bot reads your profiles, subprofiles, services, products, courses and prices and builds its own knowledge base (refreshed daily).",
-    "El bot lee tus perfiles, subperfiles, servicios, productos, cursos y precios y arma su propia base de conocimiento (actualizada a diario).",
+    "El bot lee tus perfiles, perfiles, servicios, productos, cursos y precios y arma su propia base de conocimiento (actualizada a diario).",
   ],
   how2: [
     "Responde suas conversas diretas e chats de O.S. em segundos, com os valores certos.",
