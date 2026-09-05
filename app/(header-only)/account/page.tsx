@@ -25,17 +25,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid, Megaphone } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, LayoutGrid } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
-import { useAccountTools } from "@/components/profile/account-tools"
 const AgendaBookingsExperience = dynamic(
   () => import("@/components/agenda/AgendaBookingsExperience").then((m) => m.AgendaBookingsExperience),
   { ssr: false },
 )
-import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
-import { HeadcardPills } from "@/components/profile/headcard-pills"
+import { ProfileHeadCard } from "@/components/profile/profile-head-card"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { SpacesMenu } from "@/components/account/spaces-menu"
 import { HoverHint } from "@/features/tour/HoverHint"
@@ -66,7 +64,6 @@ import {
 import { compressImageToMaxSize, type ProcessedImage } from "@/lib/media/image-processing"
 import { RetractableProfileHeader } from "@/components/layout/retractable-profile-header"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
-import { NotificationBell } from "@/components/notifications/notification-bell"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 
@@ -82,16 +79,8 @@ const UserPortfolio = dynamic(
     ),
   }
 )
-const UserDropside = dynamic(
-  () => import("@/components/layout/UserDropside").then((m) => m.UserDropside),
-  { ssr: false }
-)
 const FollowingModal = dynamic(
   () => import("@/components/profile/following-modal").then((m) => m.FollowingModal),
-  { ssr: false }
-)
-const EntityFollowModal = dynamic(
-  () => import("@/components/entity-follow/entity-follow-modal").then((m) => m.EntityFollowModal),
   { ssr: false }
 )
 const PremiumProfileModal = dynamic(
@@ -105,10 +94,6 @@ const MediaCropModal = dynamic(
 const MuralModal = dynamic(
   () => import("@/components/profile/mural-modal").then((m) => m.MuralModal),
   { ssr: false },
-)
-const DataConnectionsModal = dynamic(
-  () => import("@/components/account/DataConnectionsModal").then((m) => m.DataConnectionsModal),
-  { ssr: false }
 )
 
 function mbLabel(bytes: number) {
@@ -136,13 +121,8 @@ export default function PerfilPage() {
   const { perfil, setPerfil, isLoading, error } = useMeProfile()
   const navCounts = useNavCounts()
   const unreadMessages = navCounts.conversationUnread
-  const [dropsideOpen, setDropsideOpen] = useState(false)
   const [followedProfilesCount, setFollowedProfilesCount] = useState(0)
   const [followingModalOpen, setFollowingModalOpen] = useState(false)
-  // Paridade user≡perfil: seguidores do perfil-conta no headcard
-  const [accountFollowersCount, setAccountFollowersCount] = useState(0)
-  const [followersModalOpen, setFollowersModalOpen] = useState(false)
-  const [dataConnOpen, setDataConnOpen] = useState(false)
   const dataApiOn = useFeature("data_api")
   // Preferências pessoais da seção "Funções" (menu lateral): escondem as
   // entradas correspondentes só da experiência deste usuário.
@@ -151,7 +131,6 @@ export default function PerfilPage() {
   const agendaFeatOn = useUserFeature("agenda")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
   // do perfil: hover expande, click alterna).
-  const [toolsOpen, setToolsOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [novaRede, setNovaRede] = useState({
     id: "",
@@ -216,10 +195,6 @@ export default function PerfilPage() {
   const [loadingNewProfileMunicipios, setLoadingNewProfileMunicipios] = useState(false)
   const [isCreatingProfile, setIsCreatingProfile] = useState(false)
   const [newProfileError, setNewProfileError] = useState<string | null>(null)
-  // O primeiro toque no banner revela "Alterar"; ele se desarma sozinho porque
-  // um banner que fica escurecido para sempre depois de um clique parece
-  // quebrado (no desktop quem manda é o hover, e este estado nem entra).
-  const [bannerArmed, setBannerArmed] = useState(false)
   const [portfolioForm, setPortfolioForm] = useState({
     title: "",
     description: "",
@@ -268,12 +243,6 @@ export default function PerfilPage() {
       .catch(() => {})
   }, [])
 
-  React.useEffect(() => {
-    if (!bannerArmed) return
-    const id = window.setTimeout(() => setBannerArmed(false), 3500)
-    return () => window.clearTimeout(id)
-  }, [bannerArmed])
-
   // Bees vivos do usuário: acende o anel neon no avatar e o clique vai pro /bees
   // (deep-link no bee mais recente). Sem bees, o clique segue trocando a foto.
   React.useEffect(() => {
@@ -317,19 +286,11 @@ export default function PerfilPage() {
     (p) => !p.is_clan && !p.is_community && !p.is_user_account,
   )
 
-  // Ferramentas da conta: fonte única compartilhada com a engrenagem do
-  // headcard de perfil (components/profile/account-tools.ts).
-  const accountTools = useAccountTools({
-    agendaProfileId: accountProfileId,
-    onOpenDataConnections: () => setDataConnOpen(true),
-  })
-
   // Mural do perfil-conta (paridade user≡perfil) + contador de posts.
   const [muralOpen, setMuralOpen] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
-  // Com o Mural dentro da toolbar retrátil, a novidade dele precisa aparecer na
-  // chave inglesa FECHADA — senão o recado novo fica escondido atrás do hover.
-  const muralHasNew = !!(muralBadge.has_new || muralBadge.chat_unread > 0)
+  // O headcard usa isto para acender a bolinha da engrenagem fechada; quem
+  // desenha é o ProfileHeadCard, via `ownerActions.muralBadge`.
   const [postsCount, setPostsCount] = useState(0)
   React.useEffect(() => {
     if (!accountProfileId) return
@@ -378,16 +339,24 @@ export default function PerfilPage() {
       cancelled = true
     }
   }, [accountProfileId])
+  // A contagem de seguidores é buscada pelo próprio ProfileHeadCard — esta
+  // página tinha um fetch gêmeo do mesmo endpoint, que saiu com o headcard.
+
+  /* O headcard mostra o ENXAME, e /users/me só devolve o id dele — o catálogo
+     é que tem o nome. Antes esta lista só era buscada ao abrir o modal de criar
+     perfil; agora ela também alimenta a linha do enxame, senão o /account
+     mostraria profissão e cidade e engoliria o enxame. */
   React.useEffect(() => {
-    if (!accountProfileId) return
-    const qs = new URLSearchParams({ entity_type: "profile", entity_id: accountProfileId })
-    fetch(`/api/entity-follows/counts?${qs}`, { cache: "no-store" })
+    const idMachine = perfil?.account_profile?.id_machine
+    if (!idMachine || machines.length > 0) return
+    fetch("/api/enxames")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data) setAccountFollowersCount(Number(data.followers_count) || 0)
+        if (!data) return
+        setMachines(Array.isArray(data) ? data : (data.enxames ?? data.machines ?? []))
       })
       .catch(() => {})
-  }, [accountProfileId])
+  }, [perfil?.account_profile?.id_machine, machines.length])
 
   // Ref no headcard pro RetractableProfileHeader observar.
   const headcardRef = useRef<HTMLElement | null>(null)
@@ -1585,6 +1554,78 @@ export default function PerfilPage() {
     perfil.statuses.some((s) =>
       String(s.desc_status || "").toLowerCase().includes("email")
     )
+  /* O perfil-conta na forma que o headcard entende. `is_paid/is_visible/
+     is_active` vão TRUE porque a conta não passa pelo gate de ativação — sem
+     isso o headcard ofereceria "Ative sua conta" para o próprio dono. */
+  /* Const simples, não useMemo: este ponto fica DEPOIS dos returns de
+     carregamento, e hook depois de early return quebra a ordem dos hooks.
+     Nenhum efeito do headcard depende da identidade deste objeto — só de
+     campos primitivos dele —, então recriá-lo a cada render não custa nada. */
+  const accountHeadProfile = (() => {
+    const ap = perfil.account_profile
+    return {
+      display_name: perfil.nome,
+      avatar_url: perfil.avatar,
+      bio: perfil.bio,
+      machine_name: machines.find((m) => m.id_machine === ap?.id_machine)?.name ?? null,
+      desc_category: ap?.category ?? null,
+      estado: ap?.estado ?? perfil.estado ?? null,
+      municipio: ap?.municipio ?? perfil.municipio ?? null,
+      is_paid: true,
+      is_visible: true,
+      is_active: true,
+      username: perfil.username,
+      manifestation: manifestation?.active
+        ? { banner_url: manifestation.active.banner_url, tag_label: manifestation.active.tag_label }
+        : null,
+      /* As redes do user vêm em outro formato (platform/account); o headcard
+         lê link + glifo, então a conversão é aqui. */
+      social_media: (perfil.redes_sociais || [])
+        .map((rede) => {
+          const url = socialUrlFor(rede)
+          if (!url) return null
+          return {
+            id_profile_social_media: String(rede.id ?? rede.platform),
+            desc_social_media_type: rede.platform,
+            icon: (rede.platform || "").toLowerCase(),
+            profile_url: url,
+          }
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null),
+    }
+  })()
+
+  /* Chips da conta: status (menos o de e-mail, que é ruído) e o aviso de conta
+     supervisionada. São dado desta tela, não do perfil — por isso slot. */
+  const accountChips = (
+    <>
+      {perfil.statuses
+        ?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email"))
+        .map((status) => (
+          <span
+            key={status.id_status}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e]"
+          >
+            {status.desc_status.replace(/_/g, " ")}
+          </span>
+        ))}
+      {/* Só o MENOR mantém o chip: para ele o parental é "pedir permissão ao
+          responsável". A porta do adulto virou "Meus filhos" no menu da foto. */}
+      {perfil.is_minor === true && (
+        <HoverHint id="account-parental-supervised" side="bottom">
+          <button
+            type="button"
+            onClick={() => router.push("/account/parental/request")}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
+          >
+            <ShieldCheck className="h-3 w-3" />
+            {t("supervised", "Supervisionada")}
+          </button>
+        </HoverHint>
+      )}
+    </>
+  )
+
   return (
     <div className="fl-root fl-paper-texture min-h-[100dvh] overflow-x-hidden">
       <RetractableProfileHeader
@@ -1670,398 +1711,83 @@ export default function PerfilPage() {
       </RetractableProfileHeader>
       <main className="container mx-auto px-0 py-10 md:px-4 md:py-12 overflow-x-hidden">
         <div className="mx-auto grid w-full min-w-0 max-w-[1100px] gap-5 md:gap-6">
-          <article
-            ref={headcardRef}
-            // Sem `overflow-hidden`: o menu que abre na foto de perfil sai
-            // PARA FORA do card, e a borda o cortava (mesma armadilha que o
-            // "+" do mural da academia pagou). O banner tem recorte próprio.
-            className="min-w-0 rounded-2xl fl-paper-card border-2 border-[#0B0B0D] shadow-[8px_8px_0_0_#0B0B0D] max-md:rounded-none max-md:border-x-0 max-md:shadow-none"
-          >
-            <div
-              className="group/banner relative h-40 overflow-hidden bg-[#1d1810] md:h-52"
-              onClick={() => setBannerArmed(true)}
-            >
-              {manifestation?.active?.banner_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={manifestation.active.banner_url}
-                  alt=""
-                  className="h-full w-full object-cover"
+          {/* HEADCARD — PEÇA ÚNICA (U2b, 2026-09-05).
+              Esta página desenhava o próprio headcard, e por isso as duas telas
+              divergiam a cada feature nova: o que eu esquecesse numa aparecia só
+              na outra (foi assim que a foto de perfil sumiu de uma delas). Agora
+              é o MESMO componente do perfil, e o que era exclusivo daqui entra
+              pelos encaixes — o layout é dele, os dados e as ações são desta
+              página. Botão/chip novo de headcard nasce em
+              components/profile/profile-head-card.tsx, nunca aqui. */}
+          <section ref={headcardRef}>
+            <ProfileHeadCard
+              profile={accountHeadProfile}
+              profileId={accountProfileId || ""}
+              entityType="profile"
+              isClan={false}
+              isOwnProfile
+              portfolioCount={postsCount}
+              /* O perfil-conta não tem estado de publicação: ele É a pessoa. */
+              showStatusBadge={false}
+              /* Acompanhados da CONTA (soma todos os perfis do dono), com a
+                 lista própria — a do perfil mostraria só o que ele segue. */
+              followingCount={followedProfilesCount}
+              onShowFollowing={() => setFollowingModalOpen(true)}
+              identityHandle={perfil.username}
+              chips={accountChips}
+              hasLiveBees={myBees.length > 0}
+              /* A foto abre o menu dos espaços, então o badge de câmera vira a
+                 ÚNICA porta de trocar a foto. */
+              onAvatarClick={() => setSpacesOpen((v) => !v)}
+              avatarClickLabel={t("openSpaces", "Meus espaços")}
+              avatarClickIcon={LayoutGrid}
+              avatarTriggerAttr
+              onChangeAvatar={() => setIsUploadModalOpen(true)}
+              belowAvatar={
+                <SpacesMenu
+                  open={spacesOpen}
+                  onClose={() => setSpacesOpen(false)}
+                  isMinor={perfil.is_minor === true}
+                  hasBees={myBees.length > 0}
+                  onViewBees={() => router.push(`/bees?bee=${myBees[myBees.length - 1]}`)}
+                  onNewProfile={openNewProfileModal}
                 />
-              ) : (
-                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(242,183,5,0.28),transparent_36%),linear-gradient(135deg,#1d1810,#141009)]" />
-              )}
-
-              {/* O banner é a manifestação: tocar nele oferece TROCAR, e o
-                  destino é a loja. Dois gestos de propósito (mesma regra do
-                  pill da Carteira): o primeiro clique só revela o "Alterar",
-                  o segundo navega — banner ocupa meia tela e vira armadilha
-                  de navegação se levar embora no primeiro toque. No desktop o
-                  hover já revela, então o gesto extra só existe no toque.
-                  z-10: fica ABAIXO do sino e da engrenagem (z-20). */}
-              <div
-                className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[#0B0B0D]/45 transition-opacity duration-200 group-hover/banner:opacity-100 ${
-                  bannerArmed ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <Link
-                  href="/manifestacao"
-                  aria-label={t("changeManifestationAria", "Trocar sua manifestação na loja")}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-[#1A1505] shadow-[3px_3px_0_0_#0B0B0D] transition hover:bg-[#F1EDE2]"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {t("changeManifestation", "Alterar")}
-                </Link>
-              </div>
-
-              {/* sininho de notificações (só na /account) + configurações */}
-              <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-                <NotificationBell />
+              }
+              /* Aqui as redes são geridas por modal nesta página; no perfil, o
+                 "+" navega para o settings dele. */
+              onAddSocial={() => {
+                setNovaRede({ id: "", platform: "", account: "", followers_range: "" })
+                setIsEditing(false)
+                setIsModalOpen(true)
+              }}
+              toolsLead={
                 <button
                   type="button"
-                  onClick={() => setDropsideOpen(true)}
-                  aria-label={t("openAccountMenu", "Abrir menu da conta")}
-                  aria-haspopup="dialog"
-                  aria-expanded={dropsideOpen}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] active:translate-x-px active:translate-y-px"
-                  title={t("openSettings", "Abrir configurações")}
+                  onClick={() => router.push("/mensagens?tab=os")}
+                  aria-label={t("openMessages", "Abrir mensagens")}
+                  title={t("messages", "Mensagens")}
+                  className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
                 >
-                  <Settings className="h-4 w-4" />
-                </button>
-              </div>
-
-            </div>
-
-            <div className="relative px-5 pb-6 md:px-7">
-              <div className="relative z-10 -mt-12 flex items-end justify-between gap-4 md:gap-6">
-                <div className="flex min-w-0 flex-1 items-end gap-4 md:gap-6">
-                  <div className="relative flex shrink-0 flex-col items-center">
-                  {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito —
-                      o card da foto vem depois no DOM e por isso cobre a pilha,
-                      que só escapa pela direita. Mesma peça e mesma posição do
-                      outro headcard. */}
-                  <HeadcardPills avatarPadClass="pl-24 md:pl-28" />
-                  <div className="group relative w-24 shrink-0 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-28">
-                    {/* Anel neon rosa quando há bees vivos: conic-gradient com um
-                        facho quase branco que gira (framer-motion) + camada
-                        desfocada por baixo fazendo o glow. Some sem bees. */}
-                    {myBees.length > 0 && (
-                      <>
-                        <div className="pointer-events-none absolute -inset-2.5 overflow-hidden rounded-2xl opacity-80 blur-[7px]">
-                          <motion.div
-                            className="absolute -inset-[120%]"
-                            style={{
-                              background:
-                                "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)",
-                            }}
-                            animate={{ rotate: 360 }}
-                            transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
-                          />
-                        </div>
-                        <div className="pointer-events-none absolute -inset-1.5 overflow-hidden rounded-2xl">
-                          <motion.div
-                            className="absolute -inset-[120%]"
-                            style={{
-                              background:
-                                "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)",
-                            }}
-                            animate={{ rotate: 360 }}
-                            transition={{ repeat: Infinity, duration: 3.2, ease: "linear" }}
-                          />
-                        </div>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      data-spaces-trigger
-                      onClick={() => setSpacesOpen((v) => !v)}
-                      aria-haspopup="menu"
-                      aria-expanded={spacesOpen}
-                      aria-label={t("openSpaces", "Meus espaços")}
-                      title={t("openSpaces", "Meus espaços")}
-                      className="relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D]"
-                    >
-                      <Avatar className="h-full w-full rounded-none">
-                        {perfil.avatar && (
-                          <AvatarImage
-                            src={perfil.avatar}
-                            alt={perfil.nome}
-                            className="rounded-none object-cover"
-                          />
-                        )}
-                        <AvatarFallback className="rounded-none bg-[#F2B705]/15 text-2xl font-semibold text-[#0B0B0D]">
-                          {getInitials(perfil.nome)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-[#0B0B0D]/55 text-[#F1EDE2] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                        <LayoutGrid className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">
-                          {t("openSpaces", "Meus espaços")}
-                        </span>
-                      </span>
-                    </button>
-                    {/* Troca-perfil: o "+" na quina de baixo da foto, irmão do
-                        badge de câmera. Aqui ele recebe `onCreateProfile` porque
-                        o modal de criar perfil vive NESTA página; nas outras
-                        superfícies ele navega para cá. */}
-                    <ProfileSwitcher
-                      currentProfileId={accountProfileId}
-                      onCreateProfile={openNewProfileModal}
-                    />
-                    {/* O clique na foto abre o menu dos espaços, então este badge
-                        é a ÚNICA entrada para trocar a foto — e por isso ele não
-                        depende mais de haver bee vivo: aparece sempre. */}
-                    <button
-                      type="button"
-                      onClick={() => setIsUploadModalOpen(true)}
-                      aria-label={t("changeAvatar", "Trocar foto de perfil")}
-                      title={t("changeAvatar", "Trocar foto de perfil")}
-                      className="absolute -bottom-2 -right-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705]"
-                    >
-                      <Camera className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-
-                  <SpacesMenu
-                    open={spacesOpen}
-                    onClose={() => setSpacesOpen(false)}
-                    isMinor={perfil.is_minor === true}
-                    hasBees={myBees.length > 0}
-                    onViewBees={() => router.push(`/bees?bee=${myBees[myBees.length - 1]}`)}
-                    onNewProfile={openNewProfileModal}
-                  />
-                  {/* Estrelas de avaliação do perfil-conta (paridade perfil). */}
-                  {accountProfileId && (
-                    <div className="mt-2">
-                      <AvatarRatingStar profileId={accountProfileId} />
-                    </div>
-                  )}
-                  </div>
-
-                  {/* Coluna ALINHADA À DIREITA (pedido do Alex, 2026-09-05):
-                      encostada no avatar, ela colidia com a pilha de pills, que
-                      escapa por trás da foto justamente para a direita. Mesma
-                      mudança no headcard do perfil — esqueleto unificado. */}
-                  <div className="flex min-w-0 flex-1 flex-col items-end gap-1.5 pb-1 text-right">
-                    {/* Contadores POSTS | ACOMP. | ACOMPANHANDO — mesmo bloco do
-                        headcard do perfil (esqueleto unificado). */}
-                    <div className="flex items-baseline justify-end gap-4">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
-                          {postsCount}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                          {t("postsLabel", "Posts")}
-                        </span>
-                      </div>
-                      <span className="text-[#0B0B0D]/20">|</span>
-                      <button
-                        type="button"
-                        onClick={() => accountProfileId && setFollowersModalOpen(true)}
-                        className="flex items-baseline gap-1.5 transition hover:opacity-70"
-                        aria-label={t("seeYourFollowers", "Ver quem acompanha você")}
-                      >
-                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
-                          {accountFollowersCount}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                          {t("followersShort", "Acomp.")}
-                        </span>
-                      </button>
-                      <span className="text-[#0B0B0D]/20">|</span>
-                      <button
-                        type="button"
-                        onClick={() => setFollowingModalOpen(true)}
-                        className="flex items-baseline gap-1.5 transition hover:opacity-70"
-                        aria-label={t("seeWhoYouFollow", "Ver quem você acompanha")}
-                      >
-                        <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
-                          {followedProfilesCount}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                          {t("followingShort", "Acompanhando")}
-                        </span>
-                      </button>
-                    </div>
-                    {/* Nome migrou pro RetractableProfileHeader. @username fica como contexto. */}
-                    {perfil.username && (
-                      <p className="text-sm font-medium text-[#5b554b]">@{perfil.username}</p>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-
-              {perfil.bio && (
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#2b2b2e]">
-                  {perfil.bio}
-                </p>
-              )}
-
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {/* Nível e tag da manifestação SAÍRAM daqui (decisão do Alex,
-                    2026-09-03): o nível continua no header retrátil e a
-                    manifestação é o próprio banner, que agora abre a loja. */}
-                {perfil.statuses?.filter((s) => !String(s.desc_status || "").toLowerCase().includes("email")).map((status) => (
-                  <span
-                    key={status.id_status}
-                    className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.04] px-2.5 py-1 text-[11px] font-bold text-[#2b2b2e]"
-                  >
-                    {status.desc_status.replace(/_/g, " ")}
-                  </span>
-                ))}
-                {/* Só o MENOR mantém o chip: para ele o parental é "pedir
-                    permissão ao responsável". A porta do adulto virou "Meus
-                    filhos" no menu da foto de perfil — deixá-la também aqui
-                    seriam duas portas para a mesma tela. */}
-                {perfil.is_minor === true && (
-                  <HoverHint id="account-parental-supervised" side="bottom">
-                    <button
-                      type="button"
-                      onClick={() => router.push("/account/parental/request")}
-                      className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#E0A500]/60 bg-[#F2B705]/15 px-2.5 py-1 text-[11px] font-bold text-[#8a6d00] transition hover:bg-[#F2B705]/30"
-                    >
-                      <ShieldCheck className="h-3 w-3" />
-                      {t("supervised", "Supervisionada")}
-                    </button>
-                  </HoverHint>
-                )}
-                {/* O cupom mudou de casa: agora mora na Carteira (/wallet),
-                    junto do resto do dinheiro. Não recolocar aqui.
-                    O Mural saiu daqui em 2026-09-04 (pedido do Alex): virou
-                    item da toolbar retrátil, ao lado das outras ferramentas —
-                    igual à engrenagem do headcard do perfil. */}
-              </div>
-
-              {/* Fila das REDES, com rótulo próprio: o "+" sozinho não dizia de
-                  que era. Espelha o headcard do perfil. */}
-              <div className="mt-4">
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                  {t("mySocialsLabel", "Minhas redes")}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                {/* Redes sociais do user (perfil-conta) — mesmos ícones do perfil */}
-                {(perfil.redes_sociais || []).map((rede) => {
-                  const url = socialUrlFor(rede)
-                  if (!url) return null
-                  const p = (rede.platform || "").toLowerCase()
-                  const RIcon = p === "youtube" ? Youtube : p === "tiktok" ? Video : Instagram
-                  return (
-                    <a
-                      key={`sm-${rede.id || rede.platform}`}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={rede.platform}
-                      aria-label={rede.platform}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0B0B0D]/25 bg-[#0B0B0D]/[0.04] text-[#0B0B0D] transition hover:bg-[#F2B705]/25"
-                    >
-                      <RIcon className="h-3.5 w-3.5" />
-                    </a>
-                  )
-                })}
-                {/* Adicionar rede direto do headcard — o perfil já tinha o
-                    atalho aqui; no user o CRUD só existia na seção lá embaixo. */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNovaRede({ id: "", platform: "", account: "", followers_range: "" })
-                    setIsEditing(false)
-                    setIsModalOpen(true)
-                  }}
-                  title={t("addSocial", "Adicionar rede social")}
-                  aria-label={t("addSocial", "Adicionar rede social")}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-[#0B0B0D]/30 bg-transparent text-[#0B0B0D] transition hover:bg-[#F2B705]/25"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-                </div>
-              </div>
-
-              {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
-                  (hover abre, click alterna — mesmo comportamento da engrenagem
-                  do perfil). Botões só-ícone; o nome vive no title/aria. */}
-              <div
-                className="mt-5 flex flex-wrap items-center gap-3 text-[13px] text-[#2b2b2e]"
-                onMouseEnter={() => setToolsOpen(true)}
-                onMouseLeave={() => setToolsOpen(false)}
-              >
-                <button
-                  type="button"
-                  onClick={() => setToolsOpen((v) => !v)}
-                  aria-expanded={toolsOpen}
-                  aria-label={toolsOpen ? t("toolsClose", "Fechar ferramentas") : t("toolsButton", "Ferramentas")}
-                  title={toolsOpen ? t("toolsClose", "Fechar ferramentas") : t("toolsButton", "Ferramentas")}
-                  className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#ffc81f] active:scale-[0.96]"
-                >
-                  <Wrench className="h-4 w-4" />
-                  {(unreadMessages > 0 || muralHasNew) && !toolsOpen && (
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
                   )}
                 </button>
-                <div
-                  aria-hidden={!toolsOpen}
-                  className={`flex items-center gap-3 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${
-                    toolsOpen
-                      ? "max-w-[640px] translate-x-0 opacity-100"
-                      : "pointer-events-none max-w-0 -translate-x-1 opacity-0"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => router.push("/mensagens?tab=os")}
-                    aria-label={t("openMessages", "Abrir mensagens")}
-                    className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    title={t("messages", "Mensagens")}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    {unreadMessages > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
-                    )}
-                  </button>
-                  {/* Mural — mudou do chip para cá em 2026-09-04, igual ao
-                      menu da engrenagem do perfil. Fica fora do useAccountTools
-                      porque abre modal DESTA página e carrega badge próprio. */}
-                  {accountProfileId && (
-                    <button
-                      type="button"
-                      onClick={() => setMuralOpen(true)}
-                      aria-label={t("openMuralAria", "Abrir Mural")}
-                      title={t("muralLabel", "Mural")}
-                      className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    >
-                      <Megaphone className="h-4 w-4" />
-                      {muralHasNew && (
-                        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
-                      )}
-                    </button>
-                  )}
-                  {/* Ferramentas da conta — MESMA lista da engrenagem do
-                      headcard de perfil, via useAccountTools. Ferramenta nova
-                      entra só em components/profile/account-tools.ts. */}
-                  {accountTools.map((tool) => {
-                    const Icon = tool.icon
-                    const cls =
-                      "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
-                    return (
-                      <button
-                        key={tool.key}
-                        type="button"
-                        onClick={() => (tool.href ? router.push(tool.href) : tool.onClick?.())}
-                        aria-label={tool.ariaLabel}
-                        title={tool.label}
-                        className={cls}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </button>
-                    )
-                  })}
-                </div>
-                {/* Contadores de seguidores/acompanhados migraram pra fila
-                    POSTS | ACOMP. ao lado do avatar (esqueleto unificado). */}
-              </div>
-            </div>
-          </article>
+              }
+              toolsBadge={unreadMessages > 0}
+              onCreateProfile={openNewProfileModal}
+              /* O menu lateral é o mesmo componente; esta página só entrega o
+                 usuário completo (o do localStorage é pobre) e a bolinha de
+                 O.S. não lida, que ela já conta. */
+              dropsideUser={perfil}
+              dropsideUnreadServiceRequest={srBadge.has_new || srBadge.unread_chats > 0}
+              onLogout={handleLogout}
+              ownerActions={{
+                onShowMural: () => setMuralOpen(true),
+                muralBadge,
+              }}
+            />
+          </section>
           {/* Portfólio do user account — agora com 5 abas (Portfólio | Bees | Cursos | Perfis | Clans) */}
           <UserPortfolio
             onPostsCount={setPostsCount}
@@ -2270,14 +1996,6 @@ export default function PerfilPage() {
 
         </div>
       </main>
-
-      <UserDropside
-        open={dropsideOpen}
-        onClose={() => setDropsideOpen(false)}
-        user={perfil}
-        unreadServiceRequest={srBadge.has_new || srBadge.unread_chats > 0}
-        onLogout={handleLogout}
-      />
 
       {/* Modal de Novo Perfil */}
       <Dialog open={isNewProfileModalOpen} onOpenChange={(open) => { if (!open) setNewProfileError(null); setIsNewProfileModalOpen(open) }}>
@@ -3019,22 +2737,11 @@ export default function PerfilPage() {
       />
 
       {accountProfileId && (
-        <EntityFollowModal
-          open={followersModalOpen}
-          onOpenChange={setFollowersModalOpen}
-          entityType="profile"
-          entityId={accountProfileId}
-          mode="followers"
-        />
-      )}
-
-      {accountProfileId && (
         <MuralModal open={muralOpen} onOpenChange={setMuralOpen} profileId={accountProfileId} />
       )}
 
       <OversizeModal open={!!oversizeLabel} onClose={() => setOversizeLabel(null)} limitLabel={oversizeLabel || ""} />
 
-      {dataApiOn && <DataConnectionsModal open={dataConnOpen} onClose={() => setDataConnOpen(false)} />}
     </div>
   )
 }

@@ -142,6 +142,9 @@ interface ProfileHeadCardProps {
   identityHandle?: string | null
   /** Chips antes da fila de redes (status da conta, supervisionada). */
   chips?: React.ReactNode
+  /** O selo de publicação (ativo/rascunho/não publicado). O perfil-conta não
+   *  tem estado de publicação — ele É a pessoa —, então lá ele não existe. */
+  showStatusBadge?: boolean
   /** Anel neon rosa na foto: o dono tem bee vivo. */
   hasLiveBees?: boolean
   /** Clique na foto faz outra coisa (menu dos espaços). Sem isso, troca a foto. */
@@ -165,6 +168,13 @@ interface ProfileHeadCardProps {
   toolsBadge?: boolean
   /** Criar perfil sem sair da página — repassado ao troca-perfil. */
   onCreateProfile?: () => void
+  /** Usuário do menu lateral. Sem isso vale o do localStorage — a /account tem
+   *  o objeto completo em mãos e evita o cabeçalho pobre do LS. */
+  dropsideUser?: unknown
+  /** Bolinha de O.S. não lida no menu lateral (a /account já conta isso). */
+  dropsideUnreadServiceRequest?: boolean
+  /** Sair da conta. Sem isso, o padrão do componente. */
+  onLogout?: () => void
 }
 
 /** Anel neon de bee: o mesmo gradiente das duas camadas (glow + facho). */
@@ -279,6 +289,7 @@ export function ProfileHeadCard({
   onShowFollowing,
   identityHandle,
   chips,
+  showStatusBadge = true,
   hasLiveBees = false,
   onAvatarClick,
   avatarClickLabel,
@@ -290,6 +301,9 @@ export function ProfileHeadCard({
   toolsLead,
   toolsBadge = false,
   onCreateProfile,
+  dropsideUser,
+  dropsideUnreadServiceRequest,
+  onLogout,
 }: ProfileHeadCardProps) {
   const t = useTranslations("Profile")
   const tx = useTaxonomy()
@@ -403,6 +417,9 @@ export function ProfileHeadCard({
   useEffect(() => {
     let cancelled = false
     async function load() {
+      // Conta recém-criada pode ainda não ter perfil-conta: sem id, a busca
+      // devolveria erro e a linha de contadores piscaria zerada por nada.
+      if (!profileId) return
       try {
         const qs = new URLSearchParams({ entity_type: entityType, entity_id: profileId })
         const res = await fetch(`/api/entity-follows/counts?${qs}`)
@@ -423,13 +440,13 @@ export function ProfileHeadCard({
 
   const isPublished = !!(profile.is_paid && profile.is_visible && profile.is_active)
   const statusBadge = useMemo(() => {
-    if (!isOwnProfile) return null
+    if (!isOwnProfile || !showStatusBadge) return null
     if (isPublished)
       return { label: t("statusActive", "ativo"), className: "bg-[#16683f] text-[#ECFDF3]" }
     if (profile.is_paid && !profile.is_visible)
       return { label: t("statusDraftBadge", "rascunho"), className: "bg-[#0B0B0D] text-[#F1EDE2]" }
     return { label: t("statusUnpublished", "não publicado"), className: "bg-[#F2B705] text-[#1A1505]" }
-  }, [isOwnProfile, isPublished, profile.is_paid, profile.is_visible, t])
+  }, [isOwnProfile, showStatusBadge, isPublished, profile.is_paid, profile.is_visible, t])
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
   const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
@@ -627,7 +644,7 @@ export function ProfileHeadCard({
                 )}
                 {/* Troca-perfil: sem `onCreateProfile`, o card "+" leva para a
                     /account, onde o formulário de criar perfil vive. */}
-                {isOwnProfile && entityType !== "clan" && (
+                {isOwnProfile && entityType !== "clan" && profileId && (
                   <ProfileSwitcher currentProfileId={profileId} onCreateProfile={onCreateProfile} />
                 )}
                 {/* Badge de câmera: existe quando o clique na foto foi tomado
@@ -648,9 +665,11 @@ export function ProfileHeadCard({
 
               {belowAvatar}
 
-              <div className="mt-2">
-                <AvatarRatingStar profileId={profileId} />
-              </div>
+              {profileId && (
+                <div className="mt-2">
+                  <AvatarRatingStar profileId={profileId} />
+                </div>
+              )}
               {canUploadAvatar && (
                 <input
                   ref={fileInputRef}
@@ -960,8 +979,9 @@ export function ProfileHeadCard({
         <UserDropside
           open={dropsideOpen}
           onClose={() => setDropsideOpen(false)}
-          user={lsUser}
-          onLogout={handleAccountLogout}
+          user={(dropsideUser ?? lsUser) as never}
+          unreadServiceRequest={dropsideUnreadServiceRequest}
+          onLogout={onLogout ?? handleAccountLogout}
         />
       )}
     </>
