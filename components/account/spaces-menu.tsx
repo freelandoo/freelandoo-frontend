@@ -12,7 +12,6 @@ import {
   Signpost,
   Sparkles,
   UserRound,
-  Users,
   type LucideIcon,
 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -89,7 +88,6 @@ export function SpacesMenu({
 
   // Flag do admin E preferência do usuário em consts SEPARADAS: `&&` inline
   // deixaria a segunda chamada de hook condicional (rules-of-hooks).
-  const communitiesPref = useUserFeature("communities")
   const profilesPref = useUserFeature("profiles")
   const condoFlag = useFeature("condominio")
   const neighborhoodFlag = useFeature("bairro")
@@ -99,7 +97,7 @@ export function SpacesMenu({
   const [data, setData] = useState<SpacesPayload>(EMPTY)
   const [loading, setLoading] = useState(false)
   const [view, setView] = useState<SpaceKind | null>(null)
-  const [creating, setCreating] = useState<"pet" | "car" | "common" | null>(null)
+  const [creating, setCreating] = useState<"pet" | "car" | null>(null)
   // A comunidade comum é a única das quatro que pode ser RECUSADA (teto de
   // comunidades, nível mínimo). Antes o formulário explicava o motivo; sem ele,
   // engolir o erro deixaria o item do menu parecendo quebrado.
@@ -114,20 +112,17 @@ export function SpacesMenu({
    * perguntando as mesmas coisas antes seria um segundo lugar para editar o
    * que a página já sabe editar.
    */
-  const createAndOpen = async (kind: "pet" | "car" | "common") => {
+  const createAndOpen = async (kind: "pet" | "car") => {
     const token = getToken()
     if (!token || creating) return
     setCreating(kind)
     setCreateError(null)
     try {
-      // A comunidade comum entra pela rota genérica; pet e carro (mig 210) têm
-      // base própria. Corpo vazio nas três: o backend reconhece o pedido sem
-      // nome e sem enxame como RASCUNHO (mig 219) e devolve a comunidade já
-      // criada, que a página abre em modo de edição.
-      const path =
-        kind === "pet" ? "/api/pets"
-          : kind === "car" ? "/api/cars"
-            : "/api/communities"
+      // Pet e carro (mig 210) têm base própria. Corpo vazio nos dois: o
+      // backend reconhece o pedido sem nome e sem enxame como RASCUNHO (mig
+      // 219) e devolve a comunidade já criada, que a página abre em modo de
+      // edição.
+      const path = kind === "pet" ? "/api/pets" : "/api/cars"
       const res = await fetch(path, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -265,20 +260,11 @@ export function SpacesMenu({
       create: () => go("/bairro"),
       createLabel: t("findStreet", "Encontrar meu bairro"),
     },
-    {
-      key: "common",
-      icon: Users,
-      label: t("myCommunity", "Minha comunidade"),
-      enabled: communitiesPref,
-      rows: data.spaces.common.map((r) => ({
-        id: r.id_profile,
-        name: r.display_name,
-        subtitle: null,
-        href: `/comunidades/${r.id_profile}`,
-      })),
-      create: () => createAndOpen("common"),
-      createLabel: t("newCommunity", "Criar comunidade"),
-    },
+    /* "Minha comunidade" SAIU daqui em 2026-09-05 (pedido do Alex): virou o pill
+       "Business" da pilha do headcard (components/profile/headcard-pills.tsx),
+       que faz o mesmo abre-ou-cria contra `/api/communities`. Deixá-la nos dois
+       lugares seriam duas portas para a mesma ação — e o `createAndOpen` daqui
+       ficou só com pet e carro. */
   ]
 
   const current = view ? items.find((i) => i.key === view) || null : null

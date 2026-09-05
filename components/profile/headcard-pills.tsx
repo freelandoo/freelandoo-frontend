@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { DollarSign, Dumbbell, Gamepad2, type LucideIcon } from "lucide-react"
+import { DollarSign, Dumbbell, Gamepad2, Star, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { toast } from "sonner"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
@@ -59,12 +60,16 @@ import { cn } from "@/lib/utils"
 const CLEARANCE = "pl-3.5"
 
 /**
- * Altura da pilha cheia, em px: 3 pills de 36px (h-9) + 2 gaps de 6px (gap-1.5).
- * A foto do headcard precisa ser MAIOR que isto para cobrir a pilha — é o que
- * faz os pills escaparem só pela direita, como o desenho pede. A conta de lá
- * vive em `AVATAR_FRAME_CLASS` (components/profile/profile-head-card.tsx).
+ * Altura da pilha CHEIA do headcard, em px: 4 pills de 36px (h-9) + 3 gaps de
+ * 6px (gap-1.5). A foto do headcard precisa ser MAIOR que isto para cobrir a
+ * pilha — é o que faz os pills escaparem só pela direita, como o desenho pede.
+ * A conta de lá vive em `AVATAR_FRAME_CLASS`
+ * (components/profile/profile-head-card.tsx).
+ *
+ * A Carteira monta a própria pilha (3 botões) com o `PillStack` cru, então esta
+ * constante não vale para ela — lá a conta é 3 × 36 + 2 × 6 = 120px.
  */
-export const PILL_STACK_PX = 120
+export const PILL_STACK_PX = 162
 
 export type PillSpec = {
   key: string
@@ -251,7 +256,7 @@ export function HeadcardPills({
 }) {
   const t = useTranslations("Account")
   const router = useRouter()
-  const [goingToGames, setGoingToGames] = useState(false)
+  const [going, setGoing] = useState<string | null>(null)
 
   // A Carteira é NATIVA (saiu da Loja de Funções na mig 216): ninguém compra. O
   // que ainda pode escondê-la é só a preferência da seção "Funções" do menu
@@ -263,45 +268,74 @@ export function HeadcardPills({
   const academyFlag = useFeature("fitness_academias")
   const fitnessPref = useUserFeature("fitness_academias")
   const gamesFlag = useFeature("games")
+  // Mesma preferência que escondia "Minha comunidade" no menu da foto.
+  const communitiesOn = useUserFeature("communities")
 
   /**
-   * Games não tem URL fixa: o destino é a comunidade "Meus games" da pessoa.
-   * Quem já tem, entra na dela; quem não tem, ganha uma vazia e cai na página
-   * já editável — MESMA regra do menu dos espaços (a comunidade nasce sem
-   * formulário; jogo e plataforma se escolhem no headcard dela).
+   * Nem Games nem Business têm URL fixa: o destino é a comunidade DAQUELA
+   * pessoa. Quem já tem, entra na dela; quem não tem, ganha uma vazia e cai na
+   * página já editável — MESMA regra do menu dos espaços (a comunidade nasce
+   * sem formulário; o assunto se escolhe no headcard dela).
+   *
+   * Um caminho só para os dois: o que muda é a chave do espaço e a rota de
+   * criação. Escrever o segundo à mão seria a duplicata que faz um dos dois
+   * divergir depois.
    */
-  const openGames = useCallback(async () => {
-    if (goingToGames) return
-    const token = getToken()
-    if (!token) return
-    setGoingToGames(true)
-    try {
-      const res = await fetch("/api/me/spaces", { headers: { Authorization: `Bearer ${token}` } })
-      const json = await res.json().catch(() => null)
-      const mine = res.ok ? json?.spaces?.games?.[0]?.id_profile : null
-      if (mine) {
-        router.push(`/comunidades/${mine}`)
-        return
+  const openSpace = useCallback(
+    async (key: string, spaceKey: "games" | "common", createPath: string) => {
+      if (going) return
+      const token = getToken()
+      if (!token) return
+      setGoing(key)
+      try {
+        const res = await fetch("/api/me/spaces", { headers: { Authorization: `Bearer ${token}` } })
+        const json = await res.json().catch(() => null)
+        const mine = res.ok ? json?.spaces?.[spaceKey]?.[0]?.id_profile : null
+        if (mine) {
+          router.push(`/comunidades/${mine}`)
+          return
+        }
+        const created = await fetch(createPath, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: "{}",
+        })
+        const body = await created.json().catch(() => null)
+        if (created.ok && body?.community?.id_profile) {
+          router.push(`/comunidades/${body.community.id_profile}`)
+          return
+        }
+        // A comunidade comum é a única que pode ser RECUSADA (teto, nível).
+        // Engolir o erro deixaria o pill parecendo quebrado — no menu dos
+        // espaços essa recusa aparecia escrita; aqui não há onde escrevê-la.
+        if (body?.error) toast.error(body.error)
+      } catch {
+        /* silencioso: o pill continua aberto e a pessoa tenta de novo */
+      } finally {
+        setGoing(null)
       }
-      const created = await fetch("/api/games", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: "{}",
-      })
-      const body = await created.json().catch(() => null)
-      if (created.ok && body?.community?.id_profile) {
-        router.push(`/comunidades/${body.community.id_profile}`)
-      }
-    } catch {
-      /* silencioso: o pill continua aberto e a pessoa tenta de novo */
-    } finally {
-      setGoingToGames(false)
-    }
-  }, [goingToGames, router])
+    },
+    [going, router],
+  )
 
   const pills: PillSpec[] = []
 
-  // Games é o PRIMEIRO da pilha: fica acima do cifrão e sobe até por cima do
+  // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
+  // SAIU do menu da foto de perfil (pedido do Alex, 2026-09-05) — lá ela era um
+  // item entre pet, carro, condomínio e rua; aqui ela tem botão próprio.
+  if (communitiesOn) {
+    pills.push({
+      key: "business",
+      icon: Star,
+      label: t("businessPill", "Business"),
+      ariaLabel: t("openCommunityAria", "Abrir minha comunidade"),
+      bg: "#BE185D",
+      bgHover: "#9F1239",
+      onOpen: () => openSpace("business", "common", "/api/communities"),
+    })
+  }
+
+  // Games vem logo abaixo: fica acima do cifrão e sobe até por cima do
   // banner da manifestação (decisão do Alex 2026-09-03).
   if (gamesFlag) {
     pills.push({
@@ -311,7 +345,7 @@ export function HeadcardPills({
       ariaLabel: t("openGamesAria", "Abrir a comunidade dos meus games"),
       bg: "#6D28D9",
       bgHover: "#5B21B6",
-      onOpen: openGames,
+      onOpen: () => openSpace("games", "games", "/api/games"),
     })
   }
 
@@ -352,7 +386,7 @@ export function HeadcardPills({
       //
       // Centrar em vez de fixar um offset é o que mantém isso verdade nos dois
       // breakpoints sem número mágico por tamanho: a folga é
-      // (altura da foto − 108px da pilha) / 2, positiva em ambos.
+      // (altura da foto − PILL_STACK_PX) / 2, positiva em ambos.
       //
       // A coluna do avatar tem a altura da FOTO (as estrelas saíram dela em
       // 2026-09-05), então 50% da coluna é 50% da foto.

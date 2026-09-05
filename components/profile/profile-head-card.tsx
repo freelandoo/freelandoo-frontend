@@ -175,10 +175,13 @@ const BEE_RING_GRADIENT =
 /** Moldura da foto — borda creme com anel preto por fora, do /account. A
  *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto.
  *
- *  TAMANHO: a foto precisa COBRIR a pilha de pills (`PILL_STACK_PX`, 120px),
- *  senão o Games escapa por cima em vez de só pela direita. Com w-28/md:w-32 e
- *  proporção 2/3 ela mede 168px (celular) e 192px (md) — folga de 24 e 36px,
- *  conta fechada, não estimativa.
+ *  TAMANHO: a foto precisa COBRIR a pilha de pills (`PILL_STACK_PX`, 162px com
+ *  os quatro), senão o pill do topo escapa por cima em vez de só pela direita.
+ *  Com w-32/md:w-36 e proporção 2/3 ela mede 192px (celular) e 216px (md) —
+ *  folga de 15 e 27px, conta fechada, não estimativa.
+ *
+ *  ⚠️ PILL NOVO NA PILHA = +42px (36 do pill + 6 do gap). Refaça a conta aqui:
+ *  altura da foto tem que continuar maior que `PILL_STACK_PX`.
  *
  *  ⚠️ A LARGURA casa com o `avatarPadClass` da pilha (`pl-28 md:pl-32`): é esse
  *  padding que faz o corpo colorido nascer DEBAIXO da foto. Mexeu numa, mexe na
@@ -575,13 +578,11 @@ export function ProfileHeadCard({
           {/* Bloco principal: avatar (esquerda) + coluna de stats/info (direita).
               items-end no flex garante que a coluna direita só ocupe espaço da
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
-          {/* A foto cresce para CIMA, não para baixo: o recuo negativo absorve a
-              altura dela, então a base — e com ela os contadores e as estrelas,
-              que são bottom-aligned — fica onde sempre esteve, e quem cede
-              espaço é o banner. A conta é 48px (o recuo original, de quando a
-              foto tinha 120px) + o que ela cresceu: 168−120=48 no celular e
-              192−140=52 no md. */}
-          <div className="relative z-10 -mt-[96px] flex items-end gap-4 md:-mt-[100px] md:gap-6">
+          {/* METADE da foto sobre o banner, metade sobre o papel: o recuo é ~50%
+              da altura dela (192/2 e 216/2). Manter a base fixa e deixar toda a
+              altura nova subir comeria quase o banner inteiro no celular, que
+              só tem 160px — e o banner é a manifestação, não moldura. */}
+          <div className="relative z-10 -mt-[96px] flex items-end gap-4 md:-mt-[108px] md:gap-6">
             <div className="relative flex shrink-0 flex-col items-center">
               {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito — o
                   card da foto vem depois no DOM e por isso cobre a pilha, que
@@ -590,14 +591,14 @@ export function ProfileHeadCard({
                   O padding casa com a LARGURA DO AVATAR — mexeu numa, mexe na
                   outra (ver components/profile/headcard-pills.tsx). */}
               {isOwnProfile && entityType !== "clan" && (
-                <HeadcardPills avatarPadClass="pl-28 md:pl-32" />
+                <HeadcardPills avatarPadClass="pl-32 md:pl-36" />
               )}
               {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
                   troca-perfil na quina de baixo, e é nele que mora a rotação —
                   o anel de bees precisa girar junto com a foto. A coluna
                   inteira não serve: ela desce até as estrelas, e o botão
                   nasceria solto abaixo. */}
-              <div className="group relative w-28 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-32">
+              <div className="group relative w-32 -rotate-3 transition-transform duration-300 hover:rotate-0 md:w-36">
                 {/* Anel neon rosa quando há bee vivo: conic-gradient com um facho
                     quase branco que gira, mais uma camada desfocada fazendo o
                     glow. Some sem bee. */}

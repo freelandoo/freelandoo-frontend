@@ -1527,7 +1527,8 @@
     "switchProfileRetry": "Try again",
     "buyProfile": "Buy profile",
     "mgmtBadgeAccount": "Your account",
-    "mySocialsLabel": "My socials"
+    "mySocialsLabel": "My socials",
+    "businessPill": "Business"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
