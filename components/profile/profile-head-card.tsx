@@ -32,7 +32,6 @@ import type { HintId } from "@/features/tour/hints"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
 import { useAccountTools } from "@/components/profile/account-tools"
@@ -267,8 +266,6 @@ export function ProfileHeadCard({
     router.push("/login")
   }
   const dataApiOn = useFeature("data_api")
-  // Preferências pessoais (seção "Funções" do menu lateral).
-  const communitiesFeatOn = useUserFeature("communities")
 
   const handleAvatarSelect = () => {
     if (!isOwnProfile || uploadingAvatar) return
@@ -636,20 +633,10 @@ export function ProfileHeadCard({
                   ariaExpanded={menuOpen}
                 />
                 <RetractableIcons open={menuOpen}>
-                  <IconAction
-                    href={"/mensagens"}
-                    icon={MessageCircle}
-                    label={t("myMessages", "Minhas mensagens")}
-                    hint="headcard-messages"
-                  />
-                  {!isClan && communitiesFeatOn && (
-                    <IconAction
-                      href="/comunidades"
-                      icon={Users}
-                      label={t("communities", "Comunidade")}
-                      hint="headcard-clans"
-                    />
-                  )}
+                  {/* Mensagens e Comunidade SAÍRAM daqui (2026-09-04, pedido do
+                      Alex): as duas já são raiz do dock da ProfileSidebar, que
+                      fica na tela o tempo todo — repeti-las no menu do headcard
+                      só duplicava a porta. Não recolocar. */}
                   {isClan && ownerActions.onShowMembers && (
                     <IconAction
                       onClick={ownerActions.onShowMembers}
