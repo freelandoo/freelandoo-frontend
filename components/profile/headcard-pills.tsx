@@ -328,19 +328,20 @@ export function HeadcardPills({
     <PillStack
       pills={pills}
       avatarPadClass={avatarPadClass}
-      // `48%` é da COLUNA (que inclui as estrelas), o que cai em ~57% da altura
-      // da FOTO. A pilha é centrada nessa linha, então cresce para os dois lados
-      // e continua deixando folga acima da fila "POSTS | ACOMP.", que é
-      // bottom-aligned com a base da coluna.
+      // CENTRADA NA FOTO. Antes a pilha era ancorada numa porcentagem com um
+      // deslocamento fixo (`48% - 2.5rem`), e o Games subia acima da borda de
+      // cima da foto, caindo sobre o banner. O Alex pediu (2026-09-05) que a
+      // foto ALCANCE o Games: a foto cresceu para 2/3 e a pilha voltou ao
+      // centro, então ela cabe inteira e volta a escapar SÓ pela direita — que
+      // é a regra do desenho.
       //
-      // O `-2.5rem` sobe a pilha UMA LINHA inteira (pill ~33px + gap 6px): é o
-      // que abre o slot novo do Games no topo mantendo Carteira e Fitness onde
-      // já estavam. Como a foto começa dentro do banner (a linha do avatar é
-      // puxada com -mt-12/-mt-14), essa linha extra cai em cima do BANNER da
-      // manifestação — de propósito. A pilha não é recortada ali porque vive na
-      // coluna do avatar, irmã do banner (que tem `overflow-hidden` próprio), e
-      // vem depois dele no DOM.
-      className={cn("absolute left-0 top-[calc(48%-2.5rem)] -translate-y-1/2", className)}
+      // Centrar em vez de fixar um offset é o que mantém isso verdade nos dois
+      // breakpoints sem número mágico por tamanho: a folga é
+      // (altura da foto − 108px da pilha) / 2, positiva em ambos.
+      //
+      // A coluna do avatar tem a altura da FOTO (as estrelas saíram dela em
+      // 2026-09-05), então 50% da coluna é 50% da foto.
+      className={cn("absolute left-0 top-1/2 -translate-y-1/2", className)}
     />
   )
 }

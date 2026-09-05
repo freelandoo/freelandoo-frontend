@@ -69,9 +69,11 @@ function initials(name: string | null | undefined) {
     .join("")
 }
 
-/** Moldura da foto do headcard: papel creme, contorno de tinta e sombra dura. */
+/** Moldura da foto do headcard: papel creme, contorno de tinta e sombra dura.
+ *  A proporção acompanha a do headcard (2/3 desde 2026-09-05) — estes cards
+ *  SÃO a foto de cada perfil, e num formato diferente deixariam de ser. */
 const CARD_FRAME =
-  "relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] ring-2 ring-[#0B0B0D] shadow-[5px_5px_0_0_#F2B705]"
+  "relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] ring-2 ring-[#0B0B0D] shadow-[5px_5px_0_0_#F2B705]"
 
 export function ProfileSwitcher({
   currentProfileId,

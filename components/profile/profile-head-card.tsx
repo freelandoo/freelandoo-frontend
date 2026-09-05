@@ -173,9 +173,16 @@ const BEE_RING_GRADIENT =
   "conic-gradient(from 0deg, #ff2d95, #ff7ac8 55deg, #fff0fa 80deg, #ff7ac8 105deg, #ff2d95 160deg, #c4007a 250deg, #ff2d95 360deg)"
 
 /** Moldura da foto — borda creme com anel preto por fora, do /account. A
- *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto. */
+ *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto.
+ *
+ *  A PROPORÇÃO é 2/3 (era 4/5) porque a foto precisa ALCANÇAR o pill do topo
+ *  (Games): a pilha tem ~108px e em 4/5 a foto dava 120px no celular, então os
+ *  pills escapavam por cima em vez de só pela direita. Em 2/3 a foto vai a
+ *  144px (celular) e 168px (md) e cobre a pilha inteira com folga nos dois
+ *  lados. Só a ALTURA mudou — a largura segue w-24/md:w-28, e é ela que casa
+ *  com o `avatarPadClass` da pilha. */
 const AVATAR_FRAME_CLASS =
-  "relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] disabled:opacity-70"
+  "relative flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-xl border-4 border-[#F1EDE2] bg-[#F2B705]/15 shadow-[6px_6px_0_0_#F2B705] ring-2 ring-[#0B0B0D] disabled:opacity-70"
 
 /** O "+" da fila de redes — mesmo botão nas duas superfícies. */
 const SOCIAL_ADD_CLASS =
@@ -566,7 +573,11 @@ export function ProfileHeadCard({
           {/* Bloco principal: avatar (esquerda) + coluna de stats/info (direita).
               items-end no flex garante que a coluna direita só ocupe espaço da
               base do avatar pra baixo, ficando 100% fora da área do banner. */}
-          <div className="relative z-10 -mt-12 flex items-end gap-4 md:gap-6">
+          {/* A foto cresceu para CIMA, não para baixo: o recuo negativo absorve
+              a altura nova (48px + 24 no celular, + 28 no md), então a base da
+              foto — e com ela os contadores, que são bottom-aligned — fica
+              exatamente onde estava, e quem cede espaço é o banner. */}
+          <div className="relative z-10 -mt-[72px] flex items-end gap-4 md:-mt-[76px] md:gap-6">
             <div className="relative flex shrink-0 flex-col items-center">
               {/* Carteira / Fitness / Games: PRIMEIRO filho de propósito — o
                   card da foto vem depois no DOM e por isso cobre a pilha, que
