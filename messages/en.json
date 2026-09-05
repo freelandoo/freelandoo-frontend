@@ -1526,7 +1526,8 @@
     "switchProfileError": "Couldn't load your profiles.",
     "switchProfileRetry": "Try again",
     "buyProfile": "Buy profile",
-    "mgmtBadgeAccount": "Your account"
+    "mgmtBadgeAccount": "Your account",
+    "mySocialsLabel": "My socials"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3826,7 +3827,8 @@
     "addSocial": "Add social network",
     "menuRecado": "Note",
     "changeManifestation": "Change",
-    "changeManifestationAria": "Change your manifestation in the store"
+    "changeManifestationAria": "Change your manifestation in the store",
+    "mySocials": "My socials"
   },
   "Bees": {
     "chat": "Chat",

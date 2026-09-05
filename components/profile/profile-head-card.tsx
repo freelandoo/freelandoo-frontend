@@ -317,6 +317,13 @@ export function ProfileHeadCard({
     onOpenDataConnections: () => setDataConnOpen(true),
   })
 
+  // O Mural agora mora DENTRO do menu, então a novidade dele tem que aparecer
+  // na engrenagem fechada — senão a única pista de recado novo fica escondida
+  // atrás de um hover. Mesma conta nos dois lugares.
+  const muralHasNew = !!(
+    ownerActions?.muralBadge?.has_new || (ownerActions?.muralBadge?.chat_unread || 0) > 0
+  )
+
   const handleSettingsClick = () => setMenuOpen((v) => !v)
 
   useEffect(() => {
@@ -577,40 +584,33 @@ export function ProfileHeadCard({
             </MarkdownText>
           )}
 
-          {/* Fila de chips (mesma do /account): Mural + redes. O chip de nível
-              saiu das duas superfícies (decisão do Alex, 2026-09-03) — o nível
-              continua no header retrátil. Não recolocar em uma só, senão os
-              dois headcards divergem de novo. */}
-          {((isOwnProfile && ownerActions?.onShowMural) ||
-            socials.length > 0) && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {isOwnProfile && ownerActions?.onShowMural && (
-                <MuralPill
-                  onClick={ownerActions.onShowMural}
-                  label={t("mural", "Mural")}
-                  ariaLabel={t("openMural", "Abrir Mural")}
-                  hasNew={
-                    !!(
-                      ownerActions.muralBadge?.has_new ||
-                      (ownerActions.muralBadge?.chat_unread || 0) > 0
-                    )
-                  }
-                />
-              )}
-              <SocialIcons socials={socials} socialFallback={t("socialNetwork", "Rede social")} />
-              {/* "+" de rede social — paridade com o headcard do /account, que
-                  já tinha o atalho. Leva ao settings do perfil, onde as redes
-                  DESTE perfil são geridas (conteúdo é independente por perfil). */}
-              {isOwnProfile && ownerActions?.editHref && (
-                <Link
-                  href={ownerActions.editHref}
-                  title={t("addSocial", "Adicionar rede social")}
-                  aria-label={t("addSocial", "Adicionar rede social")}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-dashed border-[#0B0B0D]/40 bg-transparent text-[#0B0B0D] transition hover:border-solid hover:bg-[#F2B705]/25"
-                >
-                  <Plus className="h-[18px] w-[18px]" />
-                </Link>
-              )}
+          {/* Fila das REDES (mesma do /account). O Mural saiu daqui em
+              2026-09-04 (pedido do Alex) e virou item da engrenagem, junto das
+              outras ferramentas; o chip de nível saiu antes, em 2026-09-03.
+              Não recolocar em uma só das superfícies, senão os dois headcards
+              divergem de novo. */}
+          {((isOwnProfile && ownerActions?.editHref) || socials.length > 0) && (
+            <div className="mt-4">
+              {/* O "+" sozinho não dizia de que era. O rótulo nomeia a fila. */}
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                {t("mySocials", "Minhas redes")}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <SocialIcons socials={socials} socialFallback={t("socialNetwork", "Rede social")} />
+                {/* "+" de rede social — paridade com o headcard do /account, que
+                    já tinha o atalho. Leva ao settings do perfil, onde as redes
+                    DESTE perfil são geridas (conteúdo é independente por perfil). */}
+                {isOwnProfile && ownerActions?.editHref && (
+                  <Link
+                    href={ownerActions.editHref}
+                    title={t("addSocial", "Adicionar rede social")}
+                    aria-label={t("addSocial", "Adicionar rede social")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-dashed border-[#0B0B0D]/40 bg-transparent text-[#0B0B0D] transition hover:border-solid hover:bg-[#F2B705]/25"
+                  >
+                    <Plus className="h-[18px] w-[18px]" />
+                  </Link>
+                )}
+              </div>
             </div>
           )}
 
@@ -631,12 +631,22 @@ export function ProfileHeadCard({
                   hint="headcard-settings"
                   accent
                   ariaExpanded={menuOpen}
+                  badge={muralHasNew && !menuOpen}
                 />
                 <RetractableIcons open={menuOpen}>
                   {/* Mensagens e Comunidade SAÍRAM daqui (2026-09-04, pedido do
                       Alex): as duas já são raiz do dock da ProfileSidebar, que
                       fica na tela o tempo todo — repeti-las no menu do headcard
                       só duplicava a porta. Não recolocar. */}
+                  {ownerActions.onShowMural && (
+                    <IconAction
+                      onClick={ownerActions.onShowMural}
+                      icon={Megaphone}
+                      label={t("mural", "Mural")}
+                      hint="headcard-mural"
+                      badge={muralHasNew}
+                    />
+                  )}
                   {isClan && ownerActions.onShowMembers && (
                     <IconAction
                       onClick={ownerActions.onShowMembers}
@@ -868,8 +878,8 @@ function RetractableIcons({ open, children }: { open: boolean; children: React.R
 }
 
 // Stickers das redes sociais — estilo tabloide (quadrado arredondado, contorno
-// preto grosso, papel creme, glifo dourado e sombra dura). Aparecem ao lado do
-// botão Mural no headcard.
+// preto grosso, papel creme, glifo dourado e sombra dura). Formam a fila
+// "Minhas redes" do headcard.
 function SocialIcons({ socials, socialFallback }: { socials: ProfileSocialLink[]; socialFallback: string }) {
   if (socials.length === 0) return null
 
@@ -892,21 +902,9 @@ function SocialIcons({ socials, socialFallback }: { socials: ProfileSocialLink[]
   )
 }
 
-export function MuralPill({ onClick, hasNew, label, ariaLabel }: { onClick: () => void; hasNew: boolean; label: string; ariaLabel: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group relative inline-flex items-center gap-2 rounded-full border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-1.5 text-[12px] font-bold text-[#0B0B0D] transition hover:bg-[#0B0B0D] hover:text-[#F1EDE2]"
-      aria-label={ariaLabel}
-    >
-      <Megaphone className="h-3.5 w-3.5 text-[#E0A500] group-hover:text-[#F2B705]" />
-      <span>{label}</span>
-      {hasNew && (
-        <span className="ml-0.5 inline-flex h-2 w-2 rounded-full bg-[#F2B705] shadow-[0_0_0_2px_#F1EDE2]" />
-      )}
-    </button>
-  )
-}
+/* MuralPill foi REMOVIDA em 2026-09-04: o Mural virou item de menu nas duas
+   superfícies (engrenagem do perfil e toolbar do /account), então o chip ficou
+   sem nenhum caller. Se voltar a existir chip de Mural, ele nasce aqui — peça
+   de headcard escrita duas vezes diverge em silêncio. */
 
 export { getInitials }

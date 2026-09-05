@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, Camera, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageCircle, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, Wrench, LayoutGrid, Megaphone } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -37,7 +37,6 @@ const AgendaBookingsExperience = dynamic(
 import { AvatarRatingStar } from "@/components/profile/avatar-rating-star"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
-import { MuralPill } from "@/components/profile/profile-head-card"
 import { SpacesMenu } from "@/components/account/spaces-menu"
 import { HoverHint } from "@/features/tour/HoverHint"
 import { Slider } from "@/components/ui/slider"
@@ -328,6 +327,9 @@ export default function PerfilPage() {
   // Mural do perfil-conta (paridade user≡perfil) + contador de posts.
   const [muralOpen, setMuralOpen] = useState(false)
   const [muralBadge, setMuralBadge] = useState<{ has_new: boolean; chat_unread: number }>({ has_new: false, chat_unread: 0 })
+  // Com o Mural dentro da toolbar retrátil, a novidade dele precisa aparecer na
+  // chave inglesa FECHADA — senão o recado novo fica escondido atrás do hover.
+  const muralHasNew = !!(muralBadge.has_new || muralBadge.chat_unread > 0)
   const [postsCount, setPostsCount] = useState(0)
   React.useEffect(() => {
     if (!accountProfileId) return
@@ -1921,16 +1923,19 @@ export default function PerfilPage() {
                   </HoverHint>
                 )}
                 {/* O cupom mudou de casa: agora mora na Carteira (/wallet),
-                    junto do resto do dinheiro. Não recolocar aqui. */}
-                {/* Mural do perfil-conta — mesmo pill do perfil. */}
-                {accountProfileId && (
-                  <MuralPill
-                    onClick={() => setMuralOpen(true)}
-                    label={t("muralLabel", "Mural")}
-                    ariaLabel={t("openMuralAria", "Abrir Mural")}
-                    hasNew={!!(muralBadge.has_new || muralBadge.chat_unread > 0)}
-                  />
-                )}
+                    junto do resto do dinheiro. Não recolocar aqui.
+                    O Mural saiu daqui em 2026-09-04 (pedido do Alex): virou
+                    item da toolbar retrátil, ao lado das outras ferramentas —
+                    igual à engrenagem do headcard do perfil. */}
+              </div>
+
+              {/* Fila das REDES, com rótulo próprio: o "+" sozinho não dizia de
+                  que era. Espelha o headcard do perfil. */}
+              <div className="mt-4">
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                  {t("mySocialsLabel", "Minhas redes")}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
                 {/* Redes sociais do user (perfil-conta) — mesmos ícones do perfil */}
                 {(perfil.redes_sociais || []).map((rede) => {
                   const url = socialUrlFor(rede)
@@ -1966,6 +1971,7 @@ export default function PerfilPage() {
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
+                </div>
               </div>
 
               {/* Toolbar retrátil: botão de ferramentas expande a fila de ícones
@@ -1985,7 +1991,7 @@ export default function PerfilPage() {
                   className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D] bg-[#F2B705] text-[#1A1505] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#ffc81f] active:scale-[0.96]"
                 >
                   <Wrench className="h-4 w-4" />
-                  {unreadMessages > 0 && !toolsOpen && (
+                  {(unreadMessages > 0 || muralHasNew) && !toolsOpen && (
                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
                   )}
                 </button>
@@ -2009,6 +2015,23 @@ export default function PerfilPage() {
                       <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#E0A500] ring-2 ring-[#F1EDE2]" />
                     )}
                   </button>
+                  {/* Mural — mudou do chip para cá em 2026-09-04, igual ao
+                      menu da engrenagem do perfil. Fica fora do useAccountTools
+                      porque abre modal DESTA página e carrega badge próprio. */}
+                  {accountProfileId && (
+                    <button
+                      type="button"
+                      onClick={() => setMuralOpen(true)}
+                      aria-label={t("openMuralAria", "Abrir Mural")}
+                      title={t("muralLabel", "Mural")}
+                      className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[#0B0B0D]/20 bg-[#0B0B0D]/[0.03] text-[#0B0B0D] transition hover:bg-[#F2B705]/20"
+                    >
+                      <Megaphone className="h-4 w-4" />
+                      {muralHasNew && (
+                        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#F1EDE2]" />
+                      )}
+                    </button>
+                  )}
                   {/* Ferramentas da conta — MESMA lista da engrenagem do
                       headcard de perfil, via useAccountTools. Ferramenta nova
                       entra só em components/profile/account-tools.ts. */}

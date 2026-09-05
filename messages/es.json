@@ -1526,7 +1526,8 @@
     "switchProfileError": "No fue posible cargar tus perfiles.",
     "switchProfileRetry": "Intentar de nuevo",
     "buyProfile": "Comprar perfil",
-    "mgmtBadgeAccount": "Tu cuenta"
+    "mgmtBadgeAccount": "Tu cuenta",
+    "mySocialsLabel": "Mis redes"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3806,7 +3807,8 @@
     "addSocial": "Agregar red social",
     "menuRecado": "Recado",
     "changeManifestation": "Cambiar",
-    "changeManifestationAria": "Cambiar tu manifestación en la tienda"
+    "changeManifestationAria": "Cambiar tu manifestación en la tienda",
+    "mySocials": "Mis redes"
   },
   "Bees": {
     "chat": "Chat",
