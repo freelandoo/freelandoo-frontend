@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { Loader2, Plus } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -29,6 +30,14 @@ import { cn } from "@/lib/utils"
  * dentro dela, recebe `onCreateProfile` e chama esse modal direto; fora dela,
  * navega para /account?novoPerfil=1 e a página abre o mesmo modal ao carregar.
  * Duplicar o formulário aqui criaria a segunda porta para a mesma ação.
+ *
+ * ⚠️ O MODAL VAI POR PORTAL, e não é preciosismo: o gatilho mora dentro do
+ * wrapper da foto, que é rotacionado (-3deg). Um ancestral com `transform` vira
+ * o bloco de contenção de qualquer descendente `position: fixed` — o `inset-0`
+ * deixa de significar "a janela" e passa a significar "a caixa da foto", de 96px
+ * e torta. Era exatamente assim que o modal aparecia: espremido na largura da
+ * foto e inclinado junto com ela. Mandar o overlay para o `document.body` é o
+ * que devolve o `fixed` à janela. Overlay novo daqui sai pelo portal também.
  */
 
 type SwitcherProfile = {
@@ -143,27 +152,13 @@ export function ProfileSwitcher({
 
   const label = t("switchProfile", "Meus perfis")
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={label}
-        title={label}
-        className={cn(
-          "absolute -bottom-2 -left-2 z-20 inline-flex h-7 w-7 items-center justify-center",
-          "border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]",
-          "transition hover:bg-[#F2B705]",
-          className,
-        )}
-      >
-        <Plus className="h-4 w-4" strokeWidth={3} />
-      </button>
+  // O portal só existe no cliente; no primeiro render (SSR/hidratação) não há
+  // `document`, então o modal entra depois que o componente monta.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-      {open && (
-        <div
+  const overlay = (
+    <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-[#0B0B0D]/80 p-4"
           role="dialog"
           aria-modal="true"
@@ -274,8 +269,29 @@ export function ProfileSwitcher({
               </div>
             )}
           </div>
-        </div>
-      )}
+    </div>
+  )
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+        className={cn(
+          "absolute -bottom-2 -left-2 z-20 inline-flex h-7 w-7 items-center justify-center",
+          "border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]",
+          "transition hover:bg-[#F2B705]",
+          className,
+        )}
+      >
+        <Plus className="h-4 w-4" strokeWidth={3} />
+      </button>
+
+      {open && mounted && createPortal(overlay, document.body)}
     </>
   )
 }
