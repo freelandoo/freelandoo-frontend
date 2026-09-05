@@ -13,7 +13,6 @@ import {
   Cog,
   Instagram,
   LayoutGrid,
-  MapPin,
   Megaphone,
   MessageCircle,
   Plus,
@@ -21,7 +20,6 @@ import {
   Sparkles,
   Trophy,
   Users,
-  UserRound,
   type LucideIcon,
 } from "lucide-react"
 import { getToken } from "@/lib/auth"
@@ -33,7 +31,6 @@ import { cn } from "@/lib/utils"
 import { HoverHint } from "@/features/tour/HoverHint"
 import type { HintId } from "@/features/tour/hints"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { HeadcardPills } from "@/components/profile/headcard-pills"
 import { ProfileSwitcher } from "@/components/profile/profile-switcher"
@@ -138,8 +135,6 @@ interface ProfileHeadCardProps {
   followingCount?: number
   /** Abre a lista de acompanhados. Sem isso, abre a do próprio perfil. */
   onShowFollowing?: () => void
-  /** Linha de identidade sob os contadores (@username). */
-  identityHandle?: string | null
   /** Chips antes da fila de redes (status da conta, supervisionada). */
   chips?: React.ReactNode
   /** O selo de publicação (ativo/rascunho/não publicado). O perfil-conta não
@@ -287,7 +282,6 @@ export function ProfileHeadCard({
   className,
   followingCount,
   onShowFollowing,
-  identityHandle,
   chips,
   showStatusBadge = true,
   hasLiveBees = false,
@@ -306,7 +300,6 @@ export function ProfileHeadCard({
   onLogout,
 }: ProfileHeadCardProps) {
   const t = useTranslations("Profile")
-  const tx = useTaxonomy()
   const [counts, setCounts] = useState<FollowCounts>(() => defaultCounts(entityType))
   const [openFollowers, setOpenFollowers] = useState(false)
   const [openFollowing, setOpenFollowing] = useState(false)
@@ -449,7 +442,6 @@ export function ProfileHeadCard({
   }, [isOwnProfile, showStatusBadge, isPublished, profile.is_paid, profile.is_visible, t])
 
   const socials = (profile.social_media || []).filter((s) => s.is_active !== false)
-  const location = [profile.municipio, profile.estado].filter(Boolean).join(", ")
   const avatarSrc = avatarOverride || profile.avatar_url || profile.user_avatar || undefined
   const displayName = profile.display_name || t("noName", "Sem nome")
   // Trocar a foto pelo clique nela só sobra quando ninguém tomou esse clique.
@@ -681,7 +673,7 @@ export function ProfileHeadCard({
               )}
             </div>
 
-            {/* Coluna direita do avatar: Posts/Acomp no topo + Enxame/Profissao/Local em coluna.
+            {/* Coluna direita do avatar: só os três contadores.
                 ALINHADA À DIREITA (pedido do Alex, 2026-09-05): encostada no
                 avatar, ela colidia com a pilha de pills, que escapa por trás da
                 foto justamente para a direita — o cifrão da Carteira caía por
@@ -690,10 +682,10 @@ export function ProfileHeadCard({
             <div className="min-w-0 flex-1 pb-1 text-right">
               <div className="flex items-baseline justify-end gap-4">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                  <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
                     {portfolioCount}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
                     {t("postsLabel", "Posts")}
                   </span>
                 </div>
@@ -704,10 +696,10 @@ export function ProfileHeadCard({
                   className="flex items-baseline gap-1.5 transition hover:opacity-70"
                   aria-label={t("seeFollowersAria", "Ver quem acompanha")}
                 >
-                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                  <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
                     {counts.followers_count}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
                     {t("followersShort", "Acomp.")}
                   </span>
                 </button>
@@ -722,39 +714,25 @@ export function ProfileHeadCard({
                   className="flex items-baseline gap-1.5 transition hover:opacity-70"
                   aria-label={t("seeFollowingAria", "Ver quem este perfil acompanha")}
                 >
-                  <span className="text-lg font-bold tabular-nums text-[#0B0B0D] md:text-xl">
+                  <span className="text-sm font-bold tabular-nums text-[#0B0B0D] md:text-base">
                     {followingCount ?? counts.following_count}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
-                    {t("followingShort", "Acompanhando")}
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[#0B0B0D]/55">
+                    {t("followingShort", "Acomp.do")}
                   </span>
                 </button>
               </div>
 
-              {/* @username — contexto de identidade. O nome grande vive no
-                  header retrátil nas duas telas. */}
-              {identityHandle && (
-                <p className="mt-1 text-sm font-medium text-[#5b554b]">@{identityHandle}</p>
-              )}
-
-              {(profile.machine_name || profile.desc_category || location || (isClan && typeof profile.members_count === "number")) && (
+              {/* Enxame, profissão e cidade SAÍRAM daqui (pedido do Alex,
+                  2026-09-05): o headcard ficou só com os contadores. Os dados
+                  seguem no perfil e na vitrine — o que saiu foi a exibição.
+                  A contagem de perfis do clan fica: é contador, não ficha. */}
+              {isClan && typeof profile.members_count === "number" && (
                 <div className="mt-2 flex flex-col items-end gap-1">
-                  {profile.machine_name && (
-                    <HeadInfo icon={Megaphone} value={tx.enxameFull(null, profile.machine_name)} />
-                  )}
-                  {profile.desc_category && (
-                    <HeadInfo
-                      icon={isClan ? Users : UserRound}
-                      value={tx.profession(profile.desc_category)}
-                    />
-                  )}
-                  {location && <HeadInfo icon={MapPin} value={location} />}
-                  {isClan && typeof profile.members_count === "number" && (
-                    <HeadInfo
-                      icon={Users}
-                      value={`${profile.members_count} ${profile.members_count === 1 ? t("profileSingular", "perfil") : t("profilePlural", "perfis")}`}
-                    />
-                  )}
+                  <HeadInfo
+                    icon={Users}
+                    value={`${profile.members_count} ${profile.members_count === 1 ? t("profileSingular", "perfil") : t("profilePlural", "perfis")}`}
+                  />
                 </div>
               )}
             </div>

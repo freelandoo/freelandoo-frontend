@@ -1733,7 +1733,6 @@ export default function PerfilPage() {
                  lista própria — a do perfil mostraria só o que ele segue. */
               followingCount={followedProfilesCount}
               onShowFollowing={() => setFollowingModalOpen(true)}
-              identityHandle={perfil.username}
               chips={accountChips}
               hasLiveBees={myBees.length > 0}
               /* A foto abre o menu dos espaços, então o badge de câmera vira a
