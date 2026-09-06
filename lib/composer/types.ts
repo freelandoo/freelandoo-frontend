@@ -121,6 +121,15 @@ export interface ComposerProps {
   initialProfileId?: string | null
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta comunidade. */
   communityId?: string | null
+  /** Nome da comunidade — só para o rótulo do destino no último passo. */
+  communityName?: string | null
+  /**
+   * A comunidade obriga exclusividade (privada, condomínio, bairro): o que se
+   * publica ali NÃO vai para o feed geral, por política. Com isso ligado o
+   * composer mostra o destino como fato consumado, sem escolha — oferecer o
+   * feed geral e o backend recusar seria prometer o que não vai acontecer.
+   */
+  communityExclusiveOnly?: boolean
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta academia (mig 181). */
   academyId?: string | null
   onClose: () => void

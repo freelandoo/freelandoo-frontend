@@ -1807,6 +1807,13 @@ export default function CommunityDetailPage() {
           open
           mode={composerKind}
           communityId={id}
+          communityName={community.display_name}
+          // ESPELHO de `CommunityPolicy.contentIsExclusive` (backend): privada,
+          // condomínio e bairro guardam o que se publica lá dentro. Aqui o
+          // espelho serve só para NÃO OFERECER uma escolha que o backend
+          // recusaria — quem decide continua sendo o backend, então errar para
+          // mais neste lado esconde uma opção, nunca abre uma porta.
+          communityExclusiveOnly={isPrivate || isCondo || community.kind === "neighborhood"}
           onClose={() => setComposerOpen(false)}
           onPosted={() => {
             setComposerOpen(false)

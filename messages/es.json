@@ -2975,7 +2975,13 @@
     "curto.landscapeTitle": "Este video es horizontal",
     "curto.landscapeBody": "El Corto es vertical. Publícalo como Post para mantener el 16:9.",
     "curto.landscapeSwitch": "Publicar como Post",
-    "curto.landscapeKeep": "Seguir en Corto"
+    "curto.landscapeKeep": "Seguir en Corto",
+    "details.destinationLabel": "Dónde aparece esta publicación",
+    "details.destinationGlobal": "Feed general",
+    "details.destinationCommunity": "Solo en la comunidad",
+    "details.destinationGlobalHint": "Aparece en el feed general y en el feed de la comunidad.",
+    "details.destinationCommunityHint": "Queda solo en el feed de la comunidad — no va al feed general ni a tu perfil.",
+    "details.destinationLocked": "Esta comunidad es cerrada: la publicación queda solo aquí dentro."
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",

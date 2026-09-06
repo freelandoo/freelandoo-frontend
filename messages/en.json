@@ -2995,7 +2995,13 @@
     "curto.landscapeTitle": "This video is landscape",
     "curto.landscapeBody": "Shorts are vertical. Publish it as a Post to keep 16:9.",
     "curto.landscapeSwitch": "Publish as Post",
-    "curto.landscapeKeep": "Stay on Short"
+    "curto.landscapeKeep": "Stay on Short",
+    "details.destinationLabel": "Where this post shows up",
+    "details.destinationGlobal": "Main feed",
+    "details.destinationCommunity": "Community only",
+    "details.destinationGlobalHint": "Shows up in the main feed and in the community feed.",
+    "details.destinationCommunityHint": "Stays in the community feed only — it won't go to the main feed or your profile.",
+    "details.destinationLocked": "This community is closed: the post stays in here only."
   },
   "Chamado": {
     "titleService": "Open a service request",

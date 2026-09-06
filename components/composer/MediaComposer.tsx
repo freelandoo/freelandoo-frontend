@@ -129,7 +129,11 @@ function paintOverlay(
   } catch { /* frame não decodável ainda */ }
 }
 
-export function MediaComposer({ open, mode: modeProp, initialProfileId = null, communityId = null, academyId = null, onClose, onPosted }: ComposerProps) {
+export function MediaComposer({
+  open, mode: modeProp, initialProfileId = null, communityId = null,
+  communityName = null, communityExclusiveOnly = false,
+  academyId = null, onClose, onPosted,
+}: ComposerProps) {
   const t = useTranslations("Composer")
   const router = useRouter()
   const { user, status } = useAuth()
@@ -160,6 +164,21 @@ export function MediaComposer({ open, mode: modeProp, initialProfileId = null, c
   // Bee (story): localização livre + até 3 links estilizados.
   const [beeLocation, setBeeLocation] = useState("")
   const [beeLinks, setBeeLinks] = useState<BeeComposerLink[]>([])
+
+  /**
+   * Publicando DE DENTRO de uma comunidade: onde este post aparece.
+   *
+   * "global" é o padrão e significa os DOIS lugares — a comunidade e o feed
+   * geral —, porque publicar dentro do grupo nunca deixou de ser publicar. Quem
+   * quiser guardar o post só para o grupo troca para "community", e aí ele vira
+   * exclusivo (some do /feed, dos bees e do perfil público).
+   *
+   * Onde a política da comunidade já obriga exclusividade (privada, condomínio,
+   * bairro) o estado nasce em "community" e não há escolha na tela.
+   */
+  const [destination, setDestination] = useState<"global" | "community">(
+    communityExclusiveOnly ? "community" : "global"
+  )
 
   const [progress, setProgress] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -752,12 +771,17 @@ export function MediaComposer({ open, mode: modeProp, initialProfileId = null, c
       }
 
       // Feed de comunidade: liga o post recém-criado ao feed do grupo (não-fatal).
+      // `exclusive` é a escolha do último passo: por padrão o post fica nos dois
+      // lugares (grupo + feed geral) e só some do geral se o autor pedir. Onde a
+      // política obriga (privada, condomínio, bairro) o backend ignora este
+      // campo e marca exclusivo de qualquer jeito — a decisão de privacidade não
+      // é do cliente.
       if (communityId) {
         try {
           await fetch(`/api/communities/${communityId}/feed`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ id_portfolio_item: itemId }),
+            body: JSON.stringify({ id_portfolio_item: itemId, exclusive: destination === "community" }),
           })
         } catch { /* noop */ }
       }
@@ -956,6 +980,12 @@ export function MediaComposer({ open, mode: modeProp, initialProfileId = null, c
               caption={caption} setCaption={setCaption}
               beeLocation={beeLocation} setBeeLocation={setBeeLocation}
               beeLinks={beeLinks} setBeeLinks={setBeeLinks}
+              // O destino só existe publicando de dentro de uma comunidade, e
+              // só para post/curto: o bee (story) não tem exclusividade — ele
+              // vive na faixa do grupo, e mudar isso pediria coluna nova.
+              communityName={communityId && mode !== "story" ? communityName : null}
+              communityExclusiveOnly={communityExclusiveOnly}
+              destination={destination} setDestination={setDestination}
               error={error}
             />
           )}
@@ -1377,7 +1407,8 @@ function Swatches({ value, onPick }: { value: string; onPick: (c: string) => voi
 function DetailsStep({
   mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile, ineligible,
   title, setTitle, description, setDescription, caption, setCaption,
-  beeLocation, setBeeLocation, beeLinks, setBeeLinks, error,
+  beeLocation, setBeeLocation, beeLinks, setBeeLinks,
+  communityName, communityExclusiveOnly, destination, setDestination, error,
 }: {
   mode: string; userName: string | null
   profiles: ProfileLite[]; loadingProfiles: boolean
@@ -1388,6 +1419,11 @@ function DetailsStep({
   caption: string; setCaption: (s: string) => void
   beeLocation: string; setBeeLocation: (s: string) => void
   beeLinks: BeeComposerLink[]; setBeeLinks: React.Dispatch<React.SetStateAction<BeeComposerLink[]>>
+  /** Não-nulo só quando se publica de dentro de uma comunidade (e não é bee). */
+  communityName: string | null
+  communityExclusiveOnly: boolean
+  destination: "global" | "community"
+  setDestination: (d: "global" | "community") => void
   error: string | null
 }) {
   const t = useTranslations("Composer")
@@ -1536,6 +1572,57 @@ function DetailsStep({
             <Counter n={description.length} max={MAX_DESC} />
           </div>
         </>
+      )}
+
+      {/* ONDE ESTE POST APARECE — última coisa da última tela, que é onde a
+          pessoa decide o alcance depois de já ter visto o que está publicando.
+
+          O padrão é o FEED GERAL, que significa os dois lugares: publicar
+          dentro do grupo nunca deixou de ser publicar, e esconder o post do
+          resto do site por padrão faria o autor perder alcance sem ter pedido.
+          Quem quiser guardar só para o grupo troca aqui.
+
+          Onde a comunidade obriga exclusividade (privada, condomínio, bairro),
+          isto vira um aviso e não uma escolha: oferecer o feed geral e o
+          backend recusar seria prometer o que não vai acontecer. */}
+      {communityName && (
+        <div className="mt-5">
+          <Label>{t("details.destinationLabel", "Onde este post aparece")}</Label>
+          {communityExclusiveOnly ? (
+            <p className="mt-2 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-xs text-[#0B0B0D]">
+              {t("details.destinationLocked", "Esta comunidade é fechada: o post fica só aqui dentro.")}
+            </p>
+          ) : (
+            <>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {([
+                  ["global", t("details.destinationGlobal", "Feed geral")],
+                  ["community", t("details.destinationCommunity", "Só na comunidade")],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setDestination(key)}
+                    aria-pressed={destination === key}
+                    className={cn(
+                      "border-2 border-[#0B0B0D] px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.1em]",
+                      destination === key
+                        ? "bg-[#F2B705] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D]"
+                        : "bg-[#F1EDE2]/10 text-[#a89f8d]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-[#a89f8d]">
+                {destination === "global"
+                  ? t("details.destinationGlobalHint", "Aparece no feed geral e no feed da comunidade.")
+                  : t("details.destinationCommunityHint", "Fica só no feed da comunidade — não vai para o feed geral nem para o seu perfil.")}
+              </p>
+            </>
+          )}
+        </div>
       )}
 
       {error && (
