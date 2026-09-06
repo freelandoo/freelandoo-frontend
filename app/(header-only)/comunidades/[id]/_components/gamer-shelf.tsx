@@ -146,7 +146,14 @@ export function GamerShelf({
     if (!token) return
     setBusy(provider)
     try {
-      const res = await fetch(`/api/gamer/${provider}/connect`, { headers: { Authorization: `Bearer ${token}` } })
+      // De onde ela saiu, para voltar aqui e não em /account: a pessoa deixa
+      // o site no meio do caminho e reaparecer noutra tela parece que o clique
+      // se perdeu. O caminho é validado no backend (só relativo) e viaja
+      // assinado dentro do state.
+      const back = encodeURIComponent(window.location.pathname)
+      const res = await fetch(`/api/gamer/${provider}/connect?return=${back}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const body = await res.json().catch(() => null)
       if (!res.ok || !body?.url) { toast.error(body?.error || t("connectFail", "Não deu para começar a conexão.")); return }
       // A pessoa SAI do site: quem autoriza é a plataforma, na tela dela.
