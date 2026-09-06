@@ -18,6 +18,7 @@ import { Plus, Trash2 } from "lucide-react"
 import type { PersonData, PersonTag, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineText } from "../editable"
+import { isExternalHref, useSiteHref } from "../site-runtime"
 
 export function PersonSection({
   data,
@@ -57,6 +58,8 @@ export function PersonSection({
     imageHint: string
   }
 }) {
+  const ctaHref = useSiteHref(data.ctaUrl)
+
   const patchTag = useCallback(
     (tagId: string, patch: Partial<PersonTag>) => {
       onChange({ ...data, tags: data.tags.map((t) => (t.id === tagId ? { ...t, ...patch } : t)) })
@@ -234,10 +237,11 @@ export function PersonSection({
                 />
               </>
             ) : (
-              data.ctaText && (
+              data.ctaText &&
+              ctaHref && (
                 <a
-                  href={data.ctaUrl || undefined}
-                  target={data.ctaUrl.startsWith("http") ? "_blank" : undefined}
+                  href={ctaHref}
+                  target={isExternalHref(ctaHref) ? "_blank" : undefined}
                   rel="noopener noreferrer"
                   className="inline-block border-2 border-[#0B0B0D] px-6 py-3 text-xs font-extrabold uppercase tracking-[0.14em]"
                   style={{

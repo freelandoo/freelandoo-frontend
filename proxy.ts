@@ -69,6 +69,33 @@ function platformApexFor(host: string): string | null {
   return PLATFORM_HOSTS.find((apex) => host === apex || host.endsWith(`.${apex}`)) || null
 }
 
+/**
+ * As páginas PRÓPRIAS do site da comunidade, além da home.
+ *
+ * Existe uma lista, e não um repasse do caminho inteiro, porque os dois
+ * endereços tratam o resto do caminho de formas opostas e as duas estão certas:
+ * no subdomínio, `/qualquer-coisa` ainda é o produto (o link interno, o
+ * `/_next`, o `/api`); no domínio próprio, nada é o produto — lá só existe o
+ * site do cliente. Uma lista curta é o que permite acrescentar a página de
+ * agendamento sem mexer em nenhuma das duas regras.
+ *
+ * ⚠️ Página nova do site (um `/precos`, um `/blog`) entra AQUI e na rota
+ * correspondente sob `app/c/[slug]/` e `app/dominio/[host]/`. Faltando aqui,
+ * ela responde 404 no subdomínio e cai na home no domínio próprio.
+ */
+const SITE_PAGES = new Set(["agendar"])
+
+/**
+ * `/agendar` → `/agendar`; `/` → ""; qualquer outra coisa → `null`.
+ * Só manipulação de string, como todo este arquivo.
+ */
+function sitePagePath(pathname: string): string | null {
+  const clean = pathname.replace(/\/+$/, "")
+  if (clean === "" || clean === "/") return ""
+  const first = clean.split("/")[1] || ""
+  return SITE_PAGES.has(first) ? `/${first}` : null
+}
+
 export function proxy(request: NextRequest) {
   const host = cleanHost(request.headers.get("host"))
   if (!host) return NextResponse.next()
@@ -94,11 +121,14 @@ export function proxy(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // O subdomínio serve UM site. A raiz vira a página dele; qualquer outro
-    // caminho segue normal, para que /api, /_next e links internos não quebrem.
-    if (pathname === "/") {
+    // O subdomínio serve UM site: a raiz vira a página dele, e as páginas
+    // próprias do site (hoje só /agendar) viram as rotas correspondentes.
+    // Qualquer outro caminho segue normal, para que /api, /_next e links
+    // internos não quebrem.
+    const subPage = sitePagePath(pathname)
+    if (subPage !== null) {
       const url = request.nextUrl.clone()
-      url.pathname = `/c/${prefix}`
+      url.pathname = `/c/${prefix}${subPage}`
       return NextResponse.rewrite(url)
     }
     return NextResponse.next()
@@ -108,8 +138,11 @@ export function proxy(request: NextRequest) {
   // Host que não é da plataforma só pode ter chegado aqui porque alguém apontou
   // o DNS para nós. Quem descobre de quem é o domínio é a página — aqui só
   // carregamos o Host no caminho, sem consultar nada.
+  // O caminho conhecido é preservado; o desconhecido cai na home do site, como
+  // já caía — no domínio do cliente não existe outra coisa para onde ir, e um
+  // 404 nosso apareceria como se o site dele estivesse quebrado.
   const url = request.nextUrl.clone()
-  url.pathname = `/dominio/${encodeURIComponent(host)}`
+  url.pathname = `/dominio/${encodeURIComponent(host)}${sitePagePath(pathname) || ""}`
   url.search = search
   return NextResponse.rewrite(url)
 }

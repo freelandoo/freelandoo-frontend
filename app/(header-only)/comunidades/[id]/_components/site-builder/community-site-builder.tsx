@@ -26,6 +26,7 @@ import {
   Search,
   Smartphone,
   Tablet,
+  Users,
   Upload,
 } from "lucide-react"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
@@ -46,6 +47,7 @@ import { SiteCanvas } from "./site-canvas"
 import { SiteAddSectionMenu } from "./site-add-section-menu"
 import { SiteColorPalettePicker } from "./site-color-palette-picker"
 import { SiteDomainsPanel } from "./site-domains-panel"
+import { SiteTeamPanel } from "./site-team-panel"
 
 /** Pausa do autosave. Longa o bastante para um parágrafo virar UM save. */
 const AUTOSAVE_MS = 1200
@@ -84,6 +86,7 @@ export function CommunitySiteBuilder({
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [domainsOpen, setDomainsOpen] = useState(false)
+  const [teamOpen, setTeamOpen] = useState(false)
   // Zoom da prancheta. No celular ele vem da pizca de dois dedos; no
   // computador, dos botões. É zoom DA PRANCHETA, não do navegador: o do
   // navegador ampliaria a barra de ferramentas junto e tiraria o site da tela.
@@ -111,6 +114,26 @@ export function CommunitySiteBuilder({
     const token = getToken()
     return token ? { Authorization: `Bearer ${token}` } : {}
   }, [])
+
+  /**
+   * Recarrega SÓ a vitrine (serviços da equipe), depois de mexer na equipe.
+   *
+   * ⚠️ Não toca no `config`: a árvore em edição pode ter mudanças que o
+   * autosave ainda não gravou, e sobrescrevê-la com a versão do servidor
+   * apagaria o que o líder acabou de escrever.
+   */
+  const refreshShowcase = useCallback(() => {
+    fetch(`/api/communities/${idProfile}/site`, { headers: authHeaders() })
+      .then((r) => r.json() as Promise<CommunitySiteResponse & { error?: string }>)
+      .then((data) => {
+        if (data.error) return
+        setServices(Array.isArray(data.services) ? data.services : [])
+        setProviderProfileId(data.provider_profile_id || null)
+      })
+      .catch(() => {
+        /* vitrine desatualizada é menos grave do que derrubar a tela */
+      })
+  }, [idProfile, authHeaders])
 
   // ─── Carga ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -564,6 +587,29 @@ export function CommunitySiteBuilder({
             {statusLabel}
           </span>
 
+          {isLeader && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setTeamOpen((v) => !v)}
+                aria-expanded={teamOpen}
+                className="flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8]"
+              >
+                <Users className="h-4 w-4" style={{ color: accent }} />
+                {t("teamButton", "Equipe")}
+              </button>
+              {teamOpen && (
+                <SiteTeamPanel
+                  idProfile={idProfile}
+                  accent={accent}
+                  onClose={() => setTeamOpen(false)}
+                  onChanged={refreshShowcase}
+                  t={t}
+                />
+              )}
+            </div>
+          )}
+
           {isPublished && (
             <div className="relative">
               <button
@@ -677,6 +723,9 @@ export function CommunitySiteBuilder({
                 providerProfileId ? `/freelancer/${providerProfileId}` : null
               }
               locale={locale}
+              // A agenda viva do cartão de chamada também vale no construtor: o
+              // líder tem que ver o que o visitante vê.
+              communityId={idProfile}
             />
           </div>
         </div>

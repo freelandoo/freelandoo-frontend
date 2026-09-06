@@ -17,7 +17,8 @@
 // O que continua sendo do site é a APRESENTAÇÃO: quantas colunas, e o título e
 // o subtítulo da seção (que vivem na casca, não aqui).
 
-import { Clock, ExternalLink } from "lucide-react"
+import { CalendarDays, Clock } from "lucide-react"
+import { useSiteRuntime } from "../site-runtime"
 import type { ServicesCatalogData, ShowcaseService, SiteColorTheme } from "@/types/community-site"
 
 const COLUMN_CLASS: Record<ServicesCatalogData["columns"], string> = {
@@ -70,12 +71,18 @@ export function ServicesCatalogSection({
   theme: SiteColorTheme
   /** Os serviços ativos do cadastro. Vêm do backend, não do documento do site. */
   services: ShowcaseService[]
-  /** Para onde o botão do card leva — o perfil onde o serviço é contratado. */
+  /**
+   * Destino de reserva quando o site NÃO tem página de agendamento (o perfil do
+   * prestador). Enquanto existir a página própria, é ela que recebe o clique —
+   * ver o comentário do botão, abaixo.
+   */
   providerHref: string | null
   locale: string
   labels: {
     columns: string
     cta: string
+    /** Rótulo quando o clique abre o agendamento do próprio site. */
+    book: string
     empty: string
     emptyHint: string
     hourSuffix: string
@@ -86,6 +93,8 @@ export function ServicesCatalogSection({
   // pela regra única de `section-content.ts` — e ele corta a MOLDURA inteira,
   // com o cabeçalho que a casca desenha por fora. Cortar aqui dentro deixaria
   // na página um título anunciando o vazio.
+
+  const { bookingHref } = useSiteRuntime()
 
   return (
     <>
@@ -133,6 +142,11 @@ export function ServicesCatalogSection({
               labels.hourSuffix,
               labels.minSuffix
             )
+            // O serviço viaja na URL para a página de agendamento abrir já com
+            // ele marcado — quem clicou no card já escolheu.
+            const ctaHref = bookingHref
+              ? `${bookingHref}?servico=${service.id_profile_service}`
+              : providerHref
             return (
               <article
                 key={service.id_profile_service}
@@ -197,25 +211,38 @@ export function ServicesCatalogSection({
                       este site não sabe concluir.
                       Em edição ele é inerte: clicar levaria o líder para fora
                       do construtor no meio da montagem. */}
-                  {providerHref && (
+                  {/* ═══ PARA ONDE O BOTÃO LEVA ═══
+                      Para a página de agendamento DESTE site, com o serviço já
+                      escolhido — é ela que abre a agenda de quem oferece o
+                      serviço e cobra o sinal. O perfil do prestador continua
+                      sendo o destino quando não há página de agendamento.
+
+                      Isto também conserta o card no domínio próprio: ali um
+                      "/freelancer/..." não existe (o proxy devolve a home do
+                      cliente), e o botão levava a lugar nenhum.
+
+                      Em edição ele é inerte: clicar levaria o líder para fora
+                      do construtor no meio da montagem. */}
+                  {ctaHref && (
                     <div className="pt-2">
                       {editing ? (
                         <span
                           className="block border-2 border-[#0B0B0D] px-4 py-2 text-center text-[11px] font-extrabold uppercase tracking-[0.12em]"
                           style={{ background: theme.primary, color: theme.background }}
                         >
-                          {labels.cta}
+                          {bookingHref ? labels.book : labels.cta}
                         </span>
                       ) : (
                         <a
-                          href={providerHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={ctaHref}
+                          {...(bookingHref
+                            ? {}
+                            : { target: "_blank", rel: "noopener noreferrer" })}
                           className="flex items-center justify-center gap-1.5 border-2 border-[#0B0B0D] px-4 py-2 text-center text-[11px] font-extrabold uppercase tracking-[0.12em]"
                           style={{ background: theme.primary, color: theme.background }}
                         >
-                          {labels.cta}
-                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          {bookingHref ? labels.book : labels.cta}
+                          <CalendarDays className="h-3 w-3 shrink-0" />
                         </a>
                       )}
                     </div>

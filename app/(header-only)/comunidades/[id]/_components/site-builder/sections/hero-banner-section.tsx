@@ -18,6 +18,7 @@ import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineText } from "../editable"
 import { useSectionLayout } from "../site-style-context"
+import { isExternalHref, useSiteHref } from "../site-runtime"
 
 const HEIGHTS: Record<HeroData["height"], string> = {
   short: "min-h-[380px] md:min-h-[460px]",
@@ -119,6 +120,18 @@ export function HeroBannerSection({
 
   const current = slides[index]
 
+  // Destino resolvido: o token `agendar` vira o endereço da página de
+  // agendamento DESTE site (que muda conforme por onde ele foi servido); o
+  // resto passa como está. `null` = não desenha link.
+  //
+  // ⚠️ Antes do early return de "sem slide": hook chamado depois de um return
+  // condicional muda a contagem de hooks entre renderizações.
+  const primaryHref = useSiteHref(current?.ctaUrl || "")
+  const secondaryChosen = useSiteHref(current?.ctaSecondaryUrl || "")
+  // Sem link escolhido, o segundo botão leva à seção seguinte — é o "veja o que
+  // vem abaixo" do banner de tela cheia.
+  const secondaryHref = secondaryChosen || (nextAnchor ? `#${nextAnchor}` : null)
+
   if (!current) {
     // Sem slide não há hero — em leitura o canvas já cortou a seção inteira
     // (`section-content.ts`). O que sobra aqui é a porta do construtor para
@@ -134,8 +147,6 @@ export function HeroBannerSection({
       </section>
     )
   }
-
-  const secondaryHref = current.ctaSecondaryUrl || (nextAnchor ? `#${nextAnchor}` : "")
 
   return (
     <section
@@ -233,10 +244,11 @@ export function HeroBannerSection({
                     />
                   </div>
                 ) : (
-                  current.ctaText && (
+                  current.ctaText &&
+                  primaryHref && (
                     <a
-                      href={current.ctaUrl || undefined}
-                      target={current.ctaUrl.startsWith("http") ? "_blank" : undefined}
+                      href={primaryHref}
+                      target={isExternalHref(primaryHref) ? "_blank" : undefined}
                       rel="noopener noreferrer"
                       className="inline-block border-2 border-[#0B0B0D] px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
                       style={{
@@ -277,7 +289,7 @@ export function HeroBannerSection({
                   secondaryHref && (
                     <a
                       href={secondaryHref}
-                      target={secondaryHref.startsWith("http") ? "_blank" : undefined}
+                      target={isExternalHref(secondaryHref) ? "_blank" : undefined}
                       rel="noopener noreferrer"
                       className="inline-block border-2 px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
                       style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}

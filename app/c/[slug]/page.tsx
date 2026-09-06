@@ -114,6 +114,8 @@ export default async function CommunitySitePage({ params }: Props) {
         providerHref={
           site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
         }
+        bookingHref={`/c/${slug}/agendar`}
+        communityId={site.id_profile}
       />
 
       {/* Rodapé de origem: quem chega por um link solto (ou por domínio

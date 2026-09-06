@@ -19,11 +19,21 @@ export function PublicSiteView({
   config,
   services = [],
   providerHref = null,
+  bookingHref = null,
+  communityId = null,
 }: {
   config: CommunitySiteConfig
   services?: ShowcaseService[]
   /** Perfil onde os serviços da vitrine são contratados. */
   providerHref?: string | null
+  /**
+   * Endereço da página de agendamento DESTE site. Quem o monta é a página, que
+   * sabe se estamos em /c/<slug>, num subdomínio ou no domínio do cliente — o
+   * documento guarda só o token `agendar`.
+   */
+  bookingHref?: string | null
+  /** A comunidade, para o cartão de chamada perguntar o próximo horário livre. */
+  communityId?: string | null
 }) {
   const t = useTranslations("CommunitySite")
   const locale = useLocale()
@@ -34,6 +44,8 @@ export function PublicSiteView({
       editing={false}
       services={services}
       providerHref={providerHref}
+      bookingHref={bookingHref}
+      communityId={communityId}
       locale={locale}
       // Em leitura nada muda o documento. As duas funções existem só para
       // satisfazer o contrato do canvas; recebê-las como no-op é mais honesto

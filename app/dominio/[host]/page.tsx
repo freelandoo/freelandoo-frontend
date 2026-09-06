@@ -111,6 +111,10 @@ export default async function CommunityDomainPage({ params }: Props) {
         providerHref={
           site.provider_profile_id ? `/freelancer/${site.provider_profile_id}` : null
         }
+        // Caminho relativo: aqui o navegador está no domínio do cliente, e é
+        // ele que o proxy traduz de volta para /dominio/<host>/agendar.
+        bookingHref="/agendar"
+        communityId={site.id_profile}
       />
       <footer className="border-t-2 border-[#0B0B0D] bg-[#0B0B0D] px-5 py-6 text-center md:px-10">
         {/* Link ABSOLUTO: estamos num domínio que não é o nosso, então um href

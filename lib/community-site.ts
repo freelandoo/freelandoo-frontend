@@ -7,7 +7,11 @@
 // para chamadas do browser, e aqui não há browser.
 
 import { getBackendApiUrl } from "@/lib/backend"
-import type { CommunitySiteConfig, ShowcaseService } from "@/types/community-site"
+import type {
+  CommunitySiteConfig,
+  ShowcaseService,
+  SiteProfessional,
+} from "@/types/community-site"
 
 /**
  * Revalidação do site público.
@@ -33,6 +37,12 @@ export type PublicSite = {
    * SITE_REVALIDATE_SECONDS, sem republicar.
    */
   services?: ShowcaseService[]
+  /**
+   * Quem atende (mig 221): o líder e a equipe promovida. É a lista da página de
+   * agendamento — e, com uma pessoa só, ela some da tela em vez de virar uma
+   * escolha entre um.
+   */
+  professionals?: SiteProfessional[]
   /** Perfil onde os serviços são contratados (destino do botão do card). */
   provider_profile_id?: string | null
 }

@@ -45,6 +45,7 @@ import {
   useSiteChromeInfo,
 } from "./site-chrome"
 import { visibleSections } from "./section-content"
+import { SiteRuntimeProvider } from "./site-runtime"
 import { SectionShell } from "./sections/section-shell"
 import { HeroBannerSection } from "./sections/hero-banner-section"
 import { ServicesCatalogSection } from "./sections/services-catalog-section"
@@ -76,6 +77,8 @@ export function SiteCanvas({
   services = [],
   providerHref = null,
   locale = "pt-BR",
+  bookingHref = null,
+  communityId = null,
 }: {
   config: CommunitySiteConfig
   editing: boolean
@@ -94,6 +97,17 @@ export function SiteCanvas({
   services?: ShowcaseService[]
   providerHref?: string | null
   locale?: string
+  /**
+   * Endereço da página de agendamento DESTE site. Muda conforme por onde o site
+   * foi servido (`/c/<slug>/agendar`, `sub.freelandoo.com.br/agendar`, domínio
+   * próprio) — por isso quem o monta é a página, não o documento.
+   *
+   * `null` no construtor: ali os links são inertes de propósito, e um botão que
+   * levasse o líder para fora no meio da montagem seria uma armadilha.
+   */
+  bookingHref?: string | null
+  /** A comunidade — é dela que o cartão de chamada pergunta o próximo horário. */
+  communityId?: string | null
 }) {
   const { theme, sections } = config
 
@@ -302,6 +316,7 @@ export function SiteCanvas({
   }, [editing, selection, config, sections, onChange, patchLayout, t])
 
   return (
+    <SiteRuntimeProvider bookingHref={bookingHref} communityId={communityId}>
     <SiteStyleProvider
       editing={editing}
       styles={config.textStyles}
@@ -491,6 +506,7 @@ export function SiteCanvas({
       />
     )}
     </SiteStyleProvider>
+    </SiteRuntimeProvider>
   )
 
   function renderSection(section: SiteSection) {
@@ -540,6 +556,7 @@ export function SiteCanvas({
             labels={{
               columns: t("serviceColumns", "Colunas"),
               cta: t("serviceCta", "Quero este"),
+              book: t("serviceBook", "Agendar"),
               empty: t("serviceEmpty", "Nenhum serviço cadastrado ainda."),
               emptyHint: t(
                 "serviceEmptyHint",
@@ -618,7 +635,20 @@ export function SiteCanvas({
               ctaText: t("ctaButtonText", "Texto do botão"),
               ctaUrl: t("ctaButtonUrl", "Link do botão (https://...)"),
               note: t("ctaNote", "Uma observação curta (opcional)"),
+              liveTitle: t("ctaLiveTitle", "Próximo horário disponível"),
+              liveDate: t("ctaLiveDate", "Data"),
+              liveTime: t("ctaLiveTime", "Horário"),
+              liveWho: t("ctaLiveWho", "Profissional"),
+              liveToday: t("ctaLiveToday", "Hoje"),
+              liveTomorrow: t("ctaLiveTomorrow", "Amanhã"),
+              liveNote: t("ctaLiveNote", "Próximo horário: {when} às {time} com {who}"),
+              liveHint: t(
+                "ctaLiveHint",
+                "Data, horário e profissional vêm da agenda de quem atende — não são texto. Quem visita vê o próximo horário livre de verdade."
+              ),
+              liveFallback: t("ctaLiveFallback", "Aparece quando não houver horário livre"),
             }}
+            locale={locale}
           />
         )
 

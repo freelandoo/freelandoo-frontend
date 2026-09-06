@@ -95,6 +95,35 @@ export type ShowcaseService = {
   price_amount: number | null
   duration_minutes: number | null
   image_url: string | null
+  /**
+   * De QUEM é o serviço (mig 221). Serviço pertence a um perfil, e é a agenda
+   * desse perfil que a página de agendamento abre depois da escolha — sem isto
+   * a tela não saberia qual calendário mostrar.
+   */
+  provider_profile_id?: string | null
+}
+
+/**
+ * Quem atende pelo site: o líder e a equipe que ele promoveu (mig 221).
+ *
+ * `id_profile` é o perfil-conta — o alvo do agendamento, porque é nele que
+ * moram a agenda (mig 190) e os serviços cadastrados.
+ */
+export type SiteProfessional = {
+  id_profile: string
+  /**
+   * A PESSOA. Só vem na lista do líder (o painel da equipe), porque é por ela
+   * que se remove alguém — a página pública não precisa de id de usuário e por
+   * isso não o recebe.
+   */
+  id_user?: string
+  name: string
+  username?: string
+  avatar_url: string | null
+  /** Só quando declarada no onboarding; `null` vira o rótulo genérico na tela. */
+  profession: string | null
+  is_leader?: boolean
+  service_count?: number
 }
 
 export type HighlightItem = {
@@ -289,6 +318,7 @@ export type CommunitySiteResponse = {
    * que vai ser publicado.
    */
   services?: ShowcaseService[]
+  professionals?: SiteProfessional[]
   provider_profile_id?: string | null
 }
 

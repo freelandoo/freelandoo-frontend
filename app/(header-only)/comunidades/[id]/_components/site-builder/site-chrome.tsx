@@ -23,6 +23,7 @@ import { Menu, MessageCircle, X } from "lucide-react"
 import type { CommunitySiteConfig, SiteColorTheme, SiteSection } from "@/types/community-site"
 import { sectionHasContent, type SectionContentContext } from "./section-content"
 import { InlineText } from "./editable"
+import { isExternalHref, useSiteHref } from "./site-runtime"
 
 /**
  * WhatsApp digitado → link do wa.me.
@@ -92,7 +93,7 @@ export function useSiteChromeInfo(
 
 /** Link externo abre em aba nova; âncora e caminho interno, não. */
 function linkTarget(url: string) {
-  return url.startsWith("http")
+  return isExternalHref(url)
     ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
     : ({} as const)
 }
@@ -133,6 +134,11 @@ export function SiteNav({
   // barra descolaria do site que o líder está editando.
   const solidNow = editing || solid
   const wa = whatsappHref(info.whatsapp)
+  // O botão de ação da barra é herdado do primeiro banner, então herda também o
+  // token de agendar — e é aqui que ele vira endereço. `null` = sem botão: uma
+  // barra com botão que não leva a lugar nenhum é pior do que uma barra sem
+  // botão.
+  const actionHref = useSiteHref(info.action?.url || "")
 
   return (
     <header
@@ -183,10 +189,10 @@ export function SiteNav({
               {labels.whatsapp}
             </a>
           )}
-          {info.action && (
+          {info.action && actionHref && (
             <a
-              href={info.action.url}
-              {...linkTarget(info.action.url)}
+              href={actionHref}
+              {...linkTarget(actionHref)}
               className="inline-block border-2 px-5 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em]"
               style={{
                 background: theme.primary,
@@ -243,10 +249,10 @@ export function SiteNav({
               {labels.whatsapp}
             </a>
           )}
-          {info.action && (
+          {info.action && actionHref && (
             <a
-              href={info.action.url}
-              {...linkTarget(info.action.url)}
+              href={actionHref}
+              {...linkTarget(actionHref)}
               className="mt-1 block border-2 px-4 py-2 text-center text-[11px] font-extrabold uppercase tracking-[0.12em]"
               style={{
                 background: theme.primary,
