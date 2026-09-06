@@ -15,6 +15,54 @@ export interface ProfileLite {
   is_clan: boolean
   is_active: boolean
   is_user_account?: boolean
+  /** Assinatura ativa daquele perfil (`/profile/user/:id` já devolve). */
+  is_paid?: boolean
+}
+
+// ─── Paywall de publicação (espelho de utils/profilePaywall no backend) ──────
+//
+// A conta publica de graça — ela é a pessoa. Perfil ADICIONAL é produto: só
+// publica com assinatura ativa. Clan tem regra própria (criar um já exige
+// assinatura), então não é cobrado de novo aqui.
+//
+// ⚠️ Quem RECUSA é o backend. Isto aqui existe para não OFERECER o que ele vai
+// negar: sem este espelho, a pessoa grava o vídeo, corta, escolhe destino e só
+// no fim descobre que aquele perfil não publica — que foi exatamente o que
+// aconteceu (o post saiu, sumiu do feed geral e ninguém avisou). Errar para
+// mais deste lado esconde um perfil da lista; nunca abre uma porta.
+export function canProfilePublish(p: ProfileLite): boolean {
+  return p.is_user_account === true || p.is_clan === true || p.is_paid === true
+}
+
+/** Motivo curto para o seletor esmaecer o perfil, ou `null` se ele pode. */
+export function publishPaywallReason(
+  p: ProfileLite,
+  t: (key: string, fallback: string) => string,
+): string | null {
+  if (canProfilePublish(p)) return null
+  return t("profile.needsSubscription", "Precisa de assinatura para publicar")
+}
+
+/**
+ * Qual perfil já vem escolhido. A preferência ANTIGA era "o primeiro que não é
+ * a conta", e é ela que explica o caso relatado: o composer abria com o perfil
+ * adicional e o autor publicava por ele sem reparar. Agora a preferência só
+ * recai sobre quem PODE publicar — abrir já apontando para um perfil
+ * bloqueado deixaria o botão morto sem dizer por quê.
+ */
+export function pickPublishableProfileId(
+  list: ProfileLite[],
+  { currentId, initialProfileId }: { currentId?: string | null; initialProfileId?: string | null } = {},
+): string | null {
+  const usable = list.filter(canProfilePublish)
+  const keep = (id?: string | null) => (id && usable.some((p) => p.id_profile === id) ? id : null)
+  return (
+    keep(currentId) ??
+    keep(initialProfileId) ??
+    usable.find((p) => !p.is_user_account)?.id_profile ??
+    usable[0]?.id_profile ??
+    null
+  )
 }
 
 function initials(name: string | null | undefined): string {

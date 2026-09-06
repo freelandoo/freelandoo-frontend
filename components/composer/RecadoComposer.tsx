@@ -18,7 +18,7 @@ import { Loader2, MessageSquare, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
+import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishPaywallReason, type ProfileLite } from "./ProfileSelect"
 
 /** Teto do texto. Espelha o recado de comunidade da mig 162 (2000 chars). */
 export const RECADO_MAX_CHARS = 2000
@@ -70,12 +70,10 @@ export function RecadoComposer({
           (p: ProfileLite) => p.is_active
         )
         setProfiles(list)
-        setSelectedProfileId((curId) => {
-          if (curId && list.some((p) => p.id_profile === curId)) return curId
-          if (initialProfileId && list.some((p) => p.id_profile === initialProfileId)) return initialProfileId
-          const preferred = list.find((p) => !p.is_user_account) ?? list[0]
-          return preferred?.id_profile ?? null
-        })
+        // A escolha inicial passa pelo paywall (ver pickPublishableProfileId):
+        // preferir um perfil que não pode publicar é como o post do caso
+        // relatado saiu por um perfil bloqueado sem ninguém reparar.
+        setSelectedProfileId((curId) => pickPublishableProfileId(list, { currentId: curId, initialProfileId }))
       })
       .catch(() => {
         if (!cancelled) setProfiles([])
@@ -98,6 +96,11 @@ export function RecadoComposer({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open, submitting, onClose])
+
+  // O perfil escolhido tem que poder publicar; sem isto o botão fica vivo e o
+  // backend recusa com 402 depois que o texto já foi escrito.
+  const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
+  const canPostAsSelected = !selectedProfile || canProfilePublish(selectedProfile)
 
   const publish = useCallback(async () => {
     const text = body.trim()
@@ -209,6 +212,7 @@ export function RecadoComposer({
                 profiles={profiles}
                 selectedId={selectedProfileId}
                 onSelect={setSelectedProfileId}
+                ineligible={(p) => publishPaywallReason(p, t)}
               />
             )}
           </div>
@@ -238,7 +242,7 @@ export function RecadoComposer({
 
           <button
             type="button"
-            disabled={submitting || !body.trim() || !selectedProfileId}
+            disabled={submitting || !body.trim() || !selectedProfileId || !canPostAsSelected}
             onClick={() => void publish()}
             className="flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] shadow-[4px_4px_0_0_#0B0B0D] transition disabled:opacity-50"
           >

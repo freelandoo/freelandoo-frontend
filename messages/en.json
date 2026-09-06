@@ -3003,7 +3003,8 @@
     "details.destinationCommunity": "Community only",
     "details.destinationGlobalHint": "Shows up in the main feed and in the community feed.",
     "details.destinationCommunityHint": "Stays in the community feed only — it won't go to the main feed or your profile.",
-    "details.destinationLocked": "This community is closed: the post stays in here only."
+    "details.destinationLocked": "This community is closed: the post stays in here only.",
+    "profile.needsSubscription": "Needs a subscription to publish"
   },
   "Chamado": {
     "titleService": "Open a service request",

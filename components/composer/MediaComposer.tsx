@@ -36,7 +36,7 @@ import {
   type TextLayer, type TextFontId, type TextBoxStyle, type OverlayLayer,
   type AudioPick,
 } from "@/lib/composer/types"
-import { ProfileSelect, type ProfileLite } from "./ProfileSelect"
+import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishPaywallReason, type ProfileLite } from "./ProfileSelect"
 import { AudioPicker } from "./AudioPicker"
 import { OversizeModal } from "@/components/media/oversize-modal"
 import { nearestPostOrientation } from "@/lib/media/media-validation"
@@ -305,12 +305,10 @@ export function MediaComposer({
         if (cancelled) return
         const list: ProfileLite[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
         setProfiles(list)
-        setSelectedProfileId((curId) => {
-          if (curId && list.some((p) => p.id_profile === curId)) return curId
-          if (initialProfileId && list.some((p) => p.id_profile === initialProfileId)) return initialProfileId
-          const preferred = list.find((p) => !p.is_user_account) ?? list[0]
-          return preferred?.id_profile ?? null
-        })
+        // A escolha inicial passa pelo paywall (ver pickPublishableProfileId):
+        // preferir um perfil que não pode publicar é como o post do caso
+        // relatado saiu por um perfil bloqueado sem ninguém reparar.
+        setSelectedProfileId((curId) => pickPublishableProfileId(list, { currentId: curId, initialProfileId }))
       })
       .catch(() => { if (!cancelled) setProfiles([]) })
       .finally(() => { if (!cancelled) setLoadingProfiles(false) })
@@ -812,7 +810,11 @@ export function MediaComposer({
   // o bee de verdade (tb_story) — chaves novas pq as antigas têm o rótulo velho.
   const modeLabel = mode === "post" ? t("mode.post", "Novo Post") : mode === "bee" ? t("mode.curto", "Novo Curto") : t("mode.beeStory", "Novo Bee")
   const canAdvanceFromCrop = slides.length > 0
-  const canPublish = slides.length > 0 && !!selectedProfileId
+  // O perfil escolhido tem que poder publicar: sem isto o botão fica vivo e o
+  // backend devolve 402 depois de a mídia inteira já ter subido.
+  const selectedProfile = profiles.find((p) => p.id_profile === selectedProfileId) || null
+  const canPublish =
+    slides.length > 0 && !!selectedProfileId && (!selectedProfile || canProfilePublish(selectedProfile))
 
   return (
     <div className="fl-root fixed inset-0 z-[95] flex items-stretch justify-center bg-[#0b0804]">
@@ -975,7 +977,7 @@ export function MediaComposer({
               mode={mode} userName={user?.nome || null}
               profiles={profiles} loadingProfiles={loadingProfiles}
               selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId}
-              ineligible={() => null}
+              ineligible={(p) => publishPaywallReason(p, t)}
               title={title} setTitle={setTitle} description={description} setDescription={setDescription}
               caption={caption} setCaption={setCaption}
               beeLocation={beeLocation} setBeeLocation={setBeeLocation}
