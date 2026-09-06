@@ -108,15 +108,10 @@ export function ContactSection({
     [data, onChange]
   )
 
-  const hasAnything =
-    data.address ||
-    data.mapsUrl ||
-    data.whatsapp ||
-    data.email ||
-    data.hours ||
-    data.socials.length > 0
-
-  if (!editing && !hasAnything) return null
+  // Vazia, esta seção não chega até aqui em leitura: quem corta é o canvas,
+  // pela regra única de `section-content.ts` — e ele corta a MOLDURA inteira,
+  // com o cabeçalho que a casca desenha por fora. Cortar aqui dentro deixaria
+  // na página um título anunciando o vazio.
 
   const wa = whatsappHref(data.whatsapp)
   const mapSrc = mapEmbedSrc(data.address)

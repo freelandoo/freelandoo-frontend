@@ -120,9 +120,9 @@ export function HeroBannerSection({
   const current = slides[index]
 
   if (!current) {
-    // Sem slide não há hero. Em leitura, some por completo (um bloco vazio
-    // ocupando meia tela seria pior do que não existir).
-    if (!editing) return null
+    // Sem slide não há hero — em leitura o canvas já cortou a seção inteira
+    // (`section-content.ts`). O que sobra aqui é a porta do construtor para
+    // criar o primeiro banner.
     return (
       <section
         className={`flex items-center justify-center ${heightClass}`}

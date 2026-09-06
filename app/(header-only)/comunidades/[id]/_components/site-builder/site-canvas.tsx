@@ -44,6 +44,7 @@ import {
   sectionAnchor,
   useSiteChromeInfo,
 } from "./site-chrome"
+import { visibleSections } from "./section-content"
 import { SectionShell } from "./sections/section-shell"
 import { HeroBannerSection } from "./sections/hero-banner-section"
 import { ServicesCatalogSection } from "./sections/services-catalog-section"
@@ -165,11 +166,21 @@ export function SiteCanvas({
     [config, onChange]
   )
 
-  const visible = editing ? sections : sections.filter((s) => s.enabled)
+  // Em leitura, seção sem conteúdo não entra na página — e é a MOLDURA que
+  // fica de fora, não só o miolo. O cabeçalho de três degraus é desenhado pela
+  // casca, por fora da seção: se o corte fosse feito lá dentro, sobraria na
+  // página um "O QUE OFERECEMOS" anunciando o vazio.
+  const contentCtx = useMemo(() => ({ serviceCount: services.length }), [services])
+  const visible = useMemo(
+    () => visibleSections(sections, editing, contentCtx),
+    [sections, editing, contentCtx]
+  )
 
   // O que a barra, o rodapé e o botão flutuante mostram sai DAQUI, do próprio
-  // documento — nenhuma das três peças guarda texto próprio.
-  const chrome = useSiteChromeInfo(config)
+  // documento — nenhuma das três peças guarda texto próprio. O menu recebe o
+  // mesmo contexto: link para uma seção que não vai ser desenhada é link para
+  // lugar nenhum.
+  const chrome = useSiteChromeInfo(config, editing, contentCtx)
 
   /**
    * Faixa de fundo de cada seção.

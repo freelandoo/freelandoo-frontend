@@ -82,10 +82,10 @@ export function ServicesCatalogSection({
     minSuffix: string
   }
 }) {
-  // Site publicado não mostra vitrine vazia: sem serviço cadastrado, a seção
-  // inteira desaparece para o visitante. No construtor ela permanece, com a
-  // instrução — sumir lá esconderia do líder que a seção existe.
-  if (!editing && services.length === 0) return null
+  // Vazia, esta seção não chega até aqui em leitura: quem corta é o canvas,
+  // pela regra única de `section-content.ts` — e ele corta a MOLDURA inteira,
+  // com o cabeçalho que a casca desenha por fora. Cortar aqui dentro deixaria
+  // na página um título anunciando o vazio.
 
   return (
     <>

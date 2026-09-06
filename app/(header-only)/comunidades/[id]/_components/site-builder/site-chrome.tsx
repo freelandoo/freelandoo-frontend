@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Menu, MessageCircle, X } from "lucide-react"
 import type { CommunitySiteConfig, SiteColorTheme, SiteSection } from "@/types/community-site"
+import { sectionHasContent, type SectionContentContext } from "./section-content"
 import { InlineText } from "./editable"
 
 /**
@@ -54,9 +55,19 @@ export type SiteChromeInfo = {
  * três peças (barra, rodapé, botão) leem exatamente a mesma coisa — e uma
  * leitura por peça é como elas começariam a divergir.
  */
-export function useSiteChromeInfo(config: CommunitySiteConfig): SiteChromeInfo {
+export function useSiteChromeInfo(
+  config: CommunitySiteConfig,
+  editing: boolean,
+  ctx: SectionContentContext
+): SiteChromeInfo {
   return useMemo(() => {
-    const enabled = config.sections.filter((s) => s.enabled)
+    // A MESMA régua que a página usa para desenhar. O menu não pode oferecer
+    // uma âncora para a seção que ficou de fora por estar vazia — o clique
+    // rolaria para um ponto que não existe. No construtor a seção vazia ainda
+    // está lá, então ela continua no menu.
+    const enabled = config.sections.filter(
+      (s) => s.enabled && (editing || sectionHasContent(s, ctx))
+    )
     const contact = enabled.find(
       (s): s is Extract<SiteSection, { kind: "contact" }> => s.kind === "contact"
     )
@@ -76,7 +87,7 @@ export function useSiteChromeInfo(config: CommunitySiteConfig): SiteChromeInfo {
           ? { text: firstSlide.ctaText, url: firstSlide.ctaUrl }
           : null,
     }
-  }, [config])
+  }, [config, editing, ctx])
 }
 
 /** Link externo abre em aba nova; âncora e caminho interno, não. */
