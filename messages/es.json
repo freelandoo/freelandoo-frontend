@@ -4196,7 +4196,7 @@
     "loadError": "Error al cargar",
     "boosterEyebrow": "Atajo",
     "boosterTitle": "Booster de Nivel 5",
-    "boosterDesc": "Lleva un perfil directo al nivel 5 — desbloquea crear comunidad y mucho más.",
+    "boosterDesc": "Lleva un perfil directo al nivel 5 — más alcance en los filtros por nivel de la vitrina y del feed.",
     "boosterPriceNote": "Pago único de {price} vía Stripe.",
     "boosterNoProfiles": "No tienes perfiles elegibles (por debajo del nivel 5).",
     "boosterSelectProfile": "Elige el perfil",

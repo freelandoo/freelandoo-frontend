@@ -14,8 +14,6 @@ import { getToken } from "@/lib/auth"
 type Enxame = { id_machine: number; name: string; slug?: string }
 type Eligibility = {
   eligible: boolean
-  required_level: number
-  current_level: number
   create_cap: number
   member_cap: number
   owned: number
@@ -108,9 +106,9 @@ export default function CreateCommunityPage() {
       .finally(() => setLoadingCities(false))
   }, [uf])
 
-  // Condomínio não consome o teto de comunidades nem exige nível 5 (mig 196).
+  // Condomínio não consome o teto de comunidades (mig 196). O gate de nível 5
+  // acabou (2026-09-06): o que ainda segura a criação é o ingresso vendido.
   const capReached = kind !== "condo" && !!elig && elig.owned >= elig.create_cap
-  const levelOk = kind === "condo" || !elig || elig.current_level >= elig.required_level
 
   const submit = async () => {
     const token = getToken()
@@ -378,12 +376,6 @@ export default function CreateCommunityPage() {
           </div>
         ) : (
           <>
-            {!levelOk ? (
-              <p className="mt-6 border-2 border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                {t("needLevel5", "Você precisa de pelo menos um perfil nível 5 para criar uma comunidade.")}
-              </p>
-            ) : null}
-
             <div className="mt-6 space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-[#F5F1E8]/80">
@@ -477,7 +469,7 @@ export default function CreateCommunityPage() {
               ) : (
                 <button
                   type="button"
-                  disabled={submitting || !levelOk}
+                  disabled={submitting}
                   onClick={submit}
                   className="inline-flex items-center gap-2 bg-[#F2B705] px-6 py-2.5 text-sm font-bold text-[#1A1505] disabled:opacity-60"
                 >

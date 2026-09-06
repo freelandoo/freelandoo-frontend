@@ -345,7 +345,7 @@ function LojaPolensContent() {
                 {t("boosterTitle", "Booster de Nível 5")}
               </h2>
               <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-[#C9C2B6]">
-                {t("boosterDesc", "Leve um perfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.")}
+                {t("boosterDesc", "Leve um perfil direto ao nível 5 — mais alcance nos filtros por nível da vitrine e do feed.")}
               </p>
               <p className="mt-3 text-xs text-[#9A938A]">
                 {t("boosterPriceNote", "Pagamento único de {price} via Stripe.").replace("{price}", fmtBRL(1000, locale))}

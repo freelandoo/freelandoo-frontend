@@ -8,10 +8,13 @@ const dir = path.join(__dirname, "..", "messages")
 const POLENS = {
   boosterEyebrow: ["Atalho", "Shortcut", "Atajo"],
   boosterTitle: ["Booster de Nível 5", "Level 5 Booster", "Booster de Nivel 5"],
+  // Reescrita em 2026-09-06 (fim do gate de nível 5 na comunidade): o valor que
+  // vale no dicionário é o de scripts/i18n-community-no-level-merge.js — este
+  // aqui é fill-if-absent e não sobrescreve nada.
   boosterDesc: [
-    "Leve um perfil direto ao nível 5 — desbloqueia criar comunidade e muito mais.",
-    "Take a sub-profile straight to level 5 — unlocks creating a community and much more.",
-    "Lleva un perfil directo al nivel 5 — desbloquea crear comunidad y mucho más.",
+    "Leve um perfil direto ao nível 5 — mais alcance nos filtros por nível da vitrine e do feed.",
+    "Take a profile straight to level 5 — more reach in the level filters of the showcase and the feed.",
+    "Lleva un perfil directo al nivel 5 — más alcance en los filtros por nivel de la vitrina y del feed.",
   ],
   boosterPriceNote: [
     "Pagamento único de {price} via Stripe.",
