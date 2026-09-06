@@ -58,6 +58,39 @@ const KEYS = {
       "No platform available here yet.",
       "Ninguna plataforma disponible por aquí todavía.",
     ],
+    // A chamada da aba vazia. Sem ela, quem chega sem nada conectado lê duas
+    // caixas cinzas e conclui que a página quebrou.
+    introTitle: ["Sua estante", "Your shelf", "Tu estante"],
+    intro: [
+      "Conecte uma plataforma e seus jogos, horas e conquistas entram aqui sozinhos, sem cadastrar nada na mão. Depois é só digitar o @ de alguém para ver o que vocês jogam em comum.",
+      "Connect a platform and your games, hours and achievements land here on their own, with nothing to fill in by hand. Then just type someone's @ to see what you both play.",
+      "Conecta una plataforma y tus juegos, horas y logros entran aquí solos, sin cargar nada a mano. Después solo escribe el @ de alguien para ver qué juegan en común.",
+    ],
+    // Estado de cada plataforma na grade. Elas aparecem TODAS, sempre: a que
+    // não dá para conectar entra apagada e com o motivo escrito.
+    statusPlanned: ["Em breve", "Coming soon", "Pronto"],
+    statusUnconfigured: ["Desligada", "Off", "Apagada"],
+    statusUnavailable: ["Não dá", "Not possible", "No se puede"],
+    steamUnconfigured: [
+      "Ainda não ligada nesta instalação",
+      "Not switched on in this install yet",
+      "Todavía no activada en esta instalación",
+    ],
+    xboxReason: [
+      "A API aberta é paga e não informa horas jogadas",
+      "The open API is paid and does not report played hours",
+      "La API abierta es de pago y no informa horas jugadas",
+    ],
+    playstationReason: [
+      "A Sony não abre uma API pública",
+      "Sony does not open a public API",
+      "Sony no abre una API pública",
+    ],
+    nintendoReason: [
+      "A Nintendo não abre uma API pública",
+      "Nintendo does not open a public API",
+      "Nintendo no abre una API pública",
+    ],
     // Estante
     shelfLocked: [
       "Esta pessoa não deixa a estante à mostra.",

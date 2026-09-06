@@ -6003,6 +6003,15 @@
     "compareLocked": "Esta persona no muestra su estante.",
     "compareNone": "Ustedes no tienen ningún juego en común todavía.",
     "compareSummary": "{n} en común · jugaste más en {mine}, {who} en {theirs}",
-    "compareYou": "Tú"
+    "compareYou": "Tú",
+    "introTitle": "Tu estante",
+    "intro": "Conecta una plataforma y tus juegos, horas y logros entran aquí solos, sin cargar nada a mano. Después solo escribe el @ de alguien para ver qué juegan en común.",
+    "statusPlanned": "Pronto",
+    "statusUnconfigured": "Apagada",
+    "statusUnavailable": "No se puede",
+    "steamUnconfigured": "Todavía no activada en esta instalación",
+    "xboxReason": "La API abierta es de pago y no informa horas jugadas",
+    "playstationReason": "Sony no abre una API pública",
+    "nintendoReason": "Nintendo no abre una API pública"
   }
 }

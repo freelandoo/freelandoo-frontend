@@ -41,7 +41,15 @@ type Account = {
   sync_error: string | null
   last_sync_at: string | null
 }
-type Provider = { provider: string; label: string; capabilities: Caps; account: Account | null }
+type Provider = {
+  provider: string; label: string; capabilities: Caps
+  /** `false` = a instalação não tem credencial: a plataforma aparece, apagada. */
+  available: boolean
+  status: "ready" | "unconfigured"
+  account: Account | null
+}
+/** Plataforma sem adaptador, e o motivo. Ver gameProvider/index.js. */
+type Roadmap = { provider: string; label: string; status: "planned" | "unavailable"; reason: string }
 type Game = {
   id_game: string
   name: string
@@ -87,6 +95,7 @@ export function GamerShelf({
 }) {
   const t = useTranslations("Gamer")
   const [providers, setProviders] = useState<Provider[]>([])
+  const [roadmap, setRoadmap] = useState<Roadmap[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [total, setTotal] = useState(0)
   const [totalMinutes, setTotalMinutes] = useState(0)
@@ -123,7 +132,8 @@ export function GamerShelf({
           // lista de provedores falhar.
           setProviders((prev) =>
             prev.length ? prev : shelf.accounts.map((a: Account) => ({
-              provider: a.provider, label: a.provider, capabilities: {
+              provider: a.provider, label: a.provider, available: true, status: "ready" as const,
+              capabilities: {
                 library: true, playtime: true, achievements: true, presence: false, campaign: false,
               }, account: a,
             }))
@@ -133,6 +143,7 @@ export function GamerShelf({
       if (provRes) {
         const prov = await provRes.json().catch(() => null)
         if (provRes.ok && Array.isArray(prov?.providers)) setProviders(prov.providers)
+        if (provRes.ok && Array.isArray(prov?.roadmap)) setRoadmap(prov.roadmap)
       }
     } finally {
       setLoading(false)
@@ -215,6 +226,30 @@ export function GamerShelf({
 
   const connected = providers.filter((p) => p.account)
   const notConnected = providers.filter((p) => !p.account)
+  // A grade de plataformas é a MESMA lista, sempre: o que muda é o estado de
+  // cada uma. Era filtrar as indisponíveis que deixava a aba muda.
+  type GridItem = { key: string; label: string; state: "connect" | "unconfigured" | "planned" | "unavailable"; note: string }
+  const grid: GridItem[] = [
+    ...notConnected.map((p) => ({
+      key: p.provider,
+      label: p.label,
+      state: (p.available ? "connect" : "unconfigured") as GridItem["state"],
+      note: p.available
+        ? t("connectHint", "Traz seus jogos, horas e conquistas automaticamente")
+        : t("steamUnconfigured", "Ainda não ligada nesta instalação"),
+    })),
+    ...roadmap.map((r) => ({
+      key: r.provider,
+      label: r.label,
+      state: r.status as GridItem["state"],
+      note:
+        r.reason === "xboxReason"
+          ? t("xboxReason", "A API aberta é paga e não informa horas jogadas")
+          : r.reason === "playstationReason"
+            ? t("playstationReason", "A Sony não abre uma API pública")
+            : t("nintendoReason", "A Nintendo não abre uma API pública"),
+    })),
+  ]
 
   return (
     <div className="space-y-6">
@@ -276,30 +311,62 @@ export function GamerShelf({
             )
           })}
 
-          {notConnected.map((p) => (
-            <button key={p.provider} type="button" onClick={() => connect(p.provider)} disabled={busy === p.provider}
-              className="flex w-full items-center gap-3 border-2 border-dashed border-[#F5F1E8]/25 bg-[#15120E] p-4 text-left disabled:opacity-50">
-              <Link2 className="h-5 w-5" style={{ color: accent }} />
-              <div className="min-w-0 flex-1">
-                <p className="fl-display text-base leading-tight text-[#F5F1E8]">
-                  {t("connectCta", "Conectar {platform}").replace("{platform}", p.label)}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                  {t("connectHint", "Traz seus jogos, horas e conquistas automaticamente")}
+          {/* A CHAMADA. Sem ela, quem chega numa aba sem nada conectado lê duas
+              caixas cinzas e conclui que a página quebrou — foi exatamente o
+              que aconteceu. Ela só aparece enquanto não há estante: depois, o
+              lugar é dos jogos. */}
+          {connected.length === 0 && (
+            <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-5">
+              <div className="flex items-center gap-2">
+                <span className="block h-5 w-1.5" style={{ background: accent }} aria-hidden />
+                <p className="fl-display text-2xl leading-none text-[#F5F1E8]">
+                  {t("introTitle", "Sua estante")}
                 </p>
               </div>
-              {busy === p.provider && <Loader2 className="h-4 w-4 animate-spin" style={{ color: accent }} />}
-            </button>
-          ))}
-
-          {/* Nenhuma plataforma disponível = a instalação não tem credencial
-              configurada. Dizer isso é melhor do que uma tela vazia que parece
-              defeito. */}
-          {providers.length === 0 && (
-            <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-4 text-xs text-[#9A938A]">
-              {t("noProviders", "Nenhuma plataforma disponível por aqui ainda.")}
-            </p>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#F5F1E8]/80">
+                {t("intro", "Conecte uma plataforma e seus jogos, horas e conquistas entram aqui sozinhos, sem cadastrar nada na mão. Depois é só digitar o @ de alguém para ver o que vocês jogam em comum.")}
+              </p>
+            </div>
           )}
+
+          {/* A GRADE APARECE INTEIRA, sempre. Plataforma que não dá para
+              conectar entra APAGADA e com o motivo escrito — sumir da tela ela
+              só viraria a pergunta "cadê o PlayStation?", que se repete a cada
+              pessoa nova. */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {grid.map((item) =>
+              item.state === "connect" ? (
+                <button key={item.key} type="button" onClick={() => connect(item.key)} disabled={busy === item.key}
+                  className="flex items-center gap-3 border-2 bg-[#15120E] p-4 text-left transition-colors hover:bg-[#1D1810] disabled:opacity-50"
+                  style={{ borderColor: accent }}>
+                  <Link2 className="h-5 w-5 shrink-0" style={{ color: accent }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="fl-display text-base leading-tight text-[#F5F1E8]">
+                      {t("connectCta", "Conectar {platform}").replace("{platform}", item.label)}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{item.note}</p>
+                  </div>
+                  {busy === item.key && <Loader2 className="h-4 w-4 animate-spin" style={{ color: accent }} />}
+                </button>
+              ) : (
+                <div key={item.key} aria-disabled
+                  className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E]/60 p-4 opacity-60">
+                  <Gamepad2 className="h-5 w-5 shrink-0 text-[#9A938A]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="fl-display text-base leading-tight text-[#F5F1E8]/70">{item.label}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{item.note}</p>
+                  </div>
+                  <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                    {item.state === "planned"
+                      ? t("statusPlanned", "Em breve")
+                      : item.state === "unconfigured"
+                        ? t("statusUnconfigured", "Desligada")
+                        : t("statusUnavailable", "Não dá")}
+                  </span>
+                </div>
+              )
+            )}
+          </div>
         </div>
       )}
 
@@ -309,11 +376,15 @@ export function GamerShelf({
           {t("shelfLocked", "Esta pessoa não deixa a estante à mostra.")}
         </p>
       ) : games.length === 0 ? (
-        <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-center text-sm text-[#9A938A]">
-          {isOwner
-            ? t("shelfEmptyOwn", "Conecte uma plataforma e seus jogos aparecem aqui.")
-            : t("shelfEmpty", "Nenhum jogo por aqui ainda.")}
-        </p>
+        // Para o DONO, a chamada e a grade acima já dizem o que fazer: repetir
+        // "conecte uma plataforma" numa terceira caixa foi o que fez a aba
+        // parecer um amontoado de avisos. Quem visita, esse sim, precisa de uma
+        // linha — senão a aba abre em branco.
+        isOwner ? null : (
+          <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-center text-sm text-[#9A938A]">
+            {t("shelfEmpty", "Nenhum jogo por aqui ainda.")}
+          </p>
+        )
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">

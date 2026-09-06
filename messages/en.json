@@ -6023,6 +6023,15 @@
     "compareLocked": "This person keeps their shelf private.",
     "compareNone": "You two do not share any game yet.",
     "compareSummary": "{n} in common · you played more in {mine}, {who} in {theirs}",
-    "compareYou": "You"
+    "compareYou": "You",
+    "introTitle": "Your shelf",
+    "intro": "Connect a platform and your games, hours and achievements land here on their own, with nothing to fill in by hand. Then just type someone's @ to see what you both play.",
+    "statusPlanned": "Coming soon",
+    "statusUnconfigured": "Off",
+    "statusUnavailable": "Not possible",
+    "steamUnconfigured": "Not switched on in this install yet",
+    "xboxReason": "The open API is paid and does not report played hours",
+    "playstationReason": "Sony does not open a public API",
+    "nintendoReason": "Nintendo does not open a public API"
   }
 }
