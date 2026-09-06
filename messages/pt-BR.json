@@ -2661,7 +2661,10 @@
     "privacyPublicRead": "Qualquer pessoa entra de graça, e os posts daqui também aparecem no feed.",
     "privacyPrivateRead": "Entrar aqui exige assinatura mensal, e o que se publica fica só dentro da comunidade.",
     "goalNoneRead": "Nenhuma temporada em andamento.",
-    "bioEmptyRead": "O líder ainda não escreveu sobre a comunidade."
+    "bioEmptyRead": "O líder ainda não escreveu sobre a comunidade.",
+    "muralPill": "Mural",
+    "muralPillAria": "Mural do líder: recados da comunidade",
+    "muralMembersOnly": "Só quem é da comunidade lê o mural."
   },
   "Careers": {
     "hero.badge": "Carreiras",

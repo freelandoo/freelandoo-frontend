@@ -2674,7 +2674,10 @@
     "privacyPublicRead": "Anyone can join for free, and posts from here also show up in the feed.",
     "privacyPrivateRead": "Joining requires a monthly subscription, and what is posted stays inside the community.",
     "goalNoneRead": "No season running.",
-    "bioEmptyRead": "The leader hasn't written about the community yet."
+    "bioEmptyRead": "The leader hasn't written about the community yet.",
+    "muralPill": "Board",
+    "muralPillAria": "Leader's board: community notices",
+    "muralMembersOnly": "Only community members can read the board."
   },
   "Careers": {
     "hero.badge": "Careers",

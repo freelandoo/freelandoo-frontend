@@ -293,13 +293,17 @@ export default function CommunityDetailPage() {
   const [annPin, setAnnPin] = useState(false)
   const [postingAnn, setPostingAnn] = useState(false)
 
-  // Painel do botão "Perfil" (o pill azul atrás da foto). O que a comunidade É
-  // — enxame, privacidade, temporada e o texto do líder — mora aqui dentro, e
-  // não mais em quatro blocos empilhados no meio da página: quem visita lia
-  // quatro caixas de configuração antes de chegar no feed, e três delas nem
-  // apareciam para ele. Agora todo mundo abre o mesmo painel; o que muda é que
-  // o líder EDITA e o visitante LÊ.
-  const [profilePanelOpen, setProfilePanelOpen] = useState(false)
+  // Qual painel dos botões retráteis está aberto — UM POR VEZ, como os próprios
+  // pills. O que a comunidade É (perfil: enxame, privacidade, temporada e o
+  // texto do líder) e o que ela ANUNCIA (o mural) saíram dos blocos empilhados
+  // no meio da página: quem visita lia caixas de configuração antes de chegar
+  // no feed, e a maioria delas nem aparecia para ele. Agora todo mundo abre os
+  // mesmos painéis; o que muda é que o líder EDITA e o visitante LÊ.
+  //
+  // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
+  // são a mesma decisão, e separá-los deixaria um botão sem painel.
+  type CommunityPanel = "profile" | "mural"
+  const [panel, setPanel] = useState<CommunityPanel | null>(null)
 
   const currentUserId = getStoredUser()?.id_user ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
@@ -373,13 +377,17 @@ export default function CommunityDetailPage() {
   const feedLocked = isPrivate && !isMember
   const monthlyCents = Number(community?.monthly_cents || 0)
 
-  // A pilha atrás da foto. Um botão só por enquanto — e é de propósito que ele
-  // NÃO seja um bloco na página: o painel é o mesmo para quem lê e para quem
-  // edita, então não há duas telas dizendo o que a comunidade é.
+  // A pilha atrás da foto — Perfil (azul) e, embaixo dele, Mural (laranja). É de
+  // propósito que nenhum dos dois seja um bloco na página: o painel é o mesmo
+  // para quem lê e para quem edita, então não há duas telas dizendo o que a
+  // comunidade é nem dois lugares mostrando o mesmo recado.
   //
-  // A cor é FIXA (azul) e não a `accent` da comunidade: o accent é editável
-  // pelo líder e pode cair justamente no tom do botão, que sumiria dentro do
-  // próprio card. O pill é peça de chrome, não conteúdo pintável.
+  // Vale para TODA comunidade — comum, condomínio, bairro, pet, carro e games
+  // usam esta mesma casca, então a pilha nasce igual em todas por construção.
+  //
+  // A cor é FIXA (azul e laranja) e não a `accent` da comunidade: o accent é
+  // editável pelo líder e pode cair justamente no tom do botão, que sumiria
+  // dentro do próprio card. O pill é peça de chrome, não conteúdo pintável.
   const communityPills: PillSpec[] = useMemo(
     () => [
       {
@@ -389,11 +397,21 @@ export default function CommunityDetailPage() {
         ariaLabel: t("profilePillAria", "Perfil da comunidade: enxame, privacidade, temporada e sobre"),
         bg: "#1D4ED8",
         bgHover: "#1E3A8A",
-        onOpen: () => setProfilePanelOpen((v) => !v),
-        active: profilePanelOpen,
+        onOpen: () => setPanel((p) => (p === "profile" ? null : "profile")),
+        active: panel === "profile",
+      },
+      {
+        key: "mural",
+        icon: Megaphone,
+        label: t("muralPill", "Mural"),
+        ariaLabel: t("muralPillAria", "Mural do líder: recados da comunidade"),
+        bg: "#C2410C",
+        bgHover: "#9A3412",
+        onOpen: () => setPanel((p) => (p === "mural" ? null : "mural")),
+        active: panel === "mural",
       },
     ],
-    [t, profilePanelOpen]
+    [t, panel]
   )
 
   const ranked = useMemo(
@@ -1069,20 +1087,27 @@ export default function CommunityDetailPage() {
         </div>
       </header>
 
-      {/* PAINEL DO BOTÃO "PERFIL" — o que a comunidade É, num lugar só: enxame,
-          privacidade, temporada e o texto do líder. Vem logo abaixo do
-          headcard porque é o que a pessoa acabou de pedir ao abrir o botão.
+      {/* OS PAINÉIS DOS BOTÕES RETRÁTEIS — "Perfil" (o que a comunidade É:
+          enxame, privacidade, temporada e o texto do líder) e "Mural" (o que
+          ela ANUNCIA). Vêm logo abaixo do headcard porque é o que a pessoa
+          acabou de pedir ao abrir o botão, e a página começa direto no feed.
 
           UM painel para os dois papéis, e não uma tela de configuração ao lado
           de uma tela de leitura: o visitante lê exatamente os mesmos campos que
           o líder edita. Duas telas para a mesma verdade é como uma delas para
-          de contar a mudança da outra. */}
-      {profilePanelOpen && (
+          de contar a mudança da outra.
+
+          A moldura é COMPARTILHADA e só a cor e o título mudam por painel — é o
+          que mantém os dois com a mesma cara conforme a lista de botões
+          crescer. */}
+      {panel && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08] shadow-[6px_6px_0_0_#1D4ED8]">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: `6px 6px 0 0 ${panel === "mural" ? "#C2410C" : "#1D4ED8"}` }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-                <UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}
+                {panel === "mural"
+                  ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
+                  : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
               </span>
               <div className="flex items-center gap-2">
                 {/* O líder abre o painel no modo em que a página está. Se ele
@@ -1095,13 +1120,59 @@ export default function CommunityDetailPage() {
                     <ScrollText className="h-3.5 w-3.5" /> {t("edit", "Editar")}
                   </button>
                 )}
-                <button type="button" onClick={() => setProfilePanelOpen(false)} aria-label={t("panelClose", "Fechar")}
+                <button type="button" onClick={() => setPanel(null)} aria-label={t("panelClose", "Fechar")}
                   className="border-2 border-[#0B0B0D] bg-[#15120E] p-1 text-[#9A938A] transition hover:text-[#F5F1E8]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
+            {/* MURAL — o recado do líder. Continua PRIVADO: só membro lê, só o
+                líder escreve. A recusa é dita em voz alta em vez de o painel
+                abrir vazio — botão que abre o nada parece quebrado. */}
+            {panel === "mural" && (
+              <div className="p-4 md:p-5">
+                {!isMember ? (
+                  <p className="text-sm text-[#9A938A]">{t("muralMembersOnly", "Só quem é da comunidade lê o mural.")}</p>
+                ) : (
+                  <>
+                    {showAsLeaderEdit && (
+                      <div className="mb-3 space-y-2 border-b border-[#F5F1E8]/10 pb-3">
+                        <textarea value={annBody} maxLength={1000} rows={2} onChange={(e) => setAnnBody(e.target.value)} placeholder={t("muralPlaceholder", "Escreva um recado para a comunidade...")}
+                          className="w-full bg-transparent text-sm text-[#F5F1E8] outline-none placeholder:text-[#9A938A]/70" />
+                        <div className="flex items-center gap-3">
+                          <label className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                            <input type="checkbox" checked={annPin} onChange={(e) => setAnnPin(e.target.checked)} /> <Pin className="h-3 w-3" /> {t("muralPin", "Fixar")}
+                          </label>
+                          <button type="button" disabled={postingAnn || !annBody.trim()} onClick={postAnnouncement}
+                            className="ml-auto inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                            {postingAnn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Megaphone className="h-4 w-4" />} {t("muralPost", "Publicar")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {announcements.length === 0 ? (
+                      <p className="text-sm text-[#9A938A]">{t("muralEmpty", "Nenhum recado ainda.")}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {announcements.map((a) => (
+                          <div key={a.id} className="relative border border-[#F5F1E8]/10 bg-[#1D1810] px-4 py-3">
+                            {a.is_pinned && <span className="mb-1 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}><Pin className="h-3 w-3" /> {t("pinned", "Fixado")}</span>}
+                            <p className="whitespace-pre-line text-sm text-[#F5F1E8]/90">{a.body}</p>
+                            <div className="mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">
+                              <span>{a.author_username ? `@${a.author_username}` : ""} · {new Date(a.created_at).toLocaleDateString()}</span>
+                              {showAsLeaderEdit && <button type="button" onClick={() => deleteAnnouncement(a.id)} className="text-[#ff7a6a]"><Trash2 className="h-3.5 w-3.5" /></button>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {panel === "profile" && (
             <div className="space-y-4 p-4 md:p-5">
               {/* ENXAME (mig 219). É este campo que substitui o formulário de
                   criação: a comunidade comum nasce vazia e o assunto dela é
@@ -1289,6 +1360,7 @@ export default function CommunityDetailPage() {
                 )}
               </Block>
             </div>
+            )}
           </div>
         </section>
       )}
@@ -1433,43 +1505,6 @@ export default function CommunityDetailPage() {
                     className={selectCls} />
                 </label>
               </div>
-            </Block>
-          )}
-
-          {/* Mural — privado: só membros leem; só o líder posta */}
-          {(showAsLeaderEdit || (isMember && announcements.length > 0)) && (
-            <Block title={t("muralTitle", "Mural do líder")} icon={<Megaphone className="h-4 w-4" />} accent={accent}>
-              {showAsLeaderEdit && (
-                <div className="mb-3 space-y-2 border-b border-[#F5F1E8]/10 pb-3">
-                  <textarea value={annBody} maxLength={1000} rows={2} onChange={(e) => setAnnBody(e.target.value)} placeholder={t("muralPlaceholder", "Escreva um recado para a comunidade...")}
-                    className="w-full bg-transparent text-sm text-[#F5F1E8] outline-none placeholder:text-[#9A938A]/70" />
-                  <div className="flex items-center gap-3">
-                    <label className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                      <input type="checkbox" checked={annPin} onChange={(e) => setAnnPin(e.target.checked)} /> <Pin className="h-3 w-3" /> {t("muralPin", "Fixar")}
-                    </label>
-                    <button type="button" disabled={postingAnn || !annBody.trim()} onClick={postAnnouncement}
-                      className="ml-auto inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
-                      {postingAnn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Megaphone className="h-4 w-4" />} {t("muralPost", "Publicar")}
-                    </button>
-                  </div>
-                </div>
-              )}
-              {announcements.length === 0 ? (
-                <p className="text-sm text-[#9A938A]">{t("muralEmpty", "Nenhum recado ainda.")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {announcements.map((a) => (
-                    <div key={a.id} className="relative border border-[#F5F1E8]/10 bg-[#1D1810] px-4 py-3">
-                      {a.is_pinned && <span className="mb-1 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}><Pin className="h-3 w-3" /> {t("pinned", "Fixado")}</span>}
-                      <p className="whitespace-pre-line text-sm text-[#F5F1E8]/90">{a.body}</p>
-                      <div className="mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">
-                        <span>{a.author_username ? `@${a.author_username}` : ""} · {new Date(a.created_at).toLocaleDateString()}</span>
-                        {showAsLeaderEdit && <button type="button" onClick={() => deleteAnnouncement(a.id)} className="text-[#ff7a6a]"><Trash2 className="h-3.5 w-3.5" /></button>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </Block>
           )}
 
