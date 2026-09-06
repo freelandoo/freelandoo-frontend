@@ -4,12 +4,14 @@
 
 import { useEffect, useRef } from "react"
 import {
+  BadgeCheck,
   Image as ImageIcon,
   LayoutPanelTop,
   MapPin,
   MessageSquareQuote,
   ScrollText,
   Store,
+  UserRound,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { SITE_SECTION_KINDS, type SiteSectionKind } from "@/types/community-site"
@@ -19,6 +21,8 @@ const META: Record<SiteSectionKind, { icon: LucideIcon; labelKey: string; fallba
   services_catalog: { icon: Store, labelKey: "sectionServices", fallback: "Catálogo de serviços" },
   about: { icon: ScrollText, labelKey: "sectionAbout", fallback: "Sobre nós" },
   testimonials: { icon: MessageSquareQuote, labelKey: "sectionTestimonials", fallback: "Depoimentos" },
+  cta: { icon: BadgeCheck, labelKey: "sectionCta", fallback: "Chamada" },
+  person: { icon: UserRound, labelKey: "sectionPerson", fallback: "Quem está por trás" },
   gallery: { icon: ImageIcon, labelKey: "sectionGallery", fallback: "Galeria de fotos" },
   contact: { icon: MapPin, labelKey: "sectionContact", fallback: "Contato e localização" },
 }

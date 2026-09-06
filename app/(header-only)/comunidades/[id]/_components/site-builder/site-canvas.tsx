@@ -13,16 +13,18 @@ import type {
   AboutData,
   CommunitySiteConfig,
   ContactData,
+  CtaData,
   GalleryData,
   HeroData,
+  PersonData,
   ServicesCatalogData,
   ShowcaseService,
   SiteSection,
+  SiteSectionKind,
   SiteSectionLayout,
   SiteTextStyle,
   TestimonialsData,
 } from "@/types/community-site"
-import { InlineText } from "./editable"
 import {
   SectionResizeDots,
   SiteStyleProvider,
@@ -35,6 +37,13 @@ import {
 import { SiteSizeToolbar, type SizeRow } from "./site-size-toolbar"
 import { SiteSectionToolbar } from "./site-section-toolbar"
 import { sectionLabel } from "./site-add-section-menu"
+import {
+  SiteFooter,
+  SiteNav,
+  SiteWhatsAppFab,
+  sectionAnchor,
+  useSiteChromeInfo,
+} from "./site-chrome"
 import { SectionShell } from "./sections/section-shell"
 import { HeroBannerSection } from "./sections/hero-banner-section"
 import { ServicesCatalogSection } from "./sections/services-catalog-section"
@@ -42,6 +51,20 @@ import { AboutSection } from "./sections/about-section"
 import { TestimonialsSection } from "./sections/testimonials-section"
 import { GallerySection } from "./sections/gallery-section"
 import { ContactSection } from "./sections/contact-section"
+import { CtaSection } from "./sections/cta-section"
+import { PersonSection } from "./sections/person-section"
+
+/**
+ * Seções que desenham o próprio cabeçalho.
+ *
+ * No banner ele fica sobre a foto; em "quem está por trás", dentro da coluna
+ * de texto ao lado do retrato. Nas duas a casca entra com `hideHeader` — senão
+ * o título apareceria DUAS vezes.
+ */
+const OWN_HEADER: SiteSectionKind[] = ["hero", "person"]
+
+/** Blocos que são um destaque no meio da página abrem centralizados. */
+const CENTERED_HEADER: SiteSectionKind[] = ["testimonials", "cta", "gallery"]
 
 export function SiteCanvas({
   config,
@@ -144,6 +167,46 @@ export function SiteCanvas({
 
   const visible = editing ? sections : sections.filter((s) => s.enabled)
 
+  // O que a barra, o rodapé e o botão flutuante mostram sai DAQUI, do próprio
+  // documento — nenhuma das três peças guarda texto próprio.
+  const chrome = useSiteChromeInfo(config)
+
+  /**
+   * Faixa de fundo de cada seção.
+   *
+   * As seções alternam entre o fundo e a superfície da paleta da comunidade.
+   * Não é enfeite: é o que separa um bloco do outro numa página longa sem
+   * precisar de uma linha divisória em cada emenda. O banner fica de fora —
+   * ele tem foto, e uma faixa por baixo dela não apareceria.
+   */
+  const bandOf = useCallback(
+    (section: SiteSection) => {
+      if (section.kind === "hero") return theme.background
+      const position = visible.filter((s) => s.kind !== "hero").indexOf(section)
+      return position % 2 === 0 ? theme.surface : theme.background
+    },
+    [visible, theme]
+  )
+
+  /**
+   * A barra é `fixed` em leitura, então ela flutua SOBRE o conteúdo. Isso é o
+   * que se quer quando o site abre com o banner de tela cheia — a manchete
+   * ocupa tudo e a barra passa por cima dela.
+   *
+   * Sem banner no topo, porém, a primeira seção nasceria por baixo da barra,
+   * com o título cortado. Aí, e só aí, a página começa mais abaixo.
+   */
+  const needsTopGap = !editing && visible[0]?.kind !== "hero"
+
+  /** Âncora da seção seguinte — destino do 2º botão do banner. */
+  const anchorAfter = useCallback(
+    (section: SiteSection) => {
+      const next = visible[visible.indexOf(section) + 1]
+      return next ? sectionAnchor(next.id) : null
+    },
+    [visible]
+  )
+
   // Linhas do painel de tamanho do que está selecionado. Montadas aqui porque
   // é aqui que se sabe se o alvo é texto (fonte + largura) ou seção (altura +
   // largura da coluna) — o painel em si só desenha botões.
@@ -237,43 +300,32 @@ export function SiteCanvas({
     >
     <div
       className="fl-sharp w-full"
-      style={{ background: theme.background, color: theme.textPrimary }}
+      style={{
+        background: theme.background,
+        color: theme.textPrimary,
+        paddingTop: needsTopGap ? "4.5rem" : undefined,
+      }}
       // Tocar no fundo do site (fora de qualquer caixa) desfaz a seleção. Sem
       // isto a única saída seria o X do painel, e a alça ficaria pendurada numa
       // caixa que a pessoa já esqueceu.
       onPointerDown={editing ? () => setSelection(null) : undefined}
     >
-      {/* Cabeçalho do site: nome + tagline. Fora das seções de propósito —
-          é a identidade do site, não um bloco que se possa remover. */}
-      <header
-        className="border-b-2 border-[#0B0B0D] px-5 py-5 md:px-10"
-        style={{ background: theme.surface }}
-      >
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1">
-          <InlineText
-            editing={editing}
-            value={config.siteName}
-            onChange={(v) => onChange({ ...config, siteName: v })}
-            styleKey="site.name"
-            placeholder={t("siteNamePlaceholder", "Nome do site")}
-            maxLength={120}
-            className="fl-display text-2xl leading-none md:text-3xl"
-            style={{ color: theme.primary }}
-          />
-          {(editing || config.tagline) && (
-            <InlineText
-              editing={editing}
-              value={config.tagline}
-              onChange={(v) => onChange({ ...config, tagline: v })}
-              styleKey="site.tagline"
-              placeholder={t("taglinePlaceholder", "Uma frase que resume a comunidade")}
-              maxLength={240}
-              className="text-[11px] font-extrabold uppercase tracking-[0.16em]"
-              style={{ color: theme.textSecondary }}
-            />
-          )}
-        </div>
-      </header>
+      {/* A barra é a identidade do site — fica fora das seções de propósito,
+          não é um bloco que se possa remover. Ela mostra o nome e o menu, e é
+          nela que o líder edita o nome: a mesma caixa que o visitante lê. */}
+      <SiteNav
+        config={config}
+        info={chrome}
+        theme={theme}
+        editing={editing}
+        onChangeSiteName={(v) => onChange({ ...config, siteName: v })}
+        labels={{
+          openMenu: t("navOpen", "Abrir menu"),
+          closeMenu: t("navClose", "Fechar menu"),
+          whatsapp: t("navWhatsapp", "WhatsApp"),
+          siteName: t("siteNamePlaceholder", "Nome do site"),
+        }}
+      />
 
       {visible.length === 0 && (
         <div className="px-5 py-20 text-center md:px-10">
@@ -290,34 +342,44 @@ export function SiteCanvas({
         const layout: SiteSectionLayout = section.layout || { minHeight: null, maxWidth: null }
         // A altura vai na moldura; a largura da coluna desce pelo contexto até
         // a casca da seção (é ela quem centraliza o conteúdo), junto do escopo.
-        const frameStyle: React.CSSProperties = { minHeight: layout.minHeight ?? undefined }
+        const frameStyle: React.CSSProperties = {
+          minHeight: layout.minHeight ?? undefined,
+          background: bandOf(section),
+        }
         const isResizing = editing && selection?.type === "section" && selection.id === section.id
         const body = renderSection(section)
 
-        // Hero desenha o próprio cabeçalho (manchete gigante sobre a foto), então
-        // não passa pela SectionShell — que existe para padronizar o resto.
-        const content =
-          section.kind === "hero" ? (
-            body
-          ) : (
-            <SectionShell
-              editing={editing}
-              theme={theme}
-              title={section.title}
-              subtitle={section.subtitle}
-              onTitle={(v) => patchSection(section.id, { title: v })}
-              onSubtitle={(v) => patchSection(section.id, { subtitle: v })}
-              titlePlaceholder={t("sectionTitlePlaceholder", "Título da seção")}
-              subtitlePlaceholder={t("sectionSubtitlePlaceholder", "Subtítulo (opcional)")}
-            >
-              {body}
-            </SectionShell>
-          )
+        // Banner e "quem está por trás" desenham o próprio cabeçalho (um sobre
+        // a foto, o outro dentro da coluna de texto), então não passam pela
+        // SectionShell — que existe para padronizar o resto.
+        const content = OWN_HEADER.includes(section.kind) ? (
+          body
+        ) : (
+          <SectionShell
+            editing={editing}
+            theme={theme}
+            title={section.title}
+            subtitle={section.subtitle}
+            onTitle={(v) => patchSection(section.id, { title: v })}
+            onSubtitle={(v) => patchSection(section.id, { subtitle: v })}
+            titlePlaceholder={t("sectionTitlePlaceholder", "Título da seção")}
+            subtitlePlaceholder={t("sectionSubtitlePlaceholder", "Subtítulo (opcional)")}
+            eyebrow={sectionLabel(section.kind, t)}
+            align={CENTERED_HEADER.includes(section.kind) ? "center" : "left"}
+          >
+            {body}
+          </SectionShell>
+        )
 
         if (!editing) {
           return (
             <SiteStyleScope key={section.id} scope={`sec:${section.id}`} layout={layout}>
-              <div style={frameStyle}>{content}</div>
+              {/* A âncora vive na moldura, que é o topo real da seção. O
+                  `scroll-mt` paga a altura da barra fixa: sem ele o link do
+                  menu para justo com o título escondido atrás dela. */}
+              <div id={sectionAnchor(section.id)} className="scroll-mt-20" style={frameStyle}>
+                {content}
+              </div>
             </SiteStyleScope>
           )
         }
@@ -326,7 +388,8 @@ export function SiteCanvas({
           <SiteStyleScope key={section.id} scope={`sec:${section.id}`} layout={layout}>
           <div
             data-section-id={section.id}
-            className="relative"
+            id={sectionAnchor(section.id)}
+            className="relative scroll-mt-20"
             style={{
               ...frameStyle,
               outline: isResizing
@@ -378,7 +441,32 @@ export function SiteCanvas({
           </SiteStyleScope>
         )
       })}
+
+      {/* Rodapé: fecha a página e repete o menu para quem chegou ao fim sem
+          voltar ao topo. Como a barra, não é uma seção — não some, não
+          reordena, e o texto dele já existe no documento. */}
+      <SiteFooter
+        config={config}
+        info={chrome}
+        theme={theme}
+        editing={editing}
+        onChangeTagline={(v) => onChange({ ...config, tagline: v })}
+        labels={{
+          rights: t("footerRights", "Todos os direitos reservados."),
+          tagline: t("taglinePlaceholder", "Uma frase que resume a comunidade"),
+        }}
+      />
     </div>
+
+    {/* Só em leitura: no construtor o botão flutuante cobriria as ferramentas
+        do líder num canto que ele precisa alcançar. */}
+    {!editing && (
+      <SiteWhatsAppFab
+        info={chrome}
+        theme={theme}
+        label={t("navWhatsapp", "WhatsApp")}
+      />
+    )}
 
     {sizePanel && (
       <SiteSizeToolbar
@@ -407,11 +495,15 @@ export function SiteCanvas({
             editing={editing}
             theme={theme}
             onUpload={onUpload}
+            nextAnchor={anchorAfter(section)}
             labels={{
               headline: t("heroHeadline", "Manchete do banner"),
               subheadline: t("heroSubheadline", "Uma linha de apoio"),
               ctaText: t("heroCtaText", "Texto do botão"),
               ctaUrl: t("heroCtaUrl", "Link do botão (https://...)"),
+              ctaSecondaryText: t("heroCtaSecondaryText", "Texto do 2º botão"),
+              ctaSecondaryUrl: t("heroCtaSecondaryUrl", "Link do 2º botão (vazio = seção abaixo)"),
+              scrollHint: t("heroScrollHint", "Ver o que vem abaixo"),
               addSlide: t("heroAddSlide", "Novo banner"),
               removeSlide: t("heroRemoveSlide", "Remover banner"),
               changeImage: t("changeImage", "Trocar imagem"),
@@ -464,6 +556,7 @@ export function SiteCanvas({
               removeHighlight: t("aboutRemoveHighlight", "Remover destaque"),
               addPhoto: t("aboutAddPhoto", "Nova foto"),
               removePhoto: t("removePhoto", "Remover foto"),
+              icon: t("aboutHighlightIcon", "Ícone"),
               changeImage: t("changeImage", "Trocar imagem"),
               framing: t("framing", "Enquadramento"),
               removeImage: t("removeImage", "Remover imagem"),
@@ -480,17 +573,70 @@ export function SiteCanvas({
             editing={editing}
             theme={theme}
             onUpload={onUpload}
+            locale={locale}
             labels={{
               name: t("testimonialName", "Nome"),
               role: t("testimonialRole", "Quem é (opcional)"),
               text: t("testimonialText", "O que essa pessoa disse"),
+              date: t("testimonialDate", "Data"),
               addItem: t("testimonialAdd", "Novo depoimento"),
               removeItem: t("testimonialRemove", "Remover depoimento"),
               changeImage: t("changeImage", "Trocar imagem"),
               framing: t("framing", "Enquadramento"),
               removeImage: t("removeImage", "Remover imagem"),
+              imageHint: t("imageHint", "Clique para enviar uma imagem"),
               ratingLabel: t("testimonialRating", "Nota"),
               empty: t("testimonialEmpty", "Nenhum depoimento ainda."),
+            }}
+          />
+        )
+
+      case "cta":
+        return (
+          <CtaSection
+            data={section.data}
+            onChange={(d: CtaData) => setData(d)}
+            editing={editing}
+            theme={theme}
+            labels={{
+              badge: t("ctaBadge", "Um selo curto (ex.: atendimento com hora marcada)"),
+              itemLabel: t("ctaItemLabel", "Rótulo"),
+              itemValue: t("ctaItemValue", "Valor"),
+              addItem: t("ctaAddItem", "Nova informação"),
+              removeItem: t("ctaRemoveItem", "Remover informação"),
+              ctaText: t("ctaButtonText", "Texto do botão"),
+              ctaUrl: t("ctaButtonUrl", "Link do botão (https://...)"),
+              note: t("ctaNote", "Uma observação curta (opcional)"),
+            }}
+          />
+        )
+
+      case "person":
+        return (
+          <PersonSection
+            data={section.data}
+            onChange={(d: PersonData) => setData(d)}
+            editing={editing}
+            theme={theme}
+            onUpload={onUpload}
+            title={section.title}
+            subtitle={section.subtitle}
+            onTitle={(v) => patchSection(section.id, { title: v })}
+            onSubtitle={(v) => patchSection(section.id, { subtitle: v })}
+            eyebrow={sectionLabel(section.kind, t)}
+            labels={{
+              title: t("sectionTitlePlaceholder", "Título da seção"),
+              subtitle: t("sectionSubtitlePlaceholder", "Subtítulo (opcional)"),
+              body: t("personBody", "Quem é essa pessoa e o que ela faz."),
+              tag: t("personTag", "Selo"),
+              addTag: t("personAddTag", "Novo selo"),
+              removeTag: t("personRemoveTag", "Remover selo"),
+              ctaText: t("personCtaText", "Texto do botão"),
+              ctaUrl: t("personCtaUrl", "Link do botão (https://...)"),
+              changeImage: t("changeImage", "Trocar imagem"),
+              framing: t("framing", "Enquadramento"),
+              removeImage: t("removeImage", "Remover imagem"),
+              imageHint: t("imageHint", "Clique para enviar uma imagem"),
             }}
           />
         )
@@ -530,6 +676,11 @@ export function SiteCanvas({
               whatsapp: t("contactWhatsapp", "WhatsApp com DDD"),
               email: t("contactEmail", "E-mail de contato"),
               hours: t("contactHours", "Horário de funcionamento"),
+              addressLabel: t("contactAddressLabel", "Endereço"),
+              whatsappLabel: t("contactWhatsappLabel", "WhatsApp"),
+              emailLabel: t("contactEmailLabel", "E-mail"),
+              hoursLabel: t("contactHoursLabel", "Horários"),
+              mapTitle: t("contactMapTitle", "Mapa do endereço"),
               socialLabel: t("contactSocialLabel", "Rede"),
               socialUrl: t("contactSocialUrl", "Link do perfil"),
               addSocial: t("contactAddSocial", "Nova rede"),

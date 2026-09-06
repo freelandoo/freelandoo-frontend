@@ -1,22 +1,30 @@
 "use client"
 
-// Seção Hero: um ou mais banners com manchete, subtítulo e CTA.
+// Seção Hero: um ou mais banners com manchete, subtítulo e dois botões.
 //
 // O carrossel só gira em modo LEITURA. Editando, o slide fica parado no que o
 // líder escolheu — um banner que troca sozinho enquanto ele digita tiraria o
 // texto de baixo do cursor.
+//
+// ═══ O SEGUNDO BOTÃO NÃO PRECISA DE LINK ═══
+//
+// Sem URL, ele ancora na PRÓXIMA seção do site. É o destino óbvio ("conheça o
+// espaço" leva ao bloco de baixo) e poupa o líder de descobrir e colar uma
+// âncora que ele nem sabe que existe. Com URL, a escolha dele vence.
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
 import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineText } from "../editable"
 import { useSectionLayout } from "../site-style-context"
 
 const HEIGHTS: Record<HeroData["height"], string> = {
-  short: "min-h-[320px] md:min-h-[380px]",
-  medium: "min-h-[420px] md:min-h-[520px]",
-  tall: "min-h-[520px] md:min-h-[660px]",
+  short: "min-h-[380px] md:min-h-[460px]",
+  medium: "min-h-[520px] md:min-h-[640px]",
+  // O banner ocupa a tela inteira: é o enquadramento da composição de
+  // referência, em que a manchete é a primeira e única coisa visível.
+  tall: "min-h-[86vh] md:min-h-screen",
 }
 
 const AUTOPLAY_MS = 6000
@@ -27,6 +35,7 @@ export function HeroBannerSection({
   editing,
   theme,
   onUpload,
+  nextAnchor,
   labels,
 }: {
   data: HeroData
@@ -34,11 +43,15 @@ export function HeroBannerSection({
   editing: boolean
   theme: SiteColorTheme
   onUpload: (file: File) => Promise<string | null>
+  /** Âncora da seção seguinte — destino do 2º botão e do indicador de rolagem. */
+  nextAnchor: string | null
   labels: {
     headline: string
     subheadline: string
     ctaText: string
     ctaUrl: string
+    ctaSecondaryText: string
+    ctaSecondaryUrl: string
     addSlide: string
     removeSlide: string
     changeImage: string
@@ -47,6 +60,7 @@ export function HeroBannerSection({
     imageHint: string
     prev: string
     next: string
+    scrollHint: string
   }
 }) {
   const slides = data.slides
@@ -89,6 +103,8 @@ export function HeroBannerSection({
       subheadline: "",
       ctaText: "",
       ctaUrl: "",
+      ctaSecondaryText: "",
+      ctaSecondaryUrl: "",
     }
     onChange({ ...data, slides: [...data.slides, slide] })
     setIndex(data.slides.length)
@@ -119,9 +135,11 @@ export function HeroBannerSection({
     )
   }
 
+  const secondaryHref = current.ctaSecondaryUrl || (nextAnchor ? `#${nextAnchor}` : "")
+
   return (
     <section
-      className={`relative w-full overflow-hidden ${heightClass}`}
+      className={`relative flex w-full items-center overflow-hidden ${heightClass}`}
       style={heightStyle}
     >
       <div className="absolute inset-0">
@@ -143,20 +161,27 @@ export function HeroBannerSection({
 
       {/* Véu: a manchete precisa passar por cima de qualquer foto, inclusive
           uma clara. Sem ele o texto some justamente na foto que o líder achou
-          mais bonita. */}
+          mais bonita.
+          São DUAS camadas: a horizontal escurece o lado do texto e deixa a
+          foto respirar à direita; a vertical costura o banner com a seção de
+          baixo. Só a horizontal deixaria uma emenda dura no rodapé do banner. */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, ${theme.background}22 0%, ${theme.background}cc 62%, ${theme.background} 100%)`,
+          background: `linear-gradient(90deg, ${theme.background}f2 0%, ${theme.background}b3 45%, ${theme.background}33 100%)`,
         }}
       />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3"
+        style={{ background: `linear-gradient(180deg, transparent 0%, ${theme.background} 100%)` }}
+      />
 
-      <div className="relative flex h-full min-h-inherit items-end">
-        <div className="w-full px-5 py-10 md:px-10 md:py-16">
-          <div
-            className="mx-auto w-full max-w-6xl"
-            style={layout?.maxWidth ? { maxWidth: layout.maxWidth } : undefined}
-          >
+      <div className="relative w-full px-5 py-24 md:px-10">
+        <div
+          className="mx-auto w-full max-w-6xl"
+          style={layout?.maxWidth ? { maxWidth: layout.maxWidth } : undefined}
+        >
+          <div className="max-w-2xl">
             <InlineText
               as="h1"
               editing={editing}
@@ -165,7 +190,7 @@ export function HeroBannerSection({
               styleKey={`hero.${current.id}.headline`}
               placeholder={labels.headline}
               maxLength={120}
-              className="fl-display max-w-4xl text-4xl leading-[0.95] md:text-7xl"
+              className="fl-display text-5xl uppercase leading-[0.9] tracking-[0.02em] md:text-7xl lg:text-8xl"
               style={{ color: theme.textPrimary }}
             />
             {(editing || current.subheadline) && (
@@ -178,22 +203,23 @@ export function HeroBannerSection({
                 placeholder={labels.subheadline}
                 maxLength={240}
                 multiline
-                className="mt-4 max-w-2xl text-sm leading-relaxed md:text-base"
+                className="mt-6 max-w-xl text-base leading-relaxed md:text-xl"
                 style={{ color: theme.textSecondary }}
               />
             )}
 
-            {(editing || current.ctaText) && (
-              <div className="mt-7 flex flex-wrap items-center gap-3">
+            {(editing || current.ctaText || current.ctaSecondaryText) && (
+              <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+                {/* Botão principal */}
                 {editing ? (
-                  <>
+                  <div className="flex flex-col gap-1">
                     <InlineText
                       editing
                       value={current.ctaText}
                       onChange={(v) => patchSlide(current.id, { ctaText: v })}
                       placeholder={labels.ctaText}
                       maxLength={40}
-                      className="border-2 border-[#0B0B0D] px-6 py-3 text-xs font-extrabold uppercase tracking-[0.14em]"
+                      className="border-2 border-[#0B0B0D] px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
                       style={{ background: theme.primary, color: theme.background }}
                     />
                     <InlineText
@@ -205,14 +231,14 @@ export function HeroBannerSection({
                       className="min-w-[180px] px-2 py-1 text-[11px]"
                       style={{ color: theme.textSecondary }}
                     />
-                  </>
+                  </div>
                 ) : (
                   current.ctaText && (
                     <a
                       href={current.ctaUrl || undefined}
-                      target={current.ctaUrl?.startsWith("http") ? "_blank" : undefined}
+                      target={current.ctaUrl.startsWith("http") ? "_blank" : undefined}
                       rel="noopener noreferrer"
-                      className="inline-block border-2 border-[#0B0B0D] px-6 py-3 text-xs font-extrabold uppercase tracking-[0.14em]"
+                      className="inline-block border-2 border-[#0B0B0D] px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
                       style={{
                         background: theme.primary,
                         color: theme.background,
@@ -223,11 +249,63 @@ export function HeroBannerSection({
                     </a>
                   )
                 )}
+
+                {/* Botão secundário: contorno, peso menor. */}
+                {editing ? (
+                  <div className="flex flex-col gap-1">
+                    <InlineText
+                      editing
+                      value={current.ctaSecondaryText}
+                      onChange={(v) => patchSlide(current.id, { ctaSecondaryText: v })}
+                      placeholder={labels.ctaSecondaryText}
+                      maxLength={40}
+                      className="border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
+                      style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}
+                    />
+                    <InlineText
+                      editing
+                      value={current.ctaSecondaryUrl}
+                      onChange={(v) => patchSlide(current.id, { ctaSecondaryUrl: v })}
+                      placeholder={labels.ctaSecondaryUrl}
+                      maxLength={600}
+                      className="min-w-[180px] px-2 py-1 text-[11px]"
+                      style={{ color: theme.textSecondary }}
+                    />
+                  </div>
+                ) : (
+                  current.ctaSecondaryText &&
+                  secondaryHref && (
+                    <a
+                      href={secondaryHref}
+                      target={secondaryHref.startsWith("http") ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className="inline-block border-2 px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
+                      style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}
+                    >
+                      {current.ctaSecondaryText}
+                    </a>
+                  )
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Indicador de rolagem: diz que a página continua abaixo do banner de
+          tela cheia. Só em leitura — no construtor ele cobriria os controles
+          de slide, e ali a rolagem é da prancheta, não da página. */}
+      {!editing && nextAnchor && (
+        <a
+          href={`#${nextAnchor}`}
+          aria-label={labels.scrollHint}
+          title={labels.scrollHint}
+          className="absolute bottom-6 left-1/2 grid h-10 w-10 -translate-x-1/2 animate-bounce place-items-center border-2 motion-reduce:animate-none"
+          style={{ borderColor: `${theme.textPrimary}55`, color: theme.textPrimary }}
+        >
+          <ChevronDown className="h-5 w-5" />
+        </a>
+      )}
 
       {slides.length > 1 && (
         <>
@@ -249,7 +327,7 @@ export function HeroBannerSection({
           >
             <ChevronRight className="h-5 w-5" />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
+          <div className="absolute bottom-6 right-5 flex gap-1.5 md:right-10">
             {slides.map((s, i) => (
               <button
                 key={s.id}

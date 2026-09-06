@@ -41,7 +41,43 @@ export type HeroSlide = {
   subheadline: string
   ctaText: string
   ctaUrl: string
+  /** Segundo botão, ao lado do primeiro e com peso menor. */
+  ctaSecondaryText: string
+  /** Vazio = o botão ancora na seção seguinte (destino óbvio, sem pedir link). */
+  ctaSecondaryUrl: string
 }
+
+/**
+ * Ícones que um destaque pode usar — lista FECHADA, igual à do backend.
+ *
+ * O valor indexa `HIGHLIGHT_ICONS` no front. Ícone novo entra nos DOIS lugares;
+ * presente só aqui, o normalizador do servidor o troca pelo default no primeiro
+ * save e a escolha do líder "volta atrás" sozinha.
+ */
+export const SITE_ICONS = [
+  "none",
+  "sparkles",
+  "star",
+  "heart",
+  "shield",
+  "clock",
+  "users",
+  "award",
+  "coffee",
+  "camera",
+  "music",
+  "map-pin",
+  "wifi",
+  "gift",
+  "leaf",
+  "zap",
+  "check",
+  "home",
+  "smile",
+  "thumbs-up",
+  "sun",
+] as const
+export type SiteIcon = (typeof SITE_ICONS)[number]
 
 /**
  * Um serviço da vitrine do site.
@@ -63,6 +99,7 @@ export type ShowcaseService = {
 
 export type HighlightItem = {
   id: string
+  icon: SiteIcon
   title: string
   description: string
 }
@@ -75,7 +112,15 @@ export type TestimonialItem = {
   /** Inteiro de 1 a 5 (o backend arredonda e limita). */
   rating: number
   text: string
+  /** ISO `AAAA-MM-DD`, ou vazio. Quem escreve por extenso é o front. */
+  date: string
 }
+
+/** Uma informação do bloco de chamada: rótulo em cima, valor embaixo. */
+export type CtaItem = { id: string; label: string; value: string }
+
+/** Selo da seção "quem está por trás" ("Cuidado", "Qualidade"...). */
+export type PersonTag = { id: string; label: string }
 
 export type PhotoItem = {
   id: string
@@ -95,6 +140,8 @@ export const SITE_SECTION_KINDS = [
   "services_catalog",
   "about",
   "testimonials",
+  "cta",
+  "person",
   "gallery",
   "contact",
 ] as const
@@ -109,6 +156,28 @@ export type HeroData = {
 export type ServicesCatalogData = { columns: 2 | 3 | 4 }
 export type AboutData = { body: string; highlights: HighlightItem[]; photos: PhotoItem[] }
 export type TestimonialsData = { items: TestimonialItem[] }
+/**
+ * Bloco de chamada: selo, informações lado a lado e um botão grande.
+ *
+ * Os valores são TEXTO do líder, não agenda viva — o site não consulta
+ * disponibilidade. Quem tem agenda, sinal e pagamento é o perfil.
+ */
+export type CtaData = {
+  badge: string
+  items: CtaItem[]
+  ctaText: string
+  ctaUrl: string
+  note: string
+}
+/** Quem está por trás: retrato ao lado do texto, com selos. */
+export type PersonData = {
+  photoUrl: string
+  objectPosition: SiteObjectPosition
+  body: string
+  tags: PersonTag[]
+  ctaText: string
+  ctaUrl: string
+}
 export type GalleryData = { photos: PhotoItem[]; columns: 2 | 3 | 4 }
 export type ContactData = {
   address: string
@@ -129,6 +198,8 @@ export type SiteSection =
   | SiteSectionBase<"services_catalog", ServicesCatalogData>
   | SiteSectionBase<"about", AboutData>
   | SiteSectionBase<"testimonials", TestimonialsData>
+  | SiteSectionBase<"cta", CtaData>
+  | SiteSectionBase<"person", PersonData>
   | SiteSectionBase<"gallery", GalleryData>
   | SiteSectionBase<"contact", ContactData>
 
@@ -253,6 +324,17 @@ export function emptySectionData(kind: SiteSectionKind): SiteSection["data"] {
       return { body: "", highlights: [], photos: [] } satisfies AboutData
     case "testimonials":
       return { items: [] } satisfies TestimonialsData
+    case "cta":
+      return { badge: "", items: [], ctaText: "", ctaUrl: "", note: "" } satisfies CtaData
+    case "person":
+      return {
+        photoUrl: "",
+        objectPosition: "center",
+        body: "",
+        tags: [],
+        ctaText: "",
+        ctaUrl: "",
+      } satisfies PersonData
     case "gallery":
       return { photos: [], columns: 3 } satisfies GalleryData
     case "contact":
