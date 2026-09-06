@@ -5262,7 +5262,12 @@
     "expiredCta": "See training by date",
     "expiredDot": "Some students have an expired plan",
     "expiredBadge": "Expired plan",
-    "noPlanName": "no name"
+    "noPlanName": "no name",
+    "statsTitle": "Gym numbers",
+    "statsAria": "Gym numbers: members, trainers, spotlight and monthly ranking",
+    "spotlightTitle": "Spotlight",
+    "spotlightSub": "Most frequent this month",
+    "rankFreqDays": "{n} days"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

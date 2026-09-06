@@ -47,6 +47,7 @@ export function RetractableColumn({
   accent,
   ariaLabel,
   closeLabel,
+  onOpen,
   children,
 }: {
   title: string
@@ -56,6 +57,13 @@ export function RetractableColumn({
   /** O que a alça diz a quem não vê a tela (nela só cabe a seta). */
   ariaLabel?: string
   closeLabel: string
+  /**
+   * Disparado quando a gaveta abre — a porta para a superfície buscar só então
+   * o que só a coluna mostra (a academia carrega o ranking do mês aqui). Sem
+   * isso, toda visita pagaria uma requisição por uma tela que a maioria não
+   * abre. Quem chama decide se busca uma vez ou toda vez.
+   */
+  onOpen?: () => void
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -94,7 +102,10 @@ export function RetractableColumn({
           a torna alcançável com o polegar sem virar um painel. */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true)
+          onOpen?.()
+        }}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={ariaLabel || title}

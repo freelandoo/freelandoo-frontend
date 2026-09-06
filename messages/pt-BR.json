@@ -4676,7 +4676,12 @@
     "expiredCta": "Ver treinos por data",
     "expiredDot": "Há alunos com a ficha vencida",
     "expiredBadge": "Ficha vencida",
-    "noPlanName": "sem nome"
+    "noPlanName": "sem nome",
+    "statsTitle": "Números da academia",
+    "statsAria": "Números da academia: vinculados, professores, destaque e ranking do mês",
+    "spotlightTitle": "Destaque",
+    "spotlightSub": "Mais frequente do mês",
+    "rankFreqDays": "{n} dias"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",

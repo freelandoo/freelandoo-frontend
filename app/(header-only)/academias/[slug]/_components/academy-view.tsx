@@ -7,11 +7,11 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   ArrowLeft,
   BadgeCheck,
+  BarChart3,
   ClipboardList,
   Dumbbell,
   GraduationCap,
@@ -22,9 +22,11 @@ import {
   PlugZap,
   RefreshCcw,
   ShieldAlert,
+  Star,
   Trash2,
   Trophy,
   UserRound,
+  Users,
   X,
 } from "lucide-react"
 import { getStoredUser, getToken } from "@/lib/auth"
@@ -32,6 +34,10 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+// A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
+// que entra na coluna (vinculados, professores, destaque e ranking do mês) é
+// desta página.
+import { RetractableColumn } from "@/components/tabloide"
 import { AcademyFeed } from "./academy-feed"
 import {
   BTN_DARK,
@@ -56,6 +62,14 @@ const RecadoComposer = dynamic(
 )
 
 type Professor = { id_user: string; username: string | null; nome: string | null; id_profile?: string | null }
+/** Uma linha do ranking do mês (`GET /academies/:id/ranking`, porta pública). */
+type RankMember = {
+  id_member: string
+  nome: string | null
+  username: string | null
+  avatar_url: string | null
+  freq_days: number
+}
 type MyMembership = {
   membership_status: string
   plan_name: string | null
@@ -135,11 +149,16 @@ export function AcademyView({ slug }: { slug: string }) {
   const [composerOpen, setComposerOpen] = useState(false)
   const [composerKind, setComposerKind] = useState<"post" | "bee">("post")
   const [recadoOpen, setRecadoOpen] = useState(false)
-  // Professores e Ranking saíram do corpo da página: quem os abre é o "+" do
-  // headcard, e o mural vem logo depois do headcard. Ranking não abre painel —
-  // vai direto pra página de ranking da academia.
-  const [professorsOpen, setProfessorsOpen] = useState(false)
-  const router = useRouter()
+  // Professores, destaque e ranking do mês moram na GAVETA dos números (a
+  // mesma peça da comunidade): o "+" do headcard voltou a ser só o menu de
+  // publicar. Dois lugares abrindo a lista de professores é como um deles
+  // deixaria de acompanhar o outro sem nada quebrar.
+  //
+  // O ranking é carregado SÓ quando a gaveta abre: ele é a única tela que o
+  // usa, e a maioria das visitas ao mural não abre a gaveta — cobrar uma
+  // requisição de todas elas seria pagar por quem não pediu.
+  const [ranking, setRanking] = useState<RankMember[]>([])
+  const [rankingState, setRankingState] = useState<"idle" | "loading" | "loaded" | "error">("idle")
   const [feedReload, setFeedReload] = useState(0)
 
   const authHeaders = useCallback((): Record<string, string> => {
@@ -177,6 +196,31 @@ export function AcademyView({ slug }: { slug: string }) {
   useEffect(() => {
     if (enabled) void load()
   }, [enabled, load])
+
+  // Só busca na PRIMEIRA abertura (ou de novo depois de um erro): reabrir a
+  // gaveta não precisa recontar o mês inteiro. A porta é anônima — o ranking
+  // da academia é público, como na página cheia dele.
+  const loadRanking = useCallback(async () => {
+    if (!academy) return
+    if (rankingState === "loading" || rankingState === "loaded") return
+    setRankingState("loading")
+    try {
+      const res = await fetch(`/api/academies/${academy.id_academy}/ranking`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setRanking(Array.isArray(data.members) ? data.members : [])
+      setRankingState("loaded")
+    } catch {
+      // Fica em "error" de propósito: lista vazia diria "ninguém treinou este
+      // mês", que é outra coisa — e a próxima abertura tenta de novo.
+      setRankingState("error")
+    }
+  }, [academy, rankingState])
+
+  // A fila do mês é por FREQUÊNCIA (dias de catraca), o mesmo padrão com que a
+  // página cheia do ranking abre. Destaque = quem está em primeiro nela.
+  const rankedByFreq = [...ranking].sort((a, b) => Number(b.freq_days || 0) - Number(a.freq_days || 0))
+  const topOfMonth = rankedByFreq.find((m) => Number(m.freq_days || 0) > 0) || null
 
   const link = useCallback(async () => {
     const token = getToken()
@@ -468,14 +512,6 @@ export function AcademyView({ slug }: { slug: string }) {
                         setComposerKind(kind === "bee" ? "bee" : "post")
                         setComposerOpen(true)
                       }}
-                      extras={[
-                        { id: "professors", label: t("professorsTitle", "Professores"), icon: GraduationCap },
-                        { id: "ranking", label: t("rankingTitle", "Ranking do mês"), icon: Trophy },
-                      ]}
-                      onPickExtra={(id) => {
-                        if (id === "ranking") { router.push(`/academias/${academy.slug}/ranking`); return }
-                        setProfessorsOpen(true)
-                      }}
                     />
                   </div>
                   {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
@@ -513,6 +549,131 @@ export function AcademyView({ slug }: { slug: string }) {
             </div>
           </div>
         </header>
+
+        {/* OS NÚMEROS DA ACADEMIA — a gaveta, a MESMA da comunidade.
+
+            Fica escondida atrás da pontinha da seta na borda direita e não
+            ocupa um centímetro da página: o mural continua começando logo
+            depois do headcard. Dentro dela, na mesma ordem da comunidade —
+            número, quem é destaque, quem está na frente.
+
+            O ranking do mês chega no `onOpen` (ver `loadRanking`), então quem
+            só passou pelo mural não paga a requisição dele.
+
+            Bloco novo de número da academia entra AQUI DENTRO, nunca solto
+            entre o headcard e o mural. */}
+        <RetractableColumn
+          title={t("statsTitle", "Números da academia")}
+          ariaLabel={t("statsAria", "Números da academia: vinculados, professores, destaque e ranking do mês")}
+          closeLabel={t("close", "Fechar")}
+          icon={<BarChart3 className="h-4 w-4" />}
+          accent={GOLD}
+          onOpen={() => void loadRanking()}
+        >
+          <div className={`${PANEL} flex items-center gap-3 px-4 py-3`}>
+            <Users className="h-4 w-4 shrink-0 text-[#F2B705]" />
+            <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
+              {t("membersSuffix", "vinculados")}
+            </span>
+            <span className="text-2xl font-black leading-none text-[#F5F1E8]">{academy.member_count}</span>
+          </div>
+
+          {/* Professores — a lista que era um modal do "+". */}
+          <div className={`${PANEL} p-4`}>
+            <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
+              <GraduationCap className="h-4 w-4 text-[#F2B705]" />
+              {t("professorsTitle", "Professores")}
+            </h2>
+            {academy.professors.length === 0 ? (
+              <p className="mt-3 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {academy.professors.map((prof) => (
+                  <li key={prof.id_user} className={`${INNER} flex items-center justify-between gap-3 px-3 py-2 text-xs font-bold`}>
+                    <span className="min-w-0 truncate">{prof.nome || prof.username || prof.id_user.slice(0, 8)}</span>
+                    {/* Sem perfil (professor que nunca criou nenhum) o link não
+                        aparece — melhor nada do que /freelancer/undefined. */}
+                    {prof.id_profile && (
+                      <Link
+                        href={`/freelancer/${prof.id_profile}`}
+                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] hover:-translate-y-0.5"
+                      >
+                        {t("professorViewProfile", "Ver perfil")}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Destaque do mês — quem mais bateu a catraca. Só aparece com pelo
+              menos um dia registrado: pódio de zero dia não é destaque. */}
+          {topOfMonth && (
+            <div className={`${PANEL} p-4`}>
+              <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
+                <Star className="h-4 w-4 text-[#F2B705]" />
+                {t("spotlightTitle", "Destaque")}
+              </h2>
+              <div className="mt-3 flex items-center gap-3">
+                <div className={`${INNER} h-14 w-14 shrink-0 overflow-hidden`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={topOfMonth.avatar_url || "/placeholder-user.jpg"} alt="" loading="lazy" className="h-full w-full object-cover" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-base font-black uppercase leading-tight text-[#F5F1E8]">
+                    {topOfMonth.nome || topOfMonth.username || "—"}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                    {t("spotlightSub", "Mais frequente do mês")} ·{" "}
+                    {t("rankFreqDays", "{n} dias").replace("{n}", String(topOfMonth.freq_days))}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ranking do mês — os cinco primeiros; a fila inteira (e as outras
+              métricas) continuam na página do ranking. */}
+          <div className={`${PANEL} p-4`}>
+            <h2 className={`${H_SECTION} border-b-2 border-[#0B0B0D] pb-2`}>
+              <Trophy className="h-4 w-4 text-[#F2B705]" />
+              {t("rankingTitle", "Ranking do mês")}
+            </h2>
+            {rankingState === "loading" ? (
+              <p className="mt-3 flex items-center gap-2 text-xs text-[#9A938A]">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              </p>
+            ) : rankingState === "error" ? (
+              <p className="mt-3 text-xs text-[#9A938A]">
+                {t("rankingError", "Não deu para carregar o ranking agora.")}
+              </p>
+            ) : rankedByFreq.length === 0 ? (
+              <p className="mt-3 text-xs text-[#9A938A]">{t("rankingEmpty", "Ninguém treinou este mês ainda.")}</p>
+            ) : (
+              <ol className="mt-3 space-y-2">
+                {rankedByFreq.slice(0, 5).map((m, i) => (
+                  <li key={m.id_member} className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 text-base font-black text-[#F5F1E8]/40">{i + 1}</span>
+                    <div className="h-8 w-8 shrink-0 overflow-hidden border border-[#0B0B0D] bg-[#1D1810]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.avatar_url || "/placeholder-user.jpg"} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">
+                      {m.nome || m.username || "—"}
+                    </span>
+                    <span className="shrink-0 text-[11px] font-extrabold text-[#F2B705]">
+                      {t("rankFreqDays", "{n} dias").replace("{n}", String(m.freq_days))}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <Link href={`/academias/${academy.slug}/ranking`} className={`${BTN_DARK} mt-3 w-full px-3 py-2 text-[11px]`}>
+              {t("rankingSeeAll", "Ver ranking completo")}
+            </Link>
+          </div>
+        </RetractableColumn>
 
         {/* Painel do dono */}
         {academy.is_owner && (
@@ -597,49 +758,6 @@ export function AcademyView({ slug }: { slug: string }) {
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />
       </div>
-
-      {/* Professores — painel aberto pelo "+" do headcard (Ranking do
-          menu navega direto pra página de ranking da academia). */}
-      {professorsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setProfessorsOpen(false)}>
-          <div
-            className={`fl-sharp max-h-[85vh] w-full max-w-md overflow-y-auto ${PANEL} p-6 text-[#F5F1E8]`}
-            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
-              <h2 className="flex items-center gap-2 text-xl font-black uppercase">
-                <GraduationCap className="h-5 w-5 text-[#F2B705]" />
-                {t("professorsTitle", "Professores")}
-              </h2>
-              <button onClick={() => setProfessorsOpen(false)} aria-label={t("close", "Fechar")}>
-                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
-              </button>
-            </div>
-            {academy.professors.length === 0 ? (
-              <p className="mt-3 text-xs text-[#9A938A]">{t("professorsEmpty", "Nenhum professor cadastrado ainda.")}</p>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {academy.professors.map((p) => (
-                  <li key={p.id_user} className={`${INNER} flex items-center justify-between gap-3 px-3 py-2 text-xs font-bold`}>
-                    <span className="min-w-0 truncate">{p.nome || p.username || p.id_user.slice(0, 8)}</span>
-                    {/* Sem perfil (professor que nunca criou nenhum) o link não
-                        aparece — melhor nada do que /freelancer/undefined. */}
-                    {p.id_profile && (
-                      <Link
-                        href={`/freelancer/${p.id_profile}`}
-                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D] hover:-translate-y-0.5"
-                      >
-                        {t("professorViewProfile", "Ver perfil")}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Modal vincular CPF */}
       {linkOpen && (

@@ -5242,7 +5242,12 @@
     "expiredCta": "Ver entrenamientos por fecha",
     "expiredDot": "Hay alumnos con la rutina vencida",
     "expiredBadge": "Rutina vencida",
-    "noPlanName": "sin nombre"
+    "noPlanName": "sin nombre",
+    "statsTitle": "Números del gimnasio",
+    "statsAria": "Números del gimnasio: vinculados, profesores, destacado y ranking del mes",
+    "spotlightTitle": "Destacado",
+    "spotlightSub": "Más frecuente del mes",
+    "rankFreqDays": "{n} días"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",
