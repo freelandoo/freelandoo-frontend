@@ -18,7 +18,7 @@ import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site
 import { newLocalId } from "@/types/community-site"
 import { BuilderButton, EditableImage, InlineText } from "../editable"
 import { useSectionLayout } from "../site-style-context"
-import { isExternalHref, useSiteHref } from "../site-runtime"
+import { isExternalHref, useSiteHref, useSiteRuntime } from "../site-runtime"
 
 const HEIGHTS: Record<HeroData["height"], string> = {
   short: "min-h-[380px] md:min-h-[460px]",
@@ -126,7 +126,16 @@ export function HeroBannerSection({
   //
   // ⚠️ Antes do early return de "sem slide": hook chamado depois de um return
   // condicional muda a contagem de hooks entre renderizações.
-  const primaryHref = useSiteHref(current?.ctaUrl || "")
+  const primaryChosen = useSiteHref(current?.ctaUrl || "")
+  // Botão sem destino escolhido vira o agendamento, quando o site tem um.
+  //
+  // Isto é o que traz os sites JÁ PUBLICADOS para o comportamento novo: eles
+  // foram semeados com "Fale com a gente" e link vazio, o que desenhava um
+  // <a> sem href — um botão que parecia vivo e não fazia nada. A alternativa
+  // seria reescrever o documento deles por migration, sobrescrevendo o texto
+  // que o líder possa ter mudado.
+  const { bookingHref } = useSiteRuntime()
+  const primaryHref = primaryChosen || bookingHref
   const secondaryChosen = useSiteHref(current?.ctaSecondaryUrl || "")
   // Sem link escolhido, o segundo botão leva à seção seguinte — é o "veja o que
   // vem abaixo" do banner de tela cheia.
