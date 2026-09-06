@@ -14,7 +14,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
-import { PublishMenuButton } from "@/components/composer/publish-menu-button"
+import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // Os botões retráteis atrás da foto — a MESMA mecânica do headcard do perfil e
 // da Carteira. Aqui a pilha é a da COMUNIDADE: por enquanto um botão só,
@@ -376,6 +376,23 @@ export default function CommunityDetailPage() {
   const isPrivate = community?.privacy === "private"
   const feedLocked = isPrivate && !isMember
   const monthlyCents = Number(community?.monthly_cents || 0)
+
+  // Os tipos que esta superfície publica, num lugar só: o "+" do headcard, o
+  // convite do feed vazio e a faixa acima da lista abrem O MESMO menu. Escrever
+  // a lista em cada um deles é como um tipo novo (ou uma permissão nova)
+  // entraria em dois dos três, em silêncio.
+  const publishItems: PublishItem[] = useMemo(
+    () => [
+      { kind: "post", label: t("postLabel", "Post") },
+      { kind: "bee", label: t("curtoLabel", "Curto") },
+      { kind: "story", label: t("beeLabel", "Bee") },
+      { kind: "recado", label: t("recadoLabel", "Recado") },
+    ],
+    [t]
+  )
+  const publishBlockedMessage = isCondo
+    ? t("residentToPost", "Confirme seu apartamento para publicar.")
+    : t("joinToPost", "Entre na comunidade para publicar.")
 
   // A pilha atrás da foto — Perfil (azul) e, embaixo dele, Mural (laranja). É de
   // propósito que nenhum dos dois seja um bloco na página: o painel é o mesmo
@@ -1038,16 +1055,9 @@ export default function CommunityDetailPage() {
                 accent={accent}
                 label={t("composeCta", "Publicar")}
                 canPost={canPost}
-                blockedMessage={isCondo
-                  ? t("residentToPost", "Confirme seu apartamento para publicar.")
-                  : t("joinToPost", "Entre na comunidade para publicar.")}
+                blockedMessage={publishBlockedMessage}
                 onBlocked={setActionMsg}
-                items={[
-                  { kind: "post", label: t("postLabel", "Post") },
-                  { kind: "bee", label: t("curtoLabel", "Curto") },
-                  { kind: "story", label: t("beeLabel", "Bee") },
-                  { kind: "recado", label: t("recadoLabel", "Recado") },
-                ]}
+                items={publishItems}
                 onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
                 extras={siteExtras}
                 onPickExtra={(extraId) => {
@@ -1608,9 +1618,47 @@ export default function CommunityDetailPage() {
                   {loadingPosts ? (
                     <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" /></div>
                   ) : posts.length === 0 ? (
-                    <Empty text={t("feedEmptyGroup", "Ainda não há publicações. Seja o primeiro!")} />
+                    // FEED VAZIO: o convite ocupa o lugar da caixa "ainda não
+                    // há publicações" em vez de ficar ao lado dela — a caixa
+                    // dizia que faltava alguma coisa sem dar o que fazer, e o
+                    // "+" do headcard é pequeno demais para ser a resposta.
+                    // Quem não pode publicar continua vendo só o aviso: um
+                    // convite gigante que só devolve recusa é pior que nada.
+                    canPost ? (
+                      <PublishMenuButton
+                        variant="block"
+                        text={t("publishFeedCta", "Postar")}
+                        accent={accent}
+                        label={t("composeCta", "Publicar")}
+                        canPost={canPost}
+                        blockedMessage={publishBlockedMessage}
+                        onBlocked={setActionMsg}
+                        items={publishItems}
+                        onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                      />
+                    ) : (
+                      <Empty text={t("feedEmptyGroup", "Ainda não há publicações. Seja o primeiro!")} />
+                    )
                   ) : (
-                    <div className="overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
+                    <div className="space-y-3">
+                      {/* COM PUBLICAÇÕES: a mesma porta vira uma faixa fina no
+                          topo da lista. Ela não pode competir com o conteúdo
+                          que já está lá — quem chega aqui veio ler, não
+                          publicar. */}
+                      {canPost && (
+                        <PublishMenuButton
+                          variant="bar"
+                          text={t("publishFeedCta", "Postar")}
+                          accent={accent}
+                          label={t("composeCta", "Publicar")}
+                          canPost={canPost}
+                          blockedMessage={publishBlockedMessage}
+                          onBlocked={setActionMsg}
+                          items={publishItems}
+                          onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                        />
+                      )}
+                      <div className="overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
                       {posts.map((post) => (
                         <PortfolioPostCard
                           key={post.post_id}
@@ -1631,6 +1679,7 @@ export default function CommunityDetailPage() {
                           }}
                         />
                       ))}
+                      </div>
                     </div>
                   )}
                   {postsHasMore && (

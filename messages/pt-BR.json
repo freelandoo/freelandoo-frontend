@@ -2664,7 +2664,8 @@
     "bioEmptyRead": "O líder ainda não escreveu sobre a comunidade.",
     "muralPill": "Mural",
     "muralPillAria": "Mural do líder: recados da comunidade",
-    "muralMembersOnly": "Só quem é da comunidade lê o mural."
+    "muralMembersOnly": "Só quem é da comunidade lê o mural.",
+    "publishFeedCta": "Postar"
   },
   "Careers": {
     "hero.badge": "Carreiras",

@@ -2677,7 +2677,8 @@
     "bioEmptyRead": "The leader hasn't written about the community yet.",
     "muralPill": "Board",
     "muralPillAria": "Leader's board: community notices",
-    "muralMembersOnly": "Only community members can read the board."
+    "muralMembersOnly": "Only community members can read the board.",
+    "publishFeedCta": "Post"
   },
   "Careers": {
     "hero.badge": "Careers",

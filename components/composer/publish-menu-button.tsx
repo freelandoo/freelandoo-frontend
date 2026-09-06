@@ -55,6 +55,20 @@ function resolveSide(
   return preferred
 }
 
+/**
+ * A FORMA do gatilho — o menu é o mesmo nas três.
+ *
+ * `square` é o "+" do headcard. `block` e `bar` são as duas caras da entrada do
+ * FEED: sem nenhuma publicação, um botão grande convidando a fazer a primeira;
+ * com publicações, uma faixa fina no topo da lista, que não pode roubar a
+ * atenção do conteúdo que já está lá.
+ *
+ * São variantes de UMA peça, e não botões novos, porque o que faz o menu é a
+ * lista de tipos daquela superfície: um segundo componente com o mesmo menu
+ * ganharia um tipo novo (ou uma permissão nova) só de um lado, em silêncio.
+ */
+export type PublishVariant = "square" | "bar" | "block"
+
 export function PublishMenuButton({
   items,
   onPick,
@@ -67,6 +81,8 @@ export function PublishMenuButton({
   align = "left",
   extras = [],
   onPickExtra,
+  variant = "square",
+  text,
 }: {
   items: PublishItem[]
   onPick: (kind: PublishKind) => void
@@ -83,6 +99,9 @@ export function PublishMenuButton({
   /** Ações da superfície que não são publicação (abrem painéis da página). */
   extras?: PublishExtraItem[]
   onPickExtra?: (id: string) => void
+  variant?: PublishVariant
+  /** Rótulo DENTRO do botão (só em `bar`/`block`; o `square` é só o "+"). */
+  text?: string
 }) {
   const [open, setOpen] = useState(false)
   // Lado EFETIVO em que o menu abre. Começa no que a superfície pediu e é
@@ -109,8 +128,19 @@ export function PublishMenuButton({
     }
   }, [open])
 
+  const isSquare = variant === "square"
+  // A caixa do gatilho. No `square` ela abraça o botão (e o `hint` ao lado);
+  // nas outras duas ela ocupa a largura do feed, que é o que faz a faixa ser
+  // faixa e o convite ser convite.
+  const wrapClass = isSquare ? "relative flex items-center gap-3" : "relative w-full"
+  const buttonClass = isSquare
+    ? "grid h-14 w-14 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]"
+    : variant === "bar"
+      ? "flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]"
+      : "flex w-full flex-col items-center justify-center gap-2 border-2 border-[#0B0B0D] px-6 py-12 text-[#0B0B0D]"
+
   return (
-    <div ref={wrapRef} className="relative flex items-center gap-3">
+    <div ref={wrapRef} className={wrapClass}>
       <button
         type="button"
         aria-label={label}
@@ -129,10 +159,25 @@ export function PublishMenuButton({
           if (!open) setSide(resolveSide(wrapRef.current, align))
           setOpen((v) => !v)
         }}
-        className="grid h-14 w-14 shrink-0 place-items-center border-2 border-[#0B0B0D] text-[#0B0B0D]"
-        style={{ background: accent, boxShadow: "4px 4px 0 0 #0B0B0D" }}
+        className={buttonClass}
+        style={{ background: accent, boxShadow: variant === "bar" ? "3px 3px 0 0 #0B0B0D" : "4px 4px 0 0 #0B0B0D" }}
       >
-        <Plus className={`h-7 w-7 transition ${open ? "rotate-45" : ""}`} />
+        <Plus
+          className={`transition ${open ? "rotate-45" : ""} ${
+            variant === "bar" ? "h-4 w-4" : variant === "block" ? "h-10 w-10" : "h-7 w-7"
+          }`}
+        />
+        {!isSquare && text && (
+          <span
+            className={
+              variant === "bar"
+                ? ""
+                : "fl-display text-3xl leading-none"
+            }
+          >
+            {text}
+          </span>
+        )}
       </button>
       {hint && (
         <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{hint}</span>
