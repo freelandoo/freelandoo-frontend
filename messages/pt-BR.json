@@ -2652,7 +2652,16 @@
     "enxameHint": "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.",
     "registerTitle": "Cadastrar",
     "registerSubtitle": "Academia e condomínio precisam de alguns dados antes de existir. Para uma comunidade comum, use “Criar comunidade” — ela nasce pronta para editar.",
-    "tabShelf": "Estante"
+    "tabShelf": "Estante",
+    "profilePill": "Perfil",
+    "profilePillAria": "Perfil da comunidade: enxame, privacidade, temporada e sobre",
+    "profilePanelTitle": "Perfil da comunidade",
+    "panelClose": "Fechar",
+    "enxameNotSet": "Ainda sem enxame escolhido.",
+    "privacyPublicRead": "Qualquer pessoa entra de graça, e os posts daqui também aparecem no feed.",
+    "privacyPrivateRead": "Entrar aqui exige assinatura mensal, e o que se publica fica só dentro da comunidade.",
+    "goalNoneRead": "Nenhuma temporada em andamento.",
+    "bioEmptyRead": "O líder ainda não escreveu sobre a comunidade."
   },
   "Careers": {
     "hero.badge": "Carreiras",

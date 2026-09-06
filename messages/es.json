@@ -2665,7 +2665,16 @@
     "enxameHint": "Es como la comunidad aparece en los filtros del escaparate. Puedes elegirlo después.",
     "registerTitle": "Registrar",
     "registerSubtitle": "Gimnasios y condominios necesitan algunos datos antes de existir. Para una comunidad común, usa “Crear comunidad” — nace lista para editar.",
-    "tabShelf": "Estante"
+    "tabShelf": "Estante",
+    "profilePill": "Perfil",
+    "profilePillAria": "Perfil de la comunidad: enjambre, privacidad, temporada y sobre",
+    "profilePanelTitle": "Perfil de la comunidad",
+    "panelClose": "Cerrar",
+    "enxameNotSet": "Todavía sin enjambre elegido.",
+    "privacyPublicRead": "Cualquiera entra gratis, y las publicaciones de aquí también aparecen en el feed.",
+    "privacyPrivateRead": "Entrar exige una suscripción mensual, y lo que se publica queda solo dentro de la comunidad.",
+    "goalNoneRead": "Ninguna temporada en curso.",
+    "bioEmptyRead": "El líder aún no ha escrito sobre la comunidad."
   },
   "Careers": {
     "hero.badge": "Carreras",

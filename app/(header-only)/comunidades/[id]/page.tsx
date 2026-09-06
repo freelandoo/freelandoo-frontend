@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, Gamepad2,
+  Lock, Globe, PawPrint, Car, Gamepad2, UserRound,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -16,6 +16,12 @@ import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+// Os botões retráteis atrás da foto — a MESMA mecânica do headcard do perfil e
+// da Carteira. Aqui a pilha é a da COMUNIDADE: por enquanto um botão só,
+// "Perfil" (azul), que abre o que a comunidade é — enxame, privacidade,
+// temporada e o texto do líder. Botão novo de headcard de comunidade entra
+// nessa pilha, nunca como bloco solto no meio da página.
+import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -287,6 +293,14 @@ export default function CommunityDetailPage() {
   const [annPin, setAnnPin] = useState(false)
   const [postingAnn, setPostingAnn] = useState(false)
 
+  // Painel do botão "Perfil" (o pill azul atrás da foto). O que a comunidade É
+  // — enxame, privacidade, temporada e o texto do líder — mora aqui dentro, e
+  // não mais em quatro blocos empilhados no meio da página: quem visita lia
+  // quatro caixas de configuração antes de chegar no feed, e três delas nem
+  // apareciam para ele. Agora todo mundo abre o mesmo painel; o que muda é que
+  // o líder EDITA e o visitante LÊ.
+  const [profilePanelOpen, setProfilePanelOpen] = useState(false)
+
   const currentUserId = getStoredUser()?.id_user ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
   const myMembership = useMemo(
@@ -358,6 +372,29 @@ export default function CommunityDetailPage() {
   const isPrivate = community?.privacy === "private"
   const feedLocked = isPrivate && !isMember
   const monthlyCents = Number(community?.monthly_cents || 0)
+
+  // A pilha atrás da foto. Um botão só por enquanto — e é de propósito que ele
+  // NÃO seja um bloco na página: o painel é o mesmo para quem lê e para quem
+  // edita, então não há duas telas dizendo o que a comunidade é.
+  //
+  // A cor é FIXA (azul) e não a `accent` da comunidade: o accent é editável
+  // pelo líder e pode cair justamente no tom do botão, que sumiria dentro do
+  // próprio card. O pill é peça de chrome, não conteúdo pintável.
+  const communityPills: PillSpec[] = useMemo(
+    () => [
+      {
+        key: "profile",
+        icon: UserRound,
+        label: t("profilePill", "Perfil"),
+        ariaLabel: t("profilePillAria", "Perfil da comunidade: enxame, privacidade, temporada e sobre"),
+        bg: "#1D4ED8",
+        bgHover: "#1E3A8A",
+        onOpen: () => setProfilePanelOpen((v) => !v),
+        active: profilePanelOpen,
+      },
+    ],
+    [t, profilePanelOpen]
+  )
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -938,12 +975,34 @@ export default function CommunityDetailPage() {
         </div>
 
         <div className="relative z-20 -mt-12 flex flex-wrap items-end gap-4 px-2 md:-mt-16 md:px-3">
-          <div className="relative h-28 w-28 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
-            {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+          {/* A COLUNA DA FOTO: a pilha é o PRIMEIRO filho e a foto vem depois
+              no DOM. Sem z-index em nenhum dos dois, quem pinta por último
+              cobre — é assim que a foto esconde o corpo do botão e só o ícone
+              escapa pela direita. (`-z-10` NÃO serve: aqui o contexto de
+              empilhamento mais próximo é esta linha `relative z-20`, e o botão
+              iria parar atrás do banner.)
+
+              A pilha fica FORA da caixa da foto porque aquela caixa é
+              `overflow-hidden` — lá dentro o botão seria recortado na borda.
+
+              `pl-28 md:pl-36` casa com a LARGURA DA FOTO (h-28 w-28 / md:36).
+              Mexeu no tamanho da foto? Ajustar o padding junto, senão o corpo
+              colorido nasce ao lado dela em vez de debaixo. */}
+          <div className="relative shrink-0">
+            <PillStack
+              pills={communityPills}
+              avatarPadClass="pl-28 md:pl-36"
+              className="absolute left-0 top-1/2 -translate-y-1/2"
+            />
+            <div className="relative h-28 w-28 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
+              {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+            </div>
           </div>
-          <div className="flex-1 pb-1 md:pb-2">
+          {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para
+              cá de trás da foto: sem ela o nome começa debaixo dele. */}
+          <div className="flex-1 pb-1 pl-11 md:pb-2 md:pl-12">
             {showAsLeaderEdit ? (
               <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
                 className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
@@ -1009,6 +1068,230 @@ export default function CommunityDetailPage() {
           )}
         </div>
       </header>
+
+      {/* PAINEL DO BOTÃO "PERFIL" — o que a comunidade É, num lugar só: enxame,
+          privacidade, temporada e o texto do líder. Vem logo abaixo do
+          headcard porque é o que a pessoa acabou de pedir ao abrir o botão.
+
+          UM painel para os dois papéis, e não uma tela de configuração ao lado
+          de uma tela de leitura: o visitante lê exatamente os mesmos campos que
+          o líder edita. Duas telas para a mesma verdade é como uma delas para
+          de contar a mudança da outra. */}
+      {profilePanelOpen && (
+        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08] shadow-[6px_6px_0_0_#1D4ED8]">
+            <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
+              <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
+                <UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}
+              </span>
+              <div className="flex items-center gap-2">
+                {/* O líder abre o painel no modo em que a página está. Se ele
+                    estiver vendo como público, o atalho liga a edição aqui
+                    mesmo — mandá-lo procurar o botão lá em cima seria pedir
+                    para sair do painel que ele acabou de abrir. */}
+                {isLeader && !edit && (
+                  <button type="button" onClick={() => setEdit(true)}
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+                    <ScrollText className="h-3.5 w-3.5" /> {t("edit", "Editar")}
+                  </button>
+                )}
+                <button type="button" onClick={() => setProfilePanelOpen(false)} aria-label={t("panelClose", "Fechar")}
+                  className="border-2 border-[#0B0B0D] bg-[#15120E] p-1 text-[#9A938A] transition hover:text-[#F5F1E8]">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-4 md:p-5">
+              {/* ENXAME (mig 219). É este campo que substitui o formulário de
+                  criação: a comunidade comum nasce vazia e o assunto dela é
+                  escolhido aqui, do mesmo jeito que pet/carro/games escolhem
+                  raça, modelo e jogo desde a mig 211. Escolhido, ele aparece
+                  fixado — para o líder e para quem visita.
+
+                  Pet, carro, games, bairro e condomínio não têm enxame: o chip
+                  do lugar dele é o ASSUNTO, que continua no banner. */}
+              {(community.kind ?? "common") === "common" && (
+                <Block title={t("enxameTitle", "Enxame")} icon={<Hexagon className="h-4 w-4" />} accent={accent}>
+                  {showAsLeaderEdit ? (
+                    <>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                          {t("enxameLabel", "Enxame da comunidade")}
+                        </span>
+                        <select value={machineDraft} onChange={(e) => setMachineDraft(e.target.value)} className={selectCls}>
+                          <option value="">{t("enxameNone", "— escolher depois")}</option>
+                          {enxames.map((e) => (
+                            <option key={e.id_machine} value={e.id_machine}>{tx.enxame(null, e.name)}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <p className="mt-2 text-xs text-[#9A938A]">
+                        {t("enxameHint", "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.")}
+                      </p>
+                    </>
+                  ) : community.enxame_name ? (
+                    <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0B0B0D]">
+                      <Hexagon className="h-3.5 w-3.5" /> {tx.enxame(null, community.enxame_name)}
+                    </span>
+                  ) : (
+                    <p className="text-sm text-[#9A938A]">{t("enxameNotSet", "Ainda sem enxame escolhido.")}</p>
+                  )}
+                </Block>
+              )}
+
+              {/* PRIVACIDADE. Quem visita vê só o que vale para ele — se entra
+                  de graça ou se entrar custa assinatura —, nunca os controles
+                  nem o resumo financeiro do líder. */}
+              <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
+                {showAsLeaderEdit ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {([
+                        ["public", t("privacyPublic", "Pública"), <Globe key="g" className="h-4 w-4" />],
+                        ["private", t("privacyPrivate", "Privada"), <Lock key="l" className="h-4 w-4" />],
+                      ] as const).map(([key, label, icon]) => (
+                        <button key={key} type="button" onClick={() => setPrivacyDraft(key)}
+                          className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                          style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                          {icon} {label}
+                        </button>
+                      ))}
+                      {privacyDraft === "private" && (
+                        <label className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("privacyPriceLabel", "Mensalidade R$")}</span>
+                          <input value={monthlyDraft} onChange={(e) => setMonthlyDraft(e.target.value)} inputMode="decimal" placeholder="19,90"
+                            className="w-20 bg-transparent text-sm font-bold text-[#F5F1E8] outline-none" />
+                          <span className="text-[10px] font-bold uppercase text-[#9A938A]">/{t("perMonthShort", "mês")}</span>
+                        </label>
+                      )}
+                      <button type="button" disabled={savingPrivacy} onClick={savePrivacy}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                        {savingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("privacyApply", "Aplicar")}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                      {privacyDraft === "private"
+                        ? t("privacyPrivateHint", "Privada: os posts ficam só aqui dentro (não vão pro feed nem pros bees) e entrar exige assinatura mensal. Membros atuais continuam sem pagar.")
+                        : t("privacyPublicHint", "Pública: qualquer pessoa entra de graça e os posts também aparecem no feed. Assinaturas existentes param de cobrar no fim do ciclo.")}
+                    </p>
+                    {isPrivate && membershipSummary && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <MiniStat label={t("summarySubs", "Assinantes")} value={String(membershipSummary.active_subs)} accent={accent} />
+                        <MiniStat label={t("summaryWaiting", "Em liberação")} value={fmtBRL(Number(membershipSummary.waiting_cents))} accent={accent} />
+                        <MiniStat label={t("summaryAvailable", "Liberado")} value={fmtBRL(Number(membershipSummary.available_cents))} accent={accent} />
+                        <MiniStat label={t("summaryTotal", "Total líquido")} value={fmtBRL(Number(membershipSummary.total_net_cents))} accent={accent} />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
+                      {isPrivate
+                        ? <><Lock className="h-3.5 w-3.5" style={{ color: accent }} /> {t("privacyPrivate", "Privada")}{monthlyCents > 0 && <span style={{ color: accent }}>· {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}</span>}</>
+                        : <><Globe className="h-3.5 w-3.5" style={{ color: accent }} /> {t("privacyPublic", "Pública")}</>}
+                    </span>
+                    <p className="mt-2 text-xs text-[#9A938A]">
+                      {isPrivate
+                        ? t("privacyPrivateRead", "Entrar aqui exige assinatura mensal, e o que se publica fica só dentro da comunidade.")
+                        : t("privacyPublicRead", "Qualquer pessoa entra de graça, e os posts daqui também aparecem no feed.")}
+                    </p>
+                  </>
+                )}
+              </Block>
+
+              {/* TEMPORADA (a meta com prazo, ranking e prêmio). Quem visita vê
+                  a que está valendo — ou que não há nenhuma; só o líder abre o
+                  formulário. */}
+              <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
+                {goalFormOpen && showAsLeaderEdit ? (
+                  <div className="space-y-2">
+                    <input value={goalTitle} maxLength={120} onChange={(e) => setGoalTitle(e.target.value)} placeholder={t("goalNamePlaceholder", "Ex.: Bora postar essa semana!")}
+                      className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-xl text-[#F5F1E8] outline-none" />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select value={goalMetric} onChange={(e) => setGoalMetric(e.target.value)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
+                        <option value="xp">{t("metricXp", "XP coletivo")}</option>
+                        <option value="posts">{t("metricPosts", "Publicações")}</option>
+                        <option value="shares">{t("metricShares", "Compartilhamentos")}</option>
+                      </select>
+                      <select value={goalDays} onChange={(e) => setGoalDays(Number(e.target.value))} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
+                        <option value={30}>{t("goalDays30", "30 dias")}</option>
+                        <option value={60}>{t("goalDays60", "60 dias")}</option>
+                        <option value={90}>{t("goalDays90", "90 dias")}</option>
+                      </select>
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                      🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {(community.member_count ?? 0) < 5 ? `(${community.member_count ?? 0}/5)` : ""}
+                    </p>
+                    <div className="flex gap-2 pt-1">
+                      <button type="button" disabled={savingGoal || (community.member_count ?? 0) < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("goalStart", "Iniciar temporada")}
+                      </button>
+                      {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[#ff5a44]/60 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#ff7a6a]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
+                      <button type="button" onClick={() => setGoalFormOpen(false)} className="border-2 border-[#F5F1E8]/20 px-4 py-1.5 text-xs font-bold uppercase text-[#9A938A]">{t("cancel", "Cancelar")}</button>
+                    </div>
+                  </div>
+                ) : goal ? (
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="fl-display text-xl leading-tight text-[#F5F1E8]">{goal.title}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-0.5 text-[10px] font-extrabold uppercase" style={{ color: accent }}>
+                        <Sparkles className="h-3 w-3" /> {goal.prize_polens} {t("polensWord", "poléns")}
+                      </span>
+                    </div>
+                    {goal.status === "closed" ? (
+                      <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3">
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{t("goalEnded", "Temporada encerrada")}</p>
+                        {goal.winner ? (
+                          <p className="mt-1 flex items-center gap-2 fl-display text-lg text-[#F5F1E8]">🏆 {goal.winner.name} <span className="text-xs font-bold text-[#9A938A]">· {t("goalWonPrize", "levou")} {goal.prize_polens} {t("polensWord", "poléns")}</span></p>
+                        ) : (
+                          <p className="mt-1 text-sm text-[#9A938A]">{t("goalNoWinner", "Sem vencedor (ninguém pontuou).")}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-2 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                          <span className="inline-flex items-center gap-1"><Target className="h-3 w-3" style={{ color: accent }} /> {metricLabel(goal.metric)}</span>
+                          <span>· {t("goalDaysLeft", "faltam")} {daysLeft(goal.ends_at) ?? 0} {t("goalDaysWord", "dias")}</span>
+                        </div>
+                        {goal.percent != null && (
+                          <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
+                            <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {showAsLeaderEdit && (
+                      <button type="button" onClick={openGoalForm} className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8] underline">
+                        {goal.status === "closed" ? t("goalNewSeason", "Nova temporada") : t("goalEdit", "Editar temporada")}
+                      </button>
+                    )}
+                  </div>
+                ) : showAsLeaderEdit ? (
+                  <button type="button" onClick={openGoalForm} className="inline-flex items-center gap-2 border-2 border-dashed border-[#F5F1E8]/25 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:border-[#F5F1E8]/60">
+                    <Plus className="h-4 w-4" /> {t("goalStart", "Iniciar temporada")}
+                  </button>
+                ) : (
+                  <p className="text-sm text-[#9A938A]">{t("goalNoneRead", "Nenhuma temporada em andamento.")}</p>
+                )}
+              </Block>
+
+              {/* SOBRE A COMUNIDADE — o texto do líder. Quem visita lê; só o
+                  líder escreve, e no MESMO Salvar do nome e das cores. */}
+              <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
+                {showAsLeaderEdit ? (
+                  <textarea value={bioDraft} maxLength={200} onChange={(e) => setBioDraft(e.target.value)} placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")} rows={4}
+                    className="w-full bg-transparent text-sm leading-relaxed text-[#F5F1E8]/85 outline-none placeholder:text-[#9A938A]/70" />
+                ) : community.bio ? (
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-[#F5F1E8]/85">{community.bio}</p>
+                ) : (
+                  <p className="text-sm text-[#9A938A]">{t("bioEmptyRead", "O líder ainda não escreveu sobre a comunidade.")}</p>
+                )}
+              </Block>
+            </div>
+          </div>
+        </section>
+      )}
 
       {actionMsg && (
         <div className="relative z-10 mx-auto mt-4 max-w-5xl px-5 md:px-10">
@@ -1153,148 +1436,6 @@ export default function CommunityDetailPage() {
             </Block>
           )}
 
-          {/* Enxame (mig 219). É este bloco que substitui o formulário de
-              criação: a comunidade comum nasce vazia e o assunto dela é
-              escolhido aqui, do mesmo jeito que pet/carro/games escolhem raça,
-              modelo e jogo desde a mig 211. Fica ANTES da Privacidade para o
-              líder ler a página de cima para baixo na ordem em que a comunidade
-              se define: o que ela é, depois quem entra. */}
-          {showAsLeaderEdit && (community.kind ?? "common") === "common" && (
-            <Block title={t("enxameTitle", "Enxame")} icon={<Hexagon className="h-4 w-4" />} accent={accent}>
-              <label className="block">
-                <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
-                  {t("enxameLabel", "Enxame da comunidade")}
-                </span>
-                <select value={machineDraft} onChange={(e) => setMachineDraft(e.target.value)} className={selectCls}>
-                  <option value="">{t("enxameNone", "— escolher depois")}</option>
-                  {enxames.map((e) => (
-                    <option key={e.id_machine} value={e.id_machine}>{tx.enxame(null, e.name)}</option>
-                  ))}
-                </select>
-              </label>
-              <p className="mt-2 text-xs text-[#9A938A]">
-                {t("enxameHint", "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.")}
-              </p>
-            </Block>
-          )}
-
-          {/* Privacidade + mensalidade (só líder em edição) */}
-          {showAsLeaderEdit && (
-            <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
-              <div className="flex flex-wrap items-center gap-2">
-                {([
-                  ["public", t("privacyPublic", "Pública"), <Globe key="g" className="h-4 w-4" />],
-                  ["private", t("privacyPrivate", "Privada"), <Lock key="l" className="h-4 w-4" />],
-                ] as const).map(([key, label, icon]) => (
-                  <button key={key} type="button" onClick={() => setPrivacyDraft(key)}
-                    className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
-                    style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
-                    {icon} {label}
-                  </button>
-                ))}
-                {privacyDraft === "private" && (
-                  <label className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("privacyPriceLabel", "Mensalidade R$")}</span>
-                    <input value={monthlyDraft} onChange={(e) => setMonthlyDraft(e.target.value)} inputMode="decimal" placeholder="19,90"
-                      className="w-20 bg-transparent text-sm font-bold text-[#F5F1E8] outline-none" />
-                    <span className="text-[10px] font-bold uppercase text-[#9A938A]">/{t("perMonthShort", "mês")}</span>
-                  </label>
-                )}
-                <button type="button" disabled={savingPrivacy} onClick={savePrivacy}
-                  className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
-                  {savingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("privacyApply", "Aplicar")}
-                </button>
-              </div>
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                {privacyDraft === "private"
-                  ? t("privacyPrivateHint", "Privada: os posts ficam só aqui dentro (não vão pro feed nem pros bees) e entrar exige assinatura mensal. Membros atuais continuam sem pagar.")
-                  : t("privacyPublicHint", "Pública: qualquer pessoa entra de graça e os posts também aparecem no feed. Assinaturas existentes param de cobrar no fim do ciclo.")}
-              </p>
-              {isPrivate && membershipSummary && (
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <MiniStat label={t("summarySubs", "Assinantes")} value={String(membershipSummary.active_subs)} accent={accent} />
-                  <MiniStat label={t("summaryWaiting", "Em liberação")} value={fmtBRL(Number(membershipSummary.waiting_cents))} accent={accent} />
-                  <MiniStat label={t("summaryAvailable", "Liberado")} value={fmtBRL(Number(membershipSummary.available_cents))} accent={accent} />
-                  <MiniStat label={t("summaryTotal", "Total líquido")} value={fmtBRL(Number(membershipSummary.total_net_cents))} accent={accent} />
-                </div>
-              )}
-            </Block>
-          )}
-
-          {/* Temporada (meta com prazo + ranking + prêmio) */}
-          {(showAsLeaderEdit || goal) && (
-            <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
-              {goalFormOpen && showAsLeaderEdit ? (
-                <div className="space-y-2">
-                  <input value={goalTitle} maxLength={120} onChange={(e) => setGoalTitle(e.target.value)} placeholder={t("goalNamePlaceholder", "Ex.: Bora postar essa semana!")}
-                    className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-xl text-[#F5F1E8] outline-none" />
-                  <div className="flex flex-wrap items-center gap-2">
-                    <select value={goalMetric} onChange={(e) => setGoalMetric(e.target.value)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
-                      <option value="xp">{t("metricXp", "XP coletivo")}</option>
-                      <option value="posts">{t("metricPosts", "Publicações")}</option>
-                      <option value="shares">{t("metricShares", "Compartilhamentos")}</option>
-                    </select>
-                    <select value={goalDays} onChange={(e) => setGoalDays(Number(e.target.value))} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
-                      <option value={30}>{t("goalDays30", "30 dias")}</option>
-                      <option value={60}>{t("goalDays60", "60 dias")}</option>
-                      <option value={90}>{t("goalDays90", "90 dias")}</option>
-                    </select>
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                    🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {(community.member_count ?? 0) < 5 ? `(${community.member_count ?? 0}/5)` : ""}
-                  </p>
-                  <div className="flex gap-2 pt-1">
-                    <button type="button" disabled={savingGoal || (community.member_count ?? 0) < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
-                      {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("goalStart", "Iniciar temporada")}
-                    </button>
-                    {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[#ff5a44]/60 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#ff7a6a]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
-                    <button type="button" onClick={() => setGoalFormOpen(false)} className="border-2 border-[#F5F1E8]/20 px-4 py-1.5 text-xs font-bold uppercase text-[#9A938A]">{t("cancel", "Cancelar")}</button>
-                  </div>
-                </div>
-              ) : goal ? (
-                <div>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="fl-display text-xl leading-tight text-[#F5F1E8]">{goal.title}</span>
-                    <span className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-0.5 text-[10px] font-extrabold uppercase" style={{ color: accent }}>
-                      <Sparkles className="h-3 w-3" /> {goal.prize_polens} {t("polensWord", "poléns")}
-                    </span>
-                  </div>
-                  {goal.status === "closed" ? (
-                    <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{t("goalEnded", "Temporada encerrada")}</p>
-                      {goal.winner ? (
-                        <p className="mt-1 flex items-center gap-2 fl-display text-lg text-[#F5F1E8]">🏆 {goal.winner.name} <span className="text-xs font-bold text-[#9A938A]">· {t("goalWonPrize", "levou")} {goal.prize_polens} {t("polensWord", "poléns")}</span></p>
-                      ) : (
-                        <p className="mt-1 text-sm text-[#9A938A]">{t("goalNoWinner", "Sem vencedor (ninguém pontuou).")}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mt-2 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
-                        <span className="inline-flex items-center gap-1"><Target className="h-3 w-3" style={{ color: accent }} /> {metricLabel(goal.metric)}</span>
-                        <span>· {t("goalDaysLeft", "faltam")} {daysLeft(goal.ends_at) ?? 0} {t("goalDaysWord", "dias")}</span>
-                      </div>
-                      {goal.percent != null && (
-                        <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
-                          <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {showAsLeaderEdit && (
-                    <button type="button" onClick={openGoalForm} className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8] underline">
-                      {goal.status === "closed" ? t("goalNewSeason", "Nova temporada") : t("goalEdit", "Editar temporada")}
-                    </button>
-                  )}
-                </div>
-              ) : showAsLeaderEdit ? (
-                <button type="button" onClick={openGoalForm} className="inline-flex items-center gap-2 border-2 border-dashed border-[#F5F1E8]/25 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:border-[#F5F1E8]/60">
-                  <Plus className="h-4 w-4" /> {t("goalStart", "Iniciar temporada")}
-                </button>
-              ) : null}
-            </Block>
-          )}
-
           {/* Mural — privado: só membros leem; só o líder posta */}
           {(showAsLeaderEdit || (isMember && announcements.length > 0)) && (
             <Block title={t("muralTitle", "Mural do líder")} icon={<Megaphone className="h-4 w-4" />} accent={accent}>
@@ -1328,18 +1469,6 @@ export default function CommunityDetailPage() {
                     </div>
                   ))}
                 </div>
-              )}
-            </Block>
-          )}
-
-          {/* Perfil */}
-          {(showAsLeaderEdit || community.bio) && (
-            <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
-              {showAsLeaderEdit ? (
-                <textarea value={bioDraft} maxLength={200} onChange={(e) => setBioDraft(e.target.value)} placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")} rows={4}
-                  className="w-full bg-transparent text-sm leading-relaxed text-[#F5F1E8]/85 outline-none placeholder:text-[#9A938A]/70" />
-              ) : (
-                <p className="whitespace-pre-line text-sm leading-relaxed text-[#F5F1E8]/85">{community.bio}</p>
               )}
             </Block>
           )}
