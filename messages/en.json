@@ -2678,7 +2678,9 @@
     "muralPill": "Board",
     "muralPillAria": "Leader's board: community notices",
     "muralMembersOnly": "Only community members can read the board.",
-    "publishFeedCta": "Post"
+    "publishFeedCta": "Post",
+    "statsTitle": "Community numbers",
+    "statsAria": "Community numbers: members, level, XP, benchmark, spotlight and ranking"
   },
   "Careers": {
     "hero.badge": "Careers",

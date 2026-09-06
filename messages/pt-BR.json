@@ -2665,7 +2665,9 @@
     "muralPill": "Mural",
     "muralPillAria": "Mural do líder: recados da comunidade",
     "muralMembersOnly": "Só quem é da comunidade lê o mural.",
-    "publishFeedCta": "Postar"
+    "publishFeedCta": "Postar",
+    "statsTitle": "Números da comunidade",
+    "statsAria": "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking"
   },
   "Careers": {
     "hero.badge": "Carreiras",

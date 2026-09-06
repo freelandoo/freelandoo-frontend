@@ -14,6 +14,7 @@
 /* ── Chrome da página ─────────────────────────────────────────────────────── */
 export { TabloidHeader } from "./TabloidHeader"
 export { PageBackLink } from "./PageBackLink"
+export { RetractableColumn } from "./RetractableColumn"
 export { AuthShell, AuthCard } from "./AuthShell"
 export {
   PageShell,

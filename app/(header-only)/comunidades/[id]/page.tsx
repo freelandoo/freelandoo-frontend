@@ -22,6 +22,9 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // temporada e o texto do líder. Botão novo de headcard de comunidade entra
 // nessa pilha, nunca como bloco solto no meio da página.
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+// A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
+// ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
+import { RetractableColumn } from "@/components/tabloide"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -1391,19 +1394,95 @@ export default function CommunityDetailPage() {
         </div>
       )}
 
-      {/* KPIs */}
-      <section className="relative z-10 mx-auto mt-6 max-w-5xl px-5 md:px-10">
-        <div className="grid grid-cols-3 gap-3">
-          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
-          <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
-          <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
-        </div>
-      </section>
+      {/* OS NÚMEROS DA COMUNIDADE — UMA coluna retrátil (2026-09-06).
 
-      {/* GRID */}
-      <div className="relative z-10 mx-auto mt-8 grid max-w-5xl gap-6 px-5 md:grid-cols-3 md:px-10">
-        {/* coluna principal */}
-        <div className="space-y-6 md:col-span-2">
+          Eram dois lugares: a fita de três KPIs (membros, nível, XP) empurrando
+          o feed para baixo e a barra lateral (benchmark, destaque, ranking) que
+          no celular virava um rodapé depois do último post. Agora é uma coluna
+          só, enfileirada nesta ordem, atrás de um botão que abre e fecha num
+          toque — no celular e no computador.
+
+          Ela nasce FECHADA: a página começa direto no feed, como o headcard já
+          tinha feito com enxame, privacidade, temporada e mural.
+
+          Vale para TODA comunidade por construção — comum, condomínio, bairro,
+          pet, carro e games usam esta mesma casca. Bloco novo de número desta
+          página entra AQUI DENTRO, nunca solto entre o headcard e o feed. */}
+      <RetractableColumn
+        title={t("statsTitle", "Números da comunidade")}
+        ariaLabel={t("statsAria", "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking")}
+        icon={<BarChart3 className="h-4 w-4" />}
+        accent={accent}
+        className="mx-auto mt-6 max-w-5xl px-5 md:px-10"
+      >
+        <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
+        <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
+        <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
+        {benchmark && (
+          // A sombra dura saiu daqui quando o bloco entrou na coluna: quem
+          // carrega o accent é a barra que abre a coluna, e uma sombra de 6px
+          // no meio de blocos empilhados a 12px de distância faria só este
+          // parecer descolado da fila.
+          <div className="relative border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-5">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+              <BarChart3 className="h-4 w-4" /> {t("benchmarkTitle", "Benchmark")}
+            </div>
+            <div className="mt-1 fl-display text-5xl leading-none" style={{ color: accent }}>#{benchmark.position}</div>
+            <p className="mt-1 text-xs font-semibold text-[#9A938A]">
+              {t("benchmarkOf", "de")} {benchmark.total} · {benchmark.enxame_name ? tx.enxame(null, benchmark.enxame_name) : t("communitiesWord", "comunidades")}
+            </p>
+            {benchmark.percentile != null && benchmark.total > 1 && (
+              <span className="mt-2 inline-block border-2 border-[#F5F1E8]/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}>
+                {t("benchmarkTop", "top")} {benchmark.percentile}%
+              </span>
+            )}
+          </div>
+        )}
+
+        {topRow && (
+          <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
+            <div className="flex items-center gap-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]" style={{ outline: `2px solid ${accent}`, outlineOffset: "1px" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={topRow.avatar_url || "/placeholder-user.jpg"} alt={topRow.name || ""} className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate fl-display text-lg leading-tight text-[#F5F1E8]">{topRow.name}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {seasonOn && goal?.status === "closed" ? `🏆 ${t("spotlightWinner", "Vencedor")}` : seasonOn ? t("spotlightLeader", "Líder da temporada") : t("spotlightSub", "Membro destaque")} · {rowScore(topRow)}{seasonOn && goal?.metric === "posts" ? ` ${t("postsEng", "posts/eng")}` : ""}
+                </p>
+              </div>
+            </div>
+          </Block>
+        )}
+
+        {rankRows.length > 0 && (
+          <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
+            <ol className="space-y-2">
+              {rankRows.slice(0, 5).map((row, i) => (
+                <li key={row.id_user} className="flex items-center gap-2">
+                  <span className="w-5 shrink-0 fl-display text-base text-[#F5F1E8]/40">{i + 1}</span>
+                  <div className="h-8 w-8 shrink-0 overflow-hidden border border-[#0B0B0D] bg-[#1D1810]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={row.avatar_url || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{row.name}</span>
+                  <span className="shrink-0 text-[11px] font-extrabold" style={{ color: accent }}>{rowScore(row)}</span>
+                </li>
+              ))}
+            </ol>
+            {seasonOn && goal?.metric === "posts" && (
+              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">{t("postsEngHint", "posts / engajamento")}</p>
+            )}
+          </Block>
+        )}
+      </RetractableColumn>
+
+      {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
+          destaque, ranking) subiu para a coluna retrátil dos números, então o
+          feed ocupa a largura inteira. */}
+      <div className="relative z-10 mx-auto mt-8 max-w-5xl px-5 md:px-10">
+        <div className="space-y-6">
           {/* Condomínio (migs 205/206): portaria, família × disputa, planta e
               veredito. Mesma casca — muda o que aparece dentro dela. */}
           {isCondo && (
@@ -1705,64 +1784,6 @@ export default function CommunityDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* sidebar */}
-        <div className="space-y-6">
-          {benchmark && (
-            <div className="relative border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-5" style={{ boxShadow: `6px 6px 0 0 ${accent}` }}>
-              <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
-                <BarChart3 className="h-4 w-4" /> {t("benchmarkTitle", "Benchmark")}
-              </div>
-              <div className="mt-1 fl-display text-5xl leading-none" style={{ color: accent }}>#{benchmark.position}</div>
-              <p className="mt-1 text-xs font-semibold text-[#9A938A]">
-                {t("benchmarkOf", "de")} {benchmark.total} · {benchmark.enxame_name ? tx.enxame(null, benchmark.enxame_name) : t("communitiesWord", "comunidades")}
-              </p>
-              {benchmark.percentile != null && benchmark.total > 1 && (
-                <span className="mt-2 inline-block border-2 border-[#F5F1E8]/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}>
-                  {t("benchmarkTop", "top")} {benchmark.percentile}%
-                </span>
-              )}
-            </div>
-          )}
-
-          {topRow && (
-            <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]" style={{ outline: `2px solid ${accent}`, outlineOffset: "1px" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={topRow.avatar_url || "/placeholder-user.jpg"} alt={topRow.name || ""} className="h-full w-full object-cover" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate fl-display text-lg leading-tight text-[#F5F1E8]">{topRow.name}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
-                    {seasonOn && goal?.status === "closed" ? `🏆 ${t("spotlightWinner", "Vencedor")}` : seasonOn ? t("spotlightLeader", "Líder da temporada") : t("spotlightSub", "Membro destaque")} · {rowScore(topRow)}{seasonOn && goal?.metric === "posts" ? ` ${t("postsEng", "posts/eng")}` : ""}
-                  </p>
-                </div>
-              </div>
-            </Block>
-          )}
-
-          {rankRows.length > 0 && (
-            <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
-              <ol className="space-y-2">
-                {rankRows.slice(0, 5).map((row, i) => (
-                  <li key={row.id_user} className="flex items-center gap-2">
-                    <span className="w-5 shrink-0 fl-display text-base text-[#F5F1E8]/40">{i + 1}</span>
-                    <div className="h-8 w-8 shrink-0 overflow-hidden border border-[#0B0B0D] bg-[#1D1810]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={row.avatar_url || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
-                    </div>
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{row.name}</span>
-                    <span className="shrink-0 text-[11px] font-extrabold" style={{ color: accent }}>{rowScore(row)}</span>
-                  </li>
-                ))}
-              </ol>
-              {seasonOn && goal?.metric === "posts" && (
-                <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">{t("postsEngHint", "posts / engajamento")}</p>
-              )}
-            </Block>
-          )}
-        </div>
       </div>
 
       {/* Barra fixa de edição */}
@@ -1855,11 +1876,17 @@ function ImageDrop({ onFile, label, small, busy }: { onFile: (f: File) => void; 
   )
 }
 
+/**
+ * Um número da comunidade. Nasceu numa fita de três colunas e hoje é uma LINHA
+ * da coluna retrátil: rótulo à esquerda, número à direita. Empilhados, os três
+ * viram a fila que o desenho pede — membros, nível e XP, um em cima do outro.
+ */
 function Kpi({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-3">
-      <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#9A938A]"><span style={{ color: accent }}>{icon}</span>{label}</div>
-      <div className="mt-1 fl-display text-2xl leading-none text-[#F5F1E8]">{value}</div>
+    <div className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3">
+      <span className="shrink-0" style={{ color: accent }}>{icon}</span>
+      <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">{label}</span>
+      <span className="fl-display text-2xl leading-none text-[#F5F1E8]">{value}</span>
     </div>
   )
 }
