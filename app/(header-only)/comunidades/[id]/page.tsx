@@ -36,6 +36,16 @@ const CondoResidence = dynamic(
   () => import("./_components/condo-residence").then((m) => m.CondoResidence),
   { ssr: false }
 )
+// A estante (mig 220) só aparece na comunidade de games e só para quem chega
+// na aba: carregar o módulo dela em toda comunidade seria pagar o peso em
+// condomínio, bairro e pet, que nunca vão abri-la.
+const GamerShelf = dynamic(
+  () => import("./_components/gamer-shelf").then((m) => m.GamerShelf),
+  { ssr: false }
+)
+
+/** As abas da comunidade. "shelf" só existe na de games (mig 220). */
+type CommunityTab = "feed" | "members" | "shelf"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -195,7 +205,7 @@ export default function CommunityDetailPage() {
   const [goal, setGoal] = useState<Goal | null>(null)
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
-  const [tab, setTab] = useState<"feed" | "members">("feed")
+  const [tab, setTab] = useState<CommunityTab>("feed")
   const router = useRouter()
   const sitePath = id ? `/comunidades/${id}/site` : "/comunidades"
   // O menu do "+" mora no HEADCARD e a aba fica MUITO abaixo (privacidade,
@@ -203,7 +213,7 @@ export default function CommunityDetailPage() {
   // tela que a pessoa está olhando — parece botão quebrado. Por isso o item
   // do menu troca a aba E leva a pessoa até ela.
   const tabsRef = useRef<HTMLDivElement | null>(null)
-  const goToTab = useCallback((key: "feed" | "members") => {
+  const goToTab = useCallback((key: CommunityTab) => {
     setTab(key)
     // Depois da pintura: a aba só existe no DOM no quadro seguinte.
     requestAnimationFrame(() => {
@@ -325,13 +335,22 @@ export default function CommunityDetailPage() {
     [isLeader, siteEnabled, t]
   )
 
+  // ─── Estante (mig 220) ──────────────────────────────────────────────────────
+  // A aba só existe na comunidade de GAMES e só quando a conexão de plataforma
+  // está ligada no Painel de Controle. Ela mostra a biblioteca do DONO do
+  // espaço: para quem visita, é o que ele joga; para ele, é onde conecta a
+  // plataforma e compara com alguém.
+  const gamerEnabled = useFeature("games_conexao")
+  const showShelfTab = subjectKind === "games" && gamerEnabled
+
   const communityTabs = useMemo(
     () =>
       [
         ["feed", t("tabFeed", "Feed")],
         ["members", t("tabMembers", "Membros")],
-      ] as ["feed" | "members", string][],
-    [t]
+        ...(showShelfTab ? ([["shelf", t("tabShelf", "Estante")]] as [CommunityTab, string][]) : []),
+      ] as [CommunityTab, string][],
+    [t, showShelfTab]
   )
 
   const accent = accentHex(accentDraft)
@@ -1348,7 +1367,13 @@ export default function CommunityDetailPage() {
             </div>
 
             <div className="mt-6">
-              {tab === "members" ? (
+              {tab === "shelf" ? (
+                <GamerShelf
+                  ownerUserId={community.id_leader_user ?? null}
+                  isOwner={isLeader}
+                  accent={accent}
+                />
+              ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (

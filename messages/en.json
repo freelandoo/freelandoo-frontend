@@ -2664,7 +2664,8 @@
     "enxameNone": "— choose later",
     "enxameHint": "It is how the community shows up in the showcase filters. You can choose it later.",
     "registerTitle": "Register",
-    "registerSubtitle": "Gyms and buildings need a few details before they exist. For a regular community, use “Create community” — it is born ready to edit."
+    "registerSubtitle": "Gyms and buildings need a few details before they exist. For a regular community, use “Create community” — it is born ready to edit.",
+    "tabShelf": "Shelf"
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -5991,5 +5992,37 @@
     "serviceEmptyHint": "This showcase lists the services on your profile. Add them under My profile → Services and they show up here.",
     "serviceHourSuffix": "h",
     "serviceMinSuffix": "min"
+  },
+  "Gamer": {
+    "connectCta": "Connect {platform}",
+    "connectHint": "Brings your games, hours and achievements automatically",
+    "connectFail": "Could not start the connection.",
+    "actionFail": "That did not work.",
+    "noHandle": "connected account",
+    "syncNow": "Refresh",
+    "visPublic": "Visible",
+    "visPrivate": "Only me",
+    "disconnect": "Disconnect",
+    "disconnectConfirm": "Disconnecting deletes the games that came from this platform. Continue?",
+    "statusOk": "Synced",
+    "statusError": "The last read failed",
+    "statusPrivate": "Your account is private on the platform",
+    "privateHelp": "On Steam, open Profile → Edit profile → Privacy settings and set \"Game details\" to Public. Then tap Refresh here.",
+    "noProviders": "No platform available here yet.",
+    "shelfLocked": "This person keeps their shelf private.",
+    "shelfEmpty": "No games here yet.",
+    "shelfEmptyOwn": "Connect a platform and your games show up here.",
+    "gameOne": "game",
+    "gameMany": "games",
+    "searchGames": "Search game",
+    "achievements": "achievements",
+    "compareTitle": "Head to head",
+    "compareHint": "Type someone's @ and see what you both play.",
+    "compareCta": "Compare",
+    "compareFail": "I could not find that profile.",
+    "compareLocked": "This person keeps their shelf private.",
+    "compareNone": "You two do not share any game yet.",
+    "compareSummary": "{n} in common · you played more in {mine}, {who} in {theirs}",
+    "compareYou": "You"
   }
 }

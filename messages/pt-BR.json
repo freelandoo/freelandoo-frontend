@@ -2651,7 +2651,8 @@
     "enxameNone": "— escolher depois",
     "enxameHint": "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.",
     "registerTitle": "Cadastrar",
-    "registerSubtitle": "Academia e condomínio precisam de alguns dados antes de existir. Para uma comunidade comum, use “Criar comunidade” — ela nasce pronta para editar."
+    "registerSubtitle": "Academia e condomínio precisam de alguns dados antes de existir. Para uma comunidade comum, use “Criar comunidade” — ela nasce pronta para editar.",
+    "tabShelf": "Estante"
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -5405,5 +5406,37 @@
     "serviceEmptyHint": "Esta vitrine mostra os serviços do seu perfil. Cadastre em Meu perfil → Serviços e eles aparecem aqui.",
     "serviceHourSuffix": "h",
     "serviceMinSuffix": "min"
+  },
+  "Gamer": {
+    "connectCta": "Conectar {platform}",
+    "connectHint": "Traz seus jogos, horas e conquistas automaticamente",
+    "connectFail": "Não deu para começar a conexão.",
+    "actionFail": "Não deu certo.",
+    "noHandle": "conta conectada",
+    "syncNow": "Atualizar",
+    "visPublic": "Visível",
+    "visPrivate": "Só eu",
+    "disconnect": "Desconectar",
+    "disconnectConfirm": "Desconectar apaga os jogos que vieram desta plataforma. Continuar?",
+    "statusOk": "Sincronizada",
+    "statusError": "A última leitura falhou",
+    "statusPrivate": "Sua conta está fechada na plataforma",
+    "privateHelp": "Na Steam, abra Perfil → Editar perfil → Configurações de privacidade e deixe \"Detalhes do jogo\" como Público. Depois toque em Atualizar aqui.",
+    "noProviders": "Nenhuma plataforma disponível por aqui ainda.",
+    "shelfLocked": "Esta pessoa não deixa a estante à mostra.",
+    "shelfEmpty": "Nenhum jogo por aqui ainda.",
+    "shelfEmptyOwn": "Conecte uma plataforma e seus jogos aparecem aqui.",
+    "gameOne": "jogo",
+    "gameMany": "jogos",
+    "searchGames": "Procurar jogo",
+    "achievements": "conquistas",
+    "compareTitle": "Frente a frente",
+    "compareHint": "Digite o @ de alguém e veja o que vocês jogam em comum.",
+    "compareCta": "Comparar",
+    "compareFail": "Não achei esse perfil.",
+    "compareLocked": "Esta pessoa não deixa a estante à mostra.",
+    "compareNone": "Vocês não têm nenhum jogo em comum ainda.",
+    "compareSummary": "{n} em comum · você jogou mais em {mine}, {who} em {theirs}",
+    "compareYou": "Você"
   }
 }
