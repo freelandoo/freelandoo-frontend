@@ -1,28 +1,38 @@
 "use client"
 
-import { useId, useState, type ReactNode } from "react"
-import { ChevronDown } from "lucide-react"
+import { useEffect, useId, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
+import { ChevronLeft, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 /**
- * A COLUNA RETRÁTIL — a mecânica dos números de uma superfície coletiva.
+ * A COLUNA RETRÁTIL — a mecânica dos números de uma superfície coletiva, hoje
+ * em forma de SIDEBAR.
  *
  * Pedido do Alex (2026-09-06): os blocos que descreviam a comunidade (membros,
- * nível, XP de um lado; benchmark, destaque e ranking do outro) deixaram de ser
- * duas ilhas — viram UMA coluna enfileirada, e a coluna abre e fecha num toque,
- * no celular e no computador. "Em todas as comunidades... academia, negócios,
- * tudo dessa forma, retrátil."
+ * nível e XP de um lado; benchmark, destaque e ranking do outro) viraram UMA
+ * coluna enfileirada — e ela "vira um sidebar: mostra só a pontinha da setinha,
+ * e quando você aperta ele vem".
  *
- * Antes eram dois lugares: uma fita de três KPIs largando o feed para baixo e
- * uma barra lateral que, no celular, virava um rodapé de três caixas que quase
- * ninguém rolava até o fim. Empilhados atrás de um botão, os números continuam
- * a um toque de distância e a página começa direto no conteúdo.
+ * Então nada disso ocupa lugar na página: o que fica no ar o tempo todo é a
+ * ALÇA colada na borda direita, com a ponta da seta escapando. Quem aperta
+ * recebe a coluna inteira deslizando de lado; quem veio ler o feed não paga
+ * um centímetro de tela por ela.
  *
- * ⚠️ ESTA PEÇA É SÓ A MECÂNICA — a barra, o estado e a moldura. O QUE entra na
- * coluna é da superfície, como no `PillStack`: a comunidade empilha membros,
- * nível, XP, benchmark, destaque e ranking; outra superfície empilha o que ela
- * tiver. Escrever a mecânica de novo em cada tela é como uma delas ganha (ou
- * perde) o comportamento em silêncio.
+ * ⚠️ ESTA PEÇA É SÓ A MECÂNICA — a alça, a gaveta, o estado e a moldura. O QUE
+ * entra na coluna é da superfície, como no `PillStack`: a comunidade empilha
+ * membros, nível, XP, benchmark, destaque e ranking; outra superfície empilha o
+ * que ela tiver. Escrever a mecânica de novo em cada tela é como uma delas
+ * ganha (ou perde) o comportamento em silêncio.
+ *
+ * ⚠️ A ALÇA É NA DIREITA, e isso não é gosto: o dock do perfil
+ * (`ProfileSidebar`) é `fixed left-3 top-1/2` no computador. Alça na esquerda
+ * nasceria em cima dele.
+ *
+ * ⚠️ A GAVETA VAI POR PORTAL para o `<body>`. Ela é `fixed`, e ancestral com
+ * `transform` (a página tem cards rotacionados) deixa de ser janela para
+ * elemento fixo — a gaveta apareceria presa dentro de um card. O portal é o que
+ * garante que ela cubra a tela em qualquer superfície que monte a peça.
  *
  * Por que ela NÃO mora no `kit.tsx`: o kit é importado por SERVER components e
  * por isso não pode ter hook. Aqui há estado, então o arquivo é client — mesmo
@@ -36,58 +46,113 @@ export function RetractableColumn({
   icon,
   accent,
   ariaLabel,
-  defaultOpen = false,
-  className,
+  closeLabel,
   children,
 }: {
   title: string
   icon?: ReactNode
-  /** Cor da sombra dura e do ícone. */
+  /** Cor da seta, da faixa da gaveta e do ícone do cabeçalho. */
   accent: string
-  /** O que o botão diz a quem não vê a tela (o rótulo visível é o título). */
+  /** O que a alça diz a quem não vê a tela (nela só cabe a seta). */
   ariaLabel?: string
-  /**
-   * Nasce FECHADA de propósito: o pedido foi "você aperta e ela aparece". A
-   * prop existe para a superfície que quiser o contrário — não para virar o
-   * padrão por descuido.
-   */
-  defaultOpen?: boolean
-  className?: string
+  closeLabel: string
   children: ReactNode
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const panelId = useId()
 
-  return (
-    <section className={cn("relative z-10", className)}>
+  useEffect(() => setMounted(true), [])
+
+  // Esc fecha — a gaveta cobre a tela e teclado é a saída de quem não usa mouse.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open])
+
+  // Trava a rolagem do fundo enquanto a gaveta está aberta: sem isso o dedo que
+  // rola o ranking arrasta a página inteira atrás dele.
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  if (!mounted) return null
+
+  return createPortal(
+    <>
+      {/* A ALÇA — a única coisa que fica no ar. Estreita de propósito: o que
+          aparece é a ponta da seta, colada na borda. A altura (h-16) é o que
+          a torna alcançável com o polegar sem virar um painel. */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={ariaLabel || title}
-        className="flex w-full items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3 text-left transition-transform hover:-translate-y-0.5"
-        style={{ boxShadow: `6px 6px 0 0 ${accent}` }}
+        title={ariaLabel || title}
+        className={cn(
+          "fixed right-0 top-1/2 z-40 flex h-16 w-8 -translate-y-1/2 items-center justify-center border-2 border-r-0 border-[#0B0B0D] bg-[#15120E] transition-transform hover:-translate-x-1",
+          open && "pointer-events-none opacity-0",
+        )}
+        style={{ boxShadow: `-4px 4px 0 0 ${accent}` }}
       >
-        {icon && <span style={{ color: accent }}>{icon}</span>}
-        <span className="flex-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-          {title}
-        </span>
-        <ChevronDown
-          className={cn("h-5 w-5 shrink-0 transition-transform", open && "rotate-180")}
-          style={{ color: accent }}
-          aria-hidden
-        />
+        <ChevronLeft className="h-5 w-5" style={{ color: accent }} aria-hidden />
       </button>
 
-      {/* A coluna em si: um bloco embaixo do outro, na ordem em que a
-          superfície os declarou. Renderiza só quando aberta — esconder por CSS
-          deixaria o conteúdo (e as imagens dele) sendo baixado à toa. */}
-      {open && (
-        <div id={panelId} className="mt-3 space-y-3">
-          {children}
-        </div>
-      )}
-    </section>
+      {/* A GAVETA */}
+      <div
+        aria-hidden={!open}
+        className={cn(
+          "fixed inset-0 z-[90] transition-opacity duration-300",
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <div onClick={() => setOpen(false)} className="absolute inset-0 bg-black/70" />
+
+        <aside
+          id={panelId}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className={cn(
+            "fl-sharp absolute right-0 top-0 flex h-full w-full max-w-[380px] flex-col border-l-2 border-[#0B0B0D] bg-[#0F0C08] transition-transform duration-300 ease-out",
+            open ? "translate-x-0" : "translate-x-full",
+          )}
+          style={{ boxShadow: `-8px 0 0 0 ${accent}` }}
+        >
+          <header className="flex items-center gap-2 border-b-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3">
+            {icon && <span style={{ color: accent }}>{icon}</span>}
+            <span className="flex-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
+              {title}
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label={closeLabel}
+              className="grid h-8 w-8 place-items-center text-[#9A938A] hover:text-[#F5F1E8]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+
+          {/* A coluna em si: um bloco embaixo do outro, na ordem em que a
+              superfície os declarou. Só renderiza aberta — esconder por CSS
+              deixaria as fotos do ranking sendo baixadas à toa. */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {open && <div className="space-y-3">{children}</div>}
+          </div>
+        </aside>
+      </div>
+    </>,
+    document.body,
   )
 }

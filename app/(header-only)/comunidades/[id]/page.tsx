@@ -1394,26 +1394,27 @@ export default function CommunityDetailPage() {
         </div>
       )}
 
-      {/* OS NÚMEROS DA COMUNIDADE — UMA coluna retrátil (2026-09-06).
+      {/* OS NÚMEROS DA COMUNIDADE — UMA coluna, num SIDEBAR (2026-09-06).
 
           Eram dois lugares: a fita de três KPIs (membros, nível, XP) empurrando
           o feed para baixo e a barra lateral (benchmark, destaque, ranking) que
           no celular virava um rodapé depois do último post. Agora é uma coluna
-          só, enfileirada nesta ordem, atrás de um botão que abre e fecha num
-          toque — no celular e no computador.
-
-          Ela nasce FECHADA: a página começa direto no feed, como o headcard já
-          tinha feito com enxame, privacidade, temporada e mural.
+          só, enfileirada nesta ordem, e ela não ocupa lugar nenhum na página:
+          o que fica no ar é a PONTINHA DA SETA na borda direita, e quem aperta
+          recebe a gaveta inteira — no celular e no computador.
 
           Vale para TODA comunidade por construção — comum, condomínio, bairro,
           pet, carro e games usam esta mesma casca. Bloco novo de número desta
-          página entra AQUI DENTRO, nunca solto entre o headcard e o feed. */}
+          página entra AQUI DENTRO, nunca solto entre o headcard e o feed.
+
+          A peça se desenha por PORTAL no <body>, então este lugar no JSX é só
+          onde ela mora perto dos dados que lê — não é onde ela aparece. */}
       <RetractableColumn
         title={t("statsTitle", "Números da comunidade")}
         ariaLabel={t("statsAria", "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking")}
+        closeLabel={t("panelClose", "Fechar")}
         icon={<BarChart3 className="h-4 w-4" />}
         accent={accent}
-        className="mx-auto mt-6 max-w-5xl px-5 md:px-10"
       >
         <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
