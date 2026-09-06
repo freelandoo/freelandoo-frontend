@@ -77,6 +77,10 @@ export function CommunitySiteBuilder({
   // de preço que esta mudança veio justamente eliminar.
   const [services, setServices] = useState<ShowcaseService[]>([])
   const [providerProfileId, setProviderProfileId] = useState<string | null>(null)
+  // Endereço reservado do site. Ele existe a partir da PRIMEIRA publicação e é
+  // o que dá destino ao botão de agendar dentro do construtor — ver
+  // `bookingHref` mais abaixo.
+  const [slug, setSlug] = useState<string | null>(null)
   const [isPublished, setIsPublished] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>("idle")
   const [publishing, setPublishing] = useState(false)
@@ -149,6 +153,7 @@ export function CommunitySiteBuilder({
         }
         setLocked(!!data.locked)
         setIsPublished(!!data.is_published)
+        setSlug(data.slug || null)
         setServices(Array.isArray(data.services) ? data.services : [])
         setProviderProfileId(data.provider_profile_id || null)
         if (data.config) {
@@ -307,6 +312,10 @@ export function CommunitySiteBuilder({
           return
         }
         setIsPublished(!!data.is_published)
+        // A primeira publicação é quem CUNHA o endereço. Sem ler o slug de
+        // volta aqui, o botão de agendar ficaria sem destino até o líder
+        // recarregar a página.
+        if (data.slug) setSlug(data.slug)
         setError(null)
       } catch {
         setError(t("publishError", "Não foi possível publicar."))
@@ -726,6 +735,21 @@ export function CommunitySiteBuilder({
               // A agenda viva do cartão de chamada também vale no construtor: o
               // líder tem que ver o que o visitante vê.
               communityId={idProfile}
+              // O mesmo vale para o destino de agendar. O construtor não
+              // passava nada aqui, e o efeito era grande e silencioso: o token
+              // `agendar` do documento não resolvia, e TODO botão que aponta
+              // para a página de agendamento — o principal do banner, o do
+              // bloco de chamada, o da barra fixa, o de cada card de serviço —
+              // simplesmente não era desenhado na pré-visualização. O líder
+              // publicava um site com a porta principal que ele nunca viu.
+              //
+              // O endereço é o mesmo que o visitante usa (`/c/<slug>/agendar`),
+              // e não um caminho de construtor: apontar para outro lugar aqui
+              // recriaria a divergência entre o que se edita e o que se
+              // publica. Antes da primeira publicação não existe slug — e aí
+              // continua `null`, porque nesse momento a página de agendamento
+              // realmente ainda não tem endereço.
+              bookingHref={slug ? `/c/${slug}/agendar` : null}
             />
           </div>
         </div>

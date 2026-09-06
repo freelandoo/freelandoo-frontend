@@ -320,6 +320,13 @@ export type CommunitySiteResponse = {
   services?: ShowcaseService[]
   professionals?: SiteProfessional[]
   provider_profile_id?: string | null
+  /**
+   * Endereço reservado do site (`/c/<slug>`). Nasce na PRIMEIRA publicação —
+   * `null` enquanto o site nunca foi publicado. É daqui que o construtor tira
+   * o destino de agendar: sem ele, o botão principal do banner não teria para
+   * onde apontar e sumiria da pré-visualização.
+   */
+  slug?: string | null
 }
 
 export const DEFAULT_SITE_THEME: SiteColorTheme = {
