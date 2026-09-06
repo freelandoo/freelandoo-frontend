@@ -976,7 +976,17 @@ export default function CommunityDetailPage() {
 
       {/* HERO */}
       <header className="relative mx-auto mt-4 max-w-5xl px-5 md:px-10">
-        <div className="relative overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${accent}` }}>
+        {/* ⚠️ `z-0` NÃO é decoração: é o que TRANCA o banner debaixo da linha da
+            foto. Sem ele o banner é `relative` com z-index AUTO, e elemento
+            posicionado com z auto NÃO cria contexto de empilhamento — então o
+            `z-30` do overlay de "Trocar capa" (ImageDrop) subia para o contexto
+            do <header> e ganhava do `z-20` da linha da foto, pintando meio card
+            da foto e os pills de preto 50% (o `overflow-hidden` daqui é que
+            recortava a mancha na borda do banner, dando o efeito de "metade
+            escura"). Com o z-0 o banner vira contexto próprio: tudo que estiver
+            dentro dele — chip, gradiente, overlay de upload e o que vier depois
+            — fica abaixo da linha da foto por construção. */}
+        <div className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${accent}` }}>
           <div className="relative h-44 md:h-56 bg-[#1D1810]">
             {bannerSrc && (
               // eslint-disable-next-line @next/next/no-img-element
