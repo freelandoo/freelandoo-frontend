@@ -36,7 +36,7 @@ import {
   type TextLayer, type TextFontId, type TextBoxStyle, type OverlayLayer,
   type AudioPick,
 } from "@/lib/composer/types"
-import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishPaywallReason, type ProfileLite } from "./ProfileSelect"
+import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishableProfiles, type ProfileLite } from "./ProfileSelect"
 import { AudioPicker } from "./AudioPicker"
 import { OversizeModal } from "@/components/media/oversize-modal"
 import { nearestPostOrientation } from "@/lib/media/media-validation"
@@ -303,7 +303,12 @@ export function MediaComposer({
       .then((r) => (r.ok ? r.json() : { profiles: [] }))
       .then((data) => {
         if (cancelled) return
-        const list: ProfileLite[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
+        // O fluxo de publicação só enxerga perfil ATIVADO: o filtro é aqui, uma
+        // vez, ao guardar o estado. Perfil não ativado não chega à tela — nem
+        // esmaecido, nem como sugestão.
+        const list: ProfileLite[] = publishableProfiles(
+          (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
+        )
         setProfiles(list)
         // A escolha inicial passa pelo paywall (ver pickPublishableProfileId):
         // preferir um perfil que não pode publicar é como o post do caso
@@ -977,7 +982,6 @@ export function MediaComposer({
               mode={mode} userName={user?.nome || null}
               profiles={profiles} loadingProfiles={loadingProfiles}
               selectedProfileId={selectedProfileId} onSelectProfile={setSelectedProfileId}
-              ineligible={(p) => publishPaywallReason(p, t)}
               title={title} setTitle={setTitle} description={description} setDescription={setDescription}
               caption={caption} setCaption={setCaption}
               beeLocation={beeLocation} setBeeLocation={setBeeLocation}
@@ -1407,7 +1411,7 @@ function Swatches({ value, onPick }: { value: string; onPick: (c: string) => voi
 }
 
 function DetailsStep({
-  mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile, ineligible,
+  mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile,
   title, setTitle, description, setDescription, caption, setCaption,
   beeLocation, setBeeLocation, beeLinks, setBeeLinks,
   communityName, communityExclusiveOnly, destination, setDestination, error,
@@ -1415,7 +1419,6 @@ function DetailsStep({
   mode: string; userName: string | null
   profiles: ProfileLite[]; loadingProfiles: boolean
   selectedProfileId: string | null; onSelectProfile: (id: string) => void
-  ineligible: (p: ProfileLite) => string | null
   title: string; setTitle: (s: string) => void
   description: string; setDescription: (s: string) => void
   caption: string; setCaption: (s: string) => void
@@ -1464,7 +1467,7 @@ function DetailsStep({
         ) : profiles.length === 0 ? (
           <p className="border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-sm text-[#0B0B0D]">{t("details.noProfiles", "Sem perfis elegíveis. Crie um perfil para postar.")}</p>
         ) : (
-          <ProfileSelect userName={userName} profiles={profiles} selectedId={selectedProfileId} onSelect={onSelectProfile} ineligible={ineligible} />
+          <ProfileSelect userName={userName} profiles={profiles} selectedId={selectedProfileId} onSelect={onSelectProfile} />
         )}
       </div>
 

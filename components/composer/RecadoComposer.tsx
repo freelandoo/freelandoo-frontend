@@ -18,7 +18,7 @@ import { Loader2, MessageSquare, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishPaywallReason, type ProfileLite } from "./ProfileSelect"
+import { ProfileSelect, canProfilePublish, pickPublishableProfileId, publishableProfiles, type ProfileLite } from "./ProfileSelect"
 
 /** Teto do texto. Espelha o recado de comunidade da mig 162 (2000 chars). */
 export const RECADO_MAX_CHARS = 2000
@@ -66,8 +66,11 @@ export function RecadoComposer({
       .then((r) => (r.ok ? r.json() : { profiles: [] }))
       .then((data) => {
         if (cancelled) return
-        const list: ProfileLite[] = (Array.isArray(data?.profiles) ? data.profiles : []).filter(
-          (p: ProfileLite) => p.is_active
+        // O fluxo de publicação só enxerga perfil ATIVADO: o filtro é aqui, uma
+        // vez, ao guardar o estado. Perfil não ativado não chega à tela — nem
+        // esmaecido, nem como sugestão.
+        const list: ProfileLite[] = publishableProfiles(
+          (Array.isArray(data?.profiles) ? data.profiles : []).filter((p: ProfileLite) => p.is_active)
         )
         setProfiles(list)
         // A escolha inicial passa pelo paywall (ver pickPublishableProfileId):
@@ -212,7 +215,6 @@ export function RecadoComposer({
                 profiles={profiles}
                 selectedId={selectedProfileId}
                 onSelect={setSelectedProfileId}
-                ineligible={(p) => publishPaywallReason(p, t)}
               />
             )}
           </div>

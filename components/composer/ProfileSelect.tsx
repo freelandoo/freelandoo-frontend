@@ -3,7 +3,17 @@
 // Select hierárquico de perfil na pele tabloide. A CONTA do usuário (perfil-
 // fantasma, is_user_account) aparece SEMPRE primeiro, em dourado e selecionável
 // — o user pode publicar como a própria conta, não só pelos perfis. Abaixo
-// vêm os perfis. Itens inelegíveis ficam esmaecidos com o motivo.
+// vêm os perfis.
+//
+// ⚠️ AQUI SÓ ENTRA PERFIL ATIVADO. Perfil bloqueado não é desenhado esmaecido
+// com o motivo: ele é filtrado ANTES, por `publishableProfiles` (decisão do
+// Alex, 2026-09-06). Por isso não existe mais estado desabilitado nesta lista —
+// e é também por isso que a prop `ineligible` saiu: prop que ninguém alimenta
+// mas que ainda sabe desenhar o proibido é o convite para alguém voltar a
+// oferecê-lo.
+//
+// Com UMA opção só não há escolha a fazer, e o seletor vira uma LINHA que
+// apenas diz quem assina o post.
 
 import { cn } from "@/lib/utils"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -34,13 +44,19 @@ export function canProfilePublish(p: ProfileLite): boolean {
   return p.is_user_account === true || p.is_clan === true || p.is_paid === true
 }
 
-/** Motivo curto para o seletor esmaecer o perfil, ou `null` se ele pode. */
-export function publishPaywallReason(
-  p: ProfileLite,
-  t: (key: string, fallback: string) => string,
-): string | null {
-  if (canProfilePublish(p)) return null
-  return t("profile.needsSubscription", "Precisa de assinatura para publicar")
+/**
+ * A lista que o fluxo de publicação enxerga: só perfil ATIVADO. Perfil não
+ * ativado não é esmaecido com o motivo — ele NÃO APARECE (decisão do Alex,
+ * 2026-09-06). Oferecer e negar em seguida é sugerir um caminho que não
+ * existe; a lista curta é a barreira, e ela cala a escolha errada antes de a
+ * pessoa cogitá-la.
+ *
+ * ⚠️ FILTRAR AQUI, uma vez, ao guardar o estado — não na hora de desenhar. Se
+ * o perfil bloqueado continuasse no estado, cada tela que lê `profiles` teria
+ * de lembrar de escondê-lo, e a que esquecesse voltaria a oferecê-lo calada.
+ */
+export function publishableProfiles(list: ProfileLite[]): ProfileLite[] {
+  return list.filter(canProfilePublish)
 }
 
 /**
@@ -76,19 +92,46 @@ export function ProfileSelect({
   profiles,
   selectedId,
   onSelect,
-  /** id que torna um perfil inelegível + motivo (ex.: trampo p/ clan). */
-  ineligible,
 }: {
   userName: string | null
+  /** Já filtrada por `publishableProfiles` — aqui não entra perfil bloqueado. */
   profiles: ProfileLite[]
   selectedId: string | null
   onSelect: (id: string) => void
-  ineligible?: (p: ProfileLite) => string | null
 }) {
   const t = useTranslations("Composer")
 
   const account = profiles.find((p) => p.is_user_account) || null
   const subs = profiles.filter((p) => !p.is_user_account)
+
+  // Uma opção só: não há o que escolher. O post vai direto por ela, e o que
+  // sobra na tela é a linha que diz quem assina — botão de uma alternativa só
+  // pede um clique que não decide nada.
+  const only = profiles.length === 1 ? profiles[0] : null
+  if (only) {
+    return (
+      <div className="flex items-center gap-2.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-2.5 shadow-[4px_4px_0_0_#0B0B0D]">
+        <span className="grid h-8 w-8 shrink-0 -rotate-2 place-items-center overflow-hidden border-2 border-[#0B0B0D] bg-[#0B0B0D] font-[family-name:var(--font-anton)] text-sm text-[#F2B705]">
+          {only.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={only.avatar_url} alt={only.display_name || userName || ""} className="h-full w-full object-cover" />
+          ) : (
+            initials(only.display_name || userName)
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-[family-name:var(--font-anton)] text-sm uppercase leading-none text-[#0B0B0D]">
+            {only.display_name || userName || t("profile.yourAccount", "Sua conta")}
+          </div>
+          <div className="mt-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-[#0B0B0D]/70">
+            {only.is_user_account
+              ? t("profile.publishAsAccount", "Sua conta · publicar como")
+              : t("details.publishAs", "Publicar como")}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -144,22 +187,17 @@ export function ProfileSelect({
       {/* Perfis */}
       <div className="space-y-2">
         {subs.map((p) => {
-          const reason = ineligible?.(p) || null
-          const disabled = !!reason
           const on = selectedId === p.id_profile
           return (
             <button
               key={p.id_profile}
               type="button"
-              disabled={disabled}
               onClick={() => onSelect(p.id_profile)}
               className={cn(
                 "flex w-full items-center gap-2.5 border-2 border-[#0B0B0D] bg-[#F1EDE2] px-3 py-2.5 text-left transition-transform duration-200",
-                disabled
-                  ? "cursor-not-allowed opacity-45 shadow-[4px_4px_0_0_#0B0B0D]"
-                  : on
-                    ? "shadow-[6px_6px_0_0_#F2B705] -translate-x-0.5 -translate-y-0.5"
-                    : "shadow-[4px_4px_0_0_#0B0B0D] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:-rotate-[0.3deg] hover:shadow-[6px_6px_0_0_#F2B705]",
+                on
+                  ? "shadow-[6px_6px_0_0_#F2B705] -translate-x-0.5 -translate-y-0.5"
+                  : "shadow-[4px_4px_0_0_#0B0B0D] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:-rotate-[0.3deg] hover:shadow-[6px_6px_0_0_#F2B705]",
               )}
             >
               <span className="relative grid h-7 w-7 shrink-0 -rotate-2 place-items-center overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] font-[family-name:var(--font-anton)] text-xs text-[#F2B705]">
@@ -174,18 +212,13 @@ export function ProfileSelect({
                 <span className="block truncate font-[family-name:var(--font-anton)] text-sm uppercase leading-none text-[#0B0B0D]">
                   {p.display_name}
                 </span>
-                {reason && (
-                  <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.06em] text-[#8a4b2f]">
-                    {reason}
-                  </span>
-                )}
               </span>
               {p.is_clan && (
                 <span className="border-2 border-[#0B0B0D] bg-[#1D1810] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.06em] text-[#F2B705]">
                   {t("profile.clan", "Clan")}
                 </span>
               )}
-              {on && !disabled && (
+              {on && (
                 <span className="text-[10px] font-black uppercase tracking-[0.08em] text-[#9a7400]">✓</span>
               )}
             </button>
