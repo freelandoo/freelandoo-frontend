@@ -62,6 +62,64 @@ const JOGO_PADRAO =
   "https://pub-3b9774a0af714847979058ea5677a840.r2.dev/monsters/jogo/index.html"
 const JOGO_URL = process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL || JOGO_PADRAO
 
+/**
+ * ── E POR QUE EXISTEM DUAS BUILDS ─────────────────────────────────────────
+ *
+ * Porque a mesma textura não serve as duas GPUs, e carregar as duas mata o
+ * telefone.
+ *
+ * Placa de vídeo de computador lê S3TC/BPTC e não lê ETC2/ASTC; a de celular é
+ * o contrário. Uma build única tem que levar OS DOIS jogos de textura, e foi
+ * isso que quebrou aqui: com o `.pck` de 326 MB, o carregador do Godot paga o
+ * arquivo DUAS VEZES (`response.arrayBuffer()` e depois `copyToFS()` para
+ * dentro do heap da WebAssembly). Medido: **974 MB de pico num processo só**.
+ * O Chrome do Android mata a aba muito antes disso, recarrega, mata de novo — e
+ * o que a pessoa lê é "um erro ocorreu repetidamente em .../monsters".
+ *
+ * (Ele nomeia ESTA página, e não o R2, porque no Android o iframe roda no mesmo
+ * processo de renderização que ela. Foi assim que o defeito chegou como um
+ * problema da Freelandoo.)
+ *
+ * A build de celular leva só ETC2 e teto de 512 px na textura: 56 MB de `.pck`
+ * e 379 MB de pico. Ver `Cat demon/publicacao/exportar.js`.
+ */
+const JOGO_CELULAR_PADRAO =
+  "https://pub-3b9774a0af714847979058ea5677a840.r2.dev/monsters/jogo-celular/index.html"
+const JOGO_CELULAR_URL =
+  process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL_CELULAR || JOGO_CELULAR_PADRAO
+
+/**
+ * QUAL BUILD ESTE APARELHO CONSEGUE DESENHAR.
+ *
+ * A pergunta NÃO é "tem dedo?", e essa foi a primeira resposta errada. Um
+ * notebook 2-em-1 dobrado em modo tablet responde `pointer: coarse` e tem GPU
+ * de computador: ele receberia a build ETC2, não leria uma textura sequer, e
+ * abriria PRETO — o mesmo defeito que já aconteceu aqui uma vez, agora só nos
+ * aparelhos que ninguém tem na mesa para testar.
+ *
+ * A pergunta certa é a que o próprio WebGL responde. Pedimos a lista de
+ * formatos comprimidos que a GPU aceita, que é exatamente o que o Godot vai
+ * procurar dentro do `.pck` daqui a pouco. Medido no README: RTX 4060 via
+ * ANGLE/D3D11 diz sim para S3TC/BPTC e **não** para ASTC/ETC2; telefone é o
+ * contrário; e o iPad, que tem dedo e não tem S3TC, cai certo dos dois jeitos.
+ *
+ * O critério é S3TC porque é ELE que a build de computador carrega. Sem S3TC,
+ * aquela build é uma tela preta — então qualquer dúvida (WebGL indisponível,
+ * contexto recusado, lista vazia) manda para a de celular, que é a mais leve e
+ * a que mais aparelhos leem.
+ */
+function leS3TC(): boolean {
+  try {
+    const c = document.createElement("canvas")
+    const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null
+    if (!gl) return false
+    const exts = gl.getSupportedExtensions() || []
+    return exts.some((e) => e.endsWith("compressed_texture_s3tc"))
+  } catch {
+    return false
+  }
+}
+
 /** Onde mora a Monsters API (o serviço da semente social). */
 const API_URL = process.env.NEXT_PUBLIC_MONSTERS_API_URL || ""
 
@@ -78,7 +136,14 @@ export default function MonstersPage() {
   const { status } = useAuth()
   const frame = useRef<HTMLIFrameElement | null>(null)
   const [entregue, setEntregue] = useState(false)
-  const origemJogo = JOGO_URL ? origemDe(JOGO_URL) : null
+
+  // `null` = ainda não perguntei à GPU. A ESCOLHA TEM QUE VIR ANTES DO
+  // `<iframe>` NASCER: trocar o `src` depois de montado recomeça o download do
+  // zero, e o que se teria baixado até ali é a build errada — no telefone, a
+  // que o mata.
+  const [pesada, setPesada] = useState<boolean | null>(null)
+  const jogoUrl = pesada ? JOGO_URL : JOGO_CELULAR_URL
+  const origemJogo = jogoUrl ? origemDe(jogoUrl) : null
 
   const entrega = useCallback(() => {
     const janela = frame.current?.contentWindow
@@ -129,7 +194,8 @@ export default function MonstersPage() {
   // nada — e é essa a pessoa que gira o telefone no meio da partida sem
   // saber que está desmontando a tela.
   //
-  // `dedo` é o aparelho e `entrou` é o toque que abre o jogo. Enquanto esse
+  // `dedo` é o aparelho e `entrou` é o toque que abre o jogo (a BUILD quem
+  // escolhe é o `pesada` lá de cima — são perguntas diferentes). Enquanto esse
   // toque não vem, a porta fica fechada: é ela que carrega o pedido escrito e
   // é ela que dá ao `deita()` o GESTO que o navegador exige (ver abaixo — sem
   // gesto, tela cheia e trava de orientação são as duas recusadas).
@@ -140,6 +206,11 @@ export default function MonstersPage() {
   const [entrou, setEntrou] = useState(false)
 
   useEffect(() => {
+    // A GPU decide a BUILD; o dedo decide a MOLDURA (porta, orientação,
+    // controles de toque). São duas perguntas diferentes e é de propósito: o
+    // 2-em-1 tem dedo e lê S3TC, e precisa das duas respostas separadas.
+    setPesada(leS3TC())
+
     // `pointer: coarse` separa dedo de mouse. Sem isso, quem estreitasse a
     // janela no computador levaria um "gire o telefone" sem ter telefone.
     const toque = window.matchMedia("(pointer: coarse)")
@@ -203,7 +274,7 @@ export default function MonstersPage() {
     )
   }
 
-  if (!JOGO_URL || !origemJogo) {
+  if (!jogoUrl || !origemJogo) {
     return (
       <Aviso
         titulo="A build ainda não foi publicada"
@@ -214,9 +285,15 @@ export default function MonstersPage() {
 
   return (
     <main className="fixed inset-0 z-50 bg-[#0b0804]">
+      {/* O IFRAME SÓ NASCE DEPOIS QUE SE PERGUNTA À GPU. `pesada === null` é o
+          primeiro quadro, antes de o efeito ter rodado — e montar aqui seria
+          começar a baixar uma build no palpite, para trocar de `src` um
+          instante depois e baixar tudo de novo. São 56 ou 196 MB de `.pck` de
+          diferença, e é justamente o peso que derruba a aba. */}
+      {pesada !== null && (
       <iframe
         ref={frame}
-        src={JOGO_URL}
+        src={jogoUrl}
         title="Freelandoo Monsters"
         // `onLoad` não garante que a WebAssembly já subiu — a entrega de
         // verdade vem do `jogo:pronto`. Este é só o primeiro tiro, para o caso
@@ -246,6 +323,7 @@ export default function MonstersPage() {
         sandbox="allow-scripts allow-same-origin allow-pointer-lock"
         allow="fullscreen; autoplay; gamepad"
       />
+      )}
 
       <Link
         href="/feed"
@@ -260,10 +338,11 @@ export default function MonstersPage() {
         </span>
       )}
 
-      {/* A PORTA. Ela cobre a tela e o iframe carrega atrás dela — os 364 MB
-          começam a descer no primeiro segundo, enquanto a pessoa lê. Fechar o
-          jogo por trás de um toque não custa espera nenhuma; custa só o toque,
-          que é justamente o que o navegador exige para deitar a tela. */}
+      {/* A PORTA. Ela cobre a tela e o iframe carrega atrás dela — os 94 MB da
+          build de celular começam a descer no primeiro segundo, enquanto a
+          pessoa lê. Fechar o jogo por trás de um toque não custa espera
+          nenhuma; custa só o toque, que é justamente o que o navegador exige
+          para deitar a tela. */}
       {dedo && !entrou && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#0b0804] px-8 text-center">
           <RotateCcw className="h-10 w-10 text-[#f2b705]" aria-hidden />
@@ -287,7 +366,7 @@ export default function MonstersPage() {
         </div>
       )}
 
-      {/* O iframe continua vivo por baixo: a build segue baixando os 364 MB
+      {/* O iframe continua vivo por baixo: a build segue baixando
           enquanto a pessoa gira o aparelho. Desmontá-lo aqui recomeçaria o
           download do zero a cada rotação. */}
       {retrato && entrou && (

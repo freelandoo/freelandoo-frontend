@@ -21,14 +21,25 @@ const R2_PUBLIC = "https://pub-3b9774a0af714847979058ea5677a840.r2.dev"
 // host novo — é o `R2_PUBLIC` que já está declarado aqui em cima. A variável
 // só entra quando alguém aponta o iframe para outro lugar (bancada local, ou
 // uma versão de teste).
+//
+// SÃO DUAS BUILDS (uma por família de textura de GPU — ver
+// `Cat demon/publicacao/README.md`) e por isso são dois endereços. Hoje as duas
+// moram no mesmo R2 e o padrão já cobre as duas; a lista existe para quando
+// alguém apontar UMA delas para a bancada local. Sem isto, a `/monsters`
+// funcionaria no computador e o iframe do celular seria bloqueado — no dia
+// distante em que esta CSP deixar de ser `Report-Only`.
 const MONSTERS_JOGO = (() => {
-  const bruto = process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL?.trim()
-  if (!bruto) return R2_PUBLIC
-  try {
-    return new URL(bruto).origin
-  } catch {
-    return R2_PUBLIC
+  const origens = new Set([R2_PUBLIC])
+  for (const bruto of [process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL?.trim(),
+                       process.env.NEXT_PUBLIC_MONSTERS_JOGO_URL_CELULAR?.trim()]) {
+    if (!bruto) continue
+    try {
+      origens.add(new URL(bruto).origin)
+    } catch {
+      /* endereço torto não derruba a configuração; o R2 padrão continua valendo */
+    }
   }
+  return [...origens].filter(Boolean).join(" ")
 })()
 const MONSTERS_API = (() => {
   const bruto = process.env.NEXT_PUBLIC_MONSTERS_API_URL?.trim()
