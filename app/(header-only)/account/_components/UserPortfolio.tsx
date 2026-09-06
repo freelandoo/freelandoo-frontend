@@ -661,18 +661,6 @@ export function UserPortfolio({
               <Clapperboard className="h-4 w-4" />
             </button>
           </HoverHint>
-          {servicesOn && (
-            <HoverHint id="account-tab-services" side="bottom">
-              <button
-                type="button"
-                onClick={() => setPortfolioTab("services")}
-                className={tabBtn(portfolioTab === "services")}
-              >
-                <Briefcase className="h-3.5 w-3.5" />
-                {tr("tabServices", "Serviços")}
-              </button>
-            </HoverHint>
-          )}
           {coursesOn && (
             <HoverHint id="account-tab-courses" side="bottom">
               <button
@@ -707,6 +695,18 @@ export function UserPortfolio({
               {tr("tabSaved", "Salvos")}
             </button>
           </HoverHint>
+          {servicesOn && (
+            <HoverHint id="account-tab-services" side="bottom">
+              <button
+                type="button"
+                onClick={() => setPortfolioTab("services")}
+                className={tabBtn(portfolioTab === "services")}
+              >
+                <Briefcase className="h-3.5 w-3.5" />
+                {tr("tabServices", "Serviços")}
+              </button>
+            </HoverHint>
+          )}
           {myProfilesSlot !== undefined && profilesPrefOn && (
             <HoverHint id="account-tab-profiles" side="bottom">
               <button
