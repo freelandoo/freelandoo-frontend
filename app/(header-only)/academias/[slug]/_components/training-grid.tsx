@@ -94,7 +94,22 @@ function shiftDate(date: string, days: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-export function TrainingGrid({ academyId }: { academyId: string }) {
+export function TrainingGrid({
+  academyId,
+  expiredIds,
+  expiryDays,
+}: {
+  academyId: string
+  /**
+   * Quem está com a ficha vencida, JÁ RESOLVIDO por quem montou a página (que
+   * leu `/expired-plans`). A grade não recalcula os 90 dias: dois lugares
+   * fazendo essa conta é como a bolinha do botão "Membros" acenderia apontando
+   * para uma tabela sem nenhuma linha marcada.
+   */
+  expiredIds?: Set<string>
+  /** Quantos dias contam como vencida — só para escrever o aviso na tela. */
+  expiryDays?: number
+}) {
   const t = useTranslations("Workouts")
   const locale = useLocale()
 
@@ -440,7 +455,21 @@ export function TrainingGrid({ academyId }: { academyId: string }) {
                       <span className="opacity-40">{t("noPlan", "sem ficha")}</span>
                     )}
                   </td>
-                  <td className="py-2 pr-3">{r.days_on_plan ?? "—"}</td>
+                  <td className="py-2 pr-3">
+                    {expiredIds?.has(r.id_member) ? (
+                      <span
+                        className="inline-block border-2 border-[#0B0B0D] bg-[#ff3b30] px-1.5 py-0.5 text-[10px] font-black uppercase text-[#0B0B0D]"
+                        title={t("expiredHint", "Mesma ficha há {d} dias ou mais — hora de montar um treino novo.").replace(
+                          "{d}",
+                          String(expiryDays ?? r.days_on_plan ?? 0)
+                        )}
+                      >
+                        {r.days_on_plan ?? "—"} · {t("expiredShort", "vencida")}
+                      </span>
+                    ) : (
+                      (r.days_on_plan ?? "—")
+                    )}
+                  </td>
                   <td className="py-2 pr-3 font-black">{r.frequency_days_30d}</td>
                   <td className="py-2 pr-3">{r.sessions_done_7d}</td>
                 </tr>

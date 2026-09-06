@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import {
   ArrowLeft,
   BadgeCheck,
+  ClipboardList,
   Dumbbell,
   GraduationCap,
   IdCard,
@@ -23,15 +24,25 @@ import {
   ShieldAlert,
   Trash2,
   Trophy,
-  Users,
+  UserRound,
   X,
 } from "lucide-react"
 import { getStoredUser, getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
-import { TrainingGrid } from "./training-grid"
+import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { AcademyFeed } from "./academy-feed"
+import {
+  BTN_DARK,
+  BTN_GOLD,
+  GOLD,
+  H_SECTION,
+  INNER,
+  PANEL,
+  STATUS_KEYS,
+  type ExpiredPlans,
+} from "./academy-ui"
 
 const MediaComposer = dynamic(
   () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
@@ -74,34 +85,28 @@ type Academy = {
   is_active?: boolean
 }
 
-type Member = {
-  id_member: string
-  id_user: string
-  username: string | null
-  nome: string | null
-  member_name: string | null
-  membership_status: string
-  plan_name: string | null
-  linked_at: string
-  is_professor: boolean
+/**
+ * O alerta de ficha vencida aparece UMA VEZ POR DIA por academia, não a cada
+ * navegação: o professor entra na página várias vezes ao dia (mural, ranking,
+ * membros e volta), e um modal em toda entrada vira a caixa que se fecha sem
+ * ler. O que fica no ar o tempo todo é a BOLINHA no botão "Membros" — o aviso
+ * continua visível, é só o modal que não repete.
+ */
+function alertSeenToday(id_academy: string): boolean {
+  try {
+    return localStorage.getItem(`fl_academy_plan_alert:${id_academy}`) === new Date().toISOString().slice(0, 10)
+  } catch {
+    return false
+  }
 }
 
-const STATUS_KEYS: Record<string, [string, string]> = {
-  active: ["statusActive", "Matrícula ativa"],
-  overdue: ["statusOverdue", "Mensalidade atrasada"],
-  canceled: ["statusCanceled", "Matrícula cancelada"],
-  expired: ["statusExpired", "Matrícula vencida"],
-  pending: ["statusPending", "Matrícula pendente"],
+function markAlertSeen(id_academy: string) {
+  try {
+    localStorage.setItem(`fl_academy_plan_alert:${id_academy}`, new Date().toISOString().slice(0, 10))
+  } catch {
+    /* navegador sem storage: o modal volta na próxima visita, e tudo bem */
+  }
 }
-
-const GOLD = "#F2B705"
-const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
-const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
-const BTN_GOLD =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
-const BTN_DARK =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
-const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
 
 export function AcademyView({ slug }: { slug: string }) {
   const t = useTranslations("Academies")
@@ -110,7 +115,10 @@ export function AcademyView({ slug }: { slug: string }) {
 
   const [academy, setAcademy] = useState<Academy | null>(null)
   const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
-  const [members, setMembers] = useState<Member[]>([])
+  // Fichas vencidas: acende a bolinha do botão "Membros" e monta o modal que
+  // recebe o professor. Só o staff enxerga (a rota recusa o resto).
+  const [expired, setExpired] = useState<ExpiredPlans | null>(null)
+  const [expiredOpen, setExpiredOpen] = useState(false)
 
   const [linkOpen, setLinkOpen] = useState(false)
   const [cpf, setCpf] = useState("")
@@ -147,10 +155,18 @@ export function AcademyView({ slug }: { slug: string }) {
       setAcademy(data.academy)
       setState("loaded")
       if (data.academy?.is_owner || data.academy?.is_professor) {
-        const mres = await fetch(`/api/academies/${data.academy.id_academy}/members`, { headers: authHeaders() })
-        if (mres.ok) {
-          const mdata = await mres.json()
-          setMembers(Array.isArray(mdata.members) ? mdata.members : [])
+        const eres = await fetch(`/api/academies/${data.academy.id_academy}/expired-plans`, {
+          headers: authHeaders(),
+        })
+        if (eres.ok) {
+          const edata: ExpiredPlans = await eres.json()
+          setExpired(edata)
+          // O modal SÓ nasce aberto: quem fechar não é reaberto por um
+          // recarregamento da página (o `load` roda de novo em várias ações).
+          if (edata.count > 0 && !alertSeenToday(data.academy.id_academy)) {
+            markAlertSeen(data.academy.id_academy)
+            setExpiredOpen(true)
+          }
         }
       }
     } catch {
@@ -271,35 +287,6 @@ export function AcademyView({ slug }: { slug: string }) {
     [academy, authHeaders, load, t]
   )
 
-  const toggleProfessor = useCallback(
-    async (member: Member) => {
-      if (!academy) return
-      try {
-        const res = member.is_professor
-          ? await fetch(`/api/academies/${academy.id_academy}/professors/${member.id_user}`, {
-              method: "DELETE",
-              headers: authHeaders(),
-            })
-          : await fetch(`/api/academies/${academy.id_academy}/professors`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...authHeaders() },
-              body: JSON.stringify({ id_user: member.id_user }),
-            })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        toast.success(
-          member.is_professor
-            ? t("professorRemoved", "Professor removido.")
-            : t("professorAdded", "Professor promovido!")
-        )
-        void load()
-      } catch (err) {
-        toast.error(err instanceof Error && err.message ? err.message : t("professorError", "Erro ao atualizar professor"))
-      }
-    },
-    [academy, authHeaders, load, t]
-  )
-
   const fmtDate = useCallback(
     (iso: string | null | undefined) => {
       if (!iso) return "—"
@@ -345,6 +332,33 @@ export function AcademyView({ slug }: { slug: string }) {
   const isStaff = academy.is_owner || academy.is_professor
   const canPost = academy.is_owner || academy.is_professor || !!ms
   const meId = getStoredUser()?.id_user || null
+  const expiredCount = expired?.count ?? 0
+
+  /**
+   * O botão retrátil do headcard da academia. Hoje é UM (Membros, rosa) — e é a
+   * mesma pilha do headcard do perfil e da comunidade, não uma cópia: botão
+   * novo de headcard de academia entra NESTA lista, nunca como bloco solto no
+   * meio da página.
+   *
+   * Ele só existe para o staff porque é o que ele abre que é do staff (a lista
+   * de vinculados e a grade de treinos). Dar o botão a quem receberia 403 do
+   * outro lado seria uma porta pintada.
+   */
+  const pills: PillSpec[] = isStaff
+    ? [
+        {
+          key: "members",
+          icon: UserRound,
+          label: t("membersPill", "Membros"),
+          ariaLabel: t("membersPillAria", "Abrir membros vinculados e treinos por data"),
+          bg: "#DB2777",
+          bgHover: "#BE185D",
+          href: `/academias/${academy.slug}/membros`,
+          dot: expiredCount > 0,
+          dotLabel: t("expiredDot", "Há alunos com a ficha vencida"),
+        },
+      ]
+    : []
 
   return (
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
@@ -392,18 +406,36 @@ export function AcademyView({ slug }: { slug: string }) {
           <div className="bg-[#15120E] px-5 pb-5">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="flex items-end gap-4">
-                <div
-                  className="relative z-30 -mt-10 h-24 w-24 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:-mt-14 md:h-32 md:w-32"
-                  style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
-                >
-                  {academy.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={academy.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center">
-                      <Dumbbell className="h-9 w-9 text-[#9A938A]" />
-                    </span>
+                {/* Coluna da foto: a pilha de pills é o PRIMEIRO filho e a foto
+                    vem DEPOIS no DOM — dois posicionados sem z-index pintam na
+                    ordem do documento, então a foto cobre o botão e só o ícone
+                    escapa pela direita. `-z-10` NÃO serve aqui (o card da foto
+                    é z-30 e formaria contexto próprio). A pilha fica FORA da
+                    caixa da foto, que é `overflow-hidden` e recortaria o pill
+                    na borda. */}
+                <div className="relative -mt-10 h-24 w-24 shrink-0 md:-mt-14 md:h-32 md:w-32">
+                  {pills.length > 0 && (
+                    <PillStack
+                      pills={pills}
+                      // Casa com a LARGURA DA FOTO desta superfície (w-24
+                      // md:w-32). Mexeu no tamanho da foto? Ajustar aqui.
+                      avatarPadClass="pl-24 md:pl-32"
+                      className="absolute left-0 top-1/2 -translate-y-1/2"
+                    />
                   )}
+                  <div
+                    className="relative z-30 h-full w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
+                    style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
+                  >
+                    {academy.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={academy.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center">
+                        <Dumbbell className="h-9 w-9 text-[#9A938A]" />
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="pb-1">
                   <div className="flex flex-wrap items-center gap-3">
@@ -564,68 +596,6 @@ export function AcademyView({ slug }: { slug: string }) {
 
         {/* Mural social (público; postar = vinculado/staff) */}
         <AcademyFeed academyId={academy.id_academy} slug={academy.slug} reloadKey={feedReload} isOwner={academy.is_owner} meId={meId} />
-
-        {/* Treinos por data (staff) */}
-        {isStaff && <TrainingGrid academyId={academy.id_academy} />}
-
-        {/* Membros (staff) */}
-        {isStaff && (
-          <section className={`${PANEL} mt-6 p-4`}>
-            <h2 className={H_SECTION}>
-              <Users className="h-4 w-4 text-[#F2B705]" />
-              {t("membersTitle", "Membros vinculados")}
-            </h2>
-            {members.length === 0 ? (
-              <p className="mt-2 text-xs text-[#9A938A]">
-                {t("membersEmpty", "Ninguém vinculou a matrícula ainda. Divulgue a página da academia!")}
-              </p>
-            ) : (
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[560px] border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="border-b-2 border-[#0B0B0D] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
-                      <th className="py-2 pr-3">{t("colMember", "Membro")}</th>
-                      <th className="py-2 pr-3">{t("colStatus", "Status")}</th>
-                      <th className="py-2 pr-3">{t("colPlan", "Plano")}</th>
-                      <th className="py-2 pr-3">{t("colLinked", "Vínculo")}</th>
-                      {academy.is_owner && <th className="py-2">{t("colProfessor", "Professor")}</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((m) => {
-                      const meta = STATUS_KEYS[m.membership_status] || STATUS_KEYS.pending
-                      return (
-                        <tr key={m.id_member} className="border-b border-[#F5F1E8]/10">
-                          <td className="py-2 pr-3 font-bold">
-                            {m.nome || m.username || m.member_name || "—"}
-                            {m.is_professor && (
-                              <span className="ml-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-1 text-[10px] font-extrabold uppercase text-[#0B0B0D]">
-                                {t("professorBadge", "Prof")}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2 pr-3">{t(meta[0], meta[1])}</td>
-                          <td className="py-2 pr-3">{m.plan_name || "—"}</td>
-                          <td className="py-2 pr-3">{fmtDate(m.linked_at)}</td>
-                          {academy.is_owner && (
-                            <td className="py-2">
-                              <button
-                                onClick={() => void toggleProfessor(m)}
-                                className={`border-2 border-[#0B0B0D] px-2 py-1 text-[10px] font-extrabold uppercase ${m.is_professor ? "bg-[#1D1810] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}
-                              >
-                                {m.is_professor ? t("demoteCta", "Remover") : t("promoteCta", "Promover")}
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
       </div>
 
       {/* Professores — painel aberto pelo "+" do headcard (Ranking do
@@ -709,6 +679,56 @@ export function AcademyView({ slug }: { slug: string }) {
                 {linking && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("linkSubmit", "Vincular")}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fichas vencidas — o que recebe o professor ao entrar na academia.
+          A lista completa (e a grade por data) fica no botão "Membros". */}
+      {expiredOpen && expired && expired.count > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setExpiredOpen(false)}>
+          <div
+            className={`fl-sharp max-h-[85vh] w-full max-w-md overflow-y-auto ${PANEL} p-6 text-[#F5F1E8]`}
+            style={{ boxShadow: "8px 8px 0 0 #ff3b30" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b-2 border-[#0B0B0D] pb-3">
+              <h2 className="flex items-center gap-2 text-xl font-black uppercase">
+                <ClipboardList className="h-5 w-5 text-[#ff3b30]" />
+                {t("expiredTitle", "Fichas vencidas")}
+              </h2>
+              <button onClick={() => setExpiredOpen(false)} aria-label={t("close", "Fechar")}>
+                <X className="h-5 w-5 text-[#9A938A] hover:text-[#F5F1E8]" />
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-[#9A938A]">
+              {t("expiredIntro", "{n} aluno(s) estão com a mesma ficha há {d} dias ou mais. Hora de montar um treino novo.")
+                .replace("{n}", String(expired.count))
+                .replace("{d}", String(expired.days))}
+            </p>
+            <ul className="mt-3 space-y-2">
+              {expired.members.map((m) => (
+                <li key={m.id_member} className={`${INNER} flex items-center justify-between gap-3 px-3 py-2 text-xs`}>
+                  <span className="min-w-0">
+                    <span className="block truncate font-bold">{m.nome || "—"}</span>
+                    <span className="block truncate text-[11px] text-[#9A938A]">
+                      {m.active_plan_nome || t("noPlanName", "sem nome")}
+                    </span>
+                  </span>
+                  <span className="shrink-0 border-2 border-[#0B0B0D] bg-[#ff3b30] px-2 py-1 text-[10px] font-black uppercase text-[#0B0B0D]">
+                    {t("expiredDays", "{n} dias").replace("{n}", String(m.days_on_plan))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-4">
+              <button onClick={() => setExpiredOpen(false)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
+                {t("expiredLater", "Agora não")}
+              </button>
+              <Link href={`/academias/${academy.slug}/membros?aba=treinos`} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
+                {t("expiredCta", "Ver treinos por data")}
+              </Link>
             </div>
           </div>
         </div>

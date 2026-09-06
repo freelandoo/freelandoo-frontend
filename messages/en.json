@@ -5246,7 +5246,21 @@
     "composeCta": "Publish",
     "composeHint": "Post on the wall",
     "joinToPost": "Link your membership to publish.",
-    "professorViewProfile": "View profile"
+    "professorViewProfile": "View profile",
+    "membersPill": "Members",
+    "membersPillAria": "Open linked members and training by date",
+    "membersPageTitle": "Linked members",
+    "membersDenied": "Only this gym's owner and trainers can see this page.",
+    "tabMembers": "Members",
+    "tabTraining": "Training by date",
+    "expiredTitle": "Expired plans",
+    "expiredIntro": "{n} student(s) have been on the same plan for {d} days or more. Time for a new workout.",
+    "expiredDays": "{n} days",
+    "expiredLater": "Not now",
+    "expiredCta": "See training by date",
+    "expiredDot": "Some students have an expired plan",
+    "expiredBadge": "Expired plan",
+    "noPlanName": "no name"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",
@@ -5495,7 +5509,9 @@
     "restShort": "rest (s)",
     "moveUp": "Move exercise up",
     "moveDown": "Move exercise down",
-    "byStudentBadge": "by student"
+    "byStudentBadge": "by student",
+    "expiredShort": "expired",
+    "expiredHint": "Same plan for {d} days or more — time for a new workout."
   },
   "Cluster": {
     "title": "Clusters",

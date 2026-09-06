@@ -88,6 +88,17 @@ export type PillSpec = {
    * cobre o que está à direita da foto enquanto durar o painel.
    */
   active?: boolean
+  /**
+   * Bolinha vermelha de "tem coisa te esperando lá dentro" — o quadradinho da
+   * casa, que não é redondo (regra dos cantos retos).
+   *
+   * Fica na quina de CIMA À DIREITA porque é a única parte do pill fechado que
+   * escapa de trás da foto: na esquerda ela nasceria coberta e o aviso não
+   * existiria para quem não abre o botão.
+   */
+  dot?: boolean
+  /** O que a bolinha está avisando (vira title/aria dela). */
+  dotLabel?: string
 }
 
 function Pill({
@@ -142,11 +153,20 @@ function Pill({
 
   return (
     <motion.div
+      className="relative"
       initial={false}
       animate={{ x: open ? 10 : 0 }}
       whileHover={reduceMotion ? undefined : { x: open ? 10 : 7 }}
       transition={spring}
     >
+      {spec.dot && (
+        <span
+          className="pointer-events-none absolute right-1 top-1 z-10 h-2.5 w-2.5 border border-[#0B0B0D] bg-[#ff3b30]"
+          role="status"
+          aria-label={spec.dotLabel}
+          title={spec.dotLabel}
+        />
+      )}
       {spec.href ? (
         <Link
           href={spec.href}

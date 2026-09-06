@@ -4660,7 +4660,21 @@
     "composeCta": "Publicar",
     "composeHint": "Publicar no mural",
     "joinToPost": "Vincule sua matrícula para publicar.",
-    "professorViewProfile": "Ver perfil"
+    "professorViewProfile": "Ver perfil",
+    "membersPill": "Membros",
+    "membersPillAria": "Abrir membros vinculados e treinos por data",
+    "membersPageTitle": "Membros vinculados",
+    "membersDenied": "Só o dono e os professores desta academia veem esta página.",
+    "tabMembers": "Membros",
+    "tabTraining": "Treinos por data",
+    "expiredTitle": "Fichas vencidas",
+    "expiredIntro": "{n} aluno(s) estão com a mesma ficha há {d} dias ou mais. Hora de montar um treino novo.",
+    "expiredDays": "{n} dias",
+    "expiredLater": "Agora não",
+    "expiredCta": "Ver treinos por data",
+    "expiredDot": "Há alunos com a ficha vencida",
+    "expiredBadge": "Ficha vencida",
+    "noPlanName": "sem nome"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
@@ -4909,7 +4923,9 @@
     "restShort": "desc. (s)",
     "moveUp": "Subir exercício",
     "moveDown": "Descer exercício",
-    "byStudentBadge": "do aluno"
+    "byStudentBadge": "do aluno",
+    "expiredShort": "vencida",
+    "expiredHint": "Mesma ficha há {d} dias ou mais — hora de montar um treino novo."
   },
   "Cluster": {
     "title": "Clusters",
