@@ -193,7 +193,7 @@ export function ProfilePublicServicesSection({
 
   if (state === "error") {
     return (
-      <section id="services-section" className="mb-20 scroll-mt-24">
+      <section id="services-section" className="fl-sharp mb-20 scroll-mt-24 pt-5">
         <EmptyState
           icon={<Briefcase className="h-7 w-7" />}
           title={t("servicesUnavailable", "Serviços indisponíveis")}
@@ -208,7 +208,7 @@ export function ProfilePublicServicesSection({
     : services.filter((s) => s.is_active !== false)
 
   return (
-    <section id="services-section" className="mb-20 scroll-mt-24">
+    <section id="services-section" className="fl-sharp mb-20 scroll-mt-24 pt-5">
       {showOwnerControls && (
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
