@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Briefcase, Clock, Cog, Plus, Scissors } from "lucide-react"
+import Link from "next/link"
+import { Briefcase, Clock, Cog, Plus, Scissors, Settings } from "lucide-react"
 import { ServiceSelectionModal } from "@/components/calendar/ServiceSelectionModal"
 import type { ProfileService } from "@/components/calendar/types"
 import { ScheduleBookingModal } from "@/components/profile/schedule-booking-modal"
@@ -217,14 +218,31 @@ export function ProfilePublicServicesSection({
               {t("servicesOwnerSubtitle", "Serviços públicos oferecidos por este perfil.")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openCreateService}
-            className="fl-btn-gold inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t("menuService", "Serviço")}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={openCreateService}
+              className="fl-btn-gold inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t("menuService", "Serviço")}
+            </button>
+            {/* Configuração de serviços e agenda. A página JÁ EXISTE — é a
+                mesma `/account/profile/<id>/agenda` que a ferramenta Agenda
+                abre, com Disponibilidade (semana e exceções por data),
+                Serviços (preços) e Agendamentos. Criar uma tela de
+                configuração aqui daria dois lugares para dizer o mesmo
+                horário. A engrenagem do CARD é outra coisa: edita aquele
+                serviço. */}
+            <Link
+              href={`/account/profile/${profileId}/agenda`}
+              aria-label={t("servicesSettingsAria", "Configurar serviços e horários")}
+              title={t("servicesSettingsAria", "Configurar serviços e horários")}
+              className="inline-flex items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] p-1.5 text-[#0B0B0D] transition hover:bg-[#F2B705]"
+            >
+              <Settings className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </div>
         </div>
       )}
 

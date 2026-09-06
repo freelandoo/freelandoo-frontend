@@ -39,8 +39,13 @@ const SITE_BOOKING = {
     "Choose the day and time",
     "Elige el día y la hora",
   ],
+  // O passo 2 virou quadro do mês + horários lado a lado (2026-09-06). As duas
+  // chaves da fita de dias ficam órfãs no dicionário, padrão da casa.
   prevDays: ["Dias anteriores", "Previous days", "Días anteriores"],
   nextDays: ["Próximos dias", "Next days", "Próximos días"],
+  prevMonth: ["Mês anterior", "Previous month", "Mes anterior"],
+  nextMonth: ["Próximo mês", "Next month", "Mes siguiente"],
+  pickTime: ["Escolha um horário", "Pick a time", "Elige un horario"],
   loadingSlots: [
     "Consultando a agenda...",
     "Checking the calendar...",

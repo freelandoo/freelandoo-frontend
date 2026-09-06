@@ -3248,7 +3248,8 @@
     "followingShort": "Acomp.do",
     "seeFollowingAria": "Ver quem este perfil acompanha",
     "tools": "Ferramentas",
-    "noRatings": "Sem avaliações"
+    "noRatings": "Sem avaliações",
+    "servicesSettingsAria": "Configurar serviços e horários"
   },
   "Bees": {
     "chat": "Chat",
@@ -5527,6 +5528,9 @@
     "next": "Próximo",
     "confirmCta": "Confirmar agendamento",
     "hour": "h",
-    "min": "min"
+    "min": "min",
+    "prevMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "pickTime": "Escolha um horário"
   }
 }

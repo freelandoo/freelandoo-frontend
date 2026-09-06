@@ -3834,7 +3834,8 @@
     "followingShort": "Following",
     "seeFollowingAria": "See who this profile follows",
     "tools": "Tools",
-    "noRatings": "No ratings"
+    "noRatings": "No ratings",
+    "servicesSettingsAria": "Configure services and hours"
   },
   "Bees": {
     "chat": "Chat",
@@ -6113,6 +6114,9 @@
     "next": "Next",
     "confirmCta": "Confirm booking",
     "hour": "h",
-    "min": "min"
+    "min": "min",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "pickTime": "Pick a time"
   }
 }

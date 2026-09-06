@@ -127,10 +127,14 @@ export default function AgendaPageClient({
   const [exceptionsOpen, setExceptionsOpen] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
+  // Espelha o PADRÃO do backend (`utils/bookingDefaults`: 09:00–18:00, todo dia)
+  // — é só o estado antes da resposta chegar, e quem manda é a API, que agora
+  // devolve as sete regras mesmo para quem nunca configurou. Divergir aqui faria
+  // a tela piscar uma disponibilidade que o cliente não vê.
   const [rules, setRules] = useState<WeeklyRule[]>(
     Array.from({ length: 7 }, (_, i) => ({
-      weekday: i, is_enabled: i >= 1 && i <= 5,
-      start_time: "08:00", end_time: "18:00",
+      weekday: i, is_enabled: true,
+      start_time: "09:00", end_time: "18:00",
       slot_duration_minutes: 60, buffer_minutes: 0,
     }))
   )

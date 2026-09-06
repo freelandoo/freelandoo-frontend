@@ -43,9 +43,28 @@ import type {
   SiteProfessional,
 } from "@/types/community-site"
 
-/** Quantos dias o trilho oferece e quantos aparecem de uma vez. */
-const RANGE_DAYS = 42
-const STRIP_SIZE = 7
+/** Nomes curtos dos dias da semana no idioma de quem lê (domingo primeiro). */
+function weekdayLabels(locale: string): string[] {
+  // 2026-02-01 é um domingo — âncora só para pedir o nome de cada dia.
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" })
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2026, 1, 1 + i)))
+}
+
+/**
+ * As casas do mês, alinhadas na coluna do dia da semana.
+ *
+ * `null` é casa vazia antes do dia 1 — sem ela, um mês que começa numa quarta
+ * desenharia o dia 1 debaixo de "domingo" e a grade inteira mentiria.
+ */
+function monthCells(month: Date): (Date | null)[] {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1)
+  const total = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
+  const cells: (Date | null)[] = Array.from({ length: first.getDay() }, () => null)
+  for (let d = 1; d <= total; d++) {
+    cells.push(new Date(month.getFullYear(), month.getMonth(), d))
+  }
+  return cells
+}
 
 type Step = "choose" | "when" | "confirm"
 
@@ -135,7 +154,11 @@ export function SiteBookingView({
   const [whatsapp, setWhatsapp] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [windowStart, setWindowStart] = useState(0)
+  // Mês desenhado na grade (dia 1). Começa no mês de hoje.
+  const [month, setMonth] = useState<Date>(() => {
+    const n = new Date()
+    return new Date(n.getFullYear(), n.getMonth(), 1)
+  })
 
   const service = services.find((s) => s.id_profile_service === serviceId) || null
 
@@ -158,17 +181,22 @@ export function SiteBookingView({
     return services.filter((s) => s.provider_profile_id === proId)
   }, [services, proId])
 
-  const days = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return Array.from({ length: RANGE_DAYS }, (_, i) => {
-      const d = new Date(today)
-      d.setDate(today.getDate() + i)
-      return d
-    })
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
   }, [])
 
-  const visibleDays = days.slice(windowStart, windowStart + STRIP_SIZE)
+  const cells = useMemo(() => monthCells(month), [month])
+  const weekdays = useMemo(() => weekdayLabels(locale), [locale])
+
+  // Mês passado não se agenda: o botão de voltar morre no mês corrente.
+  const atFirstMonth =
+    month.getFullYear() === today.getFullYear() && month.getMonth() === today.getMonth()
+
+  const shiftMonth = useCallback((delta: number) => {
+    setMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1))
+  }, [])
 
   // Horários do dia escolhido. Só busca no passo do calendário: no primeiro
   // passo a pessoa ainda pode trocar de profissional, e cada troca custaria uma
@@ -440,103 +468,147 @@ export function SiteBookingView({
           </div>
         )}
 
-        {/* ─── Passo 2: o calendário de verdade ──────────────────────────── */}
+        {/* ─── Passo 2: o calendário de verdade ──────────────────────────
+            Mês inteiro à esquerda, horários do dia escolhido à direita, lado a
+            lado. A fita de sete dias que existia aqui antes não tinha como
+            andar de mês, então quem procurava uma data adiante ficava clicando
+            na seta sem nunca ver "outubro". Uma escolha, um controle: a fita
+            saiu em vez de conviver com a grade.
+
+            A grade é desenhada aqui, e não com o `AgendaMonthCalendar` do
+            painel do dono: aquele é react-day-picker com CSS próprio e conta
+            agendamentos por dia — coisas que este site não tem e que não
+            aceitam a paleta editável da comunidade. */}
         {step === "when" && (
           <section>
             <h2 className="fl-display text-3xl leading-none md:text-4xl">
               {t("whenTitle", "Escolha o dia e a hora")}
             </h2>
 
-            <div className="mt-6 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setWindowStart((v) => Math.max(0, v - STRIP_SIZE))}
-                disabled={windowStart === 0}
-                aria-label={t("prevDays", "Dias anteriores")}
-                className="border-2 p-2 disabled:opacity-30"
-                style={{ borderColor: theme.textSecondary }}
+            <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              {/* ── Quadro do mês ── */}
+              <div
+                className="border-2 p-4"
+                style={{ background: theme.surface, borderColor: "#0B0B0D" }}
               >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => shiftMonth(-1)}
+                    disabled={atFirstMonth}
+                    aria-label={t("prevMonth", "Mês anterior")}
+                    className="border-2 p-1.5 disabled:opacity-30"
+                    style={{ borderColor: theme.textSecondary }}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.14em]">
+                    {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(month)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => shiftMonth(1)}
+                    aria-label={t("nextMonth", "Próximo mês")}
+                    className="border-2 p-1.5"
+                    style={{ borderColor: theme.textSecondary }}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
 
-              <div className="flex flex-1 gap-2 overflow-x-auto">
-                {visibleDays.map((d) => {
-                  const iso = dateOnly(d)
-                  const selected = iso === date
-                  return (
-                    <button
-                      key={iso}
-                      type="button"
-                      onClick={() => setDate(iso)}
-                      className="flex min-w-[64px] flex-1 flex-col items-center border-2 px-2 py-3"
-                      style={{
-                        background: selected ? theme.primary : theme.surface,
-                        color: selected ? theme.background : theme.textPrimary,
-                        borderColor: "#0B0B0D",
-                      }}
-                    >
-                      <span className="text-[10px] font-extrabold uppercase tracking-[0.12em]">
-                        {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
-                      </span>
-                      <span className="fl-display mt-1 text-xl leading-none">{d.getDate()}</span>
-                      <span className="text-[10px] uppercase">
-                        {new Intl.DateTimeFormat(locale, { month: "short" }).format(d)}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setWindowStart((v) => Math.min(RANGE_DAYS - STRIP_SIZE, v + STRIP_SIZE))
-                }
-                disabled={windowStart + STRIP_SIZE >= RANGE_DAYS}
-                aria-label={t("nextDays", "Próximos dias")}
-                className="border-2 p-2 disabled:opacity-30"
-                style={{ borderColor: theme.textSecondary }}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-8">
-              {loadingSlots ? (
-                <p
-                  className="flex items-center gap-2 text-sm"
+                <div
+                  className="mt-4 grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-[0.08em]"
                   style={{ color: theme.textSecondary }}
                 >
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("loadingSlots", "Consultando a agenda...")}
-                </p>
-              ) : slots.length === 0 ? (
-                <p className="text-sm" style={{ color: theme.textSecondary }}>
-                  {t("noSlots", "Sem horário livre neste dia. Tente outro.")}
-                </p>
-              ) : (
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                  {slots.map((s) => {
-                    const label = normalizeLabel(s.start)
-                    const selected = label === time
+                  {weekdays.map((w, i) => (
+                    <span key={i}>{w}</span>
+                  ))}
+                </div>
+
+                <div className="mt-1 grid grid-cols-7 gap-1">
+                  {cells.map((d, i) => {
+                    if (!d) return <span key={`x${i}`} aria-hidden />
+                    const iso = dateOnly(d)
+                    const past = d < today
+                    const selected = iso === date
                     return (
                       <button
-                        key={label}
+                        key={iso}
                         type="button"
-                        onClick={() => setTime(label)}
-                        className="border-2 px-2 py-3 text-sm font-extrabold"
+                        disabled={past}
+                        onClick={() => setDate(iso)}
+                        aria-pressed={selected}
+                        className="border-2 py-2 text-sm font-extrabold disabled:cursor-default disabled:opacity-25"
                         style={{
-                          background: selected ? theme.primary : theme.surface,
+                          background: selected ? theme.primary : "transparent",
                           color: selected ? theme.background : theme.textPrimary,
-                          borderColor: "#0B0B0D",
+                          borderColor: selected ? "#0B0B0D" : "transparent",
                         }}
                       >
-                        {label}
+                        {d.getDate()}
                       </button>
                     )
                   })}
                 </div>
-              )}
+              </div>
+
+              {/* ── Horários do dia escolhido ── */}
+              <div
+                className="border-2 p-4"
+                style={{ background: theme.surface, borderColor: "#0B0B0D" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" style={{ color: theme.primary }} />
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.14em]">
+                    {t("pickTime", "Escolha um horário")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs" style={{ color: theme.textSecondary }}>
+                  {new Intl.DateTimeFormat(locale, {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  }).format(new Date(`${date}T12:00:00`))}
+                </p>
+
+                <div className="mt-4">
+                  {loadingSlots ? (
+                    <p
+                      className="flex items-center gap-2 text-sm"
+                      style={{ color: theme.textSecondary }}
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("loadingSlots", "Consultando a agenda...")}
+                    </p>
+                  ) : slots.length === 0 ? (
+                    <p className="text-sm" style={{ color: theme.textSecondary }}>
+                      {t("noSlots", "Sem horário livre neste dia. Tente outro.")}
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {slots.map((s) => {
+                        const label = normalizeLabel(s.start)
+                        const selected = label === time
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => setTime(label)}
+                            className="border-2 px-2 py-2.5 text-sm font-extrabold"
+                            style={{
+                              background: selected ? theme.primary : "transparent",
+                              color: selected ? theme.background : theme.textPrimary,
+                              borderColor: "#0B0B0D",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </section>
         )}
