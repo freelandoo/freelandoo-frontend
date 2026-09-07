@@ -132,6 +132,9 @@ const nextConfig = {
     return {
       afterFiles: [
         { source: "/api/:path*", destination: `${backend.replace(/\/$/, "")}/:path*` },
+        // Deck de investidores: HTML estatico em public/, servido em URL limpa.
+        // Fica fora do chrome da plataforma de proposito (e um documento, nao uma tela).
+        { source: "/investidores", destination: "/investidores.html" },
       ],
     }
   },
