@@ -6204,6 +6204,8 @@
     "send": "Enviar",
     "reconnectToReply": "Reconecta WhatsApp para responder",
     "openMedia": "abrir",
-    "downloadFile": "Descargar archivo"
+    "downloadFile": "Descargar archivo",
+    "reconnectCta": "Reconectar mi WhatsApp",
+    "idleDisconnected": "Desvinculamos tu WhatsApp porque esta bandeja pasó {days} días sin uso. No se perdió nada: reconecta para volver a recibir aquí."
   }
 }

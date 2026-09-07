@@ -6224,6 +6224,8 @@
     "send": "Send",
     "reconnectToReply": "Reconnect WhatsApp to reply",
     "openMedia": "open",
-    "downloadFile": "Download file"
+    "downloadFile": "Download file",
+    "reconnectCta": "Reconnect my WhatsApp",
+    "idleDisconnected": "We unlinked your WhatsApp because this inbox went {days} days unused. Nothing was lost — reconnect to start receiving here again."
   }
 }

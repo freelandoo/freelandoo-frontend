@@ -44,6 +44,12 @@ const WHATSAPP = {
     "Connect your number with a QR code and handle your WhatsApp chats without leaving Freelandoo.",
     "Conecta tu número con un código QR y atiende tus conversaciones de WhatsApp sin salir de Freelandoo.",
   ],
+  reconnectCta: ["Reconectar meu WhatsApp", "Reconnect my WhatsApp", "Reconectar mi WhatsApp"],
+  idleDisconnected: [
+    "Desconectamos o seu WhatsApp porque a caixa ficou {days} dias sem uso. Nada foi perdido: reconecte para voltar a receber por aqui.",
+    "We unlinked your WhatsApp because this inbox went {days} days unused. Nothing was lost — reconnect to start receiving here again.",
+    "Desvinculamos tu WhatsApp porque esta bandeja pasó {days} días sin uso. No se perdió nada: reconecta para volver a recibir aquí.",
+  ],
   notConfigured: [
     "A integração com o WhatsApp ainda não está disponível nesta instalação.",
     "The WhatsApp integration is not available in this installation yet.",

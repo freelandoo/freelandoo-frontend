@@ -5638,6 +5638,8 @@
     "send": "Enviar",
     "reconnectToReply": "Reconecte o WhatsApp para responder",
     "openMedia": "abrir",
-    "downloadFile": "Baixar arquivo"
+    "downloadFile": "Baixar arquivo",
+    "reconnectCta": "Reconectar meu WhatsApp",
+    "idleDisconnected": "Desconectamos o seu WhatsApp porque a caixa ficou {days} dias sem uso. Nada foi perdido: reconecte para voltar a receber por aqui."
   }
 }

@@ -38,6 +38,14 @@ export interface WhatsappStatusInfo {
   exists: boolean
   status: WhatsappStatus
   number: string
+  /**
+   * Por que a sessão caiu: 'user' (a pessoa desligou) ou 'idle' (o sweeper
+   * desligou por inatividade). Sem isso, quem volta depois de um mês encontra
+   * o botão "Conectar" e conclui que o produto quebrou.
+   */
+  disconnect_reason?: "user" | "idle" | null
+  /** Dias de inatividade que derrubam a sessão — o número vem do backend. */
+  idle_days?: number
   unread?: number
 }
 
@@ -256,10 +264,22 @@ export function useWhatsappInbox(enabled: boolean) {
     })
 
     const offStatus = onRealtime("whatsapp:status", (payload) => {
-      const p = payload as { status: WhatsappStatus; number: string }
+      const p = payload as {
+        status: WhatsappStatus
+        number: string
+        disconnect_reason?: "user" | "idle" | null
+      }
       if (!p || !p.status) return
       setInfo((prev) =>
-        prev ? { ...prev, exists: true, status: p.status, number: p.number || prev.number } : prev
+        prev
+          ? {
+              ...prev,
+              exists: true,
+              status: p.status,
+              number: p.number || prev.number,
+              disconnect_reason: p.status === "connected" ? null : p.disconnect_reason ?? prev.disconnect_reason,
+            }
+          : prev
       )
       // Conectou agora: a caixa pode ter conversas que chegaram enquanto a
       // sessão estava fora.
