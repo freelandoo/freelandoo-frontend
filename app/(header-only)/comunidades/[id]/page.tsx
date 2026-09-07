@@ -25,6 +25,10 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 // A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
 // ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
 import { RetractableColumn } from "@/components/tabloide"
+// A paleta editável do líder e o formatador de XP moram FORA desta página: o
+// ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
+// da lista faria as duas telas da mesma comunidade divergirem de tom.
+import { ACCENTS, accentHex, compact } from "./_components/community-ui"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -175,28 +179,6 @@ type Goal = {
 type Announcement = { id: number; body: string; is_pinned: boolean; created_at: string; author_username: string | null; author_name: string | null }
 type Benchmark = { position: number; total: number; percentile: number | null; enxame_name: string | null }
 
-// Identidade da comunidade = a do Freelandoo (escuro/tabloide). O líder só
-// recolore os DETALHES (accent): ícones, aba ativa, barra de progresso, botão
-// entrar, destaques. A base (fundo, cards, texto) é fixa.
-const ACCENTS: { key: string; labelKey: string; fallback: string; hex: string }[] = [
-  { key: "gold", labelKey: "accentGold", fallback: "Dourado", hex: "#F2B705" },
-  { key: "magenta", labelKey: "accentMagenta", fallback: "Magenta", hex: "#ff1f8e" },
-  { key: "cyan", labelKey: "accentCyan", fallback: "Ciano", hex: "#16c8e8" },
-  { key: "purple", labelKey: "accentPurple", fallback: "Roxo", hex: "#a06bff" },
-  { key: "leaf", labelKey: "accentLeaf", fallback: "Verde folha", hex: "#4fc95a" },
-  { key: "red", labelKey: "accentRed", fallback: "Vermelho", hex: "#ff5a44" },
-  { key: "orange", labelKey: "accentOrange", fallback: "Laranja", hex: "#ff8c2e" },
-  { key: "gray", labelKey: "accentGray", fallback: "Cinza", hex: "#b8b1a6" },
-]
-function accentHex(a: string): string {
-  return ACCENTS.find((x) => x.key === a)?.hex || ACCENTS[0].hex
-}
-function compact(n: number): string {
-  const v = Number(n) || 0
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
-  if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}k`
-  return String(Math.round(v))
-}
 function fmtBRL(cents: number): string {
   return (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
@@ -397,8 +379,8 @@ export default function CommunityDetailPage() {
     ? t("residentToPost", "Confirme seu apartamento para publicar.")
     : t("joinToPost", "Entre na comunidade para publicar.")
 
-  // A pilha atrás da foto — Perfil (azul) e, embaixo dele, Mural (laranja). É de
-  // propósito que nenhum dos dois seja um bloco na página: o painel é o mesmo
+  // A pilha atrás da foto — Perfil (azul), Mural (laranja) e Ranking (roxo). É
+  // de propósito que nenhum dos dois primeiros seja um bloco na página: o painel é o mesmo
   // para quem lê e para quem edita, então não há duas telas dizendo o que a
   // comunidade é nem dois lugares mostrando o mesmo recado.
   //
@@ -430,8 +412,26 @@ export default function CommunityDetailPage() {
         onOpen: () => setPanel((p) => (p === "mural" ? null : "mural")),
         active: panel === "mural",
       },
+      // O terceiro é o RANKING, e ele NAVEGA em vez de abrir painel: o pódio
+      // com foto grande, a lista inteira e a temporada não cabem embaixo do
+      // headcard sem empurrar o feed para longe outra vez — foi para tirar
+      // caixa do meio da página que os painéis nasceram. A gaveta dos números
+      // continua mostrando os cinco primeiros; quem quer a tabela toda vai
+      // para a página, que é uma tela só, servida por todas as modalidades.
+      {
+        key: "ranking",
+        icon: Trophy,
+        label: t("rankingPill", "Ranking"),
+        ariaLabel: t("rankingPillAria", "Abrir o ranking completo da comunidade"),
+        // Roxo porque a pilha já tem azul e laranja: um tom dourado ficaria
+        // colado no laranja do Mural, e o accent está fora de questão (é
+        // editável pelo líder e pode cair no tom do próprio botão).
+        bg: "#7E22CE",
+        bgHover: "#6B21A8",
+        href: `/comunidades/${id}/ranking`,
+      },
     ],
-    [t, panel]
+    [t, panel, id]
   )
 
   const ranked = useMemo(
@@ -1033,16 +1033,22 @@ export default function CommunityDetailPage() {
               A pilha fica FORA da caixa da foto porque aquela caixa é
               `overflow-hidden` — lá dentro o botão seria recortado na borda.
 
-              `pl-28 md:pl-36` casa com a LARGURA DA FOTO (h-28 w-28 / md:36).
+              `pl-32 md:pl-36` casa com a LARGURA DA FOTO (h-32 w-32 / md:36).
               Mexeu no tamanho da foto? Ajustar o padding junto, senão o corpo
-              colorido nasce ao lado dela em vez de debaixo. */}
+              colorido nasce ao lado dela em vez de debaixo.
+
+              E a foto tem que ser MAIOR QUE A PILHA, senão o pill de cima e o
+              de baixo escapam por cima e por baixo em vez de só pela direita:
+              com três pills a pilha mede 3 × 36 (h-9) + 2 × 6 (gap-1.5) =
+              120px, e foi por isso que a foto subiu de h-28 (112px) para h-32
+              (128px) no celular. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
             <PillStack
               pills={communityPills}
-              avatarPadClass="pl-28 md:pl-36"
+              avatarPadClass="pl-32 md:pl-36"
               className="absolute left-0 top-1/2 -translate-y-1/2"
             />
-            <div className="relative h-28 w-28 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
+            <div className="relative h-32 w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
               {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
@@ -1475,6 +1481,14 @@ export default function CommunityDetailPage() {
             {seasonOn && goal?.metric === "posts" && (
               <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">{t("postsEngHint", "posts / engajamento")}</p>
             )}
+            {/* A gaveta é RESUMO: mostra cinco e diz onde estão os outros. Sem
+                esta linha, uma comunidade de trinta membros pareceria ter cinco
+                — e o pódio inteiro (com a temporada e a lista) mora na página
+                que o pill roxo do headcard abre. */}
+            <Link href={`/comunidades/${id}/ranking`}
+              className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <Trophy className="h-3.5 w-3.5" /> {t("rankingSeeAll", "Ver ranking completo")}
+            </Link>
           </Block>
         )}
       </RetractableColumn>

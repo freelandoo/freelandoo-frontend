@@ -2680,7 +2680,19 @@
     "muralMembersOnly": "Only community members can read the board.",
     "publishFeedCta": "Post",
     "statsTitle": "Community numbers",
-    "statsAria": "Community numbers: members, level, XP, benchmark, spotlight and ranking"
+    "statsAria": "Community numbers: members, level, XP, benchmark, spotlight and ranking",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Open the community's full ranking",
+    "rankingSeeAll": "See full ranking",
+    "rankingHeading": "The podium.",
+    "rankingListHeading": "The whole list",
+    "rankingEyebrowXp": "the top of the community",
+    "rankingTabSeason": "Season",
+    "rankingTabXp": "Overall XP",
+    "rankingLocked": "Only community members can see the ranking.",
+    "rankingGoToCommunity": "Go to the community",
+    "rankingEmptySeason": "Nobody has scored this season yet.",
+    "rankingLoadError": "Couldn't load the ranking right now."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -5267,7 +5279,9 @@
     "statsAria": "Gym numbers: members, trainers, spotlight and monthly ranking",
     "spotlightTitle": "Spotlight",
     "spotlightSub": "Most frequent this month",
-    "rankFreqDays": "{n} days"
+    "rankFreqDays": "{n} days",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Open the gym's full ranking"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

@@ -2680,7 +2680,19 @@
     "muralMembersOnly": "Solo quien es de la comunidad lee el muro.",
     "publishFeedCta": "Publicar",
     "statsTitle": "Números de la comunidad",
-    "statsAria": "Números de la comunidad: miembros, nivel, XP, benchmark, destacado y ranking"
+    "statsAria": "Números de la comunidad: miembros, nivel, XP, benchmark, destacado y ranking",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Abrir el ranking completo de la comunidad",
+    "rankingSeeAll": "Ver ranking completo",
+    "rankingHeading": "El podio.",
+    "rankingListHeading": "La lista completa",
+    "rankingEyebrowXp": "la cima de la comunidad",
+    "rankingTabSeason": "Temporada",
+    "rankingTabXp": "XP general",
+    "rankingLocked": "Solo quien es de la comunidad ve el ranking.",
+    "rankingGoToCommunity": "Ir a la comunidad",
+    "rankingEmptySeason": "Nadie ha puntuado en esta temporada todavía.",
+    "rankingLoadError": "No se pudo cargar el ranking ahora."
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -5247,7 +5259,9 @@
     "statsAria": "Números del gimnasio: vinculados, profesores, destacado y ranking del mes",
     "spotlightTitle": "Destacado",
     "spotlightSub": "Más frecuente del mes",
-    "rankFreqDays": "{n} días"
+    "rankFreqDays": "{n} días",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Abrir el ranking completo del gimnasio"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

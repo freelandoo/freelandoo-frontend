@@ -379,30 +379,43 @@ export function AcademyView({ slug }: { slug: string }) {
   const expiredCount = expired?.count ?? 0
 
   /**
-   * O botão retrátil do headcard da academia. Hoje é UM (Membros, rosa) — e é a
-   * mesma pilha do headcard do perfil e da comunidade, não uma cópia: botão
-   * novo de headcard de academia entra NESTA lista, nunca como bloco solto no
-   * meio da página.
+   * Os botões retráteis do headcard da academia — Membros (rosa) e, embaixo
+   * dele, Ranking (roxo). É a mesma pilha do headcard do perfil e da
+   * comunidade, não uma cópia: botão novo de headcard de academia entra NESTA
+   * lista, nunca como bloco solto no meio da página.
    *
-   * Ele só existe para o staff porque é o que ele abre que é do staff (a lista
-   * de vinculados e a grade de treinos). Dar o botão a quem receberia 403 do
-   * outro lado seria uma porta pintada.
+   * MEMBROS é só do STAFF porque é do staff o que ele abre (a lista de
+   * vinculados e a grade de treinos): dar o botão a quem receberia 403 do outro
+   * lado seria uma porta pintada.
+   *
+   * RANKING é de TODO MUNDO, e o roxo é o mesmo da comunidade — o pill é a
+   * mesma porta nas duas superfícies, e mudar de cor conforme a tela faria a
+   * pessoa procurar duas vezes. A porta do ranking é anônima (`GET
+   * /academies/:id/ranking`), então aqui não há 403 a esconder.
    */
-  const pills: PillSpec[] = isStaff
-    ? [
-        {
-          key: "members",
-          icon: UserRound,
-          label: t("membersPill", "Membros"),
-          ariaLabel: t("membersPillAria", "Abrir membros vinculados e treinos por data"),
-          bg: "#DB2777",
-          bgHover: "#BE185D",
-          href: `/academias/${academy.slug}/membros`,
-          dot: expiredCount > 0,
-          dotLabel: t("expiredDot", "Há alunos com a ficha vencida"),
-        },
-      ]
-    : []
+  const pills: PillSpec[] = []
+  if (isStaff) {
+    pills.push({
+      key: "members",
+      icon: UserRound,
+      label: t("membersPill", "Membros"),
+      ariaLabel: t("membersPillAria", "Abrir membros vinculados e treinos por data"),
+      bg: "#DB2777",
+      bgHover: "#BE185D",
+      href: `/academias/${academy.slug}/membros`,
+      dot: expiredCount > 0,
+      dotLabel: t("expiredDot", "Há alunos com a ficha vencida"),
+    })
+  }
+  pills.push({
+    key: "ranking",
+    icon: Trophy,
+    label: t("rankingPill", "Ranking"),
+    ariaLabel: t("rankingPillAria", "Abrir o ranking completo da academia"),
+    bg: "#7E22CE",
+    bgHover: "#6B21A8",
+    href: `/academias/${academy.slug}/ranking`,
+  })
 
   return (
     <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
