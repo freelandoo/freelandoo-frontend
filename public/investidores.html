@@ -125,8 +125,6 @@ h3{font-size:clamp(16px,1.8vw,20px);letter-spacing:.01em}
 .coverfacts small{display:block;margin-top:7px;font-size:12px;line-height:1.35;color:var(--band-muted)}
 
 /* ---------- pieces ---------- */
-.tofill{display:inline-block;border-bottom:2px dashed var(--magenta);color:var(--magenta);font-weight:600;padding:0 3px;white-space:nowrap}
-.pen{font-family:Archivo,'Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:600;color:var(--magenta);transform:rotate(-2.5deg);display:inline-block;margin-left:8px;text-transform:none;letter-spacing:.01em;line-height:1.2;vertical-align:baseline}
 
 .versus{display:grid;gap:0;border-top:2px solid var(--rule);margin-top:6px}
 .versus > div{display:grid;gap:5px 24px;padding:15px 0;border-bottom:1px solid var(--rule-soft)}
@@ -209,24 +207,6 @@ input[type=range]:focus-visible{outline:3px solid var(--gold);outline-offset:3px
 .risk p{font-size:14.5px;color:var(--body)}
 .risk .fix{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule-soft)}
 .risk .fix strong{display:block;font:700 11px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:7px}
-
-.phases{display:grid;gap:0;border-top:2px solid var(--rule)}
-@media (min-width:900px){.phases{grid-template-columns:repeat(3,1fr)}}
-.phase{padding:18px 22px 22px 0;border-bottom:1px solid var(--rule-soft)}
-@media (min-width:900px){.phase{border-bottom:none;border-right:1px solid var(--rule-soft)}
-  .phase:last-child{border-right:none}}
-.phase b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:13px;letter-spacing:.1em;color:var(--gold)}
-.phase h3{margin:6px 0 10px}
-.phase ul{margin:0;padding-left:17px;font-size:14px;color:var(--body);display:flex;flex-direction:column;gap:7px}
-
-.usebar{display:flex;flex-direction:column;gap:12px;margin-top:22px}
-.useitem{display:grid;gap:5px}
-.useitem .row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px}
-.useitem .row b{font-weight:600}
-.useitem .row span{font-variant-numeric:tabular-nums;color:var(--muted)}
-.track{height:12px;background:var(--surface-2);border:1.5px solid var(--rule)}
-.track i{display:block;height:100%;background:var(--gold)}
-.band .track{background:#23201C}
 
 .shotgrid{display:grid;gap:clamp(24px,3.5vw,40px);margin-top:clamp(28px,4vh,42px)}
 @media (min-width:920px){.shotgrid{grid-template-columns:330px 1fr;align-items:start}}
@@ -731,14 +711,6 @@ footer a{color:var(--gold);text-decoration:none;border-bottom:1px solid currentC
             <h4>Já validado</h4>
             <p>Cadastro, checkout nos quatro fluxos de dinheiro, retenção e repasse, etiqueta de frete, integração real com software de academia e as duas APIs públicas.</p>
           </div>
-          <div>
-            <h4>Base atual</h4>
-            <p><span class="tofill">___ contas</span><span class="pen">preencher</span> · <span class="tofill">R$ ___ transacionado</span><span class="pen">preencher</span></p>
-          </div>
-          <div>
-            <h4>Time</h4>
-            <p><span class="tofill">___ pessoas</span><span class="pen">nomes e papéis</span></p>
-          </div>
         </div>
       </div>
       <div>
@@ -760,57 +732,6 @@ footer a{color:var(--gold);text-decoration:none;border-bottom:1px solid currentC
           <div class="fix"><strong>Contramedida</strong>
           <p>O que é cobrado só interessa a quem já está faturando — site, atendimento e segundo perfil não são vitrine, são operação. E a receita de academia é contrato B2B, que não depende dessa conversão. De quebra, sem taxa de adesão o programa de afiliados deixa de flertar com venda de entrada, e o risco legal correspondente some na origem.</p></div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 13 O PEDIDO -->
-<section class="slide" id="s13" data-label="O pedido">
-  <div class="wrap">
-    <div class="eyebrow"><b>13</b><em>O pedido</em><i>O que o capital compra</i></div>
-    <div class="cols c25">
-      <div>
-        <h2>Buscamos<br><span class="tofill" style="font-family:Anton,sans-serif;font-size:.9em">R$ ___</span><span class="pen">preencher o valor</span><br>para <span class="tofill" style="font-family:Anton,sans-serif;font-size:.9em">__ meses</span></h2>
-        <p class="lead">O dinheiro não vai construir o produto — ele existe. Vai transformar produto pronto em receita recorrente: academias sob contrato, prédios ligados, uma cidade densa e a máquina de converter base gratuita em assinante rodando.</p>
-        <div class="phases mt" style="border-top:2px solid var(--rule)">
-          <div class="phase">
-            <b>FASE 0</b><h3>Fundação</h3>
-            <ul><li>Onboarding separado para quem vende e quem contrata.</li><li>Confiança no perfil: avaliação atrelada a trabalho concluído.</li></ul>
-          </div>
-          <div class="phase">
-            <b>FASE 1</b><h3>Lançamento</h3>
-            <ul><li>Primeiras academias e condomínios em escala.</li><li>Temporada do programa com venda ao vivo.</li></ul>
-          </div>
-          <div class="phase">
-            <b>FASE 2</b><h3>Sustentação</h3>
-            <ul><li>Afiliado remunerado por assinatura ativa que ele trouxe.</li><li>Garantia ao comprador, protegendo a transação por dentro.</li></ul>
-          </div>
-        </div>
-      </div>
-      <div>
-        <h3>Uso do capital</h3>
-        <p class="note">Percentuais a confirmar — a estrutura reflete a tese: distribuição pesa mais que engenharia.</p>
-        <div class="usebar">
-          <div class="useitem">
-            <div class="row"><b>Aquisição: academias, condomínios e programa</b><span>45%</span></div>
-            <div class="track"><i style="width:45%"></i></div>
-          </div>
-          <div class="useitem">
-            <div class="row"><b>Time comercial e operação da cidade-piloto</b><span>25%</span></div>
-            <div class="track"><i style="width:25%"></i></div>
-          </div>
-          <div class="useitem">
-            <div class="row"><b>Produto e engenharia</b><span>18%</span></div>
-            <div class="track"><i style="width:18%"></i></div>
-          </div>
-          <div class="useitem">
-            <div class="row"><b>Infraestrutura, jurídico e reserva</b><span>12%</span></div>
-            <div class="track"><i style="width:12%"></i></div>
-          </div>
-        </div>
-        <p class="note mt">Marcos que a rodada precisa entregar: <span class="tofill">___ assinantes do plano</span>, <span class="tofill">___ academias com contrato</span>, <span class="tofill">___ condomínios</span>. <span class="pen">definir</span></p>
-        <p class="note mt">Valuation pretendido e instrumento (equity ou nota conversível): <span class="tofill">a definir</span><span class="pen">alinhar antes da reunião</span></p>
       </div>
     </div>
   </div>
