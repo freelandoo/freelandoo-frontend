@@ -22,12 +22,17 @@ import {
   Plus,
   Radio,
   Send,
+  Smartphone,
   Sparkles,
   Trash2,
   Users,
   X,
 } from "lucide-react"
 import type { ChatMachine } from "@/components/mensagens/ChatRoomPanel"
+import { useWhatsappInbox } from "@/components/mensagens/whatsapp/use-whatsapp-inbox"
+import { WhatsappList } from "@/components/mensagens/whatsapp/whatsapp-list"
+import { WhatsappThread } from "@/components/mensagens/whatsapp/whatsapp-thread"
+import { WhatsappConnectModal } from "@/components/mensagens/whatsapp/whatsapp-connect-modal"
 import type { ChamadoMode } from "@/components/search/open-chamado-modal"
 import { EmojiPickerButton } from "@/components/mensagens/EmojiPickerButton"
 import { MarkdownText } from "@/components/ui/markdown-text"
@@ -253,6 +258,14 @@ interface SendResponse {
 
 type MainTab = "conv" | "os" | "global" | "machine"
 
+/**
+ * As duas abas DENTRO de O.S. (pedido do Alex, 2026-09-06). Elas não são
+ * `MainTab` porque não trocam a tela: trocam a FONTE do que a mesma tela
+ * mostra — de um lado as solicitações da Freelandoo, do outro as conversas do
+ * WhatsApp que a pessoa conectou.
+ */
+type OsSource = "freelandoo" | "whatsapp"
+
 interface OsChatRequest {
   id_request: string
   status: string
@@ -366,6 +379,7 @@ export default function MensagensClient() {
     tabParam === "machine" ? "machine" :
     "conv"
   const initialOsResponseId = searchParams.get("response")
+  const initialOsSource: OsSource = searchParams.get("os") === "whatsapp" ? "whatsapp" : "freelandoo"
 
   const [actors, setActors] = useState<MensagensActor[]>([])
   const [actorId, setActorId] = useState<string | null>(null)
@@ -423,6 +437,21 @@ export default function MensagensClient() {
   const [osSending, setOsSending] = useState(false)
   const [productDetail, setProductDetail] = useState<OsChatItem | null>(null)
   const osThreadEndRef = useRef<HTMLDivElement | null>(null)
+
+  // ----- Aba O.S. → sub-aba WhatsApp (mig 223) -----
+  // Gate SÓ pela flag global do admin (`useFeature`), nunca por posse: o
+  // WhatsApp não é função vendida na Loja, e um gate de posse faria a aba
+  // nascer invisível — armadilha que as migs 216/217/222 já pagaram.
+  const whatsappFeatureOn = useFeature("whatsapp_atendimento")
+  const [osSource, setOsSource] = useState<OsSource>(initialOsSource)
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
+  // Fonte EFETIVA. Com a flag desligada, um `?os=whatsapp` guardado num link
+  // antigo não pode deixar a coluna vazia: ela volta a ser a da Freelandoo.
+  const effectiveOsSource: OsSource = whatsappFeatureOn ? osSource : "freelandoo"
+  const whatsappActive = tab === "os" && effectiveOsSource === "whatsapp"
+  // O hook é sempre chamado (rules-of-hooks) e só vai à rede quando a aba está
+  // na tela: quem nunca abre o WhatsApp não paga requisição nenhuma por isso.
+  const whatsapp = useWhatsappInbox(whatsappActive)
 
   // ----- Chat ao vivo (Global / Enxames) -----
   const initialMachineId = searchParams.get("machine_id")
@@ -735,6 +764,23 @@ export default function MensagensClient() {
   }, [messages.length])
 
   // ----- Solicitações: lista (6 fontes) -----
+  /**
+   * Troca a fonte da aba O.S. e guarda a escolha na URL — é o que permite
+   * mandar um link direto para o WhatsApp e é o que a pessoa espera ao voltar
+   * pelo histórico do navegador.
+   */
+  const handleSelectOsSource = useCallback(
+    (next: OsSource) => {
+      setOsSource(next)
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("tab", "os")
+      if (next === "whatsapp") params.set("os", "whatsapp")
+      else params.delete("os")
+      router.replace(`/mensagens?${params.toString()}`, { scroll: false })
+    },
+    [router, searchParams]
+  )
+
   const loadOsChats = useCallback(async () => {
     setOsChatsLoading(true)
     setOsChatsError(null)
@@ -1206,7 +1252,7 @@ export default function MensagensClient() {
             (tab === "conv"
               ? activeConvId
               : tab === "os"
-                ? activeOsResponseId
+                ? (effectiveOsSource === "whatsapp" ? whatsapp.activeId : activeOsResponseId)
                 : tab === "global"
                   ? true
                   : chatMachineId)
@@ -1219,7 +1265,9 @@ export default function MensagensClient() {
             eyebrow={
               tab === "conv"
                 ? t("conversationsSubtitle", "Suas conversas")
-                : t("osSubtitle", "Suas ordens de serviço")
+                : whatsappActive
+                  ? t("osWhatsappSubtitle", "Suas conversas do WhatsApp")
+                  : t("osSubtitle", "Suas ordens de serviço")
             }
             actions={
             tab === "conv" ? (
@@ -1252,7 +1300,7 @@ export default function MensagensClient() {
                   onSelect={handleSelectActor}
                 />
               </>
-            ) : tab === "os" ? (
+            ) : tab === "os" && !whatsappActive ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -1327,6 +1375,27 @@ export default function MensagensClient() {
               </>
             )}
           </div>
+
+          {/* Sub-abas de O.S.: de onde vem o que a coluna mostra */}
+          {tab === "os" && whatsappFeatureOn && (
+            <div className="flex items-stretch border-b border-[#F1EDE2]/10">
+              <TabloidTab
+                active={effectiveOsSource === "freelandoo"}
+                onClick={() => handleSelectOsSource("freelandoo")}
+                icon={<ClipboardList className="h-3.5 w-3.5" />}
+                label={t("osSourceFreelandoo", "Freelandoo")}
+                shortLabel={t("osSourceFreelandoo", "Freelandoo")}
+              />
+              <TabloidTab
+                active={effectiveOsSource === "whatsapp"}
+                onClick={() => handleSelectOsSource("whatsapp")}
+                icon={<Smartphone className="h-3.5 w-3.5" />}
+                label={t("osSourceWhatsapp", "WhatsApp")}
+                shortLabel={t("osSourceWhatsapp", "WhatsApp")}
+                badge={(whatsapp.info?.unread ?? 0) > 0}
+              />
+            </div>
+          )}
 
           <div className={cn("flex-1 overflow-y-auto", tab !== "conv" && "hidden")}>
             {/* Search inline pra encontrar perfis/clans pra começar nova conversa */}
@@ -1475,7 +1544,19 @@ export default function MensagensClient() {
           </div>
 
           {/* Lista O.S. */}
-          <div className={cn("flex-1 overflow-y-auto", tab !== "os" && "hidden")}>
+          {/* Lista — WhatsApp (mig 223): mesma coluna, outra fonte */}
+          {whatsappFeatureOn && (
+            <div className={cn("min-h-0 flex-1", !whatsappActive && "hidden")}>
+              <WhatsappList inbox={whatsapp} onConnect={() => setWhatsappModalOpen(true)} />
+            </div>
+          )}
+
+          <div
+            className={cn(
+              "flex-1 overflow-y-auto",
+              (tab !== "os" || effectiveOsSource !== "freelandoo") && "hidden"
+            )}
+          >
             {osChatsLoading && osChats.length === 0 ? (
               <div className="space-y-2 p-3">
                 {[0, 1, 2, 3].map((i) => (
@@ -1663,6 +1744,15 @@ export default function MensagensClient() {
             ) : (
               <EmptyMachinePick />
             )}
+          </section>
+        ) : whatsappActive ? (
+          <section
+            className={cn(
+              "flex min-w-0 flex-col overflow-hidden",
+              whatsapp.activeId ? "flex" : "hidden md:flex"
+            )}
+          >
+            <WhatsappThread inbox={whatsapp} onConnect={() => setWhatsappModalOpen(true)} />
           </section>
         ) : tab === "os" ? (
           <section
@@ -2121,6 +2211,22 @@ export default function MensagensClient() {
       </div>
 
       <ApiConnectionsModal open={apiConnOpen} onClose={() => setApiConnOpen(false)} />
+
+      {whatsappFeatureOn && (
+        <WhatsappConnectModal
+          open={whatsappModalOpen}
+          onOpenChange={setWhatsappModalOpen}
+          connected={whatsapp.info?.status === "connected"}
+          number={whatsapp.info?.number || ""}
+          onStatus={(patch) =>
+            whatsapp.setInfo((prev) =>
+              prev
+                ? { ...prev, ...patch }
+                : { configured: true, exists: true, status: "disconnected", number: "", ...patch }
+            )
+          }
+        />
+      )}
 
       <CreateGroupModal
         open={createGroupOpen}

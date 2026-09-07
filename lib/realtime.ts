@@ -139,6 +139,11 @@ async function ensureSocket(): Promise<Socket | null> {
     "cluster:signal",
     "cluster:presence",
     "cluster:members:changed",
+    // WhatsApp do usuário (mig 223): o backend empurra ao processar o webhook
+    // da Evolution. Evento que não estiver nesta lista simplesmente não chega —
+    // o socket não o repassa, e a caixa pareceria congelada.
+    "whatsapp:message",
+    "whatsapp:status",
   ]
   for (const ev of events) {
     socket.on(ev, (payload: unknown) => dispatch(ev, payload))
