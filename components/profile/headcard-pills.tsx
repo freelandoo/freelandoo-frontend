@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { DollarSign, Dumbbell, Star, type LucideIcon } from "lucide-react"
+import { DollarSign, Dumbbell, Gamepad2, Star, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -16,8 +16,9 @@ import { cn } from "@/lib/utils"
  * Os botões RETRÁTEIS do headcard — PEÇA ÚNICA das duas superfícies (o headcard
  * do /account e o `ProfileHeadCard` do perfil).
  *
- * São três, empilhados um em cima do outro atrás da foto: Business (rosa),
- * Carteira (verde) e Fitness (laranja). Fechados, só o ícone escapa pela direita da
+ * São três, empilhados um em cima do outro atrás da foto: Games (roxo, o mais
+ * alto — sobe até por cima do banner da manifestação), Carteira (verde) e
+ * Fitness (laranja). Fechados, só o ícone escapa pela direita da
  * foto; no hover ele espia um pouco mais para fora; no clique abre e mostra o
  * rótulo. O SEGUNDO clique é que navega — abrir e ir embora são gestos
  * diferentes, e o ícone mal aparece de trás da foto: fazê-lo navegar no
@@ -59,16 +60,16 @@ import { cn } from "@/lib/utils"
 const CLEARANCE = "pl-3.5"
 
 /**
- * Altura da pilha CHEIA do headcard, em px: 3 pills de 36px (h-9) + 2 gaps de
- * 6px (gap-1.5) — eram 4 até o Games sair (2026-09-08). A foto do headcard
- * precisa ser MAIOR que isto para cobrir a pilha — é o que faz os pills escaparem só pela direita, como o desenho pede.
+ * Altura da pilha CHEIA do headcard, em px: 4 pills de 36px (h-9) + 3 gaps de
+ * 6px (gap-1.5). A foto do headcard precisa ser MAIOR que isto para cobrir a
+ * pilha — é o que faz os pills escaparem só pela direita, como o desenho pede.
  * A conta de lá vive em `AVATAR_FRAME_CLASS`
  * (components/profile/profile-head-card.tsx).
  *
  * A Carteira monta a própria pilha (3 botões) com o `PillStack` cru, então esta
  * constante não vale para ela — lá a conta é 3 × 36 + 2 × 6 = 120px.
  */
-export const PILL_STACK_PX = 120
+export const PILL_STACK_PX = 162
 
 export type PillSpec = {
   key: string
@@ -286,19 +287,19 @@ export function HeadcardPills({
   // inline deixaria a segunda chamada de hook condicional (rules-of-hooks).
   const academyFlag = useFeature("fitness_academias")
   const fitnessPref = useUserFeature("fitness_academias")
+  const gamesFlag = useFeature("games")
   // Mesma preferência que escondia "Minha comunidade" no menu da foto.
   const communitiesOn = useUserFeature("communities")
 
   /**
-   * Business não tem URL fixa: o destino é a comunidade DAQUELA pessoa. Quem
-   * já tem, entra na dela; quem não tem, ganha uma vazia e cai na página já
-   * editável — MESMA regra do menu dos espaços (a comunidade nasce sem
-   * formulário; o assunto se escolhe no headcard dela).
+   * Nem Games nem Business têm URL fixa: o destino é a comunidade DAQUELA
+   * pessoa. Quem já tem, entra na dela; quem não tem, ganha uma vazia e cai na
+   * página já editável — MESMA regra do menu dos espaços (a comunidade nasce
+   * sem formulário; o assunto se escolhe no headcard dela).
    *
-   * Continua GENÉRICA (chave do espaço + rota de criação por argumento) apesar
-   * de ter um chamador só: era ela que servia o Games também, e é ela que serve
-   * o próximo espaço que ganhar pill. Especializá-la em "comunidade comum"
-   * agora seria desfazer isso para refazer depois.
+   * Um caminho só para os dois: o que muda é a chave do espaço e a rota de
+   * criação. Escrever o segundo à mão seria a duplicata que faz um dos dois
+   * divergir depois.
    */
   const openSpace = useCallback(
     async (key: string, spaceKey: "games" | "common", createPath: string) => {
@@ -354,12 +355,19 @@ export function HeadcardPills({
     })
   }
 
-  // ⚠️ GAMES SAIU DAQUI (pedido do Alex, 2026-09-08). A porta da plataforma de
-  // games continua existindo — ela é o item "Meus games" do menu dos espaços e
-  // o dock inteiro de lá dentro —, o que saiu foi o atalho desta pilha, que é a
-  // barra PRINCIPAL do headcard. Um pill a menos também devolve folga à foto
-  // (ver PILL_STACK_PX). Se um dia voltar, volta AQUI, com `openSpace("games",
-  // "games", "/api/games")` — a mecânica de criar-ou-abrir continua de pé.
+  // Games vem logo abaixo: fica acima do cifrão e sobe até por cima do
+  // banner da manifestação (decisão do Alex 2026-09-03).
+  if (gamesFlag) {
+    pills.push({
+      key: "games",
+      icon: Gamepad2,
+      label: t("gamesPill", "Games"),
+      ariaLabel: t("openGamesAria", "Abrir a comunidade dos meus games"),
+      bg: "#6D28D9",
+      bgHover: "#5B21B6",
+      onOpen: () => openSpace("games", "games", "/api/games"),
+    })
+  }
 
   if (walletOn) {
     pills.push({

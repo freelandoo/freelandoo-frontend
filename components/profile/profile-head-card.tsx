@@ -175,17 +175,15 @@ const BEE_RING_GRADIENT =
 /** Moldura da foto — borda creme com anel preto por fora, do /account. A
  *  rotação NÃO mora aqui: ela é do wrapper, para o anel de bee girar junto.
  *
- *  TAMANHO: a foto precisa COBRIR a pilha de pills (`PILL_STACK_PX`, 120px com
- *  os três), senão o pill do topo escapa por cima em vez de só pela direita.
+ *  TAMANHO: a foto precisa COBRIR a pilha de pills (`PILL_STACK_PX`, 162px com
+ *  os quatro), senão o pill do topo escapa por cima em vez de só pela direita.
  *  Com w-32/md:w-36 e proporção 2/3 ela mede 192px (celular) e 216px (md) —
- *  folga de 36 e 48px, conta fechada, não estimativa. (A folga ficou maior em
- *  2026-09-08, quando o Games saiu da pilha; a foto NÃO encolheu junto — o
- *  tamanho dela é decisão de desenho, não sobra da pilha.)
+ *  folga de 15 e 27px, conta fechada, não estimativa.
  *
  *  ⚠️ PILL NOVO NA PILHA = +42px (36 do pill + 6 do gap). Refaça a conta aqui:
  *  altura da foto tem que continuar maior que `PILL_STACK_PX`.
  *
- *  ⚠️ A LARGURA casa com o `avatarPadClass` da pilha (`pl-32 md:pl-36`): é esse
+ *  ⚠️ A LARGURA casa com o `avatarPadClass` da pilha (`pl-28 md:pl-32`): é esse
  *  padding que faz o corpo colorido nascer DEBAIXO da foto. Mexeu numa, mexe na
  *  outra — e no recuo negativo da linha do avatar, que absorve a altura. */
 const AVATAR_FRAME_CLASS =

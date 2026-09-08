@@ -67,16 +67,23 @@ const HIDDEN_ON_PATHS = [
  * Os itens que NÃO dependem do contexto ativo.
  *
  * Os três contextos (usuário, perfil, clã) sempre repetiram esta mesma
- * lista e só divergem no Ranking, que muda de destino. Ela virou constante
- * quando o Monsters entrou: um quinto item copiado em três lugares é o quinto
- * lugar de onde ele some quando alguém mexer só num deles.
+ * lista e só divergem no Ranking, que muda de destino. Ela é constante para que
+ * um item novo não precise ser copiado em três lugares — o terceiro é sempre o
+ * lugar de onde ele some quando alguém mexer só nos outros dois.
+ *
+ * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08). O jogo continua
+ * alcançável, mas por DENTRO do ambiente de games: pill roxo do headcard →
+ * plataforma → item "Game" do dock de lá (ver `buildGamesItems`). A barra
+ * principal é a da Freelandoo inteira, e o jogo é uma sala dentro de um
+ * ambiente — anunciá-lo aqui dava a ele um degrau que nem Estante nem Jogo
+ * atual têm. Botão novo que sirva a plataforma toda entra aqui; o que serve o
+ * ambiente de games entra no dock de games.
  */
 const ITENS_COMUNS: SidebarItem[] = [
   { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
   { href: "/bees", label: "Bees", icon: Hexagon, matchPrefix: "/bees" },
   { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
   { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
-  { href: "/monsters", label: "Monsters", icon: Gamepad2, matchPrefix: "/monsters" },
 ]
 
 /**
