@@ -375,7 +375,6 @@ export default function CommunityDetailPage() {
   // para quem visita — desligar o interruptor segura o que ainda não nasceu,
   // não derruba o que está no ar. (Mesma regra do GET /me/spaces.)
   const siteEnabled = useFeature("comunidade_site")
-  const hasPublishedSite = !!community?.has_site
 
   // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
   // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
@@ -389,16 +388,26 @@ export default function CommunityDetailPage() {
   // "common" do predicado e ficariam com a aba Site de pé.
   const kindCanHaveSite = kindHasSite(community?.kind)
 
-  // O líder sempre vê a entrada (é dele que o site nasce); quem visita só a vê
-  // quando existe site publicado — comunidade sem site não ganha aba vazia.
-  const showSiteTab = kindCanHaveSite && (hasPublishedSite || (isLeader && siteEnabled))
+  // ⚠️ SÓ O LÍDER VÊ A ENTRADA DO SITE (pedido do Alex, 2026-09-08).
+  //
+  // Antes, quem visitava também via a aba quando havia site publicado — e isso
+  // era porta pintada: a aba é LINK para o CONSTRUTOR (`/comunidades/<id>/site`),
+  // não para o site publicado, e o construtor recusa quem não é líder. Ou seja,
+  // ela prometia ao visitante uma tela que só falharia depois do clique.
+  //
+  // O site publicado não perdeu nada: ele continua no ar em `/c/<slug>` e no
+  // domínio próprio, que são os endereços por onde o mundo chega nele. O que
+  // sumiu foi o atalho de dentro da comunidade, que nunca levava até ele.
+  //
+  // ⚠️ O PREDICADO É UM SÓ e a aba e o item "Meu Site" do menu "+" LEEM O MESMO:
+  // escritos separados, o dia em que um mudasse deixaria o outro oferecendo uma
+  // porta que a outra metade já fechou.
+  const canBuildSite = kindCanHaveSite && isLeader && siteEnabled
 
   const siteExtras = useMemo(
     () =>
-      kindCanHaveSite && isLeader && siteEnabled
-        ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }]
-        : [],
-    [kindCanHaveSite, isLeader, siteEnabled, t]
+      canBuildSite ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : [],
+    [canBuildSite, t]
   )
 
   // ─── Estante (mig 220) ──────────────────────────────────────────────────────
@@ -1858,7 +1867,7 @@ export default function CommunityDetailPage() {
                   ele — mas é LINK, não aba: o site abre na página dele. Manter
                   as duas coisas (aba e página) daria duas experiências do mesmo
                   site, e a de dentro da caixa é a que mente sobre o resultado. */}
-              {showSiteTab && (
+              {canBuildSite && (
                 <Link href={sitePath} className="-mb-0.5 flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] opacity-50 hover:opacity-100"
                   style={{ borderBottom: "4px solid transparent" }}>
                   <Globe className="h-3.5 w-3.5" style={{ color: accent }} />
