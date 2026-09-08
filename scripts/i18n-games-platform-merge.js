@@ -60,6 +60,29 @@ const COMMUNITY = {
     "Esta comunidad es cerrada — únete para ver los posts.",
   ],
   gamePostsMore: ["Ver mais", "Load more", "Ver más"],
+
+  // O RANKING da plataforma. A régua deixou de ser XP de membros (não há
+  // membros) e passou a ser hora jogada — a única medida que a plataforma
+  // conectada VERIFICA. Digitado à mão, "3.000 horas" não valeria nada.
+  rankingUnitHours: ["horas jogadas", "hours played", "horas jugadas"],
+  rankingEyebrowGames: [
+    "quem mais jogou na plataforma",
+    "who played the most on the platform",
+    "quién más jugó en la plataforma",
+  ],
+  rankingEmptyGames: [
+    "Ninguém conectou uma plataforma com a estante pública ainda.",
+    "Nobody has connected a platform with a public shelf yet.",
+    "Nadie conectó una plataforma con la estantería pública todavía.",
+  ],
+  rankingYouLabel: ["Sua posição", "Your position", "Tu posición"],
+  rankingYouOf: ["de", "of", "de"],
+  rankingYouGames: ["jogos", "games", "juegos"],
+  rankingYouAbsent: [
+    "Você ainda não está na fila: conecte uma plataforma e deixe a estante pública.",
+    "You are not on the board yet: connect a platform and make your shelf public.",
+    "Todavía no estás en la lista: conecta una plataforma y deja la estantería pública.",
+  ],
 };
 
 const NAMESPACES = { Community: COMMUNITY };

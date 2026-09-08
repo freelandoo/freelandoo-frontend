@@ -2705,7 +2705,14 @@
     "gamePostsTitle": "Posts de juegos",
     "gamePostsEmpty": "Todavía no hay posts de juegos.",
     "gamePostsLocked": "Esta comunidad es cerrada — únete para ver los posts.",
-    "gamePostsMore": "Ver más"
+    "gamePostsMore": "Ver más",
+    "rankingUnitHours": "horas jugadas",
+    "rankingEyebrowGames": "quién más jugó en la plataforma",
+    "rankingEmptyGames": "Nadie conectó una plataforma con la estantería pública todavía.",
+    "rankingYouLabel": "Tu posición",
+    "rankingYouOf": "de",
+    "rankingYouGames": "juegos",
+    "rankingYouAbsent": "Todavía no estás en la lista: conecta una plataforma y deja la estantería pública."
   },
   "Careers": {
     "hero.badge": "Carreras",

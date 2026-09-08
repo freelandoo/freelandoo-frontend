@@ -28,6 +28,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Loader2, Lock, ShieldAlert, Trophy } from "lucide-react"
 import { DoodleCrown } from "@/components/home/landing/primitives"
@@ -36,13 +37,44 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import { accentHex, compact } from "../../_components/community-ui"
+import { GamesShellBeacon } from "@/components/layout/games-shell"
+
+// O ranking também é uma tela DE DENTRO do ambiente games: mesmo fundo, mesma
+// pele. Por `dynamic` para não pesar no ranking das outras seis modalidades.
+const TechBackdrop = dynamic(
+  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  { ssr: false }
+)
 
 type Community = {
   id_profile: string
   display_name: string
   avatar_url: string | null
+  kind?: string | null
   community_theme: { accent?: string } | null
 }
+/**
+ * A TERCEIRA FONTE do pódio (a plataforma de games).
+ *
+ * ⚠️ Ela não vira uma página nova, e isso é decisão: pódio, lista e barra já
+ * existem aqui e convergem para o tipo `Row` abaixo. Uma segunda tela de
+ * ranking seria o mesmo desenho escrito duas vezes — e a segunda pararia de
+ * acompanhar a primeira na primeira mudança de layout.
+ *
+ * O que muda é só a RÉGUA: sem membros, o que existe para comparar são as
+ * horas que as plataformas verificam.
+ */
+type GamerRow = {
+  id_user: string
+  username: string | null
+  name: string | null
+  avatar_url: string | null
+  position: number
+  minutes: number
+  games: number
+  achievements: number
+}
+type GamerMe = { position: number; total: number; minutes: number; games: number } | null
 type Member = {
   id_user: string
   role: "leader" | "vice" | "member"
@@ -96,16 +128,20 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   const [locked, setLocked] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("season")
   const [daysLeft, setDaysLeft] = useState<number | null>(null)
+  const [gamerRows, setGamerRows] = useState<GamerRow[]>([])
+  const [gamerMe, setGamerMe] = useState<GamerMe>(null)
+  const [isGames, setIsGames] = useState(false)
 
   const load = useCallback(async () => {
     try {
       const tk = getToken()
       const headers = tk ? { Authorization: `Bearer ${tk}` } : undefined
-      const [cRes, mRes, gRes] = await Promise.all([
-        fetch(`/api/communities/${communityId}`, headers ? { headers } : undefined),
-        fetch(`/api/communities/${communityId}/members`, headers ? { headers } : undefined),
-        fetch(`/api/communities/${communityId}/goal`, headers ? { headers } : undefined),
-      ])
+
+      // A comunidade vem PRIMEIRO, sozinha: é ela que diz qual régua vale.
+      // Buscar membros e temporada em paralelo "por via das dúvidas" pediria
+      // duas respostas que a plataforma de games não tem — e a de temporada
+      // voltaria como "nenhuma temporada", que ali não quer dizer nada.
+      const cRes = await fetch(`/api/communities/${communityId}`, headers ? { headers } : undefined)
       const cData = await cRes.json().catch(() => ({}))
       if (!cRes.ok) {
         setErrorMsg(cData?.error || t("notFound", "Comunidade não encontrada."))
@@ -113,6 +149,27 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
         return
       }
       setCommunity(cData.community)
+
+      if (cData.community?.kind === "games") {
+        setIsGames(true)
+        const rRes = await fetch("/api/gamer/ranking?limit=50", headers ? { headers } : undefined)
+        const rData = await rRes.json().catch(() => ({}))
+        if (rRes.ok) {
+          setGamerRows(Array.isArray(rData.rows) ? rData.rows : [])
+          setGamerMe(rData.me || null)
+        } else {
+          // Flag desligada (403) não é "ninguém jogou": é o recurso fora do ar,
+          // e as duas coisas pedem frases diferentes.
+          setLocked(rData?.error || t("rankingLoadError", "Não deu para carregar o ranking agora."))
+        }
+        setState("loaded")
+        return
+      }
+
+      const [mRes, gRes] = await Promise.all([
+        fetch(`/api/communities/${communityId}/members`, headers ? { headers } : undefined),
+        fetch(`/api/communities/${communityId}/goal`, headers ? { headers } : undefined),
+      ])
 
       const mData = await mRes.json().catch(() => ({}))
       if (mRes.ok) {
@@ -147,7 +204,9 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   }, [load])
 
   const accent = accentHex(community?.community_theme?.accent)
-  const seasonOn = !!goal
+  // Games não tem temporada: a fila é uma só, e o par de abas pediria um
+  // clique que não decide nada.
+  const seasonOn = !!goal && !isGames
 
   useEffect(() => {
     // Sem temporada não existe a aba dela — cair nela deixaria a tela vazia.
@@ -169,6 +228,17 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
    * escolhe QUAL delas responde e como o número é escrito.
    */
   const rows: Row[] = useMemo(() => {
+    if (isGames) {
+      return gamerRows.map((r) => ({
+        id_user: r.id_user,
+        name: r.name || r.username || "—",
+        avatar_url: r.avatar_url,
+        // Hora inteira: minuto exato não diz nada em cima de 9.000 deles — a
+        // mesma régua que a Estante já usa.
+        value: `${compact(Math.round(r.minutes / 60))}h`,
+        raw: r.minutes,
+      }))
+    }
     if (tab === "season" && goal) {
       return goal.ranking.map((r) => ({
         id_user: r.id_user,
@@ -195,9 +265,13 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
         value: `${compact(Number(m.top_profile_xp || 0))} XP`,
         raw: Number(m.top_profile_xp || 0),
       }))
-  }, [tab, goal, members])
+  }, [tab, goal, members, isGames, gamerRows])
 
-  const unitWord = tab === "season" && goal ? metricLabel(goal.metric) : t("metricXp", "XP coletivo")
+  const unitWord = isGames
+    ? t("rankingUnitHours", "horas jogadas")
+    : tab === "season" && goal
+      ? metricLabel(goal.metric)
+      : t("metricXp", "XP coletivo")
 
   if (state === "loading") {
     return (
@@ -226,8 +300,10 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   const rest = rows.slice(3)
 
   return (
-    <div className="fl-root min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]">
-      <div className="mx-auto max-w-4xl px-4 pt-6 md:px-6">
+    <div className={cn("fl-root relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]", isGames && "fl-games")}>
+      {isGames && <TechBackdrop />}
+      {isGames && <GamesShellBeacon communityId={communityId} />}
+      <div className="relative mx-auto max-w-4xl px-4 pt-6 md:px-6">
         <PageBackLink href={`/comunidades/${communityId}`} label={community.display_name} />
 
         {/* A troca de fila só existe quando existe temporada: com uma opção só,
@@ -265,7 +341,9 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
                 : daysLeft != null
                   ? `${t("goalDaysLeft", "faltam")} ${daysLeft} ${t("goalDaysWord", "dias")} · ${unitWord}`
                   : unitWord
-              : t("rankingEyebrowXp", "o topo da comunidade")}
+              : isGames
+                ? t("rankingEyebrowGames", "quem mais jogou na plataforma")
+                : t("rankingEyebrowXp", "o topo da comunidade")}
           </p>
           <h1 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{t("rankingHeading", "O pódio.")}</h1>
         </div>
@@ -289,9 +367,11 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
           <div className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] p-8 text-center">
             <Trophy className="mx-auto h-8 w-8 text-[#9A938A]" />
             <p className="mt-3 text-sm text-[#9A938A]">
-              {tab === "season"
-                ? t("rankingEmptySeason", "Ninguém pontuou nesta temporada ainda.")
-                : t("membersEmpty", "Sem membros ainda.")}
+              {isGames
+                ? t("rankingEmptyGames", "Ninguém conectou uma plataforma com a estante pública ainda.")
+                : tab === "season"
+                  ? t("rankingEmptySeason", "Ninguém pontuou nesta temporada ainda.")
+                  : t("membersEmpty", "Sem membros ainda.")}
             </p>
           </div>
         ) : (
@@ -370,6 +450,53 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
               </p>
             )}
           </>
+        )}
+
+        {/* ONDE VOCÊ ESTÁ.
+            Sem esta linha, quem não entrou no topo veria um pódio de estranhos
+            sem saber a própria posição — e "não apareço aqui" seria
+            indistinguível de "não pontuei". Ela vale para a fila cheia e para a
+            vazia, por isso está fora do ramo acima.
+
+            Quem não tem estante pública com horas volta como `null` do
+            backend, e aí o que aparece é o que FAZER (conectar a plataforma,
+            abrir a estante) em vez de um zero que pareceria nota. */}
+        {isGames && !locked && (
+          <div
+            className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-4"
+            style={{ boxShadow: `0 0 0 1px ${accent}66, 0 18px 48px -18px ${accent}` }}
+          >
+            {gamerMe ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+                  {t("rankingYouLabel", "Sua posição")}
+                </span>
+                <span className="fl-display text-3xl leading-none" style={{ color: accent }}>
+                  #{gamerMe.position}
+                </span>
+                <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {t("rankingYouOf", "de")} {gamerMe.total} · {compact(Math.round(gamerMe.minutes / 60))}h ·{" "}
+                  {gamerMe.games} {t("rankingYouGames", "jogos")}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-[#9A938A]">
+                  {t(
+                    "rankingYouAbsent",
+                    "Você ainda não está na fila: conecte uma plataforma e deixe a estante pública."
+                  )}
+                </p>
+                <Link
+                  href={`/comunidades/${communityId}?aba=estante`}
+                  className="shrink-0 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+                  style={{ background: accent }}
+                >
+                  {t("tabShelf", "Estante")}
+                </Link>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

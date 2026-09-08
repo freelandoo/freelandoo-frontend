@@ -2705,7 +2705,14 @@
     "gamePostsTitle": "Game posts",
     "gamePostsEmpty": "No game posts yet.",
     "gamePostsLocked": "This community is closed — join it to see the posts.",
-    "gamePostsMore": "Load more"
+    "gamePostsMore": "Load more",
+    "rankingUnitHours": "hours played",
+    "rankingEyebrowGames": "who played the most on the platform",
+    "rankingEmptyGames": "Nobody has connected a platform with a public shelf yet.",
+    "rankingYouLabel": "Your position",
+    "rankingYouOf": "of",
+    "rankingYouGames": "games",
+    "rankingYouAbsent": "You are not on the board yet: connect a platform and make your shelf public."
   },
   "Careers": {
     "hero.badge": "Careers",
