@@ -50,6 +50,8 @@ interface UserAdmin {
   taxa_paga?: boolean
   is_admin?: boolean
   created_at?: string
+  /** Última vez online (mig 228). NULL = sem registro, NÃO "nunca acessou". */
+  last_seen_at?: string | null
   total_spent_cents?: number
   profiles_count?: number
   profiles?: ProfileAdmin[]
@@ -71,6 +73,41 @@ function formatDate(iso?: string | null): string {
     month: "2-digit",
     year: "numeric",
   })
+}
+
+/**
+ * "Última vez online", em texto aproximado — que é o que o dado É: o carimbo
+ * vem do heartbeat de 5 min (ou do login), então prometer o minuto exato seria
+ * precisão que não existe.
+ *
+ * ⚠️ SEM CARIMBO NÃO É "NUNCA ACESSOU". A coluna nasceu vazia para todo mundo
+ * (mig 228, sem backfill) e só passa a valer quando a pessoa voltar. Dizer
+ * "nunca" seria afirmar sobre a pessoa uma coisa que só sabemos sobre a nossa
+ * tabela.
+ *
+ * ⚠️ O "agora" VEM DE FORA (`nowMs`), congelado quando a lista chegou. Ler o
+ * relógio aqui dentro tornaria o render impuro — duas renderizações do mesmo
+ * estado dariam telas diferentes — e o `react-hooks/purity` reprova.
+ */
+function formatLastSeen(iso: string | null | undefined, nowMs: number): { rel: string; abs: string; online: boolean } | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  const min = Math.max(0, Math.round((nowMs - d.getTime()) / 60000))
+  // 10 min = duas batidas perdidas. Com 5 min, uma aba trocada de foco no
+  // instante errado já apagaria o "agora".
+  const online = min < 10
+  const rel =
+    min < 10 ? "agora"
+    : min < 60 ? `há ${min} min`
+    : min < 60 * 24 ? `há ${Math.floor(min / 60)} h`
+    : min < 60 * 24 * 2 ? "ontem"
+    : min < 60 * 24 * 30 ? `há ${Math.floor(min / 1440)} dias`
+    : `há ${Math.floor(min / 43200)} meses`
+  const abs = d.toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  })
+  return { rel, abs, online }
 }
 
 function subscriptionStatusBadge(status: string | null) {
@@ -102,6 +139,8 @@ export default function AdminUsuariosPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [updatingAdminId, setUpdatingAdminId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  /** Relógio congelado na chegada da lista — ver `formatLastSeen`. */
+  const [nowMs, setNowMs] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -139,6 +178,7 @@ export default function AdminUsuariosPage() {
       if (response.ok) {
         const data = await response.json()
         const userList = Array.isArray(data) ? data : data.users || []
+        setNowMs(Date.now())
         setUsers(userList)
         setFilteredUsers(userList)
       }
@@ -369,6 +409,9 @@ export default function AdminUsuariosPage() {
                     <th className="hidden px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell">
                       Cadastro
                     </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Último acesso
+                    </th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Total entradas
                     </th>
@@ -478,6 +521,39 @@ export default function AdminUsuariosPage() {
                             {formatDate(u.created_at)}
                           </td>
 
+                          {/* Último acesso — relativo em cima (é aproximado) e
+                              o relógio embaixo, que foi o pedido. */}
+                          <td className="whitespace-nowrap px-4 py-3 text-center">
+                            {(() => {
+                              const seen = formatLastSeen(u.last_seen_at, nowMs)
+                              if (!seen) {
+                                return (
+                                  <span
+                                    className="text-xs italic text-muted-foreground/50"
+                                    title="Este usuário ainda não deu sinal de vida desde que passamos a registrar. Não quer dizer que nunca acessou."
+                                  >
+                                    sem registro
+                                  </span>
+                                )
+                              }
+                              return (
+                                <div className="flex flex-col items-center leading-tight">
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-xs font-medium ${
+                                      seen.online ? "text-green-500" : "text-foreground"
+                                    }`}
+                                  >
+                                    {seen.online && (
+                                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                    )}
+                                    {seen.rel}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">{seen.abs}</span>
+                                </div>
+                              )
+                            })()}
+                          </td>
+
                           {/* Total entradas */}
                           <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-foreground">
                             {formatCents(u.total_spent_cents ?? 0)}
@@ -560,6 +636,12 @@ export default function AdminUsuariosPage() {
                               <td className="hidden whitespace-nowrap px-4 py-2 text-center text-[10px] text-muted-foreground md:table-cell">
                                 {formatDate(p.created_at)}
                               </td>
+
+                              {/* Vazia: "último acesso" é do USUÁRIO — o
+                                  perfil não tem sessão própria, e repetir aqui
+                                  o carimbo do dono diria que aquele perfil
+                                  esteve online, o que ninguém mediu. */}
+                              <td className="px-4 py-2" />
 
                               {/* Total entradas do perfil */}
                               <td className="whitespace-nowrap px-4 py-2 text-right text-xs text-muted-foreground">
