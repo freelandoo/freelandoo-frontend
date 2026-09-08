@@ -16,6 +16,18 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { cn } from "@/lib/utils"
 import { Muted, RowsSkeleton, pct, type MarketItem, type NewsItem } from "./wallet-ui"
 
+/**
+ * Quantas linhas cada coluna mostra. O backend serve 8 manchetes, 8 cotações e
+ * as 8 ações mais negociadas do dia — e as três colunas ficam do mesmo tamanho
+ * porque ficam lado a lado.
+ *
+ * ⚠️ É TETO DE LAYOUT, não a régua do conteúdo: QUAIS são os oito é decisão do
+ * backend (`STOCKS_LIMIT`/`AWESOME_PAIRS` do MarketService). O teto existe
+ * porque front e backend sobem separados — em 2026-09-08 o cache tinha 113
+ * ações acumuladas, e sem ele a coluna desenharia as 113 até o Railway subir.
+ */
+const COLUMN_ROWS = 8
+
 export function MarketPanel() {
   const tr = useTranslations("Wallet")
   const [data, setData] = useState<{ stocks: MarketItem[]; quotes: MarketItem[]; news: NewsItem[] } | null>(null)
@@ -38,9 +50,9 @@ export function MarketPanel() {
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={3} />
+            <RowsSkeleton n={COLUMN_ROWS} />
           ) : data?.news?.length ? (
-            data.news.map((n) => <NewsRow key={n.id} item={n} />)
+            data.news.slice(0, COLUMN_ROWS).map((n) => <NewsRow key={n.id} item={n} />)
           ) : (
             <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
           )}
@@ -49,22 +61,22 @@ export function MarketPanel() {
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={4} />
+            <RowsSkeleton n={COLUMN_ROWS} />
           ) : err || !data?.quotes.length ? (
             <Muted>{tr("noQuotes", "Cotações indisponíveis no momento.")}</Muted>
           ) : (
-            data.quotes.map((q) => <QuoteRow key={q.symbol} item={q} />)
+            data.quotes.slice(0, COLUMN_ROWS).map((q) => <QuoteRow key={q.symbol} item={q} />)
           )}
         </MarketSection>
       </div>
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={4} />
+            <RowsSkeleton n={COLUMN_ROWS} />
           ) : err || !data?.stocks.length ? (
             <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
           ) : (
-            data.stocks.slice(0, 5).map((s) => <QuoteRow key={s.symbol} item={s} />)
+            data.stocks.slice(0, COLUMN_ROWS).map((s) => <QuoteRow key={s.symbol} item={s} />)
           )}
         </MarketSection>
       </div>
