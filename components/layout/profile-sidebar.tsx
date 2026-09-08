@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Gamepad2, Hexagon, Home, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Gamepad2, Hexagon, Home, Joystick, LayoutGrid, Library, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -12,6 +12,9 @@ import type { HintId } from "@/features/tour/hints"
 import { useTour } from "@/features/tour/useTour"
 import dynamic from "next/dynamic"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
+// Quem avisa que a rota atual é a plataforma de GAMES é a própria página (a
+// modalidade não está na URL). Ver o comentário do arquivo.
+import { useGamesShell } from "./games-shell"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 
 // F3.S7 (shell): o sidebar é global (layout raiz) e o UserDropside é pesado —
@@ -62,6 +65,33 @@ const ITENS_COMUNS: SidebarItem[] = [
   { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
   { href: "/monsters", label: "Monsters", icon: Gamepad2, matchPrefix: "/monsters" },
 ]
+
+/**
+ * O DOCK DENTRO DA PLATAFORMA DE GAMES.
+ *
+ * A barra não some nem muda de forma — continua transparente e no mesmo lugar.
+ * O que troca é o CONTEÚDO dela: dentro do ambiente, os itens da Freelandoo
+ * (Bees, Enxames, Mensagens, Ranking) dariam saída lateral para fora do
+ * ambiente sem dizer que estão saindo. A porta de volta é UMA só, e é a foto —
+ * que ali ganha o fundo amarelo justamente para se anunciar como saída.
+ *
+ * "Jogo atual" e "Estante" são DEEP-LINKS para a mesma página do ambiente (o
+ * painel e a aba que já existem lá), não telas novas: dois lugares desenhando o
+ * jogo atual seria a segunda verdade que o painel único veio evitar.
+ */
+function buildGamesItems(communityId: string): SidebarItem[] {
+  const root = `/comunidades/${communityId}`
+  return [
+    { href: root, label: "Feed", icon: Home, activePath: root },
+    { href: `${root}?aba=estante`, label: "Estante", icon: Library },
+    { href: `${root}?painel=jogo`, label: "Jogo atual", icon: Gamepad2 },
+    { href: `${root}/posts`, label: "Posts games", icon: LayoutGrid, activePath: `${root}/posts` },
+    // O JOGO de verdade. Ele é tela cheia e deitada, e o dock se esconde lá
+    // dentro (ver HIDDEN_ON_PATHS) — quem sai da partida é o botão da própria
+    // build Godot.
+    { href: "/monsters", label: "Game", icon: Joystick, matchPrefix: "/monsters" },
+  ]
+}
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?"
@@ -133,6 +163,7 @@ export function ProfileSidebar() {
   const pathname = usePathname() || "/"
   const router = useRouter()
   const active = useActiveContext()
+  const gamesShell = useGamesShell()
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [dropsideEverOpened, setDropsideEverOpened] = useState(false)
   const navCounts = useNavCounts()
@@ -182,6 +213,10 @@ export function ProfileSidebar() {
   if (!isLoggedIn) return null
 
   const bundle = buildContextBundle(active, user)
+  // Dentro do ambiente games a lista é OUTRA — não é a lista comum mais alguns
+  // itens. Acrescentar em vez de trocar deixaria oito botões numa barra que no
+  // celular já divide a largura com o polegar.
+  const inGames = !!gamesShell
 
   // Ambiente A Casa Views tem fundo claro (papel) — os ícones brancos da rail
   // somem. Escurece o contorno só nessas rotas; no hover (painel vira vidro
@@ -191,9 +226,10 @@ export function ProfileSidebar() {
   const isAdmin =
     !!user.is_admin ||
     !!user.roles?.some((r) => r.desc_role === "Administrator")
+  const baseItems: SidebarItem[] = gamesShell ? buildGamesItems(gamesShell.communityId) : bundle.items
   const items: SidebarItem[] = isAdmin
     ? [
-        ...bundle.items,
+        ...baseItems,
         {
           href: "/admin",
           label: "Administração",
@@ -202,7 +238,7 @@ export function ProfileSidebar() {
           accent: true,
         },
       ]
-    : bundle.items
+    : baseItems
 
   return (
     <>
@@ -226,6 +262,7 @@ export function ProfileSidebar() {
           bundle={bundle}
           onClick={handleTriggerClick}
           unread={unreadSR}
+          exit={inGames}
         />
 
         <div className="mx-2 my-1 h-px bg-white/[0.07]" />
@@ -249,6 +286,7 @@ export function ProfileSidebar() {
           onClick={handleTriggerClick}
           unread={unreadSR}
           compact
+          exit={inGames}
         />
         <span aria-hidden className="mx-0.5 h-7 w-px bg-white/[0.08]" />
         {items.map((item) => (
@@ -274,9 +312,16 @@ interface ProfileTriggerButtonProps {
   onClick: () => void
   unread?: boolean
   compact?: boolean
+  /**
+   * Dentro de um ambiente próprio (hoje, a plataforma de games) esta foto deixa
+   * de ser "abrir meu menu" e passa a ser a PORTA DE VOLTA para a Freelandoo.
+   * O amarelo é o que anuncia isso: sem ele, a única saída do ambiente seria
+   * indistinguível do resto da barra.
+   */
+  exit?: boolean
 }
 
-function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTriggerButtonProps) {
+function ProfileTriggerButton({ bundle, onClick, unread, compact, exit }: ProfileTriggerButtonProps) {
   return (
     <HoverHint id="sidebar-profile" side={compact ? "top" : "right"} className={compact ? undefined : "block w-full"}>
     <button
@@ -290,7 +335,10 @@ function ProfileTriggerButton({ bundle, onClick, unread, compact }: ProfileTrigg
         compact && "h-10 w-10 justify-center px-0"
       )}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center">
+      {exit && (
+        <span aria-hidden className="absolute inset-y-0 left-0 w-11 bg-[#F2B705]" />
+      )}
+      <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center">
         <Avatar className="h-8 w-8 ring-1 ring-primary/30">
           {bundle.avatar_url && (
             <AvatarImage src={bundle.avatar_url} alt={bundle.displayName} />

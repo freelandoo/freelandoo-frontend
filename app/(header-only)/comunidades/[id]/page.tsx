@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, Gamepad2, UserRound,
+  Lock, Globe, PawPrint, Car, Gamepad2, UserRound, LayoutGrid,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -25,6 +25,9 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 // A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
 // ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
 import { RetractableColumn } from "@/components/tabloide"
+// A plataforma de games troca o conteúdo do dock global. Quem sabe que a rota é
+// games é ESTA página (a modalidade não está na URL), então é ela que declara.
+import { GamesShellBeacon } from "@/components/layout/games-shell"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
@@ -287,7 +290,11 @@ export default function CommunityDetailPage() {
   //
   // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
   // são a mesma decisão, e separá-los deixaria um botão sem painel.
-  type CommunityPanel = "profile" | "mural"
+  //
+  // Na modalidade GAMES a lista é outra (ver `isGamesPlatform` abaixo): o
+  // painel azul de perfil não existe — enxame, privacidade e temporada são
+  // perguntas de comunidade COM MEMBROS, e ali não há membro nenhum.
+  type CommunityPanel = "profile" | "mural" | "game"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
 
   const currentUserId = getStoredUser()?.id_user ?? null
@@ -306,6 +313,40 @@ export default function CommunityDetailPage() {
     community?.kind === "pet" || community?.kind === "car" || community?.kind === "games"
       ? community.kind
       : null
+
+  // ─── GAMES É PLATAFORMA, NÃO COMUNIDADE COM MEMBROS ─────────────────────────
+  //
+  // O espaço de games é UM POR PESSOA (mig 210), como o do pet: quem chega não
+  // "entra" nele, visita. Tratá-lo como comunidade comum produzia quatro coisas
+  // que não querem dizer nada aqui — a aba Membros com uma linha só (o dono), o
+  // contador de membros da gaveta, o botão Entrar/Sair e um painel de Perfil
+  // perguntando enxame, privacidade e temporada, que são perguntas sobre um
+  // GRUPO.
+  //
+  // No lugar delas fica o que a plataforma É: o JOGO ATUAL (o que a pessoa
+  // joga agora), os POSTS DE GAMES e o RANKING. É por isso que a pilha e as
+  // abas bifurcam aqui, num predicado só, e não em cada lugar que lê "membro":
+  // espalhado, o lugar que esquecesse voltaria a oferecer a porta de entrar —
+  // e porta pintada é pior que porta nenhuma.
+  const isGamesPlatform = subjectKind === "games"
+
+  // As plataformas do assunto, num lugar só: os chips que o dono aperta e o
+  // rótulo que quem visita lê saem DAQUI. Escritas duas vezes, "playstation"
+  // viraria "PlayStation" de um lado e "Playstation" do outro em silêncio.
+  const gamePlatforms = useMemo(
+    () =>
+      [
+        ["pc", "PC"], ["playstation", "PlayStation"], ["xbox", "Xbox"],
+        ["nintendo", "Nintendo"], ["mobile", t("platformMobile", "Celular")],
+        ["retro", t("platformRetro", "Retrô")], ["outra", t("platformOther", "Outra")],
+      ] as [string, string][],
+    [t]
+  )
+  const platformLabel = useCallback(
+    (key: string | null | undefined) =>
+      (key && gamePlatforms.find(([k]) => k === key)?.[1]) || null,
+    [gamePlatforms]
+  )
 
   // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
   // sozinho não diz de quem é; games mostra a plataforma pela mesma razão.
@@ -350,11 +391,32 @@ export default function CommunityDetailPage() {
     () =>
       [
         ["feed", t("tabFeed", "Feed")],
-        ["members", t("tabMembers", "Membros")],
+        // Na plataforma de games não há membros para listar: a aba mostraria
+        // uma linha só, a do dono, e ainda sugeriria que existe um grupo.
+        ...(isGamesPlatform ? [] : ([["members", t("tabMembers", "Membros")]] as [CommunityTab, string][])),
         ...(showShelfTab ? ([["shelf", t("tabShelf", "Estante")]] as [CommunityTab, string][]) : []),
       ] as [CommunityTab, string][],
-    [t, showShelfTab]
+    [t, showShelfTab, isGamesPlatform]
   )
+
+  // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
+  //
+  // "Estante" e "Jogo atual" na barra de baixo apontam para esta MESMA página,
+  // com um parâmetro dizendo o que abrir — não são telas próprias. Rodam uma
+  // vez, depois que a comunidade chegou: antes disso não dá para saber se a
+  // Estante existe (ela depende da flag), e abrir uma aba que a fila de abas
+  // não tem deixaria a tela mostrando algo que ninguém consegue fechar.
+  //
+  // Lido do WINDOW e não por `useSearchParams`: o hook obriga Suspense e tira a
+  // rota do pré-render — o build já quebrou exatamente assim com `?tipo=condo`.
+  const deepLinkDone = useRef(false)
+  useEffect(() => {
+    if (!community || deepLinkDone.current) return
+    deepLinkDone.current = true
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get("aba") === "estante" && showShelfTab) setTab("shelf")
+    if (sp.get("painel") === "jogo" && isGamesPlatform) setPanel("game")
+  }, [community, showShelfTab, isGamesPlatform])
 
   const accent = accentHex(accentDraft)
   const showAsLeaderEdit = isLeader && edit
@@ -390,8 +452,47 @@ export default function CommunityDetailPage() {
   // A cor é FIXA (azul e laranja) e não a `accent` da comunidade: o accent é
   // editável pelo líder e pode cair justamente no tom do botão, que sumiria
   // dentro do próprio card. O pill é peça de chrome, não conteúdo pintável.
-  const communityPills: PillSpec[] = useMemo(
-    () => [
+  const communityPills: PillSpec[] = useMemo(() => {
+    // GAMES: a pilha é outra. O primeiro pill continua LARANJA porque ocupa o
+    // mesmo lugar do Mural — só que ali não há mural: o que a plataforma
+    // anuncia é o JOGO ATUAL. O segundo abre a vitrine dos posts de games, e o
+    // terceiro segue sendo o Ranking, roxo como em toda comunidade.
+    if (isGamesPlatform) {
+      return [
+        {
+          key: "game",
+          icon: Gamepad2,
+          label: t("gamePill", "Jogo atual"),
+          ariaLabel: t("gamePillAria", "Jogo atual: plataforma, título e nick"),
+          bg: "#C2410C",
+          bgHover: "#9A3412",
+          onOpen: () => setPanel((p) => (p === "game" ? null : "game")),
+          active: panel === "game",
+        },
+        // NAVEGA em vez de abrir painel, pela mesma razão do Ranking: uma
+        // vitrine é uma grade de capas, e grade não cabe embaixo do headcard
+        // sem empurrar o feed para longe outra vez.
+        {
+          key: "gameposts",
+          icon: LayoutGrid,
+          label: t("gamePostsPill", "Posts de games"),
+          ariaLabel: t("gamePostsPillAria", "Vitrine com os posts de games"),
+          bg: "#0E7490",
+          bgHover: "#155E75",
+          href: `/comunidades/${id}/posts`,
+        },
+        {
+          key: "ranking",
+          icon: Trophy,
+          label: t("rankingPill", "Ranking"),
+          ariaLabel: t("rankingPillAria", "Abrir o ranking completo da comunidade"),
+          bg: "#7E22CE",
+          bgHover: "#6B21A8",
+          href: `/comunidades/${id}/ranking`,
+        },
+      ]
+    }
+    return [
       {
         key: "profile",
         icon: UserRound,
@@ -430,9 +531,8 @@ export default function CommunityDetailPage() {
         bgHover: "#6B21A8",
         href: `/comunidades/${id}/ranking`,
       },
-    ],
-    [t, panel, id]
-  )
+    ]
+  }, [t, panel, id, isGamesPlatform])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -951,6 +1051,8 @@ export default function CommunityDetailPage() {
 
   return (
     <div className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
+      {/* Declara o ambiente para o dock global (não desenha nada). */}
+      {isGamesPlatform && <GamesShellBeacon communityId={id} />}
       {/* Top bar */}
       <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
         <Link href="/comunidades" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
@@ -1085,7 +1187,9 @@ export default function CommunityDetailPage() {
               />
             </div>
           )}
-          {!isLeader && (
+          {/* Entrar/Sair não existe na plataforma de games: ninguém "entra"
+              no espaço de games de outra pessoa — visita. */}
+          {!isLeader && !isGamesPlatform && (
             <div className="pb-1">
               {myMembership ? (
                 myMembership.role !== "leader" ? (
@@ -1131,12 +1235,14 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: `6px 6px 0 0 ${panel === "mural" ? "#C2410C" : "#1D4ED8"}` }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: `6px 6px 0 0 ${panel === "mural" || panel === "game" ? "#C2410C" : "#1D4ED8"}` }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-                {panel === "mural"
-                  ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
-                  : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
+                {panel === "game"
+                  ? <><Gamepad2 className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("gamePill", "Jogo atual")}</>
+                  : panel === "mural"
+                    ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
+                    : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
               </span>
               <div className="flex items-center gap-2">
                 {/* O líder abre o painel no modo em que a página está. Se ele
@@ -1197,6 +1303,62 @@ export default function CommunityDetailPage() {
                       </div>
                     )}
                   </>
+                )}
+              </div>
+            )}
+
+            {/* JOGO ATUAL — o painel do pill laranja na plataforma de games.
+                É o mesmo painel para os dois papéis: quem visita LÊ o que o
+                dono ESCOLHE. Uma tela de configuração ao lado de uma tela de
+                leitura seriam duas verdades sobre o mesmo jogo. */}
+            {panel === "game" && (
+              <div className="space-y-4 p-4 md:p-5">
+                {showAsLeaderEdit ? (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {gamePlatforms.map(([key, label]) => (
+                        <button key={key} type="button"
+                          onClick={() => setGameDraft((d) => ({ ...d, platform: key }))}
+                          className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                          style={gameDraft.platform === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gameTitleLabel", "Jogo")}</span>
+                      <input value={gameDraft.game_title} maxLength={120} placeholder="Minecraft"
+                        onChange={(e) => setGameDraft((d) => ({ ...d, game_title: e.target.value }))}
+                        className={selectCls} />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gamertagLabel", "Seu nick")}</span>
+                      <input value={gameDraft.gamertag} maxLength={60}
+                        onChange={(e) => setGameDraft((d) => ({ ...d, gamertag: e.target.value }))}
+                        className={selectCls} />
+                    </label>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                      {t("gameSaveHint", "Vai junto do Salvar lá em cima, com o nome e a foto.")}
+                    </p>
+                  </div>
+                ) : community.subject?.game_title ? (
+                  <div className="space-y-3">
+                    <p className="fl-display text-4xl leading-none text-[#F5F1E8]">{community.subject.game_title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {platformLabel(community.subject.platform) && (
+                        <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
+                          <Gamepad2 className="h-3.5 w-3.5" style={{ color: accent }} /> {platformLabel(community.subject.platform)}
+                        </span>
+                      )}
+                      {community.subject.gamertag && (
+                        <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: accent }}>
+                          <Hash className="h-3.5 w-3.5" /> {community.subject.gamertag}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#9A938A]">{t("gameNotSetRead", "O jogo ainda não foi escolhido.")}</p>
                 )}
               </div>
             )}
@@ -1422,7 +1584,14 @@ export default function CommunityDetailPage() {
         icon={<BarChart3 className="h-4 w-4" />}
         accent={accent}
       >
-        <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
+        {/* O contador de membros e, mais abaixo, o destaque e o ranking de
+            membros saem na plataforma de games: os três respondem "quem está
+            aqui dentro", e ali a resposta é sempre uma pessoa só. O ranking
+            que a plataforma tem é outro — o das horas da Estante, atrás do
+            pill roxo. */}
+        {!isGamesPlatform && (
+          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
+        )}
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
         <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
         {benchmark && (
@@ -1446,7 +1615,7 @@ export default function CommunityDetailPage() {
           </div>
         )}
 
-        {topRow && (
+        {topRow && !isGamesPlatform && (
           <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]" style={{ outline: `2px solid ${accent}`, outlineOffset: "1px" }}>
@@ -1463,7 +1632,7 @@ export default function CommunityDetailPage() {
           </Block>
         )}
 
-        {rankRows.length > 0 && (
+        {rankRows.length > 0 && !isGamesPlatform && (
           <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
             <ol className="space-y-2">
               {rankRows.slice(0, 5).map((row, i) => (
@@ -1584,39 +1753,6 @@ export default function CommunityDetailPage() {
                       <option key={m.code} value={m.code}>{m.label}</option>
                     ))}
                   </select>
-                </label>
-              </div>
-            </Block>
-          )}
-
-          {showAsLeaderEdit && subjectKind === "games" && (
-            <Block title={t("subjectGameTitle", "O jogo")} icon={<Gamepad2 className="h-4 w-4" />} accent={accent}>
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {([
-                    ["pc", "PC"], ["playstation", "PlayStation"], ["xbox", "Xbox"],
-                    ["nintendo", "Nintendo"], ["mobile", t("platformMobile", "Celular")],
-                    ["retro", t("platformRetro", "Retrô")], ["outra", t("platformOther", "Outra")],
-                  ] as const).map(([key, label]) => (
-                    <button key={key} type="button"
-                      onClick={() => setGameDraft((d) => ({ ...d, platform: key }))}
-                      className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
-                      style={gameDraft.platform === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gameTitleLabel", "Jogo")}</span>
-                  <input value={gameDraft.game_title} maxLength={120} placeholder="Minecraft"
-                    onChange={(e) => setGameDraft((d) => ({ ...d, game_title: e.target.value }))}
-                    className={selectCls} />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gamertagLabel", "Seu nick")}</span>
-                  <input value={gameDraft.gamertag} maxLength={60}
-                    onChange={(e) => setGameDraft((d) => ({ ...d, gamertag: e.target.value }))}
-                    className={selectCls} />
                 </label>
               </div>
             </Block>
@@ -1860,6 +1996,10 @@ export default function CommunityDetailPage() {
           // recusaria — quem decide continua sendo o backend, então errar para
           // mais neste lado esconde uma opção, nunca abre uma porta.
           communityExclusiveOnly={isPrivate || isCondo || community.kind === "neighborhood"}
+          // A plataforma de games guarda o post por padrão — quem quiser
+          // mandar para o feed geral escolhe. Não é trava: é o pé em que a
+          // pergunta começa, porque ali quase tudo é assunto de games.
+          communityDefaultExclusive={isGamesPlatform}
           onClose={() => setComposerOpen(false)}
           onPosted={() => {
             setComposerOpen(false)

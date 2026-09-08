@@ -130,6 +130,16 @@ export interface ComposerProps {
    * feed geral e o backend recusar seria prometer o que não vai acontecer.
    */
   communityExclusiveOnly?: boolean
+  /**
+   * A comunidade PREFERE ficar com o post, mas não obriga — hoje, a plataforma
+   * de games. A escolha continua na tela e o feed geral continua alcançável;
+   * o que muda é qual das duas vem primeiro e qual já nasce marcada.
+   *
+   * É diferente de `communityExclusiveOnly`, que é POLÍTICA: lá o backend
+   * recusaria o feed geral, então oferecer seria mentir. Aqui só o padrão muda —
+   * e por isso os dois botões continuam de pé.
+   */
+  communityDefaultExclusive?: boolean
   /** Post/Bee: quando definido, o item publicado é ligado ao feed desta academia (mig 181). */
   academyId?: string | null
   onClose: () => void

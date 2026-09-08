@@ -2695,7 +2695,17 @@
     "rankingLocked": "Only community members can see the ranking.",
     "rankingGoToCommunity": "Go to the community",
     "rankingEmptySeason": "Nobody has scored this season yet.",
-    "rankingLoadError": "Couldn't load the ranking right now."
+    "rankingLoadError": "Couldn't load the ranking right now.",
+    "gamePill": "Now playing",
+    "gamePillAria": "Now playing: platform, title and handle",
+    "gameSaveHint": "Saved together with the name and photo, from the button above.",
+    "gameNotSetRead": "No game picked yet.",
+    "gamePostsPill": "Game posts",
+    "gamePostsPillAria": "Showcase with the game posts",
+    "gamePostsTitle": "Game posts",
+    "gamePostsEmpty": "No game posts yet.",
+    "gamePostsLocked": "This community is closed — join it to see the posts.",
+    "gamePostsMore": "Load more"
   },
   "Careers": {
     "hero.badge": "Careers",

@@ -2682,7 +2682,17 @@
     "rankingLocked": "Só quem é da comunidade vê o ranking.",
     "rankingGoToCommunity": "Ir para a comunidade",
     "rankingEmptySeason": "Ninguém pontuou nesta temporada ainda.",
-    "rankingLoadError": "Não deu para carregar o ranking agora."
+    "rankingLoadError": "Não deu para carregar o ranking agora.",
+    "gamePill": "Jogo atual",
+    "gamePillAria": "Jogo atual: plataforma, título e nick",
+    "gameSaveHint": "Vai junto do Salvar lá em cima, com o nome e a foto.",
+    "gameNotSetRead": "O jogo ainda não foi escolhido.",
+    "gamePostsPill": "Posts de games",
+    "gamePostsPillAria": "Vitrine com os posts de games",
+    "gamePostsTitle": "Posts de games",
+    "gamePostsEmpty": "Nenhum post de games ainda.",
+    "gamePostsLocked": "Esta comunidade é fechada — entre nela para ver os posts.",
+    "gamePostsMore": "Ver mais"
   },
   "Careers": {
     "hero.badge": "Carreiras",
