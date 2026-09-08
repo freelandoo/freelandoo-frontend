@@ -41,3 +41,29 @@ export function compact(n: number): string {
   if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, "")}k`
   return String(Math.round(v))
 }
+
+/**
+ * ESTA MODALIDADE DE COMUNIDADE PODE TER SITE?
+ *
+ * Decisão do Alex (2026-09-07): "só meus negócios tem site, o restante não tem,
+ * nenhuma comunidade mais". O site é vitrine comercial — catálogo de serviços,
+ * agendamento, depoimentos, contato —, e isso é pergunta da comunidade de
+ * NEGÓCIO (a `common`, a que o pill "Business" do headcard abre). A comunidade
+ * do cachorro, a do modelo de carro, a da rua, a do prédio e a plataforma de
+ * games não vendem nada, e uma aba "Site" nelas era porta pintada: abria um
+ * construtor para montar uma página que ninguém ia procurar.
+ *
+ * ⚠️ ESTE É O ESPELHO. Quem decide de verdade é o backend
+ * (`kindHasSite` em `utils/communitySite.js`), que recusa ler, salvar,
+ * publicar, renomear endereço e subir imagem fora da `common`. Espelhar aqui só
+ * evita OFERECER o que ele recusaria — errar deste lado esconde um botão, nunca
+ * abre uma porta.
+ *
+ * Modalidade nova que precise de site: mudar os DOIS lugares.
+ */
+export function kindHasSite(kind: string | null | undefined): boolean {
+  // Ausente é comum: `community_kind` é NOT NULL com default 'common' desde a
+  // mig 219, mas leitura que não traga o campo não pode sumir com o site que
+  // já existe.
+  return (kind || "common") === "common"
+}

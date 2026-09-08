@@ -38,10 +38,108 @@
  * variável só, o cleanup do antigo apagaria o registro do novo e o dock voltaria
  * ao normal no meio do ambiente. Por isso o registro é um MAPA de instâncias
  * vivas: sai a que morreu, e o ambiente só acaba quando não sobra nenhuma.
+ *
+ * ─── A SEGUNDA FUNÇÃO: A BATIDA DE PRESENÇA (mig 226) ────────────────────────
+ *
+ * O ranking de atividade da plataforma conta, entre outras coisas, o TEMPO
+ * ONLINE dentro do ambiente de games. Quem sabe que a pessoa está ali dentro é
+ * exatamente este registro — o mesmo que o dock lê —, então a batida nasce aqui
+ * e não numa tela específica: pendurada numa página, mudar de tela dentro do
+ * ambiente pararia o relógio, e uma tela nova nasceria sem contar tempo.
+ *
+ * O relógio é do MAPA, não do componente: navegar entre duas telas do ambiente
+ * troca beacons sem interromper a contagem, e ela só para quando o último sai.
  */
 
 import { useEffect } from "react"
 import { useSyncExternalStore } from "react"
+import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
+
+/* ─────────────────────────── batida de presença ────────────────────────────
+ *
+ * ⚠️ VAI DIRETO NO RAILWAY, nunca pelo proxy `/api/*` da Vercel. É chamada
+ * recorrente, e cada passagem pelo proxy cobraria uma invocação por batida de
+ * cada pessoa online — a regra que já vale para o heartbeat de XP e para o
+ * chat. Assim ela custa zero na Vercel.
+ *
+ * ⚠️ SÓ COM A ABA VISÍVEL. Presença é a pessoa olhando para a tela; aba de
+ * fundo esquecida por um dia não é tempo de ninguém. Quem mede de fato é o
+ * banco (o crédito sai do intervalo entre duas batidas, com teto), então esta
+ * ponta só precisa dizer a verdade sobre quando está olhando.
+ */
+
+/** 2 minutos. O backend tolera até 180s por batida — a folga é a jitter. */
+const BEAT_MS = 120_000
+
+let beatTimer: ReturnType<typeof setInterval> | null = null
+let beatCleanup: (() => void) | null = null
+
+/**
+ * `resume` = "não credite, só acerte o relógio".
+ *
+ * Existe para o retorno de uma aba que ficou escondida: sem ele, a primeira
+ * batida depois de voltar creditaria o teto de uma batida (3 min) de um tempo
+ * em que ninguém estava olhando. Um cliente adulterado que mandasse `resume`
+ * sempre só diminuiria a própria pontuação — a fraude possível aqui é contra si
+ * mesmo, e por isso a flag pode vir do cliente sem risco.
+ */
+function sendBeat(resume: boolean, keepalive = false) {
+  const token = getToken()
+  if (!token) return
+  const url = `${getPublicBackendUrl()}/gamer/presence${resume ? "?resume=1" : ""}`
+  // `keepalive` (e não sendBeacon) porque a batida precisa do Authorization, e
+  // o sendBeacon não manda cabeçalho. Com keepalive o pedido sobrevive ao
+  // fechamento da aba.
+  void fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    keepalive,
+  }).catch(() => {
+    /* silencioso: perder uma batida custa 2 minutos de ranking, não a tela */
+  })
+}
+
+function startHeartbeat() {
+  if (beatTimer) return
+
+  const visible = () =>
+    typeof document === "undefined" || document.visibilityState === "visible"
+
+  if (visible()) sendBeat(false)
+
+  beatTimer = setInterval(() => {
+    if (visible()) sendBeat(false)
+  }, BEAT_MS)
+
+  const onVisibility = () => {
+    // Escondeu: fecha as contas com o tempo REAL até agora.
+    // Voltou: só acerta o relógio, sem creditar o tempo em que sumiu.
+    if (visible()) sendBeat(true)
+    else sendBeat(false, true)
+  }
+  // `pagehide` e não `unload`: em iOS o unload não dispara, e a última batida
+  // (que é a que credita o tempo desde a penúltima) se perderia.
+  const onPageHide = () => sendBeat(false, true)
+
+  document.addEventListener("visibilitychange", onVisibility)
+  window.addEventListener("pagehide", onPageHide)
+
+  beatCleanup = () => {
+    document.removeEventListener("visibilitychange", onVisibility)
+    window.removeEventListener("pagehide", onPageHide)
+  }
+}
+
+function stopHeartbeat() {
+  if (!beatTimer) return
+  clearInterval(beatTimer)
+  beatTimer = null
+  beatCleanup?.()
+  beatCleanup = null
+  // Saiu do ambiente: credita o trecho final antes de largar o relógio.
+  sendBeat(false, true)
+}
 
 type Shell = { communityId: string }
 
@@ -55,6 +153,14 @@ const listeners = new Set<() => void>()
 function recompute() {
   const last = [...mounted.values()].pop() ?? null
   const next = last ? { communityId: last } : null
+
+  // O relógio segue o MAPA, não o snapshot: trocar de tela dentro do ambiente
+  // muda o `communityId` (ou nem isso) sem parar a contagem, e sair de vez
+  // esvazia o mapa. É por isso que a decisão está aqui em cima e não no
+  // comparador de identidade abaixo — que devolve cedo quando nada mudou.
+  if (mounted.size > 0) startHeartbeat()
+  else stopHeartbeat()
+
   // Identidade estável: `useSyncExternalStore` compara por referência, e um
   // objeto novo a cada leitura faria o dock re-renderizar para sempre.
   if (next?.communityId === snapshot?.communityId) return

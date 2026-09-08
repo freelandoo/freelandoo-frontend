@@ -31,7 +31,7 @@ import { GamesShellBeacon } from "@/components/layout/games-shell"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
-import { ACCENTS, accentHex, compact } from "./_components/community-ui"
+import { ACCENTS, accentHex, compact, kindHasSite } from "./_components/community-ui"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -377,13 +377,24 @@ export default function CommunityDetailPage() {
   const siteEnabled = useFeature("comunidade_site")
   const hasPublishedSite = !!community?.has_site
 
+  // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
+  // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
+  // O predicado mora em `community-ui.ts` e espelha o do backend, que recusa as
+  // seis portas do site fora da `common`. Aqui ele serve para não OFERECER o
+  // que lá seria recusado — a aba e o item do menu somem juntos, porque deixar
+  // um dos dois de pé daria uma porta que só falha depois do clique.
+  const kindCanHaveSite = kindHasSite(subjectKind)
+
   // O líder sempre vê a entrada (é dele que o site nasce); quem visita só a vê
   // quando existe site publicado — comunidade sem site não ganha aba vazia.
-  const showSiteTab = hasPublishedSite || (isLeader && siteEnabled)
+  const showSiteTab = kindCanHaveSite && (hasPublishedSite || (isLeader && siteEnabled))
 
   const siteExtras = useMemo(
-    () => (isLeader && siteEnabled ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : []),
-    [isLeader, siteEnabled, t]
+    () =>
+      kindCanHaveSite && isLeader && siteEnabled
+        ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }]
+        : [],
+    [kindCanHaveSite, isLeader, siteEnabled, t]
   )
 
   // ─── Estante (mig 220) ──────────────────────────────────────────────────────

@@ -20,6 +20,24 @@
  * não porta. O que não pode existir em dois lugares é a tabela inteira, e ela
  * mora só aqui.
  *
+ * ─── GAMES TEM TRÊS FILAS, E ELAS RESPONDEM PERGUNTAS DIFERENTES ─────────────
+ *
+ * Pedido do Alex (2026-09-07): "usa as métricas de fora da plataforma games e
+ * aplica somente para dentro (...) só conta os likes, compartilhamentos, tempo
+ * online dentro da plataforma games (...) cria o ranking ali por cidade e
+ * estado apenas".
+ *
+ *   • MINHA CIDADE e MEU ESTADO (mig 226) — atividade: curtida, comentário e
+ *     compartilhamento RECEBIDOS nos posts publicados dentro da plataforma de
+ *     games, mais o tempo online lá dentro. É o ranking novo.
+ *   • HORAS JOGADAS (mig 220) — o que a Steam verifica. Continua, porque
+ *     responde outra coisa: "quem joga mais", não "quem está mais presente".
+ *
+ * As três são ABAS IRMÃS e não telas: pódio, lista, barra e a linha "sua
+ * posição" são os mesmos, e é para isso que as fontes convergem no tipo `Row`.
+ * Uma tela por régua seria o mesmo desenho escrito três vezes — e a segunda
+ * pararia de acompanhar a primeira na primeira mudança de layout.
+ *
  * A recusa é DITA EM VOZ ALTA: comunidade privada e condomínio devolvem 403 na
  * lista de membros para quem está de fora (a política declara o tier mínimo).
  * O botão do headcard aparece para todo mundo — botão que abre o nada parece
@@ -30,7 +48,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { Loader2, Lock, ShieldAlert, Trophy } from "lucide-react"
+import { Loader2, Lock, MapPin, ShieldAlert, Trophy } from "lucide-react"
 import { DoodleCrown } from "@/components/home/landing/primitives"
 import { PageBackLink } from "@/components/tabloide"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -75,6 +93,37 @@ type GamerRow = {
   achievements: number
 }
 type GamerMe = { position: number; total: number; minutes: number; games: number } | null
+
+/**
+ * A QUARTA FONTE: a atividade dentro da plataforma de games (mig 226).
+ *
+ * `place` é a cidade/estado de quem está olhando, e vem `null` para quem nunca
+ * declarou onde mora — o que é DIFERENTE de "ninguém pontuou na sua cidade".
+ * Só o primeiro tem conserto, e a tela precisa poder dizer qual é o caso.
+ *
+ * `weights` viaja na resposta em vez de ser copiado aqui: dois lugares
+ * guardando o peso fariam a legenda prometer uma conta que a fila não faz.
+ */
+type ActivityRow = {
+  id_user: string
+  username: string | null
+  name: string | null
+  avatar_url: string | null
+  position: number
+  total: number
+  score: number
+  likes: number
+  comments: number
+  shares: number
+  minutes: number
+}
+type ActivityPayload = {
+  scope: "city" | "state"
+  place: { municipio: string; estado: string } | null
+  weights: { like: number; comment: number; share: number; minutes_per_point: number }
+  rows: ActivityRow[]
+  me: ActivityRow | null
+}
 type Member = {
   id_user: string
   role: "leader" | "vice" | "member"
@@ -104,8 +153,22 @@ type Goal = {
 /** A linha desenhada — o formato para o qual as duas fontes convergem. */
 type Row = { id_user: string; name: string; avatar_url: string | null; value: string; raw: number }
 
-/** Só a temporada tem duas visões; sem ela existe uma fila só. */
-type Tab = "season" | "xp"
+/**
+ * As abas possíveis das duas famílias de comunidade.
+ *
+ * `season`/`xp` são das seis modalidades com membros; `city`/`state`/`playtime`
+ * são da plataforma de games. Um tipo só (em vez de dois) porque o estado da
+ * aba é um só e a barra que o desenha também — separar daria duas barras a
+ * manter, e a que fosse esquecida pararia de refletir a outra.
+ */
+type Tab = "season" | "xp" | "city" | "state" | "playtime"
+
+/** As duas filas de games que são "atividade" (as que leem a mig 226). */
+const ACTIVITY_TABS = ["city", "state"] as const
+type ActivityScope = (typeof ACTIVITY_TABS)[number]
+function isActivityTab(tab: Tab): tab is ActivityScope {
+  return tab === "city" || tab === "state"
+}
 
 function initials(name: string | null | undefined) {
   if (!name) return "?"
@@ -131,6 +194,15 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   const [gamerRows, setGamerRows] = useState<GamerRow[]>([])
   const [gamerMe, setGamerMe] = useState<GamerMe>(null)
   const [isGames, setIsGames] = useState(false)
+  /**
+   * A atividade é guardada POR ESCOPO, e não numa variável só.
+   *
+   * Trocar de aba não pode limpar a fila que já chegou: com um estado único,
+   * ir e voltar entre cidade e estado recarregaria as duas o tempo todo e a
+   * tela piscaria em cada troca. O escopo que ainda não chegou vale `undefined`
+   * (carregando); o que chegou vazio vale um payload com `rows: []`.
+   */
+  const [activity, setActivity] = useState<Partial<Record<ActivityScope, ActivityPayload>>>({})
 
   const load = useCallback(async () => {
     try {
@@ -152,14 +224,19 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
 
       if (cData.community?.kind === "games") {
         setIsGames(true)
+        setTab("city")
+        // As duas de uma vez porque a tela abre na cidade e o par de abas
+        // aparece junto: sem a fila de horas em mãos, o primeiro clique nela
+        // mostraria um vazio que pareceria "ninguém jogou".
         const rRes = await fetch("/api/gamer/ranking?limit=50", headers ? { headers } : undefined)
         const rData = await rRes.json().catch(() => ({}))
         if (rRes.ok) {
           setGamerRows(Array.isArray(rData.rows) ? rData.rows : [])
           setGamerMe(rData.me || null)
-        } else {
-          // Flag desligada (403) não é "ninguém jogou": é o recurso fora do ar,
-          // e as duas coisas pedem frases diferentes.
+        } else if (rRes.status !== 403) {
+          // 403 aqui é a flag da CONEXÃO de plataforma desligada, e ela não
+          // derruba a fila de atividade — que não depende de conectar nada.
+          // Só um erro de verdade vira aviso.
           setLocked(rData?.error || t("rankingLoadError", "Não deu para carregar o ranking agora."))
         }
         setState("loaded")
@@ -204,14 +281,59 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   }, [load])
 
   const accent = accentHex(community?.community_theme?.accent)
-  // Games não tem temporada: a fila é uma só, e o par de abas pediria um
-  // clique que não decide nada.
+  // Games não tem temporada — lá as abas são outras três (cidade, estado,
+  // horas), e o par Temporada/XP não diria nada.
   const seasonOn = !!goal && !isGames
 
   useEffect(() => {
     // Sem temporada não existe a aba dela — cair nela deixaria a tela vazia.
-    if (!seasonOn) setTab("xp")
-  }, [seasonOn])
+    // ⚠️ E isto NÃO vale para games: lá a aba inicial é "cidade", e um reset
+    // cego para "xp" jogaria a tela numa fila que a plataforma não tem.
+    if (!seasonOn && !isGames) setTab("xp")
+  }, [seasonOn, isGames])
+
+  /**
+   * A fila de atividade do escopo aberto.
+   *
+   * Busca SOB DEMANDA e uma vez por escopo: a maioria das visitas fica na
+   * cidade, e pedir as duas de saída pagaria por uma resposta que ninguém
+   * pediu — a mesma disciplina do `onOpen` da gaveta dos números.
+   */
+  useEffect(() => {
+    if (!isGames || !isActivityTab(tab) || activity[tab]) return
+    let alive = true
+    const tk = getToken()
+    void fetch(`/api/gamer/ranking/activity?scope=${tab}&limit=50`, {
+      headers: tk ? { Authorization: `Bearer ${tk}` } : undefined,
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!alive) return
+        if (res.ok) {
+          setActivity((prev) => ({
+            ...prev,
+            [tab]: {
+              scope: tab,
+              place: data.place ?? null,
+              weights: data.weights ?? { like: 1, comment: 2, share: 3, minutes_per_point: 10 },
+              rows: Array.isArray(data.rows) ? data.rows : [],
+              me: data.me ?? null,
+            },
+          }))
+        } else {
+          setLocked(data?.error || t("rankingLoadError", "Não deu para carregar o ranking agora."))
+        }
+      })
+      .catch(() => {
+        if (alive) setLocked(t("rankingLoadError", "Não deu para carregar o ranking agora."))
+      })
+    return () => {
+      alive = false
+    }
+  }, [isGames, tab, activity, t])
+
+  /** O payload do escopo aberto (undefined enquanto não chegou). */
+  const activeActivity = isActivityTab(tab) ? activity[tab] : undefined
 
   const metricLabel = useCallback(
     (m: string) =>
@@ -228,6 +350,15 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
    * escolhe QUAL delas responde e como o número é escrito.
    */
   const rows: Row[] = useMemo(() => {
+    if (isGames && isActivityTab(tab)) {
+      return (activity[tab]?.rows ?? []).map((r) => ({
+        id_user: r.id_user,
+        name: r.name || r.username || "—",
+        avatar_url: r.avatar_url,
+        value: compact(r.score),
+        raw: Number(r.score) || 0,
+      }))
+    }
     if (isGames) {
       return gamerRows.map((r) => ({
         id_user: r.id_user,
@@ -265,10 +396,12 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
         value: `${compact(Number(m.top_profile_xp || 0))} XP`,
         raw: Number(m.top_profile_xp || 0),
       }))
-  }, [tab, goal, members, isGames, gamerRows])
+  }, [tab, goal, members, isGames, gamerRows, activity])
 
   const unitWord = isGames
-    ? t("rankingUnitHours", "horas jogadas")
+    ? isActivityTab(tab)
+      ? t("rankingUnitPoints", "pontos de atividade")
+      : t("rankingUnitHours", "horas jogadas")
     : tab === "season" && goal
       ? metricLabel(goal.metric)
       : t("metricXp", "XP coletivo")
@@ -306,15 +439,25 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
       <div className="relative mx-auto max-w-4xl px-4 pt-6 md:px-6">
         <PageBackLink href={`/comunidades/${communityId}`} label={community.display_name} />
 
-        {/* A troca de fila só existe quando existe temporada: com uma opção só,
-            o par de botões pediria um clique que não decide nada. */}
-        {seasonOn && !locked && (
+        {/* A troca de fila só existe quando há mais de uma: com uma opção só,
+            o par de botões pediria um clique que não decide nada.
+
+            Em games são TRÊS, e planas — cidade, estado e horas. Aninhar
+            "atividade" com um sub-seletor de escopo dentro daria abas dentro de
+            abas para escolher entre três coisas; plano, o caminho até qualquer
+            uma delas é um toque. */}
+        {(seasonOn || isGames) && !locked && (
           <div className="mt-5 flex flex-wrap items-center gap-1">
-            {(
-              [
-                ["season", "rankingTabSeason", "Temporada"],
-                ["xp", "rankingTabXp", "XP geral"],
-              ] as const
+            {(isGames
+              ? ([
+                  ["city", "rankingTabCity", "Minha cidade"],
+                  ["state", "rankingTabState", "Meu estado"],
+                  ["playtime", "rankingTabPlaytime", "Horas jogadas"],
+                ] as const)
+              : ([
+                  ["season", "rankingTabSeason", "Temporada"],
+                  ["xp", "rankingTabXp", "XP geral"],
+                ] as const)
             ).map(([id, key, fallback]) => (
               <button
                 key={id}
@@ -332,6 +475,17 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
           </div>
         )}
 
+        {/* ONDE a fila está sendo medida. Sem esta linha, "Minha cidade" seria
+            uma promessa sem prova — e quem se mudou não teria como perceber que
+            está sendo comparado com a cidade errada. */}
+        {isGames && isActivityTab(tab) && activeActivity?.place && (
+          <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+            {tab === "city"
+              ? `${activeActivity.place.municipio} · ${activeActivity.place.estado}`
+              : activeActivity.place.estado}
+          </p>
+        )}
+
         {/* Cabeçalho do pódio */}
         <div className="mt-8 text-center">
           <p className="fl-marker text-2xl" style={{ color: accent }}>
@@ -341,9 +495,13 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
                 : daysLeft != null
                   ? `${t("goalDaysLeft", "faltam")} ${daysLeft} ${t("goalDaysWord", "dias")} · ${unitWord}`
                   : unitWord
-              : isGames
-                ? t("rankingEyebrowGames", "quem mais jogou na plataforma")
-                : t("rankingEyebrowXp", "o topo da comunidade")}
+              : isGames && isActivityTab(tab)
+                ? tab === "city"
+                  ? t("rankingEyebrowCity", "quem mais aparece na sua cidade")
+                  : t("rankingEyebrowState", "quem mais aparece no seu estado")
+                : isGames
+                  ? t("rankingEyebrowGames", "quem mais jogou na plataforma")
+                  : t("rankingEyebrowXp", "o topo da comunidade")}
           </p>
           <h1 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{t("rankingHeading", "O pódio.")}</h1>
         </div>
@@ -363,15 +521,48 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
               {t("rankingGoToCommunity", "Ir para a comunidade")}
             </Link>
           </div>
+        ) : isGames && isActivityTab(tab) && !activeActivity ? (
+          // A fila ainda não chegou. Um "ninguém pontuou" aqui seria mentira
+          // por meio segundo — e mentira que a pessoa lê antes de a verdade
+          // aparecer.
+          <div className="mt-10 flex items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] p-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+          </div>
+        ) : isGames && isActivityTab(tab) && !activeActivity?.place ? (
+          // NÃO É "ninguém pontuou": é "você não disse onde mora", e a fila é
+          // por cidade. O que aparece é o que FAZER.
+          <div
+            className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] p-8 text-center"
+            style={{ boxShadow: `6px 6px 0 0 ${accent}` }}
+          >
+            <MapPin className="mx-auto h-8 w-8 text-[#9A938A]" />
+            <p className="mt-3 text-sm font-semibold text-[#F5F1E8]">
+              {t(
+                "rankingNoCity",
+                "Este ranking compara quem é da sua cidade — e a sua ainda não está declarada."
+              )}
+            </p>
+            <Link
+              href="/account"
+              className="mt-4 inline-block border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+              style={{ background: accent }}
+            >
+              {t("rankingSetCity", "Declarar minha cidade")}
+            </Link>
+          </div>
         ) : top3.length === 0 ? (
           <div className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] p-8 text-center">
             <Trophy className="mx-auto h-8 w-8 text-[#9A938A]" />
             <p className="mt-3 text-sm text-[#9A938A]">
-              {isGames
-                ? t("rankingEmptyGames", "Ninguém conectou uma plataforma com a estante pública ainda.")
-                : tab === "season"
-                  ? t("rankingEmptySeason", "Ninguém pontuou nesta temporada ainda.")
-                  : t("membersEmpty", "Sem membros ainda.")}
+              {isGames && isActivityTab(tab)
+                ? tab === "city"
+                  ? t("rankingEmptyCity", "Ninguém da sua cidade pontuou na plataforma de games ainda.")
+                  : t("rankingEmptyState", "Ninguém do seu estado pontuou na plataforma de games ainda.")
+                : isGames
+                  ? t("rankingEmptyGames", "Ninguém conectou uma plataforma com a estante pública ainda.")
+                  : tab === "season"
+                    ? t("rankingEmptySeason", "Ninguém pontuou nesta temporada ainda.")
+                    : t("membersEmpty", "Sem membros ainda.")}
             </p>
           </div>
         ) : (
@@ -461,7 +652,61 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
             Quem não tem estante pública com horas volta como `null` do
             backend, e aí o que aparece é o que FAZER (conectar a plataforma,
             abrir a estante) em vez de um zero que pareceria nota. */}
-        {isGames && !locked && (
+        {isGames && isActivityTab(tab) && !locked && activeActivity?.place && (
+          <div
+            className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-4"
+            style={{ boxShadow: `0 0 0 1px ${accent}66, 0 18px 48px -18px ${accent}` }}
+          >
+            {activeActivity.me ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+                  {t("rankingYouLabel", "Sua posição")}
+                </span>
+                <span className="fl-display text-3xl leading-none" style={{ color: accent }}>
+                  #{activeActivity.me.position}
+                </span>
+                {/* A CONTA ABERTA, e não só o total: o número sozinho não diz
+                    o que fazer para subir. Aqui a pessoa vê de onde ele veio. */}
+                <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {t("rankingYouOf", "de")} {activeActivity.me.total} · {compact(activeActivity.me.score)}{" "}
+                  {t("rankingPointsShort", "pts")} · {activeActivity.me.likes}{" "}
+                  {t("rankingYouLikes", "curtidas")} · {activeActivity.me.comments}{" "}
+                  {t("rankingYouComments", "comentários")} · {activeActivity.me.shares}{" "}
+                  {t("rankingYouShares", "compart.")} · {compact(activeActivity.me.minutes)}{" "}
+                  {t("rankingYouMinutes", "min online")}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-[#9A938A]">
+                  {t(
+                    "rankingYouAbsentActivity",
+                    "Você ainda não pontuou aqui: publique na plataforma de games e apareça."
+                  )}
+                </p>
+                <Link
+                  href={`/comunidades/${communityId}`}
+                  className="shrink-0 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D]"
+                  style={{ background: accent }}
+                >
+                  {t("rankingGoPublish", "Publicar")}
+                </Link>
+              </div>
+            )}
+            {/* COMO SE PONTUA, com os pesos que vieram do backend. Copiar os
+                números aqui faria a legenda prometer uma conta que a fila não
+                faz no dia em que um peso mudasse. */}
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">
+              {t("rankingActivityHint", "Curtida {like} · comentário {comment} · compartilhamento {share} · {min} min online = 1 ponto")
+                .replace("{like}", String(activeActivity.weights.like))
+                .replace("{comment}", String(activeActivity.weights.comment))
+                .replace("{share}", String(activeActivity.weights.share))
+                .replace("{min}", String(activeActivity.weights.minutes_per_point))}
+            </p>
+          </div>
+        )}
+
+        {isGames && tab === "playtime" && !locked && (
           <div
             className="mt-10 border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-4"
             style={{ boxShadow: `0 0 0 1px ${accent}66, 0 18px 48px -18px ${accent}` }}
