@@ -67,3 +67,25 @@ export function kindHasSite(kind: string | null | undefined): boolean {
   // já existe.
   return (kind || "common") === "common"
 }
+
+/**
+ * "Esta pessoa pode CONSTRUIR o site desta comunidade?"
+ *
+ * É a régua da aba "Site" da página, do item "Meu Site" do menu "+" e do globo
+ * amarelo do dock de negócios — as TRÊS portas do construtor. Ela mora aqui
+ * porque duas delas vivem em telas diferentes da mesma comunidade (a página e o
+ * ranking, que também carrega o dock): escrita em cada lugar, o dia em que a
+ * regra mudasse deixaria uma das portas oferecendo o que a outra já fechou.
+ *
+ * As três metades: a modalidade tem site (`kindHasSite`), quem olha é o LÍDER
+ * (o construtor recusa o resto — nem vice, nem admin da comunidade: o site é a
+ * cara pública dela) e a flag `comunidade_site` está ligada (kill-switch de
+ * CONSTRUÇÃO; o site publicado continua no ar com ela desligada).
+ */
+export function canBuildCommunitySite(opts: {
+  kind: string | null | undefined
+  isLeader: boolean
+  siteEnabled: boolean
+}): boolean {
+  return kindHasSite(opts.kind) && opts.isLeader && opts.siteEnabled
+}

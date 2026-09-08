@@ -1,14 +1,18 @@
 "use client"
 
 /**
- * O AMBIENTE GAMES — quem avisa o dock de que a barra de baixo mudou.
+ * O AMBIENTE DE COMUNIDADE — quem avisa o dock de que a barra de baixo mudou.
+ *
+ * Nasceu para a plataforma de GAMES e passou a servir também "Meus negócios"
+ * (2026-09-08), que é a comunidade de modalidade `common`. Os dois são
+ * AMBIENTES: lugares onde a barra da Freelandoo inteira dá lugar aos controles
+ * daquele espaço.
  *
  * ─── O PROBLEMA ──────────────────────────────────────────────────────────────
  *
  * O dock (`ProfileSidebar`) é global: mora no layout raiz e se desenha em toda
- * rota. Dentro da plataforma de games ele precisa trocar de conteúdo inteiro —
- * Feed, Estante, Jogo atual, Posts games e o Game —, e para isso precisa saber
- * que a rota atual é uma comunidade de GAMES.
+ * rota. Dentro de um ambiente ele precisa trocar de conteúdo inteiro, e para
+ * isso precisa saber em que ambiente está.
  *
  * Pelo caminho (`usePathname`) ele NÃO tem como saber: `/comunidades/<uuid>`
  * serve todas as modalidades, e a modalidade só aparece depois que a página
@@ -18,11 +22,15 @@
  *
  * ─── A SOLUÇÃO: QUEM SABE, DECLARA ───────────────────────────────────────────
  *
- * Quem já tem a resposta é a PÁGINA. Ela monta o `<GamesShellBeacon>` quando
- * sabe que está em games, e o dock lê. É a mesma disciplina do
+ * Quem já tem a resposta é a PÁGINA. Ela monta o `<CommunityShellBeacon>`
+ * dizendo QUAL ambiente é, e o dock lê. É a mesma disciplina do
  * `platform-chrome`: quem declara o ambiente é a página, nunca um palpite sobre
  * o pathname — lá isso importava porque subdomínio e domínio próprio chegam por
  * reescrita; aqui, porque a modalidade não está na URL.
+ *
+ * ⚠️ AMBIENTE NOVO = `kind` novo aqui E a lista de itens correspondente no
+ * `ProfileSidebar`. Um `kind` sem lista deixaria a pessoa dentro do ambiente
+ * com a barra da Freelandoo, que é justamente o que o ambiente troca.
  *
  * ─── POR QUE UMA LOJA DE MÓDULO, E NÃO UM CONTEXT ────────────────────────────
  *
@@ -41,14 +49,18 @@
  *
  * ─── A SEGUNDA FUNÇÃO: A BATIDA DE PRESENÇA (mig 226) ────────────────────────
  *
- * O ranking de atividade da plataforma conta, entre outras coisas, o TEMPO
- * ONLINE dentro do ambiente de games. Quem sabe que a pessoa está ali dentro é
+ * O ranking de atividade da plataforma de games conta, entre outras coisas, o
+ * TEMPO ONLINE dentro do ambiente. Quem sabe que a pessoa está ali dentro é
  * exatamente este registro — o mesmo que o dock lê —, então a batida nasce aqui
  * e não numa tela específica: pendurada numa página, mudar de tela dentro do
  * ambiente pararia o relógio, e uma tela nova nasceria sem contar tempo.
  *
  * O relógio é do MAPA, não do componente: navegar entre duas telas do ambiente
  * troca beacons sem interromper a contagem, e ela só para quando o último sai.
+ *
+ * ⚠️ E SÓ VALE PARA GAMES. O ranking que consome esse tempo é o da plataforma de
+ * games; contar o tempo de quem está no ambiente de negócios daria pontuação de
+ * games para quem nunca entrou lá.
  */
 
 import { useEffect } from "react"
@@ -141,11 +153,12 @@ function stopHeartbeat() {
   sendBeat(false, true)
 }
 
-/* ────────────────────── o que o dock PEDE para a página ────────────────────
+/* ────────────────────── o que o dock PEDE para a página ─────────────────────
  *
- * "Estante" e "Jogo atual" no dock são DEEP-LINKS para a mesma página do
- * ambiente (`?aba=estante`, `?painel=jogo`) — não são telas próprias. Vindo de
- * outra rota isso funciona sozinho: a página monta e lê o parâmetro do window.
+ * Os itens do dock apontam para a MESMA página do ambiente com um parâmetro
+ * dizendo o que abrir (`?aba=membros`, `?painel=mural`) — não são telas
+ * próprias. Vindo de outra rota isso funciona sozinho: a página monta e lê o
+ * parâmetro do window.
  *
  * ⚠️ JÁ ESTANDO NA PÁGINA, NÃO FUNCIONAVA. Trocar só a querystring da MESMA
  * rota não desmonta nem remonta o componente, e a leitura do deep-link roda uma
@@ -164,50 +177,71 @@ function stopHeartbeat() {
  * o feed depois de a pessoa ter aberto a Estante.
  */
 
-/** O que o dock consegue pedir. Vista nova do ambiente = nome novo AQUI e o
- *  caso correspondente em quem escuta (a página da comunidade). */
-export type GamesView = "feed" | "shelf" | "game"
+/** O que o dock consegue pedir. Vista nova = nome novo AQUI e o caso
+ *  correspondente em quem escuta (a página da comunidade). */
+export type CommunityView = "feed" | "members" | "shelf" | "game" | "profile" | "mural"
 
-const viewListeners = new Set<(v: GamesView) => void>()
+const viewListeners = new Set<(v: CommunityView) => void>()
 
 /** Chamado pelo dock. Sem ninguém escutando é no-op — e é o que tem que ser:
  *  significa que a página do ambiente não está montada, e nesse caso o clique
  *  já vai navegar de verdade. */
-export function requestGamesView(view: GamesView) {
+export function requestCommunityView(view: CommunityView) {
   for (const l of [...viewListeners]) l(view)
 }
 
 /** Assinado pela página do ambiente. */
-export function onGamesView(cb: (v: GamesView) => void): () => void {
+export function onCommunityView(cb: (v: CommunityView) => void): () => void {
   viewListeners.add(cb)
   return () => {
     viewListeners.delete(cb)
   }
 }
 
-type Shell = { communityId: string }
+/** Os ambientes que trocam o dock. */
+export type ShellKind = "games" | "business"
+
+export type Shell = {
+  communityId: string
+  kind: ShellKind
+  /**
+   * Se quem está olhando pode construir o site desta comunidade — ou seja, é o
+   * líder. É o dock que precisa saber, e ele não tem como descobrir: a resposta
+   * mistura modalidade, papel e flag, e mora na página (`canBuildSite`).
+   */
+  canBuildSite: boolean
+}
 
 /** Beacons vivos, por token de instância. O ambiente é o último a entrar. */
-const mounted = new Map<number, string>()
+const mounted = new Map<number, Shell>()
 let token = 0
 let snapshot: Shell | null = null
 
 const listeners = new Set<() => void>()
 
+function same(a: Shell | null, b: Shell | null) {
+  if (!a || !b) return a === b
+  return (
+    a.communityId === b.communityId && a.kind === b.kind && a.canBuildSite === b.canBuildSite
+  )
+}
+
 function recompute() {
-  const last = [...mounted.values()].pop() ?? null
-  const next = last ? { communityId: last } : null
+  const next = [...mounted.values()].pop() ?? null
 
   // O relógio segue o MAPA, não o snapshot: trocar de tela dentro do ambiente
-  // muda o `communityId` (ou nem isso) sem parar a contagem, e sair de vez
-  // esvazia o mapa. É por isso que a decisão está aqui em cima e não no
-  // comparador de identidade abaixo — que devolve cedo quando nada mudou.
-  if (mounted.size > 0) startHeartbeat()
+  // troca beacons sem parar a contagem, e sair de vez esvazia o mapa. É por
+  // isso que a decisão está aqui em cima e não no comparador de identidade
+  // abaixo — que devolve cedo quando nada mudou.
+  //
+  // Só GAMES conta tempo (ver o cabeçalho): quem está em "Meus negócios" não
+  // pode pontuar num ranking de games.
+  if ([...mounted.values()].some((s) => s.kind === "games")) startHeartbeat()
   else stopHeartbeat()
 
   // Identidade estável: `useSyncExternalStore` compara por referência, e um
   // objeto novo a cada leitura faria o dock re-renderizar para sempre.
-  if (next?.communityId === snapshot?.communityId) return
+  if (same(next, snapshot)) return
   snapshot = next
   for (const l of listeners) l()
 }
@@ -228,23 +262,31 @@ function getServerSnapshot(): Shell | null {
   return null
 }
 
-/** Lido pelo dock. `null` = fora do ambiente games. */
-export function useGamesShell(): Shell | null {
+/** Lido pelo dock. `null` = fora de qualquer ambiente. */
+export function useCommunityShell(): Shell | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
 /**
- * Montado pelas telas da plataforma de games. Não desenha nada — só declara.
+ * Montado pelas telas de um ambiente. Não desenha nada — só declara.
  */
-export function GamesShellBeacon({ communityId }: { communityId: string }) {
+export function CommunityShellBeacon({
+  communityId,
+  kind,
+  canBuildSite = false,
+}: {
+  communityId: string
+  kind: ShellKind
+  canBuildSite?: boolean
+}) {
   useEffect(() => {
     const id = ++token
-    mounted.set(id, communityId)
+    mounted.set(id, { communityId, kind, canBuildSite })
     recompute()
     return () => {
       mounted.delete(id)
       recompute()
     }
-  }, [communityId])
+  }, [communityId, kind, canBuildSite])
   return null
 }

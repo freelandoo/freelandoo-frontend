@@ -52,10 +52,11 @@ import { Loader2, Lock, MapPin, ShieldAlert, Trophy } from "lucide-react"
 import { DoodleCrown } from "@/components/home/landing/primitives"
 import { PageBackLink } from "@/components/tabloide"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getToken } from "@/lib/auth"
+import { getToken, getStoredUser } from "@/lib/auth"
 import { cn } from "@/lib/utils"
-import { accentHex, compact } from "../../_components/community-ui"
-import { GamesShellBeacon } from "@/components/layout/games-shell"
+import { accentHex, canBuildCommunitySite, compact } from "../../_components/community-ui"
+import { CommunityShellBeacon } from "@/components/layout/community-shell"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
 // O ranking também é uma tela DE DENTRO do ambiente games: mesmo fundo, mesma
 // pele. Por `dynamic` para não pesar no ranking das outras seis modalidades.
@@ -69,6 +70,8 @@ type Community = {
   display_name: string
   avatar_url: string | null
   kind?: string | null
+  /** Quem manda na comunidade — aqui só para saber se o dock mostra o Site. */
+  id_leader_user?: string | null
   community_theme: { accent?: string } | null
 }
 /**
@@ -283,6 +286,23 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   const accent = accentHex(community?.community_theme?.accent)
   // Games não tem temporada — lá as abas são outras três (cidade, estado,
   // horas), e o par Temporada/XP não diria nada.
+  // ─── O AMBIENTE (o dock global lê isto pelo beacon lá embaixo) ────────────
+  // A régua do Site é a MESMA da página da comunidade, importada e não copiada:
+  // são duas telas do mesmo espaço, e duas cópias divergiriam na primeira
+  // mudança de regra — o globo apareceria numa e não na outra.
+  const siteEnabled = useFeature("comunidade_site")
+  const viewerId = getStoredUser()?.id_user ?? null
+  const canBuildSite = canBuildCommunitySite({
+    kind: community?.kind,
+    isLeader: !!community?.id_leader_user && community.id_leader_user === viewerId,
+    siteEnabled,
+  })
+  const shellKind: "games" | "business" | null = isGames
+    ? "games"
+    : community?.kind === "common"
+      ? "business"
+      : null
+
   const seasonOn = !!goal && !isGames
 
   useEffect(() => {
@@ -435,7 +455,17 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   return (
     <div className={cn("fl-root relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]", isGames && "fl-games")}>
       {isGames && <TechBackdrop />}
-      {isGames && <GamesShellBeacon communityId={communityId} />}
+      {/* ⚠️ ESTA TELA TAMBÉM É O AMBIENTE. O "Ranking" do dock de negócios (e o
+          "Posts games" do de games) leva para uma página irmã: sem o beacon
+          aqui, o dock voltaria a ser o da Freelandoo no meio do ambiente e a
+          pessoa perderia os controles do espaço em que ainda está. */}
+      {shellKind && (
+        <CommunityShellBeacon
+          communityId={communityId}
+          kind={shellKind}
+          canBuildSite={canBuildSite}
+        />
+      )}
       <div className="relative mx-auto max-w-4xl px-4 pt-6 md:px-6">
         <PageBackLink href={`/comunidades/${communityId}`} label={community.display_name} />
 

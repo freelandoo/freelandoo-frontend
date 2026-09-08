@@ -39,7 +39,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 // A vitrine é uma tela DE DENTRO do ambiente: sem o beacon, o dock voltaria ao
 // da Freelandoo justamente na página que o próprio dock abre.
-import { GamesShellBeacon } from "@/components/layout/games-shell"
+import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import type { FeedPost } from "@/lib/types/portfolio-feed"
 import { accentHex } from "../../_components/community-ui"
 
@@ -141,7 +141,7 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
     <main className={`relative min-h-screen bg-[#0b0804] px-5 py-8 md:px-10 ${inGames ? "fl-games" : ""}`}>
       {inGames && <TechBackdrop />}
       <div className="relative mx-auto max-w-5xl">
-        {inGames && <GamesShellBeacon communityId={communityId} />}
+        {inGames && <CommunityShellBeacon communityId={communityId} kind="games" />}
         <PageBackLink href={backHref} className="mb-5" />
 
         <header

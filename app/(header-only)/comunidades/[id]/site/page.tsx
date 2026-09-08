@@ -19,6 +19,7 @@ import { useParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
+import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { getStoredUser, getToken } from "@/lib/auth"
 
 const CommunitySiteBuilder = dynamic(
@@ -89,6 +90,14 @@ export default function CommunitySitePage() {
 
   return (
     <main className="fl-sharp min-h-[100dvh] bg-[#0b0804] px-3 py-4 md:px-6">
+      {/* O construtor é a terceira tela do ambiente de negócios (o globo do
+          dock leva para cá). Sem o beacon, o dock voltaria a ser o da
+          Freelandoo bem no meio do trabalho — e a volta para a comunidade
+          deixaria de ser um toque. `canBuildSite` é `isLeader` aqui: quem não é
+          não passa da recusa que o próprio construtor escreve. */}
+      {community && (
+        <CommunityShellBeacon communityId={community.id_profile} kind="business" canBuildSite={isLeader} />
+      )}
       <div className="mx-auto w-full max-w-[1400px]">
         <PageBackLink
           href={id ? `/comunidades/${id}` : "/account"}

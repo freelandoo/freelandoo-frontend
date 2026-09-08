@@ -27,11 +27,11 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { RetractableColumn } from "@/components/tabloide"
 // A plataforma de games troca o conteúdo do dock global. Quem sabe que a rota é
 // games é ESTA página (a modalidade não está na URL), então é ela que declara.
-import { GamesShellBeacon, onGamesView } from "@/components/layout/games-shell"
+import { CommunityShellBeacon, onCommunityView } from "@/components/layout/community-shell"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
-import { ACCENTS, accentHex, compact, kindHasSite } from "./_components/community-ui"
+import { ACCENTS, accentHex, canBuildCommunitySite, compact } from "./_components/community-ui"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -378,15 +378,13 @@ export default function CommunityDetailPage() {
 
   // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
   // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
-  // O predicado mora em `community-ui.ts` e espelha o do backend, que recusa as
-  // seis portas do site fora da `common`. Aqui ele serve para não OFERECER o
-  // que lá seria recusado — a aba e o item do menu somem juntos, porque deixar
-  // um dos dois de pé daria uma porta que só falha depois do clique.
-  // ⚠️ LÊ `community?.kind`, e NÃO `subjectKind`: aquele só carrega pet, carro e
-  // games (é o ASSUNTO editável da comunidade) e vale `null` para comum,
-  // condomínio e bairro. Com ele aqui, condomínio e bairro cairiam no default
-  // "common" do predicado e ficariam com a aba Site de pé.
-  const kindCanHaveSite = kindHasSite(community?.kind)
+  // Isso e as outras duas metades da régua (ser o líder e a flag) moram em
+  // `canBuildCommunitySite`, no `community-ui.ts`, porque a tela de ranking
+  // também precisa da resposta para desenhar o globo do dock.
+  // ⚠️ O predicado LÊ `community?.kind`, e NÃO `subjectKind`: aquele só carrega
+  // pet, carro e games (é o ASSUNTO editável da comunidade) e vale `null` para
+  // comum, condomínio e bairro. Com ele, condomínio e bairro cairiam no default
+  // "common" e ficariam com a aba Site de pé.
 
   // ⚠️ SÓ O LÍDER VÊ A ENTRADA DO SITE (pedido do Alex, 2026-09-08).
   //
@@ -402,7 +400,17 @@ export default function CommunityDetailPage() {
   // ⚠️ O PREDICADO É UM SÓ e a aba e o item "Meu Site" do menu "+" LEEM O MESMO:
   // escritos separados, o dia em que um mudasse deixaria o outro oferecendo uma
   // porta que a outra metade já fechou.
-  const canBuildSite = kindCanHaveSite && isLeader && siteEnabled
+  const canBuildSite = canBuildCommunitySite({ kind: community?.kind, isLeader, siteEnabled })
+
+  // Qual AMBIENTE esta página é (o dock lê isto pelo beacon lá embaixo).
+  // `null` = comunidade comum-mas-não-negócio (condomínio, bairro, pet, carro):
+  // ali a barra da Freelandoo continua como está, porque não há um conjunto de
+  // controles próprio a colocar no lugar dela.
+  const shellKind: "games" | "business" | null = isGamesPlatform
+    ? "games"
+    : community?.kind === "common"
+      ? "business"
+      : null
 
   const siteExtras = useMemo(
     () =>
@@ -445,8 +453,16 @@ export default function CommunityDetailPage() {
     if (!community || deepLinkDone.current) return
     deepLinkDone.current = true
     const sp = new URLSearchParams(window.location.search)
-    if (sp.get("aba") === "estante" && showShelfTab) setTab("shelf")
-    if (sp.get("painel") === "jogo" && isGamesPlatform) setPanel("game")
+    const aba = sp.get("aba")
+    const painel = sp.get("painel")
+    if (aba === "estante" && showShelfTab) setTab("shelf")
+    // "Membros" não existe na plataforma de games (não há membros para listar),
+    // e abrir uma aba que a fila de abas não tem deixaria a tela mostrando algo
+    // que ninguém consegue fechar.
+    if (aba === "membros" && !isGamesPlatform) setTab("members")
+    if (painel === "jogo" && isGamesPlatform) setPanel("game")
+    if (painel === "perfil" && !isGamesPlatform) setPanel("profile")
+    if (painel === "mural") setPanel("mural")
   }, [community, showShelfTab, isGamesPlatform])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
@@ -462,7 +478,7 @@ export default function CommunityDetailPage() {
   // dessa decisão seria a tela abrindo a Estante e fechando o painel ao mesmo
   // tempo.
   useEffect(() => {
-    return onGamesView((view) => {
+    return onCommunityView((view) => {
       if (view === "shelf") {
         if (!showShelfTab) return
         setPanel(null)
@@ -472,6 +488,24 @@ export default function CommunityDetailPage() {
       if (view === "game") {
         if (!isGamesPlatform) return
         setPanel("game")
+        return
+      }
+      if (view === "members") {
+        if (isGamesPlatform) return
+        setPanel(null)
+        setTab("members")
+        return
+      }
+      // Os dois PAINÉIS dos pills. Abrir (e não alternar): o pill alterna porque
+      // o dedo está em cima dele; no dock, "Perfil" que às vezes fecha o Perfil
+      // seria um botão com dois significados.
+      if (view === "profile") {
+        if (isGamesPlatform) return
+        setPanel("profile")
+        return
+      }
+      if (view === "mural") {
+        setPanel("mural")
         return
       }
       // "Feed" é a volta: fecha o painel aberto E devolve a aba. Fechar só um
@@ -1136,8 +1170,16 @@ export default function CommunityDetailPage() {
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
           headcard cobrir a pilha de pills. */}
       {isGamesPlatform && <TechBackdrop />}
-      {/* Declara o ambiente para o dock global (não desenha nada). */}
-      {isGamesPlatform && <GamesShellBeacon communityId={id} />}
+      {/* Declara o ambiente para o dock global (não desenha nada).
+          "Meus negócios" (a comunidade `common`) é ambiente pelo mesmo motivo
+          que a plataforma de games: lá dentro a barra da Freelandoo dá lugar aos
+          controles do espaço, e a volta é a foto amarela.
+          ⚠️ O ambiente é do LUGAR, não de quem olha — quem visita também troca
+          de barra, e é por isso que a porta de saída existe. O que depende de
+          quem olha é só o item do Site (`canBuildSite`). */}
+      {shellKind && (
+        <CommunityShellBeacon communityId={id} kind={shellKind} canBuildSite={canBuildSite} />
+      )}
       {/* Top bar */}
       <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
         {/* ⚠️ VOLTA PARA O PERFIL, não para a vitrine (pedido do Alex,

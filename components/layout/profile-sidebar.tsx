@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Gamepad2, Hexagon, Home, Joystick, LayoutGrid, Library, MessageCircle, Trophy, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Gamepad2, Globe, Hexagon, Home, Joystick, LayoutGrid, Library, Megaphone, MessageCircle, Trophy, UserRound, Users, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -14,7 +14,12 @@ import dynamic from "next/dynamic"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
 // Quem avisa que a rota atual é a plataforma de GAMES é a própria página (a
 // modalidade não está na URL). Ver o comentário do arquivo.
-import { useGamesShell, requestGamesView, type GamesView } from "./games-shell"
+import {
+  useCommunityShell,
+  requestCommunityView,
+  type CommunityView,
+  type Shell,
+} from "./community-shell"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
@@ -37,12 +42,12 @@ interface SidebarItem {
    * Item que aponta para a MESMA página em que talvez já estejamos, mudando só
    * a querystring. Navegar não resolve (a rota não remonta e a querystring não
    * é relida), então, quando o caminho atual já é `viewPath`, o clique vira um
-   * PEDIDO para a página (`requestGamesView`) em vez de uma navegação.
+   * PEDIDO para a página (`requestCommunityView`) em vez de uma navegação.
    *
    * Vindo de outra rota o `href` continua valendo: a página monta e lê o
    * parâmetro do window, como sempre leu.
    */
-  view?: GamesView
+  view?: CommunityView
   /** Caminho em que o `view` substitui a navegação. */
   viewPath?: string
 }
@@ -125,6 +130,42 @@ function buildGamesItems(communityId: string, shelfOn: boolean): SidebarItem[] {
   ]
 }
 
+/**
+ * O DOCK DENTRO DE "MEUS NEGÓCIOS" (a comunidade de modalidade `common`).
+ *
+ * Mesma ideia do de games: a barra da Freelandoo inteira daria saída lateral
+ * para fora do ambiente sem dizer que está saindo, e a porta de volta é UMA — a
+ * foto, que ali ganha o fundo amarelo.
+ *
+ * O conteúdo é o da PÁGINA: os três pills do headcard (Perfil, Mural, Ranking),
+ * mais as duas abas (Membros e Feed). Pills e abas continuam existindo na tela;
+ * o dock é um segundo caminho para as MESMAS coisas, não uma cópia delas — quem
+ * de fato abre painel e troca aba é a página, que recebe o pedido.
+ *
+ * ⚠️ O RANKING NAVEGA, os outros não. Ele é uma página (`/ranking`), como
+ * "Posts games" no dock de games; Perfil, Mural, Membros e Feed são estado da
+ * mesma tela e por isso vão pelo `view`.
+ *
+ * ⚠️ O SITE É SÓ DO LÍDER e vem em AMARELO (`accent`), o mesmo contorno do item
+ * de Administração da barra principal: ele leva ao CONSTRUTOR, e o construtor
+ * recusa quem não é líder. Quem decide se ele aparece é a página
+ * (`canBuildSite`), que é onde modalidade, papel e flag se encontram — repetir
+ * a conta aqui daria duas respostas para "esta pessoa pode editar o site?".
+ */
+function buildBusinessItems(communityId: string, canBuildSite: boolean): SidebarItem[] {
+  const root = `/comunidades/${communityId}`
+  return [
+    { href: `${root}?painel=perfil`, label: "Perfil", icon: UserRound, view: "profile", viewPath: root },
+    { href: `${root}?painel=mural`, label: "Mural", icon: Megaphone, view: "mural", viewPath: root },
+    { href: `${root}/ranking`, label: "Ranking", icon: Trophy, activePath: `${root}/ranking` },
+    { href: `${root}?aba=membros`, label: "Membros", icon: Users, view: "members", viewPath: root },
+    { href: root, label: "Feed", icon: Home, activePath: root, view: "feed", viewPath: root },
+    ...(canBuildSite
+      ? ([{ href: `${root}/site`, label: "Site", icon: Globe, activePath: `${root}/site`, accent: true }] as SidebarItem[])
+      : []),
+  ]
+}
+
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?"
   return name
@@ -195,7 +236,7 @@ export function ProfileSidebar() {
   const pathname = usePathname() || "/"
   const router = useRouter()
   const active = useActiveContext()
-  const gamesShell = useGamesShell()
+  const shell = useCommunityShell()
   // Mesma flag que a página da comunidade lê para desenhar a aba Estante. Hook
   // solto (e não dentro de um `&&`) porque hook condicional viola rules-of-hooks.
   const shelfOn = useFeature("games_conexao")
@@ -248,10 +289,10 @@ export function ProfileSidebar() {
   if (!isLoggedIn) return null
 
   const bundle = buildContextBundle(active, user)
-  // Dentro do ambiente games a lista é OUTRA — não é a lista comum mais alguns
+  // Dentro de um ambiente a lista é OUTRA — não é a lista comum mais alguns
   // itens. Acrescentar em vez de trocar deixaria oito botões numa barra que no
   // celular já divide a largura com o polegar.
-  const inGames = !!gamesShell
+  const inShell = !!shell
 
   // Ambiente A Casa Views tem fundo claro (papel) — os ícones brancos da rail
   // somem. Escurece o contorno só nessas rotas; no hover (painel vira vidro
@@ -261,9 +302,15 @@ export function ProfileSidebar() {
   const isAdmin =
     !!user.is_admin ||
     !!user.roles?.some((r) => r.desc_role === "Administrator")
-  const baseItems: SidebarItem[] = gamesShell
-    ? buildGamesItems(gamesShell.communityId, shelfOn)
-    : bundle.items
+  // ⚠️ AMBIENTE NOVO = `kind` novo no `community-shell` E um caso aqui. Sem o
+  // caso, a pessoa entraria no ambiente e continuaria com a barra da Freelandoo
+  // — que é exatamente o que o ambiente troca.
+  const shellItems = (s: Shell): SidebarItem[] =>
+    s.kind === "games"
+      ? buildGamesItems(s.communityId, shelfOn)
+      : buildBusinessItems(s.communityId, s.canBuildSite)
+
+  const baseItems: SidebarItem[] = shell ? shellItems(shell) : bundle.items
   const items: SidebarItem[] = isAdmin
     ? [
         ...baseItems,
@@ -299,7 +346,7 @@ export function ProfileSidebar() {
           bundle={bundle}
           onClick={handleTriggerClick}
           unread={unreadSR}
-          exit={inGames}
+          exit={inShell}
         />
 
         <div className="mx-2 my-1 h-px bg-white/[0.07]" />
@@ -323,7 +370,7 @@ export function ProfileSidebar() {
           onClick={handleTriggerClick}
           unread={unreadSR}
           compact
-          exit={inGames}
+          exit={inShell}
         />
         <span aria-hidden className="mx-0.5 h-7 w-px bg-white/[0.08]" />
         {items.map((item) => (
@@ -449,7 +496,7 @@ function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
         if (!item.view || !item.viewPath || pathname !== item.viewPath) return
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
         e.preventDefault()
-        requestGamesView(item.view)
+        requestCommunityView(item.view)
         // `replaceState` e não `router.replace`: só a barra de endereço muda,
         // para o F5 cair na mesma vista. Uma navegação de verdade re-renderizaria
         // a árvore inteira para trocar de aba.
