@@ -141,6 +141,50 @@ function stopHeartbeat() {
   sendBeat(false, true)
 }
 
+/* ────────────────────── o que o dock PEDE para a página ────────────────────
+ *
+ * "Estante" e "Jogo atual" no dock são DEEP-LINKS para a mesma página do
+ * ambiente (`?aba=estante`, `?painel=jogo`) — não são telas próprias. Vindo de
+ * outra rota isso funciona sozinho: a página monta e lê o parâmetro do window.
+ *
+ * ⚠️ JÁ ESTANDO NA PÁGINA, NÃO FUNCIONAVA. Trocar só a querystring da MESMA
+ * rota não desmonta nem remonta o componente, e a leitura do deep-link roda uma
+ * vez só (é ela que decide a aba inicial). O resultado era o pior tipo de
+ * botão: ele existia, aceitava o clique, a URL mudava — e a tela ficava igual.
+ *
+ * A saída não é ler a querystring a cada render: `useSearchParams` obriga
+ * Suspense e tira a rota do pré-render (o build já quebrou assim com
+ * `?tipo=condo`). Quem sabe o que foi pedido é o DOCK, então ele DIZ, pelo
+ * mesmo canal por onde a página já lhe diz que o ambiente existe — este
+ * módulo. O pedido é um evento, não estado: ele acontece uma vez e não tem
+ * "valor atual" que alguém possa reler depois.
+ *
+ * A URL continua sendo trocada (por `history.replaceState`, sem navegar), para
+ * que recarregar a página caia na mesma vista — se ela mentisse, o F5 devolveria
+ * o feed depois de a pessoa ter aberto a Estante.
+ */
+
+/** O que o dock consegue pedir. Vista nova do ambiente = nome novo AQUI e o
+ *  caso correspondente em quem escuta (a página da comunidade). */
+export type GamesView = "feed" | "shelf" | "game"
+
+const viewListeners = new Set<(v: GamesView) => void>()
+
+/** Chamado pelo dock. Sem ninguém escutando é no-op — e é o que tem que ser:
+ *  significa que a página do ambiente não está montada, e nesse caso o clique
+ *  já vai navegar de verdade. */
+export function requestGamesView(view: GamesView) {
+  for (const l of [...viewListeners]) l(view)
+}
+
+/** Assinado pela página do ambiente. */
+export function onGamesView(cb: (v: GamesView) => void): () => void {
+  viewListeners.add(cb)
+  return () => {
+    viewListeners.delete(cb)
+  }
+}
+
 type Shell = { communityId: string }
 
 /** Beacons vivos, por token de instância. O ambiente é o último a entrar. */

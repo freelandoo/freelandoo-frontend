@@ -55,6 +55,7 @@ export default async function DomainBookingPage({ params }: Props) {
       config={found.site.config}
       services={found.site.services || []}
       professionals={found.site.professionals || []}
+      communityId={found.site.id_profile}
       // No domínio do cliente a home do site é a raiz.
       homeHref="/"
       platformBookingUrl={`https://freelandoo.com.br/c/${found.slug}/agendar`}

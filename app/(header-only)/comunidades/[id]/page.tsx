@@ -27,7 +27,7 @@ import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { RetractableColumn } from "@/components/tabloide"
 // A plataforma de games troca o conteúdo do dock global. Quem sabe que a rota é
 // games é ESTA página (a modalidade não está na URL), então é ela que declara.
-import { GamesShellBeacon } from "@/components/layout/games-shell"
+import { GamesShellBeacon, onGamesView } from "@/components/layout/games-shell"
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
@@ -439,6 +439,38 @@ export default function CommunityDetailPage() {
     if (sp.get("aba") === "estante" && showShelfTab) setTab("shelf")
     if (sp.get("painel") === "jogo" && isGamesPlatform) setPanel("game")
   }, [community, showShelfTab, isGamesPlatform])
+
+  // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
+  //
+  // O deep-link acima roda UMA vez, no primeiro render depois que a comunidade
+  // chega — e tem que ser assim, senão ele reabriria a Estante toda vez que a
+  // pessoa trocasse de aba com a URL ainda dizendo `?aba=estante`.
+  //
+  // Só que "Estante" e "Jogo atual" no dock apontam para ESTA página. Já
+  // estando nela, o clique trocava a querystring de uma rota que não remonta:
+  // a URL mudava e a tela ficava igual. Agora o dock ANUNCIA o que foi pedido e
+  // quem obedece é aqui, o mesmo lugar que já decide aba e painel — dois donos
+  // dessa decisão seria a tela abrindo a Estante e fechando o painel ao mesmo
+  // tempo.
+  useEffect(() => {
+    return onGamesView((view) => {
+      if (view === "shelf") {
+        if (!showShelfTab) return
+        setPanel(null)
+        setTab("shelf")
+        return
+      }
+      if (view === "game") {
+        if (!isGamesPlatform) return
+        setPanel("game")
+        return
+      }
+      // "Feed" é a volta: fecha o painel aberto E devolve a aba. Fechar só um
+      // dos dois deixaria a pessoa apertando o mesmo botão sem sair do lugar.
+      setPanel(null)
+      setTab("feed")
+    })
+  }, [showShelfTab, isGamesPlatform])
 
   const accent = accentHex(accentDraft)
 

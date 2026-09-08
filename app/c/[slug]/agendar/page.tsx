@@ -51,6 +51,7 @@ export default async function CommunityBookingPage({ params }: Props) {
       config={site.config}
       services={site.services || []}
       professionals={site.professionals || []}
+      communityId={site.id_profile}
       homeHref={`/c/${slug}`}
     />
   )

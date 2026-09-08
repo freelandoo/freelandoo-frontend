@@ -106,12 +106,26 @@ export function SiteBookingView({
   config,
   services,
   professionals,
+  communityId,
   homeHref,
   platformBookingUrl = null,
 }: {
   config: CommunitySiteConfig
   services: ShowcaseService[]
   professionals: SiteProfessional[]
+  /**
+   * A comunidade dona deste site.
+   *
+   * Vai junto no agendamento (`id_community`) para que, confirmada a reserva, o
+   * aviso chegue ao LÍDER — na caixa de mensagens e no WhatsApp dele. Sem este
+   * campo o backend não teria como distinguir uma reserva vinda do site de uma
+   * feita no perfil do profissional, e o dono do negócio ficaria sem saber do
+   * que foi marcado na casa dele.
+   *
+   * ⚠️ Não é uma permissão: o backend confere que o profissional agendado
+   * atende MESMO nesta comunidade antes de aceitar a origem.
+   */
+  communityId: string
   /** De volta para o site — o mesmo endereço por onde a pessoa chegou. */
   homeHref: string
   /**
@@ -239,6 +253,7 @@ export function SiteBookingView({
           start_time: time,
           id_profile_service: service.id_profile_service,
           client_whatsapp: whatsapp || null,
+          id_community: communityId,
         }),
       })
       const data = await res.json()
@@ -254,7 +269,7 @@ export function SiteBookingView({
     } finally {
       setSending(false)
     }
-  }, [service, proId, time, date, whatsapp, t])
+  }, [service, proId, time, date, whatsapp, communityId, t])
 
   const canAdvance = step === "choose" ? !!service && !!proId : step === "when" ? !!time : true
 

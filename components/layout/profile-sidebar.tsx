@@ -14,8 +14,9 @@ import dynamic from "next/dynamic"
 import { useActiveContext, type ActiveContext } from "./use-active-context"
 // Quem avisa que a rota atual é a plataforma de GAMES é a própria página (a
 // modalidade não está na URL). Ver o comentário do arquivo.
-import { useGamesShell } from "./games-shell"
+import { useGamesShell, requestGamesView, type GamesView } from "./games-shell"
 import { useNavCounts } from "@/components/navigation/use-nav-counts"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
 // F3.S7 (shell): o sidebar é global (layout raiz) e o UserDropside é pesado —
 // import estático colocava ele no First Load de TODAS as rotas. O chunk baixa
@@ -32,6 +33,18 @@ interface SidebarItem {
   activePath?: string
   matchPrefix?: string
   accent?: boolean
+  /**
+   * Item que aponta para a MESMA página em que talvez já estejamos, mudando só
+   * a querystring. Navegar não resolve (a rota não remonta e a querystring não
+   * é relida), então, quando o caminho atual já é `viewPath`, o clique vira um
+   * PEDIDO para a página (`requestGamesView`) em vez de uma navegação.
+   *
+   * Vindo de outra rota o `href` continua valendo: a página monta e lê o
+   * parâmetro do window, como sempre leu.
+   */
+  view?: GamesView
+  /** Caminho em que o `view` substitui a navegação. */
+  viewPath?: string
 }
 
 const HIDDEN_ON_PATHS = [
@@ -78,13 +91,25 @@ const ITENS_COMUNS: SidebarItem[] = [
  * "Jogo atual" e "Estante" são DEEP-LINKS para a mesma página do ambiente (o
  * painel e a aba que já existem lá), não telas novas: dois lugares desenhando o
  * jogo atual seria a segunda verdade que o painel único veio evitar.
+ *
+ * ⚠️ E é por serem a mesma página que eles precisam do `view`: dentro do
+ * ambiente, o clique não pode ser uma navegação (a rota não remonta e o
+ * parâmetro não é relido — o botão mudava a URL e não fazia nada). Ver o
+ * comentário do `games-shell`. O "Feed" entra na mesma regra: sem ele, quem
+ * abrisse a Estante não teria como voltar pelo dock.
  */
-function buildGamesItems(communityId: string): SidebarItem[] {
+function buildGamesItems(communityId: string, shelfOn: boolean): SidebarItem[] {
   const root = `/comunidades/${communityId}`
   return [
-    { href: root, label: "Feed", icon: Home, activePath: root },
-    { href: `${root}?aba=estante`, label: "Estante", icon: Library },
-    { href: `${root}?painel=jogo`, label: "Jogo atual", icon: Gamepad2 },
+    { href: root, label: "Feed", icon: Home, activePath: root, view: "feed", viewPath: root },
+    // A Estante existe enquanto a conexão de plataforma estiver ligada no
+    // Painel de Controle — é a MESMA condição que faz a aba existir na página.
+    // Sem esta linha, desligar a flag deixaria no dock um botão que abre uma aba
+    // que não está lá: porta pintada, o pior tipo de botão.
+    ...(shelfOn
+      ? ([{ href: `${root}?aba=estante`, label: "Estante", icon: Library, view: "shelf", viewPath: root }] as SidebarItem[])
+      : []),
+    { href: `${root}?painel=jogo`, label: "Jogo atual", icon: Gamepad2, view: "game", viewPath: root },
     { href: `${root}/posts`, label: "Posts games", icon: LayoutGrid, activePath: `${root}/posts` },
     // O JOGO de verdade. Ele é tela cheia e deitada, e o dock se esconde lá
     // dentro (ver HIDDEN_ON_PATHS) — quem sai da partida é o botão da própria
@@ -164,6 +189,9 @@ export function ProfileSidebar() {
   const router = useRouter()
   const active = useActiveContext()
   const gamesShell = useGamesShell()
+  // Mesma flag que a página da comunidade lê para desenhar a aba Estante. Hook
+  // solto (e não dentro de um `&&`) porque hook condicional viola rules-of-hooks.
+  const shelfOn = useFeature("games_conexao")
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [dropsideEverOpened, setDropsideEverOpened] = useState(false)
   const navCounts = useNavCounts()
@@ -226,7 +254,9 @@ export function ProfileSidebar() {
   const isAdmin =
     !!user.is_admin ||
     !!user.roles?.some((r) => r.desc_role === "Administrator")
-  const baseItems: SidebarItem[] = gamesShell ? buildGamesItems(gamesShell.communityId) : bundle.items
+  const baseItems: SidebarItem[] = gamesShell
+    ? buildGamesItems(gamesShell.communityId, shelfOn)
+    : bundle.items
   const items: SidebarItem[] = isAdmin
     ? [
         ...baseItems,
@@ -406,6 +436,18 @@ function ToolbarItemLink({ item, pathname, compact }: ToolbarItemLinkProps) {
       href={item.href}
       aria-label={item.label}
       title={item.label}
+      onClick={(e) => {
+        // Já estamos na página que este item abriria: em vez de navegar (que
+        // não faria nada), pede a vista para ela e acerta a URL sem sair.
+        if (!item.view || !item.viewPath || pathname !== item.viewPath) return
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+        e.preventDefault()
+        requestGamesView(item.view)
+        // `replaceState` e não `router.replace`: só a barra de endereço muda,
+        // para o F5 cair na mesma vista. Uma navegação de verdade re-renderizaria
+        // a árvore inteira para trocar de aba.
+        window.history.replaceState(null, "", item.href)
+      }}
       className={cn(
         "relative flex h-11 items-center gap-3 overflow-hidden rounded-full px-1.5 text-sm font-medium transition-colors",
         active
