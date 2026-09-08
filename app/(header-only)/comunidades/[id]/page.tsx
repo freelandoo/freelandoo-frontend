@@ -37,6 +37,13 @@ const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
   { ssr: false }
 )
+// O fundo animado do ambiente games (WebGPU + reserva em CSS). Por `dynamic`
+// com ssr:false: ele só existe no navegador, e as outras seis modalidades desta
+// mesma casca não carregam o shader à toa.
+const TechBackdrop = dynamic(
+  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  { ssr: false }
+)
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -419,6 +426,21 @@ export default function CommunityDetailPage() {
   }, [community, showShelfTab, isGamesPlatform])
 
   const accent = accentHex(accentDraft)
+
+  // A SOMBRA DURA é a assinatura do tabloide — o deslocamento de 8px que faz o
+  // card parecer papel recortado. Dentro do ambiente games ela vira brilho de
+  // painel: mesma cor, sem o deslocamento. É o único lugar onde a pele precisa
+  // do JavaScript, porque estas duas sombras são `style` inline e CSS só as
+  // alcançaria com !important sobre um seletor de atributo — frágil demais para
+  // uma coisa que muda de valor a cada troca de paleta do líder.
+  const surfaceShadow = useCallback(
+    (color: string, px: number) =>
+      isGamesPlatform
+        ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
+        : `${px}px ${px}px 0 0 ${color}`,
+    [isGamesPlatform]
+  )
+
   const showAsLeaderEdit = isLeader && edit
   const isPrivate = community?.privacy === "private"
   const feedLocked = isPrivate && !isMember
@@ -1050,7 +1072,14 @@ export default function CommunityDetailPage() {
     seasonOn && goal ? scoreLabel(goal.metric, row) : compact(row.score)
 
   return (
-    <div className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
+    // A pele roxa é uma CLASSE no container (`fl-games`, em globals.css) e não
+    // uma troca de cores no arquivo: esta página é uma casca só para sete
+    // modalidades, e mexer nas cores aqui pintaria todas elas de roxo.
+    <div className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isGamesPlatform ? "fl-games" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
+      {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
+          DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
+          headcard cobrir a pilha de pills. */}
+      {isGamesPlatform && <TechBackdrop />}
       {/* Declara o ambiente para o dock global (não desenha nada). */}
       {isGamesPlatform && <GamesShellBeacon communityId={id} />}
       {/* Top bar */}
@@ -1091,7 +1120,7 @@ export default function CommunityDetailPage() {
             escura"). Com o z-0 o banner vira contexto próprio: tudo que estiver
             dentro dele — chip, gradiente, overlay de upload e o que vier depois
             — fica abaixo da linha da foto por construção. */}
-        <div className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${accent}` }}>
+        <div className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: surfaceShadow(accent, 8) }}>
           <div className="relative h-44 md:h-56 bg-[#1D1810]">
             {bannerSrc && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -1235,7 +1264,7 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: `6px 6px 0 0 ${panel === "mural" || panel === "game" ? "#C2410C" : "#1D4ED8"}` }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(panel === "mural" || panel === "game" ? "#C2410C" : "#1D4ED8", 6) }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
                 {panel === "game"

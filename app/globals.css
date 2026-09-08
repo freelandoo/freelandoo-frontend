@@ -696,3 +696,97 @@ body.camera-active { overflow: hidden; }
   color: rgba(245, 241, 232, 0.35);
   pointer-events: none;
 }
+
+/* ============================================================================
+   PLATAFORMA DE GAMES — a pele tecnológica (`.fl-games`)
+   ----------------------------------------------------------------------------
+   Pedido do Alex: "a gente precisa deixar ela mais tecnológica (...) roxa,
+   diferente, ainda que os cantos sejam quadrados, mas ter uma pegada menos
+   tabloide e mais tecnológica lá dentro."
+
+   ⚠️ POR QUE ISTO É UM SKIN E NÃO 227 EDIÇÕES NA PÁGINA.
+   A página da comunidade é UMA casca para sete modalidades (comum, condomínio,
+   bairro, pet, carro, games e a academia ao lado). Trocar as cores no arquivo
+   pintaria TODAS elas; trocar por variável exigiria mexer em 227 chamadas de
+   classe numa tela que nenhum teste enxerga. O skin fica num lugar só, vale
+   apenas dentro de `.fl-games` e, se um dia parar de casar, DEGRADA para o
+   marrom de hoje — nunca para quebrado.
+
+   ⚠️ E POR QUE ELE PRECISA SER MANTIDO: a lista abaixo é FECHADA. Cor de
+   superfície NOVA na página da comunidade tem que ser declarada aqui também,
+   senão aquele bloco fica marrom no meio do roxo. As cores cobertas são as
+   sete da paleta tabloide: canvas, painel, interior, painel fundo, tinta,
+   apagado e a linha.
+
+   O QUE NÃO MUDA: os cantos continuam retos (regra permanente acima) e o
+   amarelo #F2B705 continua sendo o amarelo da Freelandoo — é ele que marca a
+   porta de saída no dock e o botão de publicar. Trocá-lo por roxo apagaria a
+   única coisa que ali ainda diz "isto é a Freelandoo".
+   ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-games .bg-\[\#0b0804\]      { background-color: #0a0616; }
+.fl-games .bg-\[\#0b0804\]\/80  { background-color: rgba(10, 6, 22, 0.8); }
+.fl-games .bg-\[\#0F0C08\]      { background-color: rgba(14, 8, 32, 0.86); }
+.fl-games .bg-\[\#15120E\]      { background-color: rgba(24, 15, 51, 0.78); }
+.fl-games .bg-\[\#15120E\]\/95  { background-color: rgba(24, 15, 51, 0.95); }
+.fl-games .bg-\[\#15120E\]\/60  { background-color: rgba(24, 15, 51, 0.6); }
+.fl-games .bg-\[\#15120E\]\/40  { background-color: rgba(24, 15, 51, 0.4); }
+.fl-games .bg-\[\#1D1810\]      { background-color: rgba(37, 23, 76, 0.72); }
+.fl-games .bg-\[\#241d12\]      { background-color: rgba(52, 33, 106, 0.9); }
+
+/* Tinta ------------------------------------------------------------------- */
+.fl-games .text-\[\#F5F1E8\]     { color: #EDE7FF; }
+.fl-games .text-\[\#F5F1E8\]\/90 { color: rgba(237, 231, 255, 0.9); }
+.fl-games .text-\[\#F5F1E8\]\/85 { color: rgba(237, 231, 255, 0.85); }
+.fl-games .text-\[\#F5F1E8\]\/80 { color: rgba(237, 231, 255, 0.8); }
+.fl-games .text-\[\#F5F1E8\]\/70 { color: rgba(237, 231, 255, 0.7); }
+.fl-games .text-\[\#F5F1E8\]\/40 { color: rgba(237, 231, 255, 0.4); }
+.fl-games .text-\[\#F5F1E8\]\/30 { color: rgba(237, 231, 255, 0.3); }
+.fl-games .text-\[\#9A938A\]     { color: #9E8FD4; }
+.fl-games .text-\[\#9A938A\]\/70 { color: rgba(158, 143, 212, 0.7); }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-games .border-\[\#0B0B0D\]      { border-color: #3B2470; }
+.fl-games .border-\[\#F5F1E8\]\/30  { border-color: rgba(167, 139, 250, 0.45); }
+.fl-games .border-\[\#F5F1E8\]\/25  { border-color: rgba(167, 139, 250, 0.4); }
+.fl-games .border-\[\#F5F1E8\]\/20  { border-color: rgba(167, 139, 250, 0.34); }
+.fl-games .border-\[\#F5F1E8\]\/15  { border-color: rgba(167, 139, 250, 0.28); }
+.fl-games .border-\[\#F5F1E8\]\/12  { border-color: rgba(167, 139, 250, 0.24); }
+.fl-games .border-\[\#F5F1E8\]\/10  { border-color: rgba(167, 139, 250, 0.2); }
+.fl-games .border-\[\#F5F1E8\]\/60  { border-color: rgba(167, 139, 250, 0.6); }
+
+/* O título deixa de gritar como manchete e passa a zumbir como painel: a
+   fonte segue sendo a da casa (Anton), o que muda é o espaçamento e um brilho
+   frio por trás. Trocar a família aqui tiraria a Freelandoo da própria tela. */
+.fl-games .fl-display {
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 24px rgba(139, 92, 246, 0.45);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica
+   reta — é o mesmo chip, sem a piscadela de banca de jornal. */
+.fl-games .-rotate-2,
+.fl-games .-rotate-3 { transform: none; }
+
+/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
+   orgânico do shader. Ele fica montado por baixo do canvas: se a GPU subir, o
+   canvas o cobre; se falhar no meio, ele continua ali e a tela nunca fica
+   preta. Ver components/games/tech-backdrop.tsx. */
+.fl-games-fallback {
+  background-color: #0a0616;
+  background-image:
+    radial-gradient(60% 45% at 22% 18%, rgba(109, 40, 217, 0.42), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(14, 116, 144, 0.28), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(139, 92, 246, 0.30), transparent 70%),
+    repeating-linear-gradient(to right, rgba(167, 139, 250, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(167, 139, 250, 0.05) 0 1px, transparent 1px 64px);
+  animation: fl-games-drift 28s ease-in-out infinite alternate;
+}
+@keyframes fl-games-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-games-fallback { animation: none; }
+}

@@ -31,6 +31,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Gamepad2, ImageOff, Loader2, Lock, Play } from "lucide-react"
 import { PageBackLink } from "@/components/tabloide"
@@ -41,6 +42,13 @@ import { getToken } from "@/lib/auth"
 import { GamesShellBeacon } from "@/components/layout/games-shell"
 import type { FeedPost } from "@/lib/types/portfolio-feed"
 import { accentHex } from "../../_components/community-ui"
+
+// O mesmo fundo da página do ambiente: a vitrine é uma tela DE DENTRO dele, e
+// um fundo diferente aqui faria a pessoa achar que saiu da plataforma.
+const TechBackdrop = dynamic(
+  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  { ssr: false }
+)
 
 type Community = {
   id_profile: string
@@ -116,6 +124,7 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
 
   const accent = accentHex(community?.community_theme?.accent ?? null)
   const backHref = `/comunidades/${communityId}`
+  const inGames = community?.kind === "games"
 
   if (notFound) {
     return (
@@ -129,9 +138,10 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0804] px-5 py-8 md:px-10">
-      <div className="mx-auto max-w-5xl">
-        {community?.kind === "games" && <GamesShellBeacon communityId={communityId} />}
+    <main className={`relative min-h-screen bg-[#0b0804] px-5 py-8 md:px-10 ${inGames ? "fl-games" : ""}`}>
+      {inGames && <TechBackdrop />}
+      <div className="relative mx-auto max-w-5xl">
+        {inGames && <GamesShellBeacon communityId={communityId} />}
         <PageBackLink href={backHref} className="mb-5" />
 
         <header
