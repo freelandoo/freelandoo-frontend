@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Users, Crown, ArrowRight, EyeOff, Eye, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, LayoutGrid } from "lucide-react"
+import { Briefcase, Edit, Instagram, Youtube, Video, Plus, User, ZoomIn, ZoomOut, Trash2, ImageIcon, Upload, Pencil, AlertCircle, CalendarDays, Settings, Crown, ArrowRight, EyeOff, Eye, MessageSquare, BadgeCheck, UserRound, Sparkles, ShieldCheck, LayoutGrid } from "lucide-react"
 import { motion } from "framer-motion"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -125,7 +125,6 @@ export default function PerfilPage() {
   const dataApiOn = useFeature("data_api")
   // Preferências pessoais da seção "Funções" (menu lateral): escondem as
   // entradas correspondentes só da experiência deste usuário.
-  const communitiesFeatOn = useUserFeature("communities")
   const profilesFeatOn = useUserFeature("profiles")
   const agendaFeatOn = useUserFeature("agenda")
   // Toolbar retrátil do headcard (botão de ferramentas — espelha a engrenagem
@@ -1681,12 +1680,12 @@ export default function PerfilPage() {
                   {t("menuProfile", "Perfil")}
                 </DropdownMenuItem>
               )}
-              {communitiesFeatOn && (
-                <DropdownMenuItem onSelect={() => router.push("/comunidades")}>
-                  <Users className="h-4 w-4" />
-                  {t("menuCommunity", "Comunidade")}
-                </DropdownMenuItem>
-              )}
+              {/* "Comunidade" SAIU daqui (pedido do Alex, 2026-09-08): o item
+                  levava à vitrine `/comunidades`, que ficou órfã. Quem abre (ou
+                  cria) a comunidade da pessoa é o pill BUSINESS do headcard —
+                  a mesma porta que já tinha absorvido o item do menu da foto em
+                  2026-09-05. Duas portas para a mesma coisa é como uma delas
+                  para de acompanhar a outra. */}
               {/* "Curso" saiu daqui: cursos agora nascem DENTRO de um perfil
                   pago (regra Alex 2026-07-01). Criar curso é pelo "+" do
                   perfil, não pelo nível do user. */}

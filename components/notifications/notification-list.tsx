@@ -212,7 +212,9 @@ function hrefFor(item: NotificationItem): string {
     case "condo_claim_resolved":
     case "condo_notice_received":
     case "condo_poll_opened":
-      return item.entity_id ? `/comunidades/${item.entity_id}` : "/comunidades"
+      // Sem id não há comunidade a abrir, e a vitrine `/comunidades` está órfã
+      // desde 2026-09-08: cair nela seria dar de volta a porta que foi tirada.
+      return item.entity_id ? `/comunidades/${item.entity_id}` : "/account"
     case "affiliate_commission_released":
       return "/wallet"
     case "subscription_expiring":

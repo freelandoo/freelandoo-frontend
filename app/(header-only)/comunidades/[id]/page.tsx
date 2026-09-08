@@ -208,7 +208,7 @@ export default function CommunityDetailPage() {
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
   const [tab, setTab] = useState<CommunityTab>("feed")
   const router = useRouter()
-  const sitePath = id ? `/comunidades/${id}/site` : "/comunidades"
+  const sitePath = id ? `/comunidades/${id}/site` : "/account"
   // O menu do "+" mora no HEADCARD e a aba fica MUITO abaixo (privacidade,
   // enxame, perfil...). Trocar a aba dali sozinho não muda nada na parte da
   // tela que a pessoa está olhando — parece botão quebrado. Por isso o item
@@ -1096,7 +1096,7 @@ export default function CommunityDetailPage() {
       <div className="min-h-[100dvh] bg-[#0b0804]">
         <div className="mx-auto max-w-md px-5 py-24 text-center">
           <p className="fl-display text-2xl text-[#F5F1E8]">{t("notFound", "Comunidade não encontrada.")}</p>
-          <Link href="/comunidades" className="mt-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-[#F2B705]">
+          <Link href="/account" className="mt-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-[#F2B705]">
             <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
           </Link>
         </div>
@@ -1131,8 +1131,13 @@ export default function CommunityDetailPage() {
       {isGamesPlatform && <GamesShellBeacon communityId={id} />}
       {/* Top bar */}
       <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
-        <Link href="/comunidades" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
-          <ArrowLeft className="h-4 w-4" /> {t("pageTitle", "Comunidades")}
+        {/* ⚠️ VOLTA PARA O PERFIL, não para a vitrine (pedido do Alex,
+            2026-09-08): `/comunidades` ficou órfã, e um "Voltar" apontando para
+            uma página que já não tem porta de entrada seria a única forma de
+            chegar nela — o oposto de orfanar. A comunidade é uma sala DO
+            PERFIL, e é para ele que se volta. */}
+        <Link href="/account" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
+          <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
         {isLeader && (
           <div className="flex items-center gap-2">

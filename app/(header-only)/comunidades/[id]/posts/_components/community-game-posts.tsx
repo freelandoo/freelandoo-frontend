@@ -130,7 +130,7 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
     return (
       <main className="min-h-screen bg-[#0b0804] px-5 py-10 md:px-10">
         <div className="mx-auto max-w-5xl">
-          <PageBackLink href="/comunidades" className="mb-5" />
+          <PageBackLink href="/account" className="mb-5" />
           <p className="text-sm text-[#9A938A]">{t("notFound", "Comunidade não encontrada.")}</p>
         </div>
       </main>

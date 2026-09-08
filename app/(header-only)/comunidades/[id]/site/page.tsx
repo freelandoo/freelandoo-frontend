@@ -91,7 +91,7 @@ export default function CommunitySitePage() {
     <main className="fl-sharp min-h-[100dvh] bg-[#0b0804] px-3 py-4 md:px-6">
       <div className="mx-auto w-full max-w-[1400px]">
         <PageBackLink
-          href={id ? `/comunidades/${id}` : "/comunidades"}
+          href={id ? `/comunidades/${id}` : "/account"}
           label={t("backToCommunity", "Voltar para a comunidade")}
           className="mb-4"
         />
