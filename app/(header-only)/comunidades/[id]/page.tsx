@@ -383,7 +383,11 @@ export default function CommunityDetailPage() {
   // seis portas do site fora da `common`. Aqui ele serve para não OFERECER o
   // que lá seria recusado — a aba e o item do menu somem juntos, porque deixar
   // um dos dois de pé daria uma porta que só falha depois do clique.
-  const kindCanHaveSite = kindHasSite(subjectKind)
+  // ⚠️ LÊ `community?.kind`, e NÃO `subjectKind`: aquele só carrega pet, carro e
+  // games (é o ASSUNTO editável da comunidade) e vale `null` para comum,
+  // condomínio e bairro. Com ele aqui, condomínio e bairro cairiam no default
+  // "common" do predicado e ficariam com a aba Site de pé.
+  const kindCanHaveSite = kindHasSite(community?.kind)
 
   // O líder sempre vê a entrada (é dele que o site nasce); quem visita só a vê
   // quando existe site publicado — comunidade sem site não ganha aba vazia.
