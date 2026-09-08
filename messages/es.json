@@ -4226,13 +4226,17 @@
     "vaquinhaPill": "Vaquita",
     "vaquinhaPillAria": "Abrir mi vaquita",
     "couponPill": "Mi cupón",
-    "couponPillAria": "Mi cupón, extracto y panel de afiliado",
+    "couponPillAria": "Mi cupón, ventas con él y panel de afiliado",
     "marketPill": "Mercado",
     "marketPillAria": "Noticias de mercado, cotizaciones y acciones en alza",
     "headcardHint": "Los botones detrás de la foto abren la vaquita, el cupón y el mercado. El primer toque muestra el nombre; el segundo abre.",
     "kpiTotalReceived": "Total recibido",
     "kpiTotalReceivedHint": "plataforma + tus ingresos",
-    "manualInAccountNote": "Tus ingresos de Vida Financiera también son de la cuenta y siguen en Total recibido."
+    "manualInAccountNote": "Tus ingresos de Vida Financiera también son de la cuenta y siguen en Total recibido.",
+    "vaquinhaEyebrow": "tu objetivo",
+    "couponEyebrow": "a quién referiste",
+    "marketEyebrow": "el mundo ahí fuera",
+    "couponSalesTitle": "Ventas con tu cupón"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

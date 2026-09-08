@@ -220,24 +220,25 @@ export const TOUR_CONFIGS: TourConfig[] = [
     version: 1,
     autoStart: false,
     // Cupom e painel do afiliado moram na Carteira desde que "Meus
-    // Faturamentos" foi absorvido por ela — e, desde 2026-09-04, dentro do
-    // painel do botão de porcentagem (atrás da foto). Com o painel fechado o
-    // alvo não existe e o passo cai no modo centralizado, por isso o texto
-    // diz onde apertar em vez de só apontar.
-    pagePath: ["/wallet"],
+    // Faturamentos" foi absorvido por ela. Em 2026-09-04 eles foram parar
+    // dentro do painel do botão de porcentagem, e o passo caía no modo
+    // centralizado sempre que o painel estava fechado — que era o estado
+    // inicial da tela. Desde 2026-09-08 o botão tem PÁGINA própria, então os
+    // dois alvos existem assim que ela abre.
+    pagePath: ["/wallet/cupom"],
     steps: [
       {
         id: "affiliate-path-coupon",
         target: "[data-tour='account-coupon']",
         title: "Esse é seu cupom",
-        content: "Aperte o botão de porcentagem atrás da sua foto para abrir o cupom. Copie e compartilhe: quando alguém entrar pelo Freelandoo usando ele, você ganha comissão. Se ainda não tem cupom, o botão gera o seu.",
+        content: "Copie e compartilhe: quando alguém entrar pelo Freelandoo usando ele, você ganha comissão. Se ainda não tem cupom, o botão gera o seu.",
         placement: "bottom",
       },
       {
         id: "affiliate-path-panel",
         target: "[data-tour='wallet-affiliate']",
         title: "Painel do Afiliado",
-        content: "No mesmo painel do cupom, abaixo do extrato, você acompanha indicações, comissões pendentes e liberadas, e as regras de saque.",
+        content: "Na mesma página, abaixo das vendas feitas com o seu cupom, você acompanha indicações, comissões pendentes e liberadas, e as regras de saque.",
         placement: "top",
       },
     ],

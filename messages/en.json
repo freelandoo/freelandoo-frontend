@@ -4246,13 +4246,17 @@
     "vaquinhaPill": "Fundraiser",
     "vaquinhaPillAria": "Open my fundraiser",
     "couponPill": "My coupon",
-    "couponPillAria": "My coupon, statement and affiliate panel",
+    "couponPillAria": "My coupon, sales made with it and affiliate panel",
     "marketPill": "Market",
     "marketPillAria": "Market news, quotes and top gainers",
     "headcardHint": "The buttons behind the photo open your fundraiser, your coupon and the market. The first tap shows the name; the second opens it.",
     "kpiTotalReceived": "Total received",
     "kpiTotalReceivedHint": "platform + your income",
-    "manualInAccountNote": "Your Financial Life income is account-wide too and stays in Total received."
+    "manualInAccountNote": "Your Financial Life income is account-wide too and stays in Total received.",
+    "vaquinhaEyebrow": "your goal",
+    "couponEyebrow": "who you referred",
+    "marketEyebrow": "the world out there",
+    "couponSalesTitle": "Sales with your coupon"
   },
   "Polens": {
     "eyebrow": "Polen packages",

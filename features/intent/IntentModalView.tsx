@@ -131,7 +131,10 @@ export function IntentModalView({
     if (!TOUR_PATH_KEYS.has(chosen.path_key)) return
     closeVideo()
     if (chosen.path_key === "affiliate") {
-      beginGuidedTour("affiliate_path", "/account")
+      // O tour do afiliado aponta para o cupom e para o painel do afiliado, que
+      // moram os dois em /wallet/cupom desde 2026-09-08. Levar para /account
+      // deixava os dois passos sem alvo, no modo centralizado.
+      beginGuidedTour("affiliate_path", "/wallet/cupom")
     } else if (chosen.path_key === "explore") {
       beginGuidedTour("explore_path_feed", "/feed")
     }
