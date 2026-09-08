@@ -17,16 +17,20 @@ import { cn } from "@/lib/utils"
 import { Muted, RowsSkeleton, pct, type MarketItem, type NewsItem } from "./wallet-ui"
 
 /**
- * Quantas linhas cada coluna mostra. O backend serve 8 manchetes, 8 cotações e
- * as 8 ações mais negociadas do dia — e as três colunas ficam do mesmo tamanho
- * porque ficam lado a lado.
+ * Quantas linhas cada coluna mostra — e os números são DIFERENTES de propósito,
+ * porque as linhas têm alturas diferentes: a manchete carrega miniatura (~62px)
+ * e a cotação é uma linha de texto (~48px). Com o mesmo número, as três colunas
+ * ficam lado a lado terminando em alturas distintas, que foi o que motivou o
+ * pedido. 9 × 62 ≈ 12 × 48 — as três acabam juntas.
  *
- * ⚠️ É TETO DE LAYOUT, não a régua do conteúdo: QUAIS são os oito é decisão do
- * backend (`STOCKS_LIMIT`/`AWESOME_PAIRS` do MarketService). O teto existe
- * porque front e backend sobem separados — em 2026-09-08 o cache tinha 113
- * ações acumuladas, e sem ele a coluna desenharia as 113 até o Railway subir.
+ * ⚠️ É TETO DE LAYOUT, não a régua do conteúdo: QUAIS são as doze é decisão do
+ * backend (`STOCKS_LIMIT`/`NEWS_LIMIT`/os ranks das cotações no MarketService).
+ * O teto existe porque front e backend sobem separados — em 2026-09-08 o cache
+ * tinha 113 ações acumuladas, e sem ele a coluna desenharia as 113.
  */
-const COLUMN_ROWS = 8
+const NEWS_ROWS = 9
+const QUOTE_ROWS = 12
+const STOCK_ROWS = 12
 
 export function MarketPanel() {
   const tr = useTranslations("Wallet")
@@ -50,9 +54,9 @@ export function MarketPanel() {
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("marketPolitics", "Mercado & política")} icon={<Newspaper className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={COLUMN_ROWS} />
+            <RowsSkeleton n={NEWS_ROWS} />
           ) : data?.news?.length ? (
-            data.news.slice(0, COLUMN_ROWS).map((n) => <NewsRow key={n.id} item={n} />)
+            data.news.slice(0, NEWS_ROWS).map((n) => <NewsRow key={n.id} item={n} />)
           ) : (
             <Muted>{tr("noHeadlines", "Sem manchetes por enquanto.")}</Muted>
           )}
@@ -61,22 +65,22 @@ export function MarketPanel() {
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("quotes", "Cotações")} icon={<LineChart className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={COLUMN_ROWS} />
+            <RowsSkeleton n={QUOTE_ROWS} />
           ) : err || !data?.quotes.length ? (
             <Muted>{tr("noQuotes", "Cotações indisponíveis no momento.")}</Muted>
           ) : (
-            data.quotes.slice(0, COLUMN_ROWS).map((q) => <QuoteRow key={q.symbol} item={q} />)
+            data.quotes.slice(0, QUOTE_ROWS).map((q) => <QuoteRow key={q.symbol} item={q} />)
           )}
         </MarketSection>
       </div>
       <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D]">
         <MarketSection title={tr("stocksUp", "Ações em alta")} icon={<TrendingUp className="h-4 w-4" />}>
           {loading ? (
-            <RowsSkeleton n={COLUMN_ROWS} />
+            <RowsSkeleton n={STOCK_ROWS} />
           ) : err || !data?.stocks.length ? (
             <Muted>{tr("noStocks", "Sem dados de ações no momento.")}</Muted>
           ) : (
-            data.stocks.slice(0, COLUMN_ROWS).map((s) => <QuoteRow key={s.symbol} item={s} />)
+            data.stocks.slice(0, STOCK_ROWS).map((s) => <QuoteRow key={s.symbol} item={s} />)
           )}
         </MarketSection>
       </div>
@@ -97,6 +101,11 @@ function MarketSection({ title, icon, children }: { title: string; icon: ReactNo
 
 function QuoteRow({ item }: { item: MarketItem }) {
   const locale = useLocale()
+  // Variação AUSENTE não é variação ZERO: a open.er-api (último fallback das
+  // moedas) não traz o fechamento anterior, e a linha aparecia com seta de alta
+  // e "+0,00%" — dizendo "não mexeu" quando o certo é "não sei". Sem o número,
+  // a seta some junto.
+  const hasChange = item.change_pct != null && Number.isFinite(Number(item.change_pct))
   const up = (item.change_pct ?? 0) >= 0
   const isPts = item.currency === "pts"
   const small = item.price != null && item.price < 1
@@ -104,10 +113,13 @@ function QuoteRow({ item }: { item: MarketItem }) {
     item.price == null
       ? "—"
       : isPts
-        ? item.price.toLocaleString(locale, { maximumFractionDigits: 0 })
+        ? // Índice é pontuação, não dinheiro: sem símbolo de moeda.
+          item.price.toLocaleString(locale, { maximumFractionDigits: 0 })
         : item.price.toLocaleString(locale, {
             style: "currency",
-            currency: "BRL",
+            // A moeda vem do ITEM: Ouro e Petróleo são cotados em dólar, como o
+            // mundo os cota. Fixar BRL aqui escreveria "R$ 4.397,60" no ouro.
+            currency: item.currency || "BRL",
             minimumFractionDigits: small ? 4 : 2,
             maximumFractionDigits: small ? 4 : 2,
           })
@@ -129,11 +141,13 @@ function QuoteRow({ item }: { item: MarketItem }) {
         <span
           className={cn(
             "flex items-center gap-0.5 text-[10px] font-bold tabular-nums",
-            up ? "text-[#00876B]" : "text-[#9A3412]"
+            !hasChange ? "text-[#6B6457]" : up ? "text-[#00876B]" : "text-[#9A3412]"
           )}
         >
-          {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          {pct(item.change_pct)}
+          {hasChange ? (
+            up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />
+          ) : null}
+          {hasChange ? pct(item.change_pct) : "—"}
         </span>
       </div>
     </div>

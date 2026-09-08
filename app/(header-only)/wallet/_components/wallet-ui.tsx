@@ -27,6 +27,10 @@ export function brl(cents?: number | null, locale = "pt-BR") {
   return ((Number(cents) || 0) / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
 }
 export function pct(n?: number | null) {
+  // `Number(null)` é 0 e passa no isFinite — sem este guard, cotação SEM
+  // variação (a open.er-api não traz o fechamento anterior) era exibida como
+  // "+0,00%", dizendo "não mexeu" quando o certo é "não sei".
+  if (n == null) return "—"
   const v = Number(n)
   if (!Number.isFinite(v)) return "—"
   return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`
