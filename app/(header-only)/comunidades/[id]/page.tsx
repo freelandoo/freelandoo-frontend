@@ -1216,9 +1216,15 @@ export default function CommunityDetailPage() {
               />
             </div>
           )}
-          {/* Entrar/Sair não existe na plataforma de games: ninguém "entra"
-              no espaço de games de outra pessoa — visita. */}
-          {!isLeader && !isGamesPlatform && (
+          {/* ENTRAR não existe na plataforma de games: ninguém "entra" no
+              espaço de games de outra pessoa — visita.
+
+              ⚠️ SAIR, sim. Quem entrou ANTES desta mudança tem uma linha de
+              membresia que continua existindo no banco, e esconder o botão
+              junto com o de entrar trancaria a porta de saída — a única que
+              não pode existir (mesma regra do desconectar do WhatsApp e do
+              gamer). Por isso o gate deixa passar quem JÁ é membro. */}
+          {!isLeader && (!isGamesPlatform || !!myMembership) && (
             <div className="pb-1">
               {myMembership ? (
                 myMembership.role !== "leader" ? (
