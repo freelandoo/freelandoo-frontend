@@ -45,6 +45,17 @@ export function AcademyFeed({
   const [loadingMore, setLoadingMore] = useState(false)
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
 
+  // ⚠️ ESTÁVEIS POR EXIGÊNCIA DO `memo` do `PortfolioPostCard`: arrow inline no
+  // JSX nasce nova a cada render e derruba a comparação, fazendo a lista
+  // inteira de posts re-renderizar a cada estado desta tela.
+  const openPostComments = useCallback((pid: string) => setOpenCommentsFor(pid), [])
+
+  const handleLikeChange = useCallback((pid: string, liked: boolean, likes_count: number | null) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
+    )
+  }, [])
+
   const fetchPosts = useCallback(
     async (reset: boolean, cur?: string | null) => {
       if (reset) setLoading(true)
@@ -96,10 +107,8 @@ export function AcademyFeed({
               post={post}
               filters={FEED_FILTERS}
               commentsCount={post.comments_count ?? 0}
-              onOpenComments={(pid) => setOpenCommentsFor(pid)}
-              onLikeChange={(pid, liked, likes_count) => {
-                setPosts((prev) => prev.map((p) => (p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p)))
-              }}
+              onOpenComments={openPostComments}
+              onLikeChange={handleLikeChange}
             />
           ))}
         </div>

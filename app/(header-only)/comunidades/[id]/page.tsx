@@ -1367,14 +1367,26 @@ export default function CommunityDetailPage() {
       setActionMsg(err instanceof Error ? err.message : t("recadoError", "Não foi possível publicar o recado."))
     } finally { setPostingRecado(false) }
   }
-  const deleteRecado = async (recadoId: number) => {
+  // ⚠️ OS TRÊS HANDLERS DO CARD DO FEED MORAM EM `useCallback`, e isso é
+  // requisito do `memo` do `PortfolioPostCard` — não é estilo. Escritos como
+  // arrow inline no JSX, eles nascem novos a cada render desta página e
+  // derrubam a comparação do memo sozinhos: cada clique num pill voltaria a
+  // reconstruir a lista inteira de posts, que é exatamente o engasgo que o
+  // memo existe para fechar. Prop de função nova para o card entra aqui.
+  const deleteRecado = useCallback(async (recadoId: number) => {
     const token = getToken()
     if (!token) return
     setPosts((prev) => prev.filter((p) => !(p.is_recado && p.recado_id === recadoId)))
     try {
       await fetch(`/api/communities/${id}/recado/${recadoId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
     } catch { /* já removido otimisticamente */ }
-  }
+  }, [id])
+
+  const openPostComments = useCallback((pid: string) => setOpenCommentsFor(pid), [])
+
+  const handleLikeChange = useCallback((pid: string, liked: boolean, likes_count: number | null) => {
+    setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
+  }, [])
 
   if (loading) {
     return (
@@ -2450,10 +2462,8 @@ export default function CommunityDetailPage() {
                               ? `${window.location.origin}/cs/${id}/${currentUserId}/${post.post_id}`
                               : undefined
                           }
-                          onOpenComments={(pid) => setOpenCommentsFor(pid)}
-                          onLikeChange={(pid, liked, likes_count) => {
-                            setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
-                          }}
+                          onOpenComments={openPostComments}
+                          onLikeChange={handleLikeChange}
                         />
                       ))}
                       </div>

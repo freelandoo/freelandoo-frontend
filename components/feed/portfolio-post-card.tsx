@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import { Bookmark, Heart, Send, MessageCircle, MessageSquare, Link2, Check, Sparkles, Flag, Music, Volume2, VolumeX, Users, Trash2, ArrowUpRight, Dumbbell } from "lucide-react"
 import type { FeedFilters, FeedPost, FeedSocialLink } from "@/lib/types/portfolio-feed"
 import { TrackAudio } from "@/components/media/track-audio"
@@ -90,7 +90,24 @@ function LikeTapeSticker() {
   )
 }
 
-export function PortfolioPostCard({ post, filters, onLikeChange, onOpenComments, commentsCount, paged, shareUrlOverride, hideCommunityLink, onDeleteRecado, canDeleteRecado }: PortfolioPostCardProps) {
+/**
+ * ⚠️ O CARD É MEMOIZADO (ver o `memo` no fim do arquivo) — e isso não é
+ * microtimização, é o que impede a tela inteira de repintar a cada clique.
+ *
+ * As páginas que montam o feed (a comunidade, o /feed, o mural da academia)
+ * são componentes ÚNICOS de milhares de linhas com dezenas de `useState`.
+ * Sem `memo`, QUALQUER estado que mude lá em cima — abrir um pill, um aviso,
+ * um "salvando..." — re-renderiza este card inteiro, para CADA post da lista.
+ * Era essa a conta que fazia o spring dos pills engasgar no primeiro quadro:
+ * o segundo clique chama `setPanel`, e a página inteira era reconstruída
+ * exatamente quando a animação começava.
+ *
+ * ⚠️ PARA O MEMO VALER, QUEM MONTA A LISTA PRECISA DE PROPS ESTÁVEIS: função
+ * passada como arrow inline nasce nova a cada render e derruba a comparação
+ * sozinha. Os handlers das páginas moram em `useCallback` por causa disto —
+ * ao acrescentar uma prop de função aqui, envolva-a lá também.
+ */
+function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, commentsCount, paged, shareUrlOverride, hideCommunityLink, onDeleteRecado, canDeleteRecado }: PortfolioPostCardProps) {
   const t = useTranslations("Post")
   const router = useRouter()
   const impressionRef = useImpressionObserver(post.post_id, filters)
@@ -1077,3 +1094,5 @@ function PostCaption({ title, caption, profileLabel, onExpand }: PostCaptionProp
     </div>
   )
 }
+
+export const PortfolioPostCard = memo(PortfolioPostCardImpl)

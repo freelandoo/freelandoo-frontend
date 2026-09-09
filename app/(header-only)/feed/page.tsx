@@ -206,13 +206,29 @@ function FeedPageInner() {
 
   const hasFilters = !!(idMachine || estado || regionId)
 
-  const filtersForEvents: FeedFilters = {
-    id_machine: idMachine,
-    id_category: null,
-    estado,
-    municipio: null,
-    level_min: null,
-  }
+  // ⚠️ ESTÁVEIS POR EXIGÊNCIA DO `memo` do `PortfolioPostCard`: arrow inline no
+  // JSX nasce nova a cada render e derruba a comparação, fazendo a lista
+  // inteira de posts re-renderizar a cada estado desta tela.
+  const filtersForEvents: FeedFilters = useMemo(
+    () => ({
+      id_machine: idMachine,
+      id_category: null,
+      estado,
+      municipio: null,
+      level_min: null,
+    }),
+    [idMachine, estado]
+  )
+
+  const openPostComments = useCallback((postId: string) => setOpenCommentsFor(postId), [])
+
+  const handleLikeChange = useCallback((postId: string, liked: boolean, likes_count: number | null) => {
+    setItems((prev) =>
+      prev.map((p) =>
+        p.post_id === postId ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p
+      )
+    )
+  }, [])
 
   return (
     <div data-tour="feed-root" className="fixed inset-0 z-30 flex flex-col bg-[#0b0804] md:left-[80px]">
@@ -292,20 +308,8 @@ function FeedPageInner() {
                 post={post}
                 filters={filtersForEvents}
                 commentsCount={post.comments_count ?? 0}
-                onOpenComments={(postId) => setOpenCommentsFor(postId)}
-                onLikeChange={(postId, liked, likes_count) => {
-                  setItems((prev) =>
-                    prev.map((p) =>
-                      p.post_id === postId
-                        ? {
-                            ...p,
-                            viewer_has_liked: liked,
-                            likes_count: likes_count ?? p.likes_count,
-                          }
-                        : p
-                    )
-                  )
-                }}
+                onOpenComments={openPostComments}
+                onLikeChange={handleLikeChange}
               />
             ))}
             {loadingMore && hasMore && (
