@@ -156,6 +156,52 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
     return () => observer.disconnect()
   }, [])
 
+  /**
+   * ⚠️ SOLTAR O PLAYER ANTES DE ELE SUMIR — a outra metade de "o vídeo só
+   * nasce perto da tela".
+   *
+   * Desmontar o `<video>` tira o elemento do DOM, mas NÃO devolve o que ele
+   * segurava: um elemento destacado que ainda tem `src` continua com o
+   * decodificador alocado e com o que já baixou em memória, até o coletor de
+   * lixo passar — e não há promessa nenhuma de quando isso acontece. Rolar
+   * para cima e para baixo num feed de clipes vira um ciclo de alocar e
+   * abandonar players, e o preço não aparece no vídeo: aparece como a página
+   * inteira ficando mais lenta QUANTO MAIS ELA É USADA. Era o buraco que
+   * sobrou da entrega de 2026-09-09, que economizou a montagem e esqueceu a
+   * saída.
+   *
+   * `pause()` para o que estiver tocando; tirar o atributo `src` e chamar
+   * `load()` é a forma padrão de mandar o navegador ABORTAR o download
+   * pendente e largar o decodificador na hora.
+   *
+   * ⚠️ O ELEMENTO É CAPTURADO NA VARIÁVEL, e não lido do ref na limpeza. Na
+   * hora em que a limpeza roda o React já desmontou o `<video>` e zerou o
+   * ref: `videoRef.current` seria `null` e este efeito não faria nada —
+   * silenciosamente, que é o pior jeito de errar. Trabalhar sobre o elemento
+   * já destacado é justamente o ponto: é ele que ainda está segurando tudo.
+   *
+   * ⚠️ `removeAttribute` e NÃO `src = ""`: string vazia resolve contra a URL
+   * da página em alguns navegadores e dispara uma requisição para o próprio
+   * HTML — o oposto de abortar.
+   *
+   * Vale também no desmonte do card inteiro (sair da rota, trocar de aba),
+   * porque a limpeza de um efeito roda nos dois casos.
+   */
+  useEffect(() => {
+    if (!near) return
+    const video = videoRef.current
+    if (!video) return
+    return () => {
+      try {
+        video.pause()
+        video.removeAttribute("src")
+        video.load()
+      } catch {
+        /* silencioso: soltar recurso nunca pode derrubar a tela */
+      }
+    }
+  }, [near])
+
   // IntersectionObserver: ≥50% visível → play(); senão pause().
   // ⚠️ Depende de `near`: sem isso o efeito rodaria uma vez, ainda sem
   // `videoRef.current`, sairia pelo early-return e o vídeo nunca tocaria.
@@ -173,6 +219,13 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
           // play() pode rejeitar (autoplay bloqueado mesmo com muted em alguns casos);
           // se falhar e estávamos com som, volta pra mudo e tenta de novo.
           video.play().catch(() => {
+            // ⚠️ PLAYER JÁ SOLTO NÃO CAI PARA MUDO. Quando o card sai da faixa
+            // de 600px, o efeito de release acima dá `pause()` e limpa o
+            // `src` — e isso REJEITA o play que estava pendente, com o mesmo
+            // erro do autoplay bloqueado. Sem esta guarda, a queda para mudo
+            // abaixo dispararia ao ROLAR e desligaria o som que a pessoa tinha
+            // ligado, em todos os vídeos do feed, sem ela ter tocado em nada.
+            if (!video.isConnected) return
             if (!video.muted) {
               video.muted = true
               setGlobalUnmuted(false)

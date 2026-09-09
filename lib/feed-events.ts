@@ -1,6 +1,7 @@
 "use client"
 
 import { getToken } from "@/lib/auth"
+import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { FeedEventType, FeedFilters } from "@/lib/types/portfolio-feed"
 
 const SESSION_KEY = "feed_session_id"
@@ -42,7 +43,26 @@ export async function sendFeedEvent(input: SendFeedEventInput): Promise<void> {
     : undefined
 
   try {
-    await fetch("/api/feed/events", {
+    /**
+     * ⚠️ VAI DIRETO NO RAILWAY, nunca pelo proxy `/api/*` da Vercel — e aqui
+     * isso não é economia de centavos, é a regra da casa aplicada à chamada
+     * MAIS FREQUENTE do feed.
+     *
+     * Esta função não é disparada uma vez por post: o card manda
+     * `content_retention` a cada ~10 segundos EM QUE ESTÁ VISÍVEL
+     * (components/feed/portfolio-post-card.tsx), e nada é agrupado — é um
+     * POST por card, por janela de 10s, mais as impressões e os cliques. Numa
+     * tela com feed cheio são dezenas de requisições por minuto de UMA pessoa,
+     * e o feed é a superfície mais visitada do site.
+     *
+     * Pelo proxy, cada uma dessas cobrava uma invocação/edge request. É a
+     * mesma conta que já tirou de lá o heartbeat de XP, a batida de presença
+     * das plataformas e o chat ao vivo; o CORS do backend já aceita o site.
+     *
+     * O caminho no backend é `/feed/events` — o `/api` era só o prefixo do
+     * rewrite (next.config.mjs), e o backend não tem esse prefixo.
+     */
+    await fetch(`${getPublicBackendUrl()}/feed/events`, {
       method: "POST",
       headers,
       body: JSON.stringify({
