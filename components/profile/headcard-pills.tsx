@@ -114,12 +114,15 @@ const Pill = memo(function Pill({
   open,
   onArm,
   avatarPadClass,
+  animated,
 }: {
   spec: PillSpec
   open: boolean
   /** Recebe a chave para poder ser ESTÁVEL — ver o `armPill` do `PillStack`. */
   onArm: (key: string) => void
   avatarPadClass: string
+  /** Ver a prop homônima do `PillStack`. `false` = zero framer-motion aqui. */
+  animated: boolean
 }) {
   const reduceMotion = useReducedMotion()
   const spring = reduceMotion
@@ -165,18 +168,34 @@ const Pill = memo(function Pill({
         automático; `width` não limita. Tirar esta classe quebra o estado
         fechado em todas as superfícies de uma vez.
       */}
-      <motion.span
-        initial={false}
-        animate={{
-          width: open ? "auto" : 0,
-          opacity: open ? 1 : 0,
-          marginRight: open ? 8 : 0,
-        }}
-        transition={widthSpring}
-        className="min-w-0 overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
-      >
-        {spec.label}
-      </motion.span>
+      {animated ? (
+        <motion.span
+          initial={false}
+          animate={{
+            width: open ? "auto" : 0,
+            opacity: open ? 1 : 0,
+            marginRight: open ? 8 : 0,
+          }}
+          transition={widthSpring}
+          className="min-w-0 overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
+        >
+          {spec.label}
+        </motion.span>
+      ) : (
+        // SEM ANIMAÇÃO: o mesmo desenho, entregue de uma vez. Note que não é
+        // um `motion.span` com duração zero — é um `<span>` comum: o que se
+        // quer medir aqui é uma tela onde o motor de animação NÃO EXISTE.
+        <span
+          style={{
+            width: open ? "auto" : 0,
+            opacity: open ? 1 : 0,
+            marginRight: open ? 8 : 0,
+          }}
+          className="min-w-0 overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
+        >
+          {spec.label}
+        </span>
+      )}
       <Icon className="h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
     </span>
   )
@@ -196,14 +215,24 @@ const Pill = memo(function Pill({
     avatarPadClass
   )
 
+  // A CASCA DO PILL — `motion.div` quando anima, `div` cru quando não.
+  // O deslocamento de 10px ao abrir é o mesmo nos dois; sem animação ele
+  // simplesmente acontece no quadro do clique. O empurrãozinho de hover (7px)
+  // só existe no caminho animado: ele é `whileHover` do framer, e recriá-lo à
+  // mão pediria estado próprio — que é justamente o que este caminho não pode
+  // ter para o teste valer.
+  const Row = animated ? motion.div : "div"
+  const rowProps = animated
+    ? {
+        initial: false as const,
+        animate: { x: open ? 10 : 0 },
+        whileHover: reduceMotion ? undefined : { x: open ? 10 : 7 },
+        transition: spring,
+      }
+    : { style: { transform: `translateX(${open ? 10 : 0}px)` } }
+
   return (
-    <motion.div
-      className="relative"
-      initial={false}
-      animate={{ x: open ? 10 : 0 }}
-      whileHover={reduceMotion ? undefined : { x: open ? 10 : 7 }}
-      transition={spring}
-    >
+    <Row className="relative" {...rowProps}>
       {spec.dot && (
         <span
           className="pointer-events-none absolute right-1 top-1 z-10 h-2.5 w-2.5 border border-[#0B0B0D] bg-[#ff3b30]"
@@ -246,7 +275,7 @@ const Pill = memo(function Pill({
           {body}
         </button>
       )}
-    </motion.div>
+    </Row>
   )
 })
 
@@ -276,10 +305,26 @@ export const PillStack = memo(function PillStack({
   pills,
   avatarPadClass,
   className,
+  animated = true,
 }: {
   pills: PillSpec[]
   avatarPadClass: string
   className?: string
+  /**
+   * ⚠️ TESTE EM CURSO (Alex, 2026-09-09): *"tira toda a animação dos pills do
+   * game, deleta"*. Com `false` a pilha abre e fecha SEM framer-motion nenhum
+   * — nem um `motion` com duração zero: os elementos animados deixam de ser
+   * montados. É o único jeito de responder à pergunta que sobrou, que é se o
+   * engasgo é DA ANIMAÇÃO ou da tela em que ela roda.
+   *
+   * Hoje só a plataforma de games passa `false`. O perfil principal, a
+   * Carteira e a academia seguem animados — e é a comparação entre eles que dá
+   * sentido à medida.
+   *
+   * ⚠️ NÃO É `prefers-reduced-motion`. Aquilo é escolha de quem usa e continua
+   * valendo dentro do caminho animado; isto é escolha da SUPERFÍCIE.
+   */
+  animated?: boolean
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
   // Um aberto por vez: três rótulos abertos ao mesmo tempo viram uma parede de
@@ -323,6 +368,7 @@ export const PillStack = memo(function PillStack({
           // `memo` do `Pill` sozinha, deixando-o de enfeite.
           onArm={armPill}
           avatarPadClass={avatarPadClass}
+          animated={animated}
         />
       ))}
     </div>
