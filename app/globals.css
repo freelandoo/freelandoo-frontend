@@ -1068,3 +1068,38 @@ body.camera-active { overflow: hidden; }
   .fl-pill-row:hover .fl-pill,
   .fl-pill-row:hover .fl-pill-dot { transform: none; }
 }
+
+/* ============================================================================
+   O CARD DO FEED EM LISTA — o que está fora da tela não custa nada
+   ----------------------------------------------------------------------------
+   Depois que os pills viraram peça única e o hover saiu do JavaScript, sobrou
+   a diferença que o Alex vê (2026-09-09): "no principal e no financeiro está
+   muito mais rápido". E ela não está em componente nenhum — está no CONTEÚDO.
+   O perfil mostra uma grade e o Financeiro nasce vazio; a plataforma de games
+   desenha o FEED INTEIRO, todos os posts carregados de uma vez. O custo de
+   estilo, layout e pintura cresce com o tamanho do documento, então a MESMA
+   interação fica mais cara ali — inclusive o hover de um botão lá em cima.
+
+   `content-visibility: auto` faz o navegador PULAR estilo, layout e pintura do
+   que está fora da tela. É virtualização sem reescrever a lista: o DOM
+   continua inteiro (busca da página, âncora e leitor de tela seguem achando o
+   texto), mas o trabalho por quadro passa a ser proporcional ao que se vê.
+
+   ⚠️ SÓ NA VARIANTE DE LISTA. O modo `paged` é um carrossel de tela cheia com
+   `h-full`: ali o card não sai de vista rolando, e o tamanho vem do pai.
+
+   ⚠️ ISTO APLICA CONTENÇÃO DE PINTURA — ou seja, RECORTA o que passar da caixa
+   do card. É seguro AQUI porque as duas variantes de lista já nascem com
+   `overflow-hidden` (o anel de "em alta", que vive fora da caixa do avatar, já
+   era recortado pelo card). Um card novo que precise transbordar — um menu, um
+   balão — não pode usar esta classe: ele teria que abrir por portal.
+
+   ⚠️ `auto` ANTES DO NÚMERO não é enfeite: com a palavra-chave o navegador
+   GUARDA a altura real depois da primeira vez que desenhou o card, e o 720px
+   passa a valer só para o que nunca apareceu. Sem ela, todo card fora da tela
+   mediria 720px e a barra de rolagem pularia enquanto a pessoa rola — o preço
+   clássico de virtualizar errado. */
+.fl-feed-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}

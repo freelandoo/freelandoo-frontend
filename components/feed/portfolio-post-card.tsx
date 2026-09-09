@@ -449,7 +449,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
           "group/post box-border w-full max-w-full overflow-hidden text-[#F5F1E8]",
           paged
             ? "flex h-full min-h-0 flex-col rounded-2xl border border-white/[0.08] bg-zinc-950/80"
-            : "border-b border-[#F5F1E8]/10 bg-[#15120E]"
+            : "fl-feed-card border-b border-[#F5F1E8]/10 bg-[#15120E]"
         )}
         data-post-id={post.post_id}
       >
@@ -517,7 +517,7 @@ function PortfolioPostCardImpl({ post, filters, onLikeChange, onOpenComments, co
         "group/post box-border w-full max-w-full",
         paged
           ? "flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/80 backdrop-blur transition-all duration-300 hover:border-white/15"
-          : "overflow-hidden border-b border-[#F5F1E8]/10 bg-[#15120E] text-[#F5F1E8]"
+          : "fl-feed-card overflow-hidden border-b border-[#F5F1E8]/10 bg-[#15120E] text-[#F5F1E8]"
       )}
       data-post-id={post.post_id}
     >
