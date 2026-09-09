@@ -181,7 +181,32 @@ const Pill = memo(function Pill({
     </span>
   )
 
-  const baseBg = spec.active ? spec.bgHover : spec.bg
+  /**
+   * ⚠️ O HOVER É 100% CSS, SEM UMA LINHA DE JAVASCRIPT — e essa é a correção
+   * que o Alex pediu ("o hover dos botões do game está bem lento PARA
+   * APARECER").
+   *
+   * Aqui havia `onMouseEnter`/`onMouseLeave` do React trocando o
+   * `style.background` na mão, mais um `whileHover` do framer para o
+   * empurrãozinho de 7px. Os dois dependem da THREAD PRINCIPAL: numa página
+   * cheia (a da comunidade carrega o feed inteiro), o evento do mouse entra na
+   * fila atrás do que estiver rodando, e o hover só acende quando chegar a vez
+   * dele. Foi por isso que ele parecia "lento" numa tela e instantâneo em
+   * outra, com o MESMO componente: nada ali era lento — era tardio.
+   *
+   * `:hover` do CSS não passa por fila nenhuma. As duas cores descem como
+   * variáveis (elas são DADO de cada pill, então não cabem numa folha de
+   * estilo), e quem decide qual delas aparece é a `.fl-pill` em globals.css.
+   * O empurrão de 7px foi junto, pela mesma razão.
+   *
+   * ⚠️ `data-pill-open` existe para o CSS saber que, ABERTO, o hover NÃO
+   * empurra mais nada: o deslocamento de 10px do estado aberto já é do framer,
+   * e somar os dois levaria o pill a 17px enquanto o mouse estivesse em cima.
+   */
+  const pillVars = {
+    "--fl-pill-bg": spec.active ? spec.bgHover : spec.bg,
+    "--fl-pill-bg-hover": spec.bgHover,
+  } as React.CSSProperties
 
   // ALTURA FIXA (h-9 = 36px), e não padding: a altura de um pill com padding
   // depende do `line-height` HERDADO do rótulo, que muda conforme a árvore em
@@ -190,23 +215,29 @@ const Pill = memo(function Pill({
   // continuaram escapando por cima. Com h-9, a pilha mede
   // 3 × 36 + 2 × 6 (gap-1.5) = 120px, e a folga dentro da foto é conta fechada.
   // MEXEU AQUI OU NO NÚMERO DE PILLS? Confira PILL_STACK_PX abaixo.
+  // `fl-pill` (globals.css) carrega a cor, o hover e o empurrão — ver acima.
+  // Nada de `transition-colors` aqui: a transição da cor mora lá, curta, junto
+  // da regra que a dispara.
   const className = cn(
-    "flex h-9 w-full shrink-0 items-center border-2 border-[#0B0B0D] pr-3 text-left",
-    "text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition-colors",
+    "fl-pill flex h-9 w-full shrink-0 items-center border-2 border-[#0B0B0D] pr-3 text-left",
+    "text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D]",
     avatarPadClass
   )
 
   return (
     <motion.div
-      className="relative"
+      className="fl-pill-row relative"
+      data-pill-open={open ? "true" : undefined}
       initial={false}
       animate={{ x: open ? 10 : 0 }}
-      whileHover={reduceMotion ? undefined : { x: open ? 10 : 7 }}
       transition={spring}
     >
       {spec.dot && (
+        // ⚠️ A BOLINHA ANDA JUNTO no hover, e por isso ela tem classe própria:
+        // ela é irmã do pill (não filha), então o empurrão dele não a levaria
+        // — e ela ficaria para trás, sozinha, na quina de cima.
         <span
-          className="pointer-events-none absolute right-1 top-1 z-10 h-2.5 w-2.5 border border-[#0B0B0D] bg-[#ff3b30]"
+          className="fl-pill-dot pointer-events-none absolute right-1 top-1 z-10 h-2.5 w-2.5 border border-[#0B0B0D] bg-[#ff3b30]"
           role="status"
           aria-label={spec.dotLabel}
           title={spec.dotLabel}
@@ -225,9 +256,7 @@ const Pill = memo(function Pill({
             }
           }}
           className={className}
-          style={{ background: baseBg }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
+          style={pillVars}
         >
           {body}
         </Link>
@@ -239,9 +268,7 @@ const Pill = memo(function Pill({
           title={spec.ariaLabel}
           onClick={() => (open ? spec.onOpen?.() : onArm(spec.key))}
           className={className}
-          style={{ background: baseBg }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = baseBg)}
+          style={pillVars}
         >
           {body}
         </button>

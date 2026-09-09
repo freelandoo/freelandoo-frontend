@@ -1013,3 +1013,58 @@ body.camera-active { overflow: hidden; }
     repeating-linear-gradient(to right, rgba(var(--fl-skin-glow-rgb), 0.06) 0 1px, transparent 1px 64px),
     repeating-linear-gradient(to bottom, rgba(var(--fl-skin-glow-rgb), 0.045) 0 1px, transparent 1px 64px);
 }
+
+/* ============================================================================
+   OS PILLS RETRÁTEIS DO HEADCARD — a parte que NÃO passa pelo JavaScript
+   ----------------------------------------------------------------------------
+   A peça é `components/profile/headcard-pills.tsx`, e ela serve o perfil
+   principal, a Carteira, a academia e as sete modalidades de comunidade — a
+   MESMA peça, o mesmo spring, as mesmas props. Por isso não existe "o pill do
+   games" e "o pill do perfil": existe um só.
+
+   ⚠️ O QUE MUDA ENTRE AS TELAS É A PÁGINA, NÃO O BOTÃO. O hover vivia em
+   `onMouseEnter`/`onMouseLeave` do React (trocando `style.background` na mão) e
+   em `whileHover` do framer (o empurrão de 7px). Os dois dependem da THREAD
+   PRINCIPAL: numa página cheia — a da comunidade desenha o feed inteiro — o
+   evento do mouse entra na fila atrás do que estiver rodando, e o hover só
+   acende quando chega a vez dele. Daí a queixa do Alex (2026-09-09): "o hover
+   dos botões do game está bem lento PARA APARECER". Nada ali era lento; era
+   TARDIO — e o mesmo componente parecia instantâneo no perfil, que é uma
+   página leve.
+
+   `:hover` do CSS não entra em fila nenhuma. As duas cores descem do
+   componente como variáveis (são dado de cada pill: verde da Carteira, roxo de
+   games, laranja do Fitness), e a decisão de qual aparece é daqui.
+
+   ⚠️ ABERTO, O HOVER NÃO EMPURRA. Os 10px do estado aberto são do framer, que
+   escreve `transform` inline no elemento de fora; o empurrão de 7px é daqui e
+   mora no elemento de dentro. Sem o cancelamento abaixo os dois SOMAM, e o pill
+   aberto andaria mais 7px cada vez que o mouse passasse por cima. */
+.fl-pill {
+  background-color: var(--fl-pill-bg);
+  /* Curta de propósito: hover é resposta, não animação. E só estas duas
+     propriedades — `transition-colors` do Tailwind arrastava borda e cor de
+     texto junto, que aqui nunca mudam. */
+  transition: background-color 90ms linear, transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ⚠️ O GATILHO É A LINHA INTEIRA (`.fl-pill-row`), não o pill. A bolinha
+   vermelha de aviso é IRMÃ do pill, não filha — ela é `absolute` na linha,
+   porque o pill precisa continuar sendo um `<a>`/`<button>` limpo. Se o hover
+   ficasse no pill, ele andaria 7px e a bolinha ficaria para trás, sozinha, na
+   quina de cima. A caixa da linha é a mesma do pill, então passar o mouse numa
+   é passar na outra. */
+.fl-pill-row:hover .fl-pill { background-color: var(--fl-pill-bg-hover); }
+.fl-pill-row:hover .fl-pill,
+.fl-pill-row:hover .fl-pill-dot { transform: translateX(7px); }
+
+.fl-pill-dot { transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+[data-pill-open="true"]:hover .fl-pill,
+[data-pill-open="true"]:hover .fl-pill-dot { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fl-pill, .fl-pill-dot { transition: background-color 90ms linear; }
+  .fl-pill-row:hover .fl-pill,
+  .fl-pill-row:hover .fl-pill-dot { transform: none; }
+}
