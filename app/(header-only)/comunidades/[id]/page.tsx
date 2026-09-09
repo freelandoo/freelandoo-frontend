@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, Gamepad2, UserRound, LayoutGrid,
+  Lock, Globe, PawPrint, Car, Gamepad2, UserRound,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -709,8 +709,11 @@ export default function CommunityDetailPage() {
    * PÁGINA, que é um componente único de milhares de linhas: o `setPanel` de um
    * clique é atualização urgente, então o React reconstrói a árvore inteira de
    * forma SÍNCRONA e bloqueia a thread — exatamente no quadro em que o spring
-   * do pill está começando. Era essa a diferença que fazia só os pills de games
-   * (e os de Perfil/Mural das outras modalidades) engasgarem.
+   * do pill está começando.
+   *
+   * (Os pills de GAMES foram apagados em 2026-09-09 e serão reconstruídos; o
+   * que resta aqui são os de Perfil e Mural das outras modalidades, que abrem
+   * painel do mesmo jeito e portanto continuam precisando disto.)
    *
    * `startTransition` marca a abertura como não-urgente: o React fatia esse
    * render e devolve a thread ao navegador entre os pedaços, então a animação
@@ -728,54 +731,12 @@ export default function CommunityDetailPage() {
   }, [])
 
   const communityPills: PillSpec[] = useMemo(() => {
-    // GAMES: a pilha é outra. O primeiro pill continua LARANJA porque ocupa o
-    // mesmo lugar do Mural — só que ali não há mural. Os DOIS primeiros abrem o
-    // que é DA PESSOA dentro da plataforma (mig 232): o jogo que ela está
-    // jogando e os posts do perfil dela. O terceiro segue sendo o Ranking,
-    // roxo como em toda comunidade.
-    if (isGamesPlatform) {
-      return [
-        {
-          key: "game",
-          icon: Gamepad2,
-          label: t("gamePill", "Jogo atual"),
-          ariaLabel: gamerOwner
-            ? t("gamePillOfAria", "O jogo atual de {who}").replace("{who}", gamerOwnerLabel)
-            : t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
-          bg: "#C2410C",
-          bgHover: "#9A3412",
-          onOpen: () => openPanel("game"),
-          active: panel === "game",
-        },
-        // NAVEGA em vez de abrir painel, pela mesma razão do Ranking: uma
-        // vitrine é uma grade de capas, e grade não cabe embaixo do headcard
-        // sem empurrar o feed para longe outra vez.
-        {
-          key: "gameposts",
-          icon: LayoutGrid,
-          label: t("gamePostsPill", "Posts de games"),
-          ariaLabel: gamerOwner
-            ? t("gamePostsPillOfAria", "Vitrine com os posts de games de {who}").replace("{who}", gamerOwnerLabel)
-            : t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
-          bg: "#0E7490",
-          bgHover: "#155E75",
-          // O contexto atravessa para a vitrine: sem ele a grade abriria nos
-          // posts de quem olha, dentro do games de outra pessoa.
-          href: gamerOwner
-            ? `/comunidades/${id}/posts?de=${encodeURIComponent(gamerOwner.username)}`
-            : `/comunidades/${id}/posts`,
-        },
-        {
-          key: "ranking",
-          icon: Trophy,
-          label: t("rankingPill", "Ranking"),
-          ariaLabel: t("rankingPillAria", "Abrir o ranking completo da comunidade"),
-          bg: "#7E22CE",
-          bgHover: "#6B21A8",
-          href: `/comunidades/${id}/ranking`,
-        },
-      ]
-    }
+    // ⚠️ A PLATAFORMA DE GAMES NÃO TEM PILHA (Alex, 2026-09-09: "deleta os 3").
+    // Os três pills daqui — Jogo atual (laranja), Posts de games (ciano) e
+    // Ranking (roxo) — foram APAGADOS de propósito, para serem reconstruídos
+    // do zero depois. Ver o que ficou sem porta na nota do render, abaixo.
+    if (isGamesPlatform) return []
+
     return [
       {
         key: "profile",
@@ -816,7 +777,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, isGamesPlatform, gamerOwner, gamerOwnerLabel, openPanel])
+  }, [t, panel, id, isGamesPlatform, openPanel])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1647,11 +1608,34 @@ export default function CommunityDetailPage() {
               e a folga é confortável — mas ela veio de h-32 (128px), que já era
               o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
-            <PillStack
-              pills={communityPills}
-              avatarPadClass="pl-32 md:pl-36"
-              className="absolute left-0 top-1/2 -translate-y-1/2"
-            />
+            {/* ⚠️ EM GAMES NÃO HÁ PILHA — os três pills foram APAGADOS
+                (Alex, 2026-09-09: "deleta os 3 (...) vamos construir de novo
+                depois"). Aqui fica só a foto, sem nada atrás dela.
+
+                ⚠️ O QUE FICOU SEM PORTA, e é o que a reconstrução precisa
+                resolver:
+
+                 - RANKING da plataforma: NÃO existe outro caminho. O dock de
+                   games (`buildGamesItems`, em components/layout/profile-
+                   sidebar.tsx) tem Feed, Estante, Jogo atual, Posts games e
+                   Game — Ranking não está lá. A página
+                   `/comunidades/<id>/ranking` continua no ar; o que sumiu foi
+                   o botão.
+                 - JOGO ATUAL e POSTS DE GAMES continuam alcançáveis pelo dock
+                   (o primeiro pede o painel pelo beacon, o segundo navega). É
+                   por isso que o painel `game` desta página FICA de pé: ele não
+                   é resquício do pill, é o destino do item do dock.
+
+                A pilha das OUTRAS modalidades (Perfil, Mural e Ranking de
+                comunidade comum, condomínio, bairro, pet e carro) segue
+                intacta — o pedido foi sobre os três de games. */}
+            {!isGamesPlatform && (
+              <PillStack
+                pills={communityPills}
+                avatarPadClass="pl-32 md:pl-36"
+                className="absolute left-0 top-1/2 -translate-y-1/2"
+              />
+            )}
             {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex:
                 "deixa todos os cards das fotos na mesma proporção do
                 principal"). A LARGURA não mudou (w-32/w-36), e é por isso que
