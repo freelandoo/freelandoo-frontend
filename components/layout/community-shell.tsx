@@ -141,6 +141,17 @@ export type Shell = {
    * mistura modalidade, papel e flag, e mora na página (`canBuildSite`).
    */
   canBuildSite: boolean
+  /**
+   * O @username do dono do recorte, quando se está visitando o games de
+   * alguém. O dock precisa saber pelo mesmo motivo que precisa do
+   * `canBuildSite`: ele não tem como descobrir — a resposta chega por
+   * querystring numa rota que ele não lê —, e sem ela o item "Posts games"
+   * navegaria para os posts de QUEM OLHA de dentro do games de outra pessoa,
+   * enquanto o pill ciano ao lado abre os dela. Os outros itens do ambiente
+   * não precisam: "Estante" e "Jogo atual" não navegam, pedem a vista à
+   * página que já está no contexto.
+   */
+  gamerContext?: string | null
 }
 
 /** Beacons vivos, por token de instância. O ambiente é o último a entrar. */
@@ -153,7 +164,10 @@ const listeners = new Set<() => void>()
 function same(a: Shell | null, b: Shell | null) {
   if (!a || !b) return a === b
   return (
-    a.communityId === b.communityId && a.kind === b.kind && a.canBuildSite === b.canBuildSite
+    a.communityId === b.communityId &&
+    a.kind === b.kind &&
+    a.canBuildSite === b.canBuildSite &&
+    (a.gamerContext ?? null) === (b.gamerContext ?? null)
   )
 }
 
@@ -209,19 +223,21 @@ export function CommunityShellBeacon({
   communityId,
   kind,
   canBuildSite = false,
+  gamerContext = null,
 }: {
   communityId: string
   kind: ShellKind
   canBuildSite?: boolean
+  gamerContext?: string | null
 }) {
   useEffect(() => {
     const id = ++token
-    mounted.set(id, { communityId, kind, canBuildSite })
+    mounted.set(id, { communityId, kind, canBuildSite, gamerContext })
     recompute()
     return () => {
       mounted.delete(id)
       recompute()
     }
-  }, [communityId, kind, canBuildSite])
+  }, [communityId, kind, canBuildSite, gamerContext])
   return null
 }

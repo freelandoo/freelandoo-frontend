@@ -1529,7 +1529,8 @@
     "mgmtBadgeAccount": "Your account",
     "mySocialsLabel": "My socials",
     "businessPill": "Business",
-    "openGamesPlatformAria": "Open the games platform"
+    "openGamesPlatformAria": "Open the games platform",
+    "openGamesOfAria": "See {who}'s games"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -2747,7 +2748,14 @@
     "myGamePillAria": "Your current game: platform, title and handle",
     "myGamePostsPillAria": "Showcase with your games posts",
     "gamePostsEmptyMine": "You haven't posted anything here yet.",
-    "gamePostsSignedOut": "Sign in to see your games posts."
+    "gamePostsSignedOut": "Sign in to see your games posts.",
+    "gamePillOfAria": "{who}'s current game",
+    "gamePostsPillOfAria": "Showcase with {who}'s games posts",
+    "gameUntitled": "Untitled",
+    "gameEmptyOther": "{who} hasn't said what they're playing yet.",
+    "backToMyGames": "See my games",
+    "gamePostsTitleOf": "{who}'s posts",
+    "gamePostsEmptyOther": "{who} hasn't posted anything here yet."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -6236,7 +6244,9 @@
     "xboxReason": "The open API is paid and does not report played hours",
     "playstationReason": "Sony does not open a public API",
     "nintendoReason": "Nintendo does not open a public API",
-    "shelfSignedOut": "Sign in to see and connect your shelf."
+    "shelfSignedOut": "Sign in to see and connect your shelf.",
+    "shelfEmptyOther": "{who} has no games to show here yet.",
+    "thisPerson": "This person"
   },
   "SiteBooking": {
     "back": "Back to site",

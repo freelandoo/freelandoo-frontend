@@ -110,8 +110,16 @@ const ITENS_COMUNS: SidebarItem[] = [
  * comentário do `games-shell`. O "Feed" entra na mesma regra: sem ele, quem
  * abrisse a Estante não teria como voltar pelo dock.
  */
-function buildGamesItems(communityId: string, shelfOn: boolean): SidebarItem[] {
+function buildGamesItems(communityId: string, shelfOn: boolean, gamerContext?: string | null): SidebarItem[] {
   const root = `/comunidades/${communityId}`
+  // ⚠️ SÓ O "POSTS GAMES" PRECISA DO CONTEXTO, porque ele é o único que NAVEGA
+  // de verdade. "Estante" e "Jogo atual" pedem a vista à página que já está no
+  // contexto (a URL, com o `?de=`, nem muda). Sem isto, apertar Posts dentro do
+  // games de alguém abriria os posts de quem olha — e o pill ciano da mesma
+  // tela abriria os dela: dois botões vizinhos discordando.
+  const postsHref = gamerContext
+    ? `${root}/posts?de=${encodeURIComponent(gamerContext)}`
+    : `${root}/posts`
   return [
     { href: root, label: "Feed", icon: Home, activePath: root, view: "feed", viewPath: root },
     // A Estante existe enquanto a conexão de plataforma estiver ligada no
@@ -122,7 +130,7 @@ function buildGamesItems(communityId: string, shelfOn: boolean): SidebarItem[] {
       ? ([{ href: `${root}?aba=estante`, label: "Estante", icon: Library, view: "shelf", viewPath: root }] as SidebarItem[])
       : []),
     { href: `${root}?painel=jogo`, label: "Jogo atual", icon: Gamepad2, view: "game", viewPath: root },
-    { href: `${root}/posts`, label: "Posts games", icon: LayoutGrid, activePath: `${root}/posts` },
+    { href: postsHref, label: "Posts games", icon: LayoutGrid, activePath: `${root}/posts` },
     // O JOGO de verdade. Ele é tela cheia e deitada, e o dock se esconde lá
     // dentro (ver HIDDEN_ON_PATHS) — quem sai da partida é o botão da própria
     // build Godot.
@@ -307,7 +315,7 @@ export function ProfileSidebar() {
   // — que é exatamente o que o ambiente troca.
   const shellItems = (s: Shell): SidebarItem[] =>
     s.kind === "games"
-      ? buildGamesItems(s.communityId, shelfOn)
+      ? buildGamesItems(s.communityId, shelfOn, s.gamerContext)
       : buildBusinessItems(s.communityId, s.canBuildSite)
 
   const baseItems: SidebarItem[] = shell ? shellItems(shell) : bundle.items

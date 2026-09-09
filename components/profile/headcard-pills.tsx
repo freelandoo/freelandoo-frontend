@@ -270,9 +270,22 @@ export function PillStack({
 export function HeadcardPills({
   avatarPadClass = "pl-28 md:pl-32",
   className,
+  visitorOf = null,
 }: {
   avatarPadClass?: string
   className?: string
+  /**
+   * O @username do dono do perfil que se está VISITANDO. Presente, a pilha
+   * vira uma só: o pill de Games, levando à plataforma com o contexto DELE.
+   *
+   * ⚠️ É a MESMA peça de propósito, e não um botão novo ao lado. Os outros
+   * pills (Business, Carteira, Fitness) são da CONTA de quem olha e não têm
+   * o que mostrar no perfil alheio; games é o único que tem, porque a
+   * plataforma é de todos e o que está dentro dela é de cada um. Um segundo
+   * componente ganharia uma cor, um ícone ou uma correção só de um lado — foi
+   * assim que a foto de perfil sumiu de uma das superfícies.
+   */
+  visitorOf?: string | null
 }) {
   const t = useTranslations("Account")
   const router = useRouter()
@@ -356,7 +369,12 @@ export function HeadcardPills({
       const res = await fetch("/api/games/platform", { headers: { Authorization: `Bearer ${token}` } })
       const body = await res.json().catch(() => null)
       if (res.ok && body?.community?.id_profile) {
-        router.push(`/comunidades/${body.community.id_profile}`)
+        // O DONO DO CONTEXTO viaja na URL, e por @username: é o que cabe numa
+        // mensagem ("olha o meu games") e é como a página vai reabrir no F5.
+        // Sem ele a plataforma abre no recorte de quem está olhando, que é o
+        // comportamento de sempre e continua sendo o certo pelo próprio pill.
+        const q = visitorOf ? `?de=${encodeURIComponent(visitorOf.replace(/^@/, ""))}` : ""
+        router.push(`/comunidades/${body.community.id_profile}${q}`)
         return
       }
       // A recusa aqui é o kill-switch da flag `games`, e ela vem escrita.
@@ -367,14 +385,35 @@ export function HeadcardPills({
     } finally {
       setGoing(null)
     }
-  }, [going, router])
+  }, [going, router, visitorOf])
 
   const pills: PillSpec[] = []
+
+  // ⚠️ VISITANTE: a pilha é UM pill só. Os de baixo (Business, Carteira,
+  // Fitness) abrem coisas da CONTA de quem olha — oferecê-los pendurados na
+  // foto de outra pessoa diria que são dela. Games é a exceção porque a
+  // plataforma não é de ninguém: o pill leva ao recorte do dono do perfil.
+  const gamesSpec: PillSpec = {
+    key: "games",
+    icon: Gamepad2,
+    label: t("gamesPill", "Games"),
+    ariaLabel: visitorOf
+      ? t("openGamesOfAria", "Ver o games de {who}").replace("{who}", `@${visitorOf.replace(/^@/, "")}`)
+      : t("openGamesPlatformAria", "Abrir a plataforma de games"),
+    bg: "#6D28D9",
+    bgHover: "#5B21B6",
+    onOpen: openGamesPlatform,
+  }
+
+  // Um RETURN só para os dois papéis: a pilha do visitante é a mesma peça com
+  // um item, e não um caminho paralelo. Separados, o posicionamento (que é
+  // absoluto e centrado na foto) precisaria estar escrito duas vezes.
+  const visiting = !!visitorOf
 
   // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
   // SAIU do menu da foto de perfil (pedido do Alex, 2026-09-05) — lá ela era um
   // item entre pet, carro, condomínio e rua; aqui ela tem botão próprio.
-  if (communitiesOn) {
+  if (!visiting && communitiesOn) {
     pills.push({
       key: "business",
       icon: Star,
@@ -391,18 +430,10 @@ export function HeadcardPills({
   // é a porta da PLATAFORMA — a mesma para todo mundo —, e continua sendo o
   // único caminho até o ambiente (o Monsters saiu da barra principal).
   if (gamesFlag) {
-    pills.push({
-      key: "games",
-      icon: Gamepad2,
-      label: t("gamesPill", "Games"),
-      ariaLabel: t("openGamesPlatformAria", "Abrir a plataforma de games"),
-      bg: "#6D28D9",
-      bgHover: "#5B21B6",
-      onOpen: openGamesPlatform,
-    })
+    pills.push(gamesSpec)
   }
 
-  if (walletOn) {
+  if (!visiting && walletOn) {
     pills.push({
       key: "wallet",
       icon: DollarSign,
@@ -414,7 +445,7 @@ export function HeadcardPills({
     })
   }
 
-  if (academyFlag && fitnessPref) {
+  if (!visiting && academyFlag && fitnessPref) {
     pills.push({
       key: "fitness",
       icon: Dumbbell,

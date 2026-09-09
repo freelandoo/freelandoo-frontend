@@ -278,6 +278,24 @@ export default function CommunityDetailPage() {
     gamertag?: string | null
   } | null>(null)
   const [savingGame, setSavingGame] = useState(false)
+  /**
+   * ⚠️ O DONO DO CONTEXTO — quem é a pessoa cujo games você está vendo.
+   *
+   * Games é UMA casa (mig 232): o feed é público e comunitário, e o nome, a
+   * foto e as cores são do admin. Mas o que está DENTRO dela é de cada um, e
+   * até aqui só havia um recorte possível: o de quem estava logado. Entrar
+   * pelo perfil de alguém (`?de=@fulano`) troca esse recorte — estante, jogo
+   * atual e vitrine de posts passam a ser os DELE.
+   *
+   * `null` = sem contexto: a plataforma abre no recorte de quem olha, que é o
+   * comportamento de sempre e continua sendo o certo pelo pill do próprio
+   * perfil e pelo dock.
+   */
+  const [gamesCtx, setGamesCtx] = useState<{
+    owner: { id_user: string; username: string; name?: string | null; avatar_url?: string | null }
+    subject: { platform?: string | null; game_title?: string | null; gamertag?: string | null } | null
+    is_me: boolean
+  } | null>(null)
   const [carDraft, setCarDraft] = useState({ brand_code: "", model_code: "" })
   const [breeds, setBreeds] = useState<{ id_breed: number; slug: string; label: string }[]>([])
   const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
@@ -394,6 +412,24 @@ export default function CommunityDetailPage() {
   // esquecesse voltaria a oferecer a porta de entrar — e porta pintada é pior
   // que porta nenhuma.
   const isGamesPlatform = subjectKind === "games"
+
+  /**
+   * ⚠️ O PREDICADO DO CONTEXTO É UM SÓ, e é ele que troca a METADE PESSOAL da
+   * tela: cabeçalho, estante, jogo atual e vitrine de posts. Escrito em cada
+   * lugar (`gamesCtx && !gamesCtx.is_me` solto), o que esquecesse mostraria o
+   * recorte de quem olha dentro do games de outra pessoa — e sem erro nenhum.
+   *
+   * A METADE DA CASA NÃO PASSA POR AQUI: banner, cores, chip do ambiente e o
+   * feed continuam sendo da plataforma, para todo mundo. Visitar o games de
+   * alguém não é entrar num espaço dele — ele não tem um; é olhar o recorte
+   * dele dentro da casa que é de todos.
+   *
+   * `is_me` vem do SERVIDOR: comparar ids carregados de duas origens no front
+   * abriria o "Salvar" do jogo de um sobre a linha de outro no dia em que
+   * discordassem.
+   */
+  const gamerOwner = isGamesPlatform && gamesCtx && !gamesCtx.is_me ? gamesCtx.owner : null
+  const gamerOwnerLabel = gamerOwner ? gamerOwner.name || `@${gamerOwner.username}` : ""
 
   // As plataformas do assunto, num lugar só: os chips que o dono aperta e o
   // rótulo que quem visita lê saem DAQUI. Escritas duas vezes, "playstation"
@@ -677,7 +713,9 @@ export default function CommunityDetailPage() {
           key: "game",
           icon: Gamepad2,
           label: t("gamePill", "Jogo atual"),
-          ariaLabel: t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
+          ariaLabel: gamerOwner
+            ? t("gamePillOfAria", "O jogo atual de {who}").replace("{who}", gamerOwnerLabel)
+            : t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
           bg: "#C2410C",
           bgHover: "#9A3412",
           onOpen: () => setPanel((p) => (p === "game" ? null : "game")),
@@ -690,10 +728,16 @@ export default function CommunityDetailPage() {
           key: "gameposts",
           icon: LayoutGrid,
           label: t("gamePostsPill", "Posts de games"),
-          ariaLabel: t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
+          ariaLabel: gamerOwner
+            ? t("gamePostsPillOfAria", "Vitrine com os posts de games de {who}").replace("{who}", gamerOwnerLabel)
+            : t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
           bg: "#0E7490",
           bgHover: "#155E75",
-          href: `/comunidades/${id}/posts`,
+          // O contexto atravessa para a vitrine: sem ele a grade abriria nos
+          // posts de quem olha, dentro do games de outra pessoa.
+          href: gamerOwner
+            ? `/comunidades/${id}/posts?de=${encodeURIComponent(gamerOwner.username)}`
+            : `/comunidades/${id}/posts`,
         },
         {
           key: "ranking",
@@ -746,7 +790,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, isGamesPlatform])
+  }, [t, panel, id, isGamesPlatform, gamerOwner, gamerOwnerLabel])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -910,11 +954,51 @@ export default function CommunityDetailPage() {
     }
   }, [community?.subject])
 
+  /**
+   * ⚠️ QUEM É O DONO DO RECORTE — lido do WINDOW, UMA vez.
+   *
+   * `useSearchParams` obriga Suspense e tira a rota do pré-render (o build já
+   * quebrou exatamente assim com `?tipo=condo`), e reler a cada render faria a
+   * página voltar ao contexto de origem sempre que qualquer estado mudasse.
+   *
+   * Uma requisição resolve as três coisas de que a tela precisa: quem é a
+   * pessoa (para o cabeçalho), o que ela joga, e o `id_user` — que é o que a
+   * estante e a vitrine de posts usam depois. Endereçado por @username porque
+   * é o que cabe numa URL que alguém manda por mensagem.
+   *
+   * Falhou (perfil apagado, @ trocado, flag desligada)? Fica em `null` e a
+   * plataforma abre no recorte de quem olha. Uma tela de erro aqui trocaria um
+   * contexto perdido por uma parede — e a plataforma continua inteira sem ele.
+   */
+  const ctxDone = useRef(false)
+  useEffect(() => {
+    if (!isGamesPlatform || ctxDone.current) return
+    ctxDone.current = true
+    const who = new URLSearchParams(window.location.search).get("de")
+    if (!who) return
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    fetch(`/api/gamer/profile/${encodeURIComponent(who.replace(/^@/, ""))}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!alive || !data?.owner?.id_user) return
+        setGamesCtx(data)
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [isGamesPlatform])
+
   // ⚠️ É O ÚNICO PEDIDO DA PÁGINA QUE NÃO DEPENDE DE EDIÇÃO: o jogo atual é
-  // conteúdo (o que EU jogo), e quem visita a plataforma vê o seu próprio.
-  // Sem sessão não há o que buscar — a rota é autenticada.
+  // conteúdo (o que a pessoa joga). SEM contexto ele é o de quem olha; com
+  // contexto de OUTRA pessoa ele já veio junto do cabeçalho, e buscá-lo de
+  // novo aqui traria o de quem olha por cima do dela — o bug clássico de duas
+  // fontes para o mesmo campo. Sem sessão não há o que buscar (rota autenticada).
   useEffect(() => {
     if (!isGamesPlatform || !currentUserId) { setMyGame(null); return }
+    if (gamesCtx && !gamesCtx.is_me) { setMyGame(gamesCtx.subject); return }
     const token = getToken()
     if (!token) return
     let alive = true
@@ -932,7 +1016,7 @@ export default function CommunityDetailPage() {
       })
       .catch(() => {})
     return () => { alive = false }
-  }, [isGamesPlatform, currentUserId])
+  }, [isGamesPlatform, currentUserId, gamesCtx])
 
   useEffect(() => {
     if (!showAsLeaderEdit || subjectKind !== "pet") return
@@ -1314,7 +1398,11 @@ export default function CommunityDetailPage() {
   }
 
   const bannerSrc = bannerPreview || community.banner_url
-  const avatarSrc = avatarPreview || community.avatar_url
+  // ⚠️ A FOTO É DA PESSOA quando se visita o games dela (decisão do Alex,
+  // 2026-09-09) — o rosto do cabeçalho diz de quem é o recorte que está na
+  // tela. O BANNER e as CORES continuam os da casa: eles são a identidade do
+  // ambiente, e trocá-los faria a plataforma parecer sete plataformas.
+  const avatarSrc = gamerOwner ? gamerOwner.avatar_url || null : avatarPreview || community.avatar_url
 
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
@@ -1354,7 +1442,15 @@ export default function CommunityDetailPage() {
           quem olha é só o item do Site (`showSiteEntry`, que some junto da
           aba quando o líder aperta "Ver como público"). */}
       {shellKind && (
-        <CommunityShellBeacon communityId={id} kind={shellKind} canBuildSite={showSiteEntry} />
+        <CommunityShellBeacon
+          communityId={id}
+          kind={shellKind}
+          canBuildSite={showSiteEntry}
+          // O dock precisa saber em QUE recorte a tela está: o item "Posts
+          // games" é o único que navega, e sem o contexto ele sairia para os
+          // posts de quem olha.
+          gamerContext={gamerOwner?.username ?? null}
+        />
       )}
       {/* Top bar */}
       <div className="relative z-10 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 pt-6 md:px-10">
@@ -1366,6 +1462,20 @@ export default function CommunityDetailPage() {
         <Link href="/account" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
+        {/* ⚠️ A SAÍDA DO CONTEXTO. Sem ela quem entra no games de alguém fica
+            preso nele: o "Voltar" leva ao perfil, e o pill roxo do headcard
+            está a duas telas de distância. É a MESMA página, sem o `?de=` —
+            uma navegação de verdade (e não replaceState) porque o contexto é
+            lido uma vez, na montagem. */}
+        {gamerOwner && (
+          <Link
+            href={`/comunidades/${id}`}
+            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
+          >
+            <Gamepad2 className="h-4 w-4" style={{ color: accent }} />
+            {t("backToMyGames", "Ver o meu games")}
+          </Link>
+        )}
         {canAdminister && (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {edit && (
@@ -1486,7 +1596,9 @@ export default function CommunityDetailPage() {
               <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
                 className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
             ) : (
-              <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">{community.display_name}</h1>
+              <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+                {gamerOwner ? gamerOwnerLabel : community.display_name}
+              </h1>
             )}
           </div>
           {/* Publicar: quadrado amarelo com "+" no PRÓPRIO headcard (não há
@@ -1654,7 +1766,30 @@ export default function CommunityDetailPage() {
                 para quem não administra. */}
             {panel === "game" && (
               <div className="space-y-4 p-4 md:p-5">
-                {currentUserId ? (
+                {/* ⚠️ O JOGO DE OUTRA PESSOA É LEITURA. O mesmo painel serve os
+                    dois papéis (quem visita LÊ o que o dono ESCOLHE), como já
+                    acontece no painel de Perfil das outras modalidades — dois
+                    painéis divergiriam no primeiro campo novo. O que sai aqui
+                    é o Salvar e os campos: eles escrevem em `/games/current`,
+                    que grava pela chave do TOKEN — deixá-los de pé faria a
+                    pessoa editar o próprio jogo achando que mexe no dela. */}
+                {gamerOwner ? (
+                  myGame?.game_title || myGame?.platform || myGame?.gamertag ? (
+                    <div className="space-y-2">
+                      <p className="fl-display text-2xl leading-none text-[#F5F1E8]">
+                        {myGame.game_title || t("gameUntitled", "Sem título")}
+                      </p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
+                        {[platformLabel(myGame.platform), myGame.gamertag].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#9A938A]">
+                      {t("gameEmptyOther", "{who} ainda não disse o que está jogando.")
+                        .replace("{who}", gamerOwnerLabel)}
+                    </p>
+                  )
+                ) : currentUserId ? (
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
                       {gamePlatforms.map(([key, label]) => (
@@ -2135,7 +2270,16 @@ export default function CommunityDetailPage() {
                 // plataforma não tem dono, e a biblioteca é dado da PESSOA
                 // (`tb_user_game_account.id_user`). O componente resolve o dono
                 // pelo token — daí a única pergunta que sobra ser se há sessão.
-                <GamerShelf signedIn={!!currentUserId} accent={accent} />
+                <GamerShelf
+                  signedIn={!!currentUserId}
+                  accent={accent}
+                  // Visitando, a estante é a DELE — e a privacidade dela é
+                  // checada no backend (estante fechada volta `locked`, com a
+                  // mesma resposta de "não conectou nada", para não entregar a
+                  // escolha de quem fechou).
+                  ownerUserId={gamerOwner?.id_user ?? null}
+                  ownerName={gamerOwner?.username ?? null}
+                />
               ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">

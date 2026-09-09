@@ -21,11 +21,16 @@
  *
  * ⚠️ O QUE MUDA NA PLATAFORMA (mig 232) É O RECORTE, e não a fonte. Games
  * deixou de ser o espaço de uma pessoa: o FEED lá dentro é de todo mundo. Mas
- * esta página é a dos "meus posts" — "o feed é da plataforma; a estante, o
- * jogo atual e os posts são do perfil do usuário" (Alex, 2026-09-09) —, então
- * ela pede a MESMA porta com `author=me`. O backend lê esse "me" do TOKEN, e
- * nunca um id da querystring: aceitar um id ali daria a qualquer um uma
- * listagem por autor dentro de uma comunidade fechada.
+ * esta página é a dos posts DE UMA PESSOA — "o feed é da plataforma; a
+ * estante, o jogo atual e os posts são do perfil do usuário" (Alex,
+ * 2026-09-09) —, então ela pede a MESMA porta com um recorte de autor.
+ *
+ * ⚠️ SÃO DOIS REGIMES, E A DIFERENÇA É DE SEGURANÇA. Sem contexto o recorte é
+ * `author=me`, que o backend lê do TOKEN. Com `?de=@fulano` ele é o id_user
+ * dele — e o backend só aceita um id explícito quando a comunidade é
+ * PLATAFORMA, onde ninguém entra e o feed já é público. Numa comunidade
+ * FECHADA um id aqui daria a qualquer um uma listagem por autor de dentro de
+ * um lugar em que ele não entrou, e lá o parâmetro é ignorado.
  *
  * ─── A RECUSA É DITA EM VOZ ALTA ─────────────────────────────────────────────
  *
@@ -79,15 +84,46 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => { setSignedIn(!!getToken()) }, [])
 
+  /**
+   * O DONO DO RECORTE, resolvido do `?de=@fulano` que o pill trouxe.
+   *
+   * Lido do WINDOW e uma vez só, pela mesma razão de sempre:
+   * `useSearchParams` obriga Suspense e tira a rota do pré-render.
+   *
+   * `undefined` = ainda resolvendo (a grade espera, senão ela buscaria os
+   * posts de quem olha e depois trocaria por baixo); `null` = sem contexto,
+   * que é a vitrine própria.
+   */
+  const [owner, setOwner] = useState<{ id_user: string; username: string; name?: string | null } | null | undefined>(undefined)
+  useEffect(() => {
+    const who = new URLSearchParams(window.location.search).get("de")
+    if (!who) { setOwner(null); return }
+    const token = getToken()
+    if (!token) { setOwner(null); return }
+    let alive = true
+    fetch(`/api/gamer/profile/${encodeURIComponent(who.replace(/^@/, ""))}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive) return
+        // Contexto que não resolve cai na vitrine própria, nunca numa parede:
+        // a página continua inteira sem ele.
+        setOwner(d?.owner?.id_user && !d?.is_me ? d.owner : null)
+      })
+      .catch(() => { if (alive) setOwner(null) })
+    return () => { alive = false }
+  }, [])
+
   const fetchPosts = useCallback(
     async (reset: boolean, from?: string | null) => {
       if (reset) setLoading(true)
       else setLoadingMore(true)
       try {
-        // `author=me` é o que torna esta grade a vitrine DO PERFIL dentro da
+        // O recorte é o que torna esta grade a vitrine DE UM PERFIL dentro da
         // plataforma. Sem sessão não há "me" — e é por isso que o vazio de quem
         // não entrou diz para entrar, em vez de "ninguém postou".
-        const sp = new URLSearchParams({ limit: "24", author: "me" })
+        const sp = new URLSearchParams({ limit: "24", author: owner ? owner.id_user : "me" })
         if (!reset && from) sp.set("cursor", from)
         const token = getToken()
         const r = await fetch(`/api/communities/${communityId}/feed-posts?${sp.toString()}`, {
@@ -109,10 +145,14 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
         else setLoadingMore(false)
       }
     },
-    [communityId]
+    [communityId, owner]
   )
 
   useEffect(() => {
+    // ESPERA o contexto resolver. Sem isso a grade buscaria os posts de quem
+    // olha e os trocaria por baixo quando o `?de=` chegasse — a pessoa veria
+    // por um instante a vitrine errada, dentro do games de outra.
+    if (owner === undefined) return
     let dead = false
     const run = async () => {
       const token = getToken()
@@ -132,10 +172,15 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
     return () => {
       dead = true
     }
-  }, [communityId, fetchPosts])
+  }, [communityId, fetchPosts, owner])
 
   const accent = accentHex(community?.community_theme?.accent ?? null)
-  const backHref = `/comunidades/${communityId}`
+  // O "Voltar" devolve ao games NO MESMO CONTEXTO: sem o `?de=` a pessoa
+  // sairia da vitrine de alguém e cairia no próprio recorte, como se tivesse
+  // trocado de lugar sem pedir.
+  const backHref = owner
+    ? `/comunidades/${communityId}?de=${encodeURIComponent(owner.username)}`
+    : `/comunidades/${communityId}`
   const inGames = community?.kind === "games"
 
   if (notFound) {
@@ -153,7 +198,13 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
     <main className={`relative min-h-screen bg-[#0b0804] px-5 py-8 md:px-10 ${inGames ? "fl-games" : ""}`}>
       {inGames && <TechBackdrop />}
       <div className="relative mx-auto max-w-5xl">
-        {inGames && <CommunityShellBeacon communityId={communityId} kind="games" />}
+        {inGames && (
+          <CommunityShellBeacon
+            communityId={communityId}
+            kind="games"
+            gamerContext={owner?.username ?? null}
+          />
+        )}
         <PageBackLink href={backHref} className="mb-5" />
 
         <header
@@ -164,8 +215,13 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
             <Gamepad2 className="h-3.5 w-3.5" style={{ color: accent }} />
             {community?.display_name || "—"}
           </span>
+          {/* O TÍTULO DIZ DE QUEM É A GRADE. Sem isso, a vitrine de outra
+              pessoa e a sua ficam idênticas na tela — e quem chegasse por um
+              link compartilhado leria os posts dela como se fossem os seus. */}
           <h1 className="mt-1 fl-display text-4xl leading-[0.9] text-[#F5F1E8] md:text-6xl">
-            {t("gamePostsTitle", "Posts de games")}
+            {owner
+              ? t("gamePostsTitleOf", "Posts de {who}").replace("{who}", owner.name || `@${owner.username}`)
+              : t("gamePostsTitle", "Posts de games")}
           </h1>
           {/* O subtítulo era o jogo DO ESPAÇO, e espaço de games não existe mais
               (mig 232): o jogo atual é de cada pessoa e mora no painel laranja da
@@ -190,10 +246,18 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
             {/* DOIS vazios, porque são duas situações diferentes: quem não entrou
                 não tem "meus posts" para ter, e dizer a ele que não publicou nada
                 seria afirmar algo que ninguém mediu. */}
+            {/* TRÊS vazios, porque são três situações diferentes: quem não
+                entrou não tem "meus posts" para ter; quem entrou e não publicou
+                precisa saber que o lugar é dele; e a vitrine de outra pessoa
+                fala DELA — dizer "você não publicou" ali seria falar do
+                visitante numa tela que não é sobre ele. */}
             <p className="text-sm text-[#9A938A]">
-              {signedIn
-                ? t("gamePostsEmptyMine", "Você ainda não publicou nada aqui.")
-                : t("gamePostsSignedOut", "Entre na sua conta para ver os seus posts de games.")}
+              {owner
+                ? t("gamePostsEmptyOther", "{who} ainda não publicou nada aqui.")
+                    .replace("{who}", owner.name || `@${owner.username}`)
+                : signedIn
+                  ? t("gamePostsEmptyMine", "Você ainda não publicou nada aqui.")
+                  : t("gamePostsSignedOut", "Entre na sua conta para ver os seus posts de games.")}
             </p>
           </div>
         ) : (

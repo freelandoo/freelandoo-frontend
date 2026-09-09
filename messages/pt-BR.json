@@ -1529,7 +1529,8 @@
     "mgmtBadgeAccount": "Sua conta",
     "mySocialsLabel": "Minhas redes",
     "businessPill": "Business",
-    "openGamesPlatformAria": "Abrir a plataforma de games"
+    "openGamesPlatformAria": "Abrir a plataforma de games",
+    "openGamesOfAria": "Ver o games de {who}"
   },
   "Errors": {
     "generic": "Algo deu errado. Tente novamente.",
@@ -2734,7 +2735,14 @@
     "myGamePillAria": "O seu jogo atual: plataforma, título e nick",
     "myGamePostsPillAria": "Vitrine com os seus posts de games",
     "gamePostsEmptyMine": "Você ainda não publicou nada aqui.",
-    "gamePostsSignedOut": "Entre na sua conta para ver os seus posts de games."
+    "gamePostsSignedOut": "Entre na sua conta para ver os seus posts de games.",
+    "gamePillOfAria": "O jogo atual de {who}",
+    "gamePostsPillOfAria": "Vitrine com os posts de games de {who}",
+    "gameUntitled": "Sem título",
+    "gameEmptyOther": "{who} ainda não disse o que está jogando.",
+    "backToMyGames": "Ver o meu games",
+    "gamePostsTitleOf": "Posts de {who}",
+    "gamePostsEmptyOther": "{who} ainda não publicou nada aqui."
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -5650,7 +5658,9 @@
     "xboxReason": "A API aberta é paga e não informa horas jogadas",
     "playstationReason": "A Sony não abre uma API pública",
     "nintendoReason": "A Nintendo não abre uma API pública",
-    "shelfSignedOut": "Entre na sua conta para ver e conectar a sua estante."
+    "shelfSignedOut": "Entre na sua conta para ver e conectar a sua estante.",
+    "shelfEmptyOther": "{who} ainda não tem jogos para mostrar aqui.",
+    "thisPerson": "Esta pessoa"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

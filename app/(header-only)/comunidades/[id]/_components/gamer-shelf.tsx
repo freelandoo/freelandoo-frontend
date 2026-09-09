@@ -85,27 +85,42 @@ function hours(minutes: number) {
 }
 
 /**
- * A ESTANTE É DE QUEM OLHA (mig 232).
+ * A ESTANTE É DA PESSOA — a sua, ou a de quem você foi visitar.
  *
- * Ela nasceu quando games era o espaço de UMA pessoa: o componente recebia o
- * dono do espaço e decidia entre "a minha" e "a de fulano". A plataforma não
- * tem dono — a biblioteca é dado da PESSOA (`tb_user_game_account.id_user`) —,
- * então sobrou uma pergunta só: quem está olhando tem sessão?
+ * A plataforma não tem dono (mig 232): a biblioteca é dado da PESSOA
+ * (`tb_user_game_account.id_user`). Sem contexto, a estante é a de quem está
+ * olhando e o backend resolve o dono pelo TOKEN — é por isso que a URL do
+ * caso comum não tem id nenhum.
  *
- * ⚠️ O CAMINHO "ESTANTE DE OUTRA PESSOA" FOI REMOVIDO de propósito, e não
- * apenas deixado sem chamador: um `ownerUserId` que ninguém mais alimenta,
- * mas que o componente ainda sabe buscar, é o convite para alguém apontá-lo
- * de novo — e, aqui, para a linha da plataforma, publicando a estante do
- * admin a todo visitante. Ver a de outra pessoa continua existindo, pela
- * porta certa: o "Frente a frente", que pede o @ e obedece à privacidade
- * dela.
+ * ⚠️ `ownerUserId` VOLTOU, E A REGRA QUE O TIROU CONTINUA VALENDO. Ele foi
+ * removido em 2026-09-09 porque, sem chamador, era o convite para alguém
+ * apontá-lo para a linha da PLATAFORMA — publicando a estante do admin a todo
+ * visitante. O que o torna seguro agora é a ORIGEM do valor: ele só pode ser
+ * um id de USUÁRIO (`tb_user`), resolvido pelo backend a partir do @username
+ * do dono do perfil visitado. A plataforma é uma linha de `tb_profile` e não
+ * tem id_user — não há como cair nela por este caminho.
+ *
+ * ⚠️ NUNCA ALIMENTAR ESTA PROP com um id de comunidade/perfil. Se um dia
+ * outra tela precisar da estante de alguém, o valor tem que vir da MESMA
+ * porta (`GET /gamer/profile/:username` → `owner.id_user`).
+ *
+ * A privacidade é do BACKEND, não daqui: `GET /gamer/shelf/:id_user` devolve
+ * `locked` quando a pessoa não tem nenhuma conta pública, e a resposta é a
+ * mesma de "não conectou nada" — dizer "ela tem uma estante privada"
+ * entregaria justamente o que ela escondeu.
  */
 export function GamerShelf({
   signedIn,
   accent,
+  ownerUserId = null,
+  ownerName = null,
 }: {
   signedIn: boolean
   accent: string
+  /** Dono do recorte. `null` = a estante de quem está olhando (caso comum). */
+  ownerUserId?: string | null
+  /** @username de quem se visita, só para as frases. */
+  ownerName?: string | null
 }) {
   const t = useTranslations("Gamer")
   const [providers, setProviders] = useState<Provider[]>([])
@@ -128,11 +143,16 @@ export function GamerShelf({
     if (!token) { setLoading(false); return }
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      // Sempre a estante de quem está pedindo: o backend resolve o dono pelo
-      // TOKEN, e é por isso que não há id nenhum nesta URL.
+      // Sem contexto o backend resolve o dono pelo TOKEN — daí a URL sem id.
+      // Com contexto, a estante é a DELE, e a privacidade é checada lá.
+      //
+      // Os PROVEDORES só são pedidos na própria estante: aquela grade é a de
+      // conectar/desconectar, que é ação da conta de quem olha. Buscá-la na
+      // estante de outra pessoa gastaria uma requisição para desenhar botões
+      // que não vão aparecer.
       const [shelfRes, provRes] = await Promise.all([
-        fetch("/api/gamer/shelf", { headers }),
-        fetch("/api/gamer/providers", { headers }),
+        fetch(ownerUserId ? `/api/gamer/shelf/${encodeURIComponent(ownerUserId)}` : "/api/gamer/shelf", { headers }),
+        ownerUserId ? Promise.resolve(null) : fetch("/api/gamer/providers", { headers }),
       ])
       const shelf = await shelfRes.json().catch(() => null)
       if (shelfRes.ok && shelf) {
@@ -161,7 +181,7 @@ export function GamerShelf({
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [ownerUserId])
 
   useEffect(() => { load() }, [load])
 
@@ -266,8 +286,11 @@ export function GamerShelf({
 
   return (
     <div className="space-y-6">
-      {/* ── Contas (só o dono) ────────────────────────────────────────────── */}
-      {signedIn && (
+      {/* ── Contas (só na PRÓPRIA estante) ────────────────────────────────
+          Conectar, sincronizar, trocar a visibilidade e desconectar são ações
+          da conta de quem olha. Na estante de outra pessoa elas não têm alvo
+          — e desenhá-las prometeria mexer no que é dela. */}
+      {signedIn && !ownerUserId && (
         <div className="space-y-3">
           {connected.map((p) => {
             const a = p.account!
@@ -394,7 +417,16 @@ export function GamerShelf({
         // aba parecer um amontoado de avisos. Quem NÃO entrou precisa de uma
         // linha — senão a aba abre em branco —, e ela diz outra coisa: não é
         // que a estante esteja vazia, é que a tela não sabe de quem ela seria.
-        signedIn ? null : (
+        ownerUserId ? (
+          // Vazia na estante de OUTRA pessoa não pode ser silêncio: sem esta
+          // linha a aba abriria em branco e leria como defeito. E ela diz
+          // "não conectou", nunca "está privada" — quem fechou a estante cai
+          // no mesmo lugar, e distinguir os dois entregaria a escolha dela.
+          <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-center text-sm text-[#9A938A]">
+            {t("shelfEmptyOther", "{who} ainda não tem jogos para mostrar aqui.")
+              .replace("{who}", ownerName ? `@${ownerName}` : t("thisPerson", "Esta pessoa"))}
+          </p>
+        ) : signedIn ? null : (
           <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-center text-sm text-[#9A938A]">
             {t("shelfSignedOut", "Entre na sua conta para ver e conectar a sua estante.")}
           </p>
@@ -443,8 +475,11 @@ export function GamerShelf({
         </>
       )}
 
-      {/* ── Frente a frente ───────────────────────────────────────────────── */}
-      {signedIn && games.length > 0 && (
+      {/* ── Frente a frente ─────────────────────────────────────────────────
+          Só na própria estante: ele compara VOCÊ com alguém, e dentro da
+          estante de outra pessoa a pergunta já está respondida — quem você
+          escolheria comparar é justamente quem está na tela. */}
+      {signedIn && !ownerUserId && games.length > 0 && (
         <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4">
           <p className="fl-display text-lg leading-none text-[#F5F1E8]">{t("compareTitle", "Frente a frente")}</p>
           <p className="mt-1 text-xs text-[#9A938A]">
