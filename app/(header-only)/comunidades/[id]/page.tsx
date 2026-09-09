@@ -1709,12 +1709,23 @@ export default function CommunityDetailPage() {
           o que fica no ar é a PONTINHA DA SETA na borda direita, e quem aperta
           recebe a gaveta inteira — no celular e no computador.
 
-          Vale para TODA comunidade por construção — comum, condomínio, bairro,
-          pet, carro e games usam esta mesma casca. Bloco novo de número desta
-          página entra AQUI DENTRO, nunca solto entre o headcard e o feed.
+          Vale para TODA comunidade — comum, condomínio, bairro, pet e carro
+          usam esta mesma casca. Bloco novo de número desta página entra AQUI
+          DENTRO, nunca solto entre o headcard e o feed.
+
+          ⚠️ A PLATAFORMA DE GAMES FICOU ÓRFÃ DELA (2026-09-08). A gaveta
+          responde "que tamanho tem este GRUPO" — membros, nível, XP, posição
+          entre comunidades, destaque e ranking dos membros —, e ali dentro
+          não há grupo: a plataforma é uma por pessoa, ninguém entra. Os três
+          blocos que falam de gente já saíam; o que sobrava (nível, XP e um
+          benchmark que compara a plataforma com comunidades) media a régua
+          errada. O que games tem de fila é o RANKING da plataforma, atrás do
+          botão do mural. Guard aqui, e não dentro de cada bloco: por dentro,
+          o bloco novo que esquecesse da regra reacenderia a alça sozinho.
 
           A peça se desenha por PORTAL no <body>, então este lugar no JSX é só
           onde ela mora perto dos dados que lê — não é onde ela aparece. */}
+      {!isGamesPlatform && (
       <RetractableColumn
         title={t("statsTitle", "Números da comunidade")}
         ariaLabel={t("statsAria", "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking")}
@@ -1722,14 +1733,7 @@ export default function CommunityDetailPage() {
         icon={<BarChart3 className="h-4 w-4" />}
         accent={accent}
       >
-        {/* O contador de membros e, mais abaixo, o destaque e o ranking de
-            membros saem na plataforma de games: os três respondem "quem está
-            aqui dentro", e ali a resposta é sempre uma pessoa só. O ranking
-            que a plataforma tem é outro — o das horas da Estante, atrás do
-            pill roxo. */}
-        {!isGamesPlatform && (
-          <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
-        )}
+        <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
         <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
         {benchmark && (
@@ -1753,7 +1757,7 @@ export default function CommunityDetailPage() {
           </div>
         )}
 
-        {topRow && !isGamesPlatform && (
+        {topRow && (
           <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]" style={{ outline: `2px solid ${accent}`, outlineOffset: "1px" }}>
@@ -1770,7 +1774,7 @@ export default function CommunityDetailPage() {
           </Block>
         )}
 
-        {rankRows.length > 0 && !isGamesPlatform && (
+        {rankRows.length > 0 && (
           <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
             <ol className="space-y-2">
               {rankRows.slice(0, 5).map((row, i) => (
@@ -1799,6 +1803,7 @@ export default function CommunityDetailPage() {
           </Block>
         )}
       </RetractableColumn>
+      )}
 
       {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
           destaque, ranking) subiu para a coluna retrátil dos números, então o
