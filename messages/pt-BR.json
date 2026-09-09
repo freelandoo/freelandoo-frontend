@@ -2717,7 +2717,16 @@
     "rankingYouMinutes": "min online",
     "rankingYouAbsentActivity": "Você ainda não pontuou aqui: publique na plataforma de games e apareça.",
     "rankingGoPublish": "Publicar",
-    "rankingActivityHint": "Curtida {like} · comentário {comment} · compartilhamento {share} · {min} min online = 1 ponto"
+    "rankingActivityHint": "Curtida {like} · comentário {comment} · compartilhamento {share} · {min} min online = 1 ponto",
+    "bgLabel": "Fundo",
+    "bgBlack": "Preto",
+    "bgNavy": "Azul-noite",
+    "bgCyan": "Ciano",
+    "bgGreen": "Verde",
+    "bgPurple": "Roxo",
+    "bgWine": "Vinho",
+    "bgAmber": "Âmbar",
+    "bgBrown": "Marrom"
   },
   "Careers": {
     "hero.badge": "Carreiras",

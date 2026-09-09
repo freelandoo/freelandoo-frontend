@@ -31,7 +31,15 @@ import { CommunityShellBeacon, onCommunityView } from "@/components/layout/commu
 // A paleta editável do líder e o formatador de XP moram FORA desta página: o
 // ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
 // da lista faria as duas telas da mesma comunidade divergirem de tom.
-import { ACCENTS, accentHex, canBuildCommunitySite, compact } from "./_components/community-ui"
+import {
+  ACCENTS,
+  accentHex,
+  BACKDROPS,
+  backdropTint,
+  canBuildCommunitySite,
+  compact,
+  platformSkinVars,
+} from "./_components/community-ui"
 
 const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
@@ -263,6 +271,12 @@ export default function CommunityDetailPage() {
   const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
   const [carModels, setCarModels] = useState<{ code: string; label: string }[]>([])
   const [accentDraft, setAccentDraft] = useState("gold")
+  // A COR DO FUNDO da plataforma de negócio (pedido do Alex, 2026-09-09: "hoje
+  // só dá pra mudar a cor dos detalhes, eu queria poder mudar até a cor do
+  // fundo"). Mora no MESMO `community_theme` do accent — é a mesma pergunta
+  // ("com que cara esta comunidade aparece"), e um lugar novo para guardá-la
+  // faria a tela pedir duas gravações para uma edição só.
+  const [bgDraft, setBgDraft] = useState("black")
   // Enxame (mig 219): a comunidade comum nasce sem ele e o líder escolhe aqui.
   const [machineDraft, setMachineDraft] = useState("")
   const [enxames, setEnxames] = useState<{ id_machine: number; name: string }[]>([])
@@ -421,11 +435,27 @@ export default function CommunityDetailPage() {
   // `null` = comunidade comum-mas-não-negócio (condomínio, bairro, pet, carro):
   // ali a barra da Freelandoo continua como está, porque não há um conjunto de
   // controles próprio a colocar no lugar dela.
+  // ⚠️ UM PREDICADO SÓ para "isto é a plataforma de negócio": ele decide o
+  // ambiente do dock, a pele (`.fl-business`), o fundo WebGPU e o seletor de
+  // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
+  // deixaria a página com a pele de um ambiente e a barra de outro.
+  const isBusinessPlatform = (community?.kind ?? null) === "common"
+
   const shellKind: "games" | "business" | null = isGamesPlatform
     ? "games"
-    : community?.kind === "common"
+    : isBusinessPlatform
       ? "business"
       : null
+
+  // A pele da plataforma de negócio é a MESMA lista de classes das outras duas
+  // (em globals.css), só que lendo variáveis — porque aqui a cor é escolhida
+  // pelo líder. Quem escreve as variáveis é este `style`; sem elas as classes
+  // caem no marrom tabloide de sempre, que é a degradação desejada.
+  const skinVars = useMemo(
+    () => (isBusinessPlatform ? platformSkinVars(bgDraft) : undefined),
+    [isBusinessPlatform, bgDraft]
+  )
+  const bizTint = useMemo(() => backdropTint(bgDraft), [bgDraft])
 
   const siteExtras = useMemo(
     () =>
@@ -540,10 +570,10 @@ export default function CommunityDetailPage() {
   // uma coisa que muda de valor a cada troca de paleta do líder.
   const surfaceShadow = useCallback(
     (color: string, px: number) =>
-      isGamesPlatform
+      isGamesPlatform || isBusinessPlatform
         ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
         : `${px}px ${px}px 0 0 ${color}`,
-    [isGamesPlatform]
+    [isGamesPlatform, isBusinessPlatform]
   )
 
   const showAsLeaderEdit = isLeader && edit
@@ -760,6 +790,9 @@ export default function CommunityDetailPage() {
         setNameDraft(c.display_name)
         setBioDraft(c.bio || "")
         setAccentDraft(c.community_theme?.accent || "gold")
+        // Ausente = preto, que é o padrão da plataforma de negócio. Comunidade
+        // que nunca escolheu nasce preta, e não com a cor da última que passou.
+        setBgDraft(c.community_theme?.background || "black")
         seeded.current = true
       }
       setPrivacyDraft(c.privacy === "private" ? "private" : "public")
@@ -988,10 +1021,18 @@ export default function CommunityDetailPage() {
       })
       const pData = await pRes.json()
       if (!pRes.ok) throw new Error(pData.error || t("saveError", "Não foi possível salvar."))
-      if ((community.community_theme?.accent || "gold") !== accentDraft) {
+      // ⚠️ AS DUAS CORES VÃO NO MESMO PATCH, e a condição pergunta pelas duas:
+      // separadas, mudar só o fundo não gravaria nada (a comparação era só do
+      // accent) e o líder veria a cor voltar sozinha no próximo F5.
+      const themeChanged =
+        (community.community_theme?.accent || "gold") !== accentDraft ||
+        (community.community_theme?.background || "black") !== bgDraft
+      if (themeChanged) {
         const tRes = await fetch(`/api/communities/${id}/theme`, {
           method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ theme: { ...(community.community_theme || {}), accent: accentDraft } }),
+          body: JSON.stringify({
+            theme: { ...(community.community_theme || {}), accent: accentDraft, background: bgDraft },
+          }),
         })
         const tData = await tRes.json()
         if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
@@ -1177,14 +1218,23 @@ export default function CommunityDetailPage() {
     seasonOn && goal ? scoreLabel(goal.metric, row) : compact(row.score)
 
   return (
-    // A pele roxa é uma CLASSE no container (`fl-games`, em globals.css) e não
-    // uma troca de cores no arquivo: esta página é uma casca só para sete
-    // modalidades, e mexer nas cores aqui pintaria todas elas de roxo.
-    <div className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isGamesPlatform ? "fl-games" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}>
+    // A pele é uma CLASSE no container (`fl-games`/`fl-business`, em
+    // globals.css) e não uma troca de cores no arquivo: esta página é uma casca
+    // só para sete modalidades, e mexer nas cores aqui pintaria todas elas.
+    // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
+    <div
+      style={skinVars}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isGamesPlatform ? "fl-games" : isBusinessPlatform ? "fl-business" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+    >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
           headcard cobrir a pilha de pills. */}
       {isGamesPlatform && <TechBackdrop />}
+      {/* O mesmo fundo da plataforma de games, na cor que o líder escolheu —
+          e SEM símbolo nenhum por cima (o cifrão é do Financeiro; "meu
+          negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
+          nós estaria errado para quase todos). */}
+      {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
       {/* Declara o ambiente para o dock global (não desenha nada).
           "Meus negócios" (a comunidade `common`) é ambiente pelo mesmo motivo
           que a plataforma de games: lá dentro a barra da Freelandoo dá lugar aos
@@ -1197,7 +1247,7 @@ export default function CommunityDetailPage() {
         <CommunityShellBeacon communityId={id} kind={shellKind} canBuildSite={showSiteEntry} />
       )}
       {/* Top bar */}
-      <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 pt-6 md:px-10">
         {/* ⚠️ VOLTA PARA O PERFIL, não para a vitrine (pedido do Alex,
             2026-09-08): `/comunidades` ficou órfã, e um "Voltar" apontando para
             uma página que já não tem porta de entrada seria a única forma de
@@ -1207,9 +1257,9 @@ export default function CommunityDetailPage() {
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
         {isLeader && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {edit && (
-              <div className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-2.5 py-1.5">
+              <div className="inline-flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-2.5 py-1.5">
                 <Palette className="h-4 w-4" style={{ color: accent }} />
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">{t("colorsLabel", "Cores")}</span>
                 <span className="h-5 w-5 border-2 border-[#0B0B0D]" style={{ background: accent }} />
@@ -1217,6 +1267,21 @@ export default function CommunityDetailPage() {
                   className="border-l-2 border-[#F5F1E8]/15 bg-transparent pl-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] outline-none [&_option]:bg-[#15120E]">
                   {ACCENTS.map((a) => <option key={a.key} value={a.key}>{t(a.labelKey, a.fallback)}</option>)}
                 </select>
+                {/* ⚠️ O FUNDO SÓ APARECE NA PLATAFORMA DE NEGÓCIO, que é a
+                    única com pele de cor variável: nas outras modalidades o
+                    seletor pediria uma escolha que a tela não sabe obedecer. */}
+                {isBusinessPlatform && (
+                  <>
+                    <span className="border-l-2 border-[#F5F1E8]/15 pl-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                      {t("bgLabel", "Fundo")}
+                    </span>
+                    <span className="h-5 w-5 border-2 border-[#0B0B0D]" style={{ background: bizTint.canvas, boxShadow: `inset 0 0 0 2px ${bizTint.glow}55` }} />
+                    <select value={bgDraft} onChange={(e) => setBgDraft(e.target.value)}
+                      className="bg-transparent text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] outline-none [&_option]:bg-[#15120E]">
+                      {BACKDROPS.map((b) => <option key={b.key} value={b.key}>{t(b.labelKey, b.fallback)}</option>)}
+                    </select>
+                  </>
+                )}
               </div>
             )}
             <button type="button" onClick={() => setEdit((e) => !e)}
@@ -1748,6 +1813,8 @@ export default function CommunityDetailPage() {
         closeLabel={t("panelClose", "Fechar")}
         icon={<BarChart3 className="h-4 w-4" />}
         accent={accent}
+        skinClass={isBusinessPlatform ? "fl-business" : undefined}
+        skinVars={skinVars}
       >
         <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
         <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />

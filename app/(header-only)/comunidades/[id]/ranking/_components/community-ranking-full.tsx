@@ -54,7 +54,13 @@ import { PageBackLink } from "@/components/tabloide"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken, getStoredUser } from "@/lib/auth"
 import { cn } from "@/lib/utils"
-import { accentHex, canBuildCommunitySite, compact } from "../../_components/community-ui"
+import {
+  accentHex,
+  backdropTint,
+  canBuildCommunitySite,
+  compact,
+  platformSkinVars,
+} from "../../_components/community-ui"
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
@@ -72,7 +78,7 @@ type Community = {
   kind?: string | null
   /** Quem manda na comunidade — aqui só para saber se o dock mostra o Site. */
   id_leader_user?: string | null
-  community_theme: { accent?: string } | null
+  community_theme: { accent?: string; background?: string } | null
 }
 /**
  * A TERCEIRA FONTE do pódio (a plataforma de games).
@@ -297,11 +303,24 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
     isLeader: !!community?.id_leader_user && community.id_leader_user === viewerId,
     siteEnabled,
   })
+  // ⚠️ MESMO PREDICADO DA PÁGINA: é a plataforma de negócio que decide o
+  // ambiente do dock, a pele e o fundo. Aqui ele também escolhe as variáveis de
+  // cor — o pódio é outra sala do mesmo espaço, e chegar nele com outro fundo
+  // faria a comunidade trocar de cara ao andar dois metros.
+  const isBusiness = (community?.kind ?? null) === "common"
+
   const shellKind: "games" | "business" | null = isGames
     ? "games"
-    : community?.kind === "common"
+    : isBusiness
       ? "business"
       : null
+
+  const bgKey = community?.community_theme?.background
+  const skinVars = useMemo(
+    () => (isBusiness ? platformSkinVars(bgKey) : undefined),
+    [isBusiness, bgKey]
+  )
+  const bizTint = useMemo(() => backdropTint(bgKey), [bgKey])
 
   const seasonOn = !!goal && !isGames
 
@@ -453,8 +472,16 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   const rest = rows.slice(3)
 
   return (
-    <div className={cn("fl-root relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]", isGames && "fl-games")}>
+    <div
+      style={skinVars}
+      className={cn(
+        "fl-root relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]",
+        isGames && "fl-games",
+        isBusiness && "fl-business"
+      )}
+    >
       {isGames && <TechBackdrop />}
+      {isBusiness && <TechBackdrop variant="business" tint={bizTint} />}
       {/* ⚠️ ESTA TELA TAMBÉM É O AMBIENTE. O "Ranking" do dock de negócios (e o
           "Posts games" do de games) leva para uma página irmã: sem o beacon
           aqui, o dock voltaria a ser o da Freelandoo no meio do ambiente e a

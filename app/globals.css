@@ -905,3 +905,104 @@ body.camera-active { overflow: hidden; }
   .fl-finance-fallback,
   .fl-money-veil { animation: none; }
 }
+
+/* ============================================================================
+   PLATAFORMA DE NEGÓCIO — a pele de COR ESCOLHIDA (`.fl-business`)
+   ----------------------------------------------------------------------------
+   Pedido do Alex (2026-09-09): "adapte essa página do meu negócio como as
+   páginas games e financeiro, com WebGPU (...) preto, mas eu queria poder mudar
+   a cor do fundo também — hoje só dá pra mudar a cor dos detalhes".
+
+   ⚠️ A LISTA ABAIXO É A MESMA DA `.fl-games` E DA `.fl-finance`, e continua
+   FECHADA: cor de superfície nova na página da comunidade tem que entrar nas
+   TRÊS, senão o bloco novo nasce marrom no meio do ambiente. O que muda aqui é
+   só de onde o valor vem — de VARIÁVEIS, e não de hexadecimais escritos à mão,
+   porque o dono do negócio escolhe a cor e um skin por cor seria a mesma lista
+   copiada nove vezes.
+
+   ⚠️ QUEM ESCREVE AS VARIÁVEIS É A PÁGINA (`platformSkinVars`, no
+   `_components/community-ui.ts`), no `style` do container. Sem elas o bloco
+   inteiro é inerte — as classes caem no valor original (o marrom tabloide) em
+   vez de ficarem transparentes, que é a degradação que se quer.
+
+   O QUE NÃO MUDA: cantos retos (regra permanente acima) e o amarelo #F2B705 —
+   é ele que marca a porta de saída no dock e o botão de publicar.
+
+   ⚠️ E AQUI NÃO ENTRA SÍMBOLO NENHUM. O Financeiro tem a camada de cifrões
+   (`.fl-money-veil`) porque o ambiente dele é sobre dinheiro; "meu negócio" é
+   barbearia, padaria ou marcenaria — um símbolo escolhido por nós estaria
+   errado para quase todos. Pedido explícito do Alex: "só a cor mesmo".
+   ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-business .bg-\[\#0b0804\]      { background-color: var(--fl-skin-canvas); }
+.fl-business .bg-\[\#0b0804\]\/80  { background-color: rgba(var(--fl-skin-canvas-rgb), 0.8); }
+.fl-business .bg-\[\#0F0C08\]      { background-color: rgba(var(--fl-skin-soft-rgb), 0.86); }
+.fl-business .bg-\[\#15120E\]      { background-color: rgba(var(--fl-skin-panel-rgb), 0.78); }
+.fl-business .bg-\[\#15120E\]\/95  { background-color: rgba(var(--fl-skin-panel-rgb), 0.95); }
+.fl-business .bg-\[\#15120E\]\/60  { background-color: rgba(var(--fl-skin-panel-rgb), 0.6); }
+.fl-business .bg-\[\#15120E\]\/40  { background-color: rgba(var(--fl-skin-panel-rgb), 0.4); }
+.fl-business .bg-\[\#1D1810\]      { background-color: rgba(var(--fl-skin-inner-rgb), 0.72); }
+.fl-business .bg-\[\#241d12\]      { background-color: rgba(var(--fl-skin-deep-rgb), 0.9); }
+/* O chip escuro do pódio (`bg-[#0B0B0D]`): num canvas preto ele sumiria dentro
+   do fundo, então ele sobe para a superfície mais funda da rampa. */
+.fl-business .bg-\[\#0B0B0D\]      { background-color: rgba(var(--fl-skin-deep-rgb), 0.95); }
+
+/* Tinta ------------------------------------------------------------------- */
+.fl-business .text-\[\#F5F1E8\]     { color: rgb(var(--fl-skin-ink-rgb)); }
+.fl-business .text-\[\#F5F1E8\]\/90 { color: rgba(var(--fl-skin-ink-rgb), 0.9); }
+.fl-business .text-\[\#F5F1E8\]\/85 { color: rgba(var(--fl-skin-ink-rgb), 0.85); }
+.fl-business .text-\[\#F5F1E8\]\/80 { color: rgba(var(--fl-skin-ink-rgb), 0.8); }
+.fl-business .text-\[\#F5F1E8\]\/70 { color: rgba(var(--fl-skin-ink-rgb), 0.7); }
+.fl-business .text-\[\#F5F1E8\]\/40 { color: rgba(var(--fl-skin-ink-rgb), 0.4); }
+.fl-business .text-\[\#F5F1E8\]\/30 { color: rgba(var(--fl-skin-ink-rgb), 0.3); }
+/* A tela do ranking escreve com #F1EDE2 em vez de #F5F1E8 — a mesma tinta com
+   outro nome. Fora desta lista, o pódio da comunidade de negócio ficaria creme
+   no meio do ambiente. */
+.fl-business .text-\[\#F1EDE2\]     { color: rgb(var(--fl-skin-ink-rgb)); }
+.fl-business .text-\[\#F1EDE2\]\/85 { color: rgba(var(--fl-skin-ink-rgb), 0.85); }
+.fl-business .text-\[\#F1EDE2\]\/40 { color: rgba(var(--fl-skin-ink-rgb), 0.4); }
+.fl-business .text-\[\#9A938A\]     { color: rgb(var(--fl-skin-muted-rgb)); }
+.fl-business .text-\[\#9A938A\]\/70 { color: rgba(var(--fl-skin-muted-rgb), 0.7); }
+.fl-business .text-\[\#6B6457\]     { color: rgba(var(--fl-skin-muted-rgb), 0.75); }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-business .border-\[\#0B0B0D\]      { border-color: var(--fl-skin-line); }
+.fl-business .border-\[\#F5F1E8\]\/30  { border-color: rgba(var(--fl-skin-edge-rgb), 0.45); }
+.fl-business .border-\[\#F5F1E8\]\/25  { border-color: rgba(var(--fl-skin-edge-rgb), 0.4); }
+.fl-business .border-\[\#F5F1E8\]\/20  { border-color: rgba(var(--fl-skin-edge-rgb), 0.34); }
+.fl-business .border-\[\#F5F1E8\]\/15  { border-color: rgba(var(--fl-skin-edge-rgb), 0.28); }
+.fl-business .border-\[\#F5F1E8\]\/12  { border-color: rgba(var(--fl-skin-edge-rgb), 0.24); }
+.fl-business .border-\[\#F5F1E8\]\/10  { border-color: rgba(var(--fl-skin-edge-rgb), 0.2); }
+.fl-business .border-\[\#F5F1E8\]\/60  { border-color: rgba(var(--fl-skin-edge-rgb), 0.6); }
+
+/* O título zumbe como painel em vez de gritar como manchete — mesma decisão
+   dos outros dois ambientes, com o brilho na cor escolhida pelo líder. */
+.fl-business .fl-display {
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 24px rgba(var(--fl-skin-glow-rgb), 0.42);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
+.fl-business .-rotate-2,
+.fl-business .-rotate-3 { transform: none; }
+
+/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
+   orgânico do shader. Ver components/platform/tech-backdrop.tsx. */
+.fl-business-fallback {
+  background-color: var(--fl-skin-canvas);
+  background-image:
+    radial-gradient(60% 45% at 20% 16%, rgba(var(--fl-skin-glow-rgb), 0.30), transparent 70%),
+    radial-gradient(52% 42% at 84% 28%, rgba(var(--fl-skin-glow-rgb), 0.18), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(var(--fl-skin-glow-rgb), 0.22), transparent 70%),
+    repeating-linear-gradient(to right, rgba(var(--fl-skin-glow-rgb), 0.06) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(var(--fl-skin-glow-rgb), 0.045) 0 1px, transparent 1px 64px);
+  animation: fl-business-drift 30s ease-in-out infinite alternate;
+}
+@keyframes fl-business-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-business-fallback { animation: none; }
+}

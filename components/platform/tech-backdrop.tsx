@@ -29,14 +29,21 @@
  * (driver bloqueado, GPU em lista negra, aba sem contexto): tudo dentro de
  * try/catch, e qualquer tropeço cai no CSS em vez de deixar a tela preta.
  *
- * ─── DUAS VARIANTES, UM PIPELINE ─────────────────────────────────────────────
+ * ─── TRÊS VARIANTES, UM PIPELINE ─────────────────────────────────────────────
  *
  * `games` é roxo com a grade em perspectiva correndo para o horizonte;
- * `finance` é verde com uma fita de candles correndo no rodapé. O que muda são
- * três constantes de cor e o bloco do rodapé — o resto (nebulosa fbm, varredura,
- * vinheta e os três freios de bateria) é o mesmo. Duas cópias do arquivo
- * divergiriam na primeira correção de performance, e a correção sairia só numa
- * das telas.
+ * `finance` é verde com uma fita de candles correndo no rodapé; `business` é
+ * preto com uma malha técnica reta. O que muda são três constantes de cor e o
+ * bloco do rodapé — o resto (nebulosa fbm, varredura, vinheta e os três freios
+ * de bateria) é o mesmo. Cópias do arquivo divergiriam na primeira correção de
+ * performance, e a correção sairia só numa das telas.
+ *
+ * ⚠️ E A VARIANTE `business` TEM A COR DE FORA (`tint`), porque lá quem escolhe
+ * é o líder do negócio e não nós (pedido do Alex, 2026-09-09). É o mesmo par
+ * (canvas, glow) que pinta a pele `.fl-business` da página, vindo da MESMA
+ * função (`platformSkinVars`/`backdropTint`): duas fontes de cor fariam o fundo
+ * e os painéis discordarem, que é o tipo de divergência que ninguém reporta e
+ * todo mundo vê.
  *
  * ⚠️ A CAMADA DE CIFRÕES DA VARIANTE FINANCE NÃO ESTÁ NO SHADER: ela é CSS
  * (`.fl-money-veil`, em globals.css) e fica montada por CIMA do canvas, para
@@ -58,7 +65,7 @@ import { useEffect, useRef, useState } from "react"
 // puxaria tipos globais para o build inteiro por causa de um arquivo. O contrato
 // usado aqui é pequeno e está todo dentro deste módulo.
 
-export type BackdropVariant = "games" | "finance"
+export type BackdropVariant = "games" | "finance" | "business"
 
 /**
  * A cor de limpeza do quadro e as três da nebulosa, por ambiente. Ficam num
@@ -85,6 +92,48 @@ const PALETTE: Record<
     a: "vec3<f32>(0.086, 0.717, 0.604)",
     b: "vec3<f32>(0.000, 0.529, 0.420)",
   },
+  // Preto com névoa cinza-aço. É só o PADRÃO: a comunidade de negócio manda a
+  // cor escolhida pelo líder em `tint`, e esta entrada vale enquanto ela não
+  // chegou (primeiro quadro, ou uma tela que monte o fundo sem passar cor).
+  business: {
+    clear: [0.031, 0.035, 0.043],
+    base: "vec3<f32>(0.031, 0.035, 0.043)",
+    a: "vec3<f32>(0.557, 0.592, 0.647)",
+    b: "vec3<f32>(0.290, 0.310, 0.345)",
+  },
+}
+
+/** "#08090B" → [0.031, 0.035, 0.043]. */
+function norm(hex: string): [number, number, number] {
+  const h = hex.replace("#", "")
+  const s = h.length === 3 ? h.split("").map((c) => c + c).join("") : h
+  return [
+    (parseInt(s.slice(0, 2), 16) || 0) / 255,
+    (parseInt(s.slice(2, 4), 16) || 0) / 255,
+    (parseInt(s.slice(4, 6), 16) || 0) / 255,
+  ]
+}
+
+const vec = (c: [number, number, number]) =>
+  `vec3<f32>(${c[0].toFixed(3)}, ${c[1].toFixed(3)}, ${c[2].toFixed(3)})`
+
+/**
+ * A paleta que este quadro vai usar: a do ambiente, ou a que veio de fora.
+ *
+ * A segunda cor da névoa (`b`) é derivada e não pedida: ela existe só para dar
+ * profundidade à primeira, e pedir DUAS cores ao líder seria pedir que ele
+ * combinasse duas coisas para resolver uma.
+ */
+function paletteFor(variant: BackdropVariant, tint?: { canvas: string; glow: string }) {
+  if (!tint) return PALETTE[variant]
+  const c = norm(tint.canvas)
+  const g = norm(tint.glow)
+  const b: [number, number, number] = [
+    g[0] + (c[0] - g[0]) * 0.45,
+    g[1] + (c[1] - g[1]) * 0.45,
+    g[2] + (c[2] - g[2]) * 0.45,
+  ]
+  return { clear: c, base: vec(c), a: vec(g), b: vec(b) }
 }
 
 /** O rodapé de cada ambiente: a grade em fuga (games) × a fita de candles (finance). */
@@ -124,10 +173,33 @@ const FLOOR: Record<BackdropVariant, string> = {
     col = col + tone * (bodyMask * 0.42 + wickMask * 0.30) * fade;
   }
 `,
+  // A MALHA TÉCNICA: linhas RETAS no rodapé, derivando devagar para a esquerda.
+  // Reta de propósito — a grade em fuga é a assinatura do games, e a fita de
+  // candles prometeria mercado. "Meu negócio" é barbearia, padaria ou
+  // marcenaria: o rodapé aqui é papel milimetrado, que não diz nada sobre o
+  // ramo de ninguém.
+  business: `
+  let band = 0.30;
+  if (uv.y > 1.0 - band) {
+    let d  = (uv.y - (1.0 - band)) / band;
+    let gx = fract(uv.x * 26.0 - t * 0.020);
+    let gy = fract(uv.y * 26.0);
+    let lx = smoothstep(0.030, 0.0, min(gx, 1.0 - gx));
+    let ly = smoothstep(0.030, 0.0, min(gy, 1.0 - gy));
+    let fade = smoothstep(0.0, 0.26, d) * (1.0 - smoothstep(0.72, 1.0, d));
+    col = col + cA * (lx * 0.50 + ly * 0.32) * fade * 0.42;
+  }
+`,
 }
 
-function shaderFor(variant: BackdropVariant) {
-  const pal = PALETTE[variant]
+/** O caminho de reserva (CSS) de cada ambiente. Ver globals.css. */
+const FALLBACK_CLASS: Record<BackdropVariant, string> = {
+  games: "fl-games-fallback",
+  finance: "fl-finance-fallback",
+  business: "fl-business-fallback",
+}
+
+function shaderFor(variant: BackdropVariant, pal: { base: string; a: string; b: string }) {
   return /* wgsl */ `
 struct U {
   time : f32,
@@ -201,7 +273,19 @@ ${FLOOR[variant]}
 `
 }
 
-export function TechBackdrop({ variant = "games" }: { variant?: BackdropVariant }) {
+export function TechBackdrop({
+  variant = "games",
+  tint,
+}: {
+  variant?: BackdropVariant
+  /** Só a variante `business` usa: o par (canvas, glow) escolhido pelo líder. */
+  tint?: { canvas: string; glow: string }
+}) {
+  // ⚠️ POR VALOR, NÃO PELO OBJETO: `tint` é um literal e nasce novo a cada
+  // render do pai — nas dependências do efeito ele refaria o pipeline inteiro
+  // sem que cor nenhuma tivesse mudado.
+  const tintCanvas = tint?.canvas ?? null
+  const tintGlow = tint?.glow ?? null
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // Começa no fallback e só desliga quando o WebGPU realmente subiu: assim uma
   // falha no meio do caminho nunca deixa a tela sem fundo nenhum.
@@ -217,7 +301,14 @@ export function TechBackdrop({ variant = "games" }: { variant?: BackdropVariant 
     let dead = false
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     let cleanupExtra: (() => void) | null = null
-    const clear = PALETTE[variant].clear
+    // ⚠️ A cor entra no EFEITO: trocar de cor recompila o shader. Custa um
+    // pipeline novo, mas isso só acontece quando o líder mexe no seletor —
+    // não a cada quadro, e não a cada render.
+    const pal = paletteFor(
+      variant,
+      tintCanvas && tintGlow ? { canvas: tintCanvas, glow: tintGlow } : undefined
+    )
+    const clear = pal.clear
 
     const start = async () => {
       try {
@@ -233,7 +324,7 @@ export function TechBackdrop({ variant = "games" }: { variant?: BackdropVariant 
 
         // NÃO chamar de `module`: o Next proíbe atribuir a esse nome (ele é o
         // `module` do CommonJS e a regra existe para não quebrar o bundler).
-        const shader = device.createShaderModule({ code: shaderFor(variant) })
+        const shader = device.createShaderModule({ code: shaderFor(variant, pal) })
         const pipeline = device.createRenderPipeline({
           layout: "auto",
           vertex: { module: shader, entryPoint: "vs" },
@@ -334,15 +425,13 @@ export function TechBackdrop({ variant = "games" }: { variant?: BackdropVariant 
         /* device já morto */
       }
     }
-  }, [variant])
+  }, [variant, tintCanvas, tintGlow])
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 select-none">
       {/* O caminho de reserva. Fica montado por baixo: se o WebGPU subir, o
           canvas o cobre; se cair no meio do caminho, ele continua ali. */}
-      <div
-        className={`${variant === "finance" ? "fl-finance-fallback" : "fl-games-fallback"} absolute inset-0`}
-      />
+      <div className={`${FALLBACK_CLASS[variant]} absolute inset-0`} />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full transition-opacity duration-700"

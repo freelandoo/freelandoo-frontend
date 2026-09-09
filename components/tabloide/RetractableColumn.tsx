@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useState, type ReactNode } from "react"
+import { useEffect, useId, useState, type CSSProperties, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { ChevronLeft, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -45,6 +45,8 @@ export function RetractableColumn({
   title,
   icon,
   accent,
+  skinClass,
+  skinVars,
   ariaLabel,
   closeLabel,
   onOpen,
@@ -54,6 +56,16 @@ export function RetractableColumn({
   icon?: ReactNode
   /** Cor da seta, da faixa da gaveta e do ícone do cabeçalho. */
   accent: string
+  /**
+   * ⚠️ A PELE DO AMBIENTE PRECISA VIR POR PROP porque esta peça se desenha por
+   * PORTAL no <body>: fora da subárvore da página, ela não herda nem a classe
+   * (`.fl-business`) nem as variáveis de cor que a página escreve. Sem isto, a
+   * gaveta de números abriria marrom-tabloide no meio de uma plataforma preta —
+   * e a alça, que fica sempre no ar na borda direita, denunciaria isso o tempo
+   * todo. Quem não passa nada continua com o visual de sempre.
+   */
+  skinClass?: string
+  skinVars?: CSSProperties
   /** O que a alça diz a quem não vê a tela (nela só cabe a seta). */
   ariaLabel?: string
   closeLabel: string
@@ -96,7 +108,10 @@ export function RetractableColumn({
   if (!mounted) return null
 
   return createPortal(
-    <>
+    // Um <div> estático não vira bloco contentor de `fixed`, então a alça e a
+    // gaveta continuam ancoradas na janela — ele existe só para carregar a
+    // pele até dentro do portal.
+    <div className={skinClass} style={skinVars}>
       {/* A ALÇA — a única coisa que fica no ar. Estreita de propósito: o que
           aparece é a ponta da seta, colada na borda. A altura (h-16) é o que
           a torna alcançável com o polegar sem virar um painel. */}
@@ -163,7 +178,7 @@ export function RetractableColumn({
           </div>
         </aside>
       </div>
-    </>,
+    </div>,
     document.body,
   )
 }

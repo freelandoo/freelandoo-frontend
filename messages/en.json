@@ -2730,7 +2730,16 @@
     "rankingYouMinutes": "min online",
     "rankingYouAbsentActivity": "You have not scored here yet: post on the games platform and show up.",
     "rankingGoPublish": "Post",
-    "rankingActivityHint": "Like {like} · comment {comment} · share {share} · {min} min online = 1 point"
+    "rankingActivityHint": "Like {like} · comment {comment} · share {share} · {min} min online = 1 point",
+    "bgLabel": "Background",
+    "bgBlack": "Black",
+    "bgNavy": "Midnight blue",
+    "bgCyan": "Cyan",
+    "bgGreen": "Green",
+    "bgPurple": "Purple",
+    "bgWine": "Wine",
+    "bgAmber": "Amber",
+    "bgBrown": "Brown"
   },
   "Careers": {
     "hero.badge": "Careers",
