@@ -1060,11 +1060,20 @@ body.camera-active { overflow: hidden; }
 
 .fl-pill-dot { transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1); }
 
+/* O rótulo não muda de tamanho — ele aparece. `opacity` é a outra propriedade
+   que o navegador compõe sem recalcular nem repintar nada, então esta é a
+   única parte animada do gesto além do `transform` do próprio pill.
+   Ela existe porque, fechado, ~6px da ponta do rótulo escapam da foto (a folga
+   entre a borda da foto e o ícone é maior que o respiro do rótulo): sem sumir,
+   apareceria um risquinho de texto colado no ícone. */
+.fl-pill-label { transition: opacity 140ms linear; }
+
 [data-pill-open="true"]:hover .fl-pill,
 [data-pill-open="true"]:hover .fl-pill-dot { transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .fl-pill, .fl-pill-dot { transition: background-color 90ms linear; }
+  .fl-pill-label { transition: none; }
   .fl-pill-row:hover .fl-pill,
   .fl-pill-row:hover .fl-pill-dot { transform: none; }
 }
