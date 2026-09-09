@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -700,6 +700,33 @@ export default function CommunityDetailPage() {
   // A cor é FIXA (azul e laranja) e não a `accent` da comunidade: o accent é
   // editável pelo líder e pode cair justamente no tom do botão, que sumiria
   // dentro do próprio card. O pill é peça de chrome, não conteúdo pintável.
+  /**
+   * ⚠️ ABRIR O PAINEL É TRANSIÇÃO, e é aqui que mora a diferença entre esta
+   * tela e as outras duas que usam a MESMA pilha.
+   *
+   * No perfil principal e no Financeiro os pills NAVEGAM — o clique entrega a
+   * tela ao roteador e ninguém espera nada. Aqui ele muda o ESTADO DESTA
+   * PÁGINA, que é um componente único de milhares de linhas: o `setPanel` de um
+   * clique é atualização urgente, então o React reconstrói a árvore inteira de
+   * forma SÍNCRONA e bloqueia a thread — exatamente no quadro em que o spring
+   * do pill está começando. Era essa a diferença que fazia só os pills de games
+   * (e os de Perfil/Mural das outras modalidades) engasgarem.
+   *
+   * `startTransition` marca a abertura como não-urgente: o React fatia esse
+   * render e devolve a thread ao navegador entre os pedaços, então a animação
+   * do pill continua correndo e o painel chega alguns milissegundos depois —
+   * que é a ordem certa, porque o painel nasce fora da vista, abaixo do
+   * headcard, e o que a pessoa está olhando é o botão.
+   *
+   * ⚠️ SÓ VALE PARA ESTADO. Não envolver navegação, `fetch` ou nada assíncrono
+   * aqui: o preset do headcard (`HeadcardPills`) tem `onOpen` que faz
+   * requisição e acende um "indo...", e adiar aquilo esconderia o retorno do
+   * clique em vez de suavizá-lo.
+   */
+  const openPanel = useCallback((key: CommunityPanel) => {
+    startTransition(() => setPanel((p) => (p === key ? null : key)))
+  }, [])
+
   const communityPills: PillSpec[] = useMemo(() => {
     // GAMES: a pilha é outra. O primeiro pill continua LARANJA porque ocupa o
     // mesmo lugar do Mural — só que ali não há mural. Os DOIS primeiros abrem o
@@ -717,7 +744,7 @@ export default function CommunityDetailPage() {
             : t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
           bg: "#C2410C",
           bgHover: "#9A3412",
-          onOpen: () => setPanel((p) => (p === "game" ? null : "game")),
+          onOpen: () => openPanel("game"),
           active: panel === "game",
         },
         // NAVEGA em vez de abrir painel, pela mesma razão do Ranking: uma
@@ -757,7 +784,7 @@ export default function CommunityDetailPage() {
         ariaLabel: t("profilePillAria", "Perfil da comunidade: enxame, privacidade, temporada e sobre"),
         bg: "#1D4ED8",
         bgHover: "#1E3A8A",
-        onOpen: () => setPanel((p) => (p === "profile" ? null : "profile")),
+        onOpen: () => openPanel("profile"),
         active: panel === "profile",
       },
       {
@@ -767,7 +794,7 @@ export default function CommunityDetailPage() {
         ariaLabel: t("muralPillAria", "Mural do líder: recados da comunidade"),
         bg: "#C2410C",
         bgHover: "#9A3412",
-        onOpen: () => setPanel((p) => (p === "mural" ? null : "mural")),
+        onOpen: () => openPanel("mural"),
         active: panel === "mural",
       },
       // O terceiro é o RANKING, e ele NAVEGA em vez de abrir painel: o pódio
@@ -789,7 +816,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, isGamesPlatform, gamerOwner, gamerOwnerLabel])
+  }, [t, panel, id, isGamesPlatform, gamerOwner, gamerOwnerLabel, openPanel])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
@@ -101,7 +101,15 @@ export type PillSpec = {
   dotLabel?: string
 }
 
-function Pill({
+/**
+ * ⚠️ MEMOIZADO, e isto é o que mantém a animação honesta fora de uma tela
+ * pequena. A pilha é montada DENTRO de páginas gigantes (a da comunidade tem
+ * ~2700 linhas num componente só): sem `memo`, qualquer estado que mude lá em
+ * cima re-renderiza os três pills — inclusive no meio do spring, que é
+ * justamente quando o quadro não pode ser perdido. Ver o `memo` do `PillStack`
+ * abaixo e o `onArm` estável que o alimenta.
+ */
+const Pill = memo(function Pill({
   spec,
   open,
   onArm,
@@ -109,7 +117,8 @@ function Pill({
 }: {
   spec: PillSpec
   open: boolean
-  onArm: () => void
+  /** Recebe a chave para poder ser ESTÁVEL — ver o `armPill` do `PillStack`. */
+  onArm: (key: string) => void
   avatarPadClass: string
 }) {
   const reduceMotion = useReducedMotion()
@@ -176,7 +185,7 @@ function Pill({
           onClick={(e) => {
             if (!open) {
               e.preventDefault()
-              onArm()
+              onArm(spec.key)
             }
           }}
           className={className}
@@ -192,7 +201,7 @@ function Pill({
           aria-expanded={open}
           aria-label={spec.ariaLabel}
           title={spec.ariaLabel}
-          onClick={() => (open ? spec.onOpen?.() : onArm())}
+          onClick={() => (open ? spec.onOpen?.() : onArm(spec.key))}
           className={className}
           style={{ background: baseBg }}
           onMouseEnter={(e) => (e.currentTarget.style.background = spec.bgHover)}
@@ -203,7 +212,7 @@ function Pill({
       )}
     </motion.div>
   )
-}
+})
 
 /**
  * A mecânica dos pills, sem opinião sobre QUAIS são: um aberto por vez, fecha
@@ -217,8 +226,17 @@ function Pill({
  * Qual destino está no ar é dito pela COR (`spec.active`), não por deixar o
  * pill aberto: aberto, o rótulo cobriria o que estiver à direita da foto o
  * tempo todo em que o painel durasse.
+ *
+ * ⚠️ MEMOIZADO — e o `memo` SÓ ENGATA COM `pills` ESTÁVEL. Ele existe porque a
+ * pilha é montada dentro de páginas enormes (a da comunidade é um componente
+ * único de ~2700 linhas): sem ele, qualquer estado daquela página re-renderiza
+ * os pills no meio do spring. Quem monta precisa entregar o array em `useMemo`
+ * — a página da comunidade e o headcard da Carteira já entregam. O preset
+ * `HeadcardPills` abaixo e a academia ainda montam o array no corpo do render,
+ * então lá o `memo` não engata (não é regressão — só não há ganho). Se um dia
+ * a academia engasgar como games engasgou, é por aí que se começa.
  */
-export function PillStack({
+export const PillStack = memo(function PillStack({
   pills,
   avatarPadClass,
   className,
@@ -250,6 +268,11 @@ export function PillStack({
     }
   }, [openKey])
 
+  // `useCallback` sem dependência: o setter do React é estável, então esta
+  // função nasce UMA vez para a vida da pilha. É ela que faz o `memo` do `Pill`
+  // valer alguma coisa.
+  const armPill = useCallback((key: string) => setOpenKey(key), [])
+
   if (pills.length === 0) return null
 
   return (
@@ -259,13 +282,16 @@ export function PillStack({
           key={spec.key}
           spec={spec}
           open={openKey === spec.key}
-          onArm={() => setOpenKey(spec.key)}
+          // ⚠️ ESTÁVEL DE PROPÓSITO (`armPill`, em useCallback abaixo): uma
+          // arrow escrita aqui nasceria nova a cada render e derrubaria o
+          // `memo` do `Pill` sozinha, deixando-o de enfeite.
+          onArm={armPill}
           avatarPadClass={avatarPadClass}
         />
       ))}
     </div>
   )
-}
+})
 
 export function HeadcardPills({
   avatarPadClass = "pl-28 md:pl-32",
