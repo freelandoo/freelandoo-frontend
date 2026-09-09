@@ -26,7 +26,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { AlertCircle, Loader2, Wallet } from "lucide-react"
+import Link from "next/link"
+import { AlertCircle, Loader2, Trophy, Wallet } from "lucide-react"
 import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -180,6 +181,17 @@ export default function FinancePage() {
           </h2>
           <Underline className="absolute -bottom-2 left-0 h-3.5 w-32" style={{ color: GREEN }} />
         </div>
+        {/* A porta do ranking. NÃO é um quinto pill: a pilha do headcard já
+            tem quatro (162px) e a foto mede 168px no celular — o quinto não
+            caberia atrás dela e passaria a escapar por cima. */}
+        <Link
+          href="/wallet/ranking"
+          className="mb-4 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5"
+          style={{ background: GREEN }}
+        >
+          <Trophy className="h-4 w-4" /> {tr("rankingCta", "Ver o ranking")}
+        </Link>
+
         <p className="mb-6 max-w-2xl text-[12px] leading-relaxed text-[#C9C2B6]/80">
           {tr(
             "financeIntro",
