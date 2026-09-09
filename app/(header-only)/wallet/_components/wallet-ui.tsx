@@ -1,14 +1,19 @@
 "use client"
 
-// Vocabulário visual e as peças pequenas que as CINCO telas da Carteira
-// dividem: a raiz (/wallet), que é o Financeiro, e as páginas dos quatro botões
-// retráteis (/wallet/carteira, /wallet/ranking, /wallet/cupom e
-// /wallet/mercado).
+// Vocabulário visual e as peças pequenas que as QUATRO telas do Financeiro
+// dividem: a raiz (/wallet), que é o feed da plataforma, e as páginas dos três
+// botões retráteis (/wallet/carteira, /wallet/ranking e /wallet/cupom).
 //
 // Existe porque os pills deixaram de abrir painéis da própria página e passaram
-// a NAVEGAR (pedido do Alex, 2026-09-08): com cinco rotas, a paleta, os
+// a NAVEGAR (pedido do Alex, 2026-09-08): com quatro rotas, a paleta, os
 // formatadores e os cards de papel copiados em cada uma divergiriam na primeira
 // mudança de tom — mesma razão do `community-ui.ts` e do `academy-ui.ts`.
+//
+// ⚠️ AQUI ESTÁ O PAPEL, NÃO A PELE. As cores do AMBIENTE (o canvas verde, os
+// painéis, a tinta clara) moram em `.fl-finance`, no globals.css, e chegam pela
+// casca `finance-shell.tsx`. O que este arquivo guarda são as folhas de papel
+// que ficam POR CIMA dessa mesa — e é por isso que #F1EDE2 continua sendo
+// #F1EDE2 dentro do ambiente.
 //
 // Tela nova da Carteira importa DAQUI.
 

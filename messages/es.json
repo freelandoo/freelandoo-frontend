@@ -4267,7 +4267,11 @@
     "rankingPill": "Ranking",
     "rankingPillAria": "Ranking de Finanzas en tu ciudad y tu estado",
     "rankingLegendTime": "{min} min en Finanzas = 1 punto",
-    "rankingMinutes": "min en línea"
+    "rankingMinutes": "min en línea",
+    "financePlatformTitle": "Financiero",
+    "financePlatformLabel": "Plataforma",
+    "tabFeed": "Feed",
+    "tabMarket": "Mercado"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

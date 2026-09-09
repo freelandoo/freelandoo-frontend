@@ -17,10 +17,11 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { AlertCircle, Check, Copy, Loader2, Percent, Ticket } from "lucide-react"
-import { Halftone, Underline } from "@/components/home/landing/primitives"
+import { Underline } from "@/components/home/landing/primitives"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
 import { useTranslations } from "@/components/i18n/I18nProvider"
+import { FinanceShell } from "../_components/finance-shell"
 import { WalletHeadcard } from "../_components/wallet-headcard"
 import { AfiliadoPanel } from "../_components/afiliado-panel"
 import { CouponSaleRow, ExtratoSkeleton, GREEN, StateBox, type CouponSale } from "../_components/wallet-ui"
@@ -97,12 +98,10 @@ export default function WalletCouponPage() {
   }
 
   return (
-    <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
-      <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
+    <FinanceShell>
 
       <WalletHeadcard
         perfil={perfil}
-        eyebrow={tr("couponEyebrow", "quem você indicou")}
         title={tr("couponPill", "Meu cupom")}
         backHref="/wallet"
         active="coupon"
@@ -224,6 +223,6 @@ export default function WalletCouponPage() {
         </div>
         <AfiliadoPanel />
       </section>
-    </main>
+    </FinanceShell>
   )
 }

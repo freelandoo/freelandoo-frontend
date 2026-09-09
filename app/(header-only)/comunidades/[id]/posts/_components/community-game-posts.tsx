@@ -46,7 +46,7 @@ import { accentHex } from "../../_components/community-ui"
 // O mesmo fundo da página do ambiente: a vitrine é uma tela DE DENTRO dele, e
 // um fundo diferente aqui faria a pessoa achar que saiu da plataforma.
 const TechBackdrop = dynamic(
-  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
   { ssr: false }
 )
 

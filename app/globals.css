@@ -790,3 +790,118 @@ body.camera-active { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .fl-games-fallback { animation: none; }
 }
+
+/* ============================================================================
+   PLATAFORMA FINANCEIRO — a pele verde (`.fl-finance`)
+   ----------------------------------------------------------------------------
+   Pedido do Alex (2026-09-08): "o financeiro não é uma comunidade (...) é como
+   games (...) se vc conseguir alterar a identidade visual, colocar verde e no
+   fundo algum símbolo de dinheiro e fazer efeitos webgpu".
+
+   ⚠️ A LISTA ABAIXO É A MESMA DA `.fl-games`, com valores verdes — e isso não é
+   coincidência: a tela do Financeiro passou a usar a MESMA paleta de casca de
+   plataforma que a página da comunidade usa (canvas, painel, interior, painel
+   fundo, tinta, apagado e a linha). É o que permite que a pele seja um arquivo
+   e não 200 edições espalhadas, e é o que faz uma cor nova precisar entrar nas
+   DUAS listas: declarada só numa, o bloco novo nasce roxo no meio do verde (ou
+   marrom, que é o padrão de baixo).
+
+   O QUE NÃO MUDA: cantos retos (regra permanente acima) e o amarelo #F2B705 —
+   é ele que marca a porta de saída no dock e o botão de publicar, e trocá-lo
+   por verde apagaria a única coisa que ainda diz "isto é a Freelandoo".
+
+   ⚠️ AS TELAS DE PAPEL DA CARTEIRA (o mercado, o cupom, o extrato) usam
+   #F1EDE2, que NÃO está nesta lista de propósito: elas continuam sendo folhas
+   de papel sobre a mesa verde. Puxá-las para cá escureceria o fundo e deixaria
+   o texto preto delas ilegível — a pele DEGRADA para o que já existe, nunca
+   para quebrado.
+   ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-finance .bg-\[\#0b0804\]      { background-color: #05140F; }
+.fl-finance .bg-\[\#0b0804\]\/80  { background-color: rgba(5, 20, 15, 0.8); }
+.fl-finance .bg-\[\#0F0C08\]      { background-color: rgba(6, 26, 20, 0.86); }
+.fl-finance .bg-\[\#15120E\]      { background-color: rgba(9, 38, 29, 0.78); }
+.fl-finance .bg-\[\#15120E\]\/95  { background-color: rgba(9, 38, 29, 0.95); }
+.fl-finance .bg-\[\#15120E\]\/60  { background-color: rgba(9, 38, 29, 0.6); }
+.fl-finance .bg-\[\#15120E\]\/40  { background-color: rgba(9, 38, 29, 0.4); }
+.fl-finance .bg-\[\#1D1810\]      { background-color: rgba(12, 52, 40, 0.72); }
+.fl-finance .bg-\[\#241d12\]      { background-color: rgba(16, 74, 58, 0.9); }
+
+/* Tinta ------------------------------------------------------------------- */
+.fl-finance .text-\[\#F5F1E8\]     { color: #E4F5EE; }
+.fl-finance .text-\[\#F5F1E8\]\/90 { color: rgba(228, 245, 238, 0.9); }
+.fl-finance .text-\[\#F5F1E8\]\/85 { color: rgba(228, 245, 238, 0.85); }
+.fl-finance .text-\[\#F5F1E8\]\/80 { color: rgba(228, 245, 238, 0.8); }
+.fl-finance .text-\[\#F5F1E8\]\/70 { color: rgba(228, 245, 238, 0.7); }
+.fl-finance .text-\[\#F5F1E8\]\/40 { color: rgba(228, 245, 238, 0.4); }
+.fl-finance .text-\[\#F5F1E8\]\/30 { color: rgba(228, 245, 238, 0.3); }
+.fl-finance .text-\[\#9A938A\]     { color: #6FBFA8; }
+.fl-finance .text-\[\#9A938A\]\/70 { color: rgba(111, 191, 168, 0.7); }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-finance .border-\[\#0B0B0D\]      { border-color: #114C3E; }
+.fl-finance .border-\[\#F5F1E8\]\/30  { border-color: rgba(22, 183, 154, 0.45); }
+.fl-finance .border-\[\#F5F1E8\]\/25  { border-color: rgba(22, 183, 154, 0.4); }
+.fl-finance .border-\[\#F5F1E8\]\/20  { border-color: rgba(22, 183, 154, 0.34); }
+.fl-finance .border-\[\#F5F1E8\]\/15  { border-color: rgba(22, 183, 154, 0.28); }
+.fl-finance .border-\[\#F5F1E8\]\/12  { border-color: rgba(22, 183, 154, 0.24); }
+.fl-finance .border-\[\#F5F1E8\]\/10  { border-color: rgba(22, 183, 154, 0.2); }
+.fl-finance .border-\[\#F5F1E8\]\/60  { border-color: rgba(22, 183, 154, 0.6); }
+
+/* O título deixa de gritar como manchete e passa a zumbir como painel — mesma
+   decisão da plataforma de games, com o brilho na cor da casa.
+
+   ⚠️ O BRILHO SÓ VALE PARA TÍTULO CLARO, e é aí que ele difere do skin de
+   games: lá a página inteira é escura, aqui convivem o ambiente escuro e as
+   folhas de papel da Carteira. Um halo verde atrás de um título PRETO sobre
+   papel creme não lê como painel — lê como impressão borrada. Por isso os dois
+   seletores de tinta clara em vez de `.fl-display` solto. */
+.fl-finance .fl-display {
+  letter-spacing: 0.02em;
+}
+.fl-finance .fl-display.text-\[\#F5F1E8\],
+.fl-finance .fl-display.text-\[\#F1EDE2\] {
+  text-shadow: 0 0 24px rgba(22, 183, 154, 0.42);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
+.fl-finance .-rotate-2,
+.fl-finance .-rotate-3 { transform: none; }
+
+/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
+   orgânico do shader. Ver components/platform/tech-backdrop.tsx. */
+.fl-finance-fallback {
+  background-color: #05140F;
+  background-image:
+    radial-gradient(60% 45% at 20% 16%, rgba(0, 135, 107, 0.45), transparent 70%),
+    radial-gradient(52% 42% at 84% 28%, rgba(22, 183, 154, 0.26), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(22, 183, 154, 0.28), transparent 70%),
+    repeating-linear-gradient(to right, rgba(22, 183, 154, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(22, 183, 154, 0.05) 0 1px, transparent 1px 64px);
+  animation: fl-finance-drift 30s ease-in-out infinite alternate;
+}
+@keyframes fl-finance-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
+}
+
+/* O SÍMBOLO DE DINHEIRO — cifrões esparsos derivando devagar sobre o fundo.
+   Mora no CSS, e não no shader, porque precisa aparecer TAMBÉM para quem não
+   tem WebGPU: desenhado lá, ele sumiria justamente nos navegadores que caem no
+   caminho de reserva. `serif` genérica de propósito — a fonte da casa (Anton)
+   não é carregada dentro de um SVG de background, e um cifrão com a serifa do
+   sistema é mais legível do que um path desenhado à mão. */
+.fl-money-veil {
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%2316B79A' font-family='Georgia, serif' font-weight='bold'%3E%3Ctext x='26' y='74' font-size='58' fill-opacity='0.11'%3E$%3C/text%3E%3Ctext x='146' y='166' font-size='38' fill-opacity='0.08'%3E$%3C/text%3E%3Ctext x='96' y='210' font-size='26' fill-opacity='0.06'%3E$%3C/text%3E%3C/g%3E%3C/svg%3E");
+  animation: fl-money-drift 46s linear infinite;
+}
+@keyframes fl-money-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 220px -220px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-finance-fallback,
+  .fl-money-veil { animation: none; }
+}

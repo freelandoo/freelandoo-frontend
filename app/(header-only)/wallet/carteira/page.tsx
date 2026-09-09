@@ -12,11 +12,17 @@
 // duas telas respondem perguntas diferentes ("quanto EU tenho" × "o que o mundo
 // está falando de dinheiro"), e quem chega pela foto de perfil quer a primeira.
 //
-// Os quatro botões retráteis do headcard NAVEGAM, cada um com página própria:
-// esta (Carteira), /wallet/vaquinha, /wallet/cupom e /wallet/mercado. Antes
-// eles abriam painéis de uma página só, e três assuntos dividiam a mesma
-// rolagem sem endereço nenhum. O headcard é peça compartilhada
-// (`_components/wallet-headcard.tsx`) porque aparece nas CINCO telas.
+// Os três botões retráteis do headcard NAVEGAM, cada um com página própria:
+// esta (Carteira), /wallet/ranking e /wallet/cupom. Antes eles abriam painéis
+// de uma página só, e três assuntos dividiam a mesma rolagem sem endereço
+// nenhum. O headcard é peça compartilhada (`_components/wallet-headcard.tsx`)
+// porque aparece nas QUATRO telas da plataforma.
+//
+// ⚠️ E A CASCA TAMBÉM É COMPARTILHADA (`_components/finance-shell.tsx`): esta
+// página é uma sala do ambiente Financeiro, com a pele verde e o fundo WebGPU
+// que a plataforma inteira usa. Os cards continuam sendo de PAPEL de propósito
+// — a pele não os alcança (ver o bloco `.fl-finance` em globals.css), e é isso
+// que mantém o extrato legível sobre a mesa verde.
 //
 // O extrato ficou AQUI, e não na página do cupom onde vivia: ele sai do mesmo
 // `/me/earnings` que alimenta os KPIs e o gráfico, e obedece ao mesmo seletor
@@ -38,11 +44,12 @@ import {
 } from "lucide-react"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
-import { Halftone, Underline } from "@/components/home/landing/primitives"
+import { Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { VidaFinanceira } from "../_components/vida-financeira"
 import { MeiCard } from "../_components/mei-card"
+import { FinanceShell } from "../_components/finance-shell"
 import { WalletHeadcard, useVaquinhaEnabled } from "../_components/wallet-headcard"
 import {
   ExtratoRow, ExtratoSkeleton, GREEN, Kpi, StateBox, brl, shortDay,
@@ -166,12 +173,10 @@ export default function WalletMoneyPage() {
   const totals = agg?.totals || {}
 
   return (
-    <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
-      <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
+    <FinanceShell>
 
       <WalletHeadcard
         perfil={perfil}
-        eyebrow={tr("heroEyebrow", "a sua grana")}
         title={tr("heroTitle", "Carteira")}
         backHref="/wallet"
         active="wallet"
@@ -382,7 +387,7 @@ export default function WalletMoneyPage() {
           </div>
         </div>
       </section>
-    </main>
+    </FinanceShell>
   )
 }
 

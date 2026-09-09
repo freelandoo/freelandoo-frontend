@@ -1,66 +1,71 @@
 "use client"
 
-// O HEADCARD da Carteira — peça ÚNICA das cinco telas dela (a raiz, que é o
-// Financeiro, e as quatro páginas dos botões retráteis).
+// O HEADCARD DO FINANCEIRO — peça ÚNICA das quatro telas da plataforma (o feed,
+// que é a raiz, e as páginas dos três botões retráteis).
 //
-// Ele é a MANCHETE da página: a foto com os botões atrás dela e, no lugar onde
-// no perfil ficam o nome e o @, o título da tela. O que muda de uma para outra
-// é só o par eyebrow/título e para onde o "Voltar" leva — a pilha, a geometria
-// e o link do @ são os mesmos.
+// ⚠️ ELE VIROU A SILHUETA DA PLATAFORMA (pedido do Alex, 2026-09-08: "mantenha
+// o layout do anexo 01, a silhueta do anexo 01 exatamente, porém com a
+// identidade verde do financeiro"). Era um card de papel creme com a foto e o
+// título ao lado; agora é o MESMO desenho da plataforma de games — banner
+// largo, chip do ambiente no canto, selo no canto oposto, a foto quadrada
+// mordendo a borda de baixo com os pills escapando por trás e o título gigante
+// ao lado dela.
+//
+// A identidade não é a de games: o roxo dá lugar ao verde (`.fl-finance`, em
+// globals.css) e o fundo WebGPU corre a fita de candles em vez da grade em
+// perspectiva. O que se copiou foi a SILHUETA, não a pele.
 //
 // ⚠️ OS PILLS NAVEGAM (pedido do Alex, 2026-09-08: "os pills têm que ter
-// páginas próprias, e não apenas abrir seções"). Antes cada um abria um painel
-// da própria /wallet, então três assuntos diferentes moravam numa rolagem só e
-// nenhum deles tinha endereço: não dava para mandar o link do cupom para
-// alguém, o "Voltar" do navegador saía da Carteira inteira e o F5 devolvia a
-// tela fechada. Cada botão agora é uma ROTA — por isso `href`, e por isso o
-// `active` marca quem está no ar em vez de um estado local.
+// páginas próprias, e não apenas abrir seções"): cada botão é uma ROTA, por
+// isso `href`, e por isso o `active` marca quem está no ar em vez de um estado
+// local. O primeiro clique só revela o rótulo e o SEGUNDO navega — é a mecânica
+// do `PillStack`, e ela vale aqui porque fechado o botão mal escapa de trás da
+// foto e navegar no primeiro toque o tornaria armadilha.
 //
-// O primeiro clique só revela o rótulo e o SEGUNDO navega: é a mecânica do
-// `PillStack`, e ela vale mais aqui do que no perfil, porque fechado o botão
-// mal escapa de trás da foto e navegar no primeiro toque o tornaria armadilha.
+// ⚠️ O MERCADO SAIU DA PILHA e virou ABA da raiz (pedido do Alex: "no
+// financeiro vai ter feed e mercados (...) e o pill de mercados vai sumir de
+// trás da foto de perfil"). Ele é conteúdo da plataforma, como a Estante é em
+// games — e conteúdo mora nas abas. A rota `/wallet/mercado` foi APAGADA junto:
+// mantida de pé, a mesma tela teria duas portas, e é assim que uma delas para
+// de acompanhar a outra.
 //
 // BOTÃO NOVO DA CARTEIRA ENTRA NESTA LISTA — e, sendo uma rota, ganha a página
 // dele em `app/(header-only)/wallet/<rota>/page.tsx`. Solto na página, ele
-// existiria numa das cinco telas e sumiria nas outras quatro, em silêncio.
+// existiria numa das telas e sumiria nas outras, em silêncio.
 //
-// ⚠️ A PILHA TEM QUATRO LUGARES, e não é preferência: 4 × 36 + 3 × 6 = 162px, e
-// a foto mede 168px no celular. Um QUINTO não caberia atrás dela e passaria a
-// escapar por cima e por baixo em vez de só pela direita. É por isso que o
-// Ranking só pôde entrar quando a Vaquinha saiu (2026-09-08) — ela virou um
-// botão dentro da Carteira, ao lado da Vida Financeira, que é onde a pessoa já
-// está olhando para o próprio dinheiro.
+// ⚠️ A PILHA TEM TRÊS LUGARES: 3 × 36 (h-9) + 2 × 6 (gap-1.5) = 120px, e a foto
+// mede 128px no celular (h-32) e 144px no computador (h-36). A foto TEM que ser
+// maior que a pilha, senão o pill de cima e o de baixo escapam por cima e por
+// baixo em vez de só pela direita. PILL NOVO AQUI? Refazer esta conta antes —
+// é a mesma que, em games, obrigou a foto a subir de h-28 para h-32.
 
 import Link from "next/link"
-import { ArrowLeft, BarChart3, Percent, Trophy, Wallet } from "lucide-react"
-import { useMemo } from "react"
+import { ArrowLeft, Percent, Trophy, Wallet } from "lucide-react"
+import { useMemo, type ReactNode } from "react"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
-import { Underline } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { usePlatformPresence } from "@/components/layout/platform-presence"
-import { GREEN, GREEN_DEEP, initialsOf } from "./wallet-ui"
+import { GREEN, initialsOf } from "./wallet-ui"
 
-/** Qual das telas está no ar (a raiz, que é o Financeiro, não acende nenhum). */
-export type WalletPillKey = "wallet" | "ranking" | "coupon" | "market"
+/** Qual das telas está no ar (a raiz, que é o feed, não acende nenhum). */
+export type WalletPillKey = "wallet" | "ranking" | "coupon"
 
-/** As rotas das quatro páginas, num lugar só. */
+/** As rotas das três páginas, num lugar só. */
 export const WALLET_ROUTES: Record<WalletPillKey, string> = {
   wallet: "/wallet/carteira",
   ranking: "/wallet/ranking",
   coupon: "/wallet/cupom",
-  market: "/wallet/mercado",
 }
 
 /**
  * A Vaquinha pode FALTAR: é função com flag do admin E preferência da pessoa
- * (mesma regra do menu lateral). Ela SAIU da pilha em 2026-09-08 e virou um
- * botão dentro da Carteira, ao lado da Vida Financeira — mas o predicado
- * continua morando aqui, no arquivo que as telas da Carteira já importam:
- * copiado para dentro da Carteira, ele deixaria de acompanhar a regra no dia em
- * que ela mudasse.
+ * (mesma regra do menu lateral). Ela não está na pilha — virou um botão dentro
+ * da Carteira, ao lado da Vida Financeira —, mas o predicado continua morando
+ * aqui, no arquivo que as telas da Carteira já importam: copiado para dentro da
+ * Carteira, ele deixaria de acompanhar a regra no dia em que ela mudasse.
  */
 export function useVaquinhaEnabled() {
   const flag = useFeature("vaquinha")
@@ -70,168 +75,205 @@ export function useVaquinhaEnabled() {
 
 export function WalletHeadcard({
   perfil,
-  eyebrow,
   title,
   backHref = "/account",
   active = null,
+  action = null,
 }: {
   perfil: PerfilCompleto | null
-  eyebrow: string
+  /** O nome da SALA (Financeiro, Carteira, Ranking, Meu cupom). */
   title: string
-  /** Para onde o "Voltar" leva: /account na raiz, /wallet nas três páginas. */
+  /** Para onde o "Voltar" leva: /account na raiz, /wallet nas páginas. */
   backHref?: string
   active?: WalletPillKey | null
+  /** O canto de ação do headcard — na raiz, o "+" de publicar. */
+  action?: ReactNode
 }) {
   const tr = useTranslations("Wallet")
 
   /**
    * ⚠️ A BATIDA DE PRESENÇA DO FINANCEIRO mora AQUI, e não numa das telas
-   * (mig 230). Este headcard é a única peça que as cinco telas da Carteira
-   * dividem — pendurar o relógio numa delas faria ir do mural para a Carteira
+   * (mig 230). Este headcard é a única peça que todas as telas da plataforma
+   * dividem — pendurar o relógio numa delas faria ir do feed para a Carteira
    * parar a contagem, e cada tela nova nasceria sem contar tempo.
    *
-   * "Dentro da plataforma financeira" é o `/wallet` inteiro: o mural, a
-   * Carteira, o cupom, o mercado e o ranking são salas do MESMO ambiente, e
-   * quem está em qualquer uma delas está aqui dentro. Fora do `/wallet` este
-   * componente não existe, então o relógio não anda — que é o recorte pedido.
+   * "Dentro da plataforma financeira" é o `/wallet` inteiro: o feed, a
+   * Carteira, o cupom e o ranking são salas do MESMO ambiente. Fora do
+   * `/wallet` este componente não existe, então o relógio não anda — que é o
+   * recorte pedido.
    */
   usePlatformPresence("finance")
 
-  const pills = useMemo<PillSpec[]>(() => {
-    const list: PillSpec[] = []
-    // CARTEIRA é o primeiro e é VERDE — o dinheiro da pessoa, que era o corpo
-    // desta tela até 2026-09-08 e virou uma página atrás deste botão quando a
-    // raiz passou a ser o Financeiro. O verde é o MESMO do pill da Carteira no
-    // headcard do perfil: é a mesma porta, e mudar de tom por superfície faria
-    // procurar duas vezes.
-    list.push({
-      key: "wallet",
-      icon: Wallet,
-      label: tr("walletPill", "Carteira"),
-      ariaLabel: tr("walletPillAria", "Minha carteira: vida financeira, ganhos e extrato"),
-      bg: "#15803D",
-      bgHover: "#0F5F2E",
-      href: WALLET_ROUTES.wallet,
-      active: active === "wallet",
-    })
-    // O RANKING no lugar rosa (pedido do Alex, 2026-09-08: "tira a vaquinha do
-    // pill rosa, coloca o ranking ali"). A fila é da plataforma inteira, e a
-    // porta dela era um botão dentro do mural — que só existia porque, com a
-    // Vaquinha na pilha, um quinto pill não caberia atrás da foto. Com a
-    // Vaquinha fora, o lugar abriu, e o ranking é da plataforma como o mural e
-    // o mercado são: pertence à pilha.
-    //
-    // ⚠️ SEM GATE, diferente do que estava aqui: ranking não é função comprável
-    // nem preferência: quem não pontuou vê a fila dos outros e a frase do que
-    // fazer. Um pill que some conforme a pontuação faria a porta piscar.
-    list.push({
-      key: "ranking",
-      icon: Trophy,
-      label: tr("rankingPill", "Ranking"),
-      ariaLabel: tr("rankingPillAria", "Ranking do Financeiro na sua cidade e no seu estado"),
-      bg: "#DB2777",
-      bgHover: "#BE185D",
-      href: WALLET_ROUTES.ranking,
-      active: active === "ranking",
-    })
-    list.push({
-      key: "coupon",
-      icon: Percent,
-      label: tr("couponPill", "Meu cupom"),
-      ariaLabel: tr("couponPillAria", "Meu cupom, vendas com ele e painel do afiliado"),
-      bg: "#C2410C",
-      bgHover: "#9A3412",
-      href: WALLET_ROUTES.coupon,
-      active: active === "coupon",
-    })
-    list.push({
-      key: "market",
-      icon: BarChart3,
-      label: tr("marketPill", "Mercado"),
-      ariaLabel: tr("marketPillAria", "Notícias de mercado, cotações e ações em alta"),
-      bg: GREEN_DEEP,
-      bgHover: "#046A55",
-      href: WALLET_ROUTES.market,
-      active: active === "market",
-    })
-    return list
-  }, [active, tr])
+  const pills = useMemo<PillSpec[]>(
+    () => [
+      // CARTEIRA é o primeiro e é VERDE — o dinheiro da pessoa, que era o corpo
+      // desta tela até 2026-09-08 e virou uma página atrás deste botão quando a
+      // raiz passou a ser o Financeiro. O verde é o MESMO do pill da Carteira no
+      // headcard do perfil: é a mesma porta, e mudar de tom por superfície faria
+      // procurar duas vezes.
+      {
+        key: "wallet",
+        icon: Wallet,
+        label: tr("walletPill", "Carteira"),
+        ariaLabel: tr("walletPillAria", "Minha carteira: vida financeira, ganhos e extrato"),
+        bg: "#15803D",
+        bgHover: "#0F5F2E",
+        href: WALLET_ROUTES.wallet,
+        active: active === "wallet",
+      },
+      // ⚠️ O RANKING NÃO TEM GATE: não é função comprável nem preferência. Quem
+      // não pontuou vê a fila dos outros e a frase do que fazer — um pill que
+      // some conforme a pontuação faria a porta piscar.
+      {
+        key: "ranking",
+        icon: Trophy,
+        label: tr("rankingPill", "Ranking"),
+        ariaLabel: tr("rankingPillAria", "Ranking do Financeiro na sua cidade e no seu estado"),
+        bg: "#DB2777",
+        bgHover: "#BE185D",
+        href: WALLET_ROUTES.ranking,
+        active: active === "ranking",
+      },
+      {
+        key: "coupon",
+        icon: Percent,
+        label: tr("couponPill", "Meu cupom"),
+        ariaLabel: tr("couponPillAria", "Meu cupom, vendas com ele e painel do afiliado"),
+        bg: "#C2410C",
+        bgHover: "#9A3412",
+        href: WALLET_ROUTES.coupon,
+        active: active === "coupon",
+      },
+    ],
+    [active, tr]
+  )
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-3 pt-5 md:px-8 md:pt-6">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <>
+      {/* Top bar — a mesma linha da plataforma de games: a saída à esquerda e a
+          identidade de quem está olhando à direita. */}
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#C9C2B6] transition hover:text-[#F1EDE2]"
+          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> {tr("back", "Voltar")}
+          <ArrowLeft className="h-4 w-4" /> {tr("back", "Voltar")}
         </Link>
         {perfil?.username && (
-          <span className="inline-flex items-center gap-2 bg-[#0B0B0D] px-3 py-1.5 text-[#F1EDE2]">
+          <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-[#F5F1E8]">
             <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: GREEN }} />
             <span className="text-[11px] font-extrabold uppercase tracking-[0.2em]">@{perfil.username}</span>
           </span>
         )}
       </div>
 
-      {/* A pilha é o PRIMEIRO filho da coluna do avatar e o card da foto vem
-          depois no DOM: sem z-index, quem pinta por último cobre, então a foto
-          esconde o corpo do botão e só o ícone escapa pela direita. É a mesma
-          armadilha já paga no headcard do perfil — `-z-10` funcionaria aqui e
-          quebraria lá, por isso a regra é a ordem do DOM. */}
-      <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
-        <div className="flex items-center gap-3 md:gap-5">
-          {/* TRÊS CAMADAS, de trás para a frente: título → botões → foto.
-              O `z-10` desta coluna é o que põe os botões NA FRENTE da
-              tipografia (sem ele o título, que vem depois no DOM, pintava por
-              cima do rótulo aberto e cortava a palavra no meio). Como a coluna
-              inteira sobe junto, a foto continua cobrindo o corpo do botão pela
-              ordem do DOM lá dentro — nada de z-index na foto. */}
-          <div className="relative z-10 flex shrink-0 flex-col items-center">
+      <header className="relative mx-auto mt-4 max-w-5xl px-5 md:px-10">
+        {/* ⚠️ `z-0` NÃO é decoração: é o que TRANCA o banner debaixo da linha da
+            foto. Sem ele o banner é `relative` com z-index AUTO, e elemento
+            posicionado com z auto NÃO cria contexto de empilhamento — qualquer
+            camada de dentro dele subiria para o contexto do <header> e passaria
+            por cima do card da foto. Foi a armadilha paga na página da
+            comunidade. */}
+        <div
+          className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]"
+          style={{ boxShadow: `0 0 30px rgba(22, 183, 154, 0.22), 8px 8px 0 0 rgba(11, 58, 46, 0.9)` }}
+        >
+          <div className="relative h-44 bg-[#1D1810] md:h-56">
+            {/* O banner do Financeiro é DESENHADO, não enviado: não há foto de
+                capa a subir aqui (a plataforma é do site inteiro, e não tem
+                dono que a edite). O que ele mostra é a própria identidade —
+                a grade do painel, o brilho verde e o cifrão de marca d'água. */}
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                backgroundImage: [
+                  "radial-gradient(70% 120% at 18% 0%, rgba(22, 183, 154, 0.34), transparent 65%)",
+                  "radial-gradient(60% 120% at 88% 10%, rgba(0, 135, 107, 0.30), transparent 68%)",
+                  "repeating-linear-gradient(to right, rgba(22, 183, 154, 0.10) 0 1px, transparent 1px 40px)",
+                  "repeating-linear-gradient(to bottom, rgba(22, 183, 154, 0.07) 0 1px, transparent 1px 40px)",
+                ].join(","),
+              }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-2 -top-10 select-none font-[Georgia,serif] text-[13rem] font-bold leading-none md:text-[17rem]"
+              style={{ color: "rgba(22, 183, 154, 0.10)" }}
+            >
+              $
+            </span>
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, transparent 40%, #05140Fcc 100%)" }}
+            />
+            {/* O CHIP diz o AMBIENTE, o título diz a SALA — é por isso que ele
+                é o mesmo nas quatro telas, como o chip "GAMES" é o mesmo em
+                todas as telas da plataforma de games. */}
+            <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+              {tr("financePlatformTitle", "Financeiro")}
+            </span>
+            {/* O selo do canto oposto. Em games ali fica o NÍVEL da comunidade;
+                aqui não há nível a mostrar — a plataforma é de todo mundo e não
+                acumula XP de grupo — e inventar um número seria afirmar o que
+                ninguém apurou. O que ele carrega é a assinatura do ambiente. */}
+            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
+              <span className="text-[8px] font-bold uppercase text-[#9A938A]">
+                {tr("financePlatformLabel", "Plataforma")}
+              </span>
+              <span className="fl-display text-2xl leading-none" style={{ color: GREEN }}>
+                $
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="relative z-20 -mt-12 flex flex-wrap items-end gap-4 px-2 md:-mt-16 md:px-3">
+          {/* A COLUNA DA FOTO: a pilha é o PRIMEIRO filho e a foto vem depois no
+              DOM. Sem z-index em nenhum dos dois, quem pinta por último cobre —
+              é assim que a foto esconde o corpo do botão e só o ícone escapa
+              pela direita. (`-z-10` NÃO serve: aqui o contexto de empilhamento
+              mais próximo é esta linha `relative z-20`, e o botão iria parar
+              atrás do banner.)
+
+              A pilha fica FORA da caixa da foto porque aquela caixa é
+              `overflow-hidden` — lá dentro o botão seria recortado na borda.
+
+              `pl-32 md:pl-36` casa com a LARGURA DA FOTO. Mexeu no tamanho da
+              foto? Ajustar o padding junto, senão o corpo colorido nasce ao
+              lado dela em vez de debaixo. */}
+          <div className="relative shrink-0">
             <PillStack
               pills={pills}
-              avatarPadClass="pl-28 md:pl-32"
+              avatarPadClass="pl-32 md:pl-36"
               className="absolute left-0 top-1/2 -translate-y-1/2"
             />
-            {/* Mesma geometria do headcard do perfil: a foto precisa cobrir a
-                pilha, e a largura casa com o `avatarPadClass` acima.
-                ⚠️ São QUATRO pills desde 2026-09-08 (a Carteira entrou quando a
-                raiz virou o Financeiro): 4 × 36 (h-9) + 3 × 6 (gap-1.5) =
-                162px. A foto mede 168px no celular (w-28, aspect 2/3) e 192px
-                no computador (w-32) — cabe nos dois, e é isso que mantém os
-                pills escapando SÓ pela direita. PILL NOVO AQUI? Refazer esta
-                conta antes. */}
-            <div className="w-28 -rotate-3 md:w-32">
-              <div className="flex aspect-[2/3] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] bg-[#0B0B0D]/[0.07] shadow-[6px_6px_0_0_#16B79A] ring-2 ring-[#0B0B0D]">
-                {perfil?.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={perfil.avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="fl-display text-3xl text-[#0B0B0D]">{initialsOf(perfil?.nome)}</span>
-                )}
-              </div>
+            <div
+              className="relative h-32 w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36"
+              style={{ outline: `2px solid ${GREEN}`, outlineOffset: "2px" }}
+            >
+              {perfil?.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={perfil.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
+                  {initialsOf(perfil?.nome)}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* A folga tem que passar dos ÍCONES, não da foto: os botões nascem
-              atrás dela e cada ícone escapa uns 42px para cá. Com folga só da
-              largura da foto, o título começava debaixo deles. O título usa
-              clamp porque divide a linha com a foto — em vw puro ele estouraria
-              a caixa nos celulares estreitos. */}
-          <div className="min-w-0 flex-1 pl-16 md:pl-24">
-            <p className="fl-marker text-xl leading-none md:text-2xl" style={{ color: GREEN_DEEP }}>
-              {eyebrow}
-            </p>
-            <h1 className="relative mt-1 min-w-0">
-              <span className="fl-display block text-[clamp(2.1rem,9vw,4.25rem)] leading-[0.84] text-[#0B0B0D]">
-                {title}
-                <span style={{ color: GREEN_DEEP }}>.</span>
-              </span>
-              <Underline className="absolute -bottom-1 left-0.5 h-3 w-[52%] max-w-[220px]" style={{ color: GREEN }} />
+          {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para
+              cá de trás da foto: sem ela o título começa debaixo dele. */}
+          <div className="flex-1 pb-1 pl-11 md:pb-2 md:pl-12">
+            <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+              {title}
             </h1>
           </div>
+
+          {action && <div className="pb-1">{action}</div>}
         </div>
-      </div>
-    </section>
+      </header>
+    </>
   )
 }

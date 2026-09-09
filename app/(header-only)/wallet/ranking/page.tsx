@@ -33,11 +33,11 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { AlertCircle, MapPin, Trophy } from "lucide-react"
-import { Halftone, Underline } from "@/components/home/landing/primitives"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { FinanceShell } from "../_components/finance-shell"
 import { WalletHeadcard } from "../_components/wallet-headcard"
 import { GREEN, GREEN_DEEP, StateBox, initialsOf } from "../_components/wallet-ui"
 
@@ -105,12 +105,10 @@ export default function FinanceRankingPage() {
   const weights = payload?.weights
 
   return (
-    <main className="fl-root fl-paper-texture relative min-h-[100dvh] overflow-x-clip pb-24">
-      <Halftone className="absolute left-3 top-40 h-24 w-24 opacity-[0.1]" />
+    <FinanceShell>
 
       <WalletHeadcard
         perfil={perfil}
-        eyebrow={tr("rankingEyebrow", "quem move o dinheiro")}
         title={tr("rankingTitle", "Ranking")}
         backHref="/wallet"
         active="ranking"
@@ -237,7 +235,7 @@ export default function FinanceRankingPage() {
           </p>
         )}
       </section>
-    </main>
+    </FinanceShell>
   )
 }
 

@@ -61,7 +61,7 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // O ranking também é uma tela DE DENTRO do ambiente games: mesmo fundo, mesma
 // pele. Por `dynamic` para não pesar no ranking das outras seis modalidades.
 const TechBackdrop = dynamic(
-  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
   { ssr: false }
 )
 

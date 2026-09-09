@@ -3701,7 +3701,11 @@
     "rankingPill": "Ranking",
     "rankingPillAria": "Ranking do Financeiro na sua cidade e no seu estado",
     "rankingLegendTime": "{min} min no Financeiro = 1 ponto",
-    "rankingMinutes": "min online"
+    "rankingMinutes": "min online",
+    "financePlatformTitle": "Financeiro",
+    "financePlatformLabel": "Plataforma",
+    "tabFeed": "Feed",
+    "tabMarket": "Mercado"
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",

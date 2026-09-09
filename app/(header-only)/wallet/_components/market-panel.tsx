@@ -2,11 +2,20 @@
 
 // O mercado — manchetes, cotações e ações em alta.
 //
-// Era uma barra lateral fixa (e um slide-over no celular), depois virou painel
-// de um botão retrátil da /wallet, e agora é o conteúdo da página
-// /wallet/mercado. Mudou de casa três vezes e nunca mudou de fonte: o snapshot
-// continua vindo do CACHE DO BACKEND (scheduler do Railway) numa requisição só.
-// Sem polling e sem fetch externo por request — a regra de custo da Vercel.
+// Era uma barra lateral fixa (e um slide-over no celular), depois painel de um
+// botão retrátil da /wallet, depois a página /wallet/mercado, e agora é a ABA
+// MERCADO da plataforma Financeiro — o par da Estante de games (pedido do Alex,
+// 2026-09-08: "no financeiro vai ter feed e mercados (...) e o pill de mercados
+// vai sumir de trás da foto de perfil"). A rota própria foi apagada junto: um
+// pill e uma aba para a mesma tela seriam duas portas.
+//
+// Mudou de casa quatro vezes e nunca mudou de fonte: o snapshot continua vindo
+// do CACHE DO BACKEND (scheduler do Railway) numa requisição só. Sem polling e
+// sem fetch externo por request — a regra de custo da Vercel.
+//
+// ⚠️ OS CARDS CONTINUAM DE PAPEL dentro do ambiente escuro, de propósito: a
+// pele `.fl-finance` não alcança #F1EDE2 (ver globals.css). Puxá-los para o
+// verde escureceria o fundo e deixaria ilegível o texto preto das cotações.
 
 import { useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"

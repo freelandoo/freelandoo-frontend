@@ -41,7 +41,7 @@ const PortfolioPostCard = dynamic(
 // com ssr:false: ele só existe no navegador, e as outras seis modalidades desta
 // mesma casca não carregam o shader à toa.
 const TechBackdrop = dynamic(
-  () => import("@/components/games/tech-backdrop").then((m) => m.TechBackdrop),
+  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
   { ssr: false }
 )
 const CommentsPanel = dynamic(
