@@ -4256,7 +4256,17 @@
     "vaquinhaEyebrow": "your goal",
     "couponEyebrow": "who you referred",
     "marketEyebrow": "the world out there",
-    "couponSalesTitle": "Sales with your coupon"
+    "couponSalesTitle": "Sales with your coupon",
+    "financeWallTitle": "The money wall",
+    "financeLoadError": "Couldn't open Finance.",
+    "publishFinanceCta": "Post to Finance",
+    "composeCta": "Publish",
+    "postLabel": "Post",
+    "curtoLabel": "Short",
+    "beeLabel": "Bee",
+    "recadoLabel": "Note",
+    "walletPill": "Wallet",
+    "walletPillAria": "My wallet: financial life, earnings and statement"
   },
   "Polens": {
     "eyebrow": "Polen packages",

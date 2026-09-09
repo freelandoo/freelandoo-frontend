@@ -4236,7 +4236,17 @@
     "vaquinhaEyebrow": "tu objetivo",
     "couponEyebrow": "a quién referiste",
     "marketEyebrow": "el mundo ahí fuera",
-    "couponSalesTitle": "Ventas con tu cupón"
+    "couponSalesTitle": "Ventas con tu cupón",
+    "financeWallTitle": "El muro del dinero",
+    "financeLoadError": "No se pudo abrir Financiero.",
+    "publishFinanceCta": "Publicar en Financiero",
+    "composeCta": "Publicar",
+    "postLabel": "Post",
+    "curtoLabel": "Corto",
+    "beeLabel": "Bee",
+    "recadoLabel": "Recado",
+    "walletPill": "Cartera",
+    "walletPillAria": "Mi cartera: vida financiera, ganancias y extracto"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

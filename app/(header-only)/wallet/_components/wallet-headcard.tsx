@@ -25,7 +25,7 @@
 // existiria numa das quatro telas e sumiria nas outras três, em silêncio.
 
 import Link from "next/link"
-import { ArrowLeft, BarChart3, Percent, PiggyBank } from "lucide-react"
+import { ArrowLeft, BarChart3, Percent, PiggyBank, Wallet } from "lucide-react"
 import { useMemo } from "react"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
@@ -35,11 +35,12 @@ import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
 import { GREEN, GREEN_DEEP, initialsOf } from "./wallet-ui"
 
-/** Qual das quatro telas está no ar (a raiz não acende pill nenhum). */
-export type WalletPillKey = "vaquinha" | "coupon" | "market"
+/** Qual das telas está no ar (a raiz, que é o Financeiro, não acende nenhum). */
+export type WalletPillKey = "wallet" | "vaquinha" | "coupon" | "market"
 
-/** As rotas das três páginas, num lugar só. */
+/** As rotas das quatro páginas, num lugar só. */
 export const WALLET_ROUTES: Record<WalletPillKey, string> = {
+  wallet: "/wallet/carteira",
   vaquinha: "/wallet/vaquinha",
   coupon: "/wallet/cupom",
   market: "/wallet/mercado",
@@ -77,14 +78,32 @@ export function WalletHeadcard({
 
   const pills = useMemo<PillSpec[]>(() => {
     const list: PillSpec[] = []
+    // CARTEIRA é o primeiro e é VERDE — o dinheiro da pessoa, que era o corpo
+    // desta tela até 2026-09-08 e virou uma página atrás deste botão quando a
+    // raiz passou a ser o Financeiro. O verde é o MESMO do pill da Carteira no
+    // headcard do perfil: é a mesma porta, e mudar de tom por superfície faria
+    // procurar duas vezes.
+    list.push({
+      key: "wallet",
+      icon: Wallet,
+      label: tr("walletPill", "Carteira"),
+      ariaLabel: tr("walletPillAria", "Minha carteira: vida financeira, ganhos e extrato"),
+      bg: "#15803D",
+      bgHover: "#0F5F2E",
+      href: WALLET_ROUTES.wallet,
+      active: active === "wallet",
+    })
     if (vaquinhaOn) {
       list.push({
         key: "vaquinha",
         icon: PiggyBank,
+        // ROSA (pedido do Alex, 2026-09-08). Era verde, e o verde passou a ser
+        // da Carteira: dois pills verdes na mesma pilha seriam a mesma cor
+        // para duas portas diferentes.
         label: tr("vaquinhaPill", "Vaquinha"),
         ariaLabel: tr("vaquinhaPillAria", "Abrir minha vaquinha"),
-        bg: "#15803D",
-        bgHover: "#0F5F2E",
+        bg: "#DB2777",
+        bgHover: "#BE185D",
         href: WALLET_ROUTES.vaquinha,
         active: active === "vaquinha",
       })
@@ -149,9 +168,13 @@ export function WalletHeadcard({
               className="absolute left-0 top-1/2 -translate-y-1/2"
             />
             {/* Mesma geometria do headcard do perfil: a foto precisa cobrir a
-                pilha, e a largura casa com o `avatarPadClass` acima. Aqui a
-                pilha é outra (cofrinho, cupom e mercado), mas a mecânica e o
-                tamanho são os mesmos — 3 × 36 + 2 × 6 = 120px. */}
+                pilha, e a largura casa com o `avatarPadClass` acima.
+                ⚠️ São QUATRO pills desde 2026-09-08 (a Carteira entrou quando a
+                raiz virou o Financeiro): 4 × 36 (h-9) + 3 × 6 (gap-1.5) =
+                162px. A foto mede 168px no celular (w-28, aspect 2/3) e 192px
+                no computador (w-32) — cabe nos dois, e é isso que mantém os
+                pills escapando SÓ pela direita. PILL NOVO AQUI? Refazer esta
+                conta antes. */}
             <div className="w-28 -rotate-3 md:w-32">
               <div className="flex aspect-[2/3] w-full items-center justify-center overflow-hidden border-4 border-[#F1EDE2] bg-[#0B0B0D]/[0.07] shadow-[6px_6px_0_0_#16B79A] ring-2 ring-[#0B0B0D]">
                 {perfil?.avatar ? (

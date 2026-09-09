@@ -3670,7 +3670,17 @@
     "vaquinhaEyebrow": "o seu objetivo",
     "couponEyebrow": "quem você indicou",
     "marketEyebrow": "o mundo lá fora",
-    "couponSalesTitle": "Vendas com o seu cupom"
+    "couponSalesTitle": "Vendas com o seu cupom",
+    "financeWallTitle": "O mural do dinheiro",
+    "financeLoadError": "Não deu pra abrir o Financeiro.",
+    "publishFinanceCta": "Publicar no Financeiro",
+    "composeCta": "Publicar",
+    "postLabel": "Post",
+    "curtoLabel": "Curto",
+    "beeLabel": "Bee",
+    "recadoLabel": "Recado",
+    "walletPill": "Carteira",
+    "walletPillAria": "Minha carteira: vida financeira, ganhos e extrato"
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",
