@@ -348,7 +348,9 @@ export default function CommunityDetailPage() {
   type CommunityPanel = "profile" | "mural" | "game"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
 
-  const currentUserId = getStoredUser()?.id_user ?? null
+  const storedUser = getStoredUser()
+  const currentUserId = storedUser?.id_user ?? null
+  const myAvatar = storedUser?.avatar ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
 
   // ─── PLATAFORMA × COMUNIDADE ────────────────────────────────────────────────
@@ -375,7 +377,6 @@ export default function CommunityDetailPage() {
   // é o papel Administrator — o `roles` fica como leitura de payload antigo,
   // e é por isso que o espelho bate com o guard do backend em vez de ser mais
   // largo que ele.
-  const storedUser = getStoredUser()
   const isPlatformAdmin = !!(
     storedUser?.is_admin ||
     storedUser?.roles?.some((r) => r.desc_role === "Administrator")
@@ -1398,11 +1399,33 @@ export default function CommunityDetailPage() {
   }
 
   const bannerSrc = bannerPreview || community.banner_url
-  // ⚠️ A FOTO É DA PESSOA quando se visita o games dela (decisão do Alex,
-  // 2026-09-09) — o rosto do cabeçalho diz de quem é o recorte que está na
-  // tela. O BANNER e as CORES continuam os da casa: eles são a identidade do
-  // ambiente, e trocá-los faria a plataforma parecer sete plataformas.
-  const avatarSrc = gamerOwner ? gamerOwner.avatar_url || null : avatarPreview || community.avatar_url
+  /**
+   * ⚠️ A FOTO DO HEADCARD É A DA PESSOA (pedido do Alex, 2026-09-09: "todas as
+   * heads trazem a foto do perfil"), e são TRÊS regimes:
+   *
+   *  1. VISITANDO o games de alguém → a foto DELE. O rosto diz de quem é o
+   *     recorte que está na tela.
+   *  2. PLATAFORMA (games) → a foto de QUEM OLHA. A foto da casa é do admin e
+   *     não diz nada sobre o recorte pessoal que a tela mostra; um avatar
+   *     institucional ali faria a plataforma parecer de outra pessoa. É a
+   *     mesma escolha que o Financeiro já fazia desde sempre.
+   *  3. COMUNIDADE (negócio e as outras) → a foto DELA, com a do usuário como
+   *     RESERVA. A comunidade de negócio tem logo próprio e o líder pode
+   *     trocá-lo; forçar a foto dele apagaria a marca da barbearia. O que a
+   *     reserva resolve é o boneco cinza de quem nunca subiu imagem.
+   *
+   * ⚠️ A RESERVA É SÓ DO NEGÓCIO, e não de toda comunidade: em pet, carro,
+   * condomínio e bairro a foto é do ASSUNTO — pôr a cara do dono no perfil do
+   * cachorro seria afirmar que o cachorro é ele.
+   *
+   * O BANNER e as CORES ficam de fora dos três: são a identidade do ambiente,
+   * e trocá-los por pessoa faria a plataforma parecer sete plataformas.
+   */
+  const avatarSrc = gamerOwner
+    ? gamerOwner.avatar_url || null
+    : isGamesPlatform
+      ? myAvatar
+      : avatarPreview || community.avatar_url || (isBusinessPlatform ? myAvatar : null)
 
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
@@ -1557,7 +1580,14 @@ export default function CommunityDetailPage() {
           </div>
         </div>
 
-        <div className="relative z-20 -mt-12 flex flex-wrap items-end gap-4 px-2 md:-mt-16 md:px-3">
+        {/* ⚠️ O RECUO ACOMPANHOU A PROPORÇÃO. A foto era QUADRADA (128px) e
+            mordia o banner em 48px; agora ela é 2/3 como a do perfil (192px no
+            celular, 216px no md) e o recuo é ~METADE da altura dela, que é a
+            regra do headcard principal: metade sobre o banner, metade sobre o
+            papel. Mantido o -mt-12 antigo, os 64px a mais cairiam todos para
+            baixo — a foto desgrudaria do banner e empurraria o título e o "+"
+            junto com ela. */}
+        <div className="relative z-20 -mt-24 flex flex-wrap items-end gap-4 px-2 md:-mt-[108px] md:px-3">
           {/* A COLUNA DA FOTO: a pilha é o PRIMEIRO filho e a foto vem depois
               no DOM. Sem z-index em nenhum dos dois, quem pinta por último
               cobre — é assim que a foto esconde o corpo do botão e só o ícone
@@ -1568,25 +1598,41 @@ export default function CommunityDetailPage() {
               A pilha fica FORA da caixa da foto porque aquela caixa é
               `overflow-hidden` — lá dentro o botão seria recortado na borda.
 
-              `pl-32 md:pl-36` casa com a LARGURA DA FOTO (h-32 w-32 / md:36).
+              `pl-32 md:pl-36` casa com a LARGURA DA FOTO (w-32 / md:w-36 —
+              a altura sai da proporção 2/3 e não entra nesta conta).
               Mexeu no tamanho da foto? Ajustar o padding junto, senão o corpo
               colorido nasce ao lado dela em vez de debaixo.
 
               E a foto tem que ser MAIOR QUE A PILHA, senão o pill de cima e o
               de baixo escapam por cima e por baixo em vez de só pela direita:
               com três pills a pilha mede 3 × 36 (h-9) + 2 × 6 (gap-1.5) =
-              120px, e foi por isso que a foto subiu de h-28 (112px) para h-32
-              (128px) no celular. PILL NOVO AQUI? Refazer esta conta. */}
+              120px. Com a proporção 2/3 a foto tem 192px de altura (216 no md)
+              e a folga é confortável — mas ela veio de h-32 (128px), que já era
+              o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
             <PillStack
               pills={communityPills}
               avatarPadClass="pl-32 md:pl-36"
               className="absolute left-0 top-1/2 -translate-y-1/2"
             />
-            <div className="relative h-32 w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
+            {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex:
+                "deixa todos os cards das fotos na mesma proporção do
+                principal"). A LARGURA não mudou (w-32/w-36), e é por isso que
+                o `pl-32 md:pl-36` da pilha continua valendo — o padding casa
+                com a largura, não com a altura. A altura subiu de 128 para
+                192px, o que só melhora a cobertura da pilha (120px). */}
+            <div className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
-              {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+              <img src={avatarSrc || "/placeholder-user.jpg"} alt={gamerOwner ? gamerOwnerLabel : community.display_name} className="h-full w-full object-cover" />
+              {/* ⚠️ NA PLATAFORMA DE GAMES NÃO HÁ "TROCAR FOTO", e isso é
+                  consequência direta de a foto ser a da PESSOA: o admin
+                  trocaria a foto da casa, gravaria, e não veria mudança
+                  nenhuma — porque a tela mostra a de quem está olhando. Botão
+                  que aceita o clique e não muda nada é o pior tipo de porta.
+                  Quem quiser outra imagem ali troca a foto do próprio perfil.
+                  No NEGÓCIO ele fica: lá a foto da comunidade continua sendo a
+                  que manda (o logo), e a do usuário é só a reserva. */}
+              {showAsLeaderEdit && !isGamesPlatform && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
             </div>
           </div>
           {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para

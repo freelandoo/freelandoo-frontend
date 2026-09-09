@@ -34,10 +34,11 @@
 // existiria numa das telas e sumiria nas outras, em silêncio.
 //
 // ⚠️ A PILHA TEM TRÊS LUGARES: 3 × 36 (h-9) + 2 × 6 (gap-1.5) = 120px, e a foto
-// mede 128px no celular (h-32) e 144px no computador (h-36). A foto TEM que ser
-// maior que a pilha, senão o pill de cima e o de baixo escapam por cima e por
-// baixo em vez de só pela direita. PILL NOVO AQUI? Refazer esta conta antes —
-// é a mesma que, em games, obrigou a foto a subir de h-28 para h-32.
+// mede 192px no celular e 216px no computador (largura w-32/w-36 na proporção
+// 2/3 do headcard do perfil). A foto TEM que ser maior que a pilha, senão o
+// pill de cima e o de baixo escapam por cima e por baixo em vez de só pela
+// direita. PILL NOVO AQUI? Refazer esta conta antes — é a mesma que, em games,
+// já obrigou a foto a subir de h-28 para h-32 quando ela ainda era quadrada.
 
 import Link from "next/link"
 import { ArrowLeft, Percent, Trophy, Wallet } from "lucide-react"
@@ -228,7 +229,12 @@ export function WalletHeadcard({
           </div>
         </div>
 
-        <div className="relative z-20 -mt-12 flex flex-wrap items-end gap-4 px-2 md:-mt-16 md:px-3">
+        {/* ⚠️ O RECUO ACOMPANHA A PROPORÇÃO: com a foto em 2/3 (192px no
+            celular, 216 no md) o recuo é ~metade da altura dela, como no
+            headcard do perfil — metade sobre o banner, metade sobre o papel.
+            Mantido o -mt-12, os 64px a mais cairiam todos para baixo e a foto
+            desgrudaria do banner. */}
+        <div className="relative z-20 -mt-24 flex flex-wrap items-end gap-4 px-2 md:-mt-[108px] md:px-3">
           {/* A COLUNA DA FOTO: a pilha é o PRIMEIRO filho e a foto vem depois no
               DOM. Sem z-index em nenhum dos dois, quem pinta por último cobre —
               é assim que a foto esconde o corpo do botão e só o ícone escapa
@@ -248,8 +254,12 @@ export function WalletHeadcard({
               avatarPadClass="pl-32 md:pl-36"
               className="absolute left-0 top-1/2 -translate-y-1/2"
             />
+            {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex,
+                2026-09-09). A LARGURA não mudou (w-32/w-36), e é por isso que o
+                `pl-32 md:pl-36` da pilha continua valendo — o padding casa com
+                a largura, não com a altura. */}
             <div
-              className="relative h-32 w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:h-36 md:w-36"
+              className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36"
               style={{ outline: `2px solid ${GREEN}`, outlineOffset: "2px" }}
             >
               {perfil?.avatar ? (
