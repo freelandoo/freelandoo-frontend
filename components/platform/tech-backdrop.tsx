@@ -53,10 +53,24 @@
  *
  * ─── BATERIA ─────────────────────────────────────────────────────────────────
  *
- * Um shader de tela cheia rodando para sempre é caro num laptop. Três freios:
- * `prefers-reduced-motion` desenha UM quadro e para; a aba escondida
- * (`visibilitychange`) suspende o laço; e o passo é limitado a ~30fps, que num
- * fundo difuso é indistinguível de 60 e custa metade.
+ * Um shader de tela cheia rodando para sempre é caro num laptop. Os freios,
+ * em ordem de quanto economizam:
+ *
+ *  1. TETO DE PIXELS (~900k por quadro, ver `MAX_PIXELS`). O custo é por
+ *     pixel, então quem paga a conta é o TAMANHO DA JANELA, não o aparelho —
+ *     um monitor 4K são 8 milhões de pixels. O canvas renderiza abaixo da
+ *     resolução da tela e o CSS estica; num fundo difuso com vinheta isso é
+ *     invisível.
+ *  2. HASH SEM `sin()` e FBM DE 3 OITAVAS: eram 40 transcendentais por pixel.
+ *  3. `prefers-reduced-motion` desenha UM quadro e para.
+ *  4. A aba escondida (`visibilitychange`) suspende o laço.
+ *  5. O passo é limitado a ~30fps, indistinguível de 60 num fundo difuso.
+ *
+ * ⚠️ ESTE FUNDO DIVIDE A GPU COM O COMPOSITOR DA PÁGINA. Quando ele fica caro
+ * demais, o sintoma não é "o fundo travou" — é a ROLAGEM engasgando, porque o
+ * navegador está esperando a GPU terminar o quadro do papel de parede. Foi
+ * exatamente o que aconteceu (Alex, 2026-09-09: "o games está muito pesado e
+ * travando"). Ao mexer no shader, pense no custo POR PIXEL.
  */
 
 import { useEffect, useRef, useState } from "react"
@@ -146,8 +160,12 @@ const FLOOR: Record<BackdropVariant, string> = {
     let z = 1.0 / max(d, 0.0015);
     let gx = fract(p.x * z * 0.30);
     let gz = fract(z * 0.22 - t * 0.30);
-    let lx = smoothstep(0.025, 0.0, min(gx, 1.0 - gx));
-    let lz = smoothstep(0.035, 0.0, min(gz, 1.0 - gz));
+    // ⚠️ A SUAVIZAÇÃO ACOMPANHOU O TETO DE PIXELS: renderizando abaixo da
+    // resolução da tela, cada pixel cobre mais espaço, e uma linha fina demais
+    // vira sub-pixel e CINTILA ao andar. Engrossar a rampa do smoothstep na
+    // mesma proporção devolve a espessura aparente e mata o serrilhado.
+    let lx = smoothstep(0.038, 0.0, min(gx, 1.0 - gx));
+    let lz = smoothstep(0.050, 0.0, min(gz, 1.0 - gz));
     let fade = smoothstep(0.0, 0.30, d) * (1.0 - smoothstep(0.75, 1.0, d));
     col = col + cA * (lx + lz) * fade * 0.55;
   }
@@ -184,8 +202,9 @@ const FLOOR: Record<BackdropVariant, string> = {
     let d  = (uv.y - (1.0 - band)) / band;
     let gx = fract(uv.x * 26.0 - t * 0.020);
     let gy = fract(uv.y * 26.0);
-    let lx = smoothstep(0.030, 0.0, min(gx, 1.0 - gx));
-    let ly = smoothstep(0.030, 0.0, min(gy, 1.0 - gy));
+    // Mesma compensação de resolução da grade de games.
+    let lx = smoothstep(0.045, 0.0, min(gx, 1.0 - gx));
+    let ly = smoothstep(0.045, 0.0, min(gy, 1.0 - gy));
     let fade = smoothstep(0.0, 0.26, d) * (1.0 - smoothstep(0.72, 1.0, d));
     col = col + cA * (lx * 0.50 + ly * 0.32) * fade * 0.42;
   }
@@ -220,8 +239,16 @@ fn vs(@builtin(vertex_index) i : u32) -> @builtin(position) vec4<f32> {
   return vec4<f32>(pts[i], 0.0, 1.0);
 }
 
+// ⚠️ SEM sin(). O hash clássico -- fract(sin(dot(p, k)) * 43758.5) -- chama uma
+// transcendental, e ela é chamada QUATRO vezes por oitava, DUAS vezes por
+// pixel: eram 40 sin() por pixel, ~187 milhões por quadro numa tela cheia.
+// Numa GPU integrada isso é o suficiente para o scroll da página começar a
+// engasgar, porque o compositor disputa a mesma GPU. Este é o hash12 de Dave
+// Hoskins — só multiplicação, soma e fract, com a mesma cara de ruído.
 fn hash(p : vec2<f32>) -> f32 {
-  return fract(sin(dot(p, vec2<f32>(127.1, 311.7))) * 43758.5453);
+  var p3 = fract(vec3<f32>(p.x, p.y, p.x) * 0.1031);
+  p3 = p3 + vec3<f32>(dot(p3, vec3<f32>(p3.y, p3.z, p3.x) + vec3<f32>(33.33)));
+  return fract((p3.x + p3.y) * p3.z);
 }
 
 fn noise(p : vec2<f32>) -> f32 {
@@ -235,16 +262,21 @@ fn noise(p : vec2<f32>) -> f32 {
   return mix(mix(a, b, s.x), mix(c, d, s.x), s.y);
 }
 
+// ⚠️ TRÊS OITAVAS, NÃO CINCO. A 4ª e a 5ª entram com amplitude 0.0625 e
+// 0.03125 e depois passam por pow(n, 2.4) e pela vinheta — o que elas
+// acrescentam é um detalhe que não sobrevive ao próprio pós-processamento,
+// mas custa 8 hashes por pixel. O fator no fim devolve a faixa das cinco
+// (0.96875 / 0.875), senão a névoa sairia mais escura do que era.
 fn fbm(q : vec2<f32>) -> f32 {
   var p = q;
   var v = 0.0;
   var amp = 0.5;
-  for (var i = 0; i < 5; i = i + 1) {
+  for (var i = 0; i < 3; i = i + 1) {
     v = v + amp * noise(p);
     p = p * 2.02;
     amp = amp * 0.5;
   }
-  return v;
+  return v * 1.107;
 }
 
 @fragment
@@ -312,7 +344,12 @@ export function TechBackdrop({
 
     const start = async () => {
       try {
-        const adapter = await gpu.requestAdapter()
+        // ⚠️ "low-power" pede a GPU INTEGRADA. Num laptop com placa dedicada,
+        // o padrão pode acordar a discreta para desenhar um papel de parede —
+        // ela esquenta, o ventilador liga e a bateria vai embora por um fundo
+        // que ninguém está olhando. Se não houver integrada, o navegador
+        // devolve a que existe.
+        const adapter = await gpu.requestAdapter({ powerPreference: "low-power" })
         if (!adapter || dead) return
         device = await adapter.requestDevice()
         if (!device || dead) return
@@ -341,15 +378,50 @@ export function TechBackdrop({
           entries: [{ binding: 0, resource: { buffer: uniform } }],
         })
 
-        // Cap de 1.5 no devicePixelRatio: um shader de tela cheia a 3x num
-        // celular retina custa nove vezes mais pixels para um fundo difuso que
-        // ninguém encosta o nariz.
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+        /**
+         * ⚠️ O TETO É DE PIXELS, e não um fator de DPI — e é ele que faz este
+         * fundo custar o MESMO em toda tela.
+         *
+         * O custo de um shader de tela cheia é por PIXEL, então o preço não é
+         * do dispositivo: é do tamanho da janela. Um cap de DPR (o que havia
+         * aqui) protegia o celular retina e deixava passar justamente o pior
+         * caso — um monitor grande, onde 1920×1080 já são 2 milhões de pixels
+         * e um 4K são 8. Com o teto, cada tela renderiza no máximo ~900k e o
+         * CSS estica (o canvas é `h-full w-full`): o celular continua nítido
+         * porque cabe inteiro no teto, e o 4K passa a pagar o mesmo que o
+         * laptop.
+         *
+         * Escalar é invisível AQUI porque o fundo é uma névoa desfocada com
+         * vinheta — não há uma borda dura para o olho comparar. Não faça isto
+         * num canvas com texto ou traço fino.
+         */
+        const MAX_PIXELS = 900_000
+        /**
+         * ⚠️ O TETO CEDE SOZINHO NUMA MÁQUINA QUE NÃO ESTÁ DANDO CONTA.
+         *
+         * 900k é um número escolhido no papel, e papel nenhum conhece a GPU de
+         * quem abriu a página — integrada antiga, driver ruim, notebook em
+         * economia de bateria, quinze abas disputando. Se o laço não sustenta
+         * o passo, este fator corta o teto pela metade (até duas vezes, chão
+         * de 225k) em vez de deixar a página inteira engasgando.
+         *
+         * Só desce, nunca sobe: um fundo que oscila de nitidez enquanto a
+         * pessoa lê é pior do que um fundo permanentemente mais macio.
+         */
+        let budget = 1
         const resize = () => {
-          const w = Math.max(1, Math.floor(canvas.clientWidth * dpr))
-          const h = Math.max(1, Math.floor(canvas.clientHeight * dpr))
-          if (canvas.width !== w) canvas.width = w
-          if (canvas.height !== h) canvas.height = h
+          const cssW = Math.max(1, canvas.clientWidth)
+          const cssH = Math.max(1, canvas.clientHeight)
+          const scale = Math.min(1, Math.sqrt((MAX_PIXELS * budget) / (cssW * cssH)))
+          const w = Math.max(1, Math.round(cssW * scale))
+          const h = Math.max(1, Math.round(cssH * scale))
+          // ⚠️ OS DOIS LADOS. A checagem antiga só olhava a largura, então
+          // encolher a janela SÓ na vertical não redimensionava o buffer e a
+          // imagem ficava esticada até alguém mexer na largura.
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w
+            canvas.height = h
+          }
         }
         resize()
         const ro = new ResizeObserver(resize)
@@ -358,6 +430,9 @@ export function TechBackdrop({
         const t0 = performance.now()
         let last = 0
         const data = new Float32Array(4)
+        // Amostragem do passo real, para o teto acima saber se está caro.
+        let drawn = 0
+        let windowStart = 0
 
         const frame = (now: number) => {
           if (dead) return
@@ -367,6 +442,27 @@ export function TechBackdrop({
             return
           }
           last = now
+
+          // A CADA 60 QUADROS, pergunta se o passo está sendo sustentado.
+          // 60 quadros a 30fps são ~2s: janela grande o bastante para não
+          // reagir a um engasgo isolado (uma imagem que chegou, uma aba que
+          // abriu) e pequena o bastante para a pessoa não passar a visita
+          // inteira no modo pesado. O corte é medido em QUADROS POR SEGUNDO
+          // efetivos, não no custo do shader — o que importa não é ele estar
+          // caro, é a página não estar acompanhando.
+          if (!reduced) {
+            drawn += 1
+            if (!windowStart) windowStart = now
+            else if (drawn >= 60) {
+              const fps = (drawn * 1000) / (now - windowStart)
+              if (fps < 20 && budget > 0.25) {
+                budget = budget / 2
+                resize()
+              }
+              drawn = 0
+              windowStart = now
+            }
+          }
           data[0] = reduced ? 0 : (now - t0) / 1000
           data[1] = canvas.width
           data[2] = canvas.height
