@@ -1103,3 +1103,11 @@ body.camera-active { overflow: hidden; }
   content-visibility: auto;
   contain-intrinsic-size: auto 720px;
 }
+
+/* Chave de teste do medidor (`?nocv=1`, ver components/dev/perf-probe.tsx):
+   desliga a regra acima sem novo deploy, para separar UMA variável. Sai junto
+   com o medidor. */
+.fl-no-cv .fl-feed-card {
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
+}

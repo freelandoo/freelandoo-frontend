@@ -63,6 +63,7 @@ import { AnalyticsProvider } from "@/components/analytics-provider"
 import { CouponCapture } from "@/components/share/coupon-capture"
 import { GlobalOverlays } from "@/components/global-overlays"
 import { Toaster } from "sonner"
+import { PerfProbe } from "@/components/dev/perf-probe"
 
 /** Marcador do wrapper. O `<style>` do supressor mira exatamente nele. */
 const CHROME_ATTR = "data-platform-chrome"
@@ -133,6 +134,12 @@ export function PlatformChrome() {
       <CookieConsent />
       <AnalyticsProvider />
       <CouponCapture />
+      {/* ⚠️ INSTRUMENTO TEMPORÁRIO, não feature: só aparece com `?perf=1` e,
+          sem a flag, devolve null antes de criar observador nenhum. Mora aqui
+          dentro pela regra da peça: solto no layout raiz ele apareceria também
+          no site publicado do cliente. Some quando a caça ao atraso do hover
+          fechar. */}
+      <PerfProbe />
       {/* Overlays não-críticos (heartbeat, alertas admin, modal de votação,
           prompts PWA) carregados lazy via client wrapper. */}
       <GlobalOverlays />
