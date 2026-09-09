@@ -19,8 +19,8 @@
 // porque aparece nas QUATRO telas da plataforma.
 //
 // ⚠️ E A CASCA TAMBÉM É COMPARTILHADA (`_components/finance-shell.tsx`): esta
-// página é uma sala do ambiente Financeiro, com a pele verde e o fundo WebGPU
-// que a plataforma inteira usa. Os cards continuam sendo de PAPEL de propósito
+// página é uma sala do ambiente Financeiro, com a pele verde e a textura de
+// fundo que a plataforma inteira usa. Os cards continuam sendo de PAPEL de propósito
 // — a pele não os alcança (ver o bloco `.fl-finance` em globals.css), e é isso
 // que mantém o extrato legível sobre a mesa verde.
 //

@@ -769,11 +769,19 @@ body.camera-active { overflow: hidden; }
 .fl-games .-rotate-2,
 .fl-games .-rotate-3 { transform: none; }
 
-/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
-   orgânico do shader. Ele fica montado por baixo do canvas: se a GPU subir, o
-   canvas o cobre; se falhar no meio, ele continua ali e a tela nunca fica
-   preta. Ver components/games/tech-backdrop.tsx. */
-.fl-games-fallback {
+/* O FUNDO DA PLATAFORMA DE GAMES — textura ESTÁTICA na cor do ambiente.
+   ----------------------------------------------------------------------------
+   ⚠️ NÃO ANIMAR ESTE BLOCO. Ele é uma camada `fixed` do tamanho da janela, e
+   qualquer `animation` aqui (era um drift de `background-position`) obriga o
+   navegador a REPINTAR a tela inteira a cada quadro, para sempre — inclusive
+   enquanto a pessoa rola a página ou abre um pill. Foi essa conta, somada ao
+   shader WebGPU que existia por cima, que travava a plataforma
+   (Alex, 2026-09-09: "está travando muito, os pills estão travando").
+
+   Sem animação o fundo é pintado UMA vez e vira uma camada composta: rolar,
+   abrir painel e trocar de aba passam a custar zero de GPU aqui. Ver
+   components/platform/tech-backdrop.tsx. */
+.fl-games-bg {
   background-color: #0a0616;
   background-image:
     radial-gradient(60% 45% at 22% 18%, rgba(109, 40, 217, 0.42), transparent 70%),
@@ -781,14 +789,6 @@ body.camera-active { overflow: hidden; }
     radial-gradient(80% 55% at 50% 108%, rgba(139, 92, 246, 0.30), transparent 70%),
     repeating-linear-gradient(to right, rgba(167, 139, 250, 0.07) 0 1px, transparent 1px 64px),
     repeating-linear-gradient(to bottom, rgba(167, 139, 250, 0.05) 0 1px, transparent 1px 64px);
-  animation: fl-games-drift 28s ease-in-out infinite alternate;
-}
-@keyframes fl-games-drift {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
-  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fl-games-fallback { animation: none; }
 }
 
 /* ============================================================================
@@ -869,9 +869,9 @@ body.camera-active { overflow: hidden; }
 .fl-finance .-rotate-2,
 .fl-finance .-rotate-3 { transform: none; }
 
-/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
-   orgânico do shader. Ver components/platform/tech-backdrop.tsx. */
-.fl-finance-fallback {
+/* O FUNDO DO FINANCEIRO — textura ESTÁTICA na cor do ambiente.
+   ⚠️ NÃO ANIMAR (ver a nota da `.fl-games-bg`). */
+.fl-finance-bg {
   background-color: #05140F;
   background-image:
     radial-gradient(60% 45% at 20% 16%, rgba(0, 135, 107, 0.45), transparent 70%),
@@ -879,11 +879,6 @@ body.camera-active { overflow: hidden; }
     radial-gradient(80% 55% at 50% 108%, rgba(22, 183, 154, 0.28), transparent 70%),
     repeating-linear-gradient(to right, rgba(22, 183, 154, 0.07) 0 1px, transparent 1px 64px),
     repeating-linear-gradient(to bottom, rgba(22, 183, 154, 0.05) 0 1px, transparent 1px 64px);
-  animation: fl-finance-drift 30s ease-in-out infinite alternate;
-}
-@keyframes fl-finance-drift {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
-  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
 }
 
 /* O SÍMBOLO DE DINHEIRO — cifrões esparsos derivando devagar sobre o fundo.
@@ -895,15 +890,6 @@ body.camera-active { overflow: hidden; }
 .fl-money-veil {
   opacity: 0.5;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%2316B79A' font-family='Georgia, serif' font-weight='bold'%3E%3Ctext x='26' y='74' font-size='58' fill-opacity='0.11'%3E$%3C/text%3E%3Ctext x='146' y='166' font-size='38' fill-opacity='0.08'%3E$%3C/text%3E%3Ctext x='96' y='210' font-size='26' fill-opacity='0.06'%3E$%3C/text%3E%3C/g%3E%3C/svg%3E");
-  animation: fl-money-drift 46s linear infinite;
-}
-@keyframes fl-money-drift {
-  from { background-position: 0 0; }
-  to   { background-position: 220px -220px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fl-finance-fallback,
-  .fl-money-veil { animation: none; }
 }
 
 /* ============================================================================
@@ -987,9 +973,12 @@ body.camera-active { overflow: hidden; }
 .fl-business .-rotate-2,
 .fl-business .-rotate-3 { transform: none; }
 
-/* O caminho de reserva do fundo (sem WebGPU) — MESMAS cores, sem o movimento
-   orgânico do shader. Ver components/platform/tech-backdrop.tsx. */
-.fl-business-fallback {
+/* O FUNDO DO NEGÓCIO — textura ESTÁTICA na cor que o líder escolheu.
+   ⚠️ NÃO ANIMAR (ver a nota da `.fl-games-bg`).
+   ⚠️ A cor vem das variáveis do container (`platformSkinVars`) e também do
+   `style` do próprio fundo: a camada é `fixed`, e no dia em que ela deixasse de
+   nascer dentro do container as variáveis herdadas sumiriam sem erro nenhum. */
+.fl-business-bg {
   background-color: var(--fl-skin-canvas);
   background-image:
     radial-gradient(60% 45% at 20% 16%, rgba(var(--fl-skin-glow-rgb), 0.30), transparent 70%),
@@ -997,12 +986,4 @@ body.camera-active { overflow: hidden; }
     radial-gradient(80% 55% at 50% 108%, rgba(var(--fl-skin-glow-rgb), 0.22), transparent 70%),
     repeating-linear-gradient(to right, rgba(var(--fl-skin-glow-rgb), 0.06) 0 1px, transparent 1px 64px),
     repeating-linear-gradient(to bottom, rgba(var(--fl-skin-glow-rgb), 0.045) 0 1px, transparent 1px 64px);
-  animation: fl-business-drift 30s ease-in-out infinite alternate;
-}
-@keyframes fl-business-drift {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
-  to   { background-position: 3% -2%, -3% 2%, 0 -3%, 64px 0, 0 64px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fl-business-fallback { animation: none; }
 }

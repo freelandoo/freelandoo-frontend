@@ -45,13 +45,11 @@ const PortfolioPostCard = dynamic(
   () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
   { ssr: false }
 )
-// O fundo animado do ambiente games (WebGPU + reserva em CSS). Por `dynamic`
-// com ssr:false: ele só existe no navegador, e as outras seis modalidades desta
-// mesma casca não carregam o shader à toa.
-const TechBackdrop = dynamic(
-  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
-  { ssr: false }
-)
+// O fundo do ambiente: uma textura estática na cor da plataforma. Import
+// DIRETO (e não por `dynamic`) porque ele deixou de ser um shader e virou
+// quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
+// entrada da tela. Ver components/platform/tech-backdrop.tsx.
+import { TechBackdrop } from "@/components/platform/tech-backdrop"
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -529,7 +527,7 @@ export default function CommunityDetailPage() {
   // ali a barra da Freelandoo continua como está, porque não há um conjunto de
   // controles próprio a colocar no lugar dela.
   // ⚠️ UM PREDICADO SÓ para "isto é a plataforma de negócio": ele decide o
-  // ambiente do dock, a pele (`.fl-business`), o fundo WebGPU e o seletor de
+  // ambiente do dock, a pele (`.fl-business`), a textura de fundo e o seletor de
   // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
   // deixaria a página com a pele de um ambiente e a barra de outro.
   const isBusinessPlatform = (community?.kind ?? null) === "common"
@@ -2478,7 +2476,7 @@ export default function CommunityDetailPage() {
 
       {/* Barra fixa de edição */}
       {showAsLeaderEdit && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[#0B0B0D] bg-[#15120E]/95 px-5 py-3 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[#0B0B0D] bg-[#15120E] px-5 py-3">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
             <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#9A938A]"><Hash className="h-4 w-4" /> {community.display_name}</span>
             {actionMsg && <span className="text-xs font-bold text-[#F5F1E8]/80">{actionMsg}</span>}

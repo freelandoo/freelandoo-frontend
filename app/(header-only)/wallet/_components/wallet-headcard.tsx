@@ -12,8 +12,12 @@
 // ao lado dela.
 //
 // A identidade não é a de games: o roxo dá lugar ao verde (`.fl-finance`, em
-// globals.css) e o fundo WebGPU corre a fita de candles em vez da grade em
-// perspectiva. O que se copiou foi a SILHUETA, não a pele.
+// globals.css) e o fundo é a textura verde do ambiente. O que se copiou foi a
+// SILHUETA, não a pele.
+//
+// ⚠️ O FUNDO ANIMADO MORREU em 2026-09-09 (o shader de tela cheia dividia a
+// GPU com o compositor e engasgava a rolagem e os pills); o que ficou é uma
+// camada estática. Ver components/platform/tech-backdrop.tsx.
 //
 // ⚠️ OS PILLS NAVEGAM (pedido do Alex, 2026-09-08: "os pills têm que ter
 // páginas próprias, e não apenas abrir seções"): cada botão é uma ROTA, por

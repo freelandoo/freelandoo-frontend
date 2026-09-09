@@ -97,6 +97,12 @@ export function canBuildCommunitySite(opts: {
    páginas games e financeiro, com WebGPU (...) preto, mas eu queria poder mudar
    a cor do fundo também — hoje só dá pra mudar a cor dos detalhes".
 
+   ⚠️ O WEBGPU DA CITAÇÃO NÃO EXISTE MAIS (2026-09-09): o shader de tela cheia
+   dividia a GPU com o compositor do navegador e travava a rolagem da página
+   inteira. O fundo virou uma TEXTURA ESTÁTICA — o que esta função entrega
+   continua sendo o mesmo par (canvas, glow), agora lido pelo CSS. Ver
+   components/platform/tech-backdrop.tsx.
+
    ⚠️ POR QUE NÃO UM TERCEIRO SKIN FIXO, COMO `.fl-games` E `.fl-finance`.
    Aqueles dois pintam UM ambiente cada: o roxo é do games, o verde é do
    Financeiro, e por isso podem ser 40 linhas de valores escritos à mão. Aqui a

@@ -40,7 +40,6 @@
  */
 
 import { useCallback, useEffect, useState } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Gamepad2, ImageOff, Loader2, Lock, Play } from "lucide-react"
 import { PageBackLink } from "@/components/tabloide"
@@ -52,12 +51,11 @@ import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import type { FeedPost } from "@/lib/types/portfolio-feed"
 import { accentHex } from "../../_components/community-ui"
 
-// O mesmo fundo da página do ambiente: a vitrine é uma tela DE DENTRO dele, e
-// um fundo diferente aqui faria a pessoa achar que saiu da plataforma.
-const TechBackdrop = dynamic(
-  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
-  { ssr: false }
-)
+// O fundo do ambiente: uma textura estática na cor da plataforma. Import
+// DIRETO (e não por `dynamic`) porque ele deixou de ser um shader e virou
+// quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
+// entrada da tela. Ver components/platform/tech-backdrop.tsx.
+import { TechBackdrop } from "@/components/platform/tech-backdrop"
 
 type Community = {
   id_profile: string

@@ -46,7 +46,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Loader2, Lock, MapPin, ShieldAlert, Trophy } from "lucide-react"
 import { DoodleCrown } from "@/components/home/landing/primitives"
@@ -64,12 +63,11 @@ import {
 import { CommunityShellBeacon } from "@/components/layout/community-shell"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 
-// O ranking também é uma tela DE DENTRO do ambiente games: mesmo fundo, mesma
-// pele. Por `dynamic` para não pesar no ranking das outras seis modalidades.
-const TechBackdrop = dynamic(
-  () => import("@/components/platform/tech-backdrop").then((m) => m.TechBackdrop),
-  { ssr: false }
-)
+// O fundo do ambiente: uma textura estática na cor da plataforma. Import
+// DIRETO (e não por `dynamic`) porque ele deixou de ser um shader e virou
+// quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
+// entrada da tela. Ver components/platform/tech-backdrop.tsx.
+import { TechBackdrop } from "@/components/platform/tech-backdrop"
 
 type Community = {
   id_profile: string
