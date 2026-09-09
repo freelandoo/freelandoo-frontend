@@ -107,6 +107,35 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [unmuted, setUnmuted] = useGlobalVideoUnmuted()
   const [isVisible, setIsVisible] = useState(false)
+  /**
+   * ⚠️ O `<video>` SÓ NASCE PERTO DA TELA — e esta é a diferença entre um feed
+   * de games e qualquer outra superfície do site.
+   *
+   * Antes, TODO post de vídeo montava um `<video src=... preload="metadata">`
+   * de imediato, estivesse ele na tela ou vinte posts abaixo. Cada elemento
+   * desses abre uma requisição e SEGURA um pipeline de mídia do navegador — o
+   * decodificador continua alocado mesmo com o vídeo pausado. Num feed com
+   * dezenas de clipes isso vira dezenas de players vivos ao mesmo tempo, e o
+   * preço não aparece no vídeo: aparece como a página inteira ficando tardia
+   * (o hover de um botão lá em cima esperando a vez na thread principal).
+   *
+   * É por isso que o perfil principal e o Financeiro pareciam outra aplicação:
+   * o perfil mostra uma grade de imagens e o Financeiro nasce vazio. Nenhum
+   * dos dois monta um player sequer.
+   *
+   * ⚠️ `content-visibility` NÃO RESOLVIA ISTO. Aquilo pula estilo, layout e
+   * pintura do que está fora da tela — não desmonta nada, e um `<video>`
+   * "pulado" continua com o decodificador na mão.
+   *
+   * Fora da faixa, o que fica é o PÔSTER — que é o primeiro quadro do próprio
+   * vídeo, a mesma imagem que o `<video>` mostraria parado. Por isso rolar não
+   * muda nada na tela.
+   *
+   * A faixa é generosa (600px) de propósito: o player precisa estar pronto
+   * ANTES de o card chegar aos 50% que disparam o play, senão a rolagem rápida
+   * pegaria o vídeo ainda carregando.
+   */
+  const [near, setNear] = useState(false)
 
   // Mantém o muted do elemento alinhado com o estado global, mesmo após troca de src.
   useEffect(() => {
@@ -115,7 +144,21 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
     v.muted = !unmuted
   }, [unmuted, src])
 
+  // Monta/desmonta o player conforme a proximidade da tela (ver acima).
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setNear(!!entry?.isIntersecting),
+      { rootMargin: "600px 0px" }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
   // IntersectionObserver: ≥50% visível → play(); senão pause().
+  // ⚠️ Depende de `near`: sem isso o efeito rodaria uma vez, ainda sem
+  // `videoRef.current`, sairia pelo early-return e o vídeo nunca tocaria.
   useEffect(() => {
     const node = containerRef.current
     const video = videoRef.current
@@ -145,7 +188,7 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
 
     observer.observe(node)
     return () => observer.disconnect()
-  }, [])
+  }, [near])
 
   // Pausa quando a aba perde foco — economia de bateria.
   useEffect(() => {
@@ -169,33 +212,68 @@ function AutoPlayVideo({ src, poster, fillContainer }: AutoPlayVideoProps) {
 
   return (
     <div ref={containerRef} className="absolute inset-0">
-      <video
-        ref={videoRef}
-        src={src}
-        poster={poster || undefined}
-        muted={!unmuted}
-        loop
-        playsInline
-        preload="metadata"
-        className={cn(
-          "h-full w-full",
-          fillContainer ? "object-contain" : "object-cover"
-        )}
-      />
-
-      {/* Toggle de som — canto inferior esquerdo, fora da área do gradient direito */}
-      <button
-        type="button"
-        onClick={handleToggleSound}
-        aria-label={unmuted ? t("muteVideo", "Desligar som") : t("unmuteVideo", "Ligar som")}
-        className="absolute bottom-3 left-3 z-[3] inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white/85 backdrop-blur transition hover:bg-black/75 hover:text-white active:scale-95"
-      >
-        {unmuted ? (
-          <Volume2 className="h-4 w-4" />
+      {near ? (
+        <video
+          ref={videoRef}
+          src={src}
+          poster={poster || undefined}
+          muted={!unmuted}
+          loop
+          playsInline
+          preload="metadata"
+          className={cn(
+            "h-full w-full",
+            fillContainer ? "object-contain" : "object-cover"
+          )}
+        />
+      ) : (
+        // O MESMO QUADRO, sem o player. O pôster é o primeiro frame do vídeo —
+        // é exatamente o que o `<video>` mostraria parado —, então trocar um
+        // pelo outro não muda um pixel. Sem pôster fica a caixa escura, que é
+        // o que o player em branco também mostraria.
+        poster ? (
+          // Política de imagem da casa: superfície interna de alto volume usa
+          // `<img loading="lazy">`, nunca `next/image` — o feed tem mídia única
+          // demais para pagar otimização por arquivo.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={poster}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className={cn(
+              "h-full w-full",
+              fillContainer ? "object-contain" : "object-cover"
+            )}
+          />
         ) : (
-          <VolumeX className="h-4 w-4" />
-        )}
-      </button>
+          <div className="h-full w-full bg-black" />
+        )
+      )}
+
+      {/* Toggle de som — canto inferior esquerdo, fora da área do gradient
+          direito. Só existe com o player montado: sem vídeo não há som a
+          ligar, e um botão que não faz nada é pior que botão nenhum.
+
+          ⚠️ SEM `backdrop-blur` (saiu em 2026-09-09). Sobre um preto a 55% o
+          desfoque quase não aparece, e `backdrop-filter` obriga o compositor a
+          COPIAR e desfocar o que está atrás — por elemento, e de novo sempre
+          que algo ali atrás muda. Num feed são tantos quantos forem os vídeos.
+          Mesma conta que tirou o blur da barra fixa da comunidade. */}
+      {near && (
+        <button
+          type="button"
+          onClick={handleToggleSound}
+          aria-label={unmuted ? t("muteVideo", "Desligar som") : t("unmuteVideo", "Ligar som")}
+          className="absolute bottom-3 left-3 z-[3] inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white/85 transition hover:bg-black/85 hover:text-white active:scale-95"
+        >
+          {unmuted ? (
+            <Volume2 className="h-4 w-4" />
+          ) : (
+            <VolumeX className="h-4 w-4" />
+          )}
+        </button>
+      )}
     </div>
   )
 }
