@@ -1647,28 +1647,10 @@ export default function CommunityDetailPage() {
               e a folga é confortável — mas ela veio de h-32 (128px), que já era
               o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
-            {/* ⚠️ EM GAMES A PILHA NÃO ANIMA — teste do Alex (2026-09-09):
-                "tira toda a animação dos pills do game, deleta".
-
-                O pedido veio junto de "copia a animação da página principal e
-                cola lá", e isso não podia dar resultado: as duas telas montam
-                O MESMO `Pill` (components/profile/headcard-pills.tsx), com o
-                mesmo spring e as mesmas props — copiar de uma para a outra é
-                copiar o arquivo em cima dele mesmo. O que difere entre elas
-                nunca foi a animação; é a PÁGINA em que ela roda. Desligá-la só
-                aqui é o que separa as duas coisas de vez: se o gesto continuar
-                pesado sem animação nenhuma, a causa está na tela.
-
-                As outras modalidades desta MESMA casca (perfil e mural de
-                comunidade comum, condomínio, bairro, pet e carro) seguem
-                animadas de propósito — elas são o grupo de controle mais
-                próximo que existe, porque dividem a página inteira com games e
-                mudam só a lista de pills. */}
             <PillStack
               pills={communityPills}
               avatarPadClass="pl-32 md:pl-36"
               className="absolute left-0 top-1/2 -translate-y-1/2"
-              animated={!isGamesPlatform}
             />
             {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex:
                 "deixa todos os cards das fotos na mesma proporção do
