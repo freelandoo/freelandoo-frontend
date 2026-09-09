@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, Gamepad2, UserRound,
+  Lock, Globe, PawPrint, Car, Gamepad2, UserRound, LayoutGrid,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -689,17 +689,22 @@ export default function CommunityDetailPage() {
     ? t("residentToPost", "Confirme seu apartamento para publicar.")
     : t("joinToPost", "Entre na comunidade para publicar.")
 
-  // A pilha atrás da foto — Perfil (azul), Mural (laranja) e Ranking (roxo). É
-  // de propósito que nenhum dos dois primeiros seja um bloco na página: o painel é o mesmo
-  // para quem lê e para quem edita, então não há duas telas dizendo o que a
-  // comunidade é nem dois lugares mostrando o mesmo recado.
+  // A pilha atrás da foto. São DOIS elencos na mesma mecânica: nas comunidades
+  // (comum, condomínio, bairro, pet e carro) são Perfil (azul), Mural (laranja)
+  // e Ranking (roxo); na PLATAFORMA DE GAMES são Jogo atual (laranja), Posts de
+  // games (verde) e Ranking (roxo). O que muda é a LISTA — a peça, a animação e
+  // a conta da altura são as mesmas, e é isso que impede uma das duas telas de
+  // perder um comportamento em silêncio.
   //
-  // Vale para TODA comunidade — comum, condomínio, bairro, pet, carro e games
-  // usam esta mesma casca, então a pilha nasce igual em todas por construção.
+  // É de propósito que os pills de PAINEL não sejam blocos na página: o painel
+  // é o mesmo para quem lê e para quem edita, então não há duas telas dizendo o
+  // que a comunidade é, nem dois lugares mostrando o mesmo recado ou o mesmo
+  // jogo atual.
   //
-  // A cor é FIXA (azul e laranja) e não a `accent` da comunidade: o accent é
-  // editável pelo líder e pode cair justamente no tom do botão, que sumiria
-  // dentro do próprio card. O pill é peça de chrome, não conteúdo pintável.
+  // A cor é FIXA nos dois elencos, e não a `accent`: o accent é editável (pelo
+  // líder na comunidade, pelo administrador na plataforma) e pode cair
+  // justamente no tom do botão, que sumiria dentro do próprio card. O pill é
+  // peça de chrome, não conteúdo pintável.
   /**
    * ⚠️ ABRIR O PAINEL É TRANSIÇÃO, e é aqui que mora a diferença entre esta
    * tela e as outras duas que usam a MESMA pilha.
@@ -711,9 +716,10 @@ export default function CommunityDetailPage() {
    * forma SÍNCRONA e bloqueia a thread — exatamente no quadro em que o spring
    * do pill está começando.
    *
-   * (Os pills de GAMES foram apagados em 2026-09-09 e serão reconstruídos; o
-   * que resta aqui são os de Perfil e Mural das outras modalidades, que abrem
-   * painel do mesmo jeito e portanto continuam precisando disto.)
+   * Passam por aqui o "Jogo atual" da plataforma de games e o Perfil/Mural
+   * das outras modalidades — os três abrem painel do mesmo jeito. Os pills que
+   * NAVEGAM (Posts de games, Ranking) não precisam disto: quem espera lá é o
+   * roteador, não esta árvore.
    *
    * `startTransition` marca a abertura como não-urgente: o React fatia esse
    * render e devolve a thread ao navegador entre os pedaços, então a animação
@@ -731,11 +737,86 @@ export default function CommunityDetailPage() {
   }, [])
 
   const communityPills: PillSpec[] = useMemo(() => {
-    // ⚠️ A PLATAFORMA DE GAMES NÃO TEM PILHA (Alex, 2026-09-09: "deleta os 3").
-    // Os três pills daqui — Jogo atual (laranja), Posts de games (ciano) e
-    // Ranking (roxo) — foram APAGADOS de propósito, para serem reconstruídos
-    // do zero depois. Ver o que ficou sem porta na nota do render, abaixo.
-    if (isGamesPlatform) return []
+    /**
+     * ⚠️ A PLATAFORMA DE GAMES TEM ELENCO PRÓPRIO — e ele NÃO é o das
+     * comunidades com outra cor.
+     *
+     * Perfil e Mural são perguntas sobre um GRUPO (enxame, privacidade,
+     * temporada, o recado do líder), e ali não há grupo: ninguém entra, todo
+     * mundo lê e todo mundo publica (mig 232). O que existe para pendurar na
+     * foto é a METADE PESSOAL do ambiente — o que a pessoa está jogando e os
+     * posts dela — mais a fila que é DA CASA, o ranking.
+     *
+     * ⚠️ O RANKING SÓ TEM ESTA PORTA. O dock de games (`buildGamesItems`, em
+     * components/layout/profile-sidebar.tsx) lista Feed, Estante, Jogo atual,
+     * Posts games e Game — Ranking não está lá. Tirar este pill deixa
+     * `/comunidades/<id>/ranking` no ar e inalcançável, que foi exatamente o
+     * que aconteceu entre a limpeza de 2026-09-09 e esta reconstrução.
+     *
+     * ⚠️ UM ABRE PAINEL, DOIS NAVEGAM, e a divisão não é gosto: o jogo atual
+     * são três campos e cabe embaixo do headcard; a vitrine de posts e o pódio
+     * do ranking são telas cheias, e enfiá-los aqui empurraria o feed para
+     * longe — que é justamente o que os painéis vieram evitar.
+     */
+    if (isGamesPlatform) {
+      // O @ do dono do contexto, quando se está visitando o games de alguém.
+      // Só o pill que NAVEGA precisa dele: os que pedem painel já estão dentro
+      // da página que carrega o contexto (a URL nem muda).
+      const who = gamerOwner?.username ? encodeURIComponent(gamerOwner.username) : null
+      return [
+        {
+          key: "game",
+          icon: Gamepad2,
+          label: t("gamePill", "Jogo atual"),
+          // ⚠️ O ARIA DIZ DE QUEM É O JOGO, porque o pill é o MESMO nos dois
+          // papéis — no games de outra pessoa ele abre o jogo DELA, em
+          // leitura. Sem isto, quem usa leitor de tela ouviria "o seu jogo
+          // atual" dentro da vitrine de outro.
+          ariaLabel: gamerOwner
+            ? t("gamePillOfAria", "O jogo atual de {who}").replace("{who}", gamerOwnerLabel)
+            : t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
+          bg: "#C2410C",
+          bgHover: "#9A3412",
+          // O MESMO painel que o item "Jogo atual" do dock pede pelo beacon —
+          // um lugar só desenha o jogo. É por isso que o painel `game` desta
+          // página sobreviveu à limpeza dos pills: ele nunca foi resquício
+          // deste botão, é o destino dos dois.
+          onOpen: () => openPanel("game"),
+          active: panel === "game",
+        },
+        {
+          key: "gameposts",
+          icon: LayoutGrid,
+          label: t("gamePostsPill", "Posts de games"),
+          ariaLabel: gamerOwner
+            ? t("gamePostsPillOfAria", "Vitrine com os posts de games de {who}").replace("{who}", gamerOwnerLabel)
+            : t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
+          bg: "#15803D",
+          bgHover: "#166F36",
+          // ⚠️ NAVEGA LEVANDO O CONTEXTO. Sem o `?de=`, apertar este pill
+          // dentro do games de alguém abriria os posts de QUEM OLHA enquanto a
+          // tela ao redor mostra os dela — e o item "Posts games" do dock, que
+          // leva o parâmetro, discordaria do botão vizinho.
+          href: who ? `/comunidades/${id}/posts?de=${who}` : `/comunidades/${id}/posts`,
+        },
+        {
+          key: "ranking",
+          icon: Trophy,
+          label: t("rankingPill", "Ranking"),
+          // Chave PRÓPRIA, e não a `rankingPillAria` das comunidades: aquela
+          // diz "da comunidade", e a plataforma não é uma — essa distinção é o
+          // ponto inteiro da mig 232, e repeti-la errada num leitor de tela a
+          // desfaz.
+          ariaLabel: t("rankingPlatformPillAria", "Abrir o ranking da plataforma de games"),
+          bg: "#7E22CE",
+          bgHover: "#6B21A8",
+          // ⚠️ SEM `?de=`, de propósito: a fila é DA CASA (minha cidade, meu
+          // estado, horas jogadas) e mede quem está olhando. Levar o contexto
+          // prometeria o ranking "do fulano", que não existe.
+          href: `/comunidades/${id}/ranking`,
+        },
+      ]
+    }
 
     return [
       {
@@ -777,7 +858,12 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-  }, [t, panel, id, isGamesPlatform, openPanel])
+    // ⚠️ `gamerOwner`/`gamerOwnerLabel` VOLTARAM às dependências: só os pills
+    // de games os leem, e foi por isso que eles saíram daqui na limpeza (quem
+    // pegou foi o `eslint --max-warnings=0`). Sem eles, entrar no games de
+    // outra pessoa deixaria o pill de Posts apontando para a vitrine de quem
+    // olha até algum outro estado forçar um recálculo.
+  }, [t, panel, id, isGamesPlatform, openPanel, gamerOwner, gamerOwnerLabel])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1608,34 +1694,27 @@ export default function CommunityDetailPage() {
               e a folga é confortável — mas ela veio de h-32 (128px), que já era
               o mínimo. PILL NOVO AQUI? Refazer esta conta. */}
           <div className="relative shrink-0">
-            {/* ⚠️ EM GAMES NÃO HÁ PILHA — os três pills foram APAGADOS
-                (Alex, 2026-09-09: "deleta os 3 (...) vamos construir de novo
-                depois"). Aqui fica só a foto, sem nada atrás dela.
+            {/* ⚠️ A PILHA VALE PARA TODAS AS MODALIDADES, GAMES INCLUSIVE, e o
+                que muda entre elas é só a LISTA (ver `communityPills`), nunca a
+                mecânica: em games são Jogo atual (laranja, abre painel), Posts
+                de games (verde, navega) e Ranking (roxo, navega); nas outras,
+                Perfil, Mural e Ranking.
 
-                ⚠️ O QUE FICOU SEM PORTA, e é o que a reconstrução precisa
-                resolver:
+                Não há gate de montagem aqui de propósito — `PillStack` já
+                devolve `null` com a lista vazia. Um `&&` neste ponto seria uma
+                SEGUNDA decisão sobre quais telas têm pilha, e a que ficasse
+                para trás apagaria botões que a lista continuou entregando (foi
+                o que aconteceu com os três de games entre 2026-09-09 e esta
+                reconstrução).
 
-                 - RANKING da plataforma: NÃO existe outro caminho. O dock de
-                   games (`buildGamesItems`, em components/layout/profile-
-                   sidebar.tsx) tem Feed, Estante, Jogo atual, Posts games e
-                   Game — Ranking não está lá. A página
-                   `/comunidades/<id>/ranking` continua no ar; o que sumiu foi
-                   o botão.
-                 - JOGO ATUAL e POSTS DE GAMES continuam alcançáveis pelo dock
-                   (o primeiro pede o painel pelo beacon, o segundo navega). É
-                   por isso que o painel `game` desta página FICA de pé: ele não
-                   é resquício do pill, é o destino do item do dock.
-
-                A pilha das OUTRAS modalidades (Perfil, Mural e Ranking de
-                comunidade comum, condomínio, bairro, pet e carro) segue
-                intacta — o pedido foi sobre os três de games. */}
-            {!isGamesPlatform && (
-              <PillStack
-                pills={communityPills}
-                avatarPadClass="pl-32 md:pl-36"
-                className="absolute left-0 top-1/2 -translate-y-1/2"
-              />
-            )}
+                ⚠️ O RANKING DE GAMES SÓ TEM ESTA PORTA: o dock de lá não o
+                lista, então tirar o pill deixa `/comunidades/<id>/ranking` no
+                ar e inalcançável. */}
+            <PillStack
+              pills={communityPills}
+              avatarPadClass="pl-32 md:pl-36"
+              className="absolute left-0 top-1/2 -translate-y-1/2"
+            />
             {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex:
                 "deixa todos os cards das fotos na mesma proporção do
                 principal"). A LARGURA não mudou (w-32/w-36), e é por isso que

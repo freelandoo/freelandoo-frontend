@@ -2755,7 +2755,8 @@
     "gameEmptyOther": "{who} todavía no dijo a qué está jugando.",
     "backToMyGames": "Ver mi games",
     "gamePostsTitleOf": "Publicaciones de {who}",
-    "gamePostsEmptyOther": "{who} todavía no publicó nada aquí."
+    "gamePostsEmptyOther": "{who} todavía no publicó nada aquí.",
+    "rankingPlatformPillAria": "Abrir el ranking de la plataforma de games"
   },
   "Careers": {
     "hero.badge": "Carreras",
