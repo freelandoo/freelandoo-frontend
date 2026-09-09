@@ -402,6 +402,21 @@ export default function CommunityDetailPage() {
   // porta que a outra metade já fechou.
   const canBuildSite = canBuildCommunitySite({ kind: community?.kind, isLeader, siteEnabled })
 
+  // ⚠️ E "VER COMO PÚBLICO" ESCONDE AS TRÊS PORTAS (pedido do Alex, 2026-09-09).
+  //
+  // O botão do topo alterna entre EDITAR e ver a comunidade como ela chega a
+  // quem visita. A aba Site, o item "Meu Site" do menu "+" e o globo do dock
+  // são exatamente o que o visitante NÃO vê — deixá-los de pé no preview faria
+  // ele mentir justamente sobre o que existe para mostrar. O líder volta a elas
+  // num toque, apertando "Editar", então nada fica trancado.
+  //
+  // A régua de PERMISSÃO continua sendo `canBuildSite` (modalidade + papel +
+  // flag, no `community-ui.ts`, compartilhada com a tela de ranking); isto aqui
+  // é só o que a tela mostra AGORA — e é um valor só para as três portas, pela
+  // mesma razão de sempre: separados, o preview esconderia uma e ofereceria as
+  // outras duas.
+  const showSiteEntry = canBuildSite && edit
+
   // Qual AMBIENTE esta página é (o dock lê isto pelo beacon lá embaixo).
   // `null` = comunidade comum-mas-não-negócio (condomínio, bairro, pet, carro):
   // ali a barra da Freelandoo continua como está, porque não há um conjunto de
@@ -414,8 +429,8 @@ export default function CommunityDetailPage() {
 
   const siteExtras = useMemo(
     () =>
-      canBuildSite ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : [],
-    [canBuildSite, t]
+      showSiteEntry ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : [],
+    [showSiteEntry, t]
   )
 
   // ─── Estante (mig 220) ──────────────────────────────────────────────────────
@@ -1176,9 +1191,10 @@ export default function CommunityDetailPage() {
           controles do espaço, e a volta é a foto amarela.
           ⚠️ O ambiente é do LUGAR, não de quem olha — quem visita também troca
           de barra, e é por isso que a porta de saída existe. O que depende de
-          quem olha é só o item do Site (`canBuildSite`). */}
+          quem olha é só o item do Site (`showSiteEntry`, que some junto da
+          aba quando o líder aperta "Ver como público"). */}
       {shellKind && (
-        <CommunityShellBeacon communityId={id} kind={shellKind} canBuildSite={canBuildSite} />
+        <CommunityShellBeacon communityId={id} kind={shellKind} canBuildSite={showSiteEntry} />
       )}
       {/* Top bar */}
       <div className="relative z-10 mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
@@ -1914,7 +1930,7 @@ export default function CommunityDetailPage() {
                   ele — mas é LINK, não aba: o site abre na página dele. Manter
                   as duas coisas (aba e página) daria duas experiências do mesmo
                   site, e a de dentro da caixa é a que mente sobre o resultado. */}
-              {canBuildSite && (
+              {showSiteEntry && (
                 <Link href={sitePath} className="-mb-0.5 flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] opacity-50 hover:opacity-100"
                   style={{ borderBottom: "4px solid transparent" }}>
                   <Globe className="h-3.5 w-3.5" style={{ color: accent }} />
