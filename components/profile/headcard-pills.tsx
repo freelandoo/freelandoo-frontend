@@ -292,17 +292,17 @@ export function HeadcardPills({
   const communitiesOn = useUserFeature("communities")
 
   /**
-   * Nem Games nem Business têm URL fixa: o destino é a comunidade DAQUELA
-   * pessoa. Quem já tem, entra na dela; quem não tem, ganha uma vazia e cai na
-   * página já editável — MESMA regra do menu dos espaços (a comunidade nasce
-   * sem formulário; o assunto se escolhe no headcard dela).
+   * A COMUNIDADE DA PESSOA não tem URL fixa: quem já tem, entra na dela; quem
+   * não tem, ganha uma vazia e cai na página já editável — MESMA regra do menu
+   * dos espaços (a comunidade nasce sem formulário; o assunto se escolhe no
+   * headcard dela).
    *
-   * Um caminho só para os dois: o que muda é a chave do espaço e a rota de
-   * criação. Escrever o segundo à mão seria a duplicata que faz um dos dois
-   * divergir depois.
+   * ⚠️ GAMES DEIXOU DE PASSAR POR AQUI (mig 232). Ele virou PLATAFORMA do site
+   * inteiro: não há "a de cada um" para procurar, e a busca em `/me/spaces`
+   * seria uma requisição para ler um balde que nunca mais enche.
    */
   const openSpace = useCallback(
-    async (key: string, spaceKey: "games" | "common", createPath: string) => {
+    async (key: string, spaceKey: "common", createPath: string) => {
       if (going) return
       const token = getToken()
       if (!token) return
@@ -338,6 +338,37 @@ export function HeadcardPills({
     [going, router],
   )
 
+  /**
+   * ABRE A PLATAFORMA DE GAMES — uma só, do site inteiro (mig 232).
+   *
+   * ⚠️ UMA REQUISIÇÃO, e não duas: o backend faz get-or-create do singleton e
+   * devolve sempre a MESMA linha. O caminho antigo (procurar em `/me/spaces` e
+   * criar se não achasse) ainda funcionaria, mas leria um balde que a mig 232
+   * esvaziou de vez — e pagaria uma ida ao servidor para descobrir isso toda
+   * vez que alguém apertasse o pill.
+   */
+  const openGamesPlatform = useCallback(async () => {
+    if (going) return
+    const token = getToken()
+    if (!token) return
+    setGoing("games")
+    try {
+      const res = await fetch("/api/games/platform", { headers: { Authorization: `Bearer ${token}` } })
+      const body = await res.json().catch(() => null)
+      if (res.ok && body?.community?.id_profile) {
+        router.push(`/comunidades/${body.community.id_profile}`)
+        return
+      }
+      // A recusa aqui é o kill-switch da flag `games`, e ela vem escrita.
+      // Engoli-la deixaria o pill parecendo quebrado.
+      if (body?.error) toast.error(body.error)
+    } catch {
+      /* silencioso: o pill continua aberto e a pessoa tenta de novo */
+    } finally {
+      setGoing(null)
+    }
+  }, [going, router])
+
   const pills: PillSpec[] = []
 
   // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
@@ -356,16 +387,18 @@ export function HeadcardPills({
   }
 
   // Games vem logo abaixo: fica acima do cifrão e sobe até por cima do
-  // banner da manifestação (decisão do Alex 2026-09-03).
+  // banner da manifestação (decisão do Alex 2026-09-03). Desde a mig 232 ele
+  // é a porta da PLATAFORMA — a mesma para todo mundo —, e continua sendo o
+  // único caminho até o ambiente (o Monsters saiu da barra principal).
   if (gamesFlag) {
     pills.push({
       key: "games",
       icon: Gamepad2,
       label: t("gamesPill", "Games"),
-      ariaLabel: t("openGamesAria", "Abrir a comunidade dos meus games"),
+      ariaLabel: t("openGamesPlatformAria", "Abrir a plataforma de games"),
       bg: "#6D28D9",
       bgHover: "#5B21B6",
-      onOpen: () => openSpace("games", "games", "/api/games"),
+      onOpen: openGamesPlatform,
     })
   }
 

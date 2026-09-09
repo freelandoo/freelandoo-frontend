@@ -1528,7 +1528,8 @@
     "buyProfile": "Comprar perfil",
     "mgmtBadgeAccount": "Tu cuenta",
     "mySocialsLabel": "Mis redes",
-    "businessPill": "Business"
+    "businessPill": "Business",
+    "openGamesPlatformAria": "Abrir la plataforma de games"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -2739,7 +2740,14 @@
     "bgPurple": "Morado",
     "bgWine": "Vino",
     "bgAmber": "Ámbar",
-    "bgBrown": "Marrón"
+    "bgBrown": "Marrón",
+    "gameSave": "Guardar mi juego",
+    "gameSaved": "Juego actualizado.",
+    "gameSignedOut": "Inicia sesión para contar a qué estás jugando.",
+    "myGamePillAria": "Tu juego actual: plataforma, título y nick",
+    "myGamePostsPillAria": "Vitrina con tus publicaciones de games",
+    "gamePostsEmptyMine": "Todavía no has publicado nada aquí.",
+    "gamePostsSignedOut": "Inicia sesión para ver tus publicaciones de games."
   },
   "Careers": {
     "hero.badge": "Carreras",
@@ -6207,7 +6215,8 @@
     "steamUnconfigured": "Todavía no activada en esta instalación",
     "xboxReason": "La API abierta es de pago y no informa horas jugadas",
     "playstationReason": "Sony no abre una API pública",
-    "nintendoReason": "Nintendo no abre una API pública"
+    "nintendoReason": "Nintendo no abre una API pública",
+    "shelfSignedOut": "Inicia sesión para ver y conectar tu estantería."
   },
   "SiteBooking": {
     "back": "Volver al sitio",

@@ -116,7 +116,10 @@ type Community = {
   viewer_sub_status?: string | null
   // Modalidade (migs 196/205/210). Todas as modalidades renderizam nesta MESMA
   // casca; o que muda é quais seções aparecem e quem pode escrever.
-  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games"
+  // "finance" nunca abre por esta rota hoje (o Financeiro tem casca própria em
+  // /wallet), mas está na lista porque a REGRA de plataforma é a mesma das duas
+  // — deixá-lo de fora faria o predicado mentir no dia em que ele passasse aqui.
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car" | "games" | "finance"
   // Assunto das modalidades da mig 210: a raça do pet, o modelo do carro, o
   // jogo. É o que dá identidade à página — sem ele o cabeçalho do "Rex" não
   // diz que Rex é um vira-lata.
@@ -266,6 +269,15 @@ export default function CommunityDetailPage() {
   // cadastro: a comunidade nasce vazia e é batizada dentro de si mesma.
   const [petDraft, setPetDraft] = useState({ species: "", breed_slug: "", breed_label: "", birth_year: "" })
   const [gameDraft, setGameDraft] = useState({ platform: "", game_title: "", gamertag: "" })
+  // O JOGO ATUAL É DA PESSOA (mig 232), não da plataforma: cada um vê e edita o
+  // seu, como a Carteira dentro do Financeiro. Por isso ele NÃO vem no payload
+  // da comunidade (`community.subject` é null em games) e tem estado próprio.
+  const [myGame, setMyGame] = useState<{
+    platform?: string | null
+    game_title?: string | null
+    gamertag?: string | null
+  } | null>(null)
+  const [savingGame, setSavingGame] = useState(false)
   const [carDraft, setCarDraft] = useState({ brand_code: "", model_code: "" })
   const [breeds, setBreeds] = useState<{ id_breed: number; slug: string; label: string }[]>([])
   const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
@@ -320,6 +332,37 @@ export default function CommunityDetailPage() {
 
   const currentUserId = getStoredUser()?.id_user ?? null
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
+
+  // ─── PLATAFORMA × COMUNIDADE ────────────────────────────────────────────────
+  //
+  // Games (mig 232) e o Financeiro (mig 229) não são comunidades de ninguém:
+  // são PLATAFORMAS do site inteiro. Ninguém entra, ninguém lidera
+  // (`id_leader_user` é NULL de propósito) e quem edita nome, foto e CORES é o
+  // ADMIN DA PLATAFORMA — pedido do Alex (2026-09-09): "só o admin da
+  // plataforma pode alterar (...) e as cores só o admin pode alterar".
+  //
+  // ⚠️ E O QUE ESTÁ DENTRO DELA CONTINUA SENDO DE CADA UM: "o feed é da
+  // plataforma; a estante, o jogo atual e os posts são do perfil do usuário, a
+  // mesma coisa da carteira e da vaquinha". É por isso que existem DOIS
+  // predicados aqui e não um: `canAdminister` decide a casca (o que é da
+  // casa), e o que é da pessoa é gateado por estar logado.
+  //
+  // ⚠️ O ESPELHO ERRA PARA MENOS. Quem manda é o backend
+  // (`CommunityService._assertCommunityAdmin`); aqui só se evita OFERECER o
+  // que ele recusaria.
+  const isPlatformSpace = community?.kind === "games" || community?.kind === "finance"
+  // A leitura do admin é a MESMA das outras superfícies (UserDropside,
+  // ProfileSidebar, EditableImage). As duas metades dizem a MESMA coisa: o
+  // `is_admin` que o login guarda é o resultado de `AuthStorage.isAdmin`, que
+  // é o papel Administrator — o `roles` fica como leitura de payload antigo,
+  // e é por isso que o espelho bate com o guard do backend em vez de ser mais
+  // largo que ele.
+  const storedUser = getStoredUser()
+  const isPlatformAdmin = !!(
+    storedUser?.is_admin ||
+    storedUser?.roles?.some((r) => r.desc_role === "Administrator")
+  )
+  const canAdminister = isPlatformSpace ? isPlatformAdmin : isLeader
   const myMembership = useMemo(
     () => members.find((m) => m.id_user === currentUserId) || null,
     [members, currentUserId]
@@ -337,18 +380,19 @@ export default function CommunityDetailPage() {
 
   // ─── GAMES É PLATAFORMA, NÃO COMUNIDADE COM MEMBROS ─────────────────────────
   //
-  // O espaço de games é UM POR PESSOA (mig 210), como o do pet: quem chega não
-  // "entra" nele, visita. Tratá-lo como comunidade comum produzia quatro coisas
-  // que não querem dizer nada aqui — a aba Membros com uma linha só (o dono), o
-  // contador de membros da gaveta, o botão Entrar/Sair e um painel de Perfil
-  // perguntando enxame, privacidade e temporada, que são perguntas sobre um
-  // GRUPO.
+  // Games é UMA plataforma do site inteiro (mig 232), como o Financeiro: quem
+  // chega não "entra" nela — todo mundo lê e todo mundo publica. Tratá-la como
+  // comunidade comum produzia quatro coisas que não querem dizer nada aqui: a
+  // aba Membros, o contador de membros da gaveta, o botão Entrar/Sair e um
+  // painel de Perfil perguntando enxame, privacidade e temporada, que são
+  // perguntas sobre um GRUPO.
   //
-  // No lugar delas fica o que a plataforma É: o JOGO ATUAL (o que a pessoa
-  // joga agora), os POSTS DE GAMES e o RANKING. É por isso que a pilha e as
-  // abas bifurcam aqui, num predicado só, e não em cada lugar que lê "membro":
-  // espalhado, o lugar que esquecesse voltaria a oferecer a porta de entrar —
-  // e porta pintada é pior que porta nenhuma.
+  // No lugar delas fica o que a plataforma É — o FEED de todos — e, ao lado, o
+  // que é DE CADA UM dentro dela: o JOGO ATUAL, a ESTANTE e os POSTS do
+  // próprio perfil. É por isso que a pilha e as abas bifurcam aqui, num
+  // predicado só, e não em cada lugar que lê "membro": espalhado, o lugar que
+  // esquecesse voltaria a oferecer a porta de entrar — e porta pintada é pior
+  // que porta nenhuma.
   const isGamesPlatform = subjectKind === "games"
 
   // As plataformas do assunto, num lugar só: os chips que o dono aperta e o
@@ -370,7 +414,11 @@ export default function CommunityDetailPage() {
   )
 
   // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
-  // sozinho não diz de quem é; games mostra a plataforma pela mesma razão.
+  // sozinho não diz de quem é.
+  //
+  // ⚠️ GAMES NÃO TEM CHIP (mig 232): o backend devolve `subject` nulo ali de
+  // propósito. O jogo passou a ser da PESSOA, e escrever no cabeçalho da casa
+  // o jogo de alguém o anunciaria a todo visitante como se fosse o dele.
   const subjectChip = (() => {
     const sub = community?.subject
     if (!sub) return null
@@ -378,10 +426,18 @@ export default function CommunityDetailPage() {
     if (sub.kind === "car") {
       return [sub.brand_label, sub.model_label].filter(Boolean).join(" ") || t("kindCar", "Carro")
     }
-    return sub.game_title || t("kindGames", "Games")
+    return null
   })()
   const isResident = !!community?.viewer_is_resident
-  const canPost = isCondo ? isLeader || isResident : isMember
+  // ⚠️ NA PLATAFORMA, PUBLICAR É DE QUEM ESTÁ LOGADO. Ela não tem membros, e
+  // `isMember` seria falso para todo mundo — o "+ Postar" sumiria da tela de
+  // um feed que é justamente comunitário. Quem confere de verdade é o backend
+  // (`linkFeedItem` isenta as plataformas da membresia).
+  const canPost = isCondo
+    ? isLeader || isResident
+    : isPlatformSpace
+      ? !!currentUserId
+      : isMember
 
   // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
   // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
@@ -576,7 +632,7 @@ export default function CommunityDetailPage() {
     [isGamesPlatform, isBusinessPlatform]
   )
 
-  const showAsLeaderEdit = isLeader && edit
+  const showAsLeaderEdit = canAdminister && edit
   const isPrivate = community?.privacy === "private"
   const feedLocked = isPrivate && !isMember
   const monthlyCents = Number(community?.monthly_cents || 0)
@@ -611,16 +667,17 @@ export default function CommunityDetailPage() {
   // dentro do próprio card. O pill é peça de chrome, não conteúdo pintável.
   const communityPills: PillSpec[] = useMemo(() => {
     // GAMES: a pilha é outra. O primeiro pill continua LARANJA porque ocupa o
-    // mesmo lugar do Mural — só que ali não há mural: o que a plataforma
-    // anuncia é o JOGO ATUAL. O segundo abre a vitrine dos posts de games, e o
-    // terceiro segue sendo o Ranking, roxo como em toda comunidade.
+    // mesmo lugar do Mural — só que ali não há mural. Os DOIS primeiros abrem o
+    // que é DA PESSOA dentro da plataforma (mig 232): o jogo que ela está
+    // jogando e os posts do perfil dela. O terceiro segue sendo o Ranking,
+    // roxo como em toda comunidade.
     if (isGamesPlatform) {
       return [
         {
           key: "game",
           icon: Gamepad2,
           label: t("gamePill", "Jogo atual"),
-          ariaLabel: t("gamePillAria", "Jogo atual: plataforma, título e nick"),
+          ariaLabel: t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
           bg: "#C2410C",
           bgHover: "#9A3412",
           onOpen: () => setPanel((p) => (p === "game" ? null : "game")),
@@ -633,7 +690,7 @@ export default function CommunityDetailPage() {
           key: "gameposts",
           icon: LayoutGrid,
           label: t("gamePostsPill", "Posts de games"),
-          ariaLabel: t("gamePostsPillAria", "Vitrine com os posts de games"),
+          ariaLabel: t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
           bg: "#0E7490",
           bgHover: "#155E75",
           href: `/comunidades/${id}/posts`,
@@ -812,6 +869,9 @@ export default function CommunityDetailPage() {
   useEffect(() => { fetchPosts(true) }, [fetchPosts])
   useEffect(() => { fetchBees() }, [fetchBees])
   useEffect(() => {
+    // ⚠️ SÓ O LÍDER CAI DIRETO NA EDIÇÃO — o admin da plataforma, não. A
+    // comunidade é do líder e ele entra nela para cuidar dela; a plataforma o
+    // admin abre como qualquer um, e liga a edição quando quer mexer.
     if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
   }, [isLeader])
 
@@ -845,16 +905,34 @@ export default function CommunityDetailPage() {
         breed_label: sub.breed_label || "",
         birth_year: sub.birth_year ? String(sub.birth_year) : "",
       })
-    } else if (sub.kind === "games") {
-      setGameDraft({
-        platform: sub.platform || "",
-        game_title: sub.game_title || "",
-        gamertag: sub.gamertag || "",
-      })
     } else if (sub.kind === "car") {
       setCarDraft({ brand_code: sub.brand_code || "", model_code: sub.model_code || "" })
     }
   }, [community?.subject])
+
+  // ⚠️ É O ÚNICO PEDIDO DA PÁGINA QUE NÃO DEPENDE DE EDIÇÃO: o jogo atual é
+  // conteúdo (o que EU jogo), e quem visita a plataforma vê o seu próprio.
+  // Sem sessão não há o que buscar — a rota é autenticada.
+  useEffect(() => {
+    if (!isGamesPlatform || !currentUserId) { setMyGame(null); return }
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    fetch("/api/games/current", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!alive) return
+        const sub = data?.subject || null
+        setMyGame(sub)
+        setGameDraft({
+          platform: sub?.platform || "",
+          game_title: sub?.game_title || "",
+          gamertag: sub?.gamertag || "",
+        })
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [isGamesPlatform, currentUserId])
 
   useEffect(() => {
     if (!showAsLeaderEdit || subjectKind !== "pet") return
@@ -1000,6 +1078,40 @@ export default function CommunityDetailPage() {
     }
   }
 
+  /**
+   * Grava o MEU jogo atual.
+   *
+   * ⚠️ BOTÃO PRÓPRIO, e não o "Salvar" lá de cima: aquele é do administrador
+   * da plataforma (nome, foto, cores) e um usuário comum nem o enxerga. Juntar
+   * os dois faria a única coisa que é DELE dentro do ambiente depender de uma
+   * permissão que ele não tem.
+   */
+  const saveMyGame = async () => {
+    const token = getToken()
+    if (!token || savingGame) return
+    setSavingGame(true)
+    try {
+      const res = await fetch("/api/games/current", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          platform: gameDraft.platform || null,
+          game_title: gameDraft.game_title || null,
+          gamertag: gameDraft.gamertag || null,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || t("saveError", "Não foi possível salvar."))
+      setMyGame(data?.subject || null)
+      setActionMsg(t("gameSaved", "Jogo atualizado."))
+      setTimeout(() => setActionMsg(null), 2500)
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally {
+      setSavingGame(false)
+    }
+  }
+
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
@@ -1037,10 +1149,14 @@ export default function CommunityDetailPage() {
         const tData = await tRes.json()
         if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
       }
-      // Assunto (pet/carro/games): vai junto do Salvar, e não num botão só
-      // dele — para quem edita, nome, foto e raça são a mesma tarefa.
-      if (subjectKind) {
-        const base = subjectKind === "pet" ? "pets" : subjectKind === "car" ? "cars" : "games"
+      // Assunto (pet/carro): vai junto do Salvar, e não num botão só dele —
+      // para quem edita, nome, foto e raça são a mesma tarefa.
+      //
+      // ⚠️ GAMES SAIU DAQUI (mig 232): o jogo atual é da PESSOA e tem o botão
+      // dele dentro do painel. Mandá-lo neste Salvar faria a edição de quem
+      // não é admin depender de um botão que ele não vê.
+      if (subjectKind && subjectKind !== "games") {
+        const base = subjectKind === "pet" ? "pets" : "cars"
         const body =
           subjectKind === "pet"
             ? {
@@ -1049,13 +1165,7 @@ export default function CommunityDetailPage() {
                 breed_label: petDraft.breed_label || null,
                 birth_year: petDraft.birth_year || null,
               }
-            : subjectKind === "games"
-              ? {
-                  platform: gameDraft.platform || null,
-                  game_title: gameDraft.game_title || null,
-                  gamertag: gameDraft.gamertag || null,
-                }
-              : {
+            : {
                   brand_code: carDraft.brand_code || null,
                   brand_label: carBrands.find((b) => b.code === carDraft.brand_code)?.label || null,
                   model_code: carDraft.model_code || null,
@@ -1256,7 +1366,7 @@ export default function CommunityDetailPage() {
         <Link href="/account" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
-        {isLeader && (
+        {canAdminister && (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {edit && (
               <div className="inline-flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-2.5 py-1.5">
@@ -1468,7 +1578,7 @@ export default function CommunityDetailPage() {
                     estiver vendo como público, o atalho liga a edição aqui
                     mesmo — mandá-lo procurar o botão lá em cima seria pedir
                     para sair do painel que ele acabou de abrir. */}
-                {isLeader && !edit && (
+                {canAdminister && !edit && (
                   <button type="button" onClick={() => setEdit(true)}
                     className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
                     <ScrollText className="h-3.5 w-3.5" /> {t("edit", "Editar")}
@@ -1526,18 +1636,30 @@ export default function CommunityDetailPage() {
               </div>
             )}
 
-            {/* JOGO ATUAL — o painel do pill laranja na plataforma de games.
-                É o mesmo painel para os dois papéis: quem visita LÊ o que o
-                dono ESCOLHE. Uma tela de configuração ao lado de uma tela de
-                leitura seriam duas verdades sobre o mesmo jogo. */}
+            {/* JOGO ATUAL — o painel do pill laranja da plataforma de games.
+
+                ⚠️ ELE É DE QUEM OLHA (mig 232), e não do espaço. Games virou
+                PLATAFORMA do site inteiro: "o feed é da plataforma; a estante, o
+                jogo atual e os posts são do perfil do usuário, a mesma coisa da
+                carteira e da vaquinha" (Alex, 2026-09-09). Cada um abre este
+                painel e vê — e edita — o SEU jogo; o que a casa anuncia é o feed.
+
+                ⚠️ POR ISSO O GATE AQUI É "ESTAR LOGADO", e não `showAsLeaderEdit`.
+                Aquele é do administrador da plataforma (nome, foto, cores); preso
+                a ele, a única coisa que é da PESSOA dentro do ambiente dependeria
+                de uma permissão que ela não tem — e a tela ficaria em leitura
+                mostrando o vazio dela mesma, sem como preencher.
+
+                ⚠️ E O SALVAR É PRÓPRIO, pela mesma razão: o de cima não existe
+                para quem não administra. */}
             {panel === "game" && (
               <div className="space-y-4 p-4 md:p-5">
-                {showAsLeaderEdit ? (
+                {currentUserId ? (
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
                       {gamePlatforms.map(([key, label]) => (
                         <button key={key} type="button"
-                          onClick={() => setGameDraft((d) => ({ ...d, platform: key }))}
+                          onClick={() => setGameDraft((d) => ({ ...d, platform: d.platform === key ? "" : key }))}
                           className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
                           style={gameDraft.platform === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
                           {label}
@@ -1556,28 +1678,29 @@ export default function CommunityDetailPage() {
                         onChange={(e) => setGameDraft((d) => ({ ...d, gamertag: e.target.value }))}
                         className={selectCls} />
                     </label>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
-                      {t("gameSaveHint", "Vai junto do Salvar lá em cima, com o nome e a foto.")}
-                    </p>
-                  </div>
-                ) : community.subject?.game_title ? (
-                  <div className="space-y-3">
-                    <p className="fl-display text-4xl leading-none text-[#F5F1E8]">{community.subject.game_title}</p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {platformLabel(community.subject.platform) && (
-                        <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-                          <Gamepad2 className="h-3.5 w-3.5" style={{ color: accent }} /> {platformLabel(community.subject.platform)}
-                        </span>
-                      )}
-                      {community.subject.gamertag && (
-                        <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: accent }}>
-                          <Hash className="h-3.5 w-3.5" /> {community.subject.gamertag}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={saveMyGame} disabled={savingGame}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] disabled:opacity-60">
+                        {savingGame ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gamepad2 className="h-4 w-4" />}
+                        {t("gameSave", "Salvar meu jogo")}
+                      </button>
+                      {/* O que já está gravado, ao lado do botão: sem isso a
+                          pessoa não distingue o rascunho que está digitando do que
+                          a plataforma já sabe. */}
+                      {myGame?.game_title && (
+                        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
+                          <Hash className="h-3.5 w-3.5" />
+                          {[myGame.game_title, platformLabel(myGame.platform)].filter(Boolean).join(" · ")}
                         </span>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-[#9A938A]">{t("gameNotSetRead", "O jogo ainda não foi escolhido.")}</p>
+                  // Sem sessão não há "meu jogo" — e dizer "ainda não foi
+                  // escolhido" afirmaria algo sobre alguém que a tela não conhece.
+                  <p className="text-sm text-[#9A938A]">
+                    {t("gameSignedOut", "Entre na sua conta para dizer o que você está jogando.")}
+                  </p>
                 )}
               </div>
             )}
@@ -1900,7 +2023,7 @@ export default function CommunityDetailPage() {
               <CondoResidence communityId={id} onResidencyChange={loadAll} />
               <CondoExtras
                 communityId={id}
-                isAdmin={isLeader || !!community.viewer_is_admin}
+                isAdmin={canAdminister || !!community.viewer_is_admin}
                 isResident={isResident}
                 onReload={loadAll}
               />
@@ -2008,11 +2131,11 @@ export default function CommunityDetailPage() {
 
             <div className="mt-6">
               {tab === "shelf" ? (
-                <GamerShelf
-                  ownerUserId={community.id_leader_user ?? null}
-                  isOwner={isLeader}
-                  accent={accent}
-                />
+                // ⚠️ A ESTANTE É DE QUEM OLHA, e não do "dono do espaço": a
+                // plataforma não tem dono, e a biblioteca é dado da PESSOA
+                // (`tb_user_game_account.id_user`). O componente resolve o dono
+                // pelo token — daí a única pergunta que sobra ser se há sessão.
+                <GamerShelf signedIn={!!currentUserId} accent={accent} />
               ) : tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -2133,7 +2256,7 @@ export default function CommunityDetailPage() {
                           commentsCount={post.comments_count ?? 0}
                           hideCommunityLink
                           onDeleteRecado={deleteRecado}
-                          canDeleteRecado={isLeader || (!!currentUserId && post.author_user_id === currentUserId)}
+                          canDeleteRecado={canAdminister || (!!currentUserId && post.author_user_id === currentUserId)}
                           shareUrlOverride={
                             isMember && currentUserId && typeof window !== "undefined"
                               ? `${window.location.origin}/cs/${id}/${currentUserId}/${post.post_id}`
@@ -2222,10 +2345,13 @@ export default function CommunityDetailPage() {
           // recusaria — quem decide continua sendo o backend, então errar para
           // mais neste lado esconde uma opção, nunca abre uma porta.
           communityExclusiveOnly={isPrivate || isCondo || community.kind === "neighborhood"}
-          // A plataforma de games guarda o post por padrão — quem quiser
-          // mandar para o feed geral escolhe. Não é trava: é o pé em que a
-          // pergunta começa, porque ali quase tudo é assunto de games.
-          communityDefaultExclusive={isGamesPlatform}
+          // ⚠️ SEM PADRÃO EXCLUSIVO EM GAMES (mig 232). Ele existia porque o
+          // espaço era de UMA pessoa: guardar ali dentro era o esperado. Numa
+          // plataforma pública de todos, começar marcado em "só na comunidade"
+          // tiraria do feed geral, sem ninguém pedir, tudo que se publica no
+          // maior ambiente do site. O Financeiro — a outra plataforma — nunca
+          // teve esse padrão, e a régua da casa desde 2026-09-06 é comunidade
+          // + feed geral.
           onClose={() => setComposerOpen(false)}
           onPosted={() => {
             setComposerOpen(false)

@@ -84,13 +84,27 @@ function hours(minutes: number) {
   return `${Math.round(minutes / 60)}h`
 }
 
+/**
+ * A ESTANTE É DE QUEM OLHA (mig 232).
+ *
+ * Ela nasceu quando games era o espaço de UMA pessoa: o componente recebia o
+ * dono do espaço e decidia entre "a minha" e "a de fulano". A plataforma não
+ * tem dono — a biblioteca é dado da PESSOA (`tb_user_game_account.id_user`) —,
+ * então sobrou uma pergunta só: quem está olhando tem sessão?
+ *
+ * ⚠️ O CAMINHO "ESTANTE DE OUTRA PESSOA" FOI REMOVIDO de propósito, e não
+ * apenas deixado sem chamador: um `ownerUserId` que ninguém mais alimenta,
+ * mas que o componente ainda sabe buscar, é o convite para alguém apontá-lo
+ * de novo — e, aqui, para a linha da plataforma, publicando a estante do
+ * admin a todo visitante. Ver a de outra pessoa continua existindo, pela
+ * porta certa: o "Frente a frente", que pede o @ e obedece à privacidade
+ * dela.
+ */
 export function GamerShelf({
-  ownerUserId,
-  isOwner,
+  signedIn,
   accent,
 }: {
-  ownerUserId: string | null
-  isOwner: boolean
+  signedIn: boolean
   accent: string
 }) {
   const t = useTranslations("Gamer")
@@ -114,12 +128,11 @@ export function GamerShelf({
     if (!token) { setLoading(false); return }
     const headers = { Authorization: `Bearer ${token}` }
     try {
-      // A estante do DONO do espaço. Visitante lê pela rota por id_user, que é
-      // onde o backend confere a visibilidade — nunca aqui.
-      const url = isOwner ? "/api/gamer/shelf" : `/api/gamer/shelf/${ownerUserId}`
+      // Sempre a estante de quem está pedindo: o backend resolve o dono pelo
+      // TOKEN, e é por isso que não há id nenhum nesta URL.
       const [shelfRes, provRes] = await Promise.all([
-        fetch(url, { headers }),
-        isOwner ? fetch("/api/gamer/providers", { headers }) : Promise.resolve(null),
+        fetch("/api/gamer/shelf", { headers }),
+        fetch("/api/gamer/providers", { headers }),
       ])
       const shelf = await shelfRes.json().catch(() => null)
       if (shelfRes.ok && shelf) {
@@ -127,7 +140,7 @@ export function GamerShelf({
         setTotal(shelf.total || 0)
         setTotalMinutes(shelf.total_minutes || 0)
         setLocked(!!shelf.locked)
-        if (isOwner && Array.isArray(shelf.accounts)) {
+        if (Array.isArray(shelf.accounts)) {
           // A estante do dono já traz as contas; guardamos para o caso de a
           // lista de provedores falhar.
           setProviders((prev) =>
@@ -148,7 +161,7 @@ export function GamerShelf({
     } finally {
       setLoading(false)
     }
-  }, [isOwner, ownerUserId])
+  }, [])
 
   useEffect(() => { load() }, [load])
 
@@ -254,7 +267,7 @@ export function GamerShelf({
   return (
     <div className="space-y-6">
       {/* ── Contas (só o dono) ────────────────────────────────────────────── */}
-      {isOwner && (
+      {signedIn && (
         <div className="space-y-3">
           {connected.map((p) => {
             const a = p.account!
@@ -376,13 +389,14 @@ export function GamerShelf({
           {t("shelfLocked", "Esta pessoa não deixa a estante à mostra.")}
         </p>
       ) : games.length === 0 ? (
-        // Para o DONO, a chamada e a grade acima já dizem o que fazer: repetir
-        // "conecte uma plataforma" numa terceira caixa foi o que fez a aba
-        // parecer um amontoado de avisos. Quem visita, esse sim, precisa de uma
-        // linha — senão a aba abre em branco.
-        isOwner ? null : (
+        // Para quem tem sessão, a chamada e a grade acima já dizem o que fazer:
+        // repetir "conecte uma plataforma" numa terceira caixa foi o que fez a
+        // aba parecer um amontoado de avisos. Quem NÃO entrou precisa de uma
+        // linha — senão a aba abre em branco —, e ela diz outra coisa: não é
+        // que a estante esteja vazia, é que a tela não sabe de quem ela seria.
+        signedIn ? null : (
           <p className="border-2 border-[#0B0B0D] bg-[#15120E] p-6 text-center text-sm text-[#9A938A]">
-            {t("shelfEmpty", "Nenhum jogo por aqui ainda.")}
+            {t("shelfSignedOut", "Entre na sua conta para ver e conectar a sua estante.")}
           </p>
         )
       ) : (
@@ -430,7 +444,7 @@ export function GamerShelf({
       )}
 
       {/* ── Frente a frente ───────────────────────────────────────────────── */}
-      {isOwner && games.length > 0 && (
+      {signedIn && games.length > 0 && (
         <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-4">
           <p className="fl-display text-lg leading-none text-[#F5F1E8]">{t("compareTitle", "Frente a frente")}</p>
           <p className="mt-1 text-xs text-[#9A938A]">

@@ -19,9 +19,13 @@
  * que é post de games, e no dia em que discordassem a pessoa veria no feed um
  * post que a vitrine jura não existir.
  *
- * Como o espaço de games é UM POR PESSOA e não tem membros, tudo que está aqui
- * dentro é do dono — é isso que faz "os posts de games do usuário" e "os posts
- * desta plataforma" serem a mesma lista, sem filtro de autor nenhum.
+ * ⚠️ O QUE MUDA NA PLATAFORMA (mig 232) É O RECORTE, e não a fonte. Games
+ * deixou de ser o espaço de uma pessoa: o FEED lá dentro é de todo mundo. Mas
+ * esta página é a dos "meus posts" — "o feed é da plataforma; a estante, o
+ * jogo atual e os posts são do perfil do usuário" (Alex, 2026-09-09) —, então
+ * ela pede a MESMA porta com `author=me`. O backend lê esse "me" do TOKEN, e
+ * nunca um id da querystring: aceitar um id ali daria a qualquer um uma
+ * listagem por autor dentro de uma comunidade fechada.
  *
  * ─── A RECUSA É DITA EM VOZ ALTA ─────────────────────────────────────────────
  *
@@ -69,13 +73,21 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [locked, setLocked] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  // Lido no efeito e não no render: `getToken()` toca o localStorage, e ler
+  // armazenamento durante o render torna a tela impura (o `react-hooks/purity`
+  // reprova) além de divergir entre servidor e cliente.
+  const [signedIn, setSignedIn] = useState(false)
+  useEffect(() => { setSignedIn(!!getToken()) }, [])
 
   const fetchPosts = useCallback(
     async (reset: boolean, from?: string | null) => {
       if (reset) setLoading(true)
       else setLoadingMore(true)
       try {
-        const sp = new URLSearchParams({ limit: "24" })
+        // `author=me` é o que torna esta grade a vitrine DO PERFIL dentro da
+        // plataforma. Sem sessão não há "me" — e é por isso que o vazio de quem
+        // não entrou diz para entrar, em vez de "ninguém postou".
+        const sp = new URLSearchParams({ limit: "24", author: "me" })
         if (!reset && from) sp.set("cursor", from)
         const token = getToken()
         const r = await fetch(`/api/communities/${communityId}/feed-posts?${sp.toString()}`, {
@@ -155,11 +167,10 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
           <h1 className="mt-1 fl-display text-4xl leading-[0.9] text-[#F5F1E8] md:text-6xl">
             {t("gamePostsTitle", "Posts de games")}
           </h1>
-          {community?.subject?.game_title && (
-            <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em]" style={{ color: accent }}>
-              {community.subject.game_title}
-            </p>
-          )}
+          {/* O subtítulo era o jogo DO ESPAÇO, e espaço de games não existe mais
+              (mig 232): o jogo atual é de cada pessoa e mora no painel laranja da
+              plataforma. Buscá-lo aqui só para escrever uma linha custaria uma
+              requisição a mais numa tela que já é uma grade de capas. */}
         </header>
 
         {loading ? (
@@ -176,7 +187,14 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
         ) : posts.length === 0 ? (
           <div className="mt-8 flex items-start gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-6">
             <ImageOff className="mt-0.5 h-5 w-5 shrink-0 text-[#9A938A]" />
-            <p className="text-sm text-[#9A938A]">{t("gamePostsEmpty", "Nenhum post de games ainda.")}</p>
+            {/* DOIS vazios, porque são duas situações diferentes: quem não entrou
+                não tem "meus posts" para ter, e dizer a ele que não publicou nada
+                seria afirmar algo que ninguém mediu. */}
+            <p className="text-sm text-[#9A938A]">
+              {signedIn
+                ? t("gamePostsEmptyMine", "Você ainda não publicou nada aqui.")
+                : t("gamePostsSignedOut", "Entre na sua conta para ver os seus posts de games.")}
+            </p>
           </div>
         ) : (
           <>

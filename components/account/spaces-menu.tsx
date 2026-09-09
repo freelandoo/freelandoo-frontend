@@ -49,9 +49,11 @@ type SpaceRow = {
 }
 
 /**
- * `GET /me/spaces` também devolve `academies` e os games da pessoa; o menu não
- * lê mais nem um nem outro — os dois viraram botão retrátil do headcard. A
- * modalidade `games` continua no tipo porque a resposta segue trazendo a chave.
+ * `GET /me/spaces` também devolve `academies`; o menu não lê nem uma nem outra
+ * — as duas viraram botão retrátil do headcard. A chave `games` continua no
+ * tipo porque a resposta segue trazendo o balde, mas ele nasce VAZIO para todo
+ * mundo desde a mig 232: games virou plataforma do site inteiro e ninguém é
+ * membro dela. Quem abre o ambiente é o pill roxo, por `/games/platform`.
  */
 type SpacesPayload = {
   spaces: Record<SpaceKind, SpaceRow[]>

@@ -1528,7 +1528,8 @@
     "buyProfile": "Buy profile",
     "mgmtBadgeAccount": "Your account",
     "mySocialsLabel": "My socials",
-    "businessPill": "Business"
+    "businessPill": "Business",
+    "openGamesPlatformAria": "Open the games platform"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -2739,7 +2740,14 @@
     "bgPurple": "Purple",
     "bgWine": "Wine",
     "bgAmber": "Amber",
-    "bgBrown": "Brown"
+    "bgBrown": "Brown",
+    "gameSave": "Save my game",
+    "gameSaved": "Game updated.",
+    "gameSignedOut": "Sign in to tell everyone what you are playing.",
+    "myGamePillAria": "Your current game: platform, title and handle",
+    "myGamePostsPillAria": "Showcase with your games posts",
+    "gamePostsEmptyMine": "You haven't posted anything here yet.",
+    "gamePostsSignedOut": "Sign in to see your games posts."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -6227,7 +6235,8 @@
     "steamUnconfigured": "Not switched on in this install yet",
     "xboxReason": "The open API is paid and does not report played hours",
     "playstationReason": "Sony does not open a public API",
-    "nintendoReason": "Nintendo does not open a public API"
+    "nintendoReason": "Nintendo does not open a public API",
+    "shelfSignedOut": "Sign in to see and connect your shelf."
   },
   "SiteBooking": {
     "back": "Back to site",
