@@ -125,19 +125,55 @@ const Pill = memo(function Pill({
   const spring = reduceMotion
     ? { duration: 0 }
     : { type: "spring" as const, stiffness: 320, damping: 24 }
+  /**
+   * ⚠️ O RÓTULO TEM UM SPRING PRÓPRIO, SEM QUICADA — e a diferença não é de
+   * gosto, é de CUSTO POR QUADRO.
+   *
+   * O `x` do pill é TRANSFORM: o navegador compõe e não repinta nada, então
+   * quicar ali é de graça. A largura do rótulo é LAYOUT: cada quadro obriga um
+   * cálculo de layout e uma repintura da região. Com damping 24 (ζ≈0.67) o
+   * spring passa do alvo e volta, e cada um desses quadros a mais cobra o
+   * preço cheio sem mostrar nada de novo — a largura já tinha chegado.
+   *
+   * Damping 36 sobre stiffness 320 é o amortecimento CRÍTICO: chega e para.
+   * Mantém a cadência do gesto (mesma rigidez) e some com a cauda.
+   */
+  const widthSpring = reduceMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 320, damping: 36 }
 
   const Icon = spec.icon
   const body = (
     <span className={cn("flex items-center", CLEARANCE)}>
+      {/*
+        ⚠️ A LARGURA VAI ATÉ `auto`, E NÃO ATÉ UM NÚMERO GRANDE.
+        Aqui estava `maxWidth: 0 → 200`, e 200 é MUITO mais do que qualquer
+        rótulo mede ("Jogo atual" dá ~70px). O efeito era invisível e caro: a
+        largura chegava ao fim do texto nos primeiros ~50ms e o spring seguia
+        correndo mais uns 280ms até 200 — quadros que continuavam pedindo
+        layout e repintura da região SEM mudar um pixel. Ao fechar era pior,
+        porque a viagem de 200 até a largura do texto não mostra nada e o pill
+        parecia demorar a reagir ao clique.
+
+        Com `auto` o framer mede o texto uma vez e anima até ELE: a animação
+        acaba quando a coisa acaba. Mesmo desenho, ~1/4 dos quadros.
+
+        ⚠️ `min-w-0` NÃO É ENFEITE. O rótulo é item de flex, e item de flex tem
+        `min-width: auto` — o mínimo automático é o tamanho do conteúdo, então
+        `width: 0` sozinho NÃO encolheria e o pill nasceria aberto. O
+        `maxWidth` antigo escapava disso porque max-width limita o mínimo
+        automático; `width` não limita. Tirar esta classe quebra o estado
+        fechado em todas as superfícies de uma vez.
+      */}
       <motion.span
         initial={false}
         animate={{
-          maxWidth: open ? 200 : 0,
+          width: open ? "auto" : 0,
           opacity: open ? 1 : 0,
           marginRight: open ? 8 : 0,
         }}
-        transition={spring}
-        className="overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
+        transition={widthSpring}
+        className="min-w-0 overflow-hidden whitespace-nowrap text-[11px] font-extrabold uppercase tracking-wider"
       >
         {spec.label}
       </motion.span>

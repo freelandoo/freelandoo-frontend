@@ -791,6 +791,32 @@ body.camera-active { overflow: hidden; }
     repeating-linear-gradient(to bottom, rgba(167, 139, 250, 0.05) 0 1px, transparent 1px 64px);
 }
 
+/* ⚠️ AS TRÊS CAMADAS DE FUNDO VIVEM NUMA CAMADA DE COMPOSIÇÃO PRÓPRIA — e isso
+   não é enfeite, é a metade que faltava de tirar o WebGPU.
+
+   Elas são `fixed inset-0`, do tamanho da janela, e pintam do FUNDO da pilha:
+   sem promoção, elas moram na mesma camada que todo o resto da página. O
+   navegador então re-rasteriza os CINCO gradientes (dois deles
+   `repeating-linear-gradient`, que são dos mais caros que existem) toda vez que
+   QUALQUER coisa por cima suja um pedaço da tela — o spring de um pill, um
+   painel abrindo, a rolagem. Era esse o custo que sobrou depois que o shader
+   saiu: o desenho parou de se mover, mas continuava sendo repintado.
+
+   Com `translateZ(0)` + `will-change: transform` a camada é rasterizada UMA vez
+   e depois só composta. O preço é a memória de uma textura do tamanho da
+   janela — que é exatamente o que o canvas do WebGPU custava, sem o resto.
+
+   ⚠️ FUNDO DE PLATAFORMA NOVO ENTRA NESTA LISTA. Fora dela ele nasce correto na
+   tela e caro em todo quadro, que é o pior jeito de errar: não aparece em
+   revisão nenhuma, só na mão de quem rola a página. */
+.fl-games-bg,
+.fl-finance-bg,
+.fl-business-bg {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
 /* ============================================================================
    PLATAFORMA FINANCEIRO — a pele verde (`.fl-finance`)
    ----------------------------------------------------------------------------
