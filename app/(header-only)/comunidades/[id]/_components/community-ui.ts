@@ -101,7 +101,7 @@ export function canBuildCommunitySite(opts: {
    Aqueles dois pintam UM ambiente cada: o roxo é do games, o verde é do
    Financeiro, e por isso podem ser 40 linhas de valores escritos à mão. Aqui a
    cor é ESCOLHIDA por cada líder — um skin por cor seria a mesma lista copiada
-   nove vezes, e a décima cor pediria a décima cópia. Então a lista de classes
+   oito vezes, e a nona cor pediria a nona cópia. Então a lista de classes
    continua sendo UMA (a mesma dos outros dois ambientes, o que mantém a regra
    de "cor de superfície nova entra em todas as listas"), só que apontando para
    VARIÁVEIS que a página escreve no container.
@@ -110,7 +110,7 @@ export function canBuildCommunitySite(opts: {
    duas coisas — o `canvas` (o fundo profundo) e o `glow` (a cor que acende
    painel, linha e névoa). O resto (painel, interior, tinta, apagado, borda)
    sai de mistura, aqui, num lugar só: digitados, os sete valores de cada uma
-   das nove cores seriam 63 números para alguém manter em sincronia, e o dia em
+   das oito cores seriam 56 números para alguém manter em sincronia, e o dia em
    que a régua mudasse ela mudaria em uma cor só.
 
    As proporções abaixo não foram inventadas: foram calibradas contra as duas

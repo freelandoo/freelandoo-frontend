@@ -918,7 +918,7 @@ body.camera-active { overflow: hidden; }
    TRÊS, senão o bloco novo nasce marrom no meio do ambiente. O que muda aqui é
    só de onde o valor vem — de VARIÁVEIS, e não de hexadecimais escritos à mão,
    porque o dono do negócio escolhe a cor e um skin por cor seria a mesma lista
-   copiada nove vezes.
+   copiada oito vezes.
 
    ⚠️ QUEM ESCREVE AS VARIÁVEIS É A PÁGINA (`platformSkinVars`, no
    `_components/community-ui.ts`), no `style` do container. Sem elas o bloco
