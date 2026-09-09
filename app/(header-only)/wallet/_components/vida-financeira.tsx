@@ -61,7 +61,17 @@ function fmtDay(e: Entry, t: TFn) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-export function VidaFinanceira({ onEntriesChanged }: { onEntriesChanged?: () => void } = {}) {
+/**
+ * `action` é um SLOT ao lado do título, e não um botão que este componente
+ * conhece. Quem sabe da Vaquinha é a Carteira — a flag do admin, a preferência
+ * da pessoa e o destino são de lá. Se este componente soubesse, ele passaria a
+ * depender de uma função que não é dele, e a segunda tela que o montasse
+ * herdaria um botão que talvez não faça sentido nela.
+ */
+export function VidaFinanceira({
+  onEntriesChanged,
+  action,
+}: { onEntriesChanged?: () => void; action?: ReactNode } = {}) {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
   const [ym, setYm] = useState(currentYm())
@@ -114,13 +124,20 @@ export function VidaFinanceira({ onEntriesChanged }: { onEntriesChanged?: () => 
           `gap-1.5` (6px) não é "um espacinho": é exatamente a folga que a
           sombra dura de 5px de cada card precisa para não ser coberta pelo
           card seguinte. Zero faria as sombras sumirem debaixo do vizinho. */}
-      <div className="relative mb-3">
-        <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
-        <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>
+      {/* O título e, à direita dele, o que a página quiser pendurar ali. A
+          `Underline` continua absoluta em relação a ESTE bloco (é o que a
+          ancora embaixo do texto de apoio), então ela fica fora da linha do
+          flex de propósito. */}
+      <div className="relative mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="fl-marker text-2xl" style={{ color: GREEN }}>{tr("financeEyebrow", "controle de verdade")}</p>
+          <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-6xl">{tr("financeTitle", "Vida Financeira")}</h2>
+          <p className="mt-3 max-w-xl text-sm font-medium text-[#C9C2B6]">
+            {tr("financeIntro", "Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.")}
+          </p>
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
         <Underline className="absolute -bottom-2 left-0 h-3.5 w-48" style={{ color: GREEN }} />
-        <p className="mt-3 max-w-xl text-sm font-medium text-[#C9C2B6]">
-          {tr("financeIntro", "Some o que entra e sai fora da plataforma. Custos fixos entram sozinhos todo mês; o resto você lança no clique.")}
-        </p>
       </div>
 
       <div className="flex flex-col gap-1.5 lg:grid lg:grid-cols-[160px_minmax(0,1fr)] lg:gap-1.5">

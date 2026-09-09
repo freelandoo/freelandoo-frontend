@@ -32,8 +32,9 @@
 // Custo Vercel: nada aqui faz polling.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import {
-  AlertCircle, BarChart3, ChevronDown, Inbox, Loader2,
+  AlertCircle, BarChart3, ChevronDown, Inbox, Loader2, PiggyBank,
 } from "lucide-react"
 import { useMeProfile } from "@/hooks/use-me-profile"
 import { clientFetchWithTimeout } from "@/lib/fetch-with-timeout"
@@ -42,7 +43,7 @@ import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { VidaFinanceira } from "../_components/vida-financeira"
 import { MeiCard } from "../_components/mei-card"
-import { WalletHeadcard } from "../_components/wallet-headcard"
+import { WalletHeadcard, useVaquinhaEnabled } from "../_components/wallet-headcard"
 import {
   ExtratoRow, ExtratoSkeleton, GREEN, Kpi, StateBox, brl, shortDay,
   type Agg, type Earning, type SeriesPoint,
@@ -72,6 +73,11 @@ export default function WalletMoneyPage() {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
   const { perfil, isLoading: perfilLoading } = useMeProfile()
+  // A Vaquinha SAIU da pilha do headcard em 2026-09-08 e virou um botão aqui
+  // (pedido do Alex). O gate é o mesmo de sempre — flag do admin E preferência
+  // da pessoa —, lido do arquivo do headcard para não virar uma segunda
+  // resposta à mesma pergunta.
+  const vaquinhaOn = useVaquinhaEnabled()
 
   // Comunidade (pet/carro/games/bairro/condomínio) mora na MESMA tabela dos
   // perfis, então filtrar só `is_clan` fazia "Meu pet" e "Meu carro" aparecerem
@@ -176,7 +182,27 @@ export default function WalletMoneyPage() {
           saiu. Estava no fim da página, depois de KPIs, MEI e gráfico, e por
           isso só aparecia depois de duas telas de rolagem. */}
       <section className="mx-auto mt-3 w-full max-w-6xl px-3 md:px-8">
-        <VidaFinanceira onEntriesChanged={loadManualIn} />
+        <VidaFinanceira
+          onEntriesChanged={loadManualIn}
+          action={
+            vaquinhaOn ? (
+              /* ROSA e com a cara do pill, porque é a mesma porta que estava na
+                 pilha até hoje — mudar de forma ao mudar de lugar faria procurar
+                 duas vezes. Aqui ele NAVEGA no primeiro clique: o pill precisava
+                 de dois porque nascia escondido atrás da foto, e este não
+                 esconde nada.
+                 `/vaquinha/nova` é create-or-open: quem já tem cai na dela. */
+              <Link
+                href="/vaquinha/nova"
+                aria-label={tr("vaquinhaPillAria", "Abrir minha vaquinha")}
+                className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#DB2777] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F1EDE2] shadow-[3px_3px_0_0_#0B0B0D] transition hover:-translate-y-0.5 hover:bg-[#BE185D]"
+              >
+                <PiggyBank className="h-4 w-4" />
+                {tr("vaquinhaPill", "Vaquinha")}
+              </Link>
+            ) : null
+          }
+        />
       </section>
 
       {/* GANHOS NA PLATAFORMA — escopo, KPIs, MEI, gráfico e extrato. Vem

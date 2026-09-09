@@ -1,11 +1,12 @@
 "use client"
 
-// Vocabulário visual e as peças pequenas que as QUATRO telas da Carteira
-// dividem: a raiz (/wallet) e as páginas dos três botões retráteis
-// (/wallet/vaquinha, /wallet/cupom e /wallet/mercado).
+// Vocabulário visual e as peças pequenas que as CINCO telas da Carteira
+// dividem: a raiz (/wallet), que é o Financeiro, e as páginas dos quatro botões
+// retráteis (/wallet/carteira, /wallet/ranking, /wallet/cupom e
+// /wallet/mercado).
 //
 // Existe porque os pills deixaram de abrir painéis da própria página e passaram
-// a NAVEGAR (pedido do Alex, 2026-09-08): com quatro rotas, a paleta, os
+// a NAVEGAR (pedido do Alex, 2026-09-08): com cinco rotas, a paleta, os
 // formatadores e os cards de papel copiados em cada uma divergiriam na primeira
 // mudança de tom — mesma razão do `community-ui.ts` e do `academy-ui.ts`.
 //

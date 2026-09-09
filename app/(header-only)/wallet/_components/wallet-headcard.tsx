@@ -1,7 +1,7 @@
 "use client"
 
-// O HEADCARD da Carteira — peça ÚNICA das quatro telas dela (a raiz e as três
-// páginas dos botões retráteis).
+// O HEADCARD da Carteira — peça ÚNICA das cinco telas dela (a raiz, que é o
+// Financeiro, e as quatro páginas dos botões retráteis).
 //
 // Ele é a MANCHETE da página: a foto com os botões atrás dela e, no lugar onde
 // no perfil ficam o nome e o @, o título da tela. O que muda de uma para outra
@@ -22,10 +22,17 @@
 //
 // BOTÃO NOVO DA CARTEIRA ENTRA NESTA LISTA — e, sendo uma rota, ganha a página
 // dele em `app/(header-only)/wallet/<rota>/page.tsx`. Solto na página, ele
-// existiria numa das quatro telas e sumiria nas outras três, em silêncio.
+// existiria numa das cinco telas e sumiria nas outras quatro, em silêncio.
+//
+// ⚠️ A PILHA TEM QUATRO LUGARES, e não é preferência: 4 × 36 + 3 × 6 = 162px, e
+// a foto mede 168px no celular. Um QUINTO não caberia atrás dela e passaria a
+// escapar por cima e por baixo em vez de só pela direita. É por isso que o
+// Ranking só pôde entrar quando a Vaquinha saiu (2026-09-08) — ela virou um
+// botão dentro da Carteira, ao lado da Vida Financeira, que é onde a pessoa já
+// está olhando para o próprio dinheiro.
 
 import Link from "next/link"
-import { ArrowLeft, BarChart3, Percent, PiggyBank, Wallet } from "lucide-react"
+import { ArrowLeft, BarChart3, Percent, Trophy, Wallet } from "lucide-react"
 import { useMemo } from "react"
 import type { PerfilCompleto } from "@/lib/types/account"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
@@ -33,25 +40,27 @@ import { Underline } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { usePlatformPresence } from "@/components/layout/platform-presence"
 import { GREEN, GREEN_DEEP, initialsOf } from "./wallet-ui"
 
 /** Qual das telas está no ar (a raiz, que é o Financeiro, não acende nenhum). */
-export type WalletPillKey = "wallet" | "vaquinha" | "coupon" | "market"
+export type WalletPillKey = "wallet" | "ranking" | "coupon" | "market"
 
 /** As rotas das quatro páginas, num lugar só. */
 export const WALLET_ROUTES: Record<WalletPillKey, string> = {
   wallet: "/wallet/carteira",
-  vaquinha: "/wallet/vaquinha",
+  ranking: "/wallet/ranking",
   coupon: "/wallet/cupom",
   market: "/wallet/mercado",
 }
 
 /**
- * A Vaquinha é a única que pode FALTAR: é função com flag do admin E
- * preferência da pessoa (mesma regra do menu lateral). Fica aqui, e não copiada
- * em cada tela, porque a página dela precisa da MESMA resposta para decidir se
- * existe — duas leituras da mesma regra é como uma delas para de acompanhar a
- * outra.
+ * A Vaquinha pode FALTAR: é função com flag do admin E preferência da pessoa
+ * (mesma regra do menu lateral). Ela SAIU da pilha em 2026-09-08 e virou um
+ * botão dentro da Carteira, ao lado da Vida Financeira — mas o predicado
+ * continua morando aqui, no arquivo que as telas da Carteira já importam:
+ * copiado para dentro da Carteira, ele deixaria de acompanhar a regra no dia em
+ * que ela mudasse.
  */
 export function useVaquinhaEnabled() {
   const flag = useFeature("vaquinha")
@@ -74,7 +83,19 @@ export function WalletHeadcard({
   active?: WalletPillKey | null
 }) {
   const tr = useTranslations("Wallet")
-  const vaquinhaOn = useVaquinhaEnabled()
+
+  /**
+   * ⚠️ A BATIDA DE PRESENÇA DO FINANCEIRO mora AQUI, e não numa das telas
+   * (mig 230). Este headcard é a única peça que as cinco telas da Carteira
+   * dividem — pendurar o relógio numa delas faria ir do mural para a Carteira
+   * parar a contagem, e cada tela nova nasceria sem contar tempo.
+   *
+   * "Dentro da plataforma financeira" é o `/wallet` inteiro: o mural, a
+   * Carteira, o cupom, o mercado e o ranking são salas do MESMO ambiente, e
+   * quem está em qualquer uma delas está aqui dentro. Fora do `/wallet` este
+   * componente não existe, então o relógio não anda — que é o recorte pedido.
+   */
+  usePlatformPresence("finance")
 
   const pills = useMemo<PillSpec[]>(() => {
     const list: PillSpec[] = []
@@ -93,21 +114,26 @@ export function WalletHeadcard({
       href: WALLET_ROUTES.wallet,
       active: active === "wallet",
     })
-    if (vaquinhaOn) {
-      list.push({
-        key: "vaquinha",
-        icon: PiggyBank,
-        // ROSA (pedido do Alex, 2026-09-08). Era verde, e o verde passou a ser
-        // da Carteira: dois pills verdes na mesma pilha seriam a mesma cor
-        // para duas portas diferentes.
-        label: tr("vaquinhaPill", "Vaquinha"),
-        ariaLabel: tr("vaquinhaPillAria", "Abrir minha vaquinha"),
-        bg: "#DB2777",
-        bgHover: "#BE185D",
-        href: WALLET_ROUTES.vaquinha,
-        active: active === "vaquinha",
-      })
-    }
+    // O RANKING no lugar rosa (pedido do Alex, 2026-09-08: "tira a vaquinha do
+    // pill rosa, coloca o ranking ali"). A fila é da plataforma inteira, e a
+    // porta dela era um botão dentro do mural — que só existia porque, com a
+    // Vaquinha na pilha, um quinto pill não caberia atrás da foto. Com a
+    // Vaquinha fora, o lugar abriu, e o ranking é da plataforma como o mural e
+    // o mercado são: pertence à pilha.
+    //
+    // ⚠️ SEM GATE, diferente do que estava aqui: ranking não é função comprável
+    // nem preferência: quem não pontuou vê a fila dos outros e a frase do que
+    // fazer. Um pill que some conforme a pontuação faria a porta piscar.
+    list.push({
+      key: "ranking",
+      icon: Trophy,
+      label: tr("rankingPill", "Ranking"),
+      ariaLabel: tr("rankingPillAria", "Ranking do Financeiro na sua cidade e no seu estado"),
+      bg: "#DB2777",
+      bgHover: "#BE185D",
+      href: WALLET_ROUTES.ranking,
+      active: active === "ranking",
+    })
     list.push({
       key: "coupon",
       icon: Percent,
@@ -129,7 +155,7 @@ export function WalletHeadcard({
       active: active === "market",
     })
     return list
-  }, [vaquinhaOn, active, tr])
+  }, [active, tr])
 
   return (
     <section className="mx-auto w-full max-w-6xl px-3 pt-5 md:px-8 md:pt-6">

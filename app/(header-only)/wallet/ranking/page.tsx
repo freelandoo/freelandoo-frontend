@@ -5,7 +5,15 @@
 // "Contagem própria de pontos, ranking, igualmente o games mas para o mundo
 // financeiro" (Alex, 2026-09-08). A conta é a MESMA do ranking de games e mora
 // no backend (utils/gamesScore.js): curtida 1 · comentário 2 ·
-// compartilhamento 3, contados só sobre o que foi publicado no Financeiro.
+// compartilhamento 3 · 10 min online = 1 ponto, contados só sobre o que
+// acontece DENTRO do Financeiro.
+//
+// ⚠️ O TEMPO ONLINE É O DAQUI. Esta tela nasceu sem ele — a única batida de
+// presença que existia era a do ambiente de games, e somá-la aqui daria ponto
+// de presença de games a quem nunca entrou lá. A mig 230 pôs a plataforma na
+// chave da presença, e a Carteira passou a ter o relógio dela (a batida sai do
+// `wallet-headcard`, que é a peça das cinco telas). Quem fica na Carteira
+// pontua pela Carteira; quem fica em games, por games.
 //
 // ⚠️ OS PESOS VÊM DO BACKEND (`weights`), não são copiados aqui: dois lugares
 // guardando o peso fariam a legenda prometer uma conta que a fila não faz.
@@ -15,9 +23,12 @@
 // pessoa precisa saber qual é o caso: um pódio vazio diria "ninguém pontuou"
 // para quem, na verdade, nunca disse onde mora.
 //
-// Não é um pill: a pilha do headcard já tem quatro botões (162px) e a foto
-// mede 168px no celular — um quinto não caberia atrás dela. A porta é o link no
-// topo do mural.
+// A PORTA É O PILL ROSA do headcard (pedido do Alex, 2026-09-08: "tira a
+// vaquinha do pill rosa, coloca o ranking ali"). Antes era um botão no topo do
+// mural, porque com a Vaquinha na pilha um quinto pill não caberia atrás da
+// foto; com ela fora, o lugar abriu. O botão do mural SAIU junto — duas portas
+// para a mesma página na mesma tela é como uma delas para de acompanhar a
+// outra.
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
@@ -42,11 +53,12 @@ type Row = {
   likes: number
   comments: number
   shares: number
+  minutes: number
 }
 type Payload = {
   scope: Scope
   place: { municipio: string; estado: string } | null
-  weights: { like: number; comment: number; share: number }
+  weights: { like: number; comment: number; share: number; minutes_per_point: number }
   rows: Row[]
   me: Row | null
 }
@@ -101,6 +113,7 @@ export default function FinanceRankingPage() {
         eyebrow={tr("rankingEyebrow", "quem move o dinheiro")}
         title={tr("rankingTitle", "Ranking")}
         backHref="/wallet"
+        active="ranking"
       />
 
       <section className="mx-auto mt-6 w-full max-w-4xl px-3 md:px-8">
@@ -175,7 +188,7 @@ export default function FinanceRankingPage() {
             title={tr("rankingEmptyTitle", "A fila ainda está vazia por aqui")}
             desc={tr(
               "rankingEmptyDesc",
-              "Ninguém pontuou ainda neste recorte. Publique no Financeiro: curtida, comentário e compartilhamento dos outros viram pontos."
+              "Ninguém pontuou ainda neste recorte. Publique no Financeiro: curtida, comentário e compartilhamento dos outros viram pontos — e o tempo que você passa por aqui também conta."
             )}
             action={
               <Link
@@ -212,7 +225,14 @@ export default function FinanceRankingPage() {
             {tr("rankingLegend", "Como pontua:")}{" "}
             {tr("rankingLegendLike", "curtida")} {weights.like} ·{" "}
             {tr("rankingLegendComment", "comentário")} {weights.comment} ·{" "}
-            {tr("rankingLegendShare", "compartilhamento")} {weights.share}.{" "}
+            {tr("rankingLegendShare", "compartilhamento")} {weights.share} ·{" "}
+            {/* O peso do tempo vem do backend como os outros três: copiá-lo aqui
+                faria a legenda prometer uma conta que a fila não faz. */}
+            {tr("rankingLegendTime", "{min} min no Financeiro = 1 ponto").replace(
+              "{min}",
+              String(weights.minutes_per_point)
+            )}
+            .{" "}
             {tr("rankingLegendSelf", "O que você mesmo curte no seu post não conta.")}
           </p>
         )}
@@ -254,10 +274,13 @@ function RankRow({
         <p className="truncate text-sm font-extrabold text-[#0B0B0D]">
           {row.name || row.username || "—"}
         </p>
+        {/* A conta ABERTA, e não só o total: o número sozinho não diz o que
+            fazer para subir. */}
         <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-[#0B0B0D]/60">
           {row.likes} {tr("rankingLegendLike", "curtida")} · {row.comments}{" "}
           {tr("rankingLegendComment", "comentário")} · {row.shares}{" "}
-          {tr("rankingLegendShare", "compartilhamento")}
+          {tr("rankingLegendShare", "compartilhamento")} · {row.minutes}{" "}
+          {tr("rankingMinutes", "min online")}
         </p>
       </div>
       <span className="fl-display shrink-0 text-2xl leading-none" style={{ color: me ? "#06251F" : GREEN_DEEP }}>

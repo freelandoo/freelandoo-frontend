@@ -58,100 +58,31 @@
  * O relógio é do MAPA, não do componente: navegar entre duas telas do ambiente
  * troca beacons sem interromper a contagem, e ela só para quando o último sai.
  *
- * ⚠️ E SÓ VALE PARA GAMES. O ranking que consome esse tempo é o da plataforma de
- * games; contar o tempo de quem está no ambiente de negócios daria pontuação de
- * games para quem nunca entrou lá.
+ * ⚠️ AQUI DENTRO, SÓ GAMES BATE. "Meus negócios" é ambiente e troca o dock, mas
+ * não tem ranking próprio: contar o tempo de quem está lá daria pontuação de
+ * games a quem nunca entrou em games.
+ *
+ * O Financeiro também mede tempo desde a mig 230, mas ele NÃO passa por aqui —
+ * a Carteira não é uma comunidade na tela, e quem declara a presença dela é o
+ * headcard dela, com o mesmo `platform-presence`. O que os dois compartilham é
+ * o relógio; o que decide quando ligá-lo é de cada ambiente.
  */
 
 import { useEffect } from "react"
 import { useSyncExternalStore } from "react"
-import { getToken } from "@/lib/auth"
-import { getPublicBackendUrl } from "@/lib/backend-public"
+import { claimPresence } from "@/components/layout/platform-presence"
 
 /* ─────────────────────────── batida de presença ────────────────────────────
  *
- * ⚠️ VAI DIRETO NO RAILWAY, nunca pelo proxy `/api/*` da Vercel. É chamada
- * recorrente, e cada passagem pelo proxy cobraria uma invocação por batida de
- * cada pessoa online — a regra que já vale para o heartbeat de XP e para o
- * chat. Assim ela custa zero na Vercel.
- *
- * ⚠️ SÓ COM A ABA VISÍVEL. Presença é a pessoa olhando para a tela; aba de
- * fundo esquecida por um dia não é tempo de ninguém. Quem mede de fato é o
- * banco (o crédito sai do intervalo entre duas batidas, com teto), então esta
- * ponta só precisa dizer a verdade sobre quando está olhando.
+ * O relógio em si MUDOU DE CASA (2026-09-08): mora em
+ * `components/layout/platform-presence.ts`, porque o Financeiro passou a medir
+ * tempo também e as duas plataformas têm que bater do mesmo jeito. O que
+ * continua aqui é só a decisão de QUANDO ligar — que é o que este módulo sabe
+ * e o outro não.
  */
 
-/** 2 minutos. O backend tolera até 180s por batida — a folga é a jitter. */
-const BEAT_MS = 120_000
-
-let beatTimer: ReturnType<typeof setInterval> | null = null
-let beatCleanup: (() => void) | null = null
-
-/**
- * `resume` = "não credite, só acerte o relógio".
- *
- * Existe para o retorno de uma aba que ficou escondida: sem ele, a primeira
- * batida depois de voltar creditaria o teto de uma batida (3 min) de um tempo
- * em que ninguém estava olhando. Um cliente adulterado que mandasse `resume`
- * sempre só diminuiria a própria pontuação — a fraude possível aqui é contra si
- * mesmo, e por isso a flag pode vir do cliente sem risco.
- */
-function sendBeat(resume: boolean, keepalive = false) {
-  const token = getToken()
-  if (!token) return
-  const url = `${getPublicBackendUrl()}/gamer/presence${resume ? "?resume=1" : ""}`
-  // `keepalive` (e não sendBeacon) porque a batida precisa do Authorization, e
-  // o sendBeacon não manda cabeçalho. Com keepalive o pedido sobrevive ao
-  // fechamento da aba.
-  void fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    keepalive,
-  }).catch(() => {
-    /* silencioso: perder uma batida custa 2 minutos de ranking, não a tela */
-  })
-}
-
-function startHeartbeat() {
-  if (beatTimer) return
-
-  const visible = () =>
-    typeof document === "undefined" || document.visibilityState === "visible"
-
-  if (visible()) sendBeat(false)
-
-  beatTimer = setInterval(() => {
-    if (visible()) sendBeat(false)
-  }, BEAT_MS)
-
-  const onVisibility = () => {
-    // Escondeu: fecha as contas com o tempo REAL até agora.
-    // Voltou: só acerta o relógio, sem creditar o tempo em que sumiu.
-    if (visible()) sendBeat(true)
-    else sendBeat(false, true)
-  }
-  // `pagehide` e não `unload`: em iOS o unload não dispara, e a última batida
-  // (que é a que credita o tempo desde a penúltima) se perderia.
-  const onPageHide = () => sendBeat(false, true)
-
-  document.addEventListener("visibilitychange", onVisibility)
-  window.addEventListener("pagehide", onPageHide)
-
-  beatCleanup = () => {
-    document.removeEventListener("visibilitychange", onVisibility)
-    window.removeEventListener("pagehide", onPageHide)
-  }
-}
-
-function stopHeartbeat() {
-  if (!beatTimer) return
-  clearInterval(beatTimer)
-  beatTimer = null
-  beatCleanup?.()
-  beatCleanup = null
-  // Saiu do ambiente: credita o trecho final antes de largar o relógio.
-  sendBeat(false, true)
-}
+/** O release do claim de games, enquanto ele estiver ligado. */
+let gamesRelease: (() => void) | null = null
 
 /* ────────────────────── o que o dock PEDE para a página ─────────────────────
  *
@@ -236,8 +167,12 @@ function recompute() {
   //
   // Só GAMES conta tempo (ver o cabeçalho): quem está em "Meus negócios" não
   // pode pontuar num ranking de games.
-  if ([...mounted.values()].some((s) => s.kind === "games")) startHeartbeat()
-  else stopHeartbeat()
+  const games = [...mounted.values()].some((s) => s.kind === "games")
+  if (games && !gamesRelease) gamesRelease = claimPresence("games")
+  else if (!games && gamesRelease) {
+    gamesRelease()
+    gamesRelease = null
+  }
 
   // Identidade estável: `useSyncExternalStore` compara por referência, e um
   // objeto novo a cada leitura faria o dock re-renderizar para sempre.

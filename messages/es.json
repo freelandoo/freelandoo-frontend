@@ -4262,8 +4262,12 @@
     "rankingNoPlaceDesc": "La fila de Financiero es por ciudad y estado. Completa tu ciudad en el perfil para entrar.",
     "rankingNoPlaceCta": "Completar mi perfil",
     "rankingEmptyTitle": "La fila todavía está vacía aquí",
-    "rankingEmptyDesc": "Nadie puntuó aquí todavía. Publica en Financiero: los me gusta, comentarios y compartidos de otros se vuelven puntos.",
-    "rankingEmptyCta": "Ir al muro"
+    "rankingEmptyDesc": "Nadie ha puntuado aún en este recorte. Publica en Finanzas: me gusta, comentarios y compartidos de otros se vuelven puntos — y el tiempo que pasas aquí también cuenta.",
+    "rankingEmptyCta": "Ir al muro",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Ranking de Finanzas en tu ciudad y tu estado",
+    "rankingLegendTime": "{min} min en Finanzas = 1 punto",
+    "rankingMinutes": "min en línea"
   },
   "Polens": {
     "eyebrow": "Paquetes de Polen",

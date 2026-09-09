@@ -4282,8 +4282,12 @@
     "rankingNoPlaceDesc": "The Finance ranking is by city and state. Fill in your city on your profile to join it.",
     "rankingNoPlaceCta": "Complete my profile",
     "rankingEmptyTitle": "The ranking is still empty here",
-    "rankingEmptyDesc": "Nobody has scored here yet. Post on Finance: other people's likes, comments and shares turn into points.",
-    "rankingEmptyCta": "Go to the wall"
+    "rankingEmptyDesc": "Nobody has scored here yet. Post in Finance: likes, comments and shares from others become points — and the time you spend here counts too.",
+    "rankingEmptyCta": "Go to the wall",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Finance ranking in your city and state",
+    "rankingLegendTime": "{min} min in Finance = 1 point",
+    "rankingMinutes": "min online"
   },
   "Polens": {
     "eyebrow": "Polen packages",
