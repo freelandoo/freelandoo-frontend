@@ -107,7 +107,7 @@ export default function GamesPostsPage() {
         owner={owner}
       />
 
-      <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">
+      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         {loading || owner === undefined ? (
           <div className="flex items-center justify-center py-20 text-[#9A938A]">
             <Loader2 className="h-6 w-6 animate-spin" />

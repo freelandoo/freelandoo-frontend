@@ -182,7 +182,7 @@ export default function GamesPage() {
         }
       />
 
-      <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">
+      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         {loadingPlatform || loadingPosts ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 3 }).map((_, i) => (

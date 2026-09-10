@@ -60,7 +60,7 @@ export default function GamesShelfPage() {
         owner={owner}
       />
 
-      <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">
+      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         {/* ESPERA o contexto resolver: sem isso a estante buscaria a de quem
             olha e a trocaria por baixo quando o `?de=` chegasse. */}
         {owner === undefined || !shelfOn ? (

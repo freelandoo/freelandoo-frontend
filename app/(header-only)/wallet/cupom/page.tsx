@@ -108,7 +108,7 @@ export default function WalletCouponPage() {
       />
 
       {/* O CÓDIGO */}
-      <section className="mx-auto mt-5 w-full max-w-6xl px-3 md:px-8">
+      <section className="mx-auto mt-5 w-full max-w-6xl px-0 md:px-8">
         <div className="border-2 border-[#0B0B0D] bg-[#F1EDE2] p-4 shadow-[5px_5px_0_0_#0B0B0D] sm:p-5">
           <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6B6457]">
             <Ticket className="h-3.5 w-3.5" /> {tr("myCouponTitle", "Meu cupom")}
@@ -154,7 +154,7 @@ export default function WalletCouponPage() {
       </section>
 
       {/* QUEM COMPROU COM ELE */}
-      <section className="mx-auto mt-10 w-full max-w-6xl px-3 md:px-8">
+      <section className="mx-auto mt-10 w-full max-w-6xl px-0 md:px-8">
         <div className="relative mb-6 inline-block">
           <h2 className="fl-display text-4xl text-[#F1EDE2] md:text-5xl">
             {tr("couponSalesTitle", "Vendas com o seu cupom")}
@@ -214,7 +214,7 @@ export default function WalletCouponPage() {
       </section>
 
       {/* AFILIADO — herdado do extinto /account/afiliado. */}
-      <section className="mx-auto mt-12 w-full max-w-6xl px-3 md:px-8">
+      <section className="mx-auto mt-12 w-full max-w-6xl px-0 md:px-8">
         <div className="relative mb-6 inline-block">
           <h2 className="flex items-center gap-2 fl-display text-4xl text-[#F1EDE2] md:text-5xl">
             <Percent className="h-7 w-7" /> {tr("affiliateSection", "Afiliado")}

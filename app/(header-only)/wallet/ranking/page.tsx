@@ -114,7 +114,7 @@ export default function FinanceRankingPage() {
         active="ranking"
       />
 
-      <section className="mx-auto mt-6 w-full max-w-4xl px-3 md:px-8">
+      <section className="mx-auto mt-6 w-full max-w-4xl px-0 md:px-8">
         {/* As duas abas. Planas, e não um seletor dentro de "atividade": são
             dois recortes do mesmo número, não duas métricas. */}
         <div className="mb-4 flex flex-wrap gap-1.5">

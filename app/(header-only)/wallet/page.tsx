@@ -213,7 +213,7 @@ export default function FinancePage() {
         }
       />
 
-      <section className="mx-auto mt-8 w-full max-w-5xl px-5 md:px-10">
+      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
         <div className="flex gap-1 border-b-2 border-[#F5F1E8]/15">
           {tabs.map(([key, label]) => (
             <button

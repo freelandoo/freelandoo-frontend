@@ -128,7 +128,7 @@ export default function GamesRankingPage() {
     <GamesShell>
       <GamesHeadcard perfil={perfil} title={tr("rankingTitle", "Ranking")} backHref="/games" active="ranking" />
 
-      <section className="mx-auto mt-6 w-full max-w-4xl px-3 md:px-8">
+      <section className="mx-auto mt-6 w-full max-w-4xl px-0 md:px-8">
         {/* Três abas PLANAS, e não "atividade" com um sub-seletor dentro: abas
             dentro de abas para escolher entre três coisas. */}
         <div className="mb-4 flex flex-wrap gap-1.5">

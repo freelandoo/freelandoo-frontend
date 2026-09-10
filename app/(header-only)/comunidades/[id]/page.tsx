@@ -1295,7 +1295,7 @@ export default function CommunityDetailPage() {
         />
       )}
       {/* Top bar */}
-      <div className="relative z-10 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 pt-6 md:px-10">
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-3 pt-6 md:px-10">
         {/* ⚠️ VOLTA PARA O PERFIL, não para a vitrine (pedido do Alex,
             2026-09-08): `/comunidades` ficou órfã, e um "Voltar" apontando para
             uma página que já não tem porta de entrada seria a única forma de
@@ -1341,7 +1341,7 @@ export default function CommunityDetailPage() {
       </div>
 
       {/* HERO */}
-      <header className="relative mx-auto mt-4 max-w-5xl px-5 md:px-10">
+      <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
         {/* ⚠️ `z-0` NÃO é decoração: é o que TRANCA o banner debaixo da linha da
             foto. Sem ele o banner é `relative` com z-index AUTO, e elemento
             posicionado com z auto NÃO cria contexto de empilhamento — então o
@@ -1446,9 +1446,17 @@ export default function CommunityDetailPage() {
               {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
             </div>
           </div>
-          {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para
-              cá de trás da foto: sem ela o nome começa debaixo dele. */}
-          <div className="flex-1 pb-1 pl-11 md:pb-2 md:pl-12">
+          {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (pedido do Alex,
+              2026-09-10: "nada sobreponha os nomes no mobile"). Ao lado dela,
+              o rótulo do pill ABERTO deslizava por cima do nome — a folga de
+              44px cobre o ícone fechado, não o rótulo. O espaçador (só no
+              celular) empurra Publicar/Entrar para a direita da foto, e o
+              nome, com `order-last` + `basis-full`, ocupa a linha inteira
+              embaixo. No md o espaçador some e o nome volta para o lado, com a
+              folga passando do ícone do pill (~40px). MESMA peça nos headcards
+              de games e do Financeiro. */}
+          <div aria-hidden className="flex-1 md:hidden" />
+          <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
             {showAsLeaderEdit ? (
               <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
                 className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
@@ -1527,7 +1535,7 @@ export default function CommunityDetailPage() {
           que mantém os dois com a mesma cara conforme a lista de botões
           crescer. */}
       {panel && (
-        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
+        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
           <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(panel === "mural" ? "#C2410C" : "#1D4ED8", 6) }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
@@ -1793,7 +1801,7 @@ export default function CommunityDetailPage() {
       )}
 
       {actionMsg && (
-        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-5 md:px-10">
+        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-0 md:px-10">
           <p className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-xs font-bold text-[#F5F1E8]">{actionMsg}</p>
         </div>
       )}
@@ -1902,7 +1910,7 @@ export default function CommunityDetailPage() {
       {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
           destaque, ranking) subiu para a coluna retrátil dos números, então o
           feed ocupa a largura inteira. */}
-      <div className="relative z-10 mx-auto mt-8 max-w-5xl px-5 md:px-10">
+      <div className="relative z-10 mx-auto mt-8 max-w-5xl px-0 md:px-10">
         <div className="space-y-6">
           {/* Condomínio (migs 205/206): portaria, família × disputa, planta e
               veredito. Mesma casca — muda o que aparece dentro dela. */}

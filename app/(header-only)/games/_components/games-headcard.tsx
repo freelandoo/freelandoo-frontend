@@ -188,7 +188,7 @@ export function GamesHeadcard({
   return (
     <>
       {/* Top bar — a saída à esquerda e a identidade de quem está olhando à direita. */}
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pt-6 md:px-10">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 pt-6 md:px-10">
         <Link
           href={backHref}
           className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
@@ -203,7 +203,7 @@ export function GamesHeadcard({
         )}
       </div>
 
-      <header className="relative mx-auto mt-4 max-w-5xl px-5 md:px-10">
+      <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
         {/* `z-0` TRANCA o banner debaixo da linha da foto (ver a nota no
             headcard da Carteira: elemento posicionado com z auto não cria
             contexto de empilhamento). */}
@@ -352,8 +352,16 @@ export function GamesHeadcard({
             )}
           </div>
 
-          {/* A folga passa do ÍCONE do pill, que escapa uns 40px de trás da foto. */}
-          <div className="flex-1 pb-1 pl-11 md:pb-2 md:pl-12">
+          {/* ⚠️ NO CELULAR O TÍTULO DESCE PARA BAIXO DA FOTO (pedido do Alex,
+              2026-09-10: "nada sobreponha os nomes no mobile"). Ao lado dela,
+              o rótulo do pill ABERTO deslizava por cima do nome — a folga de
+              44px cobre o ícone fechado, não o rótulo. O espaçador (só no
+              celular) empurra a ação para a direita da foto, e o título, com
+              `order-last` + `basis-full`, ocupa a linha inteira embaixo. No md
+              o espaçador some e o título volta para o lado, com a folga
+              passando do ícone do pill (~40px). */}
+          <div aria-hidden className="flex-1 md:hidden" />
+          <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
             <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
               {title}
             </h1>

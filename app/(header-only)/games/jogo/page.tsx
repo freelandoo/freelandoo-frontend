@@ -124,7 +124,7 @@ export default function GamesCurrentPage() {
         owner={owner}
       />
 
-      <section className="mx-auto mt-8 w-full max-w-3xl px-5 md:px-10">
+      <section className="mx-auto mt-8 w-full max-w-3xl px-0 md:px-10">
         <div className="border-2 border-[#0B0B0D] bg-[#15120E] p-5 md:p-7" style={{ boxShadow: `8px 8px 0 0 ${PURPLE}` }}>
           <p className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9A938A]">
             <Gamepad2 className="h-3.5 w-3.5" style={{ color: PURPLE_GLOW }} />

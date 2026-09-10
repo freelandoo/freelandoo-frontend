@@ -186,7 +186,7 @@ export default function WalletMoneyPage() {
           É o que a pessoa vem fazer aqui todo dia: lançar o que entrou e o que
           saiu. Estava no fim da página, depois de KPIs, MEI e gráfico, e por
           isso só aparecia depois de duas telas de rolagem. */}
-      <section className="mx-auto mt-3 w-full max-w-6xl px-3 md:px-8">
+      <section className="mx-auto mt-3 w-full max-w-6xl px-0 md:px-8">
         <VidaFinanceira
           onEntriesChanged={loadManualIn}
           action={
@@ -213,7 +213,7 @@ export default function WalletMoneyPage() {
       {/* GANHOS NA PLATAFORMA — escopo, KPIs, MEI, gráfico e extrato. Vem
           depois porque é retrato (o que a plataforma já te pagou), não
           lançamento. */}
-      <section className="mx-auto mt-8 w-full max-w-6xl px-3 md:px-8">
+      <section className="mx-auto mt-8 w-full max-w-6xl px-0 md:px-8">
         <div className="min-w-0">
           {/* CONTROLES DE ESCOPO — valem para os KPIs, o gráfico e o extrato. */}
           <div className="flex flex-col gap-3 border-y-2 border-[#F1EDE2]/12 py-4 sm:flex-row sm:items-center sm:justify-between">

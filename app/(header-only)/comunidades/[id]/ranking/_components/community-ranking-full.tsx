@@ -289,7 +289,7 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
     <div
       style={skinVars}
       className={cn(
-        "fl-root relative min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]",
+        "fl-root relative min-h-[100dvh] overflow-x-clip bg-[#0b0804] pb-24 text-[#F1EDE2]",
         isBusiness && "fl-business"
       )}
     >
@@ -305,8 +305,8 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
           canBuildSite={canBuildSite}
         />
       )}
-      <div className="relative mx-auto max-w-4xl px-4 pt-6 md:px-6">
-        <PageBackLink href={`/comunidades/${communityId}`} label={community.display_name} />
+      <div className="relative mx-auto max-w-4xl px-0 pt-6 md:px-6">
+        <PageBackLink href={`/comunidades/${communityId}`} label={community.display_name} className="px-3 md:px-0" />
 
         {/* A troca de fila só existe quando há mais de uma: com uma opção só,
             o par de botões pediria um clique que não decide nada. */}
