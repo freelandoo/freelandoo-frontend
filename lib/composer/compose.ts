@@ -3,8 +3,8 @@
 // StoryRecorder (mesmo pipeline da câmera). A música NÃO é queimada (vai como
 // metadado no slice 5). Crop/zoom/filtro já aplicados pelo ComposerRenderer.
 
-import { StoryRecorder, canvasToPoster, type RecordResult } from "@/lib/camera/recorder"
-import { detectCapabilities, isH264EncodeSupported } from "@/lib/camera/capabilities"
+import { StoryRecorder, canvasToPoster, VideoCaptureError, type RecordResult } from "@/lib/camera/recorder"
+import { detectCapabilities, isH264EncodeSupported, type RecordPath } from "@/lib/camera/capabilities"
 import { ComposerRenderer } from "./renderer"
 import type { ComposedResult, FilterState, CropState, MediaDraft } from "./types"
 import { targetWidthFor } from "./types"
@@ -77,20 +77,22 @@ async function composeImage(p: ComposeParams): Promise<ComposedResult> {
   }
 }
 
-/** Exporta VÍDEO: play do <video> importado → loop de render → StoryRecorder. */
-async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
+/** Caminhos de gravação que este navegador aceita, na ordem de preferência.
+ *  Devolver uma LISTA (e não um caminho só) é o que permite cair para o
+ *  MediaRecorder quando o WebCodecs aceita os frames e não produz vídeo — o que
+ *  acontece no iOS e terminava como "decoderConfig.colorSpace" na cara do
+ *  usuário, já com a mídia editada e o post preenchido. */
+async function recordPathsFor(w: number, h: number, allowWebm: boolean): Promise<RecordPath[]> {
   const caps = detectCapabilities()
-  let path = caps.recordPath
+  const paths: RecordPath[] = []
+  if (caps.recordPath === "webcodecs" && (await isH264EncodeSupported(w, h))) paths.push("webcodecs")
+  if (caps.mediaRecorder && (caps.mediaRecorderMp4 || (allowWebm && caps.mediaRecorderWebm))) paths.push("mediarecorder")
+  return paths
+}
+
+/** Uma tentativa de export: play do <video> importado → loop de render → StoryRecorder. */
+async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<ComposedResult> {
   const { w, h } = outSize(p.crop.aspect, targetWidthFor("bee", "video"))
-  if (path === "webcodecs") {
-    const ok = await isH264EncodeSupported(w, h)
-    if (!ok) path = caps.mediaRecorderMp4 || (p.allowWebmFallback && caps.mediaRecorderWebm) ? "mediarecorder" : "none"
-  } else if (path === "mediarecorder" && !caps.mediaRecorderMp4 && !p.allowWebmFallback) {
-    path = "none"
-  } else if (path === "none" && p.allowWebmFallback && caps.mediaRecorder && caps.mediaRecorderWebm) {
-    path = "mediarecorder"
-  }
-  if (path === "none") throw new Error("Este navegador não suporta exportar vídeo. Tente outro.")
 
   const video = document.createElement("video")
   video.src = p.draft.url
@@ -101,6 +103,7 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
   // iOS/WebKit só decodifica frames de forma confiável com o <video> no DOM.
   // Mantém invisível (1×1, fora da viewport) e remove no finally.
   video.setAttribute("muted", "")
+  video.setAttribute("playsinline", "")
   video.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
   document.body.appendChild(video)
   await new Promise<void>((res, rej) => {
@@ -122,24 +125,29 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
 
   try {
     await rec.start()
-    // iOS/Safari: um <video> detached (fora do DOM) começa em readyState 1; se o
-    // loop capturar antes de HAVE_CURRENT_DATA, zero frames são codificados e o
-    // mp4-muxer quebra ao finalizar. Espera dados decodificáveis antes de gravar.
+    // iOS/Safari: um <video> começa em readyState 1; se o loop capturar antes de
+    // HAVE_CURRENT_DATA, zero frames são codificados e o mp4-muxer quebra ao
+    // finalizar. Espera dados decodificáveis antes de gravar.
+    if (video.readyState < 2) {
+      try { video.currentTime = Math.min(0.05, totalSec / 2) } catch { /* noop */ }
+    }
     await waitFor(() => video.readyState >= 2, 5000)
     await video.play().catch(() => {})
     const startWall = performance.now()
     let lastT = -1
     let stalled = 0
+    let everReady = false
     await new Promise<void>((resolve) => {
       const loop = () => {
         if (video.readyState >= 2) {
+          everReady = true
           renderer.render(video)
           rec.captureVideoFrame()
         }
         const t = video.currentTime
         p.onProgress?.(Math.min(0.9, (t / totalSec) * 0.9))
-        // Playback travado (comum em <video> detached no iOS): empurra o tempo
-        // manualmente para forçar a decodificação dos próximos frames.
+        // Playback travado (comum no iOS): empurra o tempo manualmente para
+        // forçar a decodificação dos próximos frames.
         if (Math.abs(t - lastT) < 1e-3) {
           if (++stalled > 6) { try { video.currentTime = Math.min(totalSec, t + 1 / 30) } catch { /* noop */ } ; stalled = 0 }
         } else {
@@ -149,11 +157,16 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
         const wallSec = (performance.now() - startWall) / 1000
         const reachedEnd = video.ended || t >= totalSec - 0.05
         const timedOut = wallSec > totalSec + 10
-        // No caminho webcodecs, nunca finaliza sem ter codificado ao menos 1 frame
-        // (evita decoderConfig null no mux). O mediarecorder captura via
+        // O vídeo não decodificou NENHUMA vez em 6s: não vai decodificar. Desiste
+        // cedo para o chamador tentar o próximo caminho, em vez de segurar a tela
+        // de "Renderizando" pela duração inteira do clipe. Mede "nunca esteve
+        // pronto" — e não `encodedFrames`, que só o webcodecs alimenta.
+        const deadEarly = wallSec > 6 && !everReady
+        // No caminho webcodecs, nunca finaliza sem ter codificado ao menos 1
+        // frame (evita decoderConfig null no mux). O mediarecorder captura via
         // captureStream e não usa encodedFrames, então só depende de reachedEnd.
         const hasFrames = path !== "webcodecs" || rec.encodedFrames > 0
-        if ((reachedEnd && hasFrames) || timedOut) { resolve(); return }
+        if ((reachedEnd && hasFrames) || timedOut || deadEarly) { resolve(); return }
         raf = requestAnimationFrame(loop)
       }
       raf = requestAnimationFrame(loop)
@@ -173,9 +186,36 @@ async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
   } finally {
     renderer.dispose()
     video.pause()
-    video.src = ""
+    video.removeAttribute("src")
+    try { video.load() } catch { /* noop */ }
     video.remove()
   }
+}
+
+/** Exporta VÍDEO tentando cada caminho suportado até um produzir arquivo. */
+async function composeVideo(p: ComposeParams): Promise<ComposedResult> {
+  const { w, h } = outSize(p.crop.aspect, targetWidthFor("bee", "video"))
+  const paths = await recordPathsFor(w, h, !!p.allowWebmFallback)
+  if (paths.length === 0) throw new Error("Este navegador não suporta exportar vídeo. Tente outro.")
+
+  let lastErr: unknown = null
+  for (let i = 0; i < paths.length; i++) {
+    try {
+      return await composeVideoPass(p, paths[i])
+    } catch (err) {
+      lastErr = err
+      // Só falha de CAPTURA justifica tentar outro caminho: erro de leitura do
+      // arquivo aconteceria de novo, e insistir só faria a espera dobrar.
+      const retryable = err instanceof VideoCaptureError
+      if (!retryable) throw err
+      if (i === paths.length - 1) {
+        // Acabaram os caminhos: fala do ARQUIVO e do que fazer, não do encoder.
+        throw new Error("Não consegui exportar este vídeo neste navegador. Tente um trecho mais curto ou outro arquivo.")
+      }
+      p.onProgress?.(0)
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Falha ao exportar o vídeo.")
 }
 
 export async function compose(p: ComposeParams): Promise<ComposedResult> {

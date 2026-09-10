@@ -26,6 +26,21 @@ export interface RecorderOptions {
   videoBitrate?: number
 }
 
+/**
+ * Falha de CAPTURA do caminho webcodecs: o encoder não produziu vídeo utilizável.
+ * É tipada porque quem chama (compose) precisa distinguir "não deu pra capturar,
+ * tente outro caminho" de um erro qualquer — e cair no MediaRecorder em vez de
+ * devolver erro ao usuário.
+ */
+export class VideoCaptureError extends Error {
+  readonly code: "no_frames" | "no_chunks" | "encode_failed"
+  constructor(code: "no_frames" | "no_chunks" | "encode_failed", message: string) {
+    super(message)
+    this.name = "VideoCaptureError"
+    this.code = code
+  }
+}
+
 export interface RecordResult {
   blob: Blob
   mimeType: string
@@ -68,6 +83,9 @@ export class StoryRecorder {
   private audioSamples = 0
   private audioDropped = false
   private encodeError: Error | null = null
+  /** Chunks que SAÍRAM do encoder (≠ frames enviados) e se o mux recebeu config. */
+  private outputChunks = 0
+  private sawDecoderConfig = false
 
   // MediaRecorder fallback
   private mediaRecorder: MediaRecorder | null = null
@@ -91,6 +109,8 @@ export class StoryRecorder {
     this.audioSamples = 0
     this.audioDropped = false
     this.encodeError = null
+    this.outputChunks = 0
+    this.sawDecoderConfig = false
     this.startMs = performance.now()
 
     if (this.opts.path === "webcodecs") {
@@ -136,7 +156,15 @@ export class StoryRecorder {
     })
 
     this.vEncoder = new window.VideoEncoder({
-      output: (chunk, meta) => this.muxer?.addVideoChunk(chunk, meta),
+      output: (chunk, meta) => {
+        // ⚠️ O mp4-muxer só aprende o formato do vídeo pelo `decoderConfig` do
+        // PRIMEIRO chunk. Sem ele, `finalize()` estoura lá dentro com o críptico
+        // "null is not an object (evaluating 't.info.decoderConfig.colorSpace')".
+        // Contamos aqui para RECUSAR o finalize em vez de deixar quebrar.
+        if (meta?.decoderConfig) this.sawDecoderConfig = true
+        this.outputChunks++
+        this.muxer?.addVideoChunk(chunk, meta)
+      },
       error: (e) => { this.encodeError = e as Error },
     })
     this.vEncoder.configure({
@@ -265,23 +293,29 @@ export class StoryRecorder {
 
     if (this.opts.path === "webcodecs") {
       if (this.encodeError) {
-        throw new Error("Não foi possível codificar o vídeo neste navegador. Tente um trecho mais curto.")
+        this.abortWebCodecs()
+        throw new VideoCaptureError("encode_failed", "Não foi possível codificar o vídeo neste navegador. Tente um trecho mais curto.")
       }
       if (this.frameCount === 0) {
         // Nenhum frame chegou ao encoder → o mux nunca recebeu o decoderConfig.
-        // Finalizar aqui quebraria dentro do mp4-muxer com o críptico
-        // "decoderConfig.colorSpace". Falha com mensagem clara e limpa o estado.
-        try { this.vEncoder?.close() } catch { /* noop */ }
-        try { this.aEncoder?.close() } catch { /* noop */ }
-        this.teardownAudio()
-        this.muxer = null
-        this.vEncoder = null
-        this.aEncoder = null
-        throw new Error("Não consegui capturar nenhum quadro do vídeo. Tente regravar ou escolher outro arquivo.")
+        this.abortWebCodecs()
+        throw new VideoCaptureError("no_frames", "Não consegui capturar nenhum quadro do vídeo. Tente regravar ou escolher outro arquivo.")
       }
-      await this.vEncoder?.flush()
+      try {
+        await this.vEncoder?.flush()
+      } catch (e) {
+        this.abortWebCodecs()
+        throw new VideoCaptureError("encode_failed", (e as Error)?.message || "Falha ao finalizar a codificação.")
+      }
       if (this.aEncoder) {
         try { await this.aEncoder.flush() } catch { this.audioDropped = true }
+      }
+      // ⚠️ Frames ENVIADOS não são frames CODIFICADOS: no iOS o encoder pode
+      // aceitar tudo e não emitir chunk nenhum. Só depois do flush dá para
+      // afirmar que há vídeo — e sem decoderConfig o finalize quebraria.
+      if (this.outputChunks === 0 || !this.sawDecoderConfig) {
+        this.abortWebCodecs()
+        throw new VideoCaptureError("no_chunks", "O codificador deste navegador não produziu vídeo.")
       }
       this.teardownAudio()
       this.muxer?.finalize()
@@ -302,6 +336,11 @@ export class StoryRecorder {
       mr.stop()
     })
     this.cleanupCaptureStream()
+    // Blob vazio = o captureStream não entregou nada. Sem este guard o post
+    // subiria um arquivo de 0 byte, que só quebra depois — no feed de todo mundo.
+    if (blob.size === 0) {
+      throw new VideoCaptureError("no_chunks", "A gravação deste navegador saiu vazia.")
+    }
     return { blob, mimeType: this.mediaRecorderMime, durationSec, encoder: "mediarecorder", audioDropped: this.audioDropped, width, height }
   }
 
@@ -314,6 +353,16 @@ export class StoryRecorder {
       try { this.mediaRecorder.stop() } catch { /* noop */ }
     }
     this.cleanupCaptureStream()
+    this.muxer = null
+    this.vEncoder = null
+    this.aEncoder = null
+  }
+
+  /** Fecha encoders e descarta o mux sem finalizar (estado inutilizável). */
+  private abortWebCodecs() {
+    try { this.vEncoder?.close() } catch { /* noop */ }
+    try { this.aEncoder?.close() } catch { /* noop */ }
+    this.teardownAudio()
     this.muxer = null
     this.vEncoder = null
     this.aEncoder = null

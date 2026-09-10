@@ -499,12 +499,44 @@ export function MediaComposer({
       if (draft.kind === "image") {
         const img = new Image()
         img.crossOrigin = "anonymous"
-        await new Promise<void>((res) => { img.onload = () => res(); img.src = draft.url })
+        await new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); img.src = draft.url })
         source = img
       } else {
         const v = document.createElement("video")
-        v.src = draft.url; v.muted = true; v.loop = true; v.playsInline = true
-        await new Promise<void>((res) => { v.onloadeddata = () => res() })
+        v.src = draft.url
+        v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto"
+        // iOS/WebKit ignora as PROPRIEDADES em alguns pontos: os atributos são o
+        // que de fato libera o autoplay silencioso e o play inline.
+        v.setAttribute("muted", "")
+        v.setAttribute("playsinline", "")
+        // ⚠️ iOS/WebKit só decodifica frames com o <video> NO DOM — detached ele
+        // trava em readyState 1 e o canvas fica PRETO (o preview não renderiza e
+        // a orientação parece não responder). Mesma lição já paga no compose.ts.
+        v.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
+        document.body.appendChild(v)
+        // Espera dados decodificáveis com ESCAPE: sem timeout/onerror um arquivo
+        // que o Safari não decodifica deixaria o setup pendurado para sempre —
+        // e aí nem o canvas é criado.
+        await new Promise<void>((res) => {
+          let done = false
+          const finish = () => { if (!done) { done = true; res() } }
+          const timer = window.setTimeout(finish, 6000)
+          const check = () => { if (v.readyState >= 2) { window.clearTimeout(timer); finish() } }
+          v.onloadeddata = check
+          v.oncanplay = check
+          v.onerror = () => { window.clearTimeout(timer); finish() }
+          v.onloadedmetadata = () => {
+            check()
+            // Empurra a decodificação do 1º quadro: sem isso o iOS pode ficar em
+            // readyState 1 até alguém pedir play, e play() pode ser recusado.
+            if (v.readyState < 2) { try { v.currentTime = Math.min(0.05, (v.duration || 1) / 2) } catch { /* noop */ } }
+          }
+          check()
+        })
+        // ⚠️ O cleanup pode ter rodado durante os awaits acima: sem soltar aqui,
+        // o <video> fica no <body> para sempre segurando um decodificador — um
+        // por troca de slide/passo.
+        if (disposed) { v.pause(); v.removeAttribute("src"); try { v.load() } catch { /* noop */ } ; v.remove(); return }
         await v.play().catch(() => {})
         source = v
       }
@@ -518,11 +550,17 @@ export function MediaComposer({
 
       const loop = () => {
         const rr = rendererRef.current
-        if (rr && sourceRef.current) {
+        const src = sourceRef.current
+        // Vídeo sem dados decodificados ainda: redimensiona (para o chip de
+        // orientação responder na hora) mas NÃO desenha — texImage2D de um
+        // <video> em readyState < 2 lança no WebKit, e a exceção mataria o rAF,
+        // congelando o preview para sempre.
+        const ready = !(src instanceof HTMLVideoElement) || src.readyState >= 2
+        if (rr && src) {
           rr.setFilter(filterRef.current)
           rr.setCrop(cropRef.current)
           rr.setSize(720, Math.round(720 / cropRef.current.aspect))
-          rr.render(sourceRef.current)
+          if (ready) { try { rr.render(src) } catch { /* frame indisponível neste tick */ } }
         }
         rafRef.current = requestAnimationFrame(loop)
       }
@@ -536,7 +574,7 @@ export function MediaComposer({
       try { rendererRef.current?.dispose() } catch { /* noop */ }
       rendererRef.current = null
       const s = sourceRef.current
-      if (s instanceof HTMLVideoElement) { s.pause(); s.src = "" }
+      if (s instanceof HTMLVideoElement) { s.pause(); s.removeAttribute("src"); s.load(); s.remove() }
       sourceRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1009,7 +1047,7 @@ export function MediaComposer({
               <div className="font-[family-name:var(--font-anton)] text-xl uppercase text-[#F2B705]">{t("publish.rendering", "Renderizando")}</div>
               <div className="w-56">
                 <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-[0.1em] text-[#a89f8d]">
-                  <span>{t("publish.uploading", "Enviando ao R2")}</span><span className="tabular-nums">{Math.round(progress * 100)}%</span>
+                  <span>{t("publish.uploading", "Enviando para a Freelandoo")}</span><span className="tabular-nums">{Math.round(progress * 100)}%</span>
                 </div>
                 <div className="h-2 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
                   <div className="h-full bg-[#F2B705] transition-all" style={{ width: `${progress * 100}%` }} />
