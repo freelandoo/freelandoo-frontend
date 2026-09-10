@@ -5529,7 +5529,7 @@
     "backToCommunity": "Voltar para a comunidade",
     "notFound": "Comunidade não encontrada.",
     "resizeSection": "Tamanho da seção",
-    "resizeHint": "Clique num texto para selecionar e arraste para mudar o lugar. Dois cliques (ou dois dedos, no celular) abrem as bolinhas dos cantos, que mudam o tamanho.",
+    "resizeHint": "Um clique seleciona a caixa e trava o texto — arraste para mudar o lugar. Dois cliques abrem o cursor de digitação e as bolinhas dos cantos, que mudam o tamanho.",
     "sizeTitleText": "Caixa de texto",
     "sizeTitleSection": "Seção",
     "sizeFont": "Fonte",
@@ -5603,8 +5603,8 @@
     "posX": "Horizontal",
     "posY": "Vertical",
     "sizeTitleMove": "Posição da caixa",
-    "modeMove": "Mover (arraste a caixa)",
-    "modeSize": "Dimensionar (ou dois cliques na caixa)"
+    "modeMove": "Mover (o texto fica travado)",
+    "modeSize": "Editar o texto e dimensionar"
   },
   "SiteBooking": {
     "back": "Voltar ao site",

@@ -708,7 +708,7 @@ export function CommunitySiteBuilder({
         <p className="mb-3 px-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
           {t(
             "resizeHint",
-            "Clique num texto para selecionar e arraste para mudar o lugar. Dois cliques (ou dois dedos, no celular) abrem as bolinhas dos cantos, que mudam o tamanho."
+            "Um clique seleciona a caixa e trava o texto — arraste para mudar o lugar. Dois cliques abrem o cursor de digitação e as bolinhas dos cantos, que mudam o tamanho."
           )}
         </p>
       )}

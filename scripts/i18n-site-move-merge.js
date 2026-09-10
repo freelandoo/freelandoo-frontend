@@ -23,16 +23,6 @@ const MERGE = {
     posX: ["Horizontal", "Horizontal", "Horizontal"],
     posY: ["Vertical", "Vertical", "Vertical"],
     sizeTitleMove: ["Posição da caixa", "Box position", "Posición de la caja"],
-    modeMove: [
-      "Mover (arraste a caixa)",
-      "Move (drag the box)",
-      "Mover (arrastra la caja)",
-    ],
-    modeSize: [
-      "Dimensionar (ou dois cliques na caixa)",
-      "Resize (or double-click the box)",
-      "Redimensionar (o doble clic en la caja)",
-    ],
   },
 }
 
@@ -40,9 +30,22 @@ const MERGE = {
 const OVERRIDE = {
   CommunitySite: {
     resizeHint: [
-      "Clique num texto para selecionar e arraste para mudar o lugar. Dois cliques (ou dois dedos, no celular) abrem as bolinhas dos cantos, que mudam o tamanho.",
-      "Click a text to select it, then drag to move it. Double-click (or pinch with two fingers on mobile) to bring up the corner handles, which change the size.",
-      "Haz clic en un texto para seleccionarlo y arrástralo para moverlo. Doble clic (o dos dedos, en el móvil) abre los tiradores de las esquinas, que cambian el tamaño.",
+      "Um clique seleciona a caixa e trava o texto — arraste para mudar o lugar. Dois cliques abrem o cursor de digitação e as bolinhas dos cantos, que mudam o tamanho.",
+      "One click selects the box and locks its text — drag to move it. Double-click to bring up the typing cursor and the corner handles, which change the size.",
+      "Un clic selecciona la caja y bloquea el texto — arrástrala para moverla. Doble clic abre el cursor de escritura y los tiradores de las esquinas, que cambian el tamaño.",
+    ],
+    // Estes dois nasceram nesta mesma feature descrevendo o gesto de antes (o
+    // texto era editável o tempo todo). Ficam em OVERRIDE porque já entraram
+    // nos dicionários no commit anterior, e fill-if-absent não os corrigiria.
+    modeMove: [
+      "Mover (o texto fica travado)",
+      "Move (text stays locked)",
+      "Mover (el texto queda bloqueado)",
+    ],
+    modeSize: [
+      "Editar o texto e dimensionar",
+      "Edit text and resize",
+      "Editar el texto y redimensionar",
     ],
   },
 }

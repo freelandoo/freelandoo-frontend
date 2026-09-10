@@ -6115,7 +6115,7 @@
     "backToCommunity": "Back to the community",
     "notFound": "Community not found.",
     "resizeSection": "Section size",
-    "resizeHint": "Click a text to select it, then drag to move it. Double-click (or pinch with two fingers on mobile) to bring up the corner handles, which change the size.",
+    "resizeHint": "One click selects the box and locks its text — drag to move it. Double-click to bring up the typing cursor and the corner handles, which change the size.",
     "sizeTitleText": "Text box",
     "sizeTitleSection": "Section",
     "sizeFont": "Font",
@@ -6189,8 +6189,8 @@
     "posX": "Horizontal",
     "posY": "Vertical",
     "sizeTitleMove": "Box position",
-    "modeMove": "Move (drag the box)",
-    "modeSize": "Resize (or double-click the box)"
+    "modeMove": "Move (text stays locked)",
+    "modeSize": "Edit text and resize"
   },
   "SiteBooking": {
     "back": "Back to site",

@@ -683,17 +683,25 @@ body.camera-active { overflow: hidden; }
   transition: outline-color 120ms ease, background-color 120ms ease;
 }
 .fl-site-editable:hover { outline-color: rgba(242, 183, 5, 0.65); }
-.fl-site-editable:focus {
+/* ⚠️ O realce de foco é só de quem está EDITÁVEL. A caixa travada (modo mover)
+   também recebe foco ao ser clicada — ela tem `tabindex` —, e pintá-la igual
+   desfaria em silêncio a distinção entre "travada, só movo" e "solta, digito". */
+.fl-site-editable[contenteditable="true"]:focus {
   outline: 2px solid #f2b705;
   outline-offset: 2px;
   background-color: rgba(242, 183, 5, 0.06);
 }
+.fl-site-editable[contenteditable="false"]:focus { outline-color: rgba(242, 183, 5, 0.65); }
 /* A caixa SELECIONADA no construtor: ela pode ser arrastada para o lugar, e o
    contorno é o que avisa isso — sem ele, "clicou e agora arrasta" seria uma
    regra invisível. O cursor só vira de arraste DURANTE o gesto: fixá-lo em
    `move` esconderia que ali também se digita. */
 .fl-site-box-selected { outline: 1px dashed rgba(242, 183, 5, 0.55); outline-offset: 6px; }
 .fl-site-box-moving { cursor: grabbing; }
+/* No modo EDITAR o contorno fica sólido: é o mesmo amarelo, mas cheio, para a
+   caixa dizer sozinha que ali o texto está solto — o tracejado é a caixa
+   travada, que só se move. */
+.fl-site-box-editing { outline: 1px solid rgba(242, 183, 5, 0.75); outline-offset: 6px; }
 /* Enquanto a caixa anda, o navegador não pode ir pintando de azul o texto que
    passa por baixo do dedo. */
 .fl-site-box-moving, .fl-site-box-moving * { user-select: none; }

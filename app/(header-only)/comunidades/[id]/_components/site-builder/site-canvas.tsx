@@ -323,8 +323,8 @@ export function SiteCanvas({
         modeToggle: {
           label:
             mode === "move"
-              ? t("modeSize", "Dimensionar (ou dois cliques na caixa)")
-              : t("modeMove", "Mover (arraste a caixa)"),
+              ? t("modeSize", "Editar o texto e dimensionar")
+              : t("modeMove", "Mover (o texto fica travado)"),
           icon: mode === "move" ? Maximize2 : Move,
           onClick: () =>
             setSelection({ type: "text", key, mode: mode === "move" ? "size" : "move" }),

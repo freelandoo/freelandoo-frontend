@@ -22,20 +22,25 @@ import {
 /**
  * Texto editável no lugar (clica e digita).
  *
- * OS TRÊS GESTOS SOBRE A MESMA CAIXA, e por que eles não brigam:
- *   • um clique  — pousa o cursor para digitar E seleciona a caixa (modo MOVER);
- *     dali em diante, arrastar o corpo dela muda o LUGAR;
- *   • dois cliques (ou a pizca de dois dedos) — liga o modo DIMENSIONAR, que é
- *     quando as bolinhas dos cantos aparecem;
- *   • as bolinhas — fonte no eixo vertical, largura no horizontal.
+ * OS DOIS MODOS DA CAIXA, e por que a edição de texto é de UM só:
+ *   • um clique  — seleciona e trava o texto (modo MOVER). Arrastar o corpo
+ *     muda o LUGAR, e NÃO existe cursor de digitação;
+ *   • dois cliques (ou o botão do painel) — modo EDITAR: o texto vira
+ *     editável, o cursor pousa onde a pessoa clicou e as bolinhas dos cantos
+ *     aparecem para dimensionar.
  *
- * ⚠️ O arraste só existe depois da seleção. No celular o site é quase todo
+ * ⚠️ É O `contentEditable` QUE SEPARA OS DOIS, e não um limiar de arraste.
+ * Enquanto ele esteve sempre ligado, o mesmo ponteiro servia digitar e mover:
+ * o clique pousava o caret, o navegador começava a esticar seleção de texto e o
+ * arraste tinha de brigar com ela. Travando o texto no modo mover, cada gesto
+ * tem um dono e nenhum precisa desfazer o do outro.
+ *
+ * ⚠️ Por isso o arraste vale SÓ no modo mover: no modo editar, arrastar é como
+ * se seleciona um trecho com o mouse, e mover ali tornaria isso impossível.
+ *
+ * ⚠️ E o arraste só existe depois da seleção. No celular o site é quase todo
  * texto: caixa arrastável ao primeiro toque roubaria a ROLAGEM da página, e a
  * pessoa arrastaria a manchete tentando descer.
- *
- * ⚠️ E as bolinhas só existem no modo dimensionar. Desenhadas junto com o modo
- * mover, o mesmo ponteiro serviria dois gestos e a caixa mudaria de tamanho
- * quando a pessoa só queria movê-la de canto.
  *
  * POR QUE contentEditable NÃO-CONTROLADO: um `<div contentEditable>` controlado
  * por estado React reescreve o nó a cada tecla e o cursor pula para o começo.
@@ -124,8 +129,13 @@ export function InlineText({
     [box]
   )
 
+  // ⚠️ `move`, e não `selected`: no modo editar o arraste do mouse é o gesto de
+  // selecionar um trecho de texto, e mover ali tornaria isso impossível.
+  const movable = box.mode === "move"
+  const editableNow = box.mode === "size"
+
   const move = useBoxMove({
-    enabled: box.selected,
+    enabled: movable,
     wrapRef,
     x: box.x,
     y: box.y,
@@ -133,6 +143,19 @@ export function InlineText({
   })
 
   const toSizeMode = useCallback(() => box.selectMode("size"), [box])
+
+  // Onde o duplo-clique caiu, para o cursor pousar ALI e não no fim do texto.
+  // Ref e não estado: isto não repinta nada, e um estado a mais faria a caixa
+  // renderizar de novo no meio do gesto.
+  const caretAtRef = useRef<{ x: number; y: number } | null>(null)
+
+  const onDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      caretAtRef.current = { x: e.clientX, y: e.clientY }
+      toSizeMode()
+    },
+    [toSizeMode]
+  )
 
   const { onPointerDown: onMoveDown, ...moveRest } = move.handlers
 
@@ -165,6 +188,67 @@ export function InlineText({
     setStyle: box.setStyle,
     onStart: toSizeMode,
   })
+
+  /**
+   * O foco segue o MODO.
+   *
+   * Entrando em editar, o elemento precisa ser focado na mão: ele acabou de
+   * virar `contentEditable`, e o clique que ligou o modo já passou — sem isto a
+   * pessoa daria dois cliques e teria de dar um terceiro para o cursor aparecer.
+   *
+   * ⚠️ O caret é pousado no PONTO do duplo-clique. Sem isso ele cairia no
+   * começo do texto, e corrigir uma palavra no fim de uma manchete viraria uma
+   * viagem de setas.
+   *
+   * Saindo, o `blur` é o que dispara o `onBlur`/`handleInput` e fecha a edição;
+   * tirar o `contentEditable` de um elemento ainda focado deixaria o caret
+   * pendurado num nó que não aceita mais texto.
+   */
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (editableNow) {
+      const at = caretAtRef.current
+      caretAtRef.current = null
+      // ⚠️ Só foca quando o modo veio de um DUPLO-CLIQUE. A pizca de dois dedos
+      // também liga o modo editar (para o painel passar a mostrar tamanho), e
+      // focar ali subiria o TECLADO no meio de um gesto que é de dimensionar.
+      if (!at) return
+      if (document.activeElement !== el) el.focus({ preventScroll: true })
+      try {
+        const doc = document as Document & {
+          caretRangeFromPoint?: (x: number, y: number) => Range | null
+          caretPositionFromPoint?: (
+            x: number,
+            y: number
+          ) => { offsetNode: Node; offset: number } | null
+        }
+        const range = doc.caretRangeFromPoint
+          ? doc.caretRangeFromPoint(at.x, at.y)
+          : (() => {
+              const pos = doc.caretPositionFromPoint?.(at.x, at.y)
+              if (!pos) return null
+              const r = document.createRange()
+              r.setStart(pos.offsetNode, pos.offset)
+              r.collapse(true)
+              return r
+            })()
+        // Só aceita um ponto DENTRO desta caixa: o duplo-clique pode ter caído
+        // na borda, e um range de fora moveria o cursor para outro elemento.
+        if (!range || !el.contains(range.startContainer)) return
+        range.collapse(true)
+        const sel = window.getSelection()
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      } catch {
+        // Navegador sem nenhuma das duas APIs: o foco já aconteceu, e o cursor
+        // fica onde o navegador escolher. Perder a precisão do caret não pode
+        // custar a edição inteira.
+      }
+      return
+    }
+    if (document.activeElement === el) el.blur()
+  }, [editableNow])
 
   // useLayoutEffect: escrever o texto antes da pintura evita o flash de campo
   // vazio no primeiro render de cada seção.
@@ -257,7 +341,11 @@ export function InlineText({
   const editable = (
     <Tag
       ref={ref as React.Ref<HTMLDivElement>}
-      contentEditable
+      // ⚠️ O texto NASCE TRAVADO e só o modo editar o solta. É esta linha que
+      // faz "um clique move, dois cliques editam" — com ele sempre ligado, o
+      // primeiro clique pousava o caret e o arraste brigava com a seleção de
+      // texto que o navegador começava junto.
+      contentEditable={editableNow}
       suppressContentEditableWarning
       role="textbox"
       tabIndex={0}
@@ -273,7 +361,9 @@ export function InlineText({
       // caixa TEM agora, quando ainda está em automático.
       data-style-key={box.key || undefined}
       className={`fl-site-editable ${empty ? "fl-site-editable-empty" : ""} ${className}`}
-      style={textStyle}
+      // O cursor anuncia o gesto que aquele estado aceita — travado, um cursor
+      // de texto prometeria uma digitação que não vai acontecer.
+      style={{ ...textStyle, cursor: editableNow ? "text" : movable ? "move" : "pointer" }}
     />
   )
 
@@ -283,25 +373,25 @@ export function InlineText({
   return (
     <span
       ref={wrapRef}
-      className={`relative block ${box.selected ? "fl-site-box-selected" : ""} ${
-        move.dragging ? "fl-site-box-moving" : ""
-      }`}
+      className={`relative block ${movable ? "fl-site-box-selected" : ""} ${
+        editableNow ? "fl-site-box-editing" : ""
+      } ${move.dragging ? "fl-site-box-moving" : ""}`}
       style={{
         ...wrapStyle,
         // `touchAction: none` só na caixa SELECIONADA: é o que impede o
         // navegador de ler o arraste como rolagem e engolir o gesto no meio.
         // Ligado sempre, ele mataria a rolagem do construtor em cima de
         // qualquer texto — que é quase toda a página.
-        ...(box.selected ? { touchAction: "none" } : null),
+        ...(movable ? { touchAction: "none" } : null),
       }}
       {...moveRest}
       // Tocar em qualquer lugar da caixa seleciona: no celular a alça só
       // aparece depois da seleção, e exigir acertar o texto exato seria pedir
       // pontaria que dedo não tem.
       onPointerDown={onBoxPointerDown}
-      // Dois cliques abrem as bolinhas. O gesto é o mesmo no celular (dois
-      // toques) e convive com a pizca, que leva ao mesmo modo.
-      onDoubleClick={toSizeMode}
+      // Dois cliques abrem o cursor de texto E as bolinhas. O gesto é o mesmo
+      // no celular (dois toques) e convive com a pizca, que leva ao mesmo modo.
+      onDoubleClick={onDoubleClick}
     >
       {editable}
       {box.mode === "size" && (
