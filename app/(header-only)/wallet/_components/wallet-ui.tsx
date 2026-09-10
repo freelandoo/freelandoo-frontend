@@ -48,17 +48,12 @@ export function fmtDate(iso?: string | null, locale = "pt-BR") {
   if (!iso) return "—"
   return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })
 }
-export function initialsOf(name?: string | null) {
-  return (
-    String(name || "")
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w[0] || "")
-      .join("")
-      .toUpperCase() || "?"
-  )
-}
+/**
+ * ⚠️ MUDOU DE CASA (lib/initials.ts) quando a plataforma de games passou a
+ * precisar do mesmo fallback. Re-exportado daqui porque a Carteira já importava
+ * deste arquivo — o que muda é onde a função MORA, não quem a chama.
+ */
+export { initialsOf } from "@/lib/initials"
 
 export const KIND_META: Record<string, { label: string; labelKey: string; Icon: typeof ShoppingBag }> = {
   product: { label: "Loja", labelKey: "kindStore", Icon: ShoppingBag },

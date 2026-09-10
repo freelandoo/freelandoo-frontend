@@ -50,6 +50,7 @@ const PortfolioPostCard = dynamic(
 // quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
 // entrada da tela. Ver components/platform/tech-backdrop.tsx.
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
+import { initialsOf } from "@/lib/initials"
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -348,7 +349,30 @@ export default function CommunityDetailPage() {
 
   const storedUser = getStoredUser()
   const currentUserId = storedUser?.id_user ?? null
-  const myAvatar = storedUser?.avatar ?? null
+
+  /**
+   * ⚠️ A FOTO DE QUEM OLHA VEM DE `/users/me`, NUNCA DO `localStorage`.
+   *
+   * Ela era lida de `storedUser.avatar` — e esse campo NÃO EXISTE: o payload do
+   * login não devolve avatar em nenhum dos dois caminhos (senha e Google), e
+   * nunca devolveu (conferido com `git log -S` em `AuthService`). O único outro
+   * escritor da chave é o `/bem-vindo`, que só carimba o tour preservando o
+   * resto. Resultado: `myAvatar` era `undefined` para TODA conta, e a foto da
+   * plataforma caía no boneco cinza sem erro nenhum aparecer.
+   *
+   * ⚠️ É ISSO QUE FAZIA "UNS PUXAREM E OUTROS NÃO", e a assimetria tem duas
+   * metades: visitando o games de OUTRA pessoa a foto vinha do backend
+   * (`GameProfileService._card` devolve `u.avatar`, de `tb_user`) e aparecia;
+   * o SEU próprio games lia o localStorage vazio e não aparecia. Duas fontes
+   * para o mesmo rosto na mesma tela.
+   *
+   * A fonte certa é a MESMA que `/account` e a Carteira já usam — `tb_user.avatar`,
+   * que a mig 215 cravou como fonte única do rosto da pessoa. Aqui ela é lida
+   * direto em vez de pelo `useMeProfile`, porque aquele hook EMPURRA PARA O
+   * LOGIN quando não há token: esta página é pública (o feed de games abre para
+   * visitante anônimo), e usá-lo trancaria a porta da plataforma inteira.
+   */
+  const [myAvatar, setMyAvatar] = useState<string | null>(null)
   const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
 
   // ─── PLATAFORMA × COMUNIDADE ────────────────────────────────────────────────
@@ -1043,6 +1067,30 @@ export default function CommunityDetailPage() {
    * plataforma abre no recorte de quem olha. Uma tela de erro aqui trocaria um
    * contexto perdido por uma parede — e a plataforma continua inteira sem ele.
    */
+  /**
+   * O rosto de quem olha. Só as PLATAFORMAS o usam (games sempre; o negócio
+   * como reserva de quem nunca subiu logo), então quem abre um condomínio ou o
+   * perfil de um pet não paga a requisição.
+   *
+   * Sem sessão não há o que buscar, e a ausência é o estado correto: o
+   * visitante anônimo vê a plataforma inteira, só não vê um rosto que não
+   * existe.
+   */
+  useEffect(() => {
+    if (!isGamesPlatform && !isBusinessPlatform) return
+    const token = getToken()
+    if (!token) { setMyAvatar(null); return }
+    let alive = true
+    fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!alive) return
+        setMyAvatar(data?.avatar || null)
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [isGamesPlatform, isBusinessPlatform])
+
   const ctxDone = useRef(false)
   useEffect(() => {
     if (!isGamesPlatform || ctxDone.current) return
@@ -1511,6 +1559,10 @@ export default function CommunityDetailPage() {
       ? myAvatar
       : avatarPreview || community.avatar_url || (isBusinessPlatform ? myAvatar : null)
 
+  /** O rosto desta tela é o de uma PESSOA? Decide só o que aparece quando não
+   *  há foto — ver a nota no fallback, junto do `<img>`. */
+  const faceIsPerson = !!gamerOwner || isGamesPlatform
+
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
   const rankRows = goal
@@ -1722,8 +1774,28 @@ export default function CommunityDetailPage() {
                 com a largura, não com a altura. A altura subiu de 128 para
                 192px, o que só melhora a cobertura da pilha (120px). */}
             <div className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarSrc || "/placeholder-user.jpg"} alt={gamerOwner ? gamerOwnerLabel : community.display_name} className="h-full w-full object-cover" />
+              {/* ⚠️ SEM FOTO, O FALLBACK DEPENDE DE QUEM É O ROSTO — e é por
+                  isso que ele não é um só. Quando a foto que falta é a de uma
+                  PESSOA (a plataforma, onde o rosto é o de quem olha, ou o
+                  games de alguém que se está visitando), valem as INICIAIS
+                  dela, exatamente como a Carteira já fazia: as duas telas têm
+                  a mesma silhueta de propósito, e um boneco cinza genérico num
+                  lado e iniciais no outro era a divergência que fazia a
+                  plataforma parecer quebrada. Quando o que falta é a foto de
+                  uma COMUNIDADE — o logo da barbearia, o retrato do cachorro —
+                  o boneco continua, porque ali não há nome de pessoa para
+                  reduzir a duas letras. */}
+              {avatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarSrc} alt={gamerOwner ? gamerOwnerLabel : community.display_name} className="h-full w-full object-cover" />
+              ) : faceIsPerson ? (
+                <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
+                  {initialsOf(gamerOwner ? gamerOwnerLabel : storedUser?.nome)}
+                </span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/placeholder-user.jpg" alt={community.display_name} className="h-full w-full object-cover" />
+              )}
               {/* ⚠️ NA PLATAFORMA DE GAMES NÃO HÁ "TROCAR FOTO", e isso é
                   consequência direta de a foto ser a da PESSOA: o admin
                   trocaria a foto da casa, gravaria, e não veria mudança
