@@ -5309,7 +5309,10 @@
     "spotlightSub": "Más frecuente del mes",
     "rankFreqDays": "{n} días",
     "rankingPill": "Ranking",
-    "rankingPillAria": "Abrir el ranking completo del gimnasio"
+    "rankingPillAria": "Abrir el ranking completo del gimnasio",
+    "platformLabel": "Plataforma",
+    "loadFailedTitle": "No se pudo cargar.",
+    "openAcademy": "Abrir"
   },
   "Fitness": {
     "eyebrow": "Panel Fitness",

@@ -5329,7 +5329,10 @@
     "spotlightSub": "Most frequent this month",
     "rankFreqDays": "{n} days",
     "rankingPill": "Ranking",
-    "rankingPillAria": "Open the gym's full ranking"
+    "rankingPillAria": "Open the gym's full ranking",
+    "platformLabel": "Platform",
+    "loadFailedTitle": "Couldn't load.",
+    "openAcademy": "Open"
   },
   "Fitness": {
     "eyebrow": "Fitness Panel",

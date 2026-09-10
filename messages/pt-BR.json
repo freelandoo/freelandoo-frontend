@@ -4743,7 +4743,10 @@
     "spotlightSub": "Mais frequente do mês",
     "rankFreqDays": "{n} dias",
     "rankingPill": "Ranking",
-    "rankingPillAria": "Abrir o ranking completo da academia"
+    "rankingPillAria": "Abrir o ranking completo da academia",
+    "platformLabel": "Plataforma",
+    "loadFailedTitle": "Não deu pra carregar.",
+    "openAcademy": "Abrir"
   },
   "Fitness": {
     "eyebrow": "Painel Fitness",
