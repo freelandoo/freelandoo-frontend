@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { CheckSquare, Dumbbell, Loader2, Maximize2, Pencil, Plus, Square, Trash2, X } from "lucide-react"
+import { Check, Dumbbell, Loader2, Maximize2, Pencil, Plus, Trash2, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { WorkoutPlanEditor, type EditablePlan } from "./workout-plan-editor"
@@ -44,8 +44,35 @@ const MUSCLE_LABEL: Record<string, [string, string]> = {
   corpo_inteiro: ["muscleCorpo", "Corpo inteiro"],
 }
 
+/**
+ * O CHECK da ficha — grande, verde e fácil de acertar com o dedo (pedido do
+ * Alex, 2026-09-10: "deixe grande e um check verde bonito, fácil de clicar").
+ *
+ * É uma peça só para o card e para o modal: dois desenhos do mesmo check
+ * divergiriam na primeira mudança de cor. Quem é clicável é a LINHA inteira
+ * (o botão que envolve o check), não este quadrado — 32px de quadrado ainda
+ * seriam um alvo pequeno; a linha tem 48px de altura e a largura toda.
+ */
+function BigCheck({ checked, size = "md" }: { checked: boolean; size?: "md" | "lg" }) {
+  const box = size === "lg" ? "h-10 w-10" : "h-8 w-8"
+  const icon = size === "lg" ? "h-7 w-7" : "h-6 w-6"
+  return (
+    <span
+      aria-hidden
+      className={`grid shrink-0 place-items-center border-2 transition-colors ${box} ${
+        checked
+          ? "border-[#0B0B0D] bg-[#22C55E] shadow-[2px_2px_0_0_#0B0B0D]"
+          : "border-[#9A938A]/70 bg-[#0b0804]"
+      }`}
+    >
+      {checked && <Check className={`${icon} text-[#0B0B0D]`} strokeWidth={3.5} />}
+    </span>
+  )
+}
+
 /** Card "Treino de hoje" do painel /fitness (dados da fase 3 — fichas).
- *  Clicar na ficha abre um modal grande pra ler e marcar os checks. */
+ *  Os checks vivem no próprio card (linha inteira clicável) e no modal
+ *  grande, que abre pelo nome da ficha. */
 export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refreshKey?: number }) {
   const t = useTranslations("Workouts")
   const [plans, setPlans] = useState<Plan[]>([])
@@ -201,16 +228,18 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
               ))}
             </div>
           )}
-          {/* Preview clicável — os checks vivem no modal grande */}
+          {/* O nome da ficha abre o modal grande; os checks ficam AQUI, na
+              linha inteira — botão dentro de botão não existe em HTML, então
+              o título e as linhas são botões IRMÃOS, não aninhados. */}
           <button
             type="button"
             onClick={() => setExpanded(true)}
             aria-label={t("openPlanModal", "Abrir ficha em tela cheia")}
             className="mt-1 block w-full text-left hover:bg-[#1D1810]"
           >
-            <p className="flex items-center gap-1.5 text-sm font-black">
+            <p className="flex items-center gap-1.5 text-base font-black">
               {plan.nome}
-              <Maximize2 className="h-3.5 w-3.5 shrink-0 text-[#F2B705]" />
+              <Maximize2 className="h-4 w-4 shrink-0 text-[#F2B705]" />
             </p>
             <p className="text-[10px] font-bold uppercase text-[#9A938A]">
               {t("daysOnPlan", "{n} dias com esta ficha").replace("{n}", String(plan.days_on_plan))}
@@ -220,23 +249,34 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
               </span>
             </p>
             {plan.completed_at && (
-              <p className="mt-1 border-2 border-[#0B0B0D] bg-[#4fc95a] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
+              <p className="mt-1 border-2 border-[#0B0B0D] bg-[#22C55E] px-2 py-0.5 text-center text-[10px] font-extrabold uppercase text-[#0B0B0D]">
                 {t("sessionDone", "Treino concluído!")}
               </p>
             )}
-            <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
-              {plan.exercises.map((ex) => (
-                <li key={ex.id_plan_exercise} className="flex items-center gap-2 text-xs">
-                  {ex.checked ? <CheckSquare className="h-4 w-4 shrink-0 text-[#4fc95a]" /> : <Square className="h-4 w-4 shrink-0 text-[#9A938A]" />}
-                  <span className={`min-w-0 flex-1 truncate ${ex.checked ? "line-through text-[#9A938A]" : ""}`}>{ex.exercise_nome}</span>
-                  <span className="shrink-0 font-bold text-[#9A938A]">
+          </button>
+          <ul className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
+            {plan.exercises.map((ex) => (
+              <li key={ex.id_plan_exercise}>
+                <button
+                  type="button"
+                  onClick={() => void toggle(plan, ex)}
+                  aria-pressed={ex.checked}
+                  className={`flex min-h-12 w-full items-center gap-3 border-2 border-[#0B0B0D] px-3 py-2 text-left ${
+                    ex.checked ? "bg-[#1D1810]/60" : "bg-[#1D1810] hover:bg-[#241d12]"
+                  }`}
+                >
+                  <BigCheck checked={ex.checked} />
+                  <span className={`min-w-0 flex-1 truncate text-base font-bold leading-snug ${ex.checked ? "line-through text-[#9A938A]" : "text-[#F5F1E8]"}`}>
+                    {ex.exercise_nome}
+                  </span>
+                  <span className="shrink-0 text-sm font-extrabold text-[#9A938A]">
                     {ex.sets}×{ex.reps}
                     {ex.load_kg ? ` · ${ex.load_kg}kg` : ""}
                   </span>
-                </li>
-              ))}
-            </ul>
-          </button>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -316,7 +356,7 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                   </p>
                   <div className="mt-1 h-2 border border-[#0B0B0D] bg-[#1D1810]">
                     <div
-                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#4fc95a]" : "h-full bg-[#F2B705]"}
+                      className={doneCount === totalCount && totalCount > 0 ? "h-full bg-[#22C55E]" : "h-full bg-[#F2B705]"}
                       style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : "0%" }}
                     />
                   </div>
@@ -329,16 +369,14 @@ export function WorkoutTodayCard({ date, refreshKey = 0 }: { date: string; refre
                   return (
                     <li key={ex.id_plan_exercise}>
                       <button
+                        type="button"
                         onClick={() => void toggle(plan, ex)}
-                        className={`flex w-full items-center gap-3 border-2 border-[#0B0B0D] px-3 py-2.5 text-left ${ex.checked ? "bg-[#1D1810]/60" : "bg-[#1D1810] hover:bg-[#241d12]"}`}
+                        aria-pressed={ex.checked}
+                        className={`flex min-h-14 w-full items-center gap-3 border-2 border-[#0B0B0D] px-3 py-2.5 text-left ${ex.checked ? "bg-[#1D1810]/60" : "bg-[#1D1810] hover:bg-[#241d12]"}`}
                       >
-                        {ex.checked ? (
-                          <CheckSquare className="h-6 w-6 shrink-0 text-[#4fc95a]" />
-                        ) : (
-                          <Square className="h-6 w-6 shrink-0 text-[#9A938A]" />
-                        )}
+                        <BigCheck checked={ex.checked} size="lg" />
                         <span className="min-w-0 flex-1">
-                          <span className={`block text-base font-bold leading-snug ${ex.checked ? "line-through text-[#9A938A]" : ""}`}>
+                          <span className={`block text-lg font-bold leading-snug ${ex.checked ? "line-through text-[#9A938A]" : ""}`}>
                             {ex.exercise_nome}
                           </span>
                           <span className="mt-0.5 block text-xs font-semibold text-[#9A938A]">
