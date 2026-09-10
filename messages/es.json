@@ -3012,7 +3012,12 @@
     "details.destinationCommunity": "Solo en la comunidad",
     "details.destinationGlobalHint": "Aparece en el feed general y en el feed de la comunidad.",
     "details.destinationCommunityHint": "Queda solo en el feed de la comunidad — no va al feed general ni a tu perfil.",
-    "details.destinationLocked": "Esta comunidad es cerrada: la publicación queda solo aquí dentro."
+    "details.destinationLocked": "Esta comunidad es cerrada: la publicación queda solo aquí dentro.",
+    "publish.publishing": "Publicando",
+    "publish.preparing": "Preparando",
+    "publish.processing": "Finalizando en el servidor",
+    "errors.uploadNetwork": "Error de red al enviar. Revisa tu conexión e inténtalo de nuevo.",
+    "errors.uploadCanceled": "Envío cancelado."
   },
   "Chamado": {
     "titleService": "Abrir solicitud de servicio",

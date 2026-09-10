@@ -3032,7 +3032,12 @@
     "details.destinationCommunity": "Community only",
     "details.destinationGlobalHint": "Shows up in the main feed and in the community feed.",
     "details.destinationCommunityHint": "Stays in the community feed only — it won't go to the main feed or your profile.",
-    "details.destinationLocked": "This community is closed: the post stays in here only."
+    "details.destinationLocked": "This community is closed: the post stays in here only.",
+    "publish.publishing": "Publishing",
+    "publish.preparing": "Preparing",
+    "publish.processing": "Finishing up on the server",
+    "errors.uploadNetwork": "Network error while uploading. Check your connection and try again.",
+    "errors.uploadCanceled": "Upload canceled."
   },
   "Chamado": {
     "titleService": "Open a service request",

@@ -3009,7 +3009,12 @@
     "details.destinationCommunity": "Só na comunidade",
     "details.destinationGlobalHint": "Aparece no feed geral e no feed da comunidade.",
     "details.destinationCommunityHint": "Fica só no feed da comunidade — não vai para o feed geral nem para o seu perfil.",
-    "details.destinationLocked": "Esta comunidade é fechada: o post fica só aqui dentro."
+    "details.destinationLocked": "Esta comunidade é fechada: o post fica só aqui dentro.",
+    "publish.publishing": "Publicando",
+    "publish.preparing": "Preparando",
+    "publish.processing": "Finalizando no servidor",
+    "errors.uploadNetwork": "Falha de rede no envio. Confira sua conexão e tente de novo.",
+    "errors.uploadCanceled": "Envio cancelado."
   },
   "Chamado": {
     "titleService": "Abrir chamado de serviço",

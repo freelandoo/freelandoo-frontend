@@ -19,7 +19,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getToken } from "@/lib/auth"
-import { getPublicBackendUrl } from "@/lib/backend-public"
 import { useAuth } from "@/hooks/use-auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { CameraStudio } from "@/components/camera/CameraStudio"
@@ -30,6 +29,14 @@ import type { FilterState, FilterMeta } from "@/lib/camera/types"
 import { ComposerRenderer } from "@/lib/composer/renderer"
 import { compose } from "@/lib/composer/compose"
 import { drawTextLayers, layerBox } from "@/lib/composer/text-layer"
+import { loadOverlayEl, paintOverlay } from "@/lib/composer/overlay-layer"
+import { prepareServerVideo, type ServerVideoJob } from "@/lib/composer/server-video"
+import { uploadPortfolioMedia, uploadComposedStory, UploadError } from "@/lib/composer/upload-media"
+
+/** Fatia da barra que cabe ao PREPARO. Com o vídeo indo cru para o servidor,
+ *  preparar deixou de ser a parte cara — o que demora agora é o ENVIO —, e a
+ *  tela precisa desse número para dizer em que fase está. */
+const PREPARE_SHARE = 0.15
 import {
   ASPECTS, NEUTRAL_CROP, TEXT_COLORS, TEXT_FONTS,
   type ComposedResult, type ComposerProps, type CropState, type MediaDraft, type MediaKind,
@@ -49,7 +56,6 @@ const MAX_BYTES = 80 * 1024 * 1024
 const MAX_TITLE = 120
 const MAX_DESC = 500
 const MAX_CAPTION = 280
-const SERVERLESS_UPLOAD_LIMIT = 4 * 1024 * 1024
 const MAX_SLIDES = 10
 const EMPTY_LAYERS: TextLayer[] = []
 
@@ -81,53 +87,9 @@ function readImageDim(url: string): Promise<{ w: number; h: number }> {
   })
 }
 
-/** Carrega o elemento (img/vídeo) de uma sobreposição. Usado na publicação para
- *  queimar a overlay de slides não-ativos (cujo elemento não está em memória). */
-async function loadOverlayEl(desc: OverlayLayer | null): Promise<HTMLImageElement | HTMLVideoElement | null> {
-  if (!desc) return null
-  if (desc.kind === "image") {
-    return new Promise((res) => {
-      const im = new Image()
-      im.crossOrigin = "anonymous"
-      im.onload = () => res(im)
-      im.onerror = () => res(null)
-      im.src = desc.url
-    })
-  }
-  const v = document.createElement("video")
-  v.src = desc.url; v.muted = true; v.loop = true; v.playsInline = true; v.crossOrigin = "anonymous"
-  await new Promise<void>((res) => { v.onloadeddata = () => res(); v.onerror = () => res() })
-  await v.play().catch(() => {})
-  return v
-}
-
 /** Link estilizado anexado a um bee (máx 3 — validado no cliente e no backend). */
 type BeeComposerLink = { label: string; url: string; style: "gold" | "paper" | "ink" }
 const MAX_BEE_LINKS = 3
-
-/** Desenha uma sobreposição PiP no canvas (mesma matemática do preview e export). */
-function paintOverlay(
-  ctx: CanvasRenderingContext2D, W: number, H: number,
-  desc: OverlayLayer | null, el: HTMLImageElement | HTMLVideoElement | null,
-) {
-  if (!desc || !el) return
-  const natW = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth
-  const natH = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight
-  if (!natW || !natH) return
-  const w = desc.scale * W
-  const h = w * (natH / natW)
-  const x = desc.x * W - w / 2
-  const y = desc.y * H - h / 2
-  try {
-    ctx.save()
-    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = w * 0.06; ctx.shadowOffsetY = w * 0.03
-    ctx.drawImage(el, x, y, w, h)
-    ctx.restore()
-    ctx.lineWidth = Math.max(2, w * 0.02)
-    ctx.strokeStyle = "#F2B705"
-    ctx.strokeRect(x, y, w, h)
-  } catch { /* frame não decodável ainda */ }
-}
 
 export function MediaComposer({
   open, mode: modeProp, initialProfileId = null, communityId = null,
@@ -700,15 +662,47 @@ export function MediaComposer({
     try {
       try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready } catch { /* noop */ }
 
-      // ── Story: fluxo único (sem carrossel) ──────────────────────────────────
+      // ── Story/Bee: fluxo único (sem carrossel) ──────────────────────────────
       if (mode === "story") {
         const s = slides[0]
+
+        // ⚠️ VÍDEO NÃO É MAIS CODIFICADO AQUI. O aparelho manda o arquivo
+        // original e quem compõe é o servidor — mesma razão do post: encoder de
+        // navegador dava buraco preto, quadro congelado e erro de
+        // `decoderConfig` no iOS, e ainda era a primeira de duas codificações.
+        // FOTO continua saindo daqui (render único, barato) e segue subindo
+        // pelo presign, que é o caminho zero-servidor da câmera.
+        if (s.draft.kind === "video") {
+          const job = await prepareServerVideo({
+            draft: s.draft, filter: s.filter, crop: s.crop,
+            textLayers: s.textLayers, overlay: s.overlay,
+          })
+          setProgress(PREPARE_SHARE)
+          await uploadComposedStory({
+            token,
+            profileId: selectedProfileId,
+            file: job.source,
+            fileName: job.source.name || "bee.mp4",
+            compose: job.params,
+            overlay: job.overlayBlob,
+            pip: job.pipFile,
+            caption: caption.trim() || undefined,
+            location: beeLocation.trim() || undefined,
+            links: beeLinks.length ? beeLinks : undefined,
+            idCommunity: communityId || undefined,
+            audioTrackId: audioPick?.trackId || null,
+            audioStartMs: audioPick?.startMs ?? 0,
+            onProgress: (f) => setProgress(PREPARE_SHARE + f * (1 - PREPARE_SHARE)),
+          })
+          onPosted?.(); onClose(); router.refresh()
+          return
+        }
+
         const el = await loadOverlayEl(s.overlay)
         const result = await compose({
           draft: s.draft, filter: s.filter, crop: s.crop,
           afterCompose: (ctx, w, h) => { paintOverlay(ctx, w, h, s.overlay, el); drawTextLayers(ctx, w, h, s.textLayers) },
-          allowWebmFallback: false,
-          onProgress: (f) => setProgress(f * 0.5),
+          onProgress: (f) => setProgress(f * PREPARE_SHARE),
         })
         if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
         const filterMeta: FilterMeta = {
@@ -717,21 +711,20 @@ export function MediaComposer({
           makeup: { skin_smooth: 0, lipstick: 0, blush: 0 },
           encoder: result.encoder === "image" ? "webcodecs" : result.encoder,
         }
-        const isImageStory = result.kind === "image"
         await uploadStory({
           token, id_profile: selectedProfileId, kind: "bee",
           // O bee publicado pelo "+" do mural pertence à comunidade (mig 208).
           idCommunity: communityId || undefined,
-          mediaType: isImageStory ? "image" : "video",
+          mediaType: "image",
           videoBlob: result.blob, posterBlob: result.posterBlob,
-          durationSeconds: isImageStory ? 7 : result.durationSec,
+          durationSeconds: 7,
           width: result.width, height: result.height,
           caption: caption.trim() || undefined,
           location: beeLocation.trim() || undefined,
           links: beeLinks.length ? beeLinks : undefined,
           filterMeta,
           audioTrackId: audioPick?.trackId || null, audioStartMs: audioPick?.startMs ?? 0,
-          onProgress: (f) => setProgress(0.5 + f * 0.5),
+          onProgress: (f) => setProgress(PREPARE_SHARE + f * (1 - PREPARE_SHARE)),
         })
         onPosted?.(); onClose(); router.refresh()
         return
@@ -741,18 +734,41 @@ export function MediaComposer({
       const portfolioKind = mode === "bee" ? "bees" : "feed"
       const n = slides.length
 
-      const results: ComposedResult[] = []
+      // ⚠️ FOTO E VÍDEO SEGUEM CAMINHOS DIFERENTES DAQUI PRA FRENTE, e essa é a
+      // mudança central desta entrega. Foto continua sendo exportada AQUI: é um
+      // render único, barato, e não sofre nenhum dos defeitos abaixo. VÍDEO sobe
+      // CRU e quem compõe é o SERVIDOR — codificar vídeo no aparelho era o que
+      // produzia buraco preto, quadro congelado e o erro de `decoderConfig` no
+      // iOS, e, quando funcionava, era a PRIMEIRA de duas codificações: jogava
+      // qualidade fora antes de o servidor recomprimir por cima, com teto de
+      // 720p. Agora o arquivo do celular chega inteiro e desce a 1080p num
+      // passe só.
+      type Job =
+        | { kind: "image"; result: ComposedResult }
+        | { kind: "video"; job: ServerVideoJob }
+
+      const jobs: Job[] = []
       for (let i = 0; i < n; i++) {
         const s = slides[i]
+        if (s.draft.kind === "video") {
+          jobs.push({
+            kind: "video",
+            job: await prepareServerVideo({
+              draft: s.draft, filter: s.filter, crop: s.crop,
+              textLayers: s.textLayers, overlay: s.overlay,
+            }),
+          })
+          setProgress(((i + 1) / n) * PREPARE_SHARE)
+          continue
+        }
         const el = await loadOverlayEl(s.overlay)
         try {
           const r = await compose({
             draft: s.draft, filter: s.filter, crop: s.crop,
             afterCompose: (ctx, w, h) => { paintOverlay(ctx, w, h, s.overlay, el); drawTextLayers(ctx, w, h, s.textLayers) },
-            allowWebmFallback: true,
-            onProgress: (f) => setProgress(((i + f) / n) * 0.5),
+            onProgress: (f) => setProgress(((i + f) / n) * PREPARE_SHARE),
           })
-          results.push(r)
+          jobs.push({ kind: "image", result: r })
         } finally {
           if (el instanceof HTMLVideoElement) { el.pause(); el.src = "" }
         }
@@ -771,7 +787,12 @@ export function MediaComposer({
             box: layer.box, boxColor: layer.boxColor, x: layer.x, y: layer.y, size: layer.size,
           })),
           overlay: s.overlay ? { kind: s.overlay.kind, x: s.overlay.x, y: s.overlay.y, scale: s.overlay.scale } : null,
-          encoder: results[i]?.encoder,
+          // Vídeo não tem encoder do lado do cliente — quem codifica é o
+          // servidor. Registrar isso separa, no histórico, o que saiu por cada
+          // caminho no dia em que alguém precisar entender um post antigo.
+          ...(jobs[i]?.kind === "video"
+            ? { composed_by: "server" }
+            : { encoder: jobs[i]?.kind === "image" ? jobs[i].result.encoder : undefined }),
         })),
       }
 
@@ -795,30 +816,40 @@ export function MediaComposer({
       const itemId: string | undefined = itemData?.id_portfolio_item ?? itemData?.item?.id_portfolio_item
       if (!itemId) throw new Error(t("errors.createItemResponse", "Resposta inesperada ao criar item."))
 
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i]
-        const mime = result.mimeType || result.blob.type || (result.kind === "image" ? "image/webp" : "video/mp4")
-        const ext = result.kind === "image" ? "webp" : (mime.includes("webm") ? "webm" : "mp4")
-        const file = new File([result.blob], `freelandoo-${portfolioKind}-${itemId}-${i}.${ext}`, { type: mime })
-        const fd = new FormData()
-        fd.append("file", file)
-        fd.append("media_type", result.kind)
-        fd.append("sort_order", String(i))
+      for (let i = 0; i < jobs.length; i++) {
+        const j = jobs[i]
+        const span = (1 - PREPARE_SHARE) / jobs.length
+        const base = PREPARE_SHARE + i * span
+        const onProgress = (f: number) => setProgress(base + f * span)
 
-        const shouldBypassProxy = result.kind === "video" || result.blob.size > SERVERLESS_UPLOAD_LIMIT
-        const uploadUrl = shouldBypassProxy
-          ? `${getPublicBackendUrl()}/profile/${selectedProfileId}/portfolio/${itemId}/upload`
-          : `/api/profile/${selectedProfileId}/portfolio/${itemId}/upload`
-        const uploadRes = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        })
-        if (!uploadRes.ok) {
-          const uploadData = await uploadRes.json().catch(() => ({}))
-          throw new Error(uploadData?.error || t("errors.uploadMedia", "Item criado, mas o upload da mídia falhou."))
+        if (j.kind === "video") {
+          // O arquivo do celular sobe CRU; `compose` diz ao servidor como
+          // enquadrar, colorir e sobrepor.
+          await uploadPortfolioMedia({
+            token,
+            profileId: selectedProfileId,
+            itemId,
+            file: j.job.source,
+            fileName: j.job.source.name || `freelandoo-${portfolioKind}-${itemId}-${i}.mp4`,
+            mediaType: "video",
+            sortOrder: i,
+            compose: j.job.params,
+            overlay: j.job.overlayBlob,
+            pip: j.job.pipFile,
+            onProgress,
+          })
+        } else {
+          await uploadPortfolioMedia({
+            token,
+            profileId: selectedProfileId,
+            itemId,
+            file: j.result.blob,
+            fileName: `freelandoo-${portfolioKind}-${itemId}-${i}.webp`,
+            mediaType: "image",
+            sortOrder: i,
+            onProgress,
+          })
         }
-        setProgress(0.5 + ((i + 1) / results.length) * 0.5)
       }
 
       // Feed de comunidade: liga o post recém-criado ao feed do grupo (não-fatal).
@@ -850,7 +881,26 @@ export function MediaComposer({
       setProgress(1)
       onPosted?.(); onClose(); router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.publish", "Falha ao publicar."))
+      // ⚠️ A TRADUÇÃO DO ERRO MORA AQUI, num lugar só, e vale para os dois
+      // fluxos (post e story). Quando o SERVIDOR tem algo a dizer ("o vídeo
+      // ficou grande demais", "não autenticado"), é a fala dele que aparece:
+      // ela é específica, e uma frase genérica por cima apagaria a única
+      // informação útil. Só as falhas do LADO DO CLIENTE viram texto traduzido
+      // — a lib de upload devolve código, não frase, justamente porque não tem
+      // como traduzir.
+      let msg: string
+      if (err instanceof UploadError) {
+        msg = err.serverMessage
+          ? err.serverMessage
+          : err.code === "network"
+            ? t("errors.uploadNetwork", "Falha de rede no envio. Confira sua conexão e tente de novo.")
+            : err.code === "canceled"
+              ? t("errors.uploadCanceled", "Envio cancelado.")
+              : t("errors.uploadMedia", "Item criado, mas o upload da mídia falhou.")
+      } else {
+        msg = err instanceof Error && err.message ? err.message : t("errors.publish", "Falha ao publicar.")
+      }
+      setError(msg)
       setStep("details")
     } finally {
       setSubmitting(false)
@@ -1047,10 +1097,21 @@ export function MediaComposer({
           {step === "publish" && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
               <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#F1EDE2]/15 border-t-[#F2B705]" />
-              <div className="font-[family-name:var(--font-anton)] text-xl uppercase text-[#F2B705]">{t("publish.rendering", "Renderizando")}</div>
+              <div className="font-[family-name:var(--font-anton)] text-xl uppercase text-[#F2B705]">{t("publish.publishing", "Publicando")}</div>
               <div className="w-56">
                 <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-[0.1em] text-[#a89f8d]">
-                  <span>{t("publish.uploading", "Enviando para a Freelandoo")}</span><span className="tabular-nums">{Math.round(progress * 100)}%</span>
+                  {/* ⚠️ A fase é DITA. O envio do arquivo cru pode levar minutos
+                      no celular, e depois dele o servidor ainda compõe o vídeo:
+                      sem essa linha, a barra passa um tempo longo perto de 100%
+                      e a pessoa conclui que travou e fecha no meio. */}
+                  <span>
+                    {progress < PREPARE_SHARE
+                      ? t("publish.preparing", "Preparando")
+                      : progress < 0.99
+                        ? t("publish.uploading", "Enviando para a Freelandoo")
+                        : t("publish.processing", "Finalizando no servidor")}
+                  </span>
+                  <span className="tabular-nums">{Math.round(progress * 100)}%</span>
                 </div>
                 <div className="h-2 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
                   <div className="h-full bg-[#F2B705] transition-all" style={{ width: `${progress * 100}%` }} />
