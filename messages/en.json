@@ -1528,7 +1528,9 @@
     "mySocialsLabel": "My socials",
     "businessPill": "Business",
     "gamesPill": "Games",
-    "openGamesPlatformAria": "Open the games platform"
+    "openGamesPlatformAria": "Open the games platform",
+    "openShort": "Watch this Short",
+    "itemActions": "Item actions"
   },
   "Errors": {
     "generic": "Something went wrong. Please try again.",
@@ -3883,7 +3885,8 @@
     "seeFollowingAria": "See who this profile follows",
     "tools": "Tools",
     "noRatings": "No ratings",
-    "servicesSettingsAria": "Configure services and hours"
+    "servicesSettingsAria": "Configure services and hours",
+    "itemActions": "Item actions"
   },
   "Bees": {
     "chat": "Chat",
@@ -6443,5 +6446,10 @@
     "mockChatIn": "Hi! Do you have a slot today?",
     "mockChatOut": "We have 3pm and 5pm. Want me to book it?",
     "mockChatIn2": "3pm, please!"
+  },
+  "Shorts": {
+    "close": "Close",
+    "mute": "Mute",
+    "unmute": "Unmute"
   }
 }

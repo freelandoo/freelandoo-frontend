@@ -10,6 +10,7 @@ import {
   Upload,
   Edit2,
   Trash2,
+  MoreVertical,
   Loader2,
   Heart,
   X,
@@ -59,6 +60,8 @@ import {
   type ProcessedImage,
 } from "@/lib/media/image-processing"
 
+import type { ShortItem } from "@/components/portfolio/shorts-viewer"
+
 type Media = {
   id_portfolio_media: string
   media_url: string
@@ -87,6 +90,12 @@ const sectionSkeleton = () => (
 const ProfilePublicServicesSection = dynamic(
   () => import("@/components/profile/profile-public-services-section").then((m) => m.ProfilePublicServicesSection),
   { ssr: false, loading: sectionSkeleton }
+)
+// Timeline de Curtos: chunk próprio — a maioria das visitas à vitrine não abre
+// vídeo nenhum, e não faz sentido pagar o player em todas elas.
+const ShortsViewer = dynamic(
+  () => import("@/components/portfolio/shorts-viewer").then((m) => m.ShortsViewer),
+  { ssr: false }
 )
 const ProfileOwnerProductsSection = dynamic(
   () => import("@/components/profile/profile-owner-products-section").then((m) => m.ProfileOwnerProductsSection),
@@ -167,6 +176,10 @@ export function UserPortfolio({
 }: UserPortfolioProps = {}) {
   const tr = useTranslations("Account")
   const [items, setItems] = useState<Item[]>([])
+  /** Índice do Curto aberto na timeline (null = fechada). */
+  const [shortsAt, setShortsAt] = useState<number | null>(null)
+  /** Tile de Curto com as ações do dono abertas (id do item) — ver o "⋮". */
+  const [tileMenu, setTileMenu] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
@@ -305,6 +318,27 @@ export function UserPortfolio({
     [items, portfolioTab, isPortfolioGridTab],
   )
   const aspectClass = portfolioTab === "bees" ? "aspect-[9/16]" : "aspect-[4/5]"
+  // ⚠️ Derivada de `filteredItems` — a MESMA lista da grade, na mesma ordem.
+  // Buscar os curtos por outra via faria a timeline discordar da vitrine.
+  const shorts: ShortItem[] = useMemo(() => {
+    if (portfolioTab !== "bees") return []
+    return filteredItems.flatMap((it) => {
+      const m = (it.media ?? []).find((x) => x.is_active !== false && x.media_type === "video")
+      return m
+        ? [{
+            id: it.id_portfolio_item,
+            videoUrl: m.media_url,
+            posterUrl: m.thumbnail_url ?? null,
+            title: it.title,
+            description: it.description,
+          }]
+        : []
+    })
+  }, [filteredItems, portfolioTab])
+  const openShort = useCallback((itemId: string) => {
+    const i = shorts.findIndex((x) => x.id === itemId)
+    if (i >= 0) setShortsAt(i)
+  }, [shorts])
   const emptyLabel =
     portfolioTab === "bees" ? tr("noCurtosYet", "Nenhum Curto ainda.") : tr("noPortfolioYet", "Nenhum item no portfólio ainda.")
 
@@ -830,10 +864,51 @@ export function UserPortfolio({
                       </div>
                     )}
 
+                    {/* Abrir a timeline de Curtos. Fica ATRÁS do overlay de
+                        dono; o overlay não recebe clique (só os botões dele),
+                        então tocar em qualquer outro ponto do tile cai aqui —
+                        e assim não há botão dentro de botão. */}
+                    {itemKind === "bees" && firstMedia.media_type === "video" && (
+                      <button
+                        type="button"
+                        onClick={() => openShort(item.id_portfolio_item)}
+                        aria-label={tr("openShort", "Assistir este Curto")}
+                        className="absolute inset-0 z-[1] cursor-pointer"
+                      />
+                    )}
+
+                    {/* ⚠️ As ações do dono viviam só no `:hover`, e no CELULAR
+                        não há hover — com o tile abrindo a timeline, o toque
+                        cairia sempre no vídeo e editar/excluir ficariam
+                        inalcançáveis. Este "⋮" é a porta que não depende de
+                        ponteiro; no computador o hover continua valendo. */}
+                    {itemKind === "bees" && firstMedia.media_type === "video" && (
+                      <button
+                        type="button"
+                        onClick={() => setTileMenu((cur) => (cur === item.id_portfolio_item ? null : item.id_portfolio_item))}
+                        aria-label={tr("itemActions", "Ações do item")}
+                        aria-expanded={tileMenu === item.id_portfolio_item}
+                        className="absolute right-1 top-1 z-[3] flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    )}
+
                     {/* Owner Overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                    <div
+                      onClick={() => setTileMenu(null)}
+                      className={`absolute inset-0 z-[2] bg-black/60 transition-opacity flex flex-col items-center justify-center gap-3 ${
+                        tileMenu === item.id_portfolio_item
+                          // Aberto pelo "⋮": recebe o toque, e tocar no fundo
+                          // FECHA (senão o toque atravessaria e abriria o vídeo).
+                          ? "opacity-100"
+                          // Só no hover: não intercepta, para o toque/clique
+                          // fora dos botões chegar ao alvo que abre a timeline.
+                          : "pointer-events-none [&>*]:pointer-events-auto opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
                       <label
-                        className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm cursor-pointer transition-colors"
+                        className="pointer-events-auto flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm cursor-pointer transition-colors"
                         title={tr("addMedia", "Adicionar mídia")}
                       >
                         <input
@@ -859,7 +934,7 @@ export function UserPortfolio({
                         <button
                           type="button"
                           onClick={() => handleEditItem(item)}
-                          className="flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
+                          className="pointer-events-auto flex items-center justify-center h-10 w-10 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors"
                           title={tr("editItem", "Editar item")}
                         >
                           <Edit2 className="h-5 w-5" />
@@ -867,7 +942,7 @@ export function UserPortfolio({
                         <button
                           type="button"
                           onClick={() => handleDeleteItem(item.id_portfolio_item)}
-                          className="flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
+                          className="pointer-events-auto flex items-center justify-center h-10 w-10 bg-destructive/80 hover:bg-destructive text-white rounded-full backdrop-blur-sm transition-colors"
                           title={tr("removeItem", "Remover item")}
                         >
                           <Trash2 className="h-5 w-5" />
@@ -1277,6 +1352,10 @@ export function UserPortfolio({
           void fetchItems()
         }}
       />
+
+      {shortsAt !== null && shorts.length > 0 && (
+        <ShortsViewer items={shorts} startIndex={shortsAt} onClose={() => setShortsAt(null)} />
+      )}
     </section>
   )
 }

@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
+import type { ShortItem } from "@/components/portfolio/shorts-viewer"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useCreatorPublicProfile } from "@/hooks/use-creator-public-profile"
@@ -28,6 +29,7 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
+  MoreVertical,
   Upload,
   Users,
   X,
@@ -70,6 +72,11 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 // ProfileHeadCard fica estático: é o conteúdo above-the-fold (LCP).
 const sectionSkeleton = () => (
   <div className="mt-8 h-48 w-full animate-pulse rounded-xl bg-white/5" aria-hidden />
+)
+// Timeline de Curtos: chunk próprio — a maioria das visitas não abre vídeo.
+const ShortsViewer = dynamic(
+  () => import("@/components/portfolio/shorts-viewer").then((m) => m.ShortsViewer),
+  { ssr: false }
 )
 const ProfilePublicServicesSection = dynamic(
   () => import("@/components/profile/profile-public-services-section").then((m) => m.ProfilePublicServicesSection),
@@ -145,6 +152,35 @@ export default function FreelancerProfileView({
   const pathname = usePathname()
   const { profile, portfolioItems, setPortfolioItems, members, loading, error, isOwnProfile } =
     useCreatorPublicProfile(profileId, { kind })
+  /** Índice do Curto aberto na timeline (null = fechada). */
+  const [shortsAt, setShortsAt] = useState<number | null>(null)
+  /** Tile de Curto com as ações do dono abertas (id do item) — ver o "⋮". */
+  const [tileMenu, setTileMenu] = useState<string | null>(null)
+  // ⚠️ Mesmo filtro e mesma ordem da grade da aba Curtos: a timeline não pode
+  // conhecer um vídeo que a vitrine não mostra, nem o contrário.
+  const shorts: ShortItem[] = useMemo(
+    () =>
+      portfolioItems
+        .filter((it) => (it.feed_kind ?? "feed") === "bees")
+        .flatMap((it) => {
+          const m = (it.media ?? []).find((x) => x.is_active !== false && x.media_type === "video")
+          return m
+            ? [{
+                id: it.id_portfolio_item,
+                videoUrl: m.media_url,
+                posterUrl: null,
+                title: it.title,
+                description: it.description,
+              }]
+            : []
+        }),
+    [portfolioItems]
+  )
+  const openShort = useCallback((itemId: string) => {
+    const i = shorts.findIndex((x) => x.id === itemId)
+    if (i >= 0) setShortsAt(i)
+  }, [shorts])
+
   const [showMembers, setShowMembers] = useState(false)
   const [membersQuery, setMembersQuery] = useState("")
   const [followRefreshKey, setFollowRefreshKey] = useState(0)
@@ -1047,8 +1083,20 @@ export default function FreelancerProfileView({
                       </div>
                     ) : firstMedia ? (
                       <div
-                        className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden ${!isOwnProfile ? "cursor-pointer" : ""}`}
-                        onClick={() => { if (!isOwnProfile) setOpenPortfolioItemId(item.id_portfolio_item) }}
+                        className={`relative ${aspectClass} bg-[#1d1810] overflow-hidden ${
+                          portfolioTab === "bees" || !isOwnProfile ? "cursor-pointer" : ""
+                        }`}
+                        onClick={() => {
+                          // Na vitrine de Curtos o toque abre a TIMELINE do
+                          // acervo (e vale também para o dono, que antes não
+                          // tinha como assistir o próprio vídeo daqui). A aba
+                          // Portfólio segue no modal do item.
+                          if (portfolioTab === "bees" && firstMedia.media_type === "video") {
+                            openShort(item.id_portfolio_item)
+                          } else if (!isOwnProfile) {
+                            setOpenPortfolioItemId(item.id_portfolio_item)
+                          }
+                        }}
                       >
                         {firstMedia.media_type === "video" ? (
                           <video
@@ -1096,9 +1144,34 @@ export default function FreelancerProfileView({
                           </div>
                         )}
 
+                        {/* ⚠️ Mesma armadilha do /account: as ações do dono só
+                            existiam no `:hover`, e no CELULAR não há hover —
+                            com o tile de Curto abrindo a timeline, elas
+                            ficariam inalcançáveis. O "⋮" é a porta que não
+                            depende de ponteiro. */}
+                        {isOwnProfile && portfolioTab === "bees" && firstMedia.media_type === "video" && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation() // senão o clique abre a timeline
+                              setTileMenu((cur) => (cur === item.id_portfolio_item ? null : item.id_portfolio_item))
+                            }}
+                            aria-label={t("itemActions", "Ações do item")}
+                            aria-expanded={tileMenu === item.id_portfolio_item}
+                            className="absolute right-1 top-1 z-[3] flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D]"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        )}
+
                         {/* Owner Overlay Actions */}
                         {isOwnProfile && (
-                          <div className="absolute inset-0 bg-[#0B0B0D]/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className={`absolute inset-0 z-[2] bg-[#0B0B0D]/65 transition-opacity flex flex-col items-center justify-center gap-3 ${
+                              tileMenu === item.id_portfolio_item ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            } ${portfolioTab === "bees" && tileMenu !== item.id_portfolio_item ? "pointer-events-none [&>*]:pointer-events-auto" : ""}`}
+                          >
                             <label
                               className="flex items-center justify-center h-10 w-10 border-2 border-[#0B0B0D] bg-[#F1EDE2] hover:bg-[#F2B705] text-[#0B0B0D] rounded-full cursor-pointer transition-colors"
                               title={t("addMedia", "Adicionar mídia")}
@@ -1542,6 +1615,10 @@ export default function FreelancerProfileView({
           onCancel={() => setCropTarget(null)}
           onConfirm={handleCropConfirm}
         />
+      )}
+
+      {shortsAt !== null && shorts.length > 0 && (
+        <ShortsViewer items={shorts} startIndex={shortsAt} onClose={() => setShortsAt(null)} />
       )}
 
       {openPortfolioItemId && (() => {

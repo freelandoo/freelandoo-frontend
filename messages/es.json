@@ -1528,7 +1528,9 @@
     "mySocialsLabel": "Mis redes",
     "businessPill": "Business",
     "gamesPill": "Games",
-    "openGamesPlatformAria": "Abrir la plataforma de games"
+    "openGamesPlatformAria": "Abrir la plataforma de games",
+    "openShort": "Ver este Corto",
+    "itemActions": "Acciones del elemento"
   },
   "Errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -3863,7 +3865,8 @@
     "seeFollowingAria": "Ver a quién sigue este perfil",
     "tools": "Herramientas",
     "noRatings": "Sin valoraciones",
-    "servicesSettingsAria": "Configurar servicios y horarios"
+    "servicesSettingsAria": "Configurar servicios y horarios",
+    "itemActions": "Acciones del elemento"
   },
   "Bees": {
     "chat": "Chat",
@@ -6423,5 +6426,10 @@
     "mockChatIn": "¡Hola! ¿Tienen horario hoy?",
     "mockChatOut": "Tenemos a las 15h y a las 17h. ¿Quieres que lo agende?",
     "mockChatIn2": "¡A las 15h, por favor!"
+  },
+  "Shorts": {
+    "close": "Cerrar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido"
   }
 }
