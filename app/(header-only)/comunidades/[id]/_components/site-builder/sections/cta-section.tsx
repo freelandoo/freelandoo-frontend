@@ -18,8 +18,8 @@ import { useCallback } from "react"
 import { CalendarDays, Clock, Plus, Trash2, UserRound } from "lucide-react"
 import type { CtaData, CtaItem, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
-import { BuilderButton, InlineText } from "../editable"
-import { isExternalHref, useSiteHref, useSiteRuntime } from "../site-runtime"
+import { BuilderButton, InlineButton, InlineText } from "../editable"
+import { useSiteHref, useSiteRuntime } from "../site-runtime"
 import { useNextSlot } from "../use-next-slot"
 
 const MAX_ITEMS = 4
@@ -289,45 +289,25 @@ export function CtaSection({
 
       {(editing || data.ctaText) && (
         <div className="flex flex-col items-center gap-2">
-          {editing ? (
-            <>
-              <InlineText
-                editing
-                value={data.ctaText}
-                onChange={(v) => onChange({ ...data, ctaText: v })}
-                placeholder={labels.ctaText}
-                maxLength={40}
-                className="border-2 border-[#0B0B0D] px-10 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
-                style={{ background: theme.primary, color: theme.background }}
-              />
-              <InlineText
-                editing
-                value={data.ctaUrl}
-                onChange={(v) => onChange({ ...data, ctaUrl: v })}
-                placeholder={labels.ctaUrl}
-                maxLength={600}
-                className="min-w-[220px] px-2 py-1 text-[11px]"
-                style={{ color: theme.textSecondary }}
-              />
-            </>
-          ) : (
-            data.ctaText &&
-            ctaHref && (
-              <a
-                href={ctaHref}
-                target={isExternalHref(ctaHref) ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className="inline-block border-2 border-[#0B0B0D] px-10 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
-                style={{
-                  background: theme.primary,
-                  color: theme.background,
-                  boxShadow: `4px 4px 0 0 ${theme.background}`,
-                }}
-              >
-                {data.ctaText}
-              </a>
-            )
-          )}
+          <InlineButton
+            editing={editing}
+            text={data.ctaText}
+            url={data.ctaUrl}
+            href={ctaHref || ""}
+            onChangeText={(v) => onChange({ ...data, ctaText: v })}
+            onChangeUrl={(v) => onChange({ ...data, ctaUrl: v })}
+            styleKey="cta.button"
+            textPlaceholder={labels.ctaText}
+            urlPlaceholder={labels.ctaUrl}
+            className="border-2 border-[#0B0B0D] px-10 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
+            style={{
+              background: theme.primary,
+              color: theme.background,
+              boxShadow: `4px 4px 0 0 ${theme.background}`,
+            }}
+            urlClassName="min-w-[220px] px-2 py-1 text-[11px]"
+            urlStyle={{ color: theme.textSecondary }}
+          />
         </div>
       )}
 

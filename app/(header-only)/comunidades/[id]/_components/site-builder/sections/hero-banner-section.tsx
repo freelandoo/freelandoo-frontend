@@ -16,9 +16,9 @@ import { useCallback, useEffect, useState } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react"
 import type { HeroData, HeroSlide, SiteColorTheme } from "@/types/community-site"
 import { newLocalId } from "@/types/community-site"
-import { BuilderButton, EditableImage, InlineText } from "../editable"
+import { BuilderButton, EditableImage, InlineButton, InlineText } from "../editable"
 import { useSectionLayout } from "../site-style-context"
-import { isExternalHref, useSiteHref, useSiteRuntime } from "../site-runtime"
+import { useSiteHref, useSiteRuntime } from "../site-runtime"
 
 const HEIGHTS: Record<HeroData["height"], string> = {
   short: "min-h-[380px] md:min-h-[460px]",
@@ -196,7 +196,14 @@ export function HeroBannerSection({
         style={{ background: `linear-gradient(180deg, transparent 0%, ${theme.background} 100%)` }}
       />
 
-      <div className="relative w-full px-5 py-24 md:px-10">
+      <div
+        className="relative w-full px-5 py-24 md:px-10"
+        style={
+          layout?.padY !== null && layout?.padY !== undefined
+            ? { paddingTop: layout.padY, paddingBottom: layout.padY }
+            : undefined
+        }
+      >
         <div
           className="mx-auto w-full max-w-6xl"
           style={layout?.maxWidth ? { maxWidth: layout.maxWidth } : undefined}
@@ -231,82 +238,42 @@ export function HeroBannerSection({
             {(editing || current.ctaText || current.ctaSecondaryText) && (
               <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
                 {/* Botão principal */}
-                {editing ? (
-                  <div className="flex flex-col gap-1">
-                    <InlineText
-                      editing
-                      value={current.ctaText}
-                      onChange={(v) => patchSlide(current.id, { ctaText: v })}
-                      placeholder={labels.ctaText}
-                      maxLength={40}
-                      className="border-2 border-[#0B0B0D] px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
-                      style={{ background: theme.primary, color: theme.background }}
-                    />
-                    <InlineText
-                      editing
-                      value={current.ctaUrl}
-                      onChange={(v) => patchSlide(current.id, { ctaUrl: v })}
-                      placeholder={labels.ctaUrl}
-                      maxLength={600}
-                      className="min-w-[180px] px-2 py-1 text-[11px]"
-                      style={{ color: theme.textSecondary }}
-                    />
-                  </div>
-                ) : (
-                  current.ctaText &&
-                  primaryHref && (
-                    <a
-                      href={primaryHref}
-                      target={isExternalHref(primaryHref) ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      className="inline-block border-2 border-[#0B0B0D] px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
-                      style={{
-                        background: theme.primary,
-                        color: theme.background,
-                        boxShadow: `4px 4px 0 0 ${theme.background}`,
-                      }}
-                    >
-                      {current.ctaText}
-                    </a>
-                  )
-                )}
+                <InlineButton
+                  editing={editing}
+                  text={current.ctaText}
+                  url={current.ctaUrl}
+                  href={primaryHref || ""}
+                  onChangeText={(v) => patchSlide(current.id, { ctaText: v })}
+                  onChangeUrl={(v) => patchSlide(current.id, { ctaUrl: v })}
+                  styleKey={`hero.${current.id}.cta`}
+                  textPlaceholder={labels.ctaText}
+                  urlPlaceholder={labels.ctaUrl}
+                  className="border-2 border-[#0B0B0D] px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
+                  style={{
+                    background: theme.primary,
+                    color: theme.background,
+                    boxShadow: `4px 4px 0 0 ${theme.background}`,
+                  }}
+                  urlClassName="min-w-[180px] px-2 py-1 text-[11px]"
+                  urlStyle={{ color: theme.textSecondary }}
+                />
 
                 {/* Botão secundário: contorno, peso menor. */}
-                {editing ? (
-                  <div className="flex flex-col gap-1">
-                    <InlineText
-                      editing
-                      value={current.ctaSecondaryText}
-                      onChange={(v) => patchSlide(current.id, { ctaSecondaryText: v })}
-                      placeholder={labels.ctaSecondaryText}
-                      maxLength={40}
-                      className="border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
-                      style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}
-                    />
-                    <InlineText
-                      editing
-                      value={current.ctaSecondaryUrl}
-                      onChange={(v) => patchSlide(current.id, { ctaSecondaryUrl: v })}
-                      placeholder={labels.ctaSecondaryUrl}
-                      maxLength={600}
-                      className="min-w-[180px] px-2 py-1 text-[11px]"
-                      style={{ color: theme.textSecondary }}
-                    />
-                  </div>
-                ) : (
-                  current.ctaSecondaryText &&
-                  secondaryHref && (
-                    <a
-                      href={secondaryHref}
-                      target={isExternalHref(secondaryHref) ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      className="inline-block border-2 px-8 py-4 text-center text-sm font-extrabold uppercase tracking-[0.14em]"
-                      style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}
-                    >
-                      {current.ctaSecondaryText}
-                    </a>
-                  )
-                )}
+                <InlineButton
+                  editing={editing}
+                  text={current.ctaSecondaryText}
+                  url={current.ctaSecondaryUrl}
+                  href={secondaryHref || ""}
+                  onChangeText={(v) => patchSlide(current.id, { ctaSecondaryText: v })}
+                  onChangeUrl={(v) => patchSlide(current.id, { ctaSecondaryUrl: v })}
+                  styleKey={`hero.${current.id}.cta2`}
+                  textPlaceholder={labels.ctaSecondaryText}
+                  urlPlaceholder={labels.ctaSecondaryUrl}
+                  className="border-2 px-8 py-4 text-sm font-extrabold uppercase tracking-[0.14em]"
+                  style={{ borderColor: theme.textPrimary, color: theme.textPrimary }}
+                  urlClassName="min-w-[180px] px-2 py-1 text-[11px]"
+                  urlStyle={{ color: theme.textSecondary }}
+                />
               </div>
             )}
           </div>

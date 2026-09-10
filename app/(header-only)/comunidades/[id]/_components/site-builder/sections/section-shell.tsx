@@ -58,7 +58,18 @@ export function SectionShell({
   const centered = align === "center"
 
   return (
-    <section className="px-5 py-16 md:px-10 md:py-24">
+    <section
+      className="px-5 py-16 md:px-10 md:py-24"
+      // O respiro escolhido na alça da linha divisória VENCE as classes — é ele
+      // que deixa a seção encostar no conteúdo. `null` mantém o do CSS, que é
+      // responsivo (py-16 no celular, py-24 no computador); um número fixo por
+      // padrão congelaria isso para todo mundo.
+      style={
+        layout?.padY !== null && layout?.padY !== undefined
+          ? { paddingTop: layout.padY, paddingBottom: layout.padY }
+          : undefined
+      }
+    >
       {/* A largura da coluna é a que o líder deixou na alça; sem alça, o
           max-w-6xl de sempre — e a classe continua no lugar para o site nunca
           ficar sem teto de largura. */}

@@ -72,6 +72,9 @@ const EMPTY_STYLES: Record<string, SiteTextStyle> = {}
 /** Caixa que nunca foi tocada: tudo em AUTO. */
 export const EMPTY_BOX: SiteTextStyle = { fontSize: null, width: null, x: null, y: null }
 
+/** Seção que nunca foi redimensionada: tudo em AUTO. */
+export const EMPTY_LAYOUT: SiteSectionLayout = { minHeight: null, maxWidth: null, padY: null }
+
 function isAutoBox(box: SiteTextStyle): boolean {
   return box.fontSize === null && box.width === null && box.x === null && box.y === null
 }
@@ -610,11 +613,12 @@ export function SectionResizeDots({
       const d = dragRef.current
       if (!d) return
       onChange({
+        ...layout,
         minHeight: clampSize(d.h + delta.dy, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX),
         maxWidth: clampSize(d.w + delta.dx * 2, SITE_SIZES.MAXW_MIN, SITE_SIZES.MAXW_MAX),
       })
     },
-    [layout.minHeight, layout.maxWidth, onChange]
+    [layout, onChange]
   )
 
   return (
@@ -627,6 +631,130 @@ export function SectionResizeDots({
       />
     </span>
   )
+}
+
+/**
+ * A LINHA QUE DIVIDE DUAS SEÇÕES vira alça de altura.
+ *
+ * É uma faixa fina no rodapé da seção, com o cursor de redimensionar vertical.
+ * Ela existe porque as bolinhas dos cantos moram atrás de um botão da barra
+ * (é preciso ligar o modo tamanho antes), e apertar o respiro de uma seção é a
+ * coisa mais frequente que se faz num site montado — tinha de estar a um
+ * arraste, no lugar onde o olho já está: a divisa entre uma seção e a seguinte.
+ *
+ * ⚠️ O RESPIRO CEDE ANTES DA ALTURA, e é isso que faz "diminuir" funcionar.
+ * `minHeight` sozinho SÓ CRESCE: com o `py-16 md:py-24` do CSS de pé, pedir uma
+ * altura menor que o conteúdo não mudava um pixel e a alça parecia quebrada.
+ * Então a conta é: o quanto sobra além do conteúdo vira respiro (até o teto), e
+ * `minHeight` só entra quando a pessoa pede MAIS do que o conteúdo ocupa.
+ *
+ * ⚠️ A altura do conteúdo é medida UMA VEZ, no começo do arraste. Medida a cada
+ * quadro, ela mudaria junto com o respiro que estamos aplicando e o gesto
+ * entraria em realimentação — a seção fugiria do cursor.
+ */
+export function SectionHeightHandle({
+  layout,
+  onChange,
+  label,
+  tone = "#5AC8FA",
+}: {
+  layout: SiteSectionLayout
+  onChange: (next: SiteSectionLayout) => void
+  label: string
+  tone?: string
+}) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<{ y: number; height: number; content: number; scale: number } | null>(
+    null
+  )
+  const [dragging, setDragging] = useState(false)
+
+  const begin = useCallback(
+    (e: React.PointerEvent) => {
+      const host = ref.current?.parentElement
+      if (!host) return
+      e.preventDefault()
+      e.stopPropagation()
+      const el = e.currentTarget as HTMLElement
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch {
+        // Ponteiro que já sumiu: o arraste segue pelos eventos que chegarem.
+      }
+      const scale = domScale(host)
+      const height = host.getBoundingClientRect().height / scale
+      const pad = layout.padY ?? readPadY(host)
+      dragRef.current = {
+        y: e.clientY,
+        height,
+        // Altura do conteúdo SEM o respiro: é o piso real de encolhimento.
+        content: Math.max(0, height - pad * 2),
+        scale,
+      }
+      setDragging(true)
+    },
+    [layout.padY]
+  )
+
+  const onMove = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current
+      if (!d) return
+      e.preventDefault()
+      const target = d.height + (e.clientY - d.y) / d.scale
+      const pad = clampSize((target - d.content) / 2, SITE_SIZES.PADY_MIN, SITE_SIZES.PADY_MAX)
+      const natural = d.content + pad * 2
+      onChange({
+        ...layout,
+        padY: pad,
+        // Só grava altura quando a pessoa pede MAIS do que o conteúdo com o
+        // respiro no teto — abaixo disso `minHeight` não teria efeito nenhum e
+        // guardá-lo deixaria um número morto no documento.
+        minHeight:
+          target > natural + 1
+            ? clampSize(target, SITE_SIZES.HEIGHT_MIN, SITE_SIZES.HEIGHT_MAX)
+            : null,
+      })
+    },
+    [layout, onChange]
+  )
+
+  const finish = useCallback(() => {
+    if (!dragRef.current) return
+    dragRef.current = null
+    setDragging(false)
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      role="separator"
+      aria-label={label}
+      title={label}
+      onPointerDown={begin}
+      onPointerMove={onMove}
+      onPointerUp={finish}
+      onPointerCancel={finish}
+      className="absolute inset-x-0 bottom-0 z-20 flex h-3 cursor-ns-resize items-end justify-center"
+      // `touchAction: none` impede o navegador de ler o arraste como rolagem.
+      style={{ touchAction: "none" }}
+    >
+      <div
+        className="h-1 w-full transition-opacity"
+        style={{ background: tone, opacity: dragging ? 1 : 0 }}
+      />
+      <div
+        className="absolute bottom-0 left-1/2 h-1.5 w-16 -translate-x-1/2"
+        style={{ background: tone, opacity: dragging ? 1 : 0.35 }}
+      />
+    </div>
+  )
+}
+
+/** Respiro que o CSS está pintando agora — o ponto de partida em AUTO. */
+function readPadY(el: HTMLElement): number {
+  const v = parseFloat(window.getComputedStyle(el).paddingTop)
+  return Number.isFinite(v) ? v : 0
 }
 
 /**
@@ -649,4 +777,14 @@ export function measuredSectionHeight(id: string, fallback = 320): number {
   const el = document.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(id)}"]`)
   if (!el) return fallback
   return Math.round(el.getBoundingClientRect().height) || fallback
+}
+
+/** E o respiro que o CSS pinta agora, para o painel partir do valor real. */
+export function measuredSectionPadY(id: string, fallback = 96): number {
+  if (typeof document === "undefined") return fallback
+  const el = document.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(id)}"]`)
+  // O respiro mora na CASCA da seção, não na moldura que carrega o id.
+  const inner = el?.querySelector<HTMLElement>("section") || el
+  if (!inner) return fallback
+  return Math.round(readPadY(inner)) || fallback
 }

@@ -250,6 +250,18 @@ type SiteSectionBase<K extends SiteSectionKind, D> = {
 export type SiteSectionLayout = {
   minHeight: number | null
   maxWidth: number | null
+  /**
+   * Respiro vertical da seção (o `py` de cima e de baixo), em pixels.
+   *
+   * ⚠️ Existe porque `minHeight` sozinho SÓ CRESCE: as seções têm respiro fixo
+   * no CSS (`py-16 md:py-24`), então pedir altura menor que o conteúdo mais
+   * esse respiro não encolhia nada e a alça parecia quebrada. Quem cede
+   * primeiro quando o líder aperta a linha divisória é o respiro.
+   *
+   * `null` é AUTO (o do CSS); **zero é escolha** — é ele que faz a seção
+   * encostar no conteúdo.
+   */
+  padY: number | null
 }
 
 /**
@@ -290,6 +302,8 @@ export const SITE_SIZES = {
   X_MAX: 100,
   Y_MIN: -600,
   Y_MAX: 600,
+  PADY_MIN: 0,
+  PADY_MAX: 240,
 } as const
 
 export function clampSize(value: number, min: number, max: number): number {

@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ImagePlus, Loader2, Move, Trash2 } from "lucide-react"
 import { SITE_OBJECT_POSITIONS, type SiteObjectPosition } from "@/types/community-site"
+import { isExternalHref } from "./site-runtime"
 import {
   ResizeDots,
   domScale,
@@ -18,6 +19,40 @@ import {
   usePinchResize,
   useTextBox,
 } from "./site-style-context"
+
+/**
+ * Traduz o tamanho e a posição guardados para CSS.
+ *
+ * Mora fora do `InlineText` porque o BOTÃO precisa da mesma conta: em leitura
+ * ele é um `<a>`, não um `<div>` de texto, e uma segunda cópia desta função
+ * faria o botão sair de um tamanho no construtor e de outro no site publicado
+ * — que é exatamente o motivo pelo qual os botões ficaram sem alça até aqui.
+ *
+ * O deslocamento vira `left`/`top` de um elemento `position: relative`: a caixa
+ * anda SEM levar o espaço dela junto, então o que vem abaixo não sobe quando
+ * ela vai para o lado. Um `absolute` congelaria a caixa num ponto da tela do
+ * computador e o site deixaria de caber no celular.
+ */
+export function boxStyles(
+  box: { fontSize: number | null; width: number | null; x: number | null; y: number | null },
+  style?: React.CSSProperties
+): { textStyle: React.CSSProperties; wrapStyle: React.CSSProperties | undefined } {
+  const textStyle: React.CSSProperties = box.fontSize
+    ? { ...style, fontSize: `${box.fontSize}px` }
+    : style || {}
+  const placed = box.x !== null || box.y !== null
+  const wrapStyle: React.CSSProperties | undefined =
+    box.width !== null || placed
+      ? {
+          display: "block",
+          position: "relative",
+          ...(box.width !== null ? { width: `${box.width}%`, maxWidth: "100%" } : null),
+          ...(box.x !== null ? { left: `${box.x}%` } : null),
+          ...(box.y !== null ? { top: `${box.y}px` } : null),
+        }
+      : undefined
+  return { textStyle, wrapStyle }
+}
 
 /**
  * Texto editável no lugar (clica e digita).
@@ -303,24 +338,7 @@ export function InlineText({
   // que sair encolhida para quem visita, senão o que ele publicou não é o que
   // ele viu. Fonte no elemento (a classe do Tailwind precisa perder para o
   // inline) e largura no invólucro, que é onde as alças se apoiam.
-  const textStyle: React.CSSProperties = box.fontSize
-    ? { ...style, fontSize: `${box.fontSize}px` }
-    : style || {}
-  // O deslocamento vira `left`/`top` de um elemento `position: relative`: a
-  // caixa anda SEM levar o espaço dela junto, então o parágrafo de baixo não
-  // sobe quando a manchete vai para o lado. Um `absolute` congelaria a caixa
-  // num ponto da tela do computador e o site deixaria de caber no celular.
-  const placed = box.x !== null || box.y !== null
-  const wrapStyle: React.CSSProperties | undefined =
-    box.width !== null || placed
-      ? {
-          display: "block",
-          position: "relative",
-          ...(box.width !== null ? { width: `${box.width}%`, maxWidth: "100%" } : null),
-          ...(box.x !== null ? { left: `${box.x}%` } : null),
-          ...(box.y !== null ? { top: `${box.y}px` } : null),
-        }
-      : undefined
+  const { textStyle, wrapStyle } = boxStyles(box, style)
 
   if (!editing) {
     // Em LEITURA o placeholder não existe. Ele é uma dica de edição ("Manchete
@@ -398,6 +416,101 @@ export function InlineText({
         <ResizeDots onResize={onResize} onCommit={() => (dragRef.current = null)} label={placeholder || "resize"} />
       )}
     </span>
+  )
+}
+
+/**
+ * Botão do site: o texto que aparece e o link para onde ele leva.
+ *
+ * ⚠️ PEÇA ÚNICA, e é isso que resolve o problema antigo. O botão tinha DUAS
+ * árvores escritas à mão em cada seção — um `InlineText` no construtor e um
+ * `<a>` no site publicado —, e por isso ele era o único elemento sem alça:
+ * qualquer tamanho aplicado de um lado não existia do outro. Aqui as duas
+ * pontas saem do MESMO `styleKey`, então o botão ganha mover e dimensionar
+ * pelos mesmos dois gestos das caixas de texto, sem risco de divergir.
+ *
+ * ⚠️ O campo do LINK não recebe `styleKey`, de propósito: ninguém redimensiona
+ * uma URL, ele não existe no site publicado, e cada chave ocupa uma vaga do
+ * teto do documento.
+ */
+export function InlineButton({
+  editing,
+  text,
+  url,
+  href,
+  onChangeText,
+  onChangeUrl,
+  styleKey,
+  textPlaceholder,
+  urlPlaceholder,
+  className = "",
+  style,
+  urlClassName = "",
+  urlStyle,
+  maxLength = 40,
+}: {
+  editing: boolean
+  text: string
+  url: string
+  /** Destino já resolvido pela seção (o token `agendar`, o link do líder…). */
+  href: string
+  onChangeText: (next: string) => void
+  onChangeUrl: (next: string) => void
+  styleKey: string
+  textPlaceholder: string
+  urlPlaceholder: string
+  className?: string
+  style?: React.CSSProperties
+  urlClassName?: string
+  urlStyle?: React.CSSProperties
+  maxLength?: number
+}) {
+  const box = useTextBox(styleKey)
+  const { textStyle, wrapStyle } = boxStyles(box, style)
+
+  if (!editing) {
+    // Sem texto ou sem destino não há botão: um retângulo que não leva a lugar
+    // nenhum é pior que a ausência dele.
+    if (!text || !href) return null
+    const link = (
+      <a
+        href={href}
+        target={isExternalHref(href) ? "_blank" : undefined}
+        rel="noopener noreferrer"
+        className={`inline-block text-center ${className}`}
+        style={textStyle}
+      >
+        {text}
+      </a>
+    )
+    return wrapStyle ? <span style={wrapStyle}>{link}</span> : link
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <InlineText
+        editing
+        value={text}
+        onChange={onChangeText}
+        styleKey={styleKey}
+        placeholder={textPlaceholder}
+        maxLength={maxLength}
+        className={className}
+        style={style}
+      />
+      {/* O campo do link fica no lugar mesmo quando o botão é arrastado: ele é
+          controle do construtor, não parte do site, e segui-lo esconderia o
+          campo atrás do próprio botão em deslocamentos grandes. */}
+      <InlineText
+        editing
+        value={url}
+        onChange={onChangeUrl}
+        placeholder={urlPlaceholder}
+        maxLength={600}
+        className={urlClassName}
+        style={urlStyle}
+      />
+    </div>
   )
 }
 

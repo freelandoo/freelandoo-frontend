@@ -28,12 +28,15 @@ import type {
 } from "@/types/community-site"
 import {
   EMPTY_BOX,
+  EMPTY_LAYOUT,
+  SectionHeightHandle,
   SectionResizeDots,
   SiteStyleProvider,
   SiteStyleScope,
   SITE_CONTENT_MAX_WIDTH,
   measuredFontSize,
   measuredSectionHeight,
+  measuredSectionPadY,
   type SiteSelection,
 } from "./site-style-context"
 import { SiteSizeToolbar, type SizeRow } from "./site-size-toolbar"
@@ -334,7 +337,7 @@ export function SiteCanvas({
 
     const section = sections.find((s) => s.id === selection.id)
     if (!section) return null
-    const layout: SiteSectionLayout = section.layout || { minHeight: null, maxWidth: null }
+    const layout: SiteSectionLayout = { ...EMPTY_LAYOUT, ...(section.layout || {}) }
     const rows: SizeRow[] = [
       {
         label: t("sizeHeight", "Altura"),
@@ -360,11 +363,25 @@ export function SiteCanvas({
             maxWidth: clampSize(n, SITE_SIZES.MAXW_MIN, SITE_SIZES.MAXW_MAX),
           }),
       },
+      {
+        // O respiro é o que a alça da linha divisória mexe primeiro; aqui ele
+        // ganha número exato, para quem prefere digitar a arrastar.
+        label: t("sizePad", "Respiro"),
+        value: layout.padY,
+        fallback: () => measuredSectionPadY(section.id),
+        step: 8,
+        unit: "px",
+        onChange: (n) =>
+          patchLayout(section.id, {
+            ...layout,
+            padY: clampSize(n, SITE_SIZES.PADY_MIN, SITE_SIZES.PADY_MAX),
+          }),
+      },
     ]
     return {
       title: t("sizeTitleSection", "Seção"),
       rows,
-      reset: () => patchLayout(section.id, { minHeight: null, maxWidth: null }),
+      reset: () => patchLayout(section.id, EMPTY_LAYOUT),
       // Seção não tem os dois modos: ela é empilhada, não deslocada. Declarado
       // como ausente para os dois ramos terem a MESMA forma — sem isto o painel
       // teria de saber qual dos dois recebeu.
@@ -422,7 +439,7 @@ export function SiteCanvas({
 
       {visible.map((section) => {
         const index = sections.indexOf(section)
-        const layout: SiteSectionLayout = section.layout || { minHeight: null, maxWidth: null }
+        const layout: SiteSectionLayout = { ...EMPTY_LAYOUT, ...(section.layout || {}) }
         // A altura vai na moldura; a largura da coluna desce pelo contexto até
         // a casca da seção (é ela quem centraliza o conteúdo), junto do escopo.
         const frameStyle: React.CSSProperties = {
@@ -520,6 +537,13 @@ export function SiteCanvas({
                 label={t("resizeSection", "Tamanho da seção")}
               />
             )}
+            {/* A divisa para a seção seguinte é alça de altura — sempre, sem
+                precisar ligar o modo tamanho antes. */}
+            <SectionHeightHandle
+              layout={layout}
+              onChange={(next) => patchLayout(section.id, next)}
+              label={t("resizeSectionHeight", "Arraste para apertar ou soltar a seção")}
+            />
           </div>
           </SiteStyleScope>
         )

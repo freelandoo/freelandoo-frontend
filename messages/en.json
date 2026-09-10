@@ -6115,7 +6115,7 @@
     "backToCommunity": "Back to the community",
     "notFound": "Community not found.",
     "resizeSection": "Section size",
-    "resizeHint": "One click selects the box and locks its text — drag to move it. Double-click to bring up the typing cursor and the corner handles, which change the size.",
+    "resizeHint": "One click selects the box (or button) and locks its text — drag to move it. Double-click for the typing cursor and the corner handles. On the line dividing two sections, drag to tighten or loosen the section.",
     "sizeTitleText": "Text box",
     "sizeTitleSection": "Section",
     "sizeFont": "Font",
@@ -6190,7 +6190,9 @@
     "posY": "Vertical",
     "sizeTitleMove": "Box position",
     "modeMove": "Move (text stays locked)",
-    "modeSize": "Edit text and resize"
+    "modeSize": "Edit text and resize",
+    "sizePad": "Padding",
+    "resizeSectionHeight": "Drag to tighten or loosen the section"
   },
   "SiteBooking": {
     "back": "Back to site",

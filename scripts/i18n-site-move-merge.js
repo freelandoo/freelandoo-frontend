@@ -23,6 +23,12 @@ const MERGE = {
     posX: ["Horizontal", "Horizontal", "Horizontal"],
     posY: ["Vertical", "Vertical", "Vertical"],
     sizeTitleMove: ["Posição da caixa", "Box position", "Posición de la caja"],
+    sizePad: ["Respiro", "Padding", "Respiro"],
+    resizeSectionHeight: [
+      "Arraste para apertar ou soltar a seção",
+      "Drag to tighten or loosen the section",
+      "Arrastra para apretar o soltar la sección",
+    ],
   },
 }
 
@@ -30,9 +36,9 @@ const MERGE = {
 const OVERRIDE = {
   CommunitySite: {
     resizeHint: [
-      "Um clique seleciona a caixa e trava o texto — arraste para mudar o lugar. Dois cliques abrem o cursor de digitação e as bolinhas dos cantos, que mudam o tamanho.",
-      "One click selects the box and locks its text — drag to move it. Double-click to bring up the typing cursor and the corner handles, which change the size.",
-      "Un clic selecciona la caja y bloquea el texto — arrástrala para moverla. Doble clic abre el cursor de escritura y los tiradores de las esquinas, que cambian el tamaño.",
+      "Um clique seleciona a caixa (ou o botão) e trava o texto — arraste para mudar o lugar. Dois cliques abrem o cursor de digitação e as bolinhas dos cantos. Na linha que divide duas seções, arraste para apertar ou soltar a seção.",
+      "One click selects the box (or button) and locks its text — drag to move it. Double-click for the typing cursor and the corner handles. On the line dividing two sections, drag to tighten or loosen the section.",
+      "Un clic selecciona la caja (o el botón) y bloquea el texto — arrástrala para moverla. Doble clic abre el cursor de escritura y los tiradores de las esquinas. En la línea que divide dos secciones, arrastra para apretar o soltar la sección.",
     ],
     // Estes dois nasceram nesta mesma feature descrevendo o gesto de antes (o
     // texto era editável o tempo todo). Ficam em OVERRIDE porque já entraram
