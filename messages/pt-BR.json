@@ -5778,5 +5778,15 @@
     "compareNone": "Vocês não têm nenhum jogo em comum ainda.",
     "compareSummary": "{n} em comum · você jogou mais em {mine}, {who} em {theirs}",
     "compareYou": "Você"
+  },
+  "Invite": {
+    "cta": "Convidar pessoas",
+    "menuTitle": "Convidar para {name}",
+    "share": "Compartilhar",
+    "whatsapp": "WhatsApp",
+    "copy": "Copiar link",
+    "copied": "Link copiado!",
+    "copyFailed": "Não deu pra copiar o link.",
+    "message": "Vem fazer parte de {name} na Freelandoo!"
   }
 }

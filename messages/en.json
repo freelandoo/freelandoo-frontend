@@ -6364,5 +6364,15 @@
     "compareNone": "You two do not share any game yet.",
     "compareSummary": "{n} in common · you played more in {mine}, {who} in {theirs}",
     "compareYou": "You"
+  },
+  "Invite": {
+    "cta": "Invite people",
+    "menuTitle": "Invite to {name}",
+    "share": "Share",
+    "whatsapp": "WhatsApp",
+    "copy": "Copy link",
+    "copied": "Link copied!",
+    "copyFailed": "Couldn't copy the link.",
+    "message": "Come join {name} on Freelandoo!"
   }
 }

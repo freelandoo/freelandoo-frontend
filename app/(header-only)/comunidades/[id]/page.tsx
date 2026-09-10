@@ -15,6 +15,7 @@ import { useTaxonomy } from "@/lib/i18n/taxonomy"
 import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
+import { InviteShareButton } from "@/components/community/invite-share-button"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // Os botões retráteis atrás da foto — a MESMA mecânica do headcard do perfil e
 // da Carteira. Aqui a pilha é a da COMUNIDADE: por enquanto um botão só,
@@ -1470,6 +1471,14 @@ export default function CommunityDetailPage() {
               mais barra "Poste ou escreva aqui" no meio do feed). O menu abre
               com os tipos empilhados. Feed trancado (privada sem assinar) não
               mostra o botão: ali nem ler dá. */}
+          {/* CONVITE: o aviãozinho compartilha o link desta página para
+              prospectar membros (negócio, condomínio, bairro, pet, carro —
+              vale para toda modalidade por construção). Fica de pé mesmo com o
+              feed trancado: convidar é justamente como a comunidade privada
+              ganha assinante. */}
+          <div className="pb-1">
+            <InviteShareButton url={`/comunidades/${community.id_profile}`} name={community.display_name} accent={accent} />
+          </div>
           {!feedLocked && (
             <div className="pb-1">
               <PublishMenuButton

@@ -53,6 +53,7 @@ import { getStoredUser, getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
+import { InviteShareButton } from "@/components/community/invite-share-button"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
 // A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
@@ -550,8 +551,11 @@ export function AcademyView({ slug }: { slug: string }) {
             {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
           </div>
 
-          {/* As ações do canto: mensagem ao dono e o "+" de publicar. */}
+          {/* As ações do canto: convite, mensagem ao dono e o "+" de publicar. */}
           <div className="flex items-center gap-2 pb-1">
+            {/* O aviãozinho de convite: compartilha o link da academia para
+                prospectar alunos — a MESMA peça dos headcards de comunidade. */}
+            <InviteShareButton url={`/academias/${academy.slug}`} name={academy.nome} size="sm" />
             {academy.owner_profile_id && (
               <Link
                 href={`/mensagens?with=${encodeURIComponent(academy.owner_profile_id)}`}
