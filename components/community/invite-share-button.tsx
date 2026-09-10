@@ -17,7 +17,7 @@
 // chega por ele).
 
 import { useEffect, useRef, useState } from "react"
-import { Copy, MessageCircle, Send, Share2 } from "lucide-react"
+import { Copy, Lock, MessageCircle, Send, Share2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -55,6 +55,9 @@ export function InviteShareButton({
   size = "lg",
   align = "right",
   className = "",
+  locked = false,
+  lockedLabel,
+  onLockedClick,
 }: {
   /** Link da página a convidar (caminho relativo ou URL absoluta). */
   url: string
@@ -66,6 +69,16 @@ export function InviteShareButton({
   size?: "lg" | "sm"
   align?: "left" | "right"
   className?: string
+  /**
+   * TRANCADO (Plano Negócio, mig 234): o negócio do líder ainda não aceita
+   * membros, então convidar não tem para onde levar. O botão continua no
+   * lugar — com o cadeado — e o clique abre o que o chamador mandar (o modal
+   * do plano), em vez do menu de compartilhar. O componente continua sem saber
+   * o que é o plano: só sabe que está trancado.
+   */
+  locked?: boolean
+  lockedLabel?: string
+  onLockedClick?: () => void
 }) {
   const t = useTranslations("Invite")
   const [open, setOpen] = useState(false)
@@ -123,7 +136,7 @@ export function InviteShareButton({
     notifyCopy(await copyText(absoluteUrl(url)))
   }
 
-  const label = t("cta", "Convidar pessoas")
+  const label = locked && lockedLabel ? lockedLabel : t("cta", "Convidar pessoas")
   const isLg = size === "lg"
   const buttonClass = `grid shrink-0 place-items-center border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8] ${
     isLg ? "h-14 w-14" : "h-9 w-9"
@@ -146,17 +159,29 @@ export function InviteShareButton({
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => {
+          if (locked) {
+            onLockedClick?.()
+            return
+          }
           // Mede ANTES de abrir, como o "+": o menu já nasce do lado certo.
           if (!open) setSide(resolveSide(wrapRef.current, align))
           setOpen((v) => !v)
         }}
-        className={buttonClass}
+        className={`${buttonClass} relative`}
         style={{ boxShadow: isLg ? "4px 4px 0 0 #0B0B0D" : "3px 3px 0 0 #0B0B0D" }}
       >
-        <Send className={isLg ? "h-6 w-6" : "h-4 w-4"} style={{ color: accent }} />
+        <Send className={isLg ? "h-6 w-6" : "h-4 w-4"} style={{ color: locked ? "#9A938A" : accent }} />
+        {locked && (
+          <span
+            aria-hidden
+            className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]"
+          >
+            <Lock className="h-3 w-3" strokeWidth={3} />
+          </span>
+        )}
       </button>
 
-      {open && (
+      {open && !locked && (
         <div
           role="menu"
           className={`absolute top-full z-40 mt-2 flex w-52 max-w-[calc(100vw-1.5rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2 ${

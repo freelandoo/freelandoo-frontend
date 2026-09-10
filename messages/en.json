@@ -2696,7 +2696,12 @@
     "bgPurple": "Purple",
     "bgWine": "Wine",
     "bgAmber": "Amber",
-    "bgBrown": "Brown"
+    "bgBrown": "Brown",
+    "planButton": "Business Plan",
+    "planActiveButton": "Plan active",
+    "membersLocked": "Not accepting members yet",
+    "inviteLockedAria": "Invite people — part of the Business Plan",
+    "joinNeedsPlan": "This business is not accepting members yet."
   },
   "Careers": {
     "hero.badge": "Careers",
@@ -5157,7 +5162,9 @@
     "cancelCta": "Cancel AI Assistant",
     "cancelConfirm": "Cancel the AI Assistant? The bot stops replying immediately and the month already paid is not refunded.",
     "cancelDone": "Subscription canceled. The bot was turned off.",
-    "cancelError": "Could not cancel."
+    "cancelError": "Could not cancel.",
+    "includedInPlan": "Included in the Business Plan",
+    "includedHint": "Your assistant comes with the Business Plan — no separate charge. It ends together with the plan."
   },
   "Academies": {
     "eyebrow": "Fitness · Freelandoo",
@@ -6159,7 +6166,9 @@
     "teamManyServices": "{n} services",
     "teamLoadError": "We couldn't load the team.",
     "teamAddError": "We couldn't add this person.",
-    "teamRemoveError": "We couldn't remove this person."
+    "teamRemoveError": "We couldn't remove this person.",
+    "publishLocked": "Publish site · Business Plan",
+    "publishNeedsPlan": "Publishing and sharing the site is part of the Business Plan."
   },
   "SiteBooking": {
     "back": "Back to site",
@@ -6374,5 +6383,56 @@
     "copied": "Link copied!",
     "copyFailed": "Couldn't copy the link.",
     "message": "Come join {name} on Freelandoo!"
+  },
+  "BusinessPlan": {
+    "title": "Business Plan",
+    "eyebrow": "Freelandoo · for your business",
+    "perMonth": "/month",
+    "close": "Close",
+    "pitch": "Create your business, build your own site and get an AI assistant that answers your WhatsApp and your Freelandoo messages.",
+    "step1Title": "Create your business",
+    "step1Text": "Your page with feed, photo, colors and identity — ready in one click. Free.",
+    "step2Title": "Build your site",
+    "step2Text": "Build the business site in the visual builder. With the plan, publish and share it with its own address.",
+    "step3Title": "AI assistant",
+    "step3Text": "An assistant that answers your company's WhatsApp and your Freelandoo messages, knowing your services and prices.",
+    "freeBadge": "Free",
+    "freeNote": "Creating the business and building the site is free. The plan unlocks what comes next:",
+    "inc1": "Accept members in your business",
+    "inc2": "Publish and share the site",
+    "inc3": "AI assistant on WhatsApp and in messages",
+    "inc4": "Company WhatsApp inside Freelandoo",
+    "cta": "Subscribe for {price}/month",
+    "ctaLoading": "Opening payment…",
+    "cancelAnytime": "Cancel anytime. No lock-in.",
+    "loginFirst": "Sign in to subscribe.",
+    "checkoutError": "Couldn't open the payment.",
+    "activeTitle": "Plan active",
+    "activeUntil": "Renews on {date}",
+    "activeNoDate": "Monthly billing active.",
+    "pastDue": "Payment pending — update your card to continue.",
+    "cancel": "Cancel plan",
+    "canceling": "Canceling…",
+    "cancelConfirm": "Cancel the Business Plan? You keep everything until the end of the paid period.",
+    "canceled": "Plan canceled. Valid until the end of the paid period.",
+    "cancelError": "Couldn't cancel right now.",
+    "successToast": "Business Plan active! Your business now accepts members and the site can be published.",
+    "canceledToast": "Payment canceled — you were not charged.",
+    "mockBack": "Back",
+    "mockEdit": "Edit",
+    "mockLevel": "Level 0",
+    "mockBizName": "My business",
+    "mockFeed": "Feed",
+    "mockMembers": "Members",
+    "mockSite": "Site",
+    "mockUrl": "mybusiness.freelandoo.com.br",
+    "mockBook": "Book",
+    "mockHero": "Your business,\nyour site.",
+    "mockBookNow": "Book online",
+    "mockWhatsapp": "WhatsApp",
+    "mockFreelandoo": "Freelandoo messages",
+    "mockChatIn": "Hi! Do you have a slot today?",
+    "mockChatOut": "We have 3pm and 5pm. Want me to book it?",
+    "mockChatIn2": "3pm, please!"
   }
 }

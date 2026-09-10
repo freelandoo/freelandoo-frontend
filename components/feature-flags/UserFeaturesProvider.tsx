@@ -37,6 +37,11 @@ export const USER_FEATURE_KEYS = [
   // Única com efeito server-side: desligada, os perfis do user somem da
   // vitrine pública pra todo mundo (SearchStorage).
   "vitrine",
+  // Plano NEGÓCIO (mig 234): as três portas que o plano libera. Nunca à venda
+  // avulsa — só quem assina as tem (`useUserFeatureStrict`).
+  "community_members",
+  "site_share",
+  "atendimento_ia",
 ] as const
 
 /**
@@ -113,6 +118,18 @@ export function UserFeaturesProvider({ children }: { children: ReactNode }) {
 export function useUserFeature(key: string): boolean {
   const { owned } = useContext(UserFeaturesContext)
   return owned[key] !== false
+}
+
+/**
+ * `true` SÓ quando o servidor disse que sim. É o oposto do fail-open acima, e
+ * existe para as chaves de PLANO (mig 234): uma porta paga que abrisse "por
+ * enquanto" enquanto o mapa não chega mostraria o botão do atendente de IA a
+ * todo mundo por um instante — e a quem não assina, para sempre, num deploy em
+ * que o backend ainda não conhecesse a chave.
+ */
+export function useUserFeatureStrict(key: string): boolean {
+  const { owned } = useContext(UserFeaturesContext)
+  return owned[key] === true
 }
 
 /** Mapa de posse completo (pra lista de funções do menu). */

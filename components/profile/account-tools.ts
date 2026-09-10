@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react"
 import { BarChart3, Bot, CalendarDays, Database, FolderCog } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
+import { useUserFeature, useUserFeatureStrict } from "@/components/feature-flags/UserFeaturesProvider"
 
 /**
  * FONTE ÚNICA das ferramentas da CONTA (Métricas, Gerenciar, Agenda,
@@ -51,6 +51,10 @@ export function useAccountTools({
   const agendaPrefOn = useUserFeature("agenda")
   const dataApiOn = useFeature("data_api")
   const atendimentoIaOn = useFeature("atendimento_ia_venda")
+  // O atendente INCLUÍDO no Plano Negócio (mig 234) precisa de porta mesmo com
+  // a venda avulsa desligada — senão quem assina o plano não acha o bot que
+  // pagou. Leitura ESTRITA: só quem assina tem a chave.
+  const aiInPlan = useUserFeatureStrict("atendimento_ia")
 
   const tools: AccountTool[] = [
     {
@@ -89,7 +93,7 @@ export function useAccountTools({
     })
   }
 
-  if (atendimentoIaOn) {
+  if (atendimentoIaOn || aiInPlan) {
     tools.push({
       key: "ia",
       icon: Bot,

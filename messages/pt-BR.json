@@ -2683,7 +2683,12 @@
     "bgPurple": "Roxo",
     "bgWine": "Vinho",
     "bgAmber": "Âmbar",
-    "bgBrown": "Marrom"
+    "bgBrown": "Marrom",
+    "planButton": "Plano Negócio",
+    "planActiveButton": "Plano ativo",
+    "membersLocked": "Ainda não aceita membros",
+    "inviteLockedAria": "Convidar pessoas — faz parte do Plano Negócio",
+    "joinNeedsPlan": "Este negócio ainda não aceita membros."
   },
   "Careers": {
     "hero.badge": "Carreiras",
@@ -4571,7 +4576,9 @@
     "cancelCta": "Cancelar Atendimento IA",
     "cancelConfirm": "Cancelar o Atendimento IA? O bot para de responder na hora e o mês já pago não é estornado.",
     "cancelDone": "Assinatura cancelada. O bot foi desligado.",
-    "cancelError": "Não foi possível cancelar."
+    "cancelError": "Não foi possível cancelar.",
+    "includedInPlan": "Incluído no Plano Negócio",
+    "includedHint": "Seu atendente vem com o Plano Negócio — sem cobrança à parte. Ele cai junto se o plano for cancelado."
   },
   "Academies": {
     "eyebrow": "Fitness · Freelandoo",
@@ -5573,7 +5580,9 @@
     "teamManyServices": "{n} serviços",
     "teamLoadError": "Não foi possível carregar a equipe.",
     "teamAddError": "Não foi possível adicionar.",
-    "teamRemoveError": "Não foi possível remover."
+    "teamRemoveError": "Não foi possível remover.",
+    "publishLocked": "Publicar site · Plano Negócio",
+    "publishNeedsPlan": "Publicar e compartilhar o site faz parte do Plano Negócio."
   },
   "SiteBooking": {
     "back": "Voltar ao site",
@@ -5788,5 +5797,56 @@
     "copied": "Link copiado!",
     "copyFailed": "Não deu pra copiar o link.",
     "message": "Vem fazer parte de {name} na Freelandoo!"
+  },
+  "BusinessPlan": {
+    "title": "Plano Negócio",
+    "eyebrow": "Freelandoo · para o seu negócio",
+    "perMonth": "/mês",
+    "close": "Fechar",
+    "pitch": "Crie seu negócio, faça um site para você e ainda tenha um atendente de IA para atender seu WhatsApp e as suas mensagens da Freelandoo.",
+    "step1Title": "Crie seu negócio",
+    "step1Text": "Sua página com feed, foto, cores e identidade — pronta em um clique. De graça.",
+    "step2Title": "Faça o seu site",
+    "step2Text": "Monte o site do negócio no construtor visual. Com o plano, publique e compartilhe com endereço próprio.",
+    "step3Title": "Atendente de IA",
+    "step3Text": "Um atendente que responde o WhatsApp da sua empresa e as suas mensagens da Freelandoo, sabendo seus serviços e preços.",
+    "freeBadge": "Grátis",
+    "freeNote": "Criar o negócio e montar o site é de graça. O plano libera o que vem depois:",
+    "inc1": "Aceitar membros no seu negócio",
+    "inc2": "Publicar e compartilhar o site",
+    "inc3": "Atendente de IA no WhatsApp e nas mensagens",
+    "inc4": "WhatsApp da empresa dentro da Freelandoo",
+    "cta": "Assinar por {price}/mês",
+    "ctaLoading": "Abrindo pagamento…",
+    "cancelAnytime": "Cancele quando quiser. Sem fidelidade.",
+    "loginFirst": "Entre na sua conta para assinar.",
+    "checkoutError": "Não foi possível abrir o pagamento.",
+    "activeTitle": "Plano ativo",
+    "activeUntil": "Renova em {date}",
+    "activeNoDate": "Cobrança mensal ativa.",
+    "pastDue": "Pagamento pendente — atualize o cartão para continuar.",
+    "cancel": "Cancelar plano",
+    "canceling": "Cancelando…",
+    "cancelConfirm": "Cancelar o Plano Negócio? Você continua com tudo até o fim do período já pago.",
+    "canceled": "Plano cancelado. Vale até o fim do período pago.",
+    "cancelError": "Não foi possível cancelar agora.",
+    "successToast": "Plano Negócio ativo! Seu negócio já aceita membros e o site pode ser publicado.",
+    "canceledToast": "Pagamento cancelado — você não foi cobrado.",
+    "mockBack": "Voltar",
+    "mockEdit": "Editar",
+    "mockLevel": "Nível 0",
+    "mockBizName": "Meu negócio",
+    "mockFeed": "Feed",
+    "mockMembers": "Membros",
+    "mockSite": "Site",
+    "mockUrl": "meunegocio.freelandoo.com.br",
+    "mockBook": "Agendar",
+    "mockHero": "Seu negócio,\nseu site.",
+    "mockBookNow": "Agendar online",
+    "mockWhatsapp": "WhatsApp",
+    "mockFreelandoo": "Mensagens Freelandoo",
+    "mockChatIn": "Oi! Vocês têm horário hoje?",
+    "mockChatOut": "Temos às 15h e às 17h. Quer que eu agende?",
+    "mockChatIn2": "15h, por favor!"
   }
 }

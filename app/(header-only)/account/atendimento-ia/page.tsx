@@ -33,6 +33,8 @@ type Sub = {
   current_period_end: string | null
   config: { paused?: boolean; answer_dm?: boolean; answer_os?: boolean; extra_instructions?: string }
   activated_at: string | null
+  /** Aberta pelo Plano Negócio (mig 234): sem cobrança própria, cai com o plano. */
+  included?: boolean
 }
 type Usage = {
   cycle_start: string | null
@@ -286,6 +288,11 @@ export default function AtendimentoIaPage() {
         {/* ── Assinatura ativa ── */}
         {hasLiveSub && (
           <>
+            {sub!.included && (
+              <p className="mt-4 border-2 border-[#0B0B0D] bg-[#F2B705]/15 px-3 py-2 text-xs font-bold text-[#0B0B0D]">
+                {t("includedHint", "Seu atendente vem com o Plano Negócio — sem cobrança à parte. Ele cai junto se o plano for cancelado.")}
+              </p>
+            )}
             {sub!.status === "past_due" && (
               <p className="mt-4 border-2 border-[#dc2626] bg-[#dc2626]/10 px-3 py-2 text-xs font-bold text-[#dc2626]">
                 {t("pastDueBanner", "Pagamento pendente — atualize o cartão para o bot continuar no próximo ciclo.")}
@@ -307,7 +314,9 @@ export default function AtendimentoIaPage() {
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="fl-display text-xl">{t("usageTitle", "Uso do ciclo")}</h2>
                     <span className="text-xs font-bold text-[#0B0B0D]/60">
-                      {currentPlan ? currentPlan.name : t("planWord", "Plano")} · {money(Number(sub!.monthly_cents))}/{t("perMonthShort", "mês")}
+                      {sub!.included
+                        ? t("includedInPlan", "Incluído no Plano Negócio")
+                        : `${currentPlan ? currentPlan.name : t("planWord", "Plano")} · ${money(Number(sub!.monthly_cents))}/${t("perMonthShort", "mês")}`}
                     </span>
                   </div>
                   {usage ? (

@@ -29,6 +29,9 @@ import {
   Users,
   Upload,
 } from "lucide-react"
+// O Plano Negócio (mig 234): PUBLICAR é a porta paga do site — montar é livre.
+import { BusinessPlanModal } from "@/components/plans/business-plan-modal"
+import { BUSINESS_GATE_SITE_SHARE, useBusinessPlan } from "@/components/plans/use-business-plan"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import {
@@ -91,6 +94,11 @@ export function CommunitySiteBuilder({
   const [addOpen, setAddOpen] = useState(false)
   const [domainsOpen, setDomainsOpen] = useState(false)
   const [teamOpen, setTeamOpen] = useState(false)
+  // O modal do plano abre quando o backend recusa publicar com 402 — e o
+  // cadeado no botão avisa antes do clique, lendo a assinatura de quem edita.
+  const [planOpen, setPlanOpen] = useState(false)
+  const { subscription: planSub, isActive: planActive } = useBusinessPlan()
+  const canShareSite = planActive && !!planSub && planSub.features.includes(BUSINESS_GATE_SITE_SHARE)
   // Zoom da prancheta. No celular ele vem da pizca de dois dedos; no
   // computador, dos botões. É zoom DA PRANCHETA, não do navegador: o do
   // navegador ampliaria a barra de ferramentas junto e tiraria o site da tela.
@@ -307,6 +315,13 @@ export function CommunitySiteBuilder({
           body: JSON.stringify({ published: next }),
         })
         const data = (await res.json()) as CommunitySiteResponse & { error?: string }
+        // 402 = fora do Plano Negócio (mig 234). Em vez de escrever o erro, abre
+        // a explicação com o botão de assinar — a recusa diz o que fazer.
+        if (res.status === 402) {
+          setError(null)
+          setPlanOpen(true)
+          return
+        }
         if (!res.ok || data.error) {
           setError(data.error || t("publishError", "Não foi possível publicar."))
           return
@@ -656,13 +671,26 @@ export function CommunitySiteBuilder({
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : isPublished ? (
               <Globe className="h-3.5 w-3.5" />
-            ) : (
+            ) : canShareSite ? (
               <Upload className="h-3.5 w-3.5" />
+            ) : (
+              <Lock className="h-3.5 w-3.5" />
             )}
-            {isPublished ? t("unpublish", "Publicado · despublicar") : t("publish", "Publicar site")}
+            {isPublished
+              ? t("unpublish", "Publicado · despublicar")
+              : canShareSite
+                ? t("publish", "Publicar site")
+                : t("publishLocked", "Publicar site · Plano Negócio")}
           </button>
         </div>
       )}
+
+      <BusinessPlanModal
+        open={planOpen}
+        onClose={() => setPlanOpen(false)}
+        returnTo={`/comunidades/${idProfile}/site`}
+        accent={accent}
+      />
 
       {error && (
         <div className="mb-3 border-2 border-[#0B0B0D] bg-[#2a1410] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.1em] text-[#ff8c7a]">

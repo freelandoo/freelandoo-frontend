@@ -16,6 +16,10 @@ import { getToken, getStoredUser } from "@/lib/auth"
 import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
 import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
 import { InviteShareButton } from "@/components/community/invite-share-button"
+import { toast } from "sonner"
+// O Plano Negócio (mig 234): o modal com os "prints" e o botão de assinar. É
+// dele que dependem o aviãozinho (convidar membro) e o "Entrar" do visitante.
+import { BusinessPlanModal } from "@/components/plans/business-plan-modal"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 // Os botões retráteis atrás da foto — a MESMA mecânica do headcard do perfil e
 // da Carteira. Aqui a pilha é a da COMUNIDADE: por enquanto um botão só,
@@ -111,6 +115,11 @@ type Community = {
   monthly_cents?: number | null
   viewer_is_member?: boolean
   viewer_sub_status?: string | null
+  // As três portas do Plano Negócio (mig 234), lidas do LÍDER — só na
+  // modalidade `common`. `members_enabled` decide se o visitante vê "Entrar"
+  // e se o aviãozinho do líder está trancado; `site_share_enabled` é a
+  // publicação do site (o construtor usa a própria leitura).
+  business_plan?: { members_enabled: boolean; site_share_enabled: boolean; ai_enabled: boolean }
   // Modalidade (migs 196/205/210). Todas as modalidades renderizam nesta MESMA
   // casca; o que muda é quais seções aparecem e quem pode escrever.
   //
@@ -207,6 +216,7 @@ export default function CommunityDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const t = useTranslations("Community")
+  const tPlan = useTranslations("BusinessPlan")
   const tx = useTaxonomy()
 
   const [community, setCommunity] = useState<Community | null>(null)
@@ -233,6 +243,8 @@ export default function CommunityDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // O modal do Plano Negócio (mig 234).
+  const [planOpen, setPlanOpen] = useState(false)
 
   // Feed estilo grupo
   const [posts, setPosts] = useState<FeedPost[]>([])
@@ -454,6 +466,10 @@ export default function CommunityDetailPage() {
   // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
   // deixaria a página com a pele de um ambiente e a barra de outro.
   const isBusinessPlatform = (community?.kind ?? null) === "common"
+  // O Plano Negócio do LÍDER (mig 234). Fora do negócio (condomínio, bairro,
+  // pet, carro) não há plano nenhum a cobrar, e as portas ficam abertas.
+  const planActive = !!community?.business_plan?.members_enabled
+  const membersEnabled = !isBusinessPlatform || planActive
 
   const shellKind: "business" | null = isBusinessPlatform
       ? "business"
@@ -951,6 +967,41 @@ export default function CommunityDetailPage() {
     } finally { setBusy(false) }
   }
 
+  // Volta do checkout do PLANO NEGÓCIO (?plano=sucesso|cancelado, mig 234).
+  // O webhook do Stripe pode chegar segundos depois do redirect: recarrega a
+  // comunidade de novo dali a pouco para as portas abrirem sem F5.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const sp = new URLSearchParams(window.location.search)
+    const st = sp.get("plano")
+    if (!st) return
+    if (st === "sucesso") {
+      toast.success(tPlan("successToast", "Plano Negócio ativo! Seu negócio já aceita membros e o site pode ser publicado."))
+      const timer = setTimeout(() => { void loadAll() }, 4000)
+      window.history.replaceState({}, "", window.location.pathname)
+      return () => clearTimeout(timer)
+    }
+    if (st === "cancelado") toast.error(tPlan("canceledToast", "Pagamento cancelado — você não foi cobrado."))
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [tPlan, loadAll])
+
+  // O líder do negócio SEM plano vê a explicação uma vez por dia — o aviso
+  // permanente é o botão dourado do trilho e o cadeado do aviãozinho. Modal em
+  // toda entrada vira a caixa que se fecha sem ler.
+  useEffect(() => {
+    if (!isLeader || !isBusinessPlatform || !community || planActive) return
+    if (typeof window === "undefined") return
+    try {
+      const key = `fl_business_plan_seen:${currentUserId ?? "anon"}`
+      const today = new Date().toISOString().slice(0, 10)
+      if (localStorage.getItem(key) === today) return
+      localStorage.setItem(key, today)
+    } catch {
+      /* sem storage: mostra mesmo assim */
+    }
+    setPlanOpen(true)
+  }, [isLeader, isBusinessPlatform, community, planActive, currentUserId])
+
   // Volta do checkout da assinatura (?assinatura=sucesso).
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -1280,6 +1331,14 @@ export default function CommunityDetailPage() {
           negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
           nós estaria errado para quase todos). */}
       {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
+      {isBusinessPlatform && (
+        <BusinessPlanModal
+          open={planOpen}
+          onClose={() => setPlanOpen(false)}
+          returnTo={`/comunidades/${community.id_profile}`}
+          accent={accent}
+        />
+      )}
       {/* Declara o ambiente para o dock global (não desenha nada).
           "Meus negócios" (a comunidade `common`) é o único ambiente que
           sobrou: lá dentro a barra da Freelandoo dá lugar aos controles do
@@ -1332,6 +1391,17 @@ export default function CommunityDetailPage() {
                   </>
                 )}
               </div>
+            )}
+            {/* O Plano Negócio (mig 234): a porta que libera membros, o site
+                publicado e o atendente de IA. Aceso quando ativo; dourado com
+                cadeado quando não — é o mesmo modal nos dois casos (lá dentro
+                ele vira status + cancelar). */}
+            {isBusinessPlatform && (
+              <button type="button" onClick={() => setPlanOpen(true)}
+                className={`inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${planActive ? "bg-[#15120E] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}>
+                <Crown className="h-4 w-4" style={planActive ? { color: "#22C55E" } : undefined} />
+                {planActive ? t("planActiveButton", "Plano ativo") : t("planButton", "Plano Negócio")}
+              </button>
             )}
             <button type="button" onClick={() => setEdit((e) => !e)}
               className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
@@ -1476,9 +1546,23 @@ export default function CommunityDetailPage() {
               vale para toda modalidade por construção). Fica de pé mesmo com o
               feed trancado: convidar é justamente como a comunidade privada
               ganha assinante. */}
-          <div className="pb-1">
-            <InviteShareButton url={`/comunidades/${community.id_profile}`} name={community.display_name} accent={accent} />
-          </div>
+          {/* ⚠️ SEM PLANO NEGÓCIO (mig 234) o negócio não aceita membro, e o
+              convite não teria para onde levar: para o LÍDER o aviãozinho fica
+              no lugar, TRANCADO, e abre o plano (é a porta de compra); para
+              os outros ele some — convite que termina num "Entrar" que não
+              existe seria porta pintada. */}
+          {(membersEnabled || isLeader) && (
+            <div className="pb-1">
+              <InviteShareButton
+                url={`/comunidades/${community.id_profile}`}
+                name={community.display_name}
+                accent={accent}
+                locked={!membersEnabled}
+                lockedLabel={t("inviteLockedAria", "Convidar pessoas — faz parte do Plano Negócio")}
+                onLockedClick={() => setPlanOpen(true)}
+              />
+            </div>
+          )}
           {!feedLocked && (
             <div className="pb-1">
               <PublishMenuButton
@@ -1514,6 +1598,13 @@ export default function CommunityDetailPage() {
                 // logo abaixo — mostrar "Entrar" aqui só produziria um erro.
                 <span className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
                   {t("condoResidentsOnly", "Só moradores")}
+                </span>
+              ) : !membersEnabled ? (
+                // Negócio cujo líder não assina o Plano Negócio (mig 234): o
+                // backend recusa o join com 402. Mostrar "Entrar" só produziria
+                // a recusa depois do clique.
+                <span className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                  <Lock className="h-3.5 w-3.5" /> {t("membersLocked", "Ainda não aceita membros")}
                 </span>
               ) : (
                 <button type="button" disabled={busy} onClick={() => (isPrivate ? startMembershipCheckout() : joinOrLeave("join"))}
