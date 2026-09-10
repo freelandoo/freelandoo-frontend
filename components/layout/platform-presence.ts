@@ -45,12 +45,18 @@ import { useEffect } from "react"
 import { getToken } from "@/lib/auth"
 import { getPublicBackendUrl } from "@/lib/backend-public"
 
-/** Os ambientes que medem tempo. Espelho de PLATFORM_KINDS no backend. */
-export type PresenceKind = "games" | "finance"
+/**
+ * Os ambientes que medem tempo. Espelho de PLATFORM_KINDS no backend.
+ *
+ * ⚠️ ERAM DOIS. `games` saiu quando a plataforma foi retirada do ar
+ * (2026-09-09): ninguém mais chamava `claimPresence("games")`, e um kind no
+ * mapa sem quem o peça é um endpoint anunciado que nada alcança. O backend
+ * continua aceitando `/gamer/presence` — o que sumiu é a batida deste lado.
+ */
+export type PresenceKind = "finance"
 
 /** Onde cada uma recebe a batida. */
 const ENDPOINT: Record<PresenceKind, string> = {
-  games: "/gamer/presence",
   finance: "/finance/presence",
 }
 

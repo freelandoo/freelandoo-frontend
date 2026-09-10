@@ -590,20 +590,14 @@ export function ProfileHeadCard({
                   do clan, que é entidade coletiva e mantém menu próprio.
                   O padding casa com a LARGURA DO AVATAR — mexeu numa, mexe na
                   outra (ver components/profile/headcard-pills.tsx). */}
-              {entityType !== "clan" && (isOwnProfile || !!profile.username) && (
-                <HeadcardPills
-                  avatarPadClass="pl-32 md:pl-36"
-                  // ⚠️ NO PERFIL ALHEIO A PILHA VIRA UM PILL SÓ: o de Games.
-                  // Os outros abrem coisas da conta de quem olha, e pendurados
-                  // na foto de outra pessoa diriam que são dela. Games é a
-                  // exceção porque a plataforma não é de ninguém — o pill leva
-                  // ao recorte DESTE perfil (estante, jogo atual e posts).
-                  //
-                  // O @ é do USUÁRIO, e é isso que faz visitar qualquer perfil
-                  // da pessoa levar ao mesmo games: o jogo atual e a estante
-                  // são da conta (chave `id_user`), não de um perfil.
-                  visitorOf={isOwnProfile ? null : profile.username || null}
-                />
+              {/* ⚠️ SÓ NO PRÓPRIO PERFIL. Havia um caminho para o perfil
+                  ALHEIO, que mostrava uma pilha de um item — o pill de Games,
+                  o único que fazia sentido ali. Com a plataforma fora do ar,
+                  o que resta (Business, Carteira, Fitness) é tudo da CONTA de
+                  quem olha: pendurado na foto de outra pessoa, diria que é
+                  dela. */}
+              {entityType !== "clan" && isOwnProfile && (
+                <HeadcardPills avatarPadClass="pl-32 md:pl-36" />
               )}
               {/* Wrapper da LARGURA DA FOTO: é ele que ancora o "+" do
                   troca-perfil na quina de baixo, e é nele que mora a rotação —

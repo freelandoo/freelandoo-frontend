@@ -196,13 +196,6 @@ export function CommunityGamePosts({ communityId }: { communityId: string }) {
     <main className={`relative min-h-screen bg-[#0b0804] px-5 py-8 md:px-10 ${inGames ? "fl-games" : ""}`}>
       {inGames && <TechBackdrop />}
       <div className="relative mx-auto max-w-5xl">
-        {inGames && (
-          <CommunityShellBeacon
-            communityId={communityId}
-            kind="games"
-            gamerContext={owner?.username ?? null}
-          />
-        )}
         <PageBackLink href={backHref} className="mb-5" />
 
         <header

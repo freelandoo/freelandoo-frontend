@@ -47,30 +47,22 @@
  * ao normal no meio do ambiente. Por isso o registro é um MAPA de instâncias
  * vivas: sai a que morreu, e o ambiente só acaba quando não sobra nenhuma.
  *
- * ─── A SEGUNDA FUNÇÃO: A BATIDA DE PRESENÇA (mig 226) ────────────────────────
+ * ─── A BATIDA DE PRESENÇA SAIU DAQUI ─────────────────────────────────────────
  *
- * O ranking de atividade da plataforma de games conta, entre outras coisas, o
- * TEMPO ONLINE dentro do ambiente. Quem sabe que a pessoa está ali dentro é
- * exatamente este registro — o mesmo que o dock lê —, então a batida nasce aqui
- * e não numa tela específica: pendurada numa página, mudar de tela dentro do
- * ambiente pararia o relógio, e uma tela nova nasceria sem contar tempo.
+ * Este módulo também ligava o relógio de presença da plataforma de games (mig
+ * 226): quem sabia que a pessoa estava dentro do ambiente era este registro, o
+ * mesmo que o dock lê. Com games fora do ar (2026-09-09) não há mais ranking
+ * de atividade a alimentar por aqui, e "Meus negócios" — o ambiente que
+ * sobrou — nunca bateu: ele troca o dock, mas não tem ranking próprio.
  *
- * O relógio é do MAPA, não do componente: navegar entre duas telas do ambiente
- * troca beacons sem interromper a contagem, e ela só para quando o último sai.
- *
- * ⚠️ AQUI DENTRO, SÓ GAMES BATE. "Meus negócios" é ambiente e troca o dock, mas
- * não tem ranking próprio: contar o tempo de quem está lá daria pontuação de
- * games a quem nunca entrou em games.
- *
- * O Financeiro também mede tempo desde a mig 230, mas ele NÃO passa por aqui —
- * a Carteira não é uma comunidade na tela, e quem declara a presença dela é o
- * headcard dela, com o mesmo `platform-presence`. O que os dois compartilham é
- * o relógio; o que decide quando ligá-lo é de cada ambiente.
+ * ⚠️ O RELÓGIO EM SI CONTINUA VIVO em `components/layout/platform-presence.ts`,
+ * e é o FINANCEIRO quem o usa (mig 230). Ele nunca passou por aqui — a Carteira
+ * não é uma comunidade na tela, e quem declara a presença dela é o headcard
+ * dela. Ambiente novo que precise contar tempo liga `claimPresence` de novo.
  */
 
 import { useEffect } from "react"
 import { useSyncExternalStore } from "react"
-import { claimPresence } from "@/components/layout/platform-presence"
 
 /* ─────────────────────────── batida de presença ────────────────────────────
  *
@@ -80,9 +72,6 @@ import { claimPresence } from "@/components/layout/platform-presence"
  * continua aqui é só a decisão de QUANDO ligar — que é o que este módulo sabe
  * e o outro não.
  */
-
-/** O release do claim de games, enquanto ele estiver ligado. */
-let gamesRelease: (() => void) | null = null
 
 /* ────────────────────── o que o dock PEDE para a página ─────────────────────
  *
@@ -110,7 +99,7 @@ let gamesRelease: (() => void) | null = null
 
 /** O que o dock consegue pedir. Vista nova = nome novo AQUI e o caso
  *  correspondente em quem escuta (a página da comunidade). */
-export type CommunityView = "feed" | "members" | "shelf" | "game" | "profile" | "mural"
+export type CommunityView = "feed" | "members" | "profile" | "mural"
 
 const viewListeners = new Set<(v: CommunityView) => void>()
 
@@ -129,8 +118,16 @@ export function onCommunityView(cb: (v: CommunityView) => void): () => void {
   }
 }
 
-/** Os ambientes que trocam o dock. */
-export type ShellKind = "games" | "business"
+/**
+ * Os ambientes que trocam o dock.
+ *
+ * ⚠️ ERAM DOIS. `games` saiu quando a plataforma foi retirada do ar
+ * (2026-09-09) — o tipo é uma união de um só membro de propósito, e não uma
+ * string solta: ambiente novo entra AQUI e ganha o caso correspondente no
+ * `ProfileSidebar`. Um kind sem lista deixaria a pessoa dentro do ambiente com
+ * a barra da Freelandoo, que é justamente o que o ambiente troca.
+ */
+export type ShellKind = "business"
 
 export type Shell = {
   communityId: string
@@ -141,17 +138,6 @@ export type Shell = {
    * mistura modalidade, papel e flag, e mora na página (`canBuildSite`).
    */
   canBuildSite: boolean
-  /**
-   * O @username do dono do recorte, quando se está visitando o games de
-   * alguém. O dock precisa saber pelo mesmo motivo que precisa do
-   * `canBuildSite`: ele não tem como descobrir — a resposta chega por
-   * querystring numa rota que ele não lê —, e sem ela o item "Posts games"
-   * navegaria para os posts de QUEM OLHA de dentro do games de outra pessoa,
-   * enquanto o pill ciano ao lado abre os dela. Os outros itens do ambiente
-   * não precisam: "Estante" e "Jogo atual" não navegam, pedem a vista à
-   * página que já está no contexto.
-   */
-  gamerContext?: string | null
 }
 
 /** Beacons vivos, por token de instância. O ambiente é o último a entrar. */
@@ -166,27 +152,12 @@ function same(a: Shell | null, b: Shell | null) {
   return (
     a.communityId === b.communityId &&
     a.kind === b.kind &&
-    a.canBuildSite === b.canBuildSite &&
-    (a.gamerContext ?? null) === (b.gamerContext ?? null)
+    a.canBuildSite === b.canBuildSite
   )
 }
 
 function recompute() {
   const next = [...mounted.values()].pop() ?? null
-
-  // O relógio segue o MAPA, não o snapshot: trocar de tela dentro do ambiente
-  // troca beacons sem parar a contagem, e sair de vez esvazia o mapa. É por
-  // isso que a decisão está aqui em cima e não no comparador de identidade
-  // abaixo — que devolve cedo quando nada mudou.
-  //
-  // Só GAMES conta tempo (ver o cabeçalho): quem está em "Meus negócios" não
-  // pode pontuar num ranking de games.
-  const games = [...mounted.values()].some((s) => s.kind === "games")
-  if (games && !gamesRelease) gamesRelease = claimPresence("games")
-  else if (!games && gamesRelease) {
-    gamesRelease()
-    gamesRelease = null
-  }
 
   // Identidade estável: `useSyncExternalStore` compara por referência, e um
   // objeto novo a cada leitura faria o dock re-renderizar para sempre.
@@ -223,21 +194,19 @@ export function CommunityShellBeacon({
   communityId,
   kind,
   canBuildSite = false,
-  gamerContext = null,
 }: {
   communityId: string
   kind: ShellKind
   canBuildSite?: boolean
-  gamerContext?: string | null
 }) {
   useEffect(() => {
     const id = ++token
-    mounted.set(id, { communityId, kind, canBuildSite, gamerContext })
+    mounted.set(id, { communityId, kind, canBuildSite })
     recompute()
     return () => {
       mounted.delete(id)
       recompute()
     }
-  }, [communityId, kind, canBuildSite, gamerContext])
+  }, [communityId, kind, canBuildSite])
   return null
 }

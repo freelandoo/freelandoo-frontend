@@ -307,11 +307,11 @@ export function CommunityRankingFull({ communityId }: { communityId: string }) {
   // faria a comunidade trocar de cara ao andar dois metros.
   const isBusiness = (community?.kind ?? null) === "common"
 
-  const shellKind: "games" | "business" | null = isGames
-    ? "games"
-    : isBusiness
-      ? "business"
-      : null
+  // ⚠️ SÓ O NEGÓCIO TROCA O DOCK. A plataforma de games saiu do ar
+  // (2026-09-09) e com ela o dock de games — o que sobrou desta tela para
+  // aquela modalidade (as abas de atividade abaixo) é código ÓRFÃO de
+  // propósito: continua aqui, sem porta que leve até ele.
+  const shellKind: "business" | null = isBusiness ? "business" : null
 
   const bgKey = community?.community_theme?.background
   const skinVars = useMemo(

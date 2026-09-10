@@ -7,7 +7,7 @@ import {
   Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
   ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
   Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
-  Lock, Globe, PawPrint, Car, Gamepad2, UserRound, LayoutGrid,
+  Lock, Globe, PawPrint, Car, UserRound,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -50,7 +50,6 @@ const PortfolioPostCard = dynamic(
 // quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
 // entrada da tela. Ver components/platform/tech-backdrop.tsx.
 import { TechBackdrop } from "@/components/platform/tech-backdrop"
-import { initialsOf } from "@/lib/initials"
 const CommentsPanel = dynamic(
   () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
   { ssr: false }
@@ -66,16 +65,16 @@ const CondoResidence = dynamic(
   () => import("./_components/condo-residence").then((m) => m.CondoResidence),
   { ssr: false }
 )
-// A estante (mig 220) só aparece na comunidade de games e só para quem chega
-// na aba: carregar o módulo dela em toda comunidade seria pagar o peso em
-// condomínio, bairro e pet, que nunca vão abri-la.
-const GamerShelf = dynamic(
-  () => import("./_components/gamer-shelf").then((m) => m.GamerShelf),
-  { ssr: false }
-)
-
-/** As abas da comunidade. "shelf" só existe na de games (mig 220). */
-type CommunityTab = "feed" | "members" | "shelf"
+/**
+ * As abas da comunidade.
+ *
+ * ⚠️ ERAM TRÊS: "shelf" (a estante da Steam, mig 220) saiu com a plataforma de
+ * games (2026-09-09). O componente dela continua no repositório, em
+ * `_components/gamer-shelf.tsx`, SEM CHAMADOR — órfão de propósito, guardado
+ * para quando a estante ganhar casa própria. Ele não é importado por ninguém,
+ * então não entra em bundle nenhum.
+ */
+type CommunityTab = "feed" | "members"
 // "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
 // `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
 // aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
@@ -267,34 +266,6 @@ export default function CommunityDetailPage() {
   // Editado AQUI, no modo de edição da própria comunidade — não há modal de
   // cadastro: a comunidade nasce vazia e é batizada dentro de si mesma.
   const [petDraft, setPetDraft] = useState({ species: "", breed_slug: "", breed_label: "", birth_year: "" })
-  const [gameDraft, setGameDraft] = useState({ platform: "", game_title: "", gamertag: "" })
-  // O JOGO ATUAL É DA PESSOA (mig 232), não da plataforma: cada um vê e edita o
-  // seu, como a Carteira dentro do Financeiro. Por isso ele NÃO vem no payload
-  // da comunidade (`community.subject` é null em games) e tem estado próprio.
-  const [myGame, setMyGame] = useState<{
-    platform?: string | null
-    game_title?: string | null
-    gamertag?: string | null
-  } | null>(null)
-  const [savingGame, setSavingGame] = useState(false)
-  /**
-   * ⚠️ O DONO DO CONTEXTO — quem é a pessoa cujo games você está vendo.
-   *
-   * Games é UMA casa (mig 232): o feed é público e comunitário, e o nome, a
-   * foto e as cores são do admin. Mas o que está DENTRO dela é de cada um, e
-   * até aqui só havia um recorte possível: o de quem estava logado. Entrar
-   * pelo perfil de alguém (`?de=@fulano`) troca esse recorte — estante, jogo
-   * atual e vitrine de posts passam a ser os DELE.
-   *
-   * `null` = sem contexto: a plataforma abre no recorte de quem olha, que é o
-   * comportamento de sempre e continua sendo o certo pelo pill do próprio
-   * perfil e pelo dock.
-   */
-  const [gamesCtx, setGamesCtx] = useState<{
-    owner: { id_user: string; username: string; name?: string | null; avatar_url?: string | null }
-    subject: { platform?: string | null; game_title?: string | null; gamertag?: string | null } | null
-    is_me: boolean
-  } | null>(null)
   const [carDraft, setCarDraft] = useState({ brand_code: "", model_code: "" })
   const [breeds, setBreeds] = useState<{ id_breed: number; slug: string; label: string }[]>([])
   const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
@@ -341,10 +312,8 @@ export default function CommunityDetailPage() {
   // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
   // são a mesma decisão, e separá-los deixaria um botão sem painel.
   //
-  // Na modalidade GAMES a lista é outra (ver `isGamesPlatform` abaixo): o
-  // painel azul de perfil não existe — enxame, privacidade e temporada são
-  // perguntas de comunidade COM MEMBROS, e ali não há membro nenhum.
-  type CommunityPanel = "profile" | "mural" | "game"
+  // ⚠️ ERAM TRÊS: o painel `game` saiu com a plataforma de games (2026-09-09).
+  type CommunityPanel = "profile" | "mural"
   const [panel, setPanel] = useState<CommunityPanel | null>(null)
 
   const storedUser = getStoredUser()
@@ -414,70 +383,21 @@ export default function CommunityDetailPage() {
   // vizinhos é o MORADOR — titular reconhecido de um apartamento (migs
   // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
   const isCondo = community?.kind === "condo"
-  const subjectKind =
-    community?.kind === "pet" || community?.kind === "car" || community?.kind === "games"
-      ? community.kind
-      : null
-
-  // ─── GAMES É PLATAFORMA, NÃO COMUNIDADE COM MEMBROS ─────────────────────────
-  //
-  // Games é UMA plataforma do site inteiro (mig 232), como o Financeiro: quem
-  // chega não "entra" nela — todo mundo lê e todo mundo publica. Tratá-la como
-  // comunidade comum produzia quatro coisas que não querem dizer nada aqui: a
-  // aba Membros, o contador de membros da gaveta, o botão Entrar/Sair e um
-  // painel de Perfil perguntando enxame, privacidade e temporada, que são
-  // perguntas sobre um GRUPO.
-  //
-  // No lugar delas fica o que a plataforma É — o FEED de todos — e, ao lado, o
-  // que é DE CADA UM dentro dela: o JOGO ATUAL, a ESTANTE e os POSTS do
-  // próprio perfil. É por isso que a pilha e as abas bifurcam aqui, num
-  // predicado só, e não em cada lugar que lê "membro": espalhado, o lugar que
-  // esquecesse voltaria a oferecer a porta de entrar — e porta pintada é pior
-  // que porta nenhuma.
-  const isGamesPlatform = subjectKind === "games"
-
   /**
-   * ⚠️ O PREDICADO DO CONTEXTO É UM SÓ, e é ele que troca a METADE PESSOAL da
-   * tela: cabeçalho, estante, jogo atual e vitrine de posts. Escrito em cada
-   * lugar (`gamesCtx && !gamesCtx.is_me` solto), o que esquecesse mostraria o
-   * recorte de quem olha dentro do games de outra pessoa — e sem erro nenhum.
+   * O ASSUNTO EDITÁVEL da comunidade (mig 210).
    *
-   * A METADE DA CASA NÃO PASSA POR AQUI: banner, cores, chip do ambiente e o
-   * feed continuam sendo da plataforma, para todo mundo. Visitar o games de
-   * alguém não é entrar num espaço dele — ele não tem um; é olhar o recorte
-   * dele dentro da casa que é de todos.
-   *
-   * `is_me` vem do SERVIDOR: comparar ids carregados de duas origens no front
-   * abriria o "Salvar" do jogo de um sobre a linha de outro no dia em que
-   * discordassem.
+   * ⚠️ ERAM TRÊS — `games` saiu quando a plataforma foi retirada do ar
+   * (2026-09-09). Com ele fora, esta casca voltou a servir só comunidades DE
+   * VERDADE: as que têm membros, líder e porta de entrada. Todo o tratamento
+   * especial que games exigia aqui (a aba Membros que sumia, o botão Entrar
+   * que não existia, o painel do jogo, o contexto `?de=` e a pilha própria de
+   * pills) saiu junto — era a única modalidade que não era um grupo.
    */
-  const gamerOwner = isGamesPlatform && gamesCtx && !gamesCtx.is_me ? gamesCtx.owner : null
-  const gamerOwnerLabel = gamerOwner ? gamerOwner.name || `@${gamerOwner.username}` : ""
-
-  // As plataformas do assunto, num lugar só: os chips que o dono aperta e o
-  // rótulo que quem visita lê saem DAQUI. Escritas duas vezes, "playstation"
-  // viraria "PlayStation" de um lado e "Playstation" do outro em silêncio.
-  const gamePlatforms = useMemo(
-    () =>
-      [
-        ["pc", "PC"], ["playstation", "PlayStation"], ["xbox", "Xbox"],
-        ["nintendo", "Nintendo"], ["mobile", t("platformMobile", "Celular")],
-        ["retro", t("platformRetro", "Retrô")], ["outra", t("platformOther", "Outra")],
-      ] as [string, string][],
-    [t]
-  )
-  const platformLabel = useCallback(
-    (key: string | null | undefined) =>
-      (key && gamePlatforms.find(([k]) => k === key)?.[1]) || null,
-    [gamePlatforms]
-  )
+  const subjectKind =
+    community?.kind === "pet" || community?.kind === "car" ? community.kind : null
 
   // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
   // sozinho não diz de quem é.
-  //
-  // ⚠️ GAMES NÃO TEM CHIP (mig 232): o backend devolve `subject` nulo ali de
-  // propósito. O jogo passou a ser da PESSOA, e escrever no cabeçalho da casa
-  // o jogo de alguém o anunciaria a todo visitante como se fosse o dele.
   const subjectChip = (() => {
     const sub = community?.subject
     if (!sub) return null
@@ -556,9 +476,7 @@ export default function CommunityDetailPage() {
   // deixaria a página com a pele de um ambiente e a barra de outro.
   const isBusinessPlatform = (community?.kind ?? null) === "common"
 
-  const shellKind: "games" | "business" | null = isGamesPlatform
-    ? "games"
-    : isBusinessPlatform
+  const shellKind: "business" | null = isBusinessPlatform
       ? "business"
       : null
 
@@ -579,23 +497,17 @@ export default function CommunityDetailPage() {
   )
 
   // ─── Estante (mig 220) ──────────────────────────────────────────────────────
-  // A aba só existe na comunidade de GAMES e só quando a conexão de plataforma
-  // está ligada no Painel de Controle. Ela mostra a biblioteca do DONO do
-  // espaço: para quem visita, é o que ele joga; para ele, é onde conecta a
-  // plataforma e compara com alguém.
-  const gamerEnabled = useFeature("games_conexao")
-  const showShelfTab = subjectKind === "games" && gamerEnabled
-
+  // ⚠️ A ABA "ESTANTE" SAIU DAQUI (2026-09-09). Ela só existia na modalidade
+  // games e mostrava a biblioteca conectada da Steam. O componente dela
+  // continua no repositório (`_components/gamer-shelf.tsx`), sem chamador —
+  // órfão de propósito, para quando a estante ganhar casa própria.
   const communityTabs = useMemo(
     () =>
       [
         ["feed", t("tabFeed", "Feed")],
-        // Na plataforma de games não há membros para listar: a aba mostraria
-        // uma linha só, a do dono, e ainda sugeriria que existe um grupo.
-        ...(isGamesPlatform ? [] : ([["members", t("tabMembers", "Membros")]] as [CommunityTab, string][])),
-        ...(showShelfTab ? ([["shelf", t("tabShelf", "Estante")]] as [CommunityTab, string][]) : []),
+        ["members", t("tabMembers", "Membros")],
       ] as [CommunityTab, string][],
-    [t, showShelfTab, isGamesPlatform]
+    [t]
   )
 
   // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
@@ -615,15 +527,10 @@ export default function CommunityDetailPage() {
     const sp = new URLSearchParams(window.location.search)
     const aba = sp.get("aba")
     const painel = sp.get("painel")
-    if (aba === "estante" && showShelfTab) setTab("shelf")
-    // "Membros" não existe na plataforma de games (não há membros para listar),
-    // e abrir uma aba que a fila de abas não tem deixaria a tela mostrando algo
-    // que ninguém consegue fechar.
-    if (aba === "membros" && !isGamesPlatform) setTab("members")
-    if (painel === "jogo" && isGamesPlatform) setPanel("game")
-    if (painel === "perfil" && !isGamesPlatform) setPanel("profile")
+    if (aba === "membros") setTab("members")
+    if (painel === "perfil") setPanel("profile")
     if (painel === "mural") setPanel("mural")
-  }, [community, showShelfTab, isGamesPlatform])
+  }, [community])
 
   // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
   //
@@ -639,19 +546,7 @@ export default function CommunityDetailPage() {
   // tempo.
   useEffect(() => {
     return onCommunityView((view) => {
-      if (view === "shelf") {
-        if (!showShelfTab) return
-        setPanel(null)
-        setTab("shelf")
-        return
-      }
-      if (view === "game") {
-        if (!isGamesPlatform) return
-        setPanel("game")
-        return
-      }
       if (view === "members") {
-        if (isGamesPlatform) return
         setPanel(null)
         setTab("members")
         return
@@ -660,7 +555,6 @@ export default function CommunityDetailPage() {
       // o dedo está em cima dele; no dock, "Perfil" que às vezes fecha o Perfil
       // seria um botão com dois significados.
       if (view === "profile") {
-        if (isGamesPlatform) return
         setPanel("profile")
         return
       }
@@ -673,7 +567,7 @@ export default function CommunityDetailPage() {
       setPanel(null)
       setTab("feed")
     })
-  }, [showShelfTab, isGamesPlatform])
+  }, [])
 
   const accent = accentHex(accentDraft)
 
@@ -685,10 +579,10 @@ export default function CommunityDetailPage() {
   // uma coisa que muda de valor a cada troca de paleta do líder.
   const surfaceShadow = useCallback(
     (color: string, px: number) =>
-      isGamesPlatform || isBusinessPlatform
+      isBusinessPlatform
         ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
         : `${px}px ${px}px 0 0 ${color}`,
-    [isGamesPlatform, isBusinessPlatform]
+    [isBusinessPlatform]
   )
 
   const showAsLeaderEdit = canAdminister && edit
@@ -761,87 +655,6 @@ export default function CommunityDetailPage() {
   }, [])
 
   const communityPills: PillSpec[] = useMemo(() => {
-    /**
-     * ⚠️ A PLATAFORMA DE GAMES TEM ELENCO PRÓPRIO — e ele NÃO é o das
-     * comunidades com outra cor.
-     *
-     * Perfil e Mural são perguntas sobre um GRUPO (enxame, privacidade,
-     * temporada, o recado do líder), e ali não há grupo: ninguém entra, todo
-     * mundo lê e todo mundo publica (mig 232). O que existe para pendurar na
-     * foto é a METADE PESSOAL do ambiente — o que a pessoa está jogando e os
-     * posts dela — mais a fila que é DA CASA, o ranking.
-     *
-     * ⚠️ O RANKING SÓ TEM ESTA PORTA. O dock de games (`buildGamesItems`, em
-     * components/layout/profile-sidebar.tsx) lista Feed, Estante, Jogo atual,
-     * Posts games e Game — Ranking não está lá. Tirar este pill deixa
-     * `/comunidades/<id>/ranking` no ar e inalcançável, que foi exatamente o
-     * que aconteceu entre a limpeza de 2026-09-09 e esta reconstrução.
-     *
-     * ⚠️ UM ABRE PAINEL, DOIS NAVEGAM, e a divisão não é gosto: o jogo atual
-     * são três campos e cabe embaixo do headcard; a vitrine de posts e o pódio
-     * do ranking são telas cheias, e enfiá-los aqui empurraria o feed para
-     * longe — que é justamente o que os painéis vieram evitar.
-     */
-    if (isGamesPlatform) {
-      // O @ do dono do contexto, quando se está visitando o games de alguém.
-      // Só o pill que NAVEGA precisa dele: os que pedem painel já estão dentro
-      // da página que carrega o contexto (a URL nem muda).
-      const who = gamerOwner?.username ? encodeURIComponent(gamerOwner.username) : null
-      return [
-        {
-          key: "game",
-          icon: Gamepad2,
-          label: t("gamePill", "Jogo atual"),
-          // ⚠️ O ARIA DIZ DE QUEM É O JOGO, porque o pill é o MESMO nos dois
-          // papéis — no games de outra pessoa ele abre o jogo DELA, em
-          // leitura. Sem isto, quem usa leitor de tela ouviria "o seu jogo
-          // atual" dentro da vitrine de outro.
-          ariaLabel: gamerOwner
-            ? t("gamePillOfAria", "O jogo atual de {who}").replace("{who}", gamerOwnerLabel)
-            : t("myGamePillAria", "O seu jogo atual: plataforma, título e nick"),
-          bg: "#C2410C",
-          bgHover: "#9A3412",
-          // O MESMO painel que o item "Jogo atual" do dock pede pelo beacon —
-          // um lugar só desenha o jogo. É por isso que o painel `game` desta
-          // página sobreviveu à limpeza dos pills: ele nunca foi resquício
-          // deste botão, é o destino dos dois.
-          onOpen: () => openPanel("game"),
-          active: panel === "game",
-        },
-        {
-          key: "gameposts",
-          icon: LayoutGrid,
-          label: t("gamePostsPill", "Posts de games"),
-          ariaLabel: gamerOwner
-            ? t("gamePostsPillOfAria", "Vitrine com os posts de games de {who}").replace("{who}", gamerOwnerLabel)
-            : t("myGamePostsPillAria", "Vitrine com os seus posts de games"),
-          bg: "#15803D",
-          bgHover: "#166F36",
-          // ⚠️ NAVEGA LEVANDO O CONTEXTO. Sem o `?de=`, apertar este pill
-          // dentro do games de alguém abriria os posts de QUEM OLHA enquanto a
-          // tela ao redor mostra os dela — e o item "Posts games" do dock, que
-          // leva o parâmetro, discordaria do botão vizinho.
-          href: who ? `/comunidades/${id}/posts?de=${who}` : `/comunidades/${id}/posts`,
-        },
-        {
-          key: "ranking",
-          icon: Trophy,
-          label: t("rankingPill", "Ranking"),
-          // Chave PRÓPRIA, e não a `rankingPillAria` das comunidades: aquela
-          // diz "da comunidade", e a plataforma não é uma — essa distinção é o
-          // ponto inteiro da mig 232, e repeti-la errada num leitor de tela a
-          // desfaz.
-          ariaLabel: t("rankingPlatformPillAria", "Abrir o ranking da plataforma de games"),
-          bg: "#7E22CE",
-          bgHover: "#6B21A8",
-          // ⚠️ SEM `?de=`, de propósito: a fila é DA CASA (minha cidade, meu
-          // estado, horas jogadas) e mede quem está olhando. Levar o contexto
-          // prometeria o ranking "do fulano", que não existe.
-          href: `/comunidades/${id}/ranking`,
-        },
-      ]
-    }
-
     return [
       {
         key: "profile",
@@ -882,12 +695,7 @@ export default function CommunityDetailPage() {
         href: `/comunidades/${id}/ranking`,
       },
     ]
-    // ⚠️ `gamerOwner`/`gamerOwnerLabel` VOLTARAM às dependências: só os pills
-    // de games os leem, e foi por isso que eles saíram daqui na limpeza (quem
-    // pegou foi o `eslint --max-warnings=0`). Sem eles, entrar no games de
-    // outra pessoa deixaria o pill de Posts apontando para a vitrine de quem
-    // olha até algum outro estado forçar um recálculo.
-  }, [t, panel, id, isGamesPlatform, openPanel, gamerOwner, gamerOwnerLabel])
+  }, [t, panel, id, openPanel])
 
   const ranked = useMemo(
     () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
@@ -1068,16 +876,21 @@ export default function CommunityDetailPage() {
    * contexto perdido por uma parede — e a plataforma continua inteira sem ele.
    */
   /**
-   * O rosto de quem olha. Só as PLATAFORMAS o usam (games sempre; o negócio
-   * como reserva de quem nunca subiu logo), então quem abre um condomínio ou o
-   * perfil de um pet não paga a requisição.
+   * O rosto de quem olha — hoje só a comunidade de NEGÓCIO o usa, como RESERVA
+   * de quem nunca subiu logo. Quem abre um condomínio, um bairro ou o perfil de
+   * um pet não paga a requisição: lá a foto é do ASSUNTO.
    *
-   * Sem sessão não há o que buscar, e a ausência é o estado correto: o
-   * visitante anônimo vê a plataforma inteira, só não vê um rosto que não
-   * existe.
+   * ⚠️ ELE VEM DE `/users/me`, e não do `localStorage`. O objeto que o login
+   * grava não tem `avatar` — nunca teve, em nenhum dos dois caminhos (senha e
+   * Google) —, então ler dali devolvia `undefined` para toda conta e a foto
+   * caía no boneco cinza sem erro nenhum aparecer. A fonte é `tb_user.avatar`,
+   * a mesma que `/account` e a Carteira usam desde a mig 215.
+   *
+   * Lido direto e NÃO pelo `useMeProfile`: aquele hook empurra para o login sem
+   * token, e esta página é pública.
    */
   useEffect(() => {
-    if (!isGamesPlatform && !isBusinessPlatform) return
+    if (!isBusinessPlatform) return
     const token = getToken()
     if (!token) { setMyAvatar(null); return }
     let alive = true
@@ -1089,55 +902,7 @@ export default function CommunityDetailPage() {
       })
       .catch(() => {})
     return () => { alive = false }
-  }, [isGamesPlatform, isBusinessPlatform])
-
-  const ctxDone = useRef(false)
-  useEffect(() => {
-    if (!isGamesPlatform || ctxDone.current) return
-    ctxDone.current = true
-    const who = new URLSearchParams(window.location.search).get("de")
-    if (!who) return
-    const token = getToken()
-    if (!token) return
-    let alive = true
-    fetch(`/api/gamer/profile/${encodeURIComponent(who.replace(/^@/, ""))}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive || !data?.owner?.id_user) return
-        setGamesCtx(data)
-      })
-      .catch(() => {})
-    return () => { alive = false }
-  }, [isGamesPlatform])
-
-  // ⚠️ É O ÚNICO PEDIDO DA PÁGINA QUE NÃO DEPENDE DE EDIÇÃO: o jogo atual é
-  // conteúdo (o que a pessoa joga). SEM contexto ele é o de quem olha; com
-  // contexto de OUTRA pessoa ele já veio junto do cabeçalho, e buscá-lo de
-  // novo aqui traria o de quem olha por cima do dela — o bug clássico de duas
-  // fontes para o mesmo campo. Sem sessão não há o que buscar (rota autenticada).
-  useEffect(() => {
-    if (!isGamesPlatform || !currentUserId) { setMyGame(null); return }
-    if (gamesCtx && !gamesCtx.is_me) { setMyGame(gamesCtx.subject); return }
-    const token = getToken()
-    if (!token) return
-    let alive = true
-    fetch("/api/games/current", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive) return
-        const sub = data?.subject || null
-        setMyGame(sub)
-        setGameDraft({
-          platform: sub?.platform || "",
-          game_title: sub?.game_title || "",
-          gamertag: sub?.gamertag || "",
-        })
-      })
-      .catch(() => {})
-    return () => { alive = false }
-  }, [isGamesPlatform, currentUserId, gamesCtx])
+  }, [isBusinessPlatform])
 
   useEffect(() => {
     if (!showAsLeaderEdit || subjectKind !== "pet") return
@@ -1283,40 +1048,6 @@ export default function CommunityDetailPage() {
     }
   }
 
-  /**
-   * Grava o MEU jogo atual.
-   *
-   * ⚠️ BOTÃO PRÓPRIO, e não o "Salvar" lá de cima: aquele é do administrador
-   * da plataforma (nome, foto, cores) e um usuário comum nem o enxerga. Juntar
-   * os dois faria a única coisa que é DELE dentro do ambiente depender de uma
-   * permissão que ele não tem.
-   */
-  const saveMyGame = async () => {
-    const token = getToken()
-    if (!token || savingGame) return
-    setSavingGame(true)
-    try {
-      const res = await fetch("/api/games/current", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          platform: gameDraft.platform || null,
-          game_title: gameDraft.game_title || null,
-          gamertag: gameDraft.gamertag || null,
-        }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || t("saveError", "Não foi possível salvar."))
-      setMyGame(data?.subject || null)
-      setActionMsg(t("gameSaved", "Jogo atualizado."))
-      setTimeout(() => setActionMsg(null), 2500)
-    } catch (err) {
-      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
-    } finally {
-      setSavingGame(false)
-    }
-  }
-
   const saveAll = async () => {
     const token = getToken()
     if (!token || !community) return
@@ -1356,11 +1087,7 @@ export default function CommunityDetailPage() {
       }
       // Assunto (pet/carro): vai junto do Salvar, e não num botão só dele —
       // para quem edita, nome, foto e raça são a mesma tarefa.
-      //
-      // ⚠️ GAMES SAIU DAQUI (mig 232): o jogo atual é da PESSOA e tem o botão
-      // dele dentro do painel. Mandá-lo neste Salvar faria a edição de quem
-      // não é admin depender de um botão que ele não vê.
-      if (subjectKind && subjectKind !== "games") {
+      if (subjectKind) {
         const base = subjectKind === "pet" ? "pets" : "cars"
         const body =
           subjectKind === "pet"
@@ -1533,35 +1260,21 @@ export default function CommunityDetailPage() {
   const bannerSrc = bannerPreview || community.banner_url
   /**
    * ⚠️ A FOTO DO HEADCARD É A DA PESSOA (pedido do Alex, 2026-09-09: "todas as
-   * heads trazem a foto do perfil"), e são TRÊS regimes:
+   * heads trazem a foto do perfil").
    *
-   *  1. VISITANDO o games de alguém → a foto DELE. O rosto diz de quem é o
-   *     recorte que está na tela.
-   *  2. PLATAFORMA (games) → a foto de QUEM OLHA. A foto da casa é do admin e
-   *     não diz nada sobre o recorte pessoal que a tela mostra; um avatar
-   *     institucional ali faria a plataforma parecer de outra pessoa. É a
-   *     mesma escolha que o Financeiro já fazia desde sempre.
-   *  3. COMUNIDADE (negócio e as outras) → a foto DELA, com a do usuário como
-   *     RESERVA. A comunidade de negócio tem logo próprio e o líder pode
-   *     trocá-lo; forçar a foto dele apagaria a marca da barbearia. O que a
-   *     reserva resolve é o boneco cinza de quem nunca subiu imagem.
+   * ⚠️ ERAM TRÊS REGIMES; sobraram DOIS, porque os outros dois eram de games.
+   * O que fica: a foto DA COMUNIDADE, com a do usuário como RESERVA **só no
+   * NEGÓCIO** — lá o líder pode ter posto o logo da barbearia, e forçar a cara
+   * dele apagaria a marca; o que a reserva resolve é o boneco cinza de quem
+   * nunca subiu imagem. Em pet, carro, condomínio e bairro NÃO há reserva: ali
+   * a foto é do ASSUNTO, e pôr a cara do dono no perfil do cachorro afirmaria
+   * que o cachorro é ele.
    *
-   * ⚠️ A RESERVA É SÓ DO NEGÓCIO, e não de toda comunidade: em pet, carro,
-   * condomínio e bairro a foto é do ASSUNTO — pôr a cara do dono no perfil do
-   * cachorro seria afirmar que o cachorro é ele.
-   *
-   * O BANNER e as CORES ficam de fora dos três: são a identidade do ambiente,
-   * e trocá-los por pessoa faria a plataforma parecer sete plataformas.
+   * O BANNER e as CORES ficam de fora: são a identidade do ambiente, e
+   * trocá-los por pessoa faria a plataforma parecer sete plataformas.
    */
-  const avatarSrc = gamerOwner
-    ? gamerOwner.avatar_url || null
-    : isGamesPlatform
-      ? myAvatar
-      : avatarPreview || community.avatar_url || (isBusinessPlatform ? myAvatar : null)
-
-  /** O rosto desta tela é o de uma PESSOA? Decide só o que aparece quando não
-   *  há foto — ver a nota no fallback, junto do `<img>`. */
-  const faceIsPerson = !!gamerOwner || isGamesPlatform
+  const avatarSrc =
+    avatarPreview || community.avatar_url || (isBusinessPlatform ? myAvatar : null)
 
   // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
   const seasonOn = !!goal
@@ -1581,13 +1294,14 @@ export default function CommunityDetailPage() {
     // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
     <div
       style={skinVars}
-      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isGamesPlatform ? "fl-games" : isBusinessPlatform ? "fl-business" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${showAsLeaderEdit ? "pb-28" : "pb-20"}`}
     >
       {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
           DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
-          headcard cobrir a pilha de pills. */}
-      {isGamesPlatform && <TechBackdrop />}
-      {/* O mesmo fundo da plataforma de games, na cor que o líder escolheu —
+          headcard cobrir a pilha de pills.
+          ⚠️ A variante `games` saiu com a plataforma (2026-09-09); o
+          componente segue servindo o negócio e o Financeiro. */}
+      {/* O fundo do negócio, na cor que o líder escolheu —
           e SEM símbolo nenhum por cima (o cifrão é do Financeiro; "meu
           negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
           nós estaria errado para quase todos). */}
@@ -1605,10 +1319,6 @@ export default function CommunityDetailPage() {
           communityId={id}
           kind={shellKind}
           canBuildSite={showSiteEntry}
-          // O dock precisa saber em QUE recorte a tela está: o item "Posts
-          // games" é o único que navega, e sem o contexto ele sairia para os
-          // posts de quem olha.
-          gamerContext={gamerOwner?.username ?? null}
         />
       )}
       {/* Top bar */}
@@ -1621,20 +1331,6 @@ export default function CommunityDetailPage() {
         <Link href="/account" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
           <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
         </Link>
-        {/* ⚠️ A SAÍDA DO CONTEXTO. Sem ela quem entra no games de alguém fica
-            preso nele: o "Voltar" leva ao perfil, e o pill roxo do headcard
-            está a duas telas de distância. É a MESMA página, sem o `?de=` —
-            uma navegação de verdade (e não replaceState) porque o contexto é
-            lido uma vez, na montagem. */}
-        {gamerOwner && (
-          <Link
-            href={`/comunidades/${id}`}
-            className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]"
-          >
-            <Gamepad2 className="h-4 w-4" style={{ color: accent }} />
-            {t("backToMyGames", "Ver o meu games")}
-          </Link>
-        )}
         {canAdminister && (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {edit && (
@@ -1774,37 +1470,12 @@ export default function CommunityDetailPage() {
                 com a largura, não com a altura. A altura subiu de 128 para
                 192px, o que só melhora a cobertura da pilha (120px). */}
             <div className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
-              {/* ⚠️ SEM FOTO, O FALLBACK DEPENDE DE QUEM É O ROSTO — e é por
-                  isso que ele não é um só. Quando a foto que falta é a de uma
-                  PESSOA (a plataforma, onde o rosto é o de quem olha, ou o
-                  games de alguém que se está visitando), valem as INICIAIS
-                  dela, exatamente como a Carteira já fazia: as duas telas têm
-                  a mesma silhueta de propósito, e um boneco cinza genérico num
-                  lado e iniciais no outro era a divergência que fazia a
-                  plataforma parecer quebrada. Quando o que falta é a foto de
-                  uma COMUNIDADE — o logo da barbearia, o retrato do cachorro —
-                  o boneco continua, porque ali não há nome de pessoa para
-                  reduzir a duas letras. */}
-              {avatarSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarSrc} alt={gamerOwner ? gamerOwnerLabel : community.display_name} className="h-full w-full object-cover" />
-              ) : faceIsPerson ? (
-                <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
-                  {initialsOf(gamerOwner ? gamerOwnerLabel : storedUser?.nome)}
-                </span>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src="/placeholder-user.jpg" alt={community.display_name} className="h-full w-full object-cover" />
-              )}
-              {/* ⚠️ NA PLATAFORMA DE GAMES NÃO HÁ "TROCAR FOTO", e isso é
-                  consequência direta de a foto ser a da PESSOA: o admin
-                  trocaria a foto da casa, gravaria, e não veria mudança
-                  nenhuma — porque a tela mostra a de quem está olhando. Botão
-                  que aceita o clique e não muda nada é o pior tipo de porta.
-                  Quem quiser outra imagem ali troca a foto do próprio perfil.
-                  No NEGÓCIO ele fica: lá a foto da comunidade continua sendo a
-                  que manda (o logo), e a do usuário é só a reserva. */}
-              {showAsLeaderEdit && !isGamesPlatform && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
+              {/* A foto é da COMUNIDADE. Sem ela fica o boneco: aqui não há
+                  nome de pessoa para reduzir a duas letras — o rosto desta tela
+                  é o do assunto (o cachorro, o carro) ou a marca do negócio. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
+              {showAsLeaderEdit && <ImageDrop label={t("changePhoto", "Trocar foto")} small busy={uploading === "avatar"} onFile={(f) => uploadImage("avatar", f)} />}
             </div>
           </div>
           {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para
@@ -1815,7 +1486,7 @@ export default function CommunityDetailPage() {
                 className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
             ) : (
               <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
-                {gamerOwner ? gamerOwnerLabel : community.display_name}
+                {community.display_name}
               </h1>
             )}
           </div>
@@ -1848,7 +1519,7 @@ export default function CommunityDetailPage() {
               junto com o de entrar trancaria a porta de saída — a única que
               não pode existir (mesma regra do desconectar do WhatsApp e do
               gamer). Por isso o gate deixa passar quem JÁ é membro. */}
-          {!isLeader && (!isGamesPlatform || !!myMembership) && (
+          {!isLeader && (
             <div className="pb-1">
               {myMembership ? (
                 myMembership.role !== "leader" ? (
@@ -1894,14 +1565,12 @@ export default function CommunityDetailPage() {
           crescer. */}
       {panel && (
         <section className="relative z-10 mx-auto mt-5 max-w-5xl px-5 md:px-10">
-          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(panel === "mural" || panel === "game" ? "#C2410C" : "#1D4ED8", 6) }}>
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow(panel === "mural" ? "#C2410C" : "#1D4ED8", 6) }}>
             <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
               <span className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
-                {panel === "game"
-                  ? <><Gamepad2 className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("gamePill", "Jogo atual")}</>
-                  : panel === "mural"
-                    ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
-                    : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
+                {panel === "mural"
+                  ? <><Megaphone className="h-4 w-4" style={{ color: "#FB923C" }} /> {t("muralTitle", "Mural do líder")}</>
+                  : <><UserRound className="h-4 w-4" style={{ color: "#60A5FA" }} /> {t("profilePanelTitle", "Perfil da comunidade")}</>}
               </span>
               <div className="flex items-center gap-2">
                 {/* O líder abre o painel no modo em que a página está. Se ele
@@ -1966,97 +1635,6 @@ export default function CommunityDetailPage() {
               </div>
             )}
 
-            {/* JOGO ATUAL — o painel do pill laranja da plataforma de games.
-
-                ⚠️ ELE É DE QUEM OLHA (mig 232), e não do espaço. Games virou
-                PLATAFORMA do site inteiro: "o feed é da plataforma; a estante, o
-                jogo atual e os posts são do perfil do usuário, a mesma coisa da
-                carteira e da vaquinha" (Alex, 2026-09-09). Cada um abre este
-                painel e vê — e edita — o SEU jogo; o que a casa anuncia é o feed.
-
-                ⚠️ POR ISSO O GATE AQUI É "ESTAR LOGADO", e não `showAsLeaderEdit`.
-                Aquele é do administrador da plataforma (nome, foto, cores); preso
-                a ele, a única coisa que é da PESSOA dentro do ambiente dependeria
-                de uma permissão que ela não tem — e a tela ficaria em leitura
-                mostrando o vazio dela mesma, sem como preencher.
-
-                ⚠️ E O SALVAR É PRÓPRIO, pela mesma razão: o de cima não existe
-                para quem não administra. */}
-            {panel === "game" && (
-              <div className="space-y-4 p-4 md:p-5">
-                {/* ⚠️ O JOGO DE OUTRA PESSOA É LEITURA. O mesmo painel serve os
-                    dois papéis (quem visita LÊ o que o dono ESCOLHE), como já
-                    acontece no painel de Perfil das outras modalidades — dois
-                    painéis divergiriam no primeiro campo novo. O que sai aqui
-                    é o Salvar e os campos: eles escrevem em `/games/current`,
-                    que grava pela chave do TOKEN — deixá-los de pé faria a
-                    pessoa editar o próprio jogo achando que mexe no dela. */}
-                {gamerOwner ? (
-                  myGame?.game_title || myGame?.platform || myGame?.gamertag ? (
-                    <div className="space-y-2">
-                      <p className="fl-display text-2xl leading-none text-[#F5F1E8]">
-                        {myGame.game_title || t("gameUntitled", "Sem título")}
-                      </p>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
-                        {[platformLabel(myGame.platform), myGame.gamertag].filter(Boolean).join(" · ")}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[#9A938A]">
-                      {t("gameEmptyOther", "{who} ainda não disse o que está jogando.")
-                        .replace("{who}", gamerOwnerLabel)}
-                    </p>
-                  )
-                ) : currentUserId ? (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2">
-                      {gamePlatforms.map(([key, label]) => (
-                        <button key={key} type="button"
-                          onClick={() => setGameDraft((d) => ({ ...d, platform: d.platform === key ? "" : key }))}
-                          className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
-                          style={gameDraft.platform === key ? { background: accent, color: "#0B0B0D" } : { background: "#1D1810", color: "#9A938A" }}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <label className="block">
-                      <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gameTitleLabel", "Jogo")}</span>
-                      <input value={gameDraft.game_title} maxLength={120} placeholder="Minecraft"
-                        onChange={(e) => setGameDraft((d) => ({ ...d, game_title: e.target.value }))}
-                        className={selectCls} />
-                    </label>
-                    <label className="block">
-                      <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gamertagLabel", "Seu nick")}</span>
-                      <input value={gameDraft.gamertag} maxLength={60}
-                        onChange={(e) => setGameDraft((d) => ({ ...d, gamertag: e.target.value }))}
-                        className={selectCls} />
-                    </label>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button type="button" onClick={saveMyGame} disabled={savingGame}
-                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] disabled:opacity-60">
-                        {savingGame ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gamepad2 className="h-4 w-4" />}
-                        {t("gameSave", "Salvar meu jogo")}
-                      </button>
-                      {/* O que já está gravado, ao lado do botão: sem isso a
-                          pessoa não distingue o rascunho que está digitando do que
-                          a plataforma já sabe. */}
-                      {myGame?.game_title && (
-                        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">
-                          <Hash className="h-3.5 w-3.5" />
-                          {[myGame.game_title, platformLabel(myGame.platform)].filter(Boolean).join(" · ")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  // Sem sessão não há "meu jogo" — e dizer "ainda não foi
-                  // escolhido" afirmaria algo sobre alguém que a tela não conhece.
-                  <p className="text-sm text-[#9A938A]">
-                    {t("gameSignedOut", "Entre na sua conta para dizer o que você está jogando.")}
-                  </p>
-                )}
-              </div>
-            )}
 
             {panel === "profile" && (
             <div className="space-y-4 p-4 md:p-5">
@@ -2282,7 +1860,6 @@ export default function CommunityDetailPage() {
 
           A peça se desenha por PORTAL no <body>, então este lugar no JSX é só
           onde ela mora perto dos dados que lê — não é onde ela aparece. */}
-      {!isGamesPlatform && (
       <RetractableColumn
         title={t("statsTitle", "Números da comunidade")}
         ariaLabel={t("statsAria", "Números da comunidade: membros, nível, XP, benchmark, destaque e ranking")}
@@ -2362,7 +1939,6 @@ export default function CommunityDetailPage() {
           </Block>
         )}
       </RetractableColumn>
-      )}
 
       {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
           destaque, ranking) subiu para a coluna retrátil dos números, então o
@@ -2483,22 +2059,7 @@ export default function CommunityDetailPage() {
             </div>
 
             <div className="mt-6">
-              {tab === "shelf" ? (
-                // ⚠️ A ESTANTE É DE QUEM OLHA, e não do "dono do espaço": a
-                // plataforma não tem dono, e a biblioteca é dado da PESSOA
-                // (`tb_user_game_account.id_user`). O componente resolve o dono
-                // pelo token — daí a única pergunta que sobra ser se há sessão.
-                <GamerShelf
-                  signedIn={!!currentUserId}
-                  accent={accent}
-                  // Visitando, a estante é a DELE — e a privacidade dela é
-                  // checada no backend (estante fechada volta `locked`, com a
-                  // mesma resposta de "não conectou nada", para não entregar a
-                  // escolha de quem fechou).
-                  ownerUserId={gamerOwner?.id_user ?? null}
-                  ownerName={gamerOwner?.username ?? null}
-                />
-              ) : tab === "members" ? (
+              {tab === "members" ? (
                 members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {ranked.map((m, i) => (

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import { DollarSign, Dumbbell, Gamepad2, Star, type LucideIcon } from "lucide-react"
+import { DollarSign, Dumbbell, Star, type LucideIcon } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { useUserFeature } from "@/components/feature-flags/UserFeaturesProvider"
@@ -267,25 +267,22 @@ export function PillStack({
   )
 }
 
+/**
+ * ⚠️ A PILHA É DO DONO, e desde que a plataforma de games saiu do ar ela só
+ * existe para ele. O preset tinha uma prop `visitorOf` que, no perfil alheio,
+ * reduzia a pilha a UM pill — o de Games, o único que fazia sentido ali,
+ * porque a plataforma não era de ninguém e o que estava dentro dela era de
+ * cada um. Sem games, todos os pills restantes (Business, Carteira, Fitness)
+ * abrem coisas da CONTA de quem olha, e pendurados na foto de outra pessoa
+ * diriam que são dela — então no perfil alheio não há pilha nenhuma, e a prop
+ * saiu junto em vez de ficar como um parâmetro que ninguém alimenta.
+ */
 export function HeadcardPills({
   avatarPadClass = "pl-28 md:pl-32",
   className,
-  visitorOf = null,
 }: {
   avatarPadClass?: string
   className?: string
-  /**
-   * O @username do dono do perfil que se está VISITANDO. Presente, a pilha
-   * vira uma só: o pill de Games, levando à plataforma com o contexto DELE.
-   *
-   * ⚠️ É a MESMA peça de propósito, e não um botão novo ao lado. Os outros
-   * pills (Business, Carteira, Fitness) são da CONTA de quem olha e não têm
-   * o que mostrar no perfil alheio; games é o único que tem, porque a
-   * plataforma é de todos e o que está dentro dela é de cada um. Um segundo
-   * componente ganharia uma cor, um ícone ou uma correção só de um lado — foi
-   * assim que a foto de perfil sumiu de uma das superfícies.
-   */
-  visitorOf?: string | null
 }) {
   const t = useTranslations("Account")
   const router = useRouter()
@@ -300,7 +297,6 @@ export function HeadcardPills({
   // inline deixaria a segunda chamada de hook condicional (rules-of-hooks).
   const academyFlag = useFeature("fitness_academias")
   const fitnessPref = useUserFeature("fitness_academias")
-  const gamesFlag = useFeature("games")
   // Mesma preferência que escondia "Minha comunidade" no menu da foto.
   const communitiesOn = useUserFeature("communities")
 
@@ -351,69 +347,12 @@ export function HeadcardPills({
     [going, router],
   )
 
-  /**
-   * ABRE A PLATAFORMA DE GAMES — uma só, do site inteiro (mig 232).
-   *
-   * ⚠️ UMA REQUISIÇÃO, e não duas: o backend faz get-or-create do singleton e
-   * devolve sempre a MESMA linha. O caminho antigo (procurar em `/me/spaces` e
-   * criar se não achasse) ainda funcionaria, mas leria um balde que a mig 232
-   * esvaziou de vez — e pagaria uma ida ao servidor para descobrir isso toda
-   * vez que alguém apertasse o pill.
-   */
-  const openGamesPlatform = useCallback(async () => {
-    if (going) return
-    const token = getToken()
-    if (!token) return
-    setGoing("games")
-    try {
-      const res = await fetch("/api/games/platform", { headers: { Authorization: `Bearer ${token}` } })
-      const body = await res.json().catch(() => null)
-      if (res.ok && body?.community?.id_profile) {
-        // O DONO DO CONTEXTO viaja na URL, e por @username: é o que cabe numa
-        // mensagem ("olha o meu games") e é como a página vai reabrir no F5.
-        // Sem ele a plataforma abre no recorte de quem está olhando, que é o
-        // comportamento de sempre e continua sendo o certo pelo próprio pill.
-        const q = visitorOf ? `?de=${encodeURIComponent(visitorOf.replace(/^@/, ""))}` : ""
-        router.push(`/comunidades/${body.community.id_profile}${q}`)
-        return
-      }
-      // A recusa aqui é o kill-switch da flag `games`, e ela vem escrita.
-      // Engoli-la deixaria o pill parecendo quebrado.
-      if (body?.error) toast.error(body.error)
-    } catch {
-      /* silencioso: o pill continua aberto e a pessoa tenta de novo */
-    } finally {
-      setGoing(null)
-    }
-  }, [going, router, visitorOf])
-
   const pills: PillSpec[] = []
-
-  // ⚠️ VISITANTE: a pilha é UM pill só. Os de baixo (Business, Carteira,
-  // Fitness) abrem coisas da CONTA de quem olha — oferecê-los pendurados na
-  // foto de outra pessoa diria que são dela. Games é a exceção porque a
-  // plataforma não é de ninguém: o pill leva ao recorte do dono do perfil.
-  const gamesSpec: PillSpec = {
-    key: "games",
-    icon: Gamepad2,
-    label: t("gamesPill", "Games"),
-    ariaLabel: visitorOf
-      ? t("openGamesOfAria", "Ver o games de {who}").replace("{who}", `@${visitorOf.replace(/^@/, "")}`)
-      : t("openGamesPlatformAria", "Abrir a plataforma de games"),
-    bg: "#6D28D9",
-    bgHover: "#5B21B6",
-    onOpen: openGamesPlatform,
-  }
-
-  // Um RETURN só para os dois papéis: a pilha do visitante é a mesma peça com
-  // um item, e não um caminho paralelo. Separados, o posicionamento (que é
-  // absoluto e centrado na foto) precisaria estar escrito duas vezes.
-  const visiting = !!visitorOf
 
   // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
   // SAIU do menu da foto de perfil (pedido do Alex, 2026-09-05) — lá ela era um
   // item entre pet, carro, condomínio e rua; aqui ela tem botão próprio.
-  if (!visiting && communitiesOn) {
+  if (communitiesOn) {
     pills.push({
       key: "business",
       icon: Star,
@@ -425,15 +364,7 @@ export function HeadcardPills({
     })
   }
 
-  // Games vem logo abaixo: fica acima do cifrão e sobe até por cima do
-  // banner da manifestação (decisão do Alex 2026-09-03). Desde a mig 232 ele
-  // é a porta da PLATAFORMA — a mesma para todo mundo —, e continua sendo o
-  // único caminho até o ambiente (o Monsters saiu da barra principal).
-  if (gamesFlag) {
-    pills.push(gamesSpec)
-  }
-
-  if (!visiting && walletOn) {
+  if (walletOn) {
     pills.push({
       key: "wallet",
       icon: DollarSign,
@@ -445,7 +376,7 @@ export function HeadcardPills({
     })
   }
 
-  if (!visiting && academyFlag && fitnessPref) {
+  if (academyFlag && fitnessPref) {
     pills.push({
       key: "fitness",
       icon: Dumbbell,

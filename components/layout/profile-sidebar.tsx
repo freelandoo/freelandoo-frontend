@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Boxes, Crown, Gamepad2, Globe, Hexagon, Home, Joystick, LayoutGrid, Library, Megaphone, MessageCircle, Trophy, UserRound, Users, type LucideIcon } from "lucide-react"
+import { Boxes, Crown, Globe, Hexagon, Home, Megaphone, MessageCircle, Trophy, UserRound, Users, type LucideIcon } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -76,13 +76,13 @@ const HIDDEN_ON_PATHS = [
  * um item novo não precise ser copiado em três lugares — o terceiro é sempre o
  * lugar de onde ele some quando alguém mexer só nos outros dois.
  *
- * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08). O jogo continua
- * alcançável, mas por DENTRO do ambiente de games: pill roxo do headcard →
- * plataforma → item "Game" do dock de lá (ver `buildGamesItems`). A barra
- * principal é a da Freelandoo inteira, e o jogo é uma sala dentro de um
- * ambiente — anunciá-lo aqui dava a ele um degrau que nem Estante nem Jogo
- * atual têm. Botão novo que sirva a plataforma toda entra aqui; o que serve o
- * ambiente de games entra no dock de games.
+ * ⚠️ O MONSTERS SAIU DAQUI (pedido do Alex, 2026-09-08) e NÃO voltou quando a
+ * plataforma de games foi retirada do ar (2026-09-09). Ele chegou a ser
+ * alcançável por dentro daquele ambiente — pill roxo → plataforma → item
+ * "Game" do dock de lá —, e com o ambiente fora do ar a página `/monsters`
+ * ficou ÓRFÃ de propósito: continua no ar para quem tem o endereço, sem porta
+ * na navegação. Recolocá-la aqui daria ao jogo um degrau na barra da
+ * plataforma inteira, que é o que o Alex tinha pedido para tirar.
  */
 const ITENS_COMUNS: SidebarItem[] = [
   { href: "/feed", label: "Feed", icon: Home, matchPrefix: "/feed" },
@@ -90,53 +90,6 @@ const ITENS_COMUNS: SidebarItem[] = [
   { href: "/search?machine", label: "Enxames", icon: Boxes, activePath: "/search" },
   { href: "/mensagens", label: "Mensagens", icon: MessageCircle, matchPrefix: "/mensagens" },
 ]
-
-/**
- * O DOCK DENTRO DA PLATAFORMA DE GAMES.
- *
- * A barra não some nem muda de forma — continua transparente e no mesmo lugar.
- * O que troca é o CONTEÚDO dela: dentro do ambiente, os itens da Freelandoo
- * (Bees, Enxames, Mensagens, Ranking) dariam saída lateral para fora do
- * ambiente sem dizer que estão saindo. A porta de volta é UMA só, e é a foto —
- * que ali ganha o fundo amarelo justamente para se anunciar como saída.
- *
- * "Jogo atual" e "Estante" são DEEP-LINKS para a mesma página do ambiente (o
- * painel e a aba que já existem lá), não telas novas: dois lugares desenhando o
- * jogo atual seria a segunda verdade que o painel único veio evitar.
- *
- * ⚠️ E é por serem a mesma página que eles precisam do `view`: dentro do
- * ambiente, o clique não pode ser uma navegação (a rota não remonta e o
- * parâmetro não é relido — o botão mudava a URL e não fazia nada). Ver o
- * comentário do `games-shell`. O "Feed" entra na mesma regra: sem ele, quem
- * abrisse a Estante não teria como voltar pelo dock.
- */
-function buildGamesItems(communityId: string, shelfOn: boolean, gamerContext?: string | null): SidebarItem[] {
-  const root = `/comunidades/${communityId}`
-  // ⚠️ SÓ O "POSTS GAMES" PRECISA DO CONTEXTO, porque ele é o único que NAVEGA
-  // de verdade. "Estante" e "Jogo atual" pedem a vista à página que já está no
-  // contexto (a URL, com o `?de=`, nem muda). Sem isto, apertar Posts dentro do
-  // games de alguém abriria os posts de quem olha — e o pill ciano da mesma
-  // tela abriria os dela: dois botões vizinhos discordando.
-  const postsHref = gamerContext
-    ? `${root}/posts?de=${encodeURIComponent(gamerContext)}`
-    : `${root}/posts`
-  return [
-    { href: root, label: "Feed", icon: Home, activePath: root, view: "feed", viewPath: root },
-    // A Estante existe enquanto a conexão de plataforma estiver ligada no
-    // Painel de Controle — é a MESMA condição que faz a aba existir na página.
-    // Sem esta linha, desligar a flag deixaria no dock um botão que abre uma aba
-    // que não está lá: porta pintada, o pior tipo de botão.
-    ...(shelfOn
-      ? ([{ href: `${root}?aba=estante`, label: "Estante", icon: Library, view: "shelf", viewPath: root }] as SidebarItem[])
-      : []),
-    { href: `${root}?painel=jogo`, label: "Jogo atual", icon: Gamepad2, view: "game", viewPath: root },
-    { href: postsHref, label: "Posts games", icon: LayoutGrid, activePath: `${root}/posts` },
-    // O JOGO de verdade. Ele é tela cheia e deitada, e o dock se esconde lá
-    // dentro (ver HIDDEN_ON_PATHS) — quem sai da partida é o botão da própria
-    // build Godot.
-    { href: "/monsters", label: "Game", icon: Joystick, matchPrefix: "/monsters" },
-  ]
-}
 
 /**
  * O DOCK DENTRO DE "MEUS NEGÓCIOS" (a comunidade de modalidade `common`).
@@ -247,7 +200,6 @@ export function ProfileSidebar() {
   const shell = useCommunityShell()
   // Mesma flag que a página da comunidade lê para desenhar a aba Estante. Hook
   // solto (e não dentro de um `&&`) porque hook condicional viola rules-of-hooks.
-  const shelfOn = useFeature("games_conexao")
   const [dropsideOpen, setDropsideOpen] = useState(false)
   const [dropsideEverOpened, setDropsideEverOpened] = useState(false)
   const navCounts = useNavCounts()
@@ -314,9 +266,7 @@ export function ProfileSidebar() {
   // caso, a pessoa entraria no ambiente e continuaria com a barra da Freelandoo
   // — que é exatamente o que o ambiente troca.
   const shellItems = (s: Shell): SidebarItem[] =>
-    s.kind === "games"
-      ? buildGamesItems(s.communityId, shelfOn, s.gamerContext)
-      : buildBusinessItems(s.communityId, s.canBuildSite)
+    buildBusinessItems(s.communityId, s.canBuildSite)
 
   const baseItems: SidebarItem[] = shell ? shellItems(shell) : bundle.items
   const items: SidebarItem[] = isAdmin
