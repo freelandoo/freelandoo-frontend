@@ -131,7 +131,7 @@ function paintOverlay(
 
 export function MediaComposer({
   open, mode: modeProp, initialProfileId = null, communityId = null,
-  communityName = null, communityExclusiveOnly = false, communityDefaultExclusive = false,
+  communityName = null, communityExclusiveOnly = false,
   academyId = null, onClose, onPosted,
 }: ComposerProps) {
   const t = useTranslations("Composer")
@@ -177,12 +177,14 @@ export function MediaComposer({
    * bairro) o estado nasce em "community" e não há escolha na tela.
    */
   //
-  // `communityDefaultExclusive` só muda o PADRÃO (é a plataforma de games
-  // preferindo guardar o post): os dois botões continuam na tela e o feed geral
-  // continua a um toque. Já `communityExclusiveOnly` é política do backend, e
-  // ali não há escolha nenhuma para fazer.
+  // ⚠️ NÃO EXISTE MAIS UM PADRÃO "SÓ NA COMUNIDADE". Ele existiu para a
+  // plataforma de games enquanto ela era o espaço de UMA pessoa; a mig 232 a
+  // tornou pública, e um post nascendo exclusivo ali tiraria do feed geral,
+  // sem ninguém pedir, tudo o que se publica no maior ambiente do site.
+  // `communityExclusiveOnly` é outra coisa: é política do BACKEND (privada,
+  // condomínio, bairro), e ali não há escolha nenhuma a fazer.
   const [destination, setDestination] = useState<"global" | "community">(
-    communityExclusiveOnly || communityDefaultExclusive ? "community" : "global"
+    communityExclusiveOnly ? "community" : "global"
   )
 
   const [progress, setProgress] = useState(0)
@@ -996,7 +998,6 @@ export function MediaComposer({
               // vive na faixa do grupo, e mudar isso pediria coluna nova.
               communityName={communityId && mode !== "story" ? communityName : null}
               communityExclusiveOnly={communityExclusiveOnly}
-              communityDefaultExclusive={communityDefaultExclusive}
               destination={destination} setDestination={setDestination}
               error={error}
             />
@@ -1420,7 +1421,7 @@ function DetailsStep({
   mode, userName, profiles, loadingProfiles, selectedProfileId, onSelectProfile,
   title, setTitle, description, setDescription, caption, setCaption,
   beeLocation, setBeeLocation, beeLinks, setBeeLinks,
-  communityName, communityExclusiveOnly, communityDefaultExclusive, destination, setDestination, error,
+  communityName, communityExclusiveOnly, destination, setDestination, error,
 }: {
   mode: string; userName: string | null
   profiles: ProfileLite[]; loadingProfiles: boolean
@@ -1433,7 +1434,6 @@ function DetailsStep({
   /** Não-nulo só quando se publica de dentro de uma comunidade (e não é bee). */
   communityName: string | null
   communityExclusiveOnly: boolean
-  communityDefaultExclusive: boolean
   destination: "global" | "community"
   setDestination: (d: "global" | "community") => void
   error: string | null
@@ -1610,16 +1610,10 @@ function DetailsStep({
                 {/* A ORDEM segue o padrão: a opção já marcada é a primeira.
                     Deixar a marcada em segundo lugar faria o olho começar pela
                     que não está valendo. */}
-                {(communityDefaultExclusive
-                  ? ([
-                      ["community", t("details.destinationCommunity", "Só na comunidade")],
-                      ["global", t("details.destinationGlobal", "Feed geral")],
-                    ] as const)
-                  : ([
-                      ["global", t("details.destinationGlobal", "Feed geral")],
-                      ["community", t("details.destinationCommunity", "Só na comunidade")],
-                    ] as const)
-                ).map(([key, label]) => (
+                {([
+                  ["global", t("details.destinationGlobal", "Feed geral")],
+                  ["community", t("details.destinationCommunity", "Só na comunidade")],
+                ] as const).map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
