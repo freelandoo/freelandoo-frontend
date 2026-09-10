@@ -45,9 +45,11 @@
 // já obrigou a foto a subir de h-28 para h-32 quando ela ainda era quadrada.
 
 import Link from "next/link"
-import { ArrowLeft, Percent, Trophy, Wallet } from "lucide-react"
-import { useMemo, type ReactNode } from "react"
+import { ArrowLeft, Camera, Loader2, Percent, Trophy, Undo2, Wallet } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { toast } from "sonner"
 import type { PerfilCompleto } from "@/lib/types/account"
+import { getToken } from "@/lib/auth"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
@@ -76,6 +78,96 @@ export function useVaquinhaEnabled() {
   const flag = useFeature("vaquinha")
   const pref = useUserFeature("vaquinha")
   return flag && pref
+}
+
+/**
+ * A FOTO DENTRO DO FINANCEIRO (mig 233).
+ *
+ * Pedido do Alex (2026-09-09): "a foto de perfil você vai puxar do perfil
+ * principal, sempre. Mas, se a pessoa quiser alterar, ela altera e só altera o
+ * games. Assim também precisa ser no financeiro."
+ *
+ * ⚠️ A REGRA É `override ?? perfil.avatar`, e o override vem do backend
+ * (`GET /me/platform-avatar/finance`): ausência não é "sem foto", é "usa o
+ * rosto de sempre" — e é isso que faz quem nunca trocou nada continuar herdando
+ * a foto principal, inclusive quando a muda depois. Voltar a herdar é DELETE.
+ *
+ * ⚠️ MORA NO HEADCARD, e não numa das telas: ele é a peça que as quatro salas
+ * da plataforma dividem. Preso à raiz, a Carteira e o ranking mostrariam o
+ * rosto de sempre enquanto o feed mostra o trocado — a divergência calada que a
+ * mig 215 já teve de desfazer uma vez.
+ *
+ * `null` enquanto carrega e enquanto não há override: nos dois casos a tela
+ * desenha `perfil.avatar`, então a foto não pisca para um estado vazio.
+ */
+function usePlatformAvatar(kind: "finance") {
+  const [override, setOverride] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    fetch(`/api/me/platform-avatar/${kind}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { avatar_url?: string | null } | null) => {
+        if (alive && d?.avatar_url) setOverride(d.avatar_url)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [kind])
+
+  const upload = useCallback(
+    async (file: File) => {
+      const token = getToken()
+      if (!token) return false
+      setBusy(true)
+      try {
+        const body = new FormData()
+        body.append("avatar", file)
+        const r = await fetch(`/api/me/platform-avatar/${kind}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body,
+        })
+        const d = (await r.json().catch(() => null)) as { avatar_url?: string | null } | null
+        if (!r.ok || !d?.avatar_url) return false
+        setOverride(d.avatar_url)
+        return true
+      } catch {
+        return false
+      } finally {
+        setBusy(false)
+      }
+    },
+    [kind]
+  )
+
+  const reset = useCallback(async () => {
+    const token = getToken()
+    if (!token) return false
+    setBusy(true)
+    try {
+      const r = await fetch(`/api/me/platform-avatar/${kind}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!r.ok) return false
+      setOverride(null)
+      return true
+    } catch {
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }, [kind])
+
+  return { override, busy, upload, reset }
 }
 
 export function WalletHeadcard({
@@ -108,6 +200,39 @@ export function WalletHeadcard({
    * recorte pedido.
    */
   usePlatformPresence("finance")
+
+  const { override: photoOverride, busy: photoBusy, upload: uploadPhoto, reset: resetPhoto } =
+    usePlatformAvatar("finance")
+  // O que a foto mostra: o override da plataforma ou o rosto de sempre.
+  const avatarSrc = photoOverride ?? perfil?.avatar ?? null
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (!photoMenuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPhotoMenuOpen(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [photoMenuOpen])
+
+  const onPickPhoto = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ""
+      if (!file) return
+      const ok = await uploadPhoto(file)
+      if (!ok) toast.error(tr("platformPhotoError", "Não deu para trocar a foto. Tente de novo."))
+    },
+    [uploadPhoto, tr]
+  )
+
+  const onResetPhoto = useCallback(async () => {
+    setPhotoMenuOpen(false)
+    const ok = await resetPhoto()
+    if (!ok) toast.error(tr("platformPhotoError", "Não deu para trocar a foto. Tente de novo."))
+  }, [resetPhoto, tr])
 
   const pills = useMemo<PillSpec[]>(
     () => [
@@ -266,15 +391,100 @@ export function WalletHeadcard({
               className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36"
               style={{ outline: `2px solid ${GREEN}`, outlineOffset: "2px" }}
             >
-              {perfil?.avatar ? (
+              {avatarSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={perfil.avatar} alt="" className="h-full w-full object-cover" />
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
                   {initialsOf(perfil?.nome)}
                 </span>
               )}
             </div>
+
+            {/* O BADGE DE CÂMERA — a mesma quina do headcard do perfil, mas o
+                que ele troca é a foto DESTA plataforma (mig 233), nunca a de
+                perfil. Fica FORA da caixa da foto (que é overflow-hidden) e só
+                existe para quem está logado: sem perfil não há de quem ser a
+                foto.
+
+                Sem override o clique abre o seletor direto; com override abre
+                um menu de duas linhas, porque aí existe um CAMINHO DE VOLTA
+                ("usar a minha foto") e ele tem que estar a um toque do mesmo
+                botão que criou a divergência. */}
+            {perfil && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (photoBusy) return
+                    if (photoOverride) setPhotoMenuOpen((v) => !v)
+                    else fileInputRef.current?.click()
+                  }}
+                  disabled={photoBusy}
+                  aria-label={tr("platformPhotoChange", "Trocar a foto no Financeiro")}
+                  title={tr("platformPhotoChange", "Trocar a foto no Financeiro")}
+                  aria-expanded={photoOverride ? photoMenuOpen : undefined}
+                  className="absolute -bottom-2 -right-2 z-20 inline-flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] disabled:opacity-60"
+                >
+                  {photoBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={onPickPhoto}
+                />
+                {photoMenuOpen && photoOverride && (
+                  <>
+                    {/* O fundo invisível fecha o menu no clique fora. */}
+                    <button
+                      type="button"
+                      aria-hidden
+                      tabIndex={-1}
+                      className="fixed inset-0 z-30 cursor-default"
+                      onClick={() => setPhotoMenuOpen(false)}
+                    />
+                    <div
+                      role="menu"
+                      className="absolute left-full top-full z-40 ml-2 flex w-64 flex-col border-2 border-[#0B0B0D] bg-[#15120E] text-[#F5F1E8] shadow-[4px_4px_0_0_#0B0B0D]"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setPhotoMenuOpen(false)
+                          fileInputRef.current?.click()
+                        }}
+                        className="flex items-center gap-2 px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[0.12em] transition hover:bg-[#1D1810]"
+                      >
+                        <Camera className="h-4 w-4" style={{ color: GREEN }} />
+                        {tr("platformPhotoChange", "Trocar a foto no Financeiro")}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={onResetPhoto}
+                        className="flex items-center gap-2 border-t-2 border-[#0B0B0D] px-3 py-2.5 text-left text-xs font-extrabold uppercase tracking-[0.12em] transition hover:bg-[#1D1810]"
+                      >
+                        <Undo2 className="h-4 w-4 text-[#9A938A]" />
+                        {tr("platformPhotoReset", "Usar a minha foto de perfil")}
+                      </button>
+                      <p className="border-t-2 border-[#0B0B0D] px-3 py-2 text-[10px] leading-snug text-[#9A938A]">
+                        {tr(
+                          "platformPhotoHint",
+                          "Vale só aqui dentro — a sua foto de perfil continua a mesma no resto do site."
+                        )}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* A folga tem que passar do ÍCONE do pill, que escapa uns 40px para

@@ -3669,7 +3669,12 @@
     "financePlatformTitle": "Financeiro",
     "financePlatformLabel": "Plataforma",
     "tabFeed": "Feed",
-    "tabMarket": "Mercado"
+    "tabMarket": "Mercado",
+    "platformPhotoChange": "Trocar a foto no Financeiro",
+    "platformPhotoReset": "Usar a minha foto de perfil",
+    "platformPhotoHint": "Vale só aqui dentro — a sua foto de perfil continua a mesma no resto do site.",
+    "platformPhotoSending": "Enviando…",
+    "platformPhotoError": "Não deu para trocar a foto. Tente de novo."
   },
   "Polens": {
     "eyebrow": "Pacotes de Poléns",

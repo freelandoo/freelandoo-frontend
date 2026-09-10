@@ -4255,7 +4255,12 @@
     "financePlatformTitle": "Finance",
     "financePlatformLabel": "Platform",
     "tabFeed": "Feed",
-    "tabMarket": "Market"
+    "tabMarket": "Market",
+    "platformPhotoChange": "Change your photo in Finance",
+    "platformPhotoReset": "Use my profile photo",
+    "platformPhotoHint": "Only applies in here — your profile photo stays the same everywhere else.",
+    "platformPhotoSending": "Uploading…",
+    "platformPhotoError": "Couldn't change the photo. Try again."
   },
   "Polens": {
     "eyebrow": "Polen packages",
