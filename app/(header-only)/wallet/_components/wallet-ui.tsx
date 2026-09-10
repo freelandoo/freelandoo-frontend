@@ -247,15 +247,19 @@ export function StateBox({
   title,
   desc,
   action,
+  // A cor do quadrado do ícone. Verde por padrão (a Carteira); a plataforma
+  // de games passa o roxo dela — a peça é a MESMA, muda só o accent.
+  accent = GREEN,
 }: {
   icon: ReactNode
   title: string
   desc: string
   action?: ReactNode
+  accent?: string
 }) {
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center border-2 border-dashed border-[#F1EDE2]/15 px-6 text-center">
-      <span className="flex h-12 w-12 items-center justify-center text-[#06251F]" style={{ background: GREEN }}>
+      <span className="flex h-12 w-12 items-center justify-center text-[#06251F]" style={{ background: accent }}>
         {icon}
       </span>
       <p className="mt-4 fl-display text-2xl text-[#F1EDE2]">{title}</p>

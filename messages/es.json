@@ -6194,5 +6194,29 @@
     "downloadFile": "Descargar archivo",
     "reconnectCta": "Reconectar mi WhatsApp",
     "idleDisconnected": "Desvinculamos tu WhatsApp porque esta bandeja pasó {days} días sin uso. No se perdió nada: reconecta para volver a recibir aquí."
+  },
+  "Games": {
+    "back": "Volver",
+    "platformTitle": "Games",
+    "platformLabel": "Plataforma",
+    "gamePill": "Juego actual",
+    "gamePillAria": "El juego que estás jugando ahora",
+    "postsPill": "Posts de games",
+    "postsPillAria": "Tus posts publicados en Games",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Ranking de games en tu ciudad, tu estado y por horas jugadas",
+    "platformPhotoChange": "Cambiar la foto en Games",
+    "platformPhotoReset": "Usar mi foto de perfil",
+    "platformPhotoHint": "Vale solo aquí dentro: tu foto de perfil sigue igual en el resto del sitio.",
+    "platformPhotoError": "No se pudo cambiar la foto. Inténtalo de nuevo.",
+    "composeCta": "Publicar",
+    "postLabel": "Post",
+    "curtoLabel": "Corto",
+    "beeLabel": "Bee",
+    "recadoLabel": "Recado",
+    "publishCta": "Publicar en Games",
+    "loadError": "No se pudo abrir Games.",
+    "loadFailedTitle": "No se pudo cargar.",
+    "loadMore": "Cargar más"
   }
 }

@@ -43,19 +43,20 @@
  * muda é a classe — o desenho mora todo em globals.css, junto das peles, para
  * que uma cor nova entre num lugar só.
  *
- * ⚠️ ERAM TRÊS. A variante `games` (roxa) foi APAGADA em 2026-09-09, junto com
- * o frontend daquele ambiente — variante que ninguém monta é uma classe de CSS
- * mantida viva por engano.
+ * `games` é roxa e VOLTOU em 2026-09-10 com a plataforma nova em `/games`
+ * (a casca do Financeiro com a pele roxa) — tinha saído em 2026-09-09 junto
+ * com a comunidade de games, quando ninguém mais a montava.
  *
  * ⚠️ A CAMADA DE CIFRÕES DO FINANCEIRO continua sendo CSS por cima
  * (`.fl-money-veil`), e não parte do fundo: ela é o símbolo do ambiente, e o
  * fundo é a cor dele.
  */
 
-export type BackdropVariant = "finance" | "business"
+export type BackdropVariant = "games" | "finance" | "business"
 
 /** O desenho de cada ambiente. Ver globals.css. */
 const BG_CLASS: Record<BackdropVariant, string> = {
+  games: "fl-games-bg",
   finance: "fl-finance-bg",
   business: "fl-business-bg",
 }

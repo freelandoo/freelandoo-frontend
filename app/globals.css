@@ -698,17 +698,79 @@ body.camera-active { overflow: hidden; }
 }
 
 /* ============================================================================
-   A PELE ROXA DE GAMES FOI APAGADA (2026-09-09)
+   PLATAFORMA DE GAMES — a pele roxa (`.fl-games`)
    ----------------------------------------------------------------------------
-   Aqui moravam `.fl-games` (o skin da plataforma de games) e `.fl-games-bg` (o
-   fundo dela). As duas saíram inteiras junto com o frontend daquele ambiente:
-   nenhuma tela monta a classe, e skin sem quem o vista é peso morto na folha
-   que TODA rota do site baixa.
+   ⚠️ SAIU em 2026-09-09 com o frontend da comunidade de games e VOLTOU em
+   2026-09-10 para vestir a PLATAFORMA nova em `/games` — que é a casca do
+   Financeiro com esta pele, e não a página de comunidade (pedido do Alex:
+   "criar igual o financeiro, não uma comunidade, mas uma plataforma").
 
-   O molde continua vivo nas duas peles abaixo (`.fl-finance` e `.fl-business`),
-   que nasceram como cópias desta — a regra de "cor de superfície nova entra em
-   TODAS as listas" agora vale para DUAS listas, não três.
+   ⚠️ A LISTA ABAIXO É A MESMA DA `.fl-finance` e da `.fl-business`, com
+   valores roxos: cor de superfície nova entra nas TRÊS listas, senão o bloco
+   novo nasce marrom (o padrão de baixo) no meio do roxo.
+
+   O QUE NÃO MUDA: cantos retos e o amarelo #F2B705 — é ele que marca o botão
+   de publicar e diz "isto é a Freelandoo".
    ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-games .bg-\[\#0b0804\]      { background-color: #0a0616; }
+.fl-games .bg-\[\#0b0804\]\/80  { background-color: rgba(10, 6, 22, 0.8); }
+.fl-games .bg-\[\#0F0C08\]      { background-color: rgba(14, 8, 32, 0.86); }
+.fl-games .bg-\[\#15120E\]      { background-color: rgba(24, 15, 51, 0.78); }
+.fl-games .bg-\[\#15120E\]\/95  { background-color: rgba(24, 15, 51, 0.95); }
+.fl-games .bg-\[\#15120E\]\/60  { background-color: rgba(24, 15, 51, 0.6); }
+.fl-games .bg-\[\#15120E\]\/40  { background-color: rgba(24, 15, 51, 0.4); }
+.fl-games .bg-\[\#1D1810\]      { background-color: rgba(37, 23, 76, 0.72); }
+.fl-games .bg-\[\#241d12\]      { background-color: rgba(52, 33, 106, 0.9); }
+
+/* Tinta ------------------------------------------------------------------- */
+.fl-games .text-\[\#F5F1E8\]     { color: #EDE7FF; }
+.fl-games .text-\[\#F5F1E8\]\/90 { color: rgba(237, 231, 255, 0.9); }
+.fl-games .text-\[\#F5F1E8\]\/85 { color: rgba(237, 231, 255, 0.85); }
+.fl-games .text-\[\#F5F1E8\]\/80 { color: rgba(237, 231, 255, 0.8); }
+.fl-games .text-\[\#F5F1E8\]\/70 { color: rgba(237, 231, 255, 0.7); }
+.fl-games .text-\[\#F5F1E8\]\/40 { color: rgba(237, 231, 255, 0.4); }
+.fl-games .text-\[\#F5F1E8\]\/30 { color: rgba(237, 231, 255, 0.3); }
+.fl-games .text-\[\#9A938A\]     { color: #9E8FD4; }
+.fl-games .text-\[\#9A938A\]\/70 { color: rgba(158, 143, 212, 0.7); }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-games .border-\[\#0B0B0D\]      { border-color: #3B2470; }
+.fl-games .border-\[\#F5F1E8\]\/30  { border-color: rgba(167, 139, 250, 0.45); }
+.fl-games .border-\[\#F5F1E8\]\/25  { border-color: rgba(167, 139, 250, 0.4); }
+.fl-games .border-\[\#F5F1E8\]\/20  { border-color: rgba(167, 139, 250, 0.34); }
+.fl-games .border-\[\#F5F1E8\]\/15  { border-color: rgba(167, 139, 250, 0.28); }
+.fl-games .border-\[\#F5F1E8\]\/12  { border-color: rgba(167, 139, 250, 0.24); }
+.fl-games .border-\[\#F5F1E8\]\/10  { border-color: rgba(167, 139, 250, 0.2); }
+.fl-games .border-\[\#F5F1E8\]\/60  { border-color: rgba(167, 139, 250, 0.6); }
+
+/* O título zumbe como painel em vez de gritar como manchete. Só em tinta
+   CLARA, como no Financeiro: as folhas de papel da Carteira não existem aqui,
+   mas a regra fica igual para as três peles. */
+.fl-games .fl-display {
+  letter-spacing: 0.02em;
+}
+.fl-games .fl-display.text-\[\#F5F1E8\],
+.fl-games .fl-display.text-\[\#F1EDE2\] {
+  text-shadow: 0 0 24px rgba(139, 92, 246, 0.45);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
+.fl-games .-rotate-2,
+.fl-games .-rotate-3 { transform: none; }
+
+/* O FUNDO DE GAMES — textura ESTÁTICA na cor do ambiente.
+   ⚠️ NÃO ANIMAR ESTE BLOCO (ver a nota da `.fl-finance-bg` abaixo). */
+.fl-games-bg {
+  background-color: #0a0616;
+  background-image:
+    radial-gradient(60% 45% at 22% 18%, rgba(109, 40, 217, 0.42), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(14, 116, 144, 0.28), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(139, 92, 246, 0.30), transparent 70%),
+    repeating-linear-gradient(to right, rgba(167, 139, 250, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(167, 139, 250, 0.05) 0 1px, transparent 1px 64px);
+}
 
 /* ⚠️ AS CAMADAS DE FUNDO VIVEM NUMA CAMADA DE COMPOSIÇÃO PRÓPRIA — e isso
    não é enfeite, é a metade que faltava de tirar o WebGPU.
@@ -728,6 +790,7 @@ body.camera-active { overflow: hidden; }
    ⚠️ FUNDO DE PLATAFORMA NOVO ENTRA NESTA LISTA. Fora dela ele nasce correto na
    tela e caro em todo quadro, que é o pior jeito de errar: não aparece em
    revisão nenhuma, só na mão de quem rola a página. */
+.fl-games-bg,
 .fl-finance-bg,
 .fl-business-bg {
   transform: translateZ(0);

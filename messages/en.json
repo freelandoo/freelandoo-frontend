@@ -6214,5 +6214,29 @@
     "downloadFile": "Download file",
     "reconnectCta": "Reconnect my WhatsApp",
     "idleDisconnected": "We unlinked your WhatsApp because this inbox went {days} days unused. Nothing was lost — reconnect to start receiving here again."
+  },
+  "Games": {
+    "back": "Back",
+    "platformTitle": "Games",
+    "platformLabel": "Platform",
+    "gamePill": "Now playing",
+    "gamePillAria": "The game you are playing right now",
+    "postsPill": "Game posts",
+    "postsPillAria": "Your posts published in Games",
+    "rankingPill": "Ranking",
+    "rankingPillAria": "Games ranking in your city, your state and by hours played",
+    "platformPhotoChange": "Change your photo in Games",
+    "platformPhotoReset": "Use my profile photo",
+    "platformPhotoHint": "Only applies in here — your profile photo stays the same everywhere else.",
+    "platformPhotoError": "Couldn't change the photo. Try again.",
+    "composeCta": "Publish",
+    "postLabel": "Post",
+    "curtoLabel": "Short",
+    "beeLabel": "Bee",
+    "recadoLabel": "Note",
+    "publishCta": "Publish in Games",
+    "loadError": "Couldn't open Games.",
+    "loadFailedTitle": "Couldn't load.",
+    "loadMore": "Load more"
   }
 }

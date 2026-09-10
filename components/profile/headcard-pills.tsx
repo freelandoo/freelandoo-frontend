@@ -349,41 +349,6 @@ export function HeadcardPills({
     [going, router],
   )
 
-  /**
-   * ABRE A PLATAFORMA DE GAMES — uma só, do site inteiro (mig 232).
-   *
-   * ⚠️ VOLTOU EM 2026-09-09 a pedido do Alex ("coloca o pill dele roxo ali
-   * embaixo de academia"), depois de ter saído com a demolição do front de
-   * games (`a3b037f`/`edcb00f`). O que volta é a PORTA, não a tela: a
-   * plataforma abre hoje na casca genérica de comunidade, porque os módulos
-   * de games (estante, painel do jogo, pele roxa) não existem mais no front.
-   *
-   * ⚠️ UMA REQUISIÇÃO, e não duas: o backend faz get-or-create do singleton
-   * e devolve sempre a MESMA linha. Procurar em `/me/spaces` leria um balde
-   * que a mig 232 esvaziou de vez.
-   */
-  const openGamesPlatform = useCallback(async () => {
-    if (going) return
-    const token = getToken()
-    if (!token) return
-    setGoing("games")
-    try {
-      const res = await fetch("/api/games/platform", { headers: { Authorization: `Bearer ${token}` } })
-      const body = await res.json().catch(() => null)
-      if (res.ok && body?.community?.id_profile) {
-        router.push(`/comunidades/${body.community.id_profile}`)
-        return
-      }
-      // A recusa aqui é o kill-switch da flag `games`, e ela vem escrita.
-      // Engoli-la deixaria o pill parecendo quebrado.
-      if (body?.error) toast.error(body.error)
-    } catch {
-      /* silencioso: o pill continua aberto e a pessoa tenta de novo */
-    } finally {
-      setGoing(null)
-    }
-  }, [going, router])
-
   const pills: PillSpec[] = []
 
   // Business é o PRIMEIRO da pilha. Ele é a porta da comunidade da pessoa, que
@@ -426,9 +391,14 @@ export function HeadcardPills({
   }
 
   // GAMES É O ÚLTIMO, logo abaixo do Fitness — é onde o Alex o pediu
-  // (2026-09-09). Antes da demolição ele vinha em segundo; a posição nova é
-  // decisão dele, não resto. Com ele a pilha volta a ter QUATRO lugares, que é
-  // a conta que PILL_STACK_PX (162) sempre fez — a constante nunca desceu.
+  // (2026-09-09). Com ele a pilha volta a ter QUATRO lugares, que é a conta que
+  // PILL_STACK_PX (162) sempre fez — a constante nunca desceu.
+  //
+  // ⚠️ ELE NAVEGA PARA `/games`, A PLATAFORMA (2026-09-10), e NÃO para
+  // `/comunidades/<id>`: aquela era a página de comunidade que o Alex mandou
+  // demolir — a de 2.700 linhas por baixo da qual os pills travavam. A
+  // plataforma nova tem a casca do Financeiro. Como o Financeiro, é `href`:
+  // o clique entrega a tela ao roteador e nada mais acontece naquele quadro.
   if (gamesFlag) {
     pills.push({
       key: "games",
@@ -437,7 +407,7 @@ export function HeadcardPills({
       ariaLabel: t("openGamesPlatformAria", "Abrir a plataforma de games"),
       bg: "#6D28D9",
       bgHover: "#5B21B6",
-      onOpen: openGamesPlatform,
+      href: "/games",
     })
   }
 

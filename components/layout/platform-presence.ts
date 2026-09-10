@@ -50,15 +50,16 @@ import { getPublicBackendUrl } from "@/lib/backend-public"
 /**
  * Os ambientes que medem tempo. Espelho de PLATFORM_KINDS no backend.
  *
- * ⚠️ ERAM DOIS. `games` saiu com o frontend daquela plataforma (2026-09-09):
- * ninguém mais chamava `claimPresence("games")`, e um kind no mapa sem quem o
- * peça é um endpoint anunciado que nada alcança. O backend continua aceitando
- * `/gamer/presence` — o que sumiu é a batida deste lado.
+ * `games` VOLTOU em 2026-09-10 com a plataforma nova em `/games` (o headcard
+ * dela reivindica a presença, como o da Carteira faz para o Financeiro). Tinha
+ * saído em 2026-09-09 com a comunidade de games, quando ninguém mais chamava
+ * `claimPresence("games")`; o backend nunca deixou de aceitar `/gamer/presence`.
  */
-export type PresenceKind = "finance"
+export type PresenceKind = "games" | "finance"
 
 /** Onde cada uma recebe a batida. */
 const ENDPOINT: Record<PresenceKind, string> = {
+  games: "/gamer/presence",
   finance: "/finance/presence",
 }
 
