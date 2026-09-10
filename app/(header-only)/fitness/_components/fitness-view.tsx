@@ -1,40 +1,55 @@
 "use client"
 
-// Painel Fitness PESSOAL — identidade Freelandoo (tabloide escuro/dourado,
-// mesma linguagem da página de comunidade): canvas #0b0804, painéis #15120E
-// com borda #0B0B0D e sombra dura dourada, chips rotacionados. Header estilo
-// perfil com a foto do usuário; academia é opcional (CTA "Conecte-se").
+// /fitness — A RAIZ DA PLATAFORMA FITNESS: o "Meu dia".
+//
+// ⚠️ REDESENHADA NOS MOLDES DO GAMES E DO FINANCEIRO (pedido do Alex,
+// 2026-09-10): a casca, o headcard com a foto 2/3 e os quatro pills atrás
+// dela, seções de ponta a ponta no celular. O que morava aqui e saiu para as
+// salas dos pills: academia (laranja), treino (rosa), peso/altura/histórico
+// (turquesa) e indicadores (turquesa). O que FICA é o dia: calorias e água
+// lado a lado, e o diário de refeições embaixo.
+//
+// A data navega (< >) e aceita deep-link `?dia=YYYY-MM-DD` — é assim que o
+// Histórico abre um dia antigo. Lido do `window` num efeito, nunca por
+// `useSearchParams` (obriga Suspense) nem no initializer (hidratação).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
 import { toast } from "sonner"
 import {
+  AlertCircle,
   Apple,
-  BadgeCheck,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Droplets,
-  Dumbbell,
   Flame,
   Loader2,
-  Lock,
   Minus,
   Plus,
-  Ruler,
   ScanBarcode,
   Search,
   Settings2,
   Trash2,
   X,
 } from "lucide-react"
-import { getToken, getStoredUser } from "@/lib/auth"
+import { getToken } from "@/lib/auth"
+import { useMeProfile } from "@/hooks/use-me-profile"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
-import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
-import { PageBackLink } from "@/components/tabloide"
-import { WorkoutTodayCard } from "./workout-today-card"
+import { FitnessShell } from "./fitness-shell"
+import { FitnessHeadcard } from "./fitness-headcard"
 import { FitnessProposalsGate } from "./proposals-modal"
-import { IndicatorsTab } from "./indicators-tab"
+import {
+  BTN_DARK,
+  BTN_GOLD,
+  CYAN,
+  EMBER,
+  GOLD,
+  H_SECTION,
+  INPUT,
+  PANEL,
+  StateBox,
+  shiftDate,
+  todayIso,
+} from "./fitness-ui"
 
 // BarcodeDetector é nativo em Chrome/Edge/Android e não faz parte da lib TS.
 // Declaração mínima do que usamos; quando ausente, caímos na entrada manual.
@@ -66,28 +81,13 @@ type FoodLog = {
   fat_g: number
 }
 
-type AcademySummary = {
-  id_member: string
-  academy: { nome: string; slug: string; avatar_url: string | null }
-  membership_status: string
-  plan_name: string | null
-  expires_at: string | null
-  month_days: string[]
-  frequency_days_30d: number
-  payments: { external_id: string; amount_cents: number; due_date: string | null; status: string; paid_at: string | null }[]
-}
-
 type Summary = {
   date: string
   goals: { daily_kcal_goal: number; water_goal_ml: number }
   totals: { kcal: number; protein_g: number; carbs_g: number; fat_g: number }
   water_ml: number
   logs: FoodLog[]
-  latest_measurement: { weight_kg: number | null; height_cm: number | null; measured_at: string } | null
-  academies: AcademySummary[]
 }
-
-type Me = { nome: string | null; username: string | null; avatar: string | null }
 
 const MEALS: Array<{ id: FoodLog["meal"]; key: string; fallback: string }> = [
   { id: "cafe", key: "mealCafe", fallback: "Café da manhã" },
@@ -96,41 +96,14 @@ const MEALS: Array<{ id: FoodLog["meal"]; key: string; fallback: string }> = [
   { id: "jantar", key: "mealJantar", fallback: "Jantar" },
 ]
 
-const PAY_STATUS: Record<string, [string, string]> = {
-  paid: ["payPaid", "Pago"],
-  pending: ["payPending", "Pendente"],
-  overdue: ["payOverdue", "Atrasado"],
-}
-
-// Identidade (mesma da página de comunidade)
-const GOLD = "#F2B705"
-const CYAN = "#16c8e8"
-const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
-const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
-const BTN_GOLD =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
-const BTN_DARK =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
-const H_SECTION = "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
-const INPUT = "w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[#F5F1E8] outline-none placeholder:text-[#9A938A]"
-
-function shiftDate(date: string, days: number): string {
-  const d = new Date(`${date}T12:00:00Z`)
-  d.setUTCDate(d.getUTCDate() + days)
-  return d.toISOString().slice(0, 10)
-}
-
 export function FitnessView() {
   const t = useTranslations("Fitness")
   const locale = useLocale()
-  const enabled = useFeature("fitness_academias")
+  const { perfil } = useMeProfile()
 
   const [summary, setSummary] = useState<Summary | null>(null)
-  const [state, setState] = useState<"loading" | "loaded" | "locked" | "error">("loading")
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [me, setMe] = useState<Me | null>(null)
-  const [view, setView] = useState<"day" | "indicators">("day")
+  const [state, setState] = useState<"loading" | "loaded" | "error">("loading")
+  const [date, setDate] = useState(() => todayIso())
 
   const [searchOpen, setSearchOpen] = useState<FoodLog["meal"] | null>(null)
   const [q, setQ] = useState("")
@@ -154,11 +127,6 @@ export function FitnessView() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  const [measureOpen, setMeasureOpen] = useState(false)
-  const [weight, setWeight] = useState("")
-  const [height, setHeight] = useState("")
-  const [savingMeasure, setSavingMeasure] = useState(false)
-
   const [goalsOpen, setGoalsOpen] = useState(false)
   const [kcalGoal, setKcalGoal] = useState("2000")
   const [waterGoal, setWaterGoal] = useState("2000")
@@ -168,12 +136,16 @@ export function FitnessView() {
     return token ? { Authorization: `Bearer ${token}` } : {}
   }, [])
 
+  // Deep-link `?dia=` (o Histórico abre um dia antigo por aqui).
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const dia = new URLSearchParams(window.location.search).get("dia")
+    if (dia && /^\d{4}-\d{2}-\d{2}$/.test(dia)) setDate(dia)
+  }, [])
+
   const load = useCallback(async () => {
     const token = getToken()
-    if (!token) {
-      setState("locked")
-      return
-    }
+    if (!token) return
     try {
       const res = await fetch(`/api/fitness/summary?date=${date}`, { headers: authHeaders() })
       if (!res.ok) throw new Error()
@@ -188,28 +160,8 @@ export function FitnessView() {
   }, [date, authHeaders])
 
   useEffect(() => {
-    if (enabled) void load()
-  }, [enabled, load])
-
-  // Foto/nome do usuário pro header de perfil (fallback: localStorage).
-  useEffect(() => {
-    const stored = getStoredUser()
-    if (stored) setMe({ nome: stored.nome || null, username: null, avatar: stored.avatar || null })
-    const token = getToken()
-    if (!token) return
-    fetch("/api/users/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!d) return
-        // Sem foto no user (tb_user.avatar), espelha a do perfil mais
-        // recente que tiver uma — /users/me já devolve profiles[].avatar_url.
-        const profileAvatar = Array.isArray(d.profiles)
-          ? d.profiles.find((p: { avatar_url?: string | null; deleted_at?: string | null }) => p?.avatar_url && !p.deleted_at)?.avatar_url ?? null
-          : null
-        setMe({ nome: d.nome || null, username: d.username || null, avatar: d.avatar || profileAvatar })
-      })
-      .catch(() => {})
-  }, [])
+    void load()
+  }, [load])
 
   // Typeahead: debounce de 350ms, uma sequência por digitação — resposta de
   // busca antiga é descartada. TACO preenche na hora; produtos (OFF) chegam
@@ -495,34 +447,6 @@ export function FitnessView() {
     [summary, date, authHeaders, load]
   )
 
-  const saveMeasurement = useCallback(async () => {
-    const w = weight.trim() ? Number(weight.replace(",", ".")) : null
-    const h = height.trim() ? Number(height.replace(",", ".")) : null
-    if (w === null && h === null) {
-      toast.error(t("measureMissing", "Informe peso e/ou altura"))
-      return
-    }
-    setSavingMeasure(true)
-    try {
-      const res = await fetch("/api/fitness/measurements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ weight_kg: w, height_cm: h }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
-      toast.success(t("measureSaved", "Medição registrada!"))
-      setMeasureOpen(false)
-      setWeight("")
-      setHeight("")
-      void load()
-    } catch (err) {
-      toast.error(err instanceof Error && err.message ? err.message : t("measureError", "Erro ao registrar medição"))
-    } finally {
-      setSavingMeasure(false)
-    }
-  }, [weight, height, authHeaders, load, t])
-
   const saveGoals = useCallback(async () => {
     try {
       const res = await fetch("/api/fitness/settings", {
@@ -544,339 +468,162 @@ export function FitnessView() {
     const d = new Date(`${date}T12:00:00Z`)
     return d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })
   }, [date, locale])
+  const isToday = date === todayIso()
 
-  if (!enabled) {
-    return (
-      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
-        <div>
-          <Dumbbell className="mx-auto h-10 w-10 text-[#9A938A]" />
-          <p className="mt-4 text-sm text-[#9A938A]">{t("disabled", "Recurso indisponível no momento.")}</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Sem login: o painel fitness é pessoal — só precisa entrar na conta.
-  if (state === "locked") {
-    return (
-      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-[#F5F1E8]">
-        <div className={`${PANEL} max-w-md px-8 py-12 text-center`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
-          <span className="inline-flex h-16 w-16 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810]">
-            <Lock className="h-7 w-7 text-[#F2B705]" />
-          </span>
-          <h1 className="mt-5 text-3xl font-black uppercase leading-none">{t("lockedTitle", "Painel Fitness")}</h1>
-          <p className="mx-auto mt-3 max-w-md text-sm text-[#9A938A]">
-            {t("loginText", "Entre na sua conta para acompanhar calorias, água, peso e treinos.")}
-          </p>
-          <Link href="/login" className={`${BTN_GOLD} mt-6 px-6 py-3 text-xs`}>
-            {t("loginCta", "Entrar")}
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (state === "loading" || !summary) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
-      </div>
-    )
-  }
-
-  if (state === "error") {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-sm text-[#9A938A]">
-        {t("loadError", "Erro ao carregar o painel. Tente novamente.")}
-      </div>
-    )
-  }
-
-  const kcalPct = Math.min(100, Math.round((summary.totals.kcal / summary.goals.daily_kcal_goal) * 100))
-  const waterPct = Math.min(100, Math.round((summary.water_ml / summary.goals.water_goal_ml) * 100))
+  const kcalPct = summary ? Math.min(100, Math.round((summary.totals.kcal / summary.goals.daily_kcal_goal) * 100)) : 0
+  const waterPct = summary ? Math.min(100, Math.round((summary.water_ml / summary.goals.water_goal_ml) * 100)) : 0
 
   return (
-    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
-      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
-        {/* Propostas pendentes do professor (confirmar/recusar) */}
-        <FitnessProposalsGate
-          onApplied={() => {
-            setRefreshKey((k) => k + 1)
-            void load()
-          }}
-        />
+    <FitnessShell>
+      {/* Propostas pendentes do professor (confirmar/recusar) */}
+      <FitnessProposalsGate onApplied={() => void load()} />
 
-        <PageBackLink href="/account" className="mb-6" />
-
-        {/* Header estilo perfil */}
-        <header className={`relative ${PANEL}`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
-          <span className="absolute -top-3 left-4 z-10 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
-            {t("eyebrow", "Painel Fitness")}
-          </span>
-          <div className="flex flex-wrap items-center justify-between gap-4 p-5 pt-7">
-            <div className="flex items-center gap-4">
-              <div
-                className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-[#0B0B0D] bg-[#1D1810] md:h-24 md:w-24"
-                style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
-                data-avatar
-              >
-                {me?.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={me.avatar} alt="" className="h-full w-full rounded-full object-cover" data-avatar />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center">
-                    <Dumbbell className="h-8 w-8 text-[#9A938A]" />
-                  </span>
-                )}
-              </div>
-              <div>
-                <h1 className="text-2xl font-black uppercase leading-none tracking-tight md:text-3xl">
-                  {me?.nome || t("title", "Meu dia")}
-                </h1>
-                {me?.username && <p className="mt-1 text-xs font-bold text-[#9A938A]">@{me.username}</p>}
-                <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#F2B705]">{fmtDay}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/academias" className={`${BTN_GOLD} px-3 py-2 text-[11px]`} aria-label={t("academiesCta", "Academias")}>
-                <Dumbbell className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("academiesCta", "Academias")}</span>
-              </Link>
-              <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_DARK} p-2`} aria-label={t("nextDay", "Próximo dia")}>
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <button onClick={() => setGoalsOpen(true)} className={`${BTN_DARK} px-3 py-2 text-[11px]`} aria-label={t("goalsTitle", "Metas")}>
-                <Settings2 className="h-4 w-4" />
-                {t("goalsTitle", "Metas")}
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Abas: Meu dia / Indicadores */}
-        <div className="mt-6 flex gap-[2px] border-2 border-[#0B0B0D] bg-[#0B0B0D]">
-          <button
-            onClick={() => setView("day")}
-            className={`flex-1 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${view === "day" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#15120E] text-[#9A938A] hover:bg-[#1D1810]"}`}
-          >
-            {t("tabDay", "Meu dia")}
+      <FitnessHeadcard
+        perfil={perfil}
+        title={t("platformTitle", "Fitness")}
+        backHref="/account"
+        action={
+          <button onClick={() => setGoalsOpen(true)} className={`${BTN_DARK} px-3 py-2 text-[11px]`} aria-label={t("goalsTitle", "Metas")}>
+            <Settings2 className="h-4 w-4" />
+            {t("goalsTitle", "Metas")}
           </button>
-          <button
-            onClick={() => setView("indicators")}
-            className={`flex-1 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${view === "indicators" ? "bg-[#F2B705] text-[#0B0B0D]" : "bg-[#15120E] text-[#9A938A] hover:bg-[#1D1810]"}`}
-          >
-            {t("tabIndicators", "Indicadores")}
+        }
+      />
+
+      <section className="mx-auto mt-8 w-full max-w-5xl px-0 md:px-10">
+        {/* A DATA: o dia que a tela mostra. */}
+        <div className={`${PANEL} flex items-center justify-between gap-2 px-2 py-2`}>
+          <button onClick={() => setDate((d) => shiftDate(d, -1))} className={`${BTN_DARK} p-2`} aria-label={t("prevDay", "Dia anterior")}>
+            <ChevronLeft className="h-4 w-4" />
           </button>
-        </div>
-
-        {view === "indicators" && <IndicatorsTab />}
-
-        {view === "day" && (
-          <>
-        {/* Cards do dia */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Calorias */}
-          <div className={`${PANEL} p-4`}>
-            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-              <Flame className="h-4 w-4 text-[#F2B705]" /> {t("kcalTitle", "Calorias")}
-            </p>
-            <p className="mt-2 text-3xl font-black">
-              {Math.round(summary.totals.kcal)}
-              <span className="text-sm font-bold text-[#9A938A]"> / {summary.goals.daily_kcal_goal} kcal</span>
-            </p>
-            <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
-              <div className="h-full" style={{ width: `${kcalPct}%`, background: GOLD }} />
-            </div>
-            <p className="mt-2 text-[11px] text-[#9A938A]">
-              P {Math.round(summary.totals.protein_g)}g · C {Math.round(summary.totals.carbs_g)}g · G {Math.round(summary.totals.fat_g)}g
-            </p>
-          </div>
-
-          {/* Água */}
-          <div className={`${PANEL} p-4`}>
-            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-              <Droplets className="h-4 w-4" style={{ color: CYAN }} /> {t("waterTitle", "Água")}
-            </p>
-            <p className="mt-2 text-3xl font-black">
-              {(summary.water_ml / 1000).toFixed(1)}
-              <span className="text-sm font-bold text-[#9A938A]"> / {(summary.goals.water_goal_ml / 1000).toFixed(1)} L</span>
-            </p>
-            <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
-              <div className="h-full" style={{ width: `${waterPct}%`, background: CYAN }} />
-            </div>
-            <div className="mt-2 flex gap-2">
-              <button onClick={() => void setWater(-250)} className={`${BTN_DARK} p-1.5`} aria-label={t("waterMinus", "Remover copo")}>
-                <Minus className="h-3.5 w-3.5" />
+          <div className="min-w-0 text-center">
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F2B705]">{fmtDay}</p>
+            {!isToday && (
+              <button onClick={() => setDate(todayIso())} className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F5F1E8]">
+                {t("today", "Hoje")} →
               </button>
-              <button
-                onClick={() => void setWater(250)}
-                className="flex items-center gap-1 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
-                style={{ background: CYAN }}
-              >
-                <Plus className="h-3.5 w-3.5" /> {t("waterCup", "Copo 250ml")}
-              </button>
-            </div>
-          </div>
-
-          {/* Medidas */}
-          <div className={`${PANEL} p-4`}>
-            <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
-              <Ruler className="h-4 w-4 text-[#F2B705]" /> {t("measureTitle", "Peso & altura")}
-            </p>
-            {summary.latest_measurement ? (
-              <p className="mt-2 text-3xl font-black">
-                {summary.latest_measurement.weight_kg ? `${Number(summary.latest_measurement.weight_kg).toFixed(1)}kg` : "—"}
-                <span className="text-sm font-bold text-[#9A938A]">
-                  {" "}
-                  {summary.latest_measurement.height_cm ? `· ${Number(summary.latest_measurement.height_cm).toFixed(0)}cm` : ""}
-                </span>
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-[#9A938A]">{t("measureEmpty", "Nenhuma medição ainda.")}</p>
             )}
-            <button onClick={() => setMeasureOpen(true)} className={`${BTN_DARK} mt-3 px-3 py-1.5 text-[11px]`}>
-              {t("measureCta", "Registrar")}
-            </button>
           </div>
-
-          {/* Treino de hoje (fase 3) */}
-          <WorkoutTodayCard date={date} refreshKey={refreshKey} />
+          <button onClick={() => setDate((d) => shiftDate(d, 1))} className={`${BTN_DARK} p-2`} aria-label={t("nextDay", "Próximo dia")}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Diário de refeições */}
-        <section className="mt-10">
-          <h2 className={H_SECTION}>
-            <Apple className="h-4 w-4 text-[#F2B705]" /> {t("diaryTitle", "Diário de refeições")}
-          </h2>
-          <div className="mt-3 grid gap-4 md:grid-cols-2">
-            {MEALS.map((meal) => {
-              const logs = summary.logs.filter((l) => l.meal === meal.id)
-              const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
-              return (
-                <div key={meal.id} className={PANEL}>
-                  <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-[#9A938A]">{Math.round(mealKcal)} kcal</span>
-                      <button
-                        onClick={() => {
-                          setSearchOpen(meal.id)
-                          setQ("")
-                          setLocalResults([])
-                          setOffResults([])
-                          setPicked(null)
-                          setGrams("100")
-                        }}
-                        className="border-2 border-[#0B0B0D] bg-[#F2B705] p-1 text-[#0B0B0D]"
-                        aria-label={t("addFood", "Adicionar alimento")}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  {logs.length === 0 ? (
-                    <p className="px-3 py-4 text-xs text-[#9A938A]">{t("mealEmpty", "Nada registrado.")}</p>
-                  ) : (
-                    <ul>
-                      {logs.map((l) => (
-                        <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0">
-                          <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
-                          <span className="text-xs text-[#9A938A]">{Math.round(l.quantity_g)}g</span>
-                          <span className="text-xs font-bold text-[#F2B705]">{Math.round(l.kcal)} kcal</span>
-                          <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
-                            <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        {/* Academia: frequência + matrícula */}
-        <section className="mt-10">
-          <h2 className={H_SECTION}>
-            <CalendarDays className="h-4 w-4 text-[#F2B705]" /> {t("gymTitle", "Minha academia")}
-          </h2>
-          {summary.academies.length === 0 ? (
-            <div className={`${PANEL} mt-3 px-6 py-12 text-center`} style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
-              <span className="inline-flex h-14 w-14 items-center justify-center border-2 border-[#0B0B0D] bg-[#1D1810]">
-                <Dumbbell className="h-6 w-6 text-[#F2B705]" />
-              </span>
-              <p className="mx-auto mt-4 max-w-md text-sm text-[#9A938A]">
-                {t(
-                  "connectText",
-                  "Seu painel funciona sozinho. Conectando a uma academia parceira, você ganha frequência da catraca, mensalidades e um professor que monta seus treinos."
-                )}
-              </p>
-              <Link href="/academias" className={`${BTN_GOLD} mt-5 px-6 py-3 text-xs`}>
-                <Dumbbell className="h-4 w-4" />
-                {t("connectCta", "Conecte-se a uma academia")}
-              </Link>
+        {state === "loading" || !summary ? (
+          state === "error" ? (
+            <div className="mt-4">
+              <StateBox
+                icon={<AlertCircle className="h-6 w-6" />}
+                title={t("loadFailedTitle", "Não deu pra carregar.")}
+                desc={t("loadError", "Erro ao carregar o painel. Tente novamente.")}
+                accent={EMBER}
+              />
             </div>
           ) : (
-            <div className="mt-3 grid gap-4 lg:grid-cols-2">
-              {summary.academies.map((a) => (
-                <div key={a.id_member} className={`${PANEL} p-4`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <Link href={`/academias/${a.academy.slug}`} className="text-lg font-black uppercase leading-tight hover:text-[#F2B705]">
-                        {a.academy.nome}
-                      </Link>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9A938A]">
-                        <BadgeCheck className="h-3.5 w-3.5 text-[#F2B705]" />
-                        {a.plan_name || t("gymNoPlan", "Sem plano informado")} · {a.membership_status}
-                      </p>
-                    </div>
-                    <div className={`${INNER} px-3 py-1 text-center`}>
-                      <p className="text-2xl font-black text-[#F2B705]">{a.frequency_days_30d}</p>
-                      <p className="text-[10px] font-bold uppercase text-[#9A938A]">{t("gymFreq30", "dias / 30d")}</p>
-                    </div>
-                  </div>
-
-                  {/* Calendário do mês (dias com giro) */}
-                  <MonthDots date={date} days={a.month_days} label={t("gymMonthLabel", "Presenças no mês")} />
-
-                  {/* Mensalidades */}
-                  {a.payments.length > 0 && (
-                    <div className="mt-3 border-t-2 border-[#0B0B0D] pt-2">
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("gymPayments", "Mensalidades")}</p>
-                      <ul className="mt-1 space-y-1">
-                        {a.payments.slice(0, 4).map((p) => {
-                          const meta = PAY_STATUS[p.status] || PAY_STATUS.pending
-                          return (
-                            <li key={p.external_id} className="flex items-center justify-between text-xs">
-                              <span className="text-[#9A938A]">
-                                {p.due_date ? new Date(p.due_date).toLocaleDateString(locale) : "—"}
-                              </span>
-                              <span className="font-bold">
-                                {(p.amount_cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })}
-                              </span>
-                              <span
-                                className={`border-2 border-[#0B0B0D] px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${p.status === "paid" ? "bg-[#4fc95a] text-[#0B0B0D]" : p.status === "overdue" ? "bg-[#ff5a44] text-[#0B0B0D]" : "bg-[#1D1810] text-[#9A938A]"}`}
-                              >
-                                {t(meta[0], meta[1])}
-                              </span>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="h-36 animate-pulse border-2 border-[#F5F1E8]/10 bg-[#1D1810]" />
+              <div className="h-36 animate-pulse border-2 border-[#F5F1E8]/10 bg-[#1D1810]" />
             </div>
-          )}
-        </section>
+          )
+        ) : (
+          <>
+            {/* CALORIAS e ÁGUA lado a lado — duas colunas também no celular
+                (pedido do Alex: "vai fazer duas colunas, deixar um do lado do
+                outro"). */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className={`${PANEL} p-4`} style={{ boxShadow: `6px 6px 0 0 ${GOLD}` }}>
+                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                  <Flame className="h-4 w-4 text-[#F2B705]" /> {t("kcalTitle", "Calorias")}
+                </p>
+                <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">{Math.round(summary.totals.kcal)}</p>
+                <p className="mt-1 text-xs font-bold text-[#9A938A]">/ {summary.goals.daily_kcal_goal} kcal</p>
+                <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
+                  <div className="h-full" style={{ width: `${kcalPct}%`, background: GOLD }} />
+                </div>
+                <p className="mt-2 text-[11px] text-[#9A938A]">
+                  P {Math.round(summary.totals.protein_g)}g · C {Math.round(summary.totals.carbs_g)}g · G {Math.round(summary.totals.fat_g)}g
+                </p>
+              </div>
+
+              <div className={`${PANEL} p-4`} style={{ boxShadow: `6px 6px 0 0 ${CYAN}` }}>
+                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                  <Droplets className="h-4 w-4" style={{ color: CYAN }} /> {t("waterTitle", "Água")}
+                </p>
+                <p className="mt-2 fl-display text-4xl leading-none text-[#F5F1E8]">{(summary.water_ml / 1000).toFixed(1)}</p>
+                <p className="mt-1 text-xs font-bold text-[#9A938A]">/ {(summary.goals.water_goal_ml / 1000).toFixed(1)} L</p>
+                <div className="mt-2 h-3 border-2 border-[#0B0B0D] bg-[#1D1810]">
+                  <div className="h-full" style={{ width: `${waterPct}%`, background: CYAN }} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button onClick={() => void setWater(-250)} className={`${BTN_DARK} p-1.5`} aria-label={t("waterMinus", "Remover copo")}>
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => void setWater(250)}
+                    className="flex items-center gap-1 border-2 border-[#0B0B0D] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#0B0B0D]"
+                    style={{ background: CYAN }}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> {t("waterCup", "Copo 250ml")}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Diário de refeições */}
+            <section className="mt-8">
+              <h2 className={`${H_SECTION} px-3 md:px-0`}>
+                <Apple className="h-4 w-4 text-[#F2B705]" /> {t("diaryTitle", "Diário de refeições")}
+              </h2>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {MEALS.map((meal) => {
+                  const logs = summary.logs.filter((l) => l.meal === meal.id)
+                  const mealKcal = logs.reduce((acc, l) => acc + l.kcal, 0)
+                  return (
+                    <div key={meal.id} className={PANEL}>
+                      <div className="flex items-center justify-between border-b-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+                        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]">{t(meal.key, meal.fallback)}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-[#9A938A]">{Math.round(mealKcal)} kcal</span>
+                          <button
+                            onClick={() => {
+                              setSearchOpen(meal.id)
+                              setQ("")
+                              setLocalResults([])
+                              setOffResults([])
+                              setPicked(null)
+                              setGrams("100")
+                            }}
+                            className="border-2 border-[#0B0B0D] bg-[#F2B705] p-1 text-[#0B0B0D]"
+                            aria-label={t("addFood", "Adicionar alimento")}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      {logs.length === 0 ? (
+                        <p className="px-3 py-4 text-xs text-[#9A938A]">{t("mealEmpty", "Nada registrado.")}</p>
+                      ) : (
+                        <ul>
+                          {logs.map((l) => (
+                            <li key={l.id_log} className="flex items-center justify-between gap-2 border-b border-[#F5F1E8]/10 px-3 py-2 text-sm last:border-b-0">
+                              <span className="min-w-0 flex-1 truncate">{l.food_nome}</span>
+                              <span className="text-xs text-[#9A938A]">{Math.round(l.quantity_g)}g</span>
+                              <span className="text-xs font-bold text-[#F2B705]">{Math.round(l.kcal)} kcal</span>
+                              <button onClick={() => void removeLog(l.id_log)} aria-label={t("removeLog", "Remover")}>
+                                <Trash2 className="h-3.5 w-3.5 text-[#9A938A] hover:text-[#ff5a44]" />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
           </>
         )}
-      </div>
+      </section>
 
       {/* Modal busca de alimento */}
       {searchOpen && (
@@ -888,7 +635,7 @@ export function FitnessView() {
           }}
         >
           <div
-            className={`fl-sharp flex max-h-[90vh] w-full max-w-lg flex-col ${PANEL} text-[#F5F1E8]`}
+            className={`flex max-h-[90vh] w-full max-w-lg flex-col ${PANEL} text-[#F5F1E8]`}
             style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1015,7 +762,7 @@ export function FitnessView() {
               onClick={() => setScanOpen(false)}
             >
               <div
-                className={`fl-sharp flex w-full max-w-md flex-col ${PANEL} text-[#F5F1E8]`}
+                className={`flex w-full max-w-md flex-col ${PANEL} text-[#F5F1E8]`}
                 style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -1066,41 +813,11 @@ export function FitnessView() {
         </div>
       )}
 
-      {/* Modal medição */}
-      {measureOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setMeasureOpen(false)}>
-          <div
-            className={`fl-sharp w-full max-w-sm ${PANEL} p-5 text-[#F5F1E8]`}
-            style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="border-b-2 border-[#0B0B0D] pb-2 text-lg font-black uppercase">{t("measureModalTitle", "Registrar medição")}</h2>
-            <label className="mt-4 block">
-              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("weightLabel", "Peso (kg)")}</span>
-              <input value={weight} onChange={(e) => setWeight(e.target.value)} inputMode="decimal" className={`${INPUT} mt-1`} />
-            </label>
-            <label className="mt-3 block">
-              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("heightLabel", "Altura (cm)")}</span>
-              <input value={height} onChange={(e) => setHeight(e.target.value)} inputMode="decimal" className={`${INPUT} mt-1`} />
-            </label>
-            <div className="mt-4 flex justify-end gap-2 border-t-2 border-[#0B0B0D] pt-3">
-              <button onClick={() => setMeasureOpen(false)} className={`${BTN_DARK} px-4 py-2 text-xs`}>
-                {t("cancel", "Cancelar")}
-              </button>
-              <button onClick={() => void saveMeasurement()} disabled={savingMeasure} className={`${BTN_GOLD} px-4 py-2 text-xs`}>
-                {savingMeasure && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {t("measureSubmit", "Salvar")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal metas */}
       {goalsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setGoalsOpen(false)}>
           <div
-            className={`fl-sharp w-full max-w-sm ${PANEL} p-5 text-[#F5F1E8]`}
+            className={`w-full max-w-sm ${PANEL} p-5 text-[#F5F1E8]`}
             style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1124,34 +841,6 @@ export function FitnessView() {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-/** Grade de dias do mês com presença (giro de catraca) marcada. */
-function MonthDots({ date, days, label }: { date: string; days: string[]; label: string }) {
-  const year = Number(date.slice(0, 4))
-  const month = Number(date.slice(5, 7))
-  const total = new Date(year, month, 0).getDate()
-  const present = new Set(days.map((d) => String(d).slice(0, 10)))
-  return (
-    <div className="mt-3">
-      <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{label}</p>
-      <div className="mt-1 flex flex-wrap gap-1">
-        {Array.from({ length: total }, (_, i) => {
-          const dayStr = `${date.slice(0, 7)}-${String(i + 1).padStart(2, "0")}`
-          const hit = present.has(dayStr)
-          return (
-            <span
-              key={dayStr}
-              title={dayStr}
-              className={`flex h-6 w-6 items-center justify-center border-2 text-[10px] font-bold ${hit ? "border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D]" : "border-[#0B0B0D] bg-[#1D1810] text-[#9A938A]"}`}
-            >
-              {i + 1}
-            </span>
-          )
-        })}
-      </div>
-    </div>
+    </FitnessShell>
   )
 }

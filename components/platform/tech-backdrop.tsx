@@ -52,13 +52,16 @@
  * fundo é a cor dele.
  */
 
-export type BackdropVariant = "games" | "finance" | "business"
+export type BackdropVariant = "games" | "finance" | "business" | "fitness"
 
-/** O desenho de cada ambiente. Ver globals.css. */
+/** O desenho de cada ambiente. Ver globals.css.
+ *  `fitness` (laranja) entrou em 2026-09-10 com o redesign do `/fitness`
+ *  nos moldes do Games e do Financeiro. */
 const BG_CLASS: Record<BackdropVariant, string> = {
   games: "fl-games-bg",
   finance: "fl-finance-bg",
   business: "fl-business-bg",
+  fitness: "fl-fitness-bg",
 }
 
 /**

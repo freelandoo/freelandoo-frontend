@@ -792,10 +792,88 @@ body.camera-active { overflow: hidden; }
    revisão nenhuma, só na mão de quem rola a página. */
 .fl-games-bg,
 .fl-finance-bg,
-.fl-business-bg {
+.fl-business-bg,
+.fl-fitness-bg {
   transform: translateZ(0);
   will-change: transform;
   backface-visibility: hidden;
+}
+
+/* ============================================================================
+   PLATAFORMA FITNESS — a pele laranja (`.fl-fitness`)
+   ----------------------------------------------------------------------------
+   Pedido do Alex (2026-09-10): "redesign no fitness (...) todo o visual
+   padrão, conforme o game e o financeiro". O `/fitness` ganhou a casca das
+   plataformas (banner, foto 2/3, pills atrás dela, seções de ponta a ponta) e
+   esta é a pele dele: brasa/laranja, o MESMO tom do pill de Fitness no
+   headcard do perfil (#C2410C).
+
+   ⚠️ A LISTA ABAIXO É A MESMA DA `.fl-games`, da `.fl-finance` e da
+   `.fl-business`, com valores laranja: cor de superfície nova entra nas
+   QUATRO listas, senão o bloco novo nasce marrom no meio do laranja.
+
+   O QUE NÃO MUDA: cantos retos, o amarelo #F2B705 (o botão de ação e a barra
+   das calorias) e o ciano da água (#16c8e8).
+   ============================================================================ */
+
+/* Superfícies ------------------------------------------------------------- */
+.fl-fitness .bg-\[\#0b0804\]      { background-color: #150703; }
+.fl-fitness .bg-\[\#0b0804\]\/80  { background-color: rgba(21, 7, 3, 0.8); }
+.fl-fitness .bg-\[\#0F0C08\]      { background-color: rgba(28, 10, 4, 0.86); }
+.fl-fitness .bg-\[\#15120E\]      { background-color: rgba(48, 18, 8, 0.78); }
+.fl-fitness .bg-\[\#15120E\]\/95  { background-color: rgba(48, 18, 8, 0.95); }
+.fl-fitness .bg-\[\#15120E\]\/60  { background-color: rgba(48, 18, 8, 0.6); }
+.fl-fitness .bg-\[\#15120E\]\/40  { background-color: rgba(48, 18, 8, 0.4); }
+.fl-fitness .bg-\[\#1D1810\]      { background-color: rgba(72, 28, 12, 0.72); }
+.fl-fitness .bg-\[\#1D1810\]\/60  { background-color: rgba(72, 28, 12, 0.5); }
+.fl-fitness .bg-\[\#241d12\]      { background-color: rgba(96, 38, 16, 0.9); }
+
+/* Tinta ------------------------------------------------------------------- */
+.fl-fitness .text-\[\#F5F1E8\]     { color: #FFF3EA; }
+.fl-fitness .text-\[\#F5F1E8\]\/90 { color: rgba(255, 243, 234, 0.9); }
+.fl-fitness .text-\[\#F5F1E8\]\/85 { color: rgba(255, 243, 234, 0.85); }
+.fl-fitness .text-\[\#F5F1E8\]\/80 { color: rgba(255, 243, 234, 0.8); }
+.fl-fitness .text-\[\#F5F1E8\]\/70 { color: rgba(255, 243, 234, 0.7); }
+.fl-fitness .text-\[\#F5F1E8\]\/40 { color: rgba(255, 243, 234, 0.4); }
+.fl-fitness .text-\[\#F5F1E8\]\/30 { color: rgba(255, 243, 234, 0.3); }
+.fl-fitness .text-\[\#9A938A\]     { color: #D39A7E; }
+.fl-fitness .text-\[\#9A938A\]\/70 { color: rgba(211, 154, 126, 0.7); }
+
+/* Linhas ------------------------------------------------------------------ */
+.fl-fitness .border-\[\#0B0B0D\]      { border-color: #6E2A0F; }
+.fl-fitness .border-\[\#F5F1E8\]\/30  { border-color: rgba(251, 146, 60, 0.45); }
+.fl-fitness .border-\[\#F5F1E8\]\/25  { border-color: rgba(251, 146, 60, 0.4); }
+.fl-fitness .border-\[\#F5F1E8\]\/20  { border-color: rgba(251, 146, 60, 0.34); }
+.fl-fitness .border-\[\#F5F1E8\]\/15  { border-color: rgba(251, 146, 60, 0.28); }
+.fl-fitness .border-\[\#F5F1E8\]\/12  { border-color: rgba(251, 146, 60, 0.24); }
+.fl-fitness .border-\[\#F5F1E8\]\/10  { border-color: rgba(251, 146, 60, 0.2); }
+.fl-fitness .border-\[\#F5F1E8\]\/60  { border-color: rgba(251, 146, 60, 0.6); }
+
+/* O título zumbe como painel em vez de gritar como manchete — só em tinta
+   clara, como nas outras três peles. */
+.fl-fitness .fl-display {
+  letter-spacing: 0.02em;
+}
+.fl-fitness .fl-display.text-\[\#F5F1E8\],
+.fl-fitness .fl-display.text-\[\#F1EDE2\] {
+  text-shadow: 0 0 24px rgba(249, 115, 22, 0.45);
+}
+
+/* A tarja inclinada é assinatura de tabloide. Dentro do ambiente ela fica reta. */
+.fl-fitness .-rotate-2,
+.fl-fitness .-rotate-3 { transform: none; }
+
+/* O FUNDO DE FITNESS — textura ESTÁTICA na cor do ambiente.
+   ⚠️ NÃO ANIMAR ESTE BLOCO (ver a nota da `.fl-finance-bg`). Já está na lista
+   de camadas promovidas, logo acima. */
+.fl-fitness-bg {
+  background-color: #150703;
+  background-image:
+    radial-gradient(60% 45% at 22% 18%, rgba(194, 65, 12, 0.42), transparent 70%),
+    radial-gradient(50% 40% at 82% 30%, rgba(245, 158, 11, 0.20), transparent 72%),
+    radial-gradient(80% 55% at 50% 108%, rgba(251, 146, 60, 0.28), transparent 70%),
+    repeating-linear-gradient(to right, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.05) 0 1px, transparent 1px 64px);
 }
 
 /* ============================================================================
