@@ -1683,7 +1683,13 @@
     "cpfLabel": "CPF (Brazilian tax ID)",
     "cpfHint": "One account per CPF. Inside it you can create as many profiles as you want.",
     "cpfInvalid": "Invalid CPF. Check the numbers.",
-    "blockCpf": "Enter a valid CPF."
+    "blockCpf": "Enter a valid CPF.",
+    "cpfChecking": "Checking...",
+    "cpfAvailable": "CPF available ✓",
+    "cpfTaken": "There is already an account with this CPF. Sign in to it — inside it you can create as many profiles as you want.",
+    "cpfTakenLogin": "Sign in",
+    "blockCpfChecking": "Checking the CPF...",
+    "blockCpfTaken": "There is already an account with this CPF."
   },
   "ForgotPassword": {
     "title": "Forgot your password?",
@@ -4894,7 +4900,10 @@
     "selectStateFirst": "Pick the state",
     "cityLabel": "City",
     "selectCity": "Select the city",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "cpfChecking": "Checking...",
+    "cpfAvailable": "CPF available ✓",
+    "cpfTaken": "There is already an account with this CPF. Sign in to it — inside it you can create as many profiles as you want."
   },
   "Shipping": {
     "badge": "Protected purchase",

@@ -80,6 +80,12 @@ export default function CadastroPage() {
   const [usernameMsg, setUsernameMsg] = useState("")
   const usernameTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Disponibilidade do CPF — mesma mecânica do username. Sem isto o "já existe
+  // uma conta com este CPF" só aparecia depois de a pessoa responder tudo.
+  const [cpfStatus, setCpfStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
+  const cpfTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cpfReq = useRef("")
+
   // Perfil (vendedor)
   const [machines, setMachines] = useState<Machine[]>([])
   const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null)
@@ -124,6 +130,11 @@ export default function CadastroPage() {
   const accessValid =
     dateOk &&
     cpfOk &&
+    // "idle" passa de propósito: se a consulta de disponibilidade não
+    // respondeu (rede fora), quem decide continua sendo o backend no signup —
+    // esta checagem antecipa a recusa, não é o portão dela.
+    cpfStatus !== "taken" &&
+    cpfStatus !== "checking" &&
     (isAdultBirth || (isMinorBirth && codeStatus === "valid")) &&
     passwordStrong &&
     passwordsMatch &&
@@ -143,6 +154,8 @@ export default function CadastroPage() {
   const accessBlockReason = (() => {
     if (!dateOk) return t("blockBirth", "Informe sua data de nascimento.")
     if (!cpfOk) return t("blockCpf", "Informe um CPF válido.")
+    if (cpfStatus === "checking") return t("blockCpfChecking", "Verificando o CPF...")
+    if (cpfStatus === "taken") return t("blockCpfTaken", "Já existe uma conta com este CPF.")
     if (isMinorBirth && codeStatus !== "valid") return t("blockCode", "Informe um código de responsável válido.")
     if (!passwordStrong) return t("blockPassword", "Sua senha não atende a todos os requisitos.")
     if (!passwordsMatch) return t("blockPasswordMatch", "As senhas não coincidem.")
@@ -181,6 +194,37 @@ export default function CadastroPage() {
     if (usernameTimer.current) clearTimeout(usernameTimer.current)
     if (u.length >= 3) {
       usernameTimer.current = setTimeout(() => checkUsername(u), 400)
+    }
+  }
+
+  // Consulta a disponibilidade do CPF já normalizado (11 dígitos). A resposta
+  // é descartada quando o campo mudou no meio do caminho — sem isso, apagar e
+  // redigitar marcaria "já existe" no CPF errado.
+  const checkCpf = useCallback(async (digits: string) => {
+    cpfReq.current = digits
+    setCpfStatus("checking")
+    try {
+      const res = await fetch(`/api/check-cpf?cpf=${encodeURIComponent(digits)}`)
+      const data = await res.json()
+      if (cpfReq.current !== digits) return
+      setCpfStatus(data.available ? "available" : data.reason === "cpf_taken" ? "taken" : "idle")
+    } catch {
+      if (cpfReq.current !== digits) return
+      setCpfStatus("idle")
+    }
+  }, [])
+
+  // Só consulta CPF completo e com dígito verificador válido — número torto
+  // não existe em conta nenhuma, e perguntar por ele seria requisição à toa.
+  const handleCpfChange = (raw: string) => {
+    const masked = formatCPF(raw)
+    setFormData((prev) => ({ ...prev, cpf: masked }))
+    setCpfStatus("idle")
+    cpfReq.current = ""
+    if (cpfTimer.current) clearTimeout(cpfTimer.current)
+    const digits = onlyDigits(masked)
+    if (digits.length === 11 && isValidCPF(masked)) {
+      cpfTimer.current = setTimeout(() => checkCpf(digits), 400)
     }
   }
 
@@ -575,17 +619,38 @@ export default function CadastroPage() {
                   type="text"
                   inputMode="numeric"
                   autoComplete="off"
-                  className="fl-input"
+                  className={`fl-input ${
+                    cpfBlocked || cpfStatus === "taken"
+                      ? "fl-input-error"
+                      : cpfStatus === "available"
+                        ? "fl-input-ok"
+                        : ""
+                  }`}
                   placeholder="000.000.000-00"
                   maxLength={14}
                   value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: formatCPF(e.target.value) })}
-                  aria-invalid={cpfBlocked}
+                  onChange={(e) => handleCpfChange(e.target.value)}
+                  aria-invalid={cpfBlocked || cpfStatus === "taken"}
                   required
                 />
                 {cpfBlocked ? (
                   <p className="mt-1 text-xs font-bold text-red-600">
                     {t("cpfInvalid", "CPF inválido. Confira os números.")}
+                  </p>
+                ) : cpfStatus === "taken" ? (
+                  <p className="mt-1 text-xs font-bold text-red-600">
+                    {t("cpfTaken", "Já existe uma conta com este CPF. Entre nela — dentro dela você cria quantos perfis quiser.")}{" "}
+                    <Link href="/login" className="underline">
+                      {t("cpfTakenLogin", "Entrar")}
+                    </Link>
+                  </p>
+                ) : cpfStatus === "checking" ? (
+                  <p className="mt-1 text-xs font-medium text-[#5b554b]">
+                    {t("cpfChecking", "Verificando...")}
+                  </p>
+                ) : cpfStatus === "available" ? (
+                  <p className="mt-1 text-xs font-medium text-[#15803d]">
+                    {t("cpfAvailable", "CPF disponível ✓")}
                   </p>
                 ) : (
                   <p className="mt-1 text-xs text-[#5b554b]">

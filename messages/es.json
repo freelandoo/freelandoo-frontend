@@ -1683,7 +1683,13 @@
     "cpfLabel": "CPF (documento brasileño)",
     "cpfHint": "Una cuenta por CPF. Dentro de ella puedes crear todos los perfiles que quieras.",
     "cpfInvalid": "CPF inválido. Revisa los números.",
-    "blockCpf": "Ingresa un CPF válido."
+    "blockCpf": "Ingresa un CPF válido.",
+    "cpfChecking": "Verificando...",
+    "cpfAvailable": "CPF disponible ✓",
+    "cpfTaken": "Ya existe una cuenta con este CPF. Entra en ella — dentro de ella puedes crear todos los perfiles que quieras.",
+    "cpfTakenLogin": "Entrar",
+    "blockCpfChecking": "Verificando el CPF...",
+    "blockCpfTaken": "Ya existe una cuenta con este CPF."
   },
   "ForgotPassword": {
     "title": "¿Olvidaste tu contraseña?",
@@ -4874,7 +4880,10 @@
     "selectStateFirst": "Elige el estado",
     "cityLabel": "Ciudad",
     "selectCity": "Selecciona la ciudad",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "cpfChecking": "Verificando...",
+    "cpfAvailable": "CPF disponible ✓",
+    "cpfTaken": "Ya existe una cuenta con este CPF. Entra en ella — dentro de ella puedes crear todos los perfiles que quieras."
   },
   "Shipping": {
     "badge": "Compra protegida",

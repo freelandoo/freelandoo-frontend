@@ -99,6 +99,9 @@ export function BirthdateGate() {
   const [needCpf, setNeedCpf] = useState(false)
   const [needTaxonomy, setNeedTaxonomy] = useState(false)
   const [cpf, setCpf] = useState("")
+  const [cpfStatus, setCpfStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
+  const cpfTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cpfReq = useRef("")
   const [responsibleCode, setResponsibleCode] = useState("")
   const [socials, setSocials] = useState<Record<string, string>>({})
   const [codeStatus, setCodeStatus] = useState<
@@ -285,6 +288,35 @@ export function BirthdateGate() {
     }
   }, [t])
 
+  // Disponibilidade do CPF antes do submit — o modal cobra atuação inteira
+  // (enxame, profissão, estado, cidade) depois deste campo, e descobrir só no
+  // fim que o CPF já tem conta desperdiça o passo todo.
+  const checkCpf = useCallback(async (digits: string) => {
+    cpfReq.current = digits
+    setCpfStatus("checking")
+    try {
+      const res = await fetch(`/api/check-cpf?cpf=${encodeURIComponent(digits)}`)
+      const data = await res.json()
+      if (cpfReq.current !== digits) return
+      setCpfStatus(data.available ? "available" : data.reason === "cpf_taken" ? "taken" : "idle")
+    } catch {
+      if (cpfReq.current !== digits) return
+      setCpfStatus("idle")
+    }
+  }, [])
+
+  const handleCpfChange = (raw: string) => {
+    const masked = formatCPF(raw)
+    setCpf(masked)
+    setCpfStatus("idle")
+    cpfReq.current = ""
+    if (cpfTimer.current) clearTimeout(cpfTimer.current)
+    const digits = onlyDigits(masked)
+    if (digits.length === 11 && isValidCPF(masked)) {
+      cpfTimer.current = setTimeout(() => checkCpf(digits), 400)
+    }
+  }
+
   const handleCodeChange = (raw: string) => {
     const code = raw.toUpperCase().replace(/[^A-Z0-9-]/g, "")
     setResponsibleCode(code)
@@ -298,7 +330,8 @@ export function BirthdateGate() {
 
   const identityDone =
     (!needBirthdate || (!!birthdate && age !== null)) &&
-    (!needCpf || cpfOk) &&
+    // "idle" passa: se a consulta não respondeu, quem recusa é o backend.
+    (!needCpf || (cpfOk && cpfStatus !== "taken" && cpfStatus !== "checking")) &&
     (isAdult || codeStatus === "valid")
   const taxonomyDone =
     !needTaxonomy || (!!idMachine && !!idCategory && !!uf && !!municipio)
@@ -428,21 +461,35 @@ export function BirthdateGate() {
                     placeholder="000.000.000-00"
                     maxLength={14}
                     value={cpf}
-                    onChange={(e) => setCpf(formatCPF(e.target.value))}
-                    aria-invalid={cpfBlocked}
+                    onChange={(e) => handleCpfChange(e.target.value)}
+                    aria-invalid={cpfBlocked || cpfStatus === "taken"}
                     autoFocus={!needBirthdate}
                     className={
-                      cpfBlocked
+                      cpfBlocked || cpfStatus === "taken"
                         ? "border-red-500 focus-visible:ring-red-500"
-                        : cpfOk
+                        : cpfOk && cpfStatus !== "checking"
                           ? "border-green-500 focus-visible:ring-green-500"
                           : ""
                     }
                   />
-                  <p className={`text-xs ${cpfBlocked ? "font-medium text-red-500" : "text-muted-foreground"}`}>
+                  <p
+                    className={`text-xs ${
+                      cpfBlocked || cpfStatus === "taken"
+                        ? "font-medium text-red-500"
+                        : cpfStatus === "available"
+                          ? "font-medium text-green-600"
+                          : "text-muted-foreground"
+                    }`}
+                  >
                     {cpfBlocked
                       ? t("cpfInvalid", "CPF inválido. Confira os números.")
-                      : t("cpfHint", "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.")}
+                      : cpfStatus === "taken"
+                        ? t("cpfTaken", "Já existe uma conta com este CPF. Entre nela — dentro dela você cria quantos perfis quiser.")
+                        : cpfStatus === "checking"
+                          ? t("cpfChecking", "Verificando...")
+                          : cpfStatus === "available"
+                            ? t("cpfAvailable", "CPF disponível ✓")
+                            : t("cpfHint", "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.")}
                   </p>
                 </div>
               )}

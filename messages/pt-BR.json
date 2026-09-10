@@ -1683,7 +1683,13 @@
     "cpfLabel": "CPF",
     "cpfHint": "Uma conta por CPF. Dentro dela você cria quantos perfis quiser.",
     "cpfInvalid": "CPF inválido. Confira os números.",
-    "blockCpf": "Informe um CPF válido."
+    "blockCpf": "Informe um CPF válido.",
+    "cpfChecking": "Verificando...",
+    "cpfAvailable": "CPF disponível ✓",
+    "cpfTaken": "Já existe uma conta com este CPF. Entre nela — dentro dela você cria quantos perfis quiser.",
+    "cpfTakenLogin": "Entrar",
+    "blockCpfChecking": "Verificando o CPF...",
+    "blockCpfTaken": "Já existe uma conta com este CPF."
   },
   "ForgotPassword": {
     "title": "Esqueceu sua senha?",
@@ -4308,7 +4314,10 @@
     "selectStateFirst": "Escolha a UF",
     "cityLabel": "Cidade",
     "selectCity": "Selecione a cidade",
-    "loading": "Carregando..."
+    "loading": "Carregando...",
+    "cpfChecking": "Verificando...",
+    "cpfAvailable": "CPF disponível ✓",
+    "cpfTaken": "Já existe uma conta com este CPF. Entre nela — dentro dela você cria quantos perfis quiser."
   },
   "Shipping": {
     "badge": "Compra protegida",
