@@ -153,6 +153,12 @@ Object.assign(NEW, {
   postsEmptyOther: ["{who} ainda não publicou nada aqui.", "{who} hasn't published anything here yet.", "{who} todavía no publicó nada aquí."],
 });
 
+
+// ── G4: as abas da raiz (Feed · Estante) ───────────────────────────────────
+Object.assign(NEW, {
+  tabFeed: ["Feed", "Feed", "Feed"],
+  tabShelf: ["Estante", "Shelf", "Estantería"],
+});
 let touched = 0;
 
 LOCALES.forEach((locale, idx) => {
