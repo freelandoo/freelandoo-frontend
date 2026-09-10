@@ -33,6 +33,11 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
+/** Fora de vista para a pessoa, mas DENTRO da viewport e com opacidade não-zero:
+ *  é o que o WebKit exige para continuar decodificando/pintando o elemento. */
+const OFFSCREEN_BUT_RENDERABLE =
+  "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;z-index:-1;pointer-events:none"
+
 /** Resolve quando `cond()` for verdadeiro ou após `timeoutMs` (o que vier antes). */
 function waitFor(cond: () => boolean, timeoutMs: number): Promise<void> {
   return new Promise((resolve) => {
@@ -100,11 +105,14 @@ async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<Com
   video.playsInline = true
   video.crossOrigin = "anonymous"
   video.preload = "auto"
-  // iOS/WebKit só decodifica frames de forma confiável com o <video> no DOM.
-  // Mantém invisível (1×1, fora da viewport) e remove no finally.
   video.setAttribute("muted", "")
   video.setAttribute("playsinline", "")
-  video.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
+  // ⚠️ iOS/WebKit só decodifica frames com o <video> no DOM — e, pior, ele PULA
+  // a renderização de quem está fora da viewport ou com opacity:0. O resultado
+  // silencioso é `texImage2D` lendo quadro PRETO. Por isso o elemento fica
+  // DENTRO da tela, com opacidade quase nula e atrás de tudo: invisível para a
+  // pessoa, "visível" para o compositor. Removido no finally.
+  video.style.cssText = OFFSCREEN_BUT_RENDERABLE
   document.body.appendChild(video)
   await new Promise<void>((res, rej) => {
     video.onloadedmetadata = () => res()
@@ -112,6 +120,11 @@ async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<Com
   })
 
   const canvas = document.createElement("canvas")
+  // ⚠️ Pelo mesmo motivo do <video>: o MediaRecorder grava via
+  // `canvas.captureStream()`, e no Safari um canvas destacado do documento
+  // entrega quadros pretos. Montar é de graça e vale para os dois caminhos.
+  canvas.style.cssText = OFFSCREEN_BUT_RENDERABLE
+  document.body.appendChild(canvas)
   const renderer = new ComposerRenderer(canvas, p.filter, p.crop)
   renderer.setSize(w, h)
   renderer.afterCompose = p.afterCompose
@@ -176,6 +189,14 @@ async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<Com
       raf = requestAnimationFrame(loop)
     })
     cancelAnimationFrame(raf)
+    // ⚠️ Se o <video> NUNCA entregou um quadro, o canvas ficou em branco o tempo
+    // todo. O webcodecs falha sozinho (sem frames), mas o MediaRecorder grava
+    // feliz o vazio e o post sobe PRETO — falha silenciosa que só aparece no
+    // feed, depois. Aqui ela vira erro, e o erro vira a próxima tentativa.
+    if (!everReady) {
+      try { rec.cancel() } catch { /* noop */ }
+      throw new VideoCaptureError("no_frames", "Não consegui ler os quadros deste vídeo neste navegador.")
+    }
     const res: RecordResult = await rec.stop()
     const poster = await canvasToPoster(canvas)
     p.onProgress?.(1)
@@ -193,6 +214,7 @@ async function composeVideoPass(p: ComposeParams, path: RecordPath): Promise<Com
     video.removeAttribute("src")
     try { video.load() } catch { /* noop */ }
     video.remove()
+    canvas.remove()
   }
 }
 

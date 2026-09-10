@@ -512,7 +512,10 @@ export function MediaComposer({
         // ⚠️ iOS/WebKit só decodifica frames com o <video> NO DOM — detached ele
         // trava em readyState 1 e o canvas fica PRETO (o preview não renderiza e
         // a orientação parece não responder). Mesma lição já paga no compose.ts.
-        v.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none"
+        // E não basta estar no DOM: fora da viewport ou com opacity:0 o WebKit
+        // PULA a renderização e entrega quadro PRETO. Fica dentro da tela, com
+        // opacidade quase nula e atrás de tudo.
+        v.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;z-index:-1;pointer-events:none"
         document.body.appendChild(v)
         // Espera dados decodificáveis com ESCAPE: sem timeout/onerror um arquivo
         // que o Safari não decodifica deixaria o setup pendurado para sempre —

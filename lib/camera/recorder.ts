@@ -173,10 +173,10 @@ export class StoryRecorder {
         // "null is not an object (evaluating 't.info.decoderConfig.colorSpace')".
         // Contamos aqui para RECUSAR o finalize em vez de deixar quebrar.
         if (meta?.decoderConfig) this.sawDecoderConfig = true
-        // ⚠️ Chunk ANTES do decoderConfig é DESCARTADO: ele viraria sample de uma
-        // trilha sem formato declarado, que é exatamente o estado que faz o
-        // finalize quebrar. Nada se perde — sem config não há vídeo legível.
-        if (!this.sawDecoderConfig) return
+        // ⚠️ NÃO descartar chunk que chegue antes da config: o primeiro é o
+        // KEYFRAME, e sem ele o arquivo abre PRETO (nada para o decodificador
+        // começar). O muxer só lê a config no finalize, então guardar o sample
+        // agora é inofensivo — quem decide se dá para finalizar é o guard lá.
         // ⚠️ Este callback roda DENTRO do WebCodecs, fora do try/catch de quem
         // publica: uma exceção aqui não seria capturada por ninguém. Vira estado.
         try {
