@@ -14,6 +14,22 @@ export const GOLD = "#F2B705"
 export const CYAN = "#16c8e8"
 export const INK = "#0B0B0D"
 
+/**
+ * O BANNER DESENHADO do ambiente — a grade e o brilho laranja que o headcard
+ * do /fitness, o masthead da vitrine de academias, o mini-headcard de cada
+ * academia e o headcard da página da academia dividem. É a assinatura do
+ * ambiente; a página da academia pinta isto POR CIMA da capa que ela subiu.
+ */
+export const BANNER_LAYERS = [
+  "radial-gradient(70% 120% at 18% 0%, rgba(194, 65, 12, 0.45), transparent 65%)",
+  "radial-gradient(60% 120% at 88% 10%, rgba(245, 158, 11, 0.22), transparent 68%)",
+  "repeating-linear-gradient(to right, rgba(251, 146, 60, 0.10) 0 1px, transparent 1px 40px)",
+  "repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 40px)",
+].join(",")
+
+/** A sombra do headcard das plataformas laranja: o brilho e a sombra dura queimada. */
+export const HEADCARD_SHADOW = "0 0 30px rgba(249, 115, 22, 0.22), 8px 8px 0 0 rgba(110, 42, 15, 0.9)"
+
 /** As cores dos quatro pills atrás da foto (pedido do Alex, 2026-09-10). */
 export const PILL = {
   academy: { bg: "#C2410C", hover: "#9A3412" }, // laranja — Minha academia

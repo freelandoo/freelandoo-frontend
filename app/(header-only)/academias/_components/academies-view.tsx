@@ -23,10 +23,12 @@ import { ArrowLeft, ArrowRight, Dumbbell, Loader2, MapPin, Plus, Search, Users }
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
 import {
+  BANNER_LAYERS,
   BTN_DARK,
   BTN_GOLD,
   EMBER,
   EMBER_GLOW,
+  HEADCARD_SHADOW,
   INNER,
   PANEL,
   StateBox,
@@ -51,14 +53,6 @@ export function AcademiesView() {
     </FitnessShell>
   )
 }
-
-/** O banner DESENHADO do ambiente — a grade e o brilho laranja do headcard do /fitness. */
-const BANNER_LAYERS = [
-  "radial-gradient(70% 120% at 18% 0%, rgba(194, 65, 12, 0.45), transparent 65%)",
-  "radial-gradient(60% 120% at 88% 10%, rgba(245, 158, 11, 0.22), transparent 68%)",
-  "repeating-linear-gradient(to right, rgba(251, 146, 60, 0.10) 0 1px, transparent 1px 40px)",
-  "repeating-linear-gradient(to bottom, rgba(251, 146, 60, 0.07) 0 1px, transparent 1px 40px)",
-].join(",")
 
 function AcademiesBody() {
   const t = useTranslations("Academies")
@@ -110,7 +104,7 @@ function AcademiesBody() {
       <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
         <div
           className="relative overflow-hidden border-2 border-[#0B0B0D]"
-          style={{ boxShadow: `0 0 30px rgba(249, 115, 22, 0.22), 8px 8px 0 0 rgba(110, 42, 15, 0.9)` }}
+          style={{ boxShadow: HEADCARD_SHADOW }}
         >
           <div className="relative h-40 bg-[#1D1810] md:h-48">
             <div aria-hidden className="absolute inset-0" style={{ backgroundImage: BANNER_LAYERS }} />

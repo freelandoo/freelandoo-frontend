@@ -3,6 +3,10 @@
 // Página de ranking da academia — design de pódio editorial do /ranking (paleta
 // Freelandoo dark, cards de papel off-white, torn photos, pedestais, coroa no
 // #1). Métrica escolhível (frequência da catraca / posts / compartilhamento).
+//
+// Mora na CASCA DO FITNESS (pele laranja, sem margem no celular), como a
+// página da academia de onde o pill roxo traz a pessoa. O gate da flag é da
+// casca.
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
@@ -12,6 +16,7 @@ import { DoodleCrown } from "@/components/home/landing/primitives"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { cn } from "@/lib/utils"
+import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
 
 type RankMember = {
   id_member: string
@@ -133,22 +138,26 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
-      </div>
+      <FitnessShell>
+        <div className="flex min-h-[70dvh] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+        </div>
+      </FitnessShell>
     )
   }
   if (state === "error" || !academy || !data) {
     return (
-      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
-        <div>
-          <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
-          <p className="mt-4 text-sm text-[#9A938A]">{t("rankingError", "Erro ao carregar o ranking.")}</p>
-          <Link href={`/academias/${slug}`} className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
-            <ArrowLeft className="h-4 w-4" /> {academy?.nome || t("backToAcademy", "Voltar")}
-          </Link>
+      <FitnessShell>
+        <div className="flex min-h-[70dvh] items-center justify-center px-4 text-center">
+          <div>
+            <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
+            <p className="mt-4 text-sm text-[#9A938A]">{t("rankingError", "Erro ao carregar o ranking.")}</p>
+            <Link href={`/academias/${slug}`} className="mt-4 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
+              <ArrowLeft className="h-4 w-4" /> {academy?.nome || t("backToAcademy", "Voltar")}
+            </Link>
+          </div>
         </div>
-      </div>
+      </FitnessShell>
     )
   }
 
@@ -156,15 +165,16 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
   const rest = sorted.slice(3)
 
   return (
-    <div className="fl-root min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F1EDE2]">
-      <div className="mx-auto max-w-4xl px-4 pt-6 md:px-6">
+    <FitnessShell>
+      {/* Sem margem no celular (regra das cascas); texto fica com px-3. */}
+      <div className="mx-auto max-w-4xl px-0 pt-6 md:px-10">
         {/* Voltar + nome */}
-        <Link href={`/academias/${slug}`} className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F2B705]">
+        <Link href={`/academias/${slug}`} className="ml-3 inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#9A938A] hover:text-[#F2B705] md:ml-0">
           <ArrowLeft className="h-3.5 w-3.5" /> {academy.nome}
         </Link>
 
         {/* Métrica */}
-        <div className="mt-5 flex flex-wrap items-center gap-1">
+        <div className="mt-5 flex flex-wrap items-center gap-1 px-3 md:px-0">
           {(
             [
               ["freq", "rankTabFreq", "Frequência"],
@@ -327,7 +337,7 @@ export function AcademyRankingFull({ slug }: { slug: string }) {
           </div>
         </div>
       )}
-    </div>
+    </FitnessShell>
   )
 }
 

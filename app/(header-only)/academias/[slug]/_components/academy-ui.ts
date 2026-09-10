@@ -1,10 +1,13 @@
-// Vocabulário visual da academia — a identidade tabloide escura/dourada que a
-// página da academia, a página de membros e o ranking dividem.
+// Vocabulário visual da academia — o que a página da academia, a página de
+// membros e o ranking dividem.
 //
-// Mora num arquivo só porque a página de membros nasceu recortando a página da
-// academia: com as constantes copiadas, mexer no tom do painel numa delas
-// deixaria a outra num tom diferente sem nada quebrar. O mesmo vale para
-// STATUS_KEYS, que traduz o status da matrícula nas DUAS telas.
+// ⚠️ A ACADEMIA MORA DENTRO DO AMBIENTE FITNESS (pedido do Alex, 2026-09-10:
+// "ajuste a identidade visual das academias conforme o layout do fitness").
+// As cores de superfície, os botões, o banner desenhado e a sombra do headcard
+// são os do `fitness-ui` — REEXPORTADOS, e não copiados: com as constantes
+// copiadas, mexer no tom do painel numa das telas deixaria a outra num tom
+// diferente sem nada quebrar. O que é SÓ da academia (o status da matrícula,
+// o tipo das fichas vencidas) fica aqui.
 
 /** Rótulos de status da matrícula: [chave i18n do ns `Academies`, fallback pt]. */
 export const STATUS_KEYS: Record<string, [string, string]> = {
@@ -15,15 +18,19 @@ export const STATUS_KEYS: Record<string, [string, string]> = {
   pending: ["statusPending", "Matrícula pendente"],
 }
 
-export const GOLD = "#F2B705"
-export const PANEL = "border-2 border-[#0B0B0D] bg-[#15120E]"
-export const INNER = "border-2 border-[#0B0B0D] bg-[#1D1810]"
-export const BTN_GOLD =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] text-[#0B0B0D] font-extrabold uppercase tracking-[0.12em] disabled:opacity-50"
-export const BTN_DARK =
-  "inline-flex items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] text-[#F5F1E8] font-extrabold uppercase tracking-[0.12em] hover:bg-[#241d12] disabled:opacity-50"
-export const H_SECTION =
-  "flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"
+export {
+  BANNER_LAYERS,
+  BTN_DARK,
+  BTN_GOLD,
+  EMBER,
+  EMBER_GLOW,
+  GOLD,
+  HEADCARD_SHADOW,
+  H_SECTION,
+  INNER,
+  PANEL,
+  initialsOf,
+} from "@/app/(header-only)/fitness/_components/fitness-ui"
 
 /** O que a API de fichas vencidas devolve (`GET /academies/:id/expired-plans`). */
 export type ExpiredPlans = {

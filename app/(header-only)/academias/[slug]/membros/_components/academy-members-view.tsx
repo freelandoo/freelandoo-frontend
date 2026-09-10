@@ -7,6 +7,10 @@
 // tem nove colunas) e viviam espremidas embaixo do mural, com o professor
 // rolando meia tela de post para chegar nelas. Aqui elas nascem no topo, e a
 // página da academia volta a ser o que ela é para quem visita — capa e mural.
+//
+// Mora na CASCA DO FITNESS (pele laranja, sem margem no celular) como a página
+// da academia: chegar aqui pelo pill e cair noutra cor faria a academia trocar
+// de cara ao andar dois metros. O gate da flag é da casca.
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
@@ -16,10 +20,12 @@ import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PageBackLink } from "@/components/tabloide/PageBackLink"
+import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
 import { TrainingGrid } from "../../_components/training-grid"
 import {
   BTN_DARK,
-  GOLD,
+  EMBER,
+  EMBER_GLOW,
   H_SECTION,
   PANEL,
   STATUS_KEYS,
@@ -145,19 +151,14 @@ export function AcademyMembersView({ slug }: { slug: string }) {
     [locale]
   )
 
-  if (!enabled) {
-    return (
-      <Blocked
-        message={t("disabled", "Recurso indisponível no momento.")}
-        backLabel={t("backToList", "Ver academias")}
-      />
-    )
-  }
+  // O "recurso indisponível" é da casca (`FitnessShell`), num lugar só.
   if (state === "loading") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
-      </div>
+      <FitnessShell>
+        <div className="flex min-h-[70dvh] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+        </div>
+      </FitnessShell>
     )
   }
   if (state === "denied") {
@@ -187,17 +188,21 @@ export function AcademyMembersView({ slug }: { slug: string }) {
     }`
 
   return (
-    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
-      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
-        <PageBackLink href={`/academias/${academy.slug}`} label={t("backToAcademy", "Voltar pra academia")} />
+    <FitnessShell>
+      {/* Sem margem no celular (regra das cascas); o "Voltar" fica com px-3. */}
+      <div className="mx-auto max-w-5xl px-0 pt-6 md:px-10">
+        <div className="px-3 md:px-0">
+          <PageBackLink href={`/academias/${academy.slug}`} label={t("backToAcademy", "Voltar pra academia")} />
+        </div>
 
         <header
           className={`${PANEL} mt-4 flex flex-wrap items-center gap-4 p-4`}
-          style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}
+          style={{ boxShadow: `8px 8px 0 0 ${EMBER}` }}
         >
+          {/* A foto no cartão 2/3, como no headcard da academia — em miniatura. */}
           <div
-            className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
-            style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
+            className="aspect-[2/3] w-12 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
+            style={{ outline: `2px solid ${EMBER_GLOW}`, outlineOffset: "2px" }}
           >
             {academy.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -210,13 +215,13 @@ export function AcademyMembersView({ slug }: { slug: string }) {
           </div>
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#9A938A]">{academy.nome}</p>
-            <h1 className="text-2xl font-black uppercase leading-none md:text-3xl">
+            <h1 className="fl-display text-3xl leading-[0.9] md:text-4xl">
               {t("membersPageTitle", "Membros vinculados")}
             </h1>
           </div>
         </header>
 
-        <nav className="mt-5 flex flex-wrap gap-2">
+        <nav className="mt-5 flex flex-wrap gap-2 px-3 md:px-0">
           <button type="button" onClick={() => setTab("membros")} className={tabBtn(tab === "membros")}>
             <UserRound className="h-4 w-4" />
             {t("tabMembers", "Membros")}
@@ -306,7 +311,7 @@ export function AcademyMembersView({ slug }: { slug: string }) {
           <TrainingGrid academyId={academy.id_academy} expiredIds={expiredIds} expiryDays={expired?.days} />
         )}
       </div>
-    </div>
+    </FitnessShell>
   )
 }
 
@@ -321,14 +326,16 @@ function Blocked({
   backLabel: string
 }) {
   return (
-    <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
-      <div>
-        <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
-        <p className="mt-4 text-sm text-[#9A938A]">{message}</p>
-        <Link href={backHref || "/academias"} className={`${BTN_DARK} mt-4 px-4 py-2 text-xs`}>
-          {backLabel}
-        </Link>
+    <FitnessShell>
+      <div className="flex min-h-[70dvh] items-center justify-center px-4 text-center">
+        <div>
+          <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
+          <p className="mt-4 text-sm text-[#9A938A]">{message}</p>
+          <Link href={backHref || "/academias"} className={`${BTN_DARK} mt-4 px-4 py-2 text-xs`}>
+            {backLabel}
+          </Link>
+        </div>
       </div>
-    </div>
+    </FitnessShell>
   )
 }

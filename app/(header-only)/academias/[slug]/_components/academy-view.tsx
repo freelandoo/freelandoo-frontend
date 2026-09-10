@@ -1,8 +1,28 @@
 "use client"
 
-// Página da academia — identidade Freelandoo (tabloide escuro/dourado, mesma
-// linguagem da página de comunidade): capa com chips rotacionados, avatar
-// sobreposto com outline dourado, tiles de estatística, painéis #15120E.
+// Página da academia — a CASCA DO FITNESS (pele laranja, fundo do ambiente) e
+// o headcard na silhueta das plataformas (pedido do Alex, 2026-09-10: "o card
+// da academia está quadrado, eu quero ele grande, retangular na mesma
+// proporção que os cards de foto dos perfis, e a identidade visual conforme o
+// fitness, mais laranja; tire as margens e deixe o nome da academia embaixo").
+//
+// ⚠️ O BANNER É A CAPA DA ACADEMIA COM O AMBIENTE POR CIMA: a capa que o dono
+// subiu continua aparecendo, e as camadas laranja do Fitness (`BANNER_LAYERS`)
+// são pintadas sobre ela, para que uma academia com capa e uma sem capa
+// pareçam a mesma casa. Sem capa, sobra só o banner desenhado, como no
+// /fitness.
+//
+// ⚠️ A FOTO É UM CARTÃO 2/3 (`aspect-[2/3] w-32 md:w-36`), a MESMA silhueta
+// do headcard do /fitness, do Games e do Financeiro, com os pills escapando
+// por trás. O recuo é METADE da altura (`-mt-24` / `md:-mt-[108px]`): 128px
+// de largura dá 192px de altura; 144 dá 216. Mexeu na largura da foto?
+// Refazer o recuo E o `avatarPadClass` da pilha (que casa com a LARGURA).
+//
+// ⚠️ SEM MARGEM NO CELULAR (regra das cascas): o container é `px-0 md:px-10`,
+// e o título DESCE para baixo da foto (`order-last basis-full md:order-none`)
+// — ao lado dela, o rótulo do pill aberto deslizaria por cima do nome.
+//
+// O gate da flag `fitness_academias` mora na `FitnessShell`, num lugar só.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
@@ -34,19 +54,25 @@ import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
 import { PublishMenuButton } from "@/components/composer/publish-menu-button"
 import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+import { FitnessShell } from "@/app/(header-only)/fitness/_components/fitness-shell"
 // A gaveta dos números — a MESMA peça da comunidade. Só a mecânica é dela: o
 // que entra na coluna (vinculados, professores, destaque e ranking do mês) é
 // desta página.
 import { RetractableColumn } from "@/components/tabloide"
 import { AcademyFeed } from "./academy-feed"
 import {
+  BANNER_LAYERS,
   BTN_DARK,
   BTN_GOLD,
+  EMBER,
+  EMBER_GLOW,
   GOLD,
+  HEADCARD_SHADOW,
   H_SECTION,
   INNER,
   PANEL,
   STATUS_KEYS,
+  initialsOf,
   type ExpiredPlans,
 } from "./academy-ui"
 
@@ -340,34 +366,30 @@ export function AcademyView({ slug }: { slug: string }) {
     [locale]
   )
 
-  if (!enabled) {
-    return (
-      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
-        <div>
-          <Dumbbell className="mx-auto h-10 w-10 text-[#9A938A]" />
-          <p className="mt-4 text-sm text-[#9A938A]">{t("disabled", "Recurso indisponível no momento.")}</p>
-        </div>
-      </div>
-    )
-  }
+  // O aviso de "recurso indisponível" é da casca (`FitnessShell`), num lugar
+  // só — aqui só existem carregando, erro e a página.
   if (state === "loading") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#0b0804]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
-      </div>
+      <FitnessShell>
+        <div className="flex min-h-[70dvh] items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" />
+        </div>
+      </FitnessShell>
     )
   }
   if (state === "error" || !academy) {
     return (
-      <div className="fl-sharp flex min-h-[100dvh] items-center justify-center bg-[#0b0804] px-4 text-center text-[#F5F1E8]">
-        <div>
-          <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
-          <p className="mt-4 text-sm text-[#9A938A]">{t("notFound", "Academia não encontrada.")}</p>
-          <Link href="/academias" className={`${BTN_DARK} mt-4 px-4 py-2 text-xs`}>
-            {t("backToList", "Ver academias")}
-          </Link>
+      <FitnessShell>
+        <div className="flex min-h-[70dvh] items-center justify-center px-4 text-center">
+          <div>
+            <ShieldAlert className="mx-auto h-10 w-10 text-[#9A938A]" />
+            <p className="mt-4 text-sm text-[#9A938A]">{t("notFound", "Academia não encontrada.")}</p>
+            <Link href="/academias" className={`${BTN_DARK} mt-4 px-4 py-2 text-xs`}>
+              {t("backToList", "Ver academias")}
+            </Link>
+          </div>
         </div>
-      </div>
+      </FitnessShell>
     )
   }
 
@@ -418,150 +440,183 @@ export function AcademyView({ slug }: { slug: string }) {
   })
 
   return (
-    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] pb-24 text-[#F5F1E8]">
-      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <Link
-            href="/fitness"
-            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("backToFitness", "Voltar pro painel fitness")}
-          </Link>
-          <Link
-            href="/academias"
-            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:text-[#F2B705]"
-          >
-            {t("backToList", "Ver academias")}
-          </Link>
-        </div>
+    <FitnessShell>
+      {/* Top bar — a saída à esquerda e a vitrine à direita, como no headcard
+          do /fitness. `px-3` porque texto não encosta na borda. */}
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-3 pt-6 md:px-10">
+        <Link
+          href="/fitness"
+          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("backToFitness", "Voltar pro painel fitness")}
+        </Link>
+        <Link
+          href="/academias"
+          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]"
+        >
+          {t("backToList", "Ver academias")}
+        </Link>
+      </div>
 
-        {/* Cabeçalho estilo comunidade: capa + chips + avatar sobreposto */}
-        <header className="relative mt-3 border-2 border-[#0B0B0D]" style={{ boxShadow: `8px 8px 0 0 ${GOLD}` }}>
-          <div className="relative h-40 bg-[#1D1810] md:h-52">
+      {/* O HEADCARD — a silhueta do /fitness: banner largo, chip do ambiente
+          num canto, selo no outro, a foto 2/3 mordendo a borda de baixo com os
+          pills escapando por trás e o nome gigante ao lado (embaixo, no
+          celular). Sem margem no celular. */}
+      <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
+        {/* `z-0` TRANCA o banner debaixo da linha da foto. */}
+        <div className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: HEADCARD_SHADOW }}>
+          <div className="relative h-44 bg-[#1D1810] md:h-56">
             {academy.cover_url && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={academy.cover_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img src={academy.cover_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
             )}
+            {/* As camadas laranja do ambiente, POR CIMA da capa: é o que faz
+                uma academia com capa e uma sem parecerem a mesma casa. */}
+            <div aria-hidden className="absolute inset-0" style={{ backgroundImage: BANNER_LAYERS }} />
+            {!academy.cover_url && (
+              <Dumbbell
+                aria-hidden
+                className="pointer-events-none absolute -right-6 -top-6 h-64 w-64 select-none md:h-80 md:w-80"
+                strokeWidth={1}
+                style={{ color: "rgba(251, 146, 60, 0.10)" }}
+              />
+            )}
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, transparent 40%, #150703cc 100%)" }}
+            />
+            {/* O CHIP diz o que a academia é; o chip da cidade vem embaixo. */}
             <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
               {t("chipAcademy", "Academia parceira")}
             </span>
             {academy.cidade && (
               <span className="absolute left-4 top-12 z-20 inline-flex -rotate-2 items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F5F1E8]">
-                <MapPin className="h-3 w-3 text-[#F2B705]" />
+                <MapPin className="h-3 w-3" style={{ color: EMBER_GLOW }} />
                 {academy.cidade}
               </span>
             )}
+            {/* O selo do canto oposto: quantos estão vinculados. */}
             <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
-              <span className="text-lg font-black leading-none text-[#F2B705]">{academy.member_count}</span>
+              <span className="text-lg font-black leading-none" style={{ color: EMBER_GLOW }}>
+                {academy.member_count}
+              </span>
               <span className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-[#9A938A]">
                 {t("membersSuffix", "vinculados")}
               </span>
             </span>
           </div>
+        </div>
 
-          <div className="bg-[#15120E] px-5 pb-5">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex items-end gap-4">
-                {/* Coluna da foto: a pilha de pills é o PRIMEIRO filho e a foto
-                    vem DEPOIS no DOM — dois posicionados sem z-index pintam na
-                    ordem do documento, então a foto cobre o botão e só o ícone
-                    escapa pela direita. `-z-10` NÃO serve aqui (o card da foto
-                    é z-30 e formaria contexto próprio). A pilha fica FORA da
-                    caixa da foto, que é `overflow-hidden` e recortaria o pill
-                    na borda. */}
-                <div className="relative -mt-10 h-24 w-24 shrink-0 md:-mt-14 md:h-32 md:w-32">
-                  {pills.length > 0 && (
-                    <PillStack
-                      pills={pills}
-                      // Casa com a LARGURA DA FOTO desta superfície (w-24
-                      // md:w-32). Mexeu no tamanho da foto? Ajustar aqui.
-                      avatarPadClass="pl-24 md:pl-32"
-                      className="absolute left-0 top-1/2 -translate-y-1/2"
-                    />
-                  )}
-                  <div
-                    className="relative z-30 h-full w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
-                    style={{ outline: `2px solid ${GOLD}`, outlineOffset: "2px" }}
-                  >
-                    {academy.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={academy.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center">
-                        <Dumbbell className="h-9 w-9 text-[#9A938A]" />
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="pb-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-3xl font-black uppercase leading-none tracking-tight md:text-4xl">{academy.nome}</h1>
-                    {academy.owner_profile_id && (
-                      <Link
-                        href={`/mensagens?with=${encodeURIComponent(academy.owner_profile_id)}`}
-                        aria-label={t("messageCta", "Enviar mensagem")}
-                        title={t("messageCta", "Enviar mensagem")}
-                        className={`${BTN_DARK} h-9 w-9 shrink-0`}
-                      >
-                        <MessageCircle className="h-4 w-4 text-[#F2B705]" />
-                      </Link>
-                    )}
-                    {/* Publicar no mural: mesmo "+" amarelo das comunidades,
-                        no headcard. A academia não tem Bee (story pertence a
-                        comunidade, não a academia) — só Post, Curto e Recado. */}
-                    <PublishMenuButton
-                      label={t("composeCta", "Publicar")}
-                      canPost={canPost}
-                      blockedMessage={t("joinToPost", "Vincule sua matrícula para publicar.")}
-                      onBlocked={(m) => toast.error(m)}
-                      items={[
-                        { kind: "post", label: t("postLabel", "Post") },
-                        { kind: "bee", label: t("curtoLabel", "Curto") },
-                        { kind: "recado", label: t("recadoLabel", "Recado") },
-                      ]}
-                      onPick={(kind) => {
-                        if (kind === "recado") { setRecadoOpen(true); return }
-                        setComposerKind(kind === "bee" ? "bee" : "post")
-                        setComposerOpen(true)
-                      }}
-                    />
-                  </div>
-                  {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
-                </div>
-              </div>
-
-              {/* Meu vínculo */}
-              <div className="min-w-[220px] pt-4">
-                {ms ? (
-                  <div className={`${INNER} p-3`}>
-                    <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
-                      <BadgeCheck className="h-4 w-4" />
-                      {statusMeta ? t(statusMeta[0], statusMeta[1]) : ms.membership_status}
-                    </p>
-                    {ms.plan_name && <p className="mt-1 text-xs text-[#9A938A]">{ms.plan_name}</p>}
-                    <p className="mt-1 text-[11px] text-[#9A938A]">
-                      {t("linkedSince", "Vinculado desde")} {fmtDate(ms.linked_at)}
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <Link href="/fitness" className={`${BTN_GOLD} px-3 py-1.5 text-[11px]`}>
-                        {t("goFitness", "Meu painel fitness")}
-                      </Link>
-                      <button onClick={() => void unlink()} className={`${BTN_DARK} px-2 py-1.5`} aria-label={t("unlinkCta", "Desvincular")}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button onClick={() => setLinkOpen(true)} className={`${BTN_GOLD} w-full px-4 py-3 text-xs`}>
-                    <IdCard className="h-4 w-4" />
-                    {t("linkCta", "Vincular matrícula (CPF)")}
-                  </button>
-                )}
-              </div>
+        {/* O recuo é ~metade da altura da foto: metade sobre o banner, metade
+            sobre o papel, como no headcard do perfil. */}
+        <div className="relative z-20 -mt-24 flex flex-wrap items-end gap-4 px-2 md:-mt-[108px] md:px-3">
+          {/* A pilha é o PRIMEIRO filho e a foto vem depois no DOM: quem pinta
+              por último cobre. `pl-32 md:pl-36` casa com a LARGURA da foto. */}
+          <div className="relative shrink-0">
+            {pills.length > 0 && (
+              <PillStack
+                pills={pills}
+                avatarPadClass="pl-32 md:pl-36"
+                className="absolute left-0 top-1/2 -translate-y-1/2"
+              />
+            )}
+            <div
+              className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36"
+              style={{ outline: `2px solid ${EMBER_GLOW}`, outlineOffset: "2px" }}
+            >
+              {academy.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={academy.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                // Sem foto, as INICIAIS — como na vitrine e nas plataformas.
+                <span className="grid h-full w-full place-items-center fl-display text-4xl text-[#F5F1E8]/40">
+                  {initialsOf(academy.nome)}
+                </span>
+              )}
             </div>
           </div>
-        </header>
+
+          {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (regra das cascas,
+              2026-09-10): o espaçador empurra as ações para a direita da foto
+              e o título, com `order-last` + `basis-full`, ocupa a linha
+              inteira embaixo. No md o layout é lado a lado. */}
+          <div aria-hidden className="flex-1 md:hidden" />
+          <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
+            <h1 className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+              {academy.nome}
+            </h1>
+            {academy.descricao && <p className="mt-2 max-w-xl text-sm text-[#9A938A]">{academy.descricao}</p>}
+          </div>
+
+          {/* As ações do canto: mensagem ao dono e o "+" de publicar. */}
+          <div className="flex items-center gap-2 pb-1">
+            {academy.owner_profile_id && (
+              <Link
+                href={`/mensagens?with=${encodeURIComponent(academy.owner_profile_id)}`}
+                aria-label={t("messageCta", "Enviar mensagem")}
+                title={t("messageCta", "Enviar mensagem")}
+                className={`${BTN_DARK} h-9 w-9 shrink-0`}
+              >
+                <MessageCircle className="h-4 w-4 text-[#F2B705]" />
+              </Link>
+            )}
+            {/* Publicar no mural: mesmo "+" amarelo das comunidades, no
+                headcard. A academia não tem Bee (story pertence a comunidade,
+                não a academia) — só Post, Curto e Recado. */}
+            <PublishMenuButton
+              label={t("composeCta", "Publicar")}
+              canPost={canPost}
+              blockedMessage={t("joinToPost", "Vincule sua matrícula para publicar.")}
+              onBlocked={(m) => toast.error(m)}
+              items={[
+                { kind: "post", label: t("postLabel", "Post") },
+                { kind: "bee", label: t("curtoLabel", "Curto") },
+                { kind: "recado", label: t("recadoLabel", "Recado") },
+              ]}
+              onPick={(kind) => {
+                if (kind === "recado") { setRecadoOpen(true); return }
+                setComposerKind(kind === "bee" ? "bee" : "post")
+                setComposerOpen(true)
+              }}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* As seções vão de ponta a ponta no celular (`px-0 md:px-10`). */}
+      <div className="mx-auto max-w-5xl px-0 md:px-10">
+        {/* Meu vínculo — saiu de dentro do headcard: na silhueta das
+            plataformas não há painel embaixo do banner, e a caixa virou a
+            primeira seção da página. */}
+        <section className="mt-6">
+          {ms ? (
+            <div className={`${PANEL} p-4`}>
+              <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F2B705]">
+                <BadgeCheck className="h-4 w-4" />
+                {statusMeta ? t(statusMeta[0], statusMeta[1]) : ms.membership_status}
+              </p>
+              {ms.plan_name && <p className="mt-1 text-xs text-[#9A938A]">{ms.plan_name}</p>}
+              <p className="mt-1 text-[11px] text-[#9A938A]">
+                {t("linkedSince", "Vinculado desde")} {fmtDate(ms.linked_at)}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Link href="/fitness" className={`${BTN_GOLD} px-3 py-1.5 text-[11px]`}>
+                  {t("goFitness", "Meu painel fitness")}
+                </Link>
+                <button onClick={() => void unlink()} className={`${BTN_DARK} px-2 py-1.5`} aria-label={t("unlinkCta", "Desvincular")}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setLinkOpen(true)} className={`${BTN_GOLD} w-full px-4 py-3 text-xs`}>
+              <IdCard className="h-4 w-4" />
+              {t("linkCta", "Vincular matrícula (CPF)")}
+            </button>
+          )}
+        </section>
 
         {/* OS NÚMEROS DA ACADEMIA — a gaveta, a MESMA da comunidade.
 
@@ -580,7 +635,10 @@ export function AcademyView({ slug }: { slug: string }) {
           ariaLabel={t("statsAria", "Números da academia: vinculados, professores, destaque e ranking do mês")}
           closeLabel={t("close", "Fechar")}
           icon={<BarChart3 className="h-4 w-4" />}
-          accent={GOLD}
+          accent={EMBER}
+          // A gaveta vai por PORTAL para o <body>, fora da casca: sem a pele
+          // por prop ela abriria marrom no meio da plataforma laranja.
+          skinClass="fl-root fl-fitness fl-sharp"
           onOpen={() => void loadRanking()}
         >
           <div className={`${PANEL} flex items-center gap-3 px-4 py-3`}>
@@ -889,6 +947,6 @@ export function AcademyView({ slug }: { slug: string }) {
           }}
         />
       )}
-    </div>
+    </FitnessShell>
   )
 }
